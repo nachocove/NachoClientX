@@ -827,7 +827,8 @@ namespace NachoCore.ActiveSync
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
                 var search = McPending.QueryEligible (accountId).
-                    Where (x => McPending.Operations.ContactSearch == x.Operation).FirstOrDefault ();
+                    Where (x => McPending.Operations.ContactSearch == x.Operation ||
+                        McPending.Operations.EmailSearch == x.Operation).FirstOrDefault ();
                 if (null != search) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Search");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, 
@@ -931,7 +932,7 @@ namespace NachoCore.ActiveSync
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId).FirstOrDefault ();
                 if (null != next) {
-                    NcAssert.True (McPending.Operations.Last == McPending.Operations.CalForward);
+                    NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
                     AsCommand cmd = null;
                     var action = PickActionEnum.QOop;
@@ -972,6 +973,7 @@ namespace NachoCore.ActiveSync
                         cmd = new AsSendMailCommand (BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.ContactSearch:
+                    case McPending.Operations.EmailSearch:
                         cmd = new AsSearchCommand (BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.CalRespond:

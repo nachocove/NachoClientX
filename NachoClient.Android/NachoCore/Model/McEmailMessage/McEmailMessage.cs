@@ -13,6 +13,7 @@ using MimeKit;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Index;
 
 namespace NachoCore.Model
 {
@@ -59,6 +60,19 @@ namespace NachoCore.Model
         public McEmailMessage GetMessage ()
         {
             return McEmailMessage.QueryById<McEmailMessage> (Id);
+        }
+    }
+
+    public class NcEmailMessageIndexComparer : IEqualityComparer<NcEmailMessageIndex>
+    {
+        public bool Equals (NcEmailMessageIndex a, NcEmailMessageIndex b)
+        {
+            return a.Id == b.Id;
+        }
+
+        public int GetHashCode (NcEmailMessageIndex i)
+        {
+            return i.Id;
         }
     }
 
@@ -500,11 +514,6 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
-        {
-            return QueryActiveMessageItemsByScore (accountId, folderId, minHotScore);
-        }
-
         /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
         public static List<NcEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
@@ -584,6 +593,17 @@ namespace NachoCore.Model
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
                 false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderByDescending (x => x.CreatedAt);
+        }
+
+        public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
+        {
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id AS Id, e.ConversationId as ThreadId FROM McEmailMessage AS e WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " e.DateReceived = ? AND " +
+                " e.[From] = ? ",
+                accountId, dateRecv, from);
         }
 
         public override ClassCodeEnum GetClassCode ()
@@ -673,7 +693,9 @@ namespace NachoCore.Model
 
         public void Add (NcEmailMessageIndex index)
         {
-            thread.Add (index);
+            if (!thread.Contains (index, new NcEmailMessageIndexComparer ())) {
+                thread.Add (index);
+            }
         }
 
         public NcEmailMessageIndex GetEmailMessageIndex (int i)
@@ -957,6 +979,7 @@ namespace NachoCore.Model
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Delete ();
             });
+            NcBrain.SharedInstance.UnindexEmailMessage (this);
             return returnVal;
         }
 

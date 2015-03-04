@@ -37,6 +37,7 @@ namespace NachoClient.iOS
         // segue id's
         string FilesToComposeSegueId = "AttachmentsToCompose";
         string FilesToNotesSegueId = "AttachmentsToNotes";
+        string FilesToNotesModalSegueId = "AttachmentsToNotesModal";
 
         // animation constants
         public nfloat AnimationDuration = 3.0f;
@@ -321,21 +322,23 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals (FilesToComposeSegueId)) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
-
                 var holder = sender as SegueHolder;
                 var attachments = (List<McAttachment>)holder.value;
-
                 dc.SetEmailPresetFields (attachmentList: attachments);
                 return;
             }
-
             if (segue.Identifier.Equals (FilesToNotesSegueId)) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-
                 var holder = sender as SegueHolder;
                 selectedNote = (McNote)holder.value;
-
                 dc.SetOwner (this, true);
+                return;
+            }
+            if (segue.Identifier.Equals (FilesToNotesModalSegueId)) {
+                var dc = (NotesViewerViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                selectedNote = (McNote)holder.value;
+                dc.SetOwner (this);
                 return;
             }
 
@@ -590,7 +593,7 @@ namespace NachoClient.iOS
             }
 
             FileChooserSheet (note, () => {
-                PerformSegue (FilesToNotesSegueId, new SegueHolder (note));
+                PerformSegue (FilesToNotesModalSegueId, new SegueHolder (note));
             });
         }
 

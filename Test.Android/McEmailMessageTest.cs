@@ -457,6 +457,99 @@ namespace Test.Common
             Assert.AreEqual (1, results2.Count);
             CheckMessage (message3, results2 [0]);
         }
+
+        [Test]
+        public void TestQueryByDateReceivedAndFrom ()
+        {
+            var accountId = 9;
+            var magicTime1 = DateTime.UtcNow.AddDays(-5);
+            var magicTime2 = magicTime1.AddDays (1);
+            var magicFrom1 = "foo@bar.com";
+            var winner1 = "winner@foo.com";
+            var winner2 = "winner@bar.com";
+            var loser = "bad@foo.com";
+            // will be found.
+            var message1 = new McEmailMessage () {
+                AccountId = accountId,
+                DateReceived = magicTime1,
+                From = magicFrom1,
+                To = winner1,
+                BodyId = 0,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message1);
+            // will be found.
+            var message2 = new McEmailMessage () {
+                AccountId = accountId,
+                DateReceived = magicTime2,
+                From = magicFrom1,
+                To = winner2,
+                BodyId = 0,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message2);
+            // will not be found
+            var message3 = new McEmailMessage () {
+                AccountId = accountId,
+                DateReceived = magicTime2,
+                From = magicFrom1,
+                To = loser,
+                BodyId = 0,
+                IsIndexed = false,
+                IsAwaitingDelete = true,
+            };
+            InsertAndCheckMessage (message3);
+            // will not be found
+            var message4 = new McEmailMessage () {
+                AccountId = accountId+1,
+                DateReceived = magicTime2,
+                From = magicFrom1,
+                To = loser,
+                BodyId = 0,
+                IsIndexed = false,
+            };
+            InsertAndCheckMessage (message4);
+            // will not be found
+            var message5 = new McEmailMessage () {
+                AccountId = accountId,
+                DateReceived = magicTime2.AddDays (-100),
+                From = magicFrom1,
+                To = loser,
+                BodyId = 0,
+                IsIndexed = false,
+            };
+            InsertAndCheckMessage (message5);
+            // will not be found
+            var message6 = new McEmailMessage () {
+                AccountId = accountId,
+                DateReceived = magicTime2,
+                From = magicFrom1 + "m",
+                To = loser,
+                BodyId = 0,
+                IsIndexed = false,
+            };
+            InsertAndCheckMessage (message6);
+
+            var result = McEmailMessage.QueryByDateReceivedAndFrom (accountId, magicTime1, magicFrom1);
+            Assert.IsNotNull (result);
+            Assert.AreEqual (1, result.Count);
+            var index = result.First ();
+            var chosen = McEmailMessage.QueryById<McEmailMessage> (index.Id);
+            Assert.IsNotNull (chosen);
+            Assert.AreEqual (winner1, chosen.To);
+            Assert.AreEqual (magicFrom1, chosen.From);
+            Assert.AreEqual (magicTime1, chosen.DateReceived);
+
+            result = McEmailMessage.QueryByDateReceivedAndFrom (accountId, magicTime2, magicFrom1);
+            Assert.IsNotNull (result);
+            Assert.AreEqual (1, result.Count);
+            index = result.First ();
+            chosen = McEmailMessage.QueryById<McEmailMessage> (index.Id);
+            Assert.IsNotNull (chosen);
+            Assert.AreEqual (winner2, chosen.To);
+            Assert.AreEqual (magicFrom1, chosen.From);
+            Assert.AreEqual (magicTime2, chosen.DateReceived);
+        }
     }
 }
 

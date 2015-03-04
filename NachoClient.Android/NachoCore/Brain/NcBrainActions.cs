@@ -103,7 +103,7 @@ namespace NachoCore.Brain
             return true;
         }
 
-        protected bool IndexEmailMessage (Index.Index index, McEmailMessage emailMessage, ref long bytesIndexed)
+        protected bool IndexEmailMessage (Index.NcIndex index, McEmailMessage emailMessage, ref long bytesIndexed)
         {
             if (null == emailMessage) {
                 return false;
@@ -134,6 +134,15 @@ namespace NachoCore.Brain
             emailMessage.UpdateByBrain ();
 
             return true;
+        }
+
+        public void UnindexEmailMessage (McEmailMessage emailMessage)
+        {
+            if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
+                return;
+            }
+            var index = Index (emailMessage.AccountId);
+            index.Remove ("message", emailMessage.Id.ToString ());
         }
     }
 }

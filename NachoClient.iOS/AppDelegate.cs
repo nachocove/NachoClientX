@@ -687,10 +687,22 @@ namespace NachoClient.iOS
                 }
             }
 
-            // When the app is started by a local notification, the tab bar controller won't
-            // be set up yet when this code executes.  NachoTabBarController has code to look
-            // for notifications too, and it deals with them when it starts up.
-            var nachoTabBarController = Window.RootViewController as NachoTabBarController;
+            // Look for the NachoTabBarController.  It's normally in Window.RootViewController.  Except when the
+            // app was launched as a fresh install, in which case we have to look deeper.  And if a notification
+            // arrives while database migration is in progress, the NachoTabBarController might not exist at all.
+            NachoTabBarController nachoTabBarController = null;
+            if (Window.RootViewController is NachoTabBarController) {
+                nachoTabBarController = (NachoTabBarController)Window.RootViewController;
+            } else if (null != Window.RootViewController) {
+                if (Window.RootViewController.PresentedViewController is NachoTabBarController) {
+                    nachoTabBarController = (NachoTabBarController)Window.RootViewController.PresentedViewController;
+                } else if (null != Window.RootViewController.PresentedViewController && Window.RootViewController.PresentedViewController.TabBarController is NachoTabBarController) {
+                    nachoTabBarController = (NachoTabBarController)Window.RootViewController.PresentedViewController.TabBarController;
+                }
+            }
+            if (null == nachoTabBarController) {
+                Log.Error (Log.LOG_LIFECYCLE, "The NachoTabBarController could not be found.  Handling of the notification will be delayed or skipped.");
+            }
                 
             if (null != emailNotification) {
                 var emailMessageId = emailNotification.ToMcModelIndex ();
@@ -702,8 +714,9 @@ namespace NachoClient.iOS
             if (null != eventNotification) {
                 var eventId = eventNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EventNotificationKey, eventId);
-                nachoTabBarController.SwitchToNachoNow ();
-
+                if (null != nachoTabBarController) {
+                    nachoTabBarController.SwitchToNachoNow ();
+                }
             }
             if ((null == emailNotification) && (null == eventNotification)) {
                 Log.Error (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: received unknown notification");

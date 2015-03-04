@@ -15,7 +15,7 @@ using Lucene.Net.Search.Payloads;
 
 namespace NachoCore.Index
 {
-    public class Index : IDisposable
+    public class NcIndex : IDisposable
     {
         private StandardAnalyzer Analyzer;
         private FSDirectory IndexDirectory;
@@ -24,7 +24,9 @@ namespace NachoCore.Index
         private IndexWriter Writer;
         private IndexReader Reader;
 
-        public Index (string indexDirectoryPath)
+        public bool Dirty { protected set; get; }
+
+        public NcIndex (string indexDirectoryPath)
         {
             Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);
             IndexDirectory = FSDirectory.Open (indexDirectoryPath);
@@ -48,7 +50,7 @@ namespace NachoCore.Index
 
         // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
         // So, if you are going to use more than one item, please use the later combination.
-        public long Add (IndexDocument doc)
+        public long Add (NcIndexDocument doc)
         {
             BeginAddTransaction ();
             var bytesIndexed = BatchAdd (doc);
@@ -56,14 +58,15 @@ namespace NachoCore.Index
             return bytesIndexed;
         }
 
-        public long BatchAdd (IndexDocument doc)
+        public long BatchAdd (NcIndexDocument doc)
         {
             if (null == Writer) {
-                throw new ArgumentNullException ();
+                throw new ArgumentNullException ("writer not set up");
             }
 
             // Index the document
             Writer.AddDocument (doc.Doc);
+            Dirty = true;
 
             return doc.BytesIndexed;
         }
@@ -72,14 +75,18 @@ namespace NachoCore.Index
         {
             Lock.WaitOne ();
             if (null != Writer) {
-                throw new ArgumentException ();
+                throw new ArgumentException ("writer already exists");
             }
+            Dirty = false;
             Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
         }
 
         public void EndAddTransaction ()
         {
-            Writer.Commit ();
+            if (Dirty) {
+                Writer.Commit ();
+                Dirty = false;
+            }
             Writer.Dispose ();
             Writer = null;
             Lock.ReleaseMutex ();
@@ -89,7 +96,9 @@ namespace NachoCore.Index
         // So, if you are going to remove more than one item, please use the later combination.
         public bool Remove (string type, string id)
         {
-            BeginRemoveTransaction ();
+            if (!BeginRemoveTransaction ()) {
+                return false;
+            }
             var isRemoved = BatchRemove (type, id);
             EndRemoveTransaction ();
             return isRemoved;
@@ -98,7 +107,7 @@ namespace NachoCore.Index
         public bool BatchRemove (string type, string id)
         {
             if (null == Reader) {
-                throw new ArgumentNullException ();
+                throw new ArgumentNullException ("reader not set up");
             }
             var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "id", Analyzer);
             var queryString = String.Format ("type:{0} AND id:{1}", type, id);
@@ -114,16 +123,24 @@ namespace NachoCore.Index
                 return false;
             }
             Reader.DeleteDocument (matches.ScoreDocs [0].Doc);
+            Dirty = true;
             return true;
         }
 
-        public void BeginRemoveTransaction ()
+        public bool BeginRemoveTransaction ()
         {
             Lock.WaitOne ();
             if (null != Reader) {
-                throw new ArgumentException ();
+                throw new ArgumentException ("reader already exists");
             }
-            Reader = IndexReader.Open (IndexDirectory, false);
+            try {
+                Reader = IndexReader.Open (IndexDirectory, false);
+            } catch (Lucene.Net.Store.NoSuchDirectoryException e) {
+                // This can happen if the removal is done before anything is written to the index.
+                Lock.ReleaseMutex ();
+                return false;
+            }
+            return true;
         }
 
         public void EndRemoveTransaction ()

@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -452,7 +452,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
@@ -861,21 +861,21 @@
             </objects>
             <point key="canvasLocation" x="2519" y="-1730"/>
         </scene>
-        <!--Notes Navigation Controller-->
-        <scene sceneID="2gu-y0-TcU">
+        <!--Notes Viewer View Controller-->
+        <scene sceneID="Hd9-0q-M2W">
             <objects>
-                <navigationController id="rQ6-W7-lBA" userLabel="Notes Navigation Controller" sceneMemberID="viewController">
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="0Cx-Bj-vxC">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <connections>
-                        <segue destination="qAG-NA-NKz" kind="relationship" relationship="rootViewController" id="Ztv-WG-YJO"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Ih5-J5-dJr" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <viewController storyboardIdentifier="NotesViewerViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="nWJ-PS-9xE" userLabel="Notes Viewer View Controller" customClass="NotesViewerViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="SVg-bm-Mae">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <simulatedStatusBarMetrics key="simulatedStatusBarMetrics" statusBarStyle="lightContent"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="reC-sA-KTw" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="736" y="-2894"/>
+            <point key="canvasLocation" x="935" y="-3303"/>
         </scene>
         <!--Notes View Controller-->
         <scene sceneID="OcZ-uK-llj">
@@ -946,7 +946,8 @@
                     <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
                     <connections>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="AttachmentsToCompose" id="p7w-hx-Y70"/>
-                        <segue destination="rQ6-W7-lBA" kind="modal" identifier="AttachmentsToNotes" id="zIz-hP-NrB"/>
+                        <segue destination="qAG-NA-NKz" kind="push" identifier="AttachmentsToNotes" id="Kfq-r2-VA6"/>
+                        <segue destination="nWJ-PS-9xE" kind="modal" identifier="AttachmentsToNotesModal" id="7EA-mX-9sf"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1583,34 +1584,34 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="twQ-jE-jZd"/>
-        <segue reference="i6d-Pz-anv"/>
-        <segue reference="c2Q-C8-ZgX"/>
-        <segue reference="lof-V2-Nc4"/>
-        <segue reference="RHB-Or-A5o"/>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="eTD-uL-AQU"/>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="ay2-o2-R8l"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="Ztv-WG-YJO"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="rew-s7-VAQ"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
+        <segue reference="p7w-hx-Y70"/>
+        <segue reference="22b-Az-fdF"/>
         <segue reference="lbY-YF-b2b"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="g4G-tD-G9H"/>
         <segue reference="XZZ-AT-ZHc"/>
         <segue reference="Aba-pv-mzB"/>
+        <segue reference="WNu-7Y-s9s"/>
         <segue reference="mLY-u0-R5O"/>
         <segue reference="Ar9-Nl-fq9"/>
-        <segue reference="WNu-7Y-s9s"/>
         <segue reference="wZy-ga-YEb"/>
+        <segue reference="Kfq-r2-VA6"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="ay2-o2-R8l"/>
+        <segue reference="Bq3-C6-QI6"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="rew-s7-VAQ"/>
+        <segue reference="c2Q-C8-ZgX"/>
+        <segue reference="i6d-Pz-anv"/>
+        <segue reference="lof-V2-Nc4"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="twQ-jE-jZd"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

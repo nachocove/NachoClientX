@@ -73,6 +73,10 @@ namespace NachoClient.iOS
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
         private NSAttributedString initialQuotedText = null;
+
+        protected UIFont composeFont = A.Font_AvenirNextRegular12;
+        protected UIColor composeColor = A.Color_NachoDarkText;
+
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
         protected UIColor labelColor = A.Color_NachoDarkText;
 
@@ -400,8 +404,8 @@ namespace NachoClient.iOS
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
             bodyTextView = new UITextView (new CGRect (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
-            bodyTextView.Font = labelFont;
-            bodyTextView.TextColor = labelColor;
+            bodyTextView.Font = composeFont;
+            bodyTextView.TextColor = composeColor;
             bodyTextView.BackgroundColor = UIColor.White;
             bodyTextView.ScrollEnabled = true;
             bodyTextView.Scrolled += BodyTextViewScrolled;
@@ -411,7 +415,7 @@ namespace NachoClient.iOS
             bodyTextView.AllowsEditingTextAttributes = true;
 
             var attributes = new CoreText.CTStringAttributes ();
-            attributes.Font = new CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+            attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
             var initialString = new NSMutableAttributedString ();
 
             if (EmailTemplate != null) {
@@ -970,7 +974,7 @@ namespace NachoClient.iOS
             }
 
             var attributes = new CoreText.CTStringAttributes ();
-            attributes.Font = new CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+            attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
 
             var response = new NSMutableAttributedString (selectedResponse.body, attributes);
             response.Append (bodyTextView.AttributedText);
@@ -1242,7 +1246,7 @@ namespace NachoClient.iOS
             string text;
             if (MimeHelpers.FindText (referencedMessage, out html, out text)) {
                 var attributes = new CoreText.CTStringAttributes ();
-                attributes.Font = new CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+                attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
                 var initialString = new NSMutableAttributedString ();
                 initialString.Append (bodyTextView.AttributedText);
                 initialString.Append (new NSAttributedString ("\n\n", attributes));

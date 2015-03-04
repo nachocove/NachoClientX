@@ -1509,8 +1509,11 @@ namespace NachoCore.Model
             } else if (IsGleaned ()) {
                 return 1;
             }
-            NcAssert.True (false);
-            return 0;
+            Log.Error (Log.LOG_CONTACTS, 
+                "unknown contact type: source={0}, accountId={1}, galCacheToken={2}, # email addresses={3}",
+                Source, AccountId, GalCacheToken, EmailAddresses.Count);
+            // Make contacts of unknown type the highest priority so they are never eclipsed by mistake
+            return 6;
         }
 
         private static bool ShouldSuperceded (McContact a, McContact b)

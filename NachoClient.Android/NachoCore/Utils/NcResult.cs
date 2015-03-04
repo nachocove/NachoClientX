@@ -63,7 +63,7 @@ namespace NachoCore.Utils
             Info_SyncSucceeded,
             Info_FolderSyncSucceeded,
             Info_MeetingResponseSucceeded,
-            Info_SearchCommandSucceeded,
+            Info_ContactSearchCommandSucceeded,
             Info_BackgroundAbateStarted,
             Info_BackgroundAbateStopped,
             Info_ServiceUnavailable,
@@ -130,7 +130,7 @@ namespace NachoCore.Utils
             Error_SyncFailedToComplete,
             Error_FolderSyncFailed,
             Error_MeetingResponseFailed,
-            Error_SearchCommandFailed,
+            Error_ContactSearchCommandFailed,
             Error_AuthFailBlocked,
             Error_AuthFailPasswordExpired,
             Error_PasswordWillExpire,
@@ -163,6 +163,8 @@ namespace NachoCore.Utils
             Error_InvalidResponseType,
             Error_IsDistinguished,
             Error_IsAwaitingDelete,
+            Info_EmailSearchCommandSucceeded,
+            Error_EmailSearchCommandFailed,
         };
 
         public enum WhyEnum

@@ -16,7 +16,7 @@ namespace Test.Common
 
         const string EmailPath = "email";
 
-        Index Index;
+        NcIndex Index;
 
         private void CleanupIndexDirectory ()
         {
@@ -39,7 +39,7 @@ namespace Test.Common
         {
             CleanupIndexDirectory (); // make sure there is no index to begin with
             CleanupEmailFile ();
-            Index = new Index (IndexPath);
+            Index = new NcIndex (IndexPath);
         }
 
         [TearDown]

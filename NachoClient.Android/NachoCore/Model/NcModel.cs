@@ -139,6 +139,11 @@ namespace NachoCore.Model
             return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
         }
 
+        public string GetIndexPath (int accountId)
+        {
+            return NcModel.Instance.GetFileDirPath (accountId, "index");
+        }
+
         public void InitalizeDirs (int accountId)
         {
             Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));

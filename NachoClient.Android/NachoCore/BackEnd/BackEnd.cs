@@ -274,6 +274,16 @@ namespace NachoCore
         }
 
         // Commands need to do Task.Run as appropriate in protocol controller.
+        public NcResult StartSearchEmailReq (int accountId, string keywords, uint? maxResults)
+        {
+            return CmdInDoNotDelayContext (accountId, (service) => service.StartSearchEmailReq (keywords, maxResults));
+        }
+
+        public NcResult SearchEmailReq (int accountId, string keywords, uint? maxResults, string token)
+        {
+            return CmdInDoNotDelayContext (accountId, (service) => service.SearchEmailReq (keywords, maxResults, token));
+        }
+
         public NcResult StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
             return CmdInDoNotDelayContext (accountId, (service) => service.StartSearchContactsReq (prefix, maxResults));

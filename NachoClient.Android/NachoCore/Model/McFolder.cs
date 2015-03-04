@@ -26,10 +26,14 @@ namespace NachoCore.Model
 
         public string AsSyncKey { get; set; }
 
+        // Keep track of certian back-to-back Sync failures. If N happen in a row, we will reset the SyncKey.
+        public int AsSyncFailRun { get; set; }
+
         // For keeping old folders around through a forced re-FolderSync from 0.
         public uint AsFolderSyncEpoch { get; set; }
         // For keeping old items around through a forced re-Sync from 0.
         public int AsSyncEpoch { get; set; }
+
         public bool AsSyncEpochScrubNeeded { get; set; }
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
         public bool AsSyncMetaToClientExpected { get; set; }
@@ -164,6 +168,11 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
         }
 
+        public static McFolder GetCalDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_CalDrafts);
+        }
+
         public static McFolder GetGalCacheFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_GalCache);
@@ -279,10 +288,10 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryByMostRecentlyAccessedFolders (int accountId)
+        public static List<McFolder> QueryByMostRecentlyAccessedVisibleFolders (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                          "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
+                          "WHERE f.AccountId = ? AND f.LastAccessed > ? AND f.IsHidden = 0 " +
                           "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears (-1));
             return folders.ToList ();
         }
@@ -296,6 +305,34 @@ namespace NachoCore.Model
                           " f.IsHidden = 0 " +
                           " ORDER BY f.DisplayName ", 
                               accountId);
+            return folders.ToList ();
+        }
+
+        public static McFolder QueryByServerId (int accountId, string serverId)
+        {
+            var f = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                    " f.AccountId = ? AND " +
+                    " f.IsAwaitingDelete = 0 AND " +
+                    " f.IsHidden = 0 AND " +
+                    " f.ServerId = ? ",
+                        accountId, serverId).ToList ();
+            NcAssert.True (2 > f.Count());
+            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            " f.AccountId = ? AND " +
+            " f.IsAwaitingDelete = 0 AND " +
+            " f.IsHidden = 0 AND " +
+            " f.ServerId = ? ",
+                accountId, serverId).SingleOrDefault ();
+        }
+
+        public static List<McFolder> QueryVisibleChildrenOfParentId (int accountId, string parentId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          " f.AccountId = ? AND " +
+                          " f.IsHidden = 0 AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
+                          " f.ParentId = ? ",
+                              accountId, parentId);
             return folders.ToList ();
         }
 
@@ -573,6 +610,27 @@ namespace NachoCore.Model
             foreach (var folder in folders) {
                 folder.UpdateSet_AsSyncMetaToClientExpected (toClientExpected);
             }
+        }
+
+        public McFolder UpdateReset_AsSyncFailRun ()
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncFailRun = 0;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateIncrement_AsSyncFailRunToClientExpected (bool toClientExpected)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncFailRun++;
+                target.AsSyncMetaToClientExpected = toClientExpected;
+                return true;
+            });
+            return folder;
         }
 
         public McFolder UpdateSet_AsSyncMetaToClientExpected (bool toClientExpected)

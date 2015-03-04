@@ -974,7 +974,7 @@ namespace NachoClient.iOS
                 startDatePicker.Mode = UIDatePickerMode.DateAndTime;
             }
             startDate = c.StartTime;
-            startDatePicker.Date = c.StartTime.LocalT ().ToNSDate();
+            startDatePicker.Date = c.StartTime.ToNSDate ();
             startDateLabelView.SizeToFit ();
             startDateLabelView.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -985,12 +985,12 @@ namespace NachoClient.iOS
                 endDateLabelView.Text = Pretty.FullDateString (endDay);
                 endDatePicker.Mode = UIDatePickerMode.Date;
                 endDate = endDay;
-                endDatePicker.Date = endDay.LocalT ().ToNSDate();
+                endDatePicker.Date = endDay.ToNSDate ();
             } else {
                 endDateLabelView.Text = Pretty.FullDateTimeString (c.EndTime);
                 endDatePicker.Mode = UIDatePickerMode.DateAndTime;
                 endDate = c.EndTime;
-                endDatePicker.Date = c.EndTime.LocalT ().ToNSDate();
+                endDatePicker.Date = c.EndTime.ToNSDate ();
             }
             endDateLabelView.SizeToFit ();
             endDateLabelView.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);

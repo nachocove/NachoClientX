@@ -807,7 +807,7 @@ namespace NachoClient.iOS
             indentLevel += 1;
             List<FolderStruct> subFolders = new List<FolderStruct> ();
             List<McFolder> folds = new List<McFolder> ();
-            folds = McFolder.QueryByParentId (accountID, serverID);
+            folds = McFolder.QueryVisibleChildrenOfParentId (accountID, serverID);
 
             foreach (McFolder f in folds) {
                 subFolders.Add (new FolderStruct (f.Id, GetSubFolders (f.Id, f.AccountId, f.ServerId, indentLevel), f.DisplayName, f.Type, 10000));
@@ -857,12 +857,12 @@ namespace NachoClient.iOS
 
         public McFolder GetParentFolder (McFolder folder)
         {
-            return McFolder.ServerEndQueryByServerId (account.Id, folder.ParentId);
+            return McFolder.QueryByServerId (account.Id, folder.ParentId);
         }
 
         public void UpdateLastAccessed ()
         {
-            var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
+            var list = McFolder.QueryByMostRecentlyAccessedVisibleFolders (account.Id);
             recentFolderList = list.Take (MAX_RECENT_FOLDERS).ToList ();
         }
 

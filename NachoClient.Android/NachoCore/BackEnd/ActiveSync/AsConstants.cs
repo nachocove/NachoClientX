@@ -1022,12 +1022,15 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Search";
             // Alpha order.
+            public const string And = "And";
             public const string DeepTraversal = "DeepTraversal";
-            public const string Properties = "Properties";
+            public const string FreeText = "FreeText";
+            public const string LessThan = "LessThan";
             public const string MaxPictures = "MaxPictures";
             public const string Name = "Name";
-            public const string Picture = "Picture";
             public const string Options = "Options";
+            public const string Picture = "Picture";
+            public const string Properties = "Properties";
             public const string Query = "Query";
             public const string Range = "Range";
             public const string RebuildResults = "RebuildResults";
@@ -1035,6 +1038,7 @@ namespace NachoCore.ActiveSync
             public const string Result = MeetingResp.Result;
             public const string Status = AirSync.Status;
             public const string Store = ItemOperations.Store;
+            public const string Value = "Value";
 
             public class NameCode
             {

@@ -874,15 +874,15 @@ namespace NachoCore.ActiveSync
             McFolder freshMade;
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_Outbox, "On-Device Outbox",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
             });
             NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                if (null == McFolder.GetCalDraftsFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();

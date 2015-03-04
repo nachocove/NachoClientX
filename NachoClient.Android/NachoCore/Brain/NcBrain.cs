@@ -10,7 +10,7 @@ using System.IO;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
-using NachoCoreLog = NachoCore.Index.Log;
+using NachoCore.Index;
 
 namespace NachoCore.Brain
 {
@@ -51,6 +51,8 @@ namespace NachoCore.Brain
 
         private NcQueue<NcBrainEvent> EventQueue;
 
+        private ConcurrentDictionary<int, NcIndex> _Indexes;
+
         public NcCounter RootCounter;
         public OperationCounters McEmailMessageCounters;
         public OperationCounters McEmailMessageDependencyCounters;
@@ -67,6 +69,8 @@ namespace NachoCore.Brain
 
         public NcBrain ()
         {
+            _Indexes = new ConcurrentDictionary<int, NcIndex> ();
+
             LastPeriodicGlean = new DateTime ();
             LastPeriodicGleanRestart = new DateTime ();
             LastNotified = new ConcurrentDictionary<NcResult.SubKindEnum, DateTime> ();
@@ -84,22 +88,27 @@ namespace NachoCore.Brain
             LockObj = new object ();
         }
 
+        protected NcIndex Index (int accountId)
+        {
+            NcIndex index;
+            if (_Indexes.TryGetValue (accountId, out index)) {
+                return index;
+            }
+            var indexPath = NcModel.Instance.GetIndexPath (accountId);
+            index = new Index.NcIndex (indexPath);
+            if (!_Indexes.TryAdd (accountId, index)) {
+                // A race happens and this thread loses. There should be an Index in the dictionary now
+                index.Dispose ();
+                index = null;
+                var got = _Indexes.TryGetValue (accountId, out index);
+                NcAssert.True (got);
+            }
+            return index;
+        }
+
         public static void StartService ()
         {
             // Set up the logging functions for IndexLib
-            NachoCoreLog.PlatformDebug = (fmt, args) => {
-                Log.Info (Log.LOG_BRAIN, fmt, args);
-            };
-            NachoCoreLog.PlatformInfo = (fmt, args) => {
-                Log.Info (Log.LOG_BRAIN, fmt, args);
-            };
-            NachoCoreLog.PlatformWarn = (fmt, args) => {
-                Log.Warn (Log.LOG_BRAIN, fmt, args);
-            };
-            NachoCoreLog.PlatformError = (fmt, args) => {
-                Log.Error (Log.LOG_BRAIN, fmt, args);
-            };
-
             NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
                 brain.EventQueue.Token = NcTask.Cts.Token;
@@ -212,21 +221,19 @@ namespace NachoCore.Brain
             int numIndexed = 0;
             long bytesIndexed = 0;
             List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
-            Dictionary<int, Index.Index> indexes = new Dictionary<int, Index.Index> ();
+            Dictionary<int, Index.NcIndex> indexes = new Dictionary<int, Index.NcIndex> ();
             foreach (var emailMessage in emailMessages) {
                 if (EventQueue.Token.IsCancellationRequested) {
                     break;
                 }
 
                 // If we don't have an index for this account, open one
-                Index.Index index;
+                NcIndex index;
                 if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
-                    var indexPath = NcModel.Instance.GetFileDirPath (emailMessage.AccountId, "index");
-                    index = new Index.Index (indexPath);
-                    indexes.Add (emailMessage.AccountId, index);
+                    index = Index (emailMessage.AccountId);
                     index.BeginAddTransaction ();
+                    indexes.Add (emailMessage.AccountId, index);
                 }
-
                 if (IndexEmailMessage (index, emailMessage, ref bytesIndexed)) {
                     numIndexed += 1;
                 }
@@ -234,7 +241,6 @@ namespace NachoCore.Brain
 
             foreach (var index in indexes.Values) {
                 index.EndAddTransaction ();
-                index.Dispose ();
             }
             if (0 != numIndexed) {
                 Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);

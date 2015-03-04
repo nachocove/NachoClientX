@@ -16,7 +16,7 @@ using NachoCore;
 namespace Test.iOS
 {
     [TestFixture]
-    public class McFolderTest 
+    public class McFolderTest
     {
         [TestFixture]
         public class TestClientOwnedDistFolders : BaseMcFolderTest
@@ -41,6 +41,9 @@ namespace Test.iOS
                 // Outbox
                 McFolder expectedOutbox = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_Outbox, isClientOwned: true);
 
+                // CalDrafts
+                McFolder expectedCalDrafts = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_CalDrafts, isClientOwned: true);
+
                 // GalCache
                 McFolder expectedGalCache = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_GalCache, isClientOwned: true);
 
@@ -52,6 +55,9 @@ namespace Test.iOS
 
                 McFolder actualFolder1 = McFolder.GetOutboxFolder (accountId);
                 FoldersAreEqual (expectedOutbox, actualFolder1, "Should be able to query for distinguished folder (Outbox)");
+
+                McFolder actualFolder2 = McFolder.GetCalDraftsFolder (accountId);
+                FoldersAreEqual (expectedCalDrafts, actualFolder2, "Should be able to query for distinguished folder (Calendar Drafts)");
 
                 McFolder galCache = McFolder.GetGalCacheFolder (accountId);
                 FoldersAreEqual (expectedGalCache, galCache, "Should be able to query for distinguished folder (GalCache)");
@@ -81,8 +87,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode1, parentId: parentId, name: name);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode1, parentId.ToInt (), name).First();
-                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First();
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode1, parentId.ToInt (), name).First ();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First ();
 
                 Assert.AreNotEqual (expected1.Type, expected2.Type, "Folders should be able to have the same name and parent as long as their typecodes are different");
             }
@@ -104,8 +110,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parent1.ServerId, name: name);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parent2.ServerId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode, serverId1.ToInt (), name).First();
-                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode, serverId2.ToInt (), name).First();
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode, serverId1.ToInt (), name).First ();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode, serverId2.ToInt (), name).First ();
 
                 Assert.AreNotEqual (expected1.ParentId, expected2.ParentId, "Folders with identical properties should be able to reside under different parents"); 
             }
@@ -124,8 +130,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name1);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name2);
 
-                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1).First();
-                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2).First();
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1).First ();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2).First ();
 
                 Assert.AreNotEqual (expected1.DisplayName, expected2.DisplayName, "Folders with different names should be considered separate folders");
             }
@@ -242,6 +248,36 @@ namespace Test.iOS
         }
 
         [TestFixture]
+        public class TestQueryByServerId : BaseMcFolderTest
+        {
+            [Test]
+            public void TestNoFolderRetrieved ()
+            {
+                McFolder retrieved1 = McFolder.QueryByServerId (1, "1");
+                Assert.IsNull (retrieved1, "Should not retrieve any folders if none have been added");
+
+                var folder1 = FolderOps.CreateFolder (1, parentId: "0", serverId: "2");
+                FolderOps.CreateFolder (1, parentId: folder1.ServerId);
+
+                McFolder retrieved2 = McFolder.QueryByServerId (1, "55");
+                Assert.IsNull (retrieved2, "Should return empty list of folders if none were found");
+            }
+
+            [Test]
+            public void TestSingleFolderRetrieved ()
+            {
+                var folder1 = FolderOps.CreateFolder (1, parentId: "0", serverId: "65");
+                var folder2 = FolderOps.CreateFolder (1, parentId: folder1.ServerId, serverId: "66");
+                FolderOps.CreateFolder (1, parentId: folder2.ServerId);
+
+                McFolder retrieved = McFolder.QueryByServerId (1, serverId: folder1.ServerId);
+                Assert.IsNotNull (retrieved, "Should return a single folder if only one folder has a parent id");
+                FoldersAreEqual (folder1, retrieved, "Returned folder should match created folder");
+            }
+
+        }
+
+        [TestFixture]
         public class QueryByMostRecentlyAccessedFolders : BaseMcFolderTest
         {
             [Test]
@@ -253,17 +289,17 @@ namespace Test.iOS
                 McFolder folder2 = FolderOps.CreateFolder (accountId);
                 McFolder folder3 = FolderOps.CreateFolder (accountId);
                 DateTime now1 = DateTime.UtcNow;
-                DateTime now2 = DateTime.UtcNow.AddHours(-2);
-                DateTime now3 = DateTime.UtcNow.AddDays(-3);
+                DateTime now2 = DateTime.UtcNow.AddHours (-2);
+                DateTime now3 = DateTime.UtcNow.AddDays (-3);
 
                 folder1 = folder1.UpdateSet_LastAccessed (now1);
                 folder2 = folder2.UpdateSet_LastAccessed (now2);
                 folder3 = folder3.UpdateSet_LastAccessed (now3);
 
-                List<McFolder> recentlyAccessed = McFolder.QueryByMostRecentlyAccessedFolders (accountId);
-                FoldersAreEqual (folder3, recentlyAccessed[0], "folder3 should be the first folder in the list");
-                FoldersAreEqual (folder2, recentlyAccessed[1], "folder2 should be the second folder in the list");
-                FoldersAreEqual (folder1, recentlyAccessed[2], "folder1 should be the last folder in the list");
+                List<McFolder> recentlyAccessed = McFolder.QueryByMostRecentlyAccessedVisibleFolders (accountId);
+                FoldersAreEqual (folder3, recentlyAccessed [0], "folder3 should be the first folder in the list");
+                FoldersAreEqual (folder2, recentlyAccessed [1], "folder2 should be the second folder in the list");
+                FoldersAreEqual (folder1, recentlyAccessed [2], "folder1 should be the last folder in the list");
             }
         }
 
@@ -276,7 +312,7 @@ namespace Test.iOS
                 int accountId = 1;
 
                 McFolder differentAccountId = FolderOps.CreateFolder (2, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "apple");
-                McFolder waitingToDelete = FolderOps.CreateFolder (accountId, isAwaitingDelete:true, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "banana");
+                McFolder waitingToDelete = FolderOps.CreateFolder (accountId, isAwaitingDelete: true, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "banana");
                 McFolder defaultEmailDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "carrot");
                 McFolder deviceCalendarDrafts = FolderOps.CreateFolder (accountId, isClientOwned: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "date");
                 McFolder defaultInbox = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultInbox_2, name: "elderberry");
@@ -322,19 +358,19 @@ namespace Test.iOS
             int accountId = 1;
 
             McFolder defaultDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "Default-Drafts");
-            Assert.True(McFolder.GetOrCreateEmailDraftsFolder (accountId).DisplayName == "Default-Drafts");
+            Assert.True (McFolder.GetOrCreateEmailDraftsFolder (accountId).DisplayName == "Default-Drafts");
             defaultDrafts.Delete ();
 
             McFolder createdDraftsFolder = McFolder.GetOrCreateEmailDraftsFolder (accountId);
             Assert.True (McFolder.DRAFTS_DISPLAY_NAME == createdDraftsFolder.DisplayName);
         }
 
-           //Not sure how to write a unit test for this
-//        [Test]
-//        public void TestGetOrCreateArchiveFolder ()
-//        {
-//            Assert.True("Archive".Equals (McFolder.GetOrCreateArchiveFolder (account.Id).DisplayName));
-//        }
+        //Not sure how to write a unit test for this
+        //        [Test]
+        //        public void TestGetOrCreateArchiveFolder ()
+        //        {
+        //            Assert.True("Archive".Equals (McFolder.GetOrCreateArchiveFolder (account.Id).DisplayName));
+        //        }
 
         [Test]
         public void TestTypesToCommaDelimitedString ()
@@ -345,10 +381,10 @@ namespace Test.iOS
                 Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
             };
 
-            string typesArrayAsString =  Folder_Helpers.TypesToCommaDelimitedString (typeArray);
+            string typesArrayAsString = Folder_Helpers.TypesToCommaDelimitedString (typeArray);
             Assert.True (typesArrayAsString.Equals ("(1,2,3)"));
 
-            Xml.FolderHierarchy.TypeCode [] emptyTypeArray = new TypeCode[0];
+            Xml.FolderHierarchy.TypeCode[] emptyTypeArray = new TypeCode[0];
             typesArrayAsString = Folder_Helpers.TypesToCommaDelimitedString (emptyTypeArray);
             Assert.True (typesArrayAsString.Equals ("()"));
         }
@@ -392,7 +428,7 @@ namespace Test.iOS
 
                 McFolder folder1 = FolderOps.CreateFolder (accountId, autoInsert: false);
                 McEmailMessage firstEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId);
-                McEmailMessage secondEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId, FolderOps.defaultServerId+"1");
+                McEmailMessage secondEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId, FolderOps.defaultServerId + "1");
                 folder1.Link (secondEmail); // insert second email, but query for first email
 
                 List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, firstEmail.Id);
@@ -819,7 +855,8 @@ namespace Test.iOS
                 TestDeletingItemOfType<McTask> ();
             }
 
-            private void TestDeletingItemOfType<T> () where T : McAbstrItem, new() {
+            private void TestDeletingItemOfType<T> () where T : McAbstrItem, new()
+            {
                 int accountId = 1;
 
                 T item = FolderOps.CreateUniqueItem<T> (accountId);
@@ -945,7 +982,7 @@ namespace Test.iOS
         [TestFixture]
         public class FolderConstraints : BaseMcFolderTest
         {
-            // A client-owned folder can’t be created inside a synced folder. 
+            // A client-owned folder can’t be created inside a synced folder.
             // Exception should be thrown if parent is wrong kind
             [Test]
             public void TestClientOwnedInsideSynced ()
@@ -1129,6 +1166,7 @@ namespace Test.iOS
     public class EpochScrub : BaseMcFolderTest
     {
         const int AccountId = 1;
+
         [Test]
         public void TestUpdateResetSyncState ()
         {
@@ -1196,10 +1234,10 @@ namespace Test.iOS
                 target.AsSyncEpoch++;
                 return true;
             });
-            McEmailMessage email2 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"6");
+            McEmailMessage email2 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "6");
             folder1.Link (email2);
             // Do the scrub.
-            folder1.PerformSyncEpochScrub (testRunSync:true);
+            folder1.PerformSyncEpochScrub (testRunSync: true);
             // 1st email is gone.
             var dead = McEmailMessage.QueryById<McEmailMessage> (email1.Id);
             Assert.IsNull (dead);
@@ -1211,7 +1249,7 @@ namespace Test.iOS
             Assert.IsNotNull (live);
             Assert.AreEqual (live.Id, email2.Id);
             var mapFound = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId,
-                folder1.Id, email2.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+                               folder1.Id, email2.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
             Assert.IsNotNull (mapFound);
             Assert.AreEqual (email2.Id, mapFound.FolderEntryId);
             Assert.AreEqual (folder1.Id, mapFound.FolderId);
@@ -1230,7 +1268,7 @@ namespace Test.iOS
             // email1 & email2 are included.
             McEmailMessage email1 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId);
             folder1.Link (email1);
-            McEmailMessage email2 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"6");
+            McEmailMessage email2 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "6");
             folder1.Link (email2);
             // bump to next epoch.
             folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
@@ -1239,10 +1277,10 @@ namespace Test.iOS
                 return true;
             });
             // email3 excluded (epoch).
-            McEmailMessage email3 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"7");
+            McEmailMessage email3 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "7");
             folder1.Link (email3);
             // email4 excluded (account).
-            FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"8");
+            FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "8");
             McFolder folder2 = FolderOps.CreateFolder (AccountId);
             folder2 = folder2.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
@@ -1250,10 +1288,10 @@ namespace Test.iOS
                 return true;
             });
             // email5 excluded (folder).
-            McEmailMessage email5 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"9");
+            McEmailMessage email5 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "9");
             folder2.Link (email5);
             // email6 excluded (IsAwaitingDelete).
-            McEmailMessage email6 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"10");
+            McEmailMessage email6 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "10");
             email6.IsAwaitingDelete = true;
             email6.Update ();
             folder1.Link (email6);

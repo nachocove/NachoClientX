@@ -19,6 +19,7 @@ namespace NachoClient.iOS
     {
         MessageTableViewSource messageSource;
         MessageTableViewSource searchResultsSource;
+        NachoMessageSearchResults searchResultsMessages;
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem multiSelectButton;
         protected UIBarButtonItem cancelSelectedButton;
@@ -28,6 +29,7 @@ namespace NachoClient.iOS
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
 
+        protected string searchToken;
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
 
@@ -123,7 +125,9 @@ namespace NachoClient.iOS
             searchBar = new UISearchBar ();
             searchBar.Delegate = this;
             searchDisplayController = new UISearchDisplayController (searchBar, this);
+            searchResultsMessages = new NachoMessageSearchResults ();
             searchResultsSource = new MessageTableViewSource ();
+            searchResultsSource.SetEmailMessages (searchResultsMessages);
             searchResultsSource.owner = this;
             searchDisplayController.SearchResultsSource = searchResultsSource;
 
@@ -200,13 +204,16 @@ namespace NachoClient.iOS
             ReloadCapture.Start ();
             List<int> adds;
             List<int> deletes;
-            bool refresh = messageSource.RefreshEmailMessages (out adds, out deletes);
-            if (messageSource.NoMessageThreads ()) {
-                MaybeDismissView ();
-            } else if (refresh) {
+            if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
                 Util.UpdateTable (TableView, adds, deletes);
             } else {
                 messageSource.ReconfigureVisibleCells (TableView);
+            }
+            if (messageSource.NoMessageThreads ()) {
+                MaybeDismissView ();
+            }
+            if (searchDisplayController.Active) {
+                UpdateSearchResults ();
             }
             ReloadCapture.Stop ();
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
@@ -214,7 +221,7 @@ namespace NachoClient.iOS
 
         public virtual void MaybeDismissView ()
         {
-            // nope
+            // Nope, message views show 'empty'
         }
 
         public override void ViewWillAppear (bool animated)
@@ -230,7 +237,6 @@ namespace NachoClient.iOS
             if (0 > TableView.ContentOffset.Y) {
                 TableView.ContentOffset = new CGPoint (0, 0);
             }
-
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
@@ -245,6 +251,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
         }
@@ -260,6 +267,10 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded == s.Status.SubKind) {
                 ReloadDataMaintainingPosition ();
+            }
+            if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
+                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
             }
         }
 
@@ -450,7 +461,7 @@ namespace NachoClient.iOS
         [Export ("searchBar:textDidChange:")]
         public void TextChanged (UISearchBar searchBar, string searchText)
         {
-            SearchButtonClicked (searchBar);
+            Search (searchBar);
         }
 
         [Foundation.Export ("searchBarSearchButtonClicked:")]
@@ -459,17 +470,67 @@ namespace NachoClient.iOS
             if (null == NcApplication.Instance.Account) {
                 return;
             }
-            var indexPath = NcModel.Instance.GetFileDirPath (NcApplication.Instance.Account.Id, "index");
-            var index = new NachoCore.Index.Index (indexPath);
+            searchResultsMessages.UpdateMatches (null);
+            searchResultsMessages.UpdateServerMatches (null);
+            Search (searchBar);
+        }
+
+        protected void Search (UISearchBar searchBar)
+        {
+            // Ask the server
+            KickoffSearchApi (0, searchBar.Text);
+            // On-device index
+            var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
+            var index = new NachoCore.Index.NcIndex (indexPath);
             var match = searchBar.Text;
             var pattern = String.Format ("to:\"{0}\" subject:\"{0}\"  body:\"{0}\"", match);
             var matches = index.Search (pattern);
-            searchResultsSource.SetEmailMessages (new NachoMessageSearchResults (matches));
+            searchResultsMessages.UpdateMatches (matches);
             List<int> adds;
             List<int> deletes;
             searchResultsSource.RefreshEmailMessages (out adds, out deletes);
             if (null != searchDisplayController.SearchResultsTableView) {
                 searchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+        }
+
+        protected void KickoffSearchApi (int forSearchOption, string forSearchString)
+        {
+            if (String.IsNullOrEmpty (searchToken)) {
+                searchToken = BackEnd.Instance.StartSearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null).GetValue<string> ();
+            } else {
+                BackEnd.Instance.SearchEmailReq (NcApplication.Instance.Account.Id, forSearchString, null, searchToken);
+            }
+        }
+
+        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> list)
+        {
+            searchResultsMessages.UpdateServerMatches (list);
+            List<int> adds;
+            List<int> deletes;
+            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+            if (null != searchDisplayController.SearchResultsTableView) {
+                searchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+        }
+
+        // After status ind
+        protected void UpdateSearchResults ()
+        {
+            searchResultsMessages.UpdateResults ();
+            List<int> adds;
+            List<int> deletes;
+            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+            if (null != searchDisplayController.SearchResultsTableView) {
+                searchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+        }
+
+        protected void CancelSearchIfActive ()
+        {
+            if (!String.IsNullOrEmpty (searchToken)) {
+                BackEnd.Instance.Cancel (NcApplication.Instance.Account.Id, searchToken);
+                searchToken = null;
             }
         }
     }

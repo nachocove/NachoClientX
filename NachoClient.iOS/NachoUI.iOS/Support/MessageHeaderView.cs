@@ -113,11 +113,13 @@ namespace NachoClient.iOS
             fromLabelView.Hidden = false;
 
             // Chili image view
-            var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            var chiliImageIcon = (message.isHot () ? "email-hot" : "email-not-hot");
+            string chiliImageIcon;
             if (thread.HasMultipleMessages ()) {
-                chiliImageIcon += "-thread";
+                chiliImageIcon = (message.isHot () ? "email-hotthread" : "email-nothothread");
+            } else {
+                chiliImageIcon = (message.isHot () ? "email-hot" : "email-not-hot");
             }
+            var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
             using (var image = UIImage.FromBundle (chiliImageIcon)) {
                 chiliImageView.Image = image;
             }

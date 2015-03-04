@@ -71,6 +71,12 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);

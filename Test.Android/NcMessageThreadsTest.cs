@@ -138,6 +138,27 @@ namespace Test.Common
             CheckAddsAndDeletes (oldList, newList, adds, deletes);
 
         }
+
+        [Test]
+        public void NoDups()
+        {
+            var t = new McEmailMessageThread ();
+            var m1a = new NcEmailMessageIndex ();
+            m1a.Id = 1;
+            t.Add (m1a);
+            var m1b = new NcEmailMessageIndex ();
+            m1b.Id = 1;
+            t.Add (m1b);
+            Assert.AreEqual (1, t.Count);
+            var m2a = new NcEmailMessageIndex ();
+            m2a.Id = 2;
+            t.Add (m2a);
+            Assert.AreEqual (2, t.Count);
+            var m2b = new NcEmailMessageIndex ();
+            m2b.Id = 2;
+            t.Add (m2b);
+            Assert.AreEqual (2, t.Count);
+        }
     }
 }
 
