@@ -466,11 +466,15 @@ namespace NachoCore
             }
             var parameters = Owner.PushAssistParameters ();
             Dictionary<string, string> httpHeadersDict = new Dictionary<string, string> ();
-            foreach (var header in parameters.RequestHeaders) {
-                httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
+            if (null != parameters.RequestHeaders) {
+                foreach (var header in parameters.RequestHeaders) {
+                    httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
+                }
             }
-            foreach (var header in parameters.ContentHeaders) {
-                httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
+            if (null != parameters.ContentHeaders) {
+                foreach (var header in parameters.ContentHeaders) {
+                    httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
+                }
             }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
