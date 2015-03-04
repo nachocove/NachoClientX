@@ -96,7 +96,9 @@ namespace NachoCore.Index
         // So, if you are going to remove more than one item, please use the later combination.
         public bool Remove (string type, string id)
         {
-            BeginRemoveTransaction ();
+            if (!BeginRemoveTransaction ()) {
+                return false;
+            }
             var isRemoved = BatchRemove (type, id);
             EndRemoveTransaction ();
             return isRemoved;
@@ -125,13 +127,19 @@ namespace NachoCore.Index
             return true;
         }
 
-        public void BeginRemoveTransaction ()
+        public bool BeginRemoveTransaction ()
         {
             Lock.WaitOne ();
             if (null != Reader) {
                 throw new ArgumentException ("reader already exists");
             }
-            Reader = IndexReader.Open (IndexDirectory, false);
+            try {
+                Reader = IndexReader.Open (IndexDirectory, false);
+            } catch (Lucene.Net.Store.NoSuchDirectoryException e) {
+                // This can happen if the removal is done before anything is written to the index.
+                return false;
+            }
+            return true;
         }
 
         public void EndRemoveTransaction ()
