@@ -587,6 +587,17 @@ namespace NachoCore.Model
                 false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderByDescending (x => x.CreatedAt);
         }
 
+        public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
+        {
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id AS Id, e.ConversationId as ThreadId FROM McEmailMessage AS e WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " e.DateReceived = ? AND " +
+                " e.[From] = ? ",
+                accountId, dateRecv, from);
+        }
+
         public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Email;

@@ -298,7 +298,11 @@ namespace NachoCore.Wbxml
 
                     // Is there a namespace switch?
                     if (null != current.Filter) {
-                        if (current.Filter.NameSpace != element.Name.NamespaceName) {
+                        if ((current.Filter.NameSpace != element.Name.NamespaceName) &&
+                            // Do not do a namespace switch if we are already in redacted mode.
+                            // This is because it will put a non-null parent node and make it think
+                            // this is no longer in redacted mode. So, just ignore the namespace change
+                            !current.IsRedacted ()) {
                             current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
                             if (null != current.Filter) {
                                 current.ParentNode = current.Filter.Root;
@@ -390,7 +394,7 @@ namespace NachoCore.Wbxml
         public static string FullHash (string value)
         {
             string hash;
-            if (!HashCache.TryGetValue(value, out hash)) {
+            if (!HashCache.TryGetValue (value, out hash)) {
                 hash = HashHelper.Sha256 (value);
                 HashCache.TryAdd (value, hash);
             }

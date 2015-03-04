@@ -56,6 +56,10 @@ namespace NachoCore
         void UnblockPendingCmd (int accountId, int pendingId);
         // accept the fail. delete the pending obj.
         void DeletePendingCmd (int accountId, int pendingId);
+        // search email. returns token that can be used to cancel the search and all eclipsed searches.
+        NcResult StartSearchEmailReq (int accountId, string prefix, uint? maxResults);
+        // follow-on email search, using same token.
+        NcResult SearchEmailReq (int accountId, string prefix, uint? maxResults, string token);
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
         NcResult StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
         // follow-on contacts search, using same token.

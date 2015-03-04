@@ -71,7 +71,9 @@ namespace NachoCore.Model
             AttachmentDownload,
             Sync,
             CalForward,
-            Last = CalForward,
+            // These values are persisted in the DB, so only add at the end.
+            EmailSearch,
+            Last = EmailSearch,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -667,8 +669,10 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_TaskUpdateFailed;
             case Operations.TaskDelete:
                 return NcResult.SubKindEnum.Error_TaskDeleteFailed;
+            case Operations.EmailSearch:
+                return NcResult.SubKindEnum.Error_EmailSearchCommandFailed;
             case Operations.ContactSearch:
-                return NcResult.SubKindEnum.Error_SearchCommandFailed;
+                return NcResult.SubKindEnum.Error_ContactSearchCommandFailed;
             case Operations.AttachmentDownload:
                 return NcResult.SubKindEnum.Error_AttDownloadFailed;
             case Operations.Sync:
@@ -820,6 +824,7 @@ namespace NachoCore.Model
             }
             var killList = query.ToList ();
             foreach (var kill in killList) {
+                NcAssert.True (Operations.ContactSearch == kill.Operation || Operations.EmailSearch == kill.Operation);
                 kill.ResolveAsCancelled (false);
             }
         }
@@ -1232,7 +1237,6 @@ namespace NachoCore.Model
             case Operations.ContactCreate:
             case Operations.ContactDelete:
             case Operations.ContactMove:
-            case Operations.ContactSearch:
             case Operations.ContactUpdate:
                 return McContact.QueryById<McContact> (ItemId);
             case Operations.EmailClearFlag:
