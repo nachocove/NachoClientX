@@ -514,11 +514,6 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
-        {
-            return QueryActiveMessageItemsByScore (accountId, folderId, minHotScore);
-        }
-
         /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
         public static List<NcEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
@@ -698,7 +693,9 @@ namespace NachoCore.Model
 
         public void Add (NcEmailMessageIndex index)
         {
-            thread.Add (index);
+            if (!thread.Contains (index, new NcEmailMessageIndexComparer ())) {
+                thread.Add (index);
+            }
         }
 
         public NcEmailMessageIndex GetEmailMessageIndex (int i)
