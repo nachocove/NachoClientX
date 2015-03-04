@@ -1,5 +1,9 @@
-﻿. Addressed UI stalls for recurring meetings that had no end date.
-. Fixed stability issues on Exchange 2007 calendar interactions with Google events.
-. Added 64-bit support.
-. Calendar event forward added.
-. Contacts no longer duplicated as they are gleaned and added.
+﻿This release adds the following features:
+  Threading Support
+  Message Search
+
+Additionally, this release addresses an issue with the last release in which certain Exchange servers would not recognize the device, because the migration of 64-bit support was incorrectly configured.
+
+Contact search is faster.
+Many user issues in calendaring addressed.
+Font size issues in certain message replies is fixed.
