@@ -649,6 +649,11 @@ namespace NachoCore
                 numTelemetryEvents = 0;
                 numCrashes = 0;
 
+                if (ExecutionContextEnum.QuickSync == ExecutionContext) {
+                    Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: early exit in quick sync.");
+                    break;
+                }
+
                 if (15 < UpTimeSec) {
                     // If we have no network connectivity or cellular only, we wait or
                     // upload up to 15 sec. The cellular part is to avoid running up
