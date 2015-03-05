@@ -351,6 +351,12 @@ namespace NachoCore.ActiveSync
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsHardFail (BEContext.ProtoControl, why);
             });
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            result.Value = status;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = BEContext.Account,
+                Status = result,
+            });
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
                 string.Format ("{0}", (Xml.StatusCode)status));
@@ -363,6 +369,12 @@ namespace NachoCore.ActiveSync
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl, reason, why);
+            });
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            result.Value = status;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = BEContext.Account,
+                Status = result,
             });
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
@@ -385,6 +397,7 @@ namespace NachoCore.ActiveSync
         // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
         public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
         {
+            status = (uint)Xml.StatusCode.AvailabilityFailure_163;
             switch ((Xml.StatusCode)status) {
             case Xml.StatusCode.InvalidContent_101:
             case Xml.StatusCode.InvalidWBXML_102:
