@@ -397,7 +397,6 @@ namespace NachoCore.ActiveSync
         // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
         public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
         {
-            status = (uint)Xml.StatusCode.AvailabilityFailure_163;
             switch ((Xml.StatusCode)status) {
             case Xml.StatusCode.InvalidContent_101:
             case Xml.StatusCode.InvalidWBXML_102:
