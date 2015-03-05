@@ -687,10 +687,10 @@ namespace NachoCore
             }
             if (KSafeModeMaxSeconds > UpTimeSec) {
                 // Safe mode does not use up all allowed time. Reschedule class 4 timer to an earlier time.
-                if (!Class4EarlyShowTimer.IsExpired ()) {
+                if ((null != Class4EarlyShowTimer) && !Class4EarlyShowTimer.IsExpired ()) {
                     Class4EarlyShowTimer.Change (new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
                 }
-                if (!Class4LateShowTimer.IsExpired ()) {
+                if ((null != Class4LateShowTimer) && !Class4LateShowTimer.IsExpired ()) {
                     Class4LateShowTimer.Change (new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
                 }
             }
