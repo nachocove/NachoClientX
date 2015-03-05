@@ -69,10 +69,24 @@ namespace NachoCore.ActiveSync
         public TimeZoneInfo ConvertToSystemTimeZone ()
         {
             try {
+                string timeZoneID;
+                string displayName;
+                string standardName;
+                if (string.IsNullOrEmpty (StandardName)) {
+                    timeZoneID = "CustomID";
+                    displayName = "Custom Time Zone";
+                    standardName = "Standard";
+                } else {
+                    timeZoneID = StandardName;
+                    displayName = StandardName;
+                    standardName = StandardName;
+                }
+                string daylightName = string.IsNullOrEmpty(DaylightName) ? "Daylight" : DaylightName;
+
                 if (0 == DaylightBias && 0 == StandardBias) {
                     // Simple case. No daylight saving time.
                     return TimeZoneInfo.CreateCustomTimeZone (
-                        StandardName, new TimeSpan (-(Bias * TimeSpan.TicksPerMinute)), StandardName, StandardName);
+                        timeZoneID, new TimeSpan (-(Bias * TimeSpan.TicksPerMinute)), displayName, standardName);
                 }
                 TimeZoneInfo.TransitionTime transitionToDaylight;
                 if (0 == DaylightDate.year) {
@@ -101,19 +115,6 @@ namespace NachoCore.ActiveSync
                     new TimeSpan (-((DaylightBias - StandardBias) * TimeSpan.TicksPerMinute)),
                     transitionToDaylight, transitionToStandard);
 
-                string timeZoneID;
-                string displayName;
-                string standardName;
-                if (string.IsNullOrEmpty (StandardName)) {
-                    timeZoneID = "CustomID";
-                    displayName = "Custom Time Zone";
-                    standardName = "Standard";
-                } else {
-                    timeZoneID = StandardName;
-                    displayName = StandardName;
-                    standardName = StandardName;
-                }
-                string daylightName = string.IsNullOrEmpty(DaylightName) ? "Daylight" : DaylightName;
                 return TimeZoneInfo.CreateCustomTimeZone (
                     timeZoneID, new TimeSpan (-((Bias + StandardBias) * TimeSpan.TicksPerMinute)),
                     displayName, standardName, daylightName,
