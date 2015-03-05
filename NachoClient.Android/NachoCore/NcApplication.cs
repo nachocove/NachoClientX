@@ -364,6 +364,7 @@ namespace NachoCore
             NcModel.Instance.Stop ();
             NcTimer.StopService ();
             NcTask.StopService ();
+            UnmarkStartup ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices exited.");
         }
 
@@ -397,6 +398,7 @@ namespace NachoCore
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);
                 }
+                UnmarkStartup ();
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer exited.");
             }, null, new TimeSpan (0, 0, KClass4LateShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
         }
@@ -660,7 +662,7 @@ namespace NachoCore
 
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
-                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
+                    numTelemetryEvents = McTelemetryEvent.QueryCount ();
                     if (0 == numTelemetryEvents) {
                         telemetryDone = true;
                     }
