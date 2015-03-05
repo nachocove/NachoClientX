@@ -237,6 +237,7 @@ namespace NachoCore
         private NcTimer MonitorTimer;
         private NcTimer Class4EarlyShowTimer;
         private NcTimer Class4LateShowTimer;
+        private NcTimer StartupUnmarkTimer;
 
         public event EventHandler Class4EarlyShowEvent;
         public event EventHandler Class4LateShowEvent;
@@ -362,6 +363,10 @@ namespace NachoCore
             NcContactGleaner.Stop ();
             NcBrain.StopService ();
             NcModel.Instance.Stop ();
+            if (null != StartupUnmarkTimer) {
+                StartupUnmarkTimer.Dispose ();
+                StartupUnmarkTimer = null;
+            }
             NcTimer.StopService ();
             NcTask.StopService ();
             UnmarkStartup ();
@@ -398,7 +403,6 @@ namespace NachoCore
                 if (null != Class4LateShowEvent) {
                     Class4LateShowEvent (this, EventArgs.Empty);
                 }
-                UnmarkStartup ();
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer exited.");
             }, null, new TimeSpan (0, 0, KClass4LateShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
         }
@@ -649,6 +653,11 @@ namespace NachoCore
                 numTelemetryEvents = 0;
                 numCrashes = 0;
 
+                if (ExecutionContextEnum.QuickSync == ExecutionContext) {
+                    Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: early exit in quick sync.");
+                    break;
+                }
+
                 if (15 < UpTimeSec) {
                     // If we have no network connectivity or cellular only, we wait or
                     // upload up to 15 sec. The cellular part is to avoid running up
@@ -700,6 +709,13 @@ namespace NachoCore
 
         public void MarkStartup ()
         {
+            if (null != StartupUnmarkTimer) {
+                StartupUnmarkTimer.Dispose ();
+            }
+            StartupUnmarkTimer = new NcTimer ("StartupUnmark",
+                (state) => {
+                    UnmarkStartup ();
+                }, null, 20 * 1000, 0);
             using (var fileStream = File.Open (StartupLog, FileMode.OpenOrCreate | FileMode.Append)) {
                 var timestamp = String.Format ("{0}\n", DateTime.UtcNow);
                 var bytes = Encoding.ASCII.GetBytes (timestamp);

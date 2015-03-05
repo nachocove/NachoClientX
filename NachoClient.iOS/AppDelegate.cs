@@ -559,6 +559,7 @@ namespace NachoClient.iOS
             fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.QuickSync;
+            NcApplication.Instance.UnmarkStartup ();
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }
