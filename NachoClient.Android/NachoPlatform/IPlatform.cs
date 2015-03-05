@@ -11,6 +11,7 @@ namespace NachoPlatform
 	{
 		Stream Open (string relPath);
 		bool Exists (string relPath);
+        string GetPath (string relPath);
 		string[] List (string relPath);
 	}
     public interface IPlatformRegDom

@@ -2130,6 +2130,7 @@
     <BundleResource Include="Resources\gen-deadlinethread%403x.png" />
     <BundleResource Include="Resources\gen-deadlinethread%404x.png" />
     <BundleResource Include="Resources\gen-deadlinethread%406x.png" />
+    <BundleResource Include="Resources\db" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
