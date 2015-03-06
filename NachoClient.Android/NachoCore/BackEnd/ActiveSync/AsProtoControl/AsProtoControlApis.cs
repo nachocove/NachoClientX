@@ -279,7 +279,7 @@ namespace NachoCore.ActiveSync
 
         public override NcResult DeleteEmailCmd (int emailMessageId)
         {
-            NcResult result = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McEmailMessage emailMessage = null;
             NcModel.Instance.RunInTransaction (() => {
                 emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
@@ -300,14 +300,27 @@ namespace NachoCore.ActiveSync
                     return;
                 }
 
-                var pending = new McPending (Account.Id) {
-                    Operation = McPending.Operations.EmailDelete,
-                    ParentId = primeFolder.ServerId,
-                    ServerId = emailMessage.ServerId
-                };   
+                McPending pending;
+                var trash = McFolder.GetDefaultDeletedFolder (Account.Id);
+                if (null == trash || trash.Id == primeFolder.Id) {
+                    pending = new McPending (Account.Id) {
+                        Operation = McPending.Operations.EmailDelete,
+                        ParentId = primeFolder.ServerId,
+                        ServerId = emailMessage.ServerId,
+                    };
+                    emailMessage.Delete ();
+                } else {
+                    pending = new McPending (Account.Id) {
+                        Operation = McPending.Operations.EmailMove,
+                        ServerId = emailMessage.ServerId,
+                        ParentId = primeFolder.ServerId,
+                        DestParentId = trash.ServerId,
+                    };
+                    trash.Link (emailMessage);
+                    primeFolder.Unlink (emailMessage);
+                }
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                emailMessage.Delete ();
             });
             if (null != emailMessage && result.isOK ()) {
                 Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",

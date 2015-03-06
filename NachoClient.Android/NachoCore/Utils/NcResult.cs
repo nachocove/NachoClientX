@@ -163,6 +163,7 @@ namespace NachoCore.Utils
             Error_IsAwaitingDelete,
             Info_EmailSearchCommandSucceeded,
             Error_EmailSearchCommandFailed,
+            Info_ServerStatus,
         };
 
         public enum WhyEnum {

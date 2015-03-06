@@ -1584,7 +1584,11 @@ namespace NachoCore.Model
 
         public bool HasSameName (McContact other)
         {
-            return ((FirstName == other.FirstName) && (MiddleName == other.MiddleName) && (LastName == other.LastName));
+            return (
+                (FirstName == other.FirstName) &&
+                (MiddleName == other.MiddleName) &&
+                (LastName == other.LastName) &&
+                (Suffix == other.Suffix));
         }
 
         public bool IsAnonymous ()

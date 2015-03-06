@@ -424,7 +424,6 @@ namespace NachoCore.Brain
                         }
                     }
                     if (ENABLED) {
-                        NcApplication.Instance.UnmarkStartup ();
                         ProcessEvent (brainEvent);
                     }
                 }
