@@ -108,25 +108,34 @@ namespace NachoCore.Brain
             if (null == emailMessage) {
                 return false;
             }
-            Log.Info (Log.LOG_BRAIN, "index email message {0}", emailMessage.Id);
+            Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
 
             // Make sure the body is there
             var body = emailMessage.GetBody ();
             if (null != body) {
                 var messagePath = body.GetFilePath ();
                 if (!File.Exists (messagePath)) {
-                    Log.Warn (Log.LOG_BRAIN, "{0} does not exist", messagePath);
+                    Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: {0} does not exist", messagePath);
                     return false;
                 }
 
                 // Create the parsed object, its tokenizer, and its index document
                 var message = NcObjectParser.ParseMimeMessage (messagePath);
+                if (null == message) {
+                    Log.Warn ("IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, bodyType={2}, filePresence={3}",
+                        emailMessage.Id, emailMessage.BodyId, body.BodyType, body.FilePresence);
+                    return false;
+                }
                 var tokenizer = new NcMimeTokenizer (message);
                 var content = tokenizer.Content;
                 var indexDoc = new Index.IndexEmailMessage (emailMessage.Id.ToString (), content, message);
 
                 // Index the document
                 bytesIndexed += index.BatchAdd (indexDoc);
+            } else {
+                Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: null body (emailMessageId={0}, bodyId={1})",
+                    emailMessage.Id, emailMessage.BodyId);
+                return false;
             }
 
             // Mark the email message indexed
