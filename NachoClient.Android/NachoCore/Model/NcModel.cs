@@ -4,6 +4,7 @@ using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -197,44 +198,50 @@ namespace NachoCore.Model
             DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
             AutoVacuum = AutoVacuumEnum.NONE;
-            Db.CreateTable<McAccount> ();
-            Db.CreateTable<McConference> ();
-            Db.CreateTable<McCred> ();
-            Db.CreateTable<McMapFolderFolderEntry> ();
-            Db.CreateTable<McFolder> ();
-            Db.CreateTable<McEmailAddress> ();
-            Db.CreateTable<McEmailMessage> ();
-            Db.CreateTable<McEmailMessageCategory> ();
-            Db.CreateTable<McEmailMessageScoreSyncInfo> ();
-            Db.CreateTable<McEmailMessageDependency> ();
-            Db.CreateTable<McMeetingRequest> ();
-            Db.CreateTable<McAttachment> ();
-            Db.CreateTable<McContact> ();
-            Db.CreateTable<McContactDateAttribute> ();
-            Db.CreateTable<McContactStringAttribute> ();
-            Db.CreateTable<McContactAddressAttribute> ();
-            Db.CreateTable<McContactEmailAddressAttribute> ();
-            Db.CreateTable<McEmailAddressScoreSyncInfo> ();
-            Db.CreateTable<McPolicy> ();
-            Db.CreateTable<McProtocolState> ();
-            Db.CreateTable<McServer> ();
-            Db.CreateTable<McPending> ();
-            Db.CreateTable<McPendDep> ();
-            Db.CreateTable<McCalendar> ();
-            Db.CreateTable<McException> ();
-            Db.CreateTable<McAttendee> ();
-            Db.CreateTable<McCalendarCategory> ();
-            Db.CreateTable<McRecurrence> ();
-            Db.CreateTable<McEvent> ();
-            Db.CreateTable<McTask> ();
-            Db.CreateTable<McBody> ();
-            Db.CreateTable<McDocument> ();
-            Db.CreateTable<McMutables> ();
-            Db.CreateTable<McPath> ();
-            Db.CreateTable<McNote> ();
-            Db.CreateTable<McPortrait> ();
-            Db.CreateTable<McMapEmailAddressEntry> ();
-            Db.CreateTable<McMigration> ();
+            var watch = Stopwatch.StartNew ();
+            // Use the SQLite.NET "raw" version of RunInTransaction while initializing NcModel.
+            Db.RunInTransaction (() => {
+                Db.CreateTable<McAccount> ();
+                Db.CreateTable<McConference> ();
+                Db.CreateTable<McCred> ();
+                Db.CreateTable<McMapFolderFolderEntry> ();
+                Db.CreateTable<McFolder> ();
+                Db.CreateTable<McEmailAddress> ();
+                Db.CreateTable<McEmailMessage> ();
+                Db.CreateTable<McEmailMessageCategory> ();
+                Db.CreateTable<McEmailMessageScoreSyncInfo> ();
+                Db.CreateTable<McEmailMessageDependency> ();
+                Db.CreateTable<McMeetingRequest> ();
+                Db.CreateTable<McAttachment> ();
+                Db.CreateTable<McContact> ();
+                Db.CreateTable<McContactDateAttribute> ();
+                Db.CreateTable<McContactStringAttribute> ();
+                Db.CreateTable<McContactAddressAttribute> ();
+                Db.CreateTable<McContactEmailAddressAttribute> ();
+                Db.CreateTable<McEmailAddressScoreSyncInfo> ();
+                Db.CreateTable<McPolicy> ();
+                Db.CreateTable<McProtocolState> ();
+                Db.CreateTable<McServer> ();
+                Db.CreateTable<McPending> ();
+                Db.CreateTable<McPendDep> ();
+                Db.CreateTable<McCalendar> ();
+                Db.CreateTable<McException> ();
+                Db.CreateTable<McAttendee> ();
+                Db.CreateTable<McCalendarCategory> ();
+                Db.CreateTable<McRecurrence> ();
+                Db.CreateTable<McEvent> ();
+                Db.CreateTable<McTask> ();
+                Db.CreateTable<McBody> ();
+                Db.CreateTable<McDocument> ();
+                Db.CreateTable<McMutables> ();
+                Db.CreateTable<McPath> ();
+                Db.CreateTable<McNote> ();
+                Db.CreateTable<McPortrait> ();
+                Db.CreateTable<McMapEmailAddressEntry> ();
+                Db.CreateTable<McMigration> ();
+            });
+            watch.Stop();
+            QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
             ConfigureDb (Db);
         }
 
@@ -466,7 +473,7 @@ namespace NachoCore.Model
                 exitValue = oldValue;
                 return oldValue + 1;
             });
-            System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch ();
+            Stopwatch watch = new Stopwatch ();
             try {
                 var whoa = DateTime.UtcNow.AddSeconds (5.0);
                 // It is okay to loop here, because a busy will have caused us to ROLLBACK and release
@@ -480,8 +487,7 @@ namespace NachoCore.Model
                         watch.Stop ();
                         var span = watch.ElapsedMilliseconds;
                         if (1000 < span) {
-                            Log.Error (Log.LOG_DB, "RunInTransaction: {0}ms for {1}", span, 
-                                new System.Diagnostics.StackTrace (true));
+                            Log.Error (Log.LOG_DB, "RunInTransaction: {0}ms for {1}", span, new StackTrace (true));
                         }
                         break;
                     } catch (SQLiteException ex) {
