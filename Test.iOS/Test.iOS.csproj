@@ -270,6 +270,9 @@
     <Compile Include="..\Test.Android\McEventTest.cs">
       <Link>McEventTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\PushAssistTest.cs">
+      <Link>PushAssistTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

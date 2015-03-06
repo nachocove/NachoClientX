@@ -82,6 +82,25 @@ namespace NachoCore
             }
         }
 
+        // Client Id is a string that uniquely identifies a NachoMail client on
+        // all cloud servers (telemetry, pinger, etc.)
+        private string _ClientId;
+
+        public string ClientId {
+            get {
+                return _ClientId;
+            }
+            set {
+                _ClientId = value;
+                var status = new StatusIndEventArgs () {
+                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                };
+                status.Status.Value = value;
+                InvokeStatusIndEvent (status);
+            }
+        }
+
         private bool StartupMarked;
 
         public bool IsUp ()
@@ -603,14 +622,6 @@ namespace NachoCore
                     BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
             }
             BackEnd.Instance.CertAskResp (accountId, isOkay);
-        }
-
-        public string GetClientId ()
-        {
-            // TODO - the client id is currently obtained thru telemetry. Create an API
-            //        now and if / when we move the client id registration mechanism
-            //        out of telemetry, only this API needs to be changed.
-            return Telemetry.SharedInstance.GetUserName ();
         }
 
         public string GetPlatformName ()

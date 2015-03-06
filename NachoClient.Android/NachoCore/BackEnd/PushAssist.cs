@@ -32,9 +32,11 @@ namespace NachoCore
 
     public class PushAssist : IDisposable
     {
+        public static Type HttpClientType = typeof(MockableHttpClient);
+
         private IPushAssistOwner Owner;
-        private NcStateMachine Sm;
-        private HttpClient Client;
+        protected NcStateMachine Sm;
+        protected IHttpClient Client;
         private CookieContainer CookieJar;
         private int AccountId;
         private bool IsDisposed;
@@ -114,7 +116,6 @@ namespace NachoCore
         public static PushAssist GetPAObjectByContext (string context)
         {
             WeakReference weakRef;
-            PushAssist pa;
             if (ContextObjectMap.TryGetValue (context, out weakRef)) {
                 if (weakRef.IsAlive) {
                     return (PushAssist)weakRef.Target;
@@ -160,7 +161,7 @@ namespace NachoCore
                 CookieContainer = CookieJar,
                 UseCookies = true,
             };
-            Client = new HttpClient (handler, true);
+            Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
             Owner = owner;
             AccountId = Owner.Account.Id;
             var account = McAccount.QueryById<McAccount> (AccountId);
@@ -175,6 +176,10 @@ namespace NachoCore
                 ContextObjectMap.TryGetValue (ClientContext, out oldPaRef);
                 ContextObjectMap.TryUpdate (ClientContext, paRef, oldPaRef);
             }
+
+            // Normally, the state transition should be:
+            //
+            // Start -> DevTokW -> CliTokW -> SessTokW -> Active
             Sm = new NcStateMachine ("PA") {
                 Name = string.Format ("PA({0})", AccountId),
                 LocalStateType = typeof(Lst),
@@ -348,7 +353,7 @@ namespace NachoCore
         {
             // FIXME Cancel any outstanding http request. This is tricky, given concurrency.
             // Only one SM action can execute at a time, but there is a Q in front of the SM.
-            var clientId = NcApplication.Instance.GetClientId ();
+            var clientId = NcApplication.Instance.ClientId;
             if (String.IsNullOrEmpty (clientId) ||
                 String.IsNullOrEmpty (ClientContext) ||
                 String.IsNullOrEmpty (SessionToken)) {
@@ -358,7 +363,7 @@ namespace NachoCore
                 Sm.PostEvent ((uint)SmEvt.E.HardFail, "PAPARAMERROR");
             }
             var jsonRequest = new StopSessionRequest () {
-                ClientId = NcApplication.Instance.GetClientId (),
+                ClientId = NcApplication.Instance.ClientId,
                 DeviceId = NachoPlatform.Device.Instance.Identity (),
                 ClientContext = ClientContext,
                 Token = SessionToken,
@@ -395,7 +400,7 @@ namespace NachoCore
 
         private void DoGetCliTok ()
         {
-            var clientId = NcApplication.Instance.GetClientId ();
+            var clientId = NcApplication.Instance.ClientId;
             if (null != clientId) {
                 Sm.PostEvent ((uint)PAEvt.E.CliTok, "GOTCLITOK");
             }
@@ -453,7 +458,7 @@ namespace NachoCore
 
         private async void DoGetSess ()
         {
-            var clientId = NcApplication.Instance.GetClientId ();
+            var clientId = NcApplication.Instance.ClientId;
             if (null == clientId) {
                 Sm.PostEvent ((uint)PAEvt.E.CliTokLoss, "DOSESSCTL");
                 return;
@@ -524,7 +529,7 @@ namespace NachoCore
 
         private async void DoHoldOff ()
         {
-            var clientId = NcApplication.Instance.GetClientId ();
+            var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
             if (String.IsNullOrEmpty (clientId) ||
                 String.IsNullOrEmpty (ClientContext) ||
@@ -591,24 +596,18 @@ namespace NachoCore
         // This API is "called" by platform code on receipt of the APNS/GCD device token.
         public void SetDeviceToken (byte[] deviceToken)
         {
-            // FIXME - Why NcTask? This creates a race where SM may read before the token is saved
-            NcTask.Run (delegate {
-                var b64tok = Convert.ToBase64String (deviceToken);
-                McMutables.Set (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken, b64tok);
-                Sm.PostEvent ((uint)PAEvt.E.DevTok, "DEVTOKSET");
-            }, "PushAssist");
+            var b64tok = Convert.ToBase64String (deviceToken);
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken, b64tok);
+            Sm.PostEvent ((uint)PAEvt.E.DevTok, "DEVTOKSET");
         }
 
         // This API is called by platform code to clear the APNS/GCD device token.
         public void ResetDeviceToken ()
         {
-            // FIXME - Why NcTask? This creates a race where SM may read before the token is saved
-            NcTask.Run (delegate {
-                // Because we aren't interlocking the DB delete and the SM event, all code
-                // must check device token before using it.
-                McMutables.Delete (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
-                Sm.PostEvent ((uint)PAEvt.E.DevTokLoss, "DEVTOKLOSS");
-            }, "PushAssist:ResetDeviceToken");
+            // Because we aren't interlocking the DB delete and the SM event, all code
+            // must check device token before using it.
+            McMutables.Delete (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
+            Sm.PostEvent ((uint)PAEvt.E.DevTokLoss, "DEVTOKLOSS");
         }
 
 

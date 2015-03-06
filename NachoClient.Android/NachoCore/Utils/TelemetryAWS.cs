@@ -35,7 +35,18 @@ namespace NachoCore.Utils
         private static Table UiTable;
         private static Table WbxmlTable;
 
-        private static string ClientId;
+        private static string _ClientId;
+
+        private static string ClientId {
+            get {
+                return _ClientId;
+            }
+            set {
+                _ClientId = value;
+                // Currently, the telemetry client id is the application's client id.
+                NcApplication.Instance.ClientId = _ClientId;
+            }
+        }
 
         private bool FreshInstall;
 
