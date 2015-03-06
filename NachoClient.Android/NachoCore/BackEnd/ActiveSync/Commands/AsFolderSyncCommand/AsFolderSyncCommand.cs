@@ -59,6 +59,7 @@ namespace NachoCore.ActiveSync
                             pathElem = new McPath (BEContext.Account.Id);
                             pathElem.ServerId = serverId;
                             pathElem.ParentId = parentId;
+                            pathElem.IsFolder = true;
                             pathElem.Insert ();
                             var applyAdd = new ApplyFolderAdd (BEContext.Account.Id) {
                                 ServerId = serverId, 

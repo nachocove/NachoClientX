@@ -244,11 +244,12 @@ namespace Test.iOS
 
     public class PathOps : CommonTestOps
     {
-        public static McPath CreatePath (int accountId, string serverId = "", string parentId = "")
+        public static McPath CreatePath (int accountId, string serverId = "", string parentId = "", bool isFolder = false)
         {
             var path = new McPath (accountId);
             path.ServerId = serverId;
             path.ParentId = parentId;
+            path.IsFolder = isFolder;
             path.Insert ();
             return path;
         }
