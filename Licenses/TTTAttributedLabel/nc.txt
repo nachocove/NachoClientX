@@ -1,5 +1,5 @@
 
-TTTAttributedLabel
+TTTAttributedLabel is provided under the following license:
 
 Copyright (c) 2011 Mattt Thompson (http://mattt.me/)
 
