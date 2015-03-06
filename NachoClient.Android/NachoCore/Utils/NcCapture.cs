@@ -305,6 +305,8 @@ namespace NachoCore.Utils
             Stop (null);
         }
 
+        public long ElapsedMilliseconds { get { return Watch.ElapsedMilliseconds; } }
+
         public void Stop (Dictionary<string,int> xtra)
         {
             Watch.Stop ();

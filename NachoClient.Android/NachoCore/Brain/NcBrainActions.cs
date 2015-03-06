@@ -122,7 +122,7 @@ namespace NachoCore.Brain
                 // Create the parsed object, its tokenizer, and its index document
                 var message = NcObjectParser.ParseMimeMessage (messagePath);
                 if (null == message) {
-                    Log.Warn ("IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, bodyType={2}, filePresence={3}",
+                    Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, bodyType={2}, filePresence={3}",
                         emailMessage.Id, emailMessage.BodyId, body.BodyType, body.FilePresence);
                     return false;
                 }
