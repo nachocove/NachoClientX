@@ -34,7 +34,7 @@ namespace NachoCore
     {
         public static Type HttpClientType = typeof(MockableHttpClient);
 
-        private IPushAssistOwner Owner;
+        protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
         protected IHttpClient Client;
         private CookieContainer CookieJar;
@@ -58,19 +58,19 @@ namespace NachoCore
             }
         }
 
-        private string StartSessionUrl {
+        protected string StartSessionUrl {
             get {
                 return BaseUrl + "/register";
             }
         }
 
-        private string DeferSessionUrl {
+        protected string DeferSessionUrl {
             get {
                 return BaseUrl + "/defer";
             }
         }
 
-        private string StopSessionUrl {
+        protected string StopSessionUrl {
             get {
                 return BaseUrl + "/stop";
             }
@@ -309,7 +309,7 @@ namespace NachoCore
             NcApplication.Instance.StatusIndEvent += TokensWatcher;
         }
 
-        private string GetClientContext (McAccount account)
+        protected string GetClientContext (McAccount account)
         {
             string prefix = null;
             string id = null;
@@ -434,24 +434,24 @@ namespace NachoCore
                 case PingerResponse.Ok:
                     {
                         if (!String.IsNullOrEmpty (response.Message)) {
-                            Log.Info (Log.LOG_PUSH, "DoGetSess: response={0}", response.Message);
+                            Log.Info (Log.LOG_PUSH, "ParsePingerResposne: response={0}", response.Message);
                         }
                         break;
                     }
                 case PingerResponse.Warn:
                     {
-                        Log.Warn (Log.LOG_PUSH, "DoGetSess: response={0}", response.Message);
+                        Log.Warn (Log.LOG_PUSH, "ParsePingerResposne: response={0}", response.Message);
                         break;
                     }
                 case PingerResponse.Error:
                     {
-                        Log.Error (Log.LOG_PUSH, "DoGetSess: response={0}", response.Message);
+                        Log.Error (Log.LOG_PUSH, "ParsePingerResponse: response={0}", response.Message);
                         break;
                     }
                 }
                 return response;
             } catch (Exception e) {
-                Log.Error (Log.LOG_PUSH, "Fail to parse JSON response (jsonResponse={0}, exception={1})", jsonResponse, e);
+                Log.Error (Log.LOG_PUSH, "ParsePingerResponse: Fail to parse JSON response (jsonResponse={0}, exception={1})", jsonResponse, e);
                 return null;
             }
         }
