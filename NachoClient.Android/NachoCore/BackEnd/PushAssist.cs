@@ -41,7 +41,7 @@ namespace NachoCore
         private int AccountId;
         private bool IsDisposed;
         private string ClientContext;
-        private string SessionToken;
+        protected string SessionToken;
 
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
@@ -343,6 +343,11 @@ namespace NachoCore
         public void HoldOff ()
         {
             Sm.PostEvent ((uint)PAEvt.E.HoldOff, "PAHO");
+        }
+
+        public void Stop ()
+        {
+            Sm.PostEvent ((uint)PAEvt.E.Park, "PAPARK");
         }
 
         private void DoNop ()

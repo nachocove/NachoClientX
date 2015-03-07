@@ -85,6 +85,12 @@ namespace Test.Common
             }
         }
 
+        public new string SessionToken {
+            get {
+                return base.SessionToken;
+            }
+        }
+
         public new string ProtocolToString (PushAssistProtocol protocol)
         {
             return base.ProtocolToString (protocol);
@@ -101,6 +107,7 @@ namespace Test.Common
         const string ClientToken = "us-1-east:12345";
         const string Email = "bob@company.net";
         const string Password = "Password";
+        const string SessionToken = "xyz";
 
         private MockPushAssistOwnwer Owner;
         private WrapPushAssist Wpa;
@@ -179,6 +186,7 @@ namespace Test.Common
 
             var jsonContent = await httpRequest.Content.ReadAsStringAsync ().ConfigureAwait (false);
             var jsonRequest = JsonConvert.DeserializeObject <StartSessionRequest> (jsonContent);
+
             Assert.AreEqual (NcApplication.Instance.ClientId, jsonRequest.ClientId);
             Assert.AreEqual (Wpa.ClientContext, jsonRequest.ClientContext);
             Assert.AreEqual (MockPushAssistOwnwer.ServerUrl, jsonRequest.MailServerUrl);
@@ -193,21 +201,74 @@ namespace Test.Common
             CheckContent (MockPushAssistOwnwer.ResponseData, jsonRequest.HttpNoChangeReply);
         }
 
-        private HttpResponseMessage StartSessionOkResponse (HttpRequestMessage httpRequest)
+        private async void CheckDeferSessionRequest (HttpRequestMessage httpRequest)
         {
-            var httpResponse = new HttpResponseMessage ();
-            httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
-            var jsonResponse = new PingerResponse () {
-                Status = "OK",
-                Message = "",
-            };
+            Assert.AreEqual (Wpa.DeferSessionUrl, httpRequest.RequestUri.AbsoluteUri);
+            CheckHttpHeader<string> (httpRequest.Content.Headers, "Content-Type", "application/json");
+
+            var jsonContent = await httpRequest.Content.ReadAsStringAsync ().ConfigureAwait (false);
+            var jsonRequest = JsonConvert.DeserializeObject <DeferSessionRequest> (jsonContent);
+
+            Assert.AreEqual (NcApplication.Instance.ClientId, jsonRequest.ClientId);
+            Assert.AreEqual (Wpa.ClientContext, jsonRequest.ClientContext);
+            Assert.AreEqual (Wpa.SessionToken, jsonRequest.Token);
+            Assert.AreEqual (MockPushAssistOwnwer.ResponseTimeout, jsonRequest.ResponseTimeout);
+        }
+
+        private async void CheckStopSessionRequest (HttpRequestMessage httpRequest)
+        {
+            Assert.AreEqual (Wpa.StopSessionUrl, httpRequest.RequestUri.AbsoluteUri);
+            CheckHttpHeader<string> (httpRequest.Content.Headers, "Content-Type", "application/json");
+
+            var jsonContent = await httpRequest.Content.ReadAsStringAsync ().ConfigureAwait (false);
+            var jsonRequest = JsonConvert.DeserializeObject <StopSessionRequest> (jsonContent);
+
+            Assert.AreEqual (NcApplication.Instance.ClientId, jsonRequest.ClientId);
+            Assert.AreEqual (Wpa.ClientContext, jsonRequest.ClientContext);
+            Assert.AreEqual (Wpa.SessionToken, jsonRequest.Token);
+        }
+
+        private StringContent EncodeJsonResponse (PingerResponse jsonResponse)
+        {
             var jsonContent = JsonConvert.SerializeObject (jsonResponse);
             var content = new StringContent (jsonContent);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse ("application/json");
             content.Headers.ContentLength = jsonContent.Length;
-            httpResponse.Content = content;
+            return content;
+        }
+
+        private HttpResponseMessage StartSessionOkResponse (HttpRequestMessage httpRequest)
+        {
+            var httpResponse = new HttpResponseMessage ();
+            httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+
+            var jsonResponse = new PingerResponse () {
+                Status = "OK",
+                Message = "",
+                Token = SessionToken,
+            };
+            httpResponse.Content = EncodeJsonResponse (jsonResponse);
 
             return httpResponse;
+        }
+
+        private HttpResponseMessage DeferSessionOkResponse (HttpRequestMessage httpRequest)
+        {
+            var httpResponse = new HttpResponseMessage ();
+            httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+
+            var jsonResponse = new PingerResponse () {
+                Status = "OK",
+                Message = "",
+            };
+            httpResponse.Content = EncodeJsonResponse (jsonResponse);
+
+            return httpResponse;
+        }
+
+        private HttpResponseMessage StopSessionOkResponse (HttpRequestMessage httpRequest)
+        {
+            return DeferSessionOkResponse (httpRequest);
         }
 
         // Start -> DevTokW -> CliTokW -> SessTokW -> Active
@@ -231,6 +292,18 @@ namespace Test.Common
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
             NcApplication.Instance.ClientId = ClientToken;
             WaitForState ((uint)PushAssist.Lst.Active);
+
+            // [defer] -> Active
+            MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = DeferSessionOkResponse;
+            Wpa.HoldOff ();
+            WaitForState ((uint)PushAssist.Lst.Active);
+
+            // [stop] -> Start
+            MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
+            Wpa.Stop ();
+            WaitForState ((uint)St.Start);
         }
 
         [Test]
@@ -248,6 +321,18 @@ namespace Test.Common
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
             Wpa.Execute ();
             WaitForState ((uint)PushAssist.Lst.Active);
+
+            // -> Active
+            MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = DeferSessionOkResponse;
+            Wpa.HoldOff ();
+            WaitForState ((uint)PushAssist.Lst.Active);
+
+            // -> Start
+            MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
+            Wpa.Stop ();
+            WaitForState ((uint)St.Start);
         }
     }
 }
