@@ -135,7 +135,7 @@ namespace NachoCore.Index
             }
             try {
                 Reader = IndexReader.Open (IndexDirectory, false);
-            } catch (Lucene.Net.Store.NoSuchDirectoryException e) {
+            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
                 // This can happen if the removal is done before anything is written to the index.
                 Lock.ReleaseMutex ();
                 return false;
@@ -164,7 +164,7 @@ namespace NachoCore.Index
                         matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
                     }
                 }
-            } catch (Lucene.Net.Store.NoSuchDirectoryException e) {
+            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
                 // This can happen if a search is done before anything is written to the index.
             }
             return matchedItems;

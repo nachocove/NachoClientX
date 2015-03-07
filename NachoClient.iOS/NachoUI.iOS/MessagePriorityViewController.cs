@@ -164,6 +164,7 @@ namespace NachoClient.iOS
                 using (var image = UIImage.FromBundle (buttonInfo.buttonIcon).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     buttonRect.SetImage (image, UIControlState.Normal);
                 }
+                buttonRect.AccessibilityLabel = buttonInfo.buttonLabel;
                 buttonRect.TouchUpInside += (object sender, EventArgs e) => {
                     buttonInfo.buttonAction ();
                 };

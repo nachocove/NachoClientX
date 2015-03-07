@@ -74,7 +74,7 @@ namespace NachoClient.iOS
         // This makes it possible to check later if the user changed the text.
         private NSAttributedString initialQuotedText = null;
 
-        protected UIFont composeFont = A.Font_AvenirNextRegular12;
+        protected UIFont composeFont = A.Font_AvenirNextRegular14;
         protected UIColor composeColor = A.Color_NachoDarkText;
 
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
@@ -1115,12 +1115,16 @@ namespace NachoClient.iOS
                 bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
             }
 
+            // Convert to Helvetica because it's widely available
+            var mutableBodyAttributedText = new NSMutableAttributedString (bodyAttributedText);
+            mutableBodyAttributedText.AddAttribute (UIStringAttributeKey.Font, UIFont.FromName ("Helvetica", 12), new NSRange (0, mutableBodyAttributedText.Length));
+
             var body = new BodyBuilder ();
             body.TextBody = bodyTextView.Text;
 
             NSError error = null;
-            NSData htmlData = bodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, bodyAttributedText.Length),
+            NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
+                                  new NSRange (0, mutableBodyAttributedText.Length),
                                   new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
                                   ref error);
             body.HtmlBody = htmlData.ToString ();

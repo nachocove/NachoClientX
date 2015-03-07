@@ -1260,7 +1260,6 @@
       <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
-    <Compile Include="NachoCore\Model\Migration\NcMigration6.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoMessageSearchResults.cs">
       <Link>NachoCore\Adapters\NachoMessageSearchResults.cs</Link>
     </Compile>
@@ -1270,6 +1269,12 @@
     <Compile Include="NachoUI.iOS\NotesViewerViewController.cs" />
     <Compile Include="NachoUI.iOS\NotesViewerViewController.designer.cs">
       <DependentUpon>NotesViewerViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration6.cs">
+      <Link>NachoCore\Model\Migration\NcMigration6.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration8.cs">
+      <Link>NachoCore\Model\Migration\NcMigration8.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

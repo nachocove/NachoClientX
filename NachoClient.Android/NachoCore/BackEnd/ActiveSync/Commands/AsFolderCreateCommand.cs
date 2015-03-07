@@ -51,6 +51,7 @@ namespace NachoCore.ActiveSync
                 var pathElem = new McPath (BEContext.Account.Id);
                 pathElem.ServerId = serverId;
                 pathElem.ParentId = PendingSingle.ParentId;
+                pathElem.IsFolder = true;
                 pathElem.Insert ();
                 var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
                     PlaceholderId = PendingSingle.ServerId,

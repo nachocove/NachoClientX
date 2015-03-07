@@ -262,6 +262,7 @@ namespace NachoCore
         private NcTimer MonitorTimer;
         private NcTimer Class4EarlyShowTimer;
         private NcTimer Class4LateShowTimer;
+        private NcTimer StartupUnmarkTimer;
 
         public event EventHandler Class4EarlyShowEvent;
         public event EventHandler Class4LateShowEvent;
@@ -387,8 +388,13 @@ namespace NachoCore
             NcContactGleaner.Stop ();
             NcBrain.StopService ();
             NcModel.Instance.Stop ();
+            if (null != StartupUnmarkTimer) {
+                StartupUnmarkTimer.Dispose ();
+                StartupUnmarkTimer = null;
+            }
             NcTimer.StopService ();
             NcTask.StopService ();
+            UnmarkStartup ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices exited.");
         }
 
@@ -694,6 +700,11 @@ namespace NachoCore
                 numTelemetryEvents = 0;
                 numCrashes = 0;
 
+                if (ExecutionContextEnum.QuickSync == ExecutionContext) {
+                    Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: early exit in quick sync.");
+                    break;
+                }
+
                 if (15 < UpTimeSec) {
                     // If we have no network connectivity or cellular only, we wait or
                     // upload up to 15 sec. The cellular part is to avoid running up
@@ -707,7 +718,7 @@ namespace NachoCore
 
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
-                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
+                    numTelemetryEvents = McTelemetryEvent.QueryCount ();
                     if (0 == numTelemetryEvents) {
                         telemetryDone = true;
                     }
@@ -732,10 +743,10 @@ namespace NachoCore
             }
             if (KSafeModeMaxSeconds > UpTimeSec) {
                 // Safe mode does not use up all allowed time. Reschedule class 4 timer to an earlier time.
-                if (!Class4EarlyShowTimer.IsExpired ()) {
+                if ((null != Class4EarlyShowTimer) && !Class4EarlyShowTimer.IsExpired ()) {
                     Class4EarlyShowTimer.Change (new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
                 }
-                if (!Class4LateShowTimer.IsExpired ()) {
+                if ((null != Class4LateShowTimer) && !Class4LateShowTimer.IsExpired ()) {
                     Class4LateShowTimer.Change (new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
                 }
             }
@@ -745,6 +756,13 @@ namespace NachoCore
 
         public void MarkStartup ()
         {
+            if (null != StartupUnmarkTimer) {
+                StartupUnmarkTimer.Dispose ();
+            }
+            StartupUnmarkTimer = new NcTimer ("StartupUnmark",
+                (state) => {
+                    UnmarkStartup ();
+                }, null, 20 * 1000, 0);
             using (var fileStream = File.Open (StartupLog, FileMode.OpenOrCreate | FileMode.Append)) {
                 var timestamp = String.Format ("{0}\n", DateTime.UtcNow);
                 var bytes = Encoding.ASCII.GetBytes (timestamp);

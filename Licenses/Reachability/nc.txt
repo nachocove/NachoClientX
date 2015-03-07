@@ -1,5 +1,5 @@
 
-Reachabillity
+Reachabillity is provided under the following license:
 
 Copyright (c) 2011-2013, Tony Million.
 All rights reserved.

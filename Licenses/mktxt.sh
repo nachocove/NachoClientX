@@ -3,17 +3,18 @@
 LIST="MimeKit \
     WbXML \
     bc-csharp \
-    iCarousel \
     Antlr \
     DDay.iCal \
     DnDns \
-    Facebook \
     Hockeyapp \
     JSON.Net \
-    MCSwipeTableViewCell \
-    Parse \
+    ModernHttpClient \
+    MobileHtmlAgilityPack \
+    lucene.net \
+    okhttp \
     Reachability \
     SFHFKeychainUtils \
+    SwipeView \
     TTTAttributedLabel \
     UIImageEffects \
     protobuf-c \

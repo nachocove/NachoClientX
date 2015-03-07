@@ -370,6 +370,8 @@
     <Compile Include="NachoCore\Adapters\NachoThreadedEmailMessages.cs" />
     <Compile Include="NachoCore\Adapters\NachoMessageSearchResults.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration7.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration6.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration8.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

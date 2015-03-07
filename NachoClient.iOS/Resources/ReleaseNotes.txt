@@ -1,9 +1,11 @@
-﻿This release adds the following features:
-  Threading Support
-  Message Search
+﻿This release requires a fresh install of the app. Please delete your old app prior to installing. We found an issue as we moved from 32-bit support to full 32 and 64 bit support which requires a re-install.
 
-Additionally, this release addresses an issue with the last release in which certain Exchange servers would not recognize the device, because the migration of 64-bit support was incorrectly configured.
+This version has improved threading and search.
 
-Contact search is faster.
-Many user issues in calendaring addressed.
-Font size issues in certain message replies is fixed.
+Known issues:
+
+Threading support does not currently work for Google Apps users. This is a known issue and will be fixed in next release.
+
+Recurring meetings cannot be created in Nacho Mail at this time.
+
+Canceling a single instance of a recurring meeting is not working at this time.

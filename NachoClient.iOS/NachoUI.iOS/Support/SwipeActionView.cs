@@ -61,6 +61,7 @@ namespace NachoClient.iOS
             BackgroundColor = Config.Color;
             Enabled = true;
             UserInteractionEnabled = true;
+            AccessibilityLabel = Config.Text;
 
             if (null != Config.Image) {
                 UIImage image = Config.Image;

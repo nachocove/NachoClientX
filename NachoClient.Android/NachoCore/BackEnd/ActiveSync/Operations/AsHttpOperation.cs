@@ -79,7 +79,7 @@ namespace NachoCore.ActiveSync
         private const string KDefaultTimeoutExpander = "1.2";
         private const int KDefaultRetries = 8;
         private const int KConsec401ThenReDisc = 5;
-        private const string KToXML = "ToXML";
+        private const string KLoadBytes = "LoadBytes";
         private string CommandName;
 
         // HttpClient factory stuff.
@@ -160,7 +160,7 @@ namespace NachoCore.ActiveSync
 
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
-            NcCapture.AddKind (KToXML);
+            NcCapture.AddKind (KLoadBytes);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
             int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", 
@@ -393,6 +393,7 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
+                    Log.Info (Log.LOG_HTTP, "CreateHttpRequest: create stream (#1313)");
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
                     Log.Info (Log.LOG_HTTP, "CreateHttpRequest: stream created (#1313)");
                     var content = new StreamContent (stream);
@@ -602,7 +603,13 @@ namespace NachoCore.ActiveSync
                                     }
                                 },
                                              cToken, 180 * 1000, System.Threading.Timeout.Infinite);
+                            var capture = NcCapture.Create (KLoadBytes);
+                            capture.Start ();
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
+                            capture.Stop ();
+                            if (5000 > capture.ElapsedMilliseconds) {
+                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0}ms", capture.ElapsedMilliseconds);
+                            }
                             diaper.Dispose ();
                             if (isWedged) {
                                 // If not cancelled, we've already done the right thing and sent a timeout event.

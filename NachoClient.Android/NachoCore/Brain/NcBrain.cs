@@ -223,7 +223,7 @@ namespace NachoCore.Brain
             List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
             Dictionary<int, Index.NcIndex> indexes = new Dictionary<int, Index.NcIndex> ();
             foreach (var emailMessage in emailMessages) {
-                if (EventQueue.Token.IsCancellationRequested) {
+                if (EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired) {
                     break;
                 }
 
@@ -344,8 +344,14 @@ namespace NachoCore.Brain
                 num_entries -= AnalyzeEmails (num_entries);
                 num_entries -= GleanContacts (num_entries);
                 num_entries -= UpdateEmailAddressScores (num_entries);
+                // We need to index email message before updating the score because score update
+                // always leads to hot view to flap the abatement signal and we never
+                // get to index any message. What we do is to split the remaining allowed
+                // entries into two halves. 1st half goes to indexing and the leftover goes to
+                // score update.
+                num_entries -= IndexEmailMessages (Math.Min (1, num_entries / 2));
+                // This must be the last action. See comment above.
                 num_entries -= UpdateEmailMessageScores (num_entries);
-                num_entries -= IndexEmailMessages (num_entries);
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
@@ -424,7 +430,6 @@ namespace NachoCore.Brain
                         }
                     }
                     if (ENABLED) {
-                        NcApplication.Instance.UnmarkStartup ();
                         ProcessEvent (brainEvent);
                     }
                 }

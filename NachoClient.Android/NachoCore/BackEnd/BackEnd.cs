@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -74,7 +75,7 @@ namespace NachoCore
             NcAssert.True (0 != accountId, "0 != accountId");
             ProtoControl protoCtrl;
             if (!Services.TryGetValue (accountId, out protoCtrl)) {
-                Log.Error (Log.LOG_SYS, "ServiceFromAccountId called with bad accountId {0}", accountId);
+                Log.Error (Log.LOG_SYS, "ServiceFromAccountId called with bad accountId {0} @ {1}", accountId, new StackTrace ());
                 return NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist);
             }
             return func (protoCtrl);
@@ -153,9 +154,10 @@ namespace NachoCore
                 NcAssert.True (false);
                 break;
             }
+            Log.Info (Log.LOG_LIFECYCLE, "EstablishService {0}", accountId);
             if (!Services.TryAdd (accountId, service)) {
                 // Concurrency. Another thread has jumped in and done the add.
-                Log.Info (Log.LOG_SYS, "Another thread has already called EstablishService for Account.Id {0}", accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "Another thread has already called EstablishService for Account.Id {0}", accountId);
             }
         }
 
@@ -165,6 +167,7 @@ namespace NachoCore
             ProtoControl service = null;
             if (Services.TryGetValue (accountId, out service)) {
                 service.Remove ();
+                Log.Info (Log.LOG_LIFECYCLE, "RemoveService {0}", accountId);
                 if (!Services.TryRemove (accountId, out service)) {
                     Log.Error (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not remove service.", accountId);
                 }

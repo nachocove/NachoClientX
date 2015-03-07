@@ -19,6 +19,8 @@ namespace NachoCore.Model
 
         public bool WasMoveDest { get; set; }
 
+        public bool IsFolder { get; set; }
+
         public McPath ()
         {
         }
@@ -94,19 +96,20 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            var subs = QueryByParentId (AccountId, ServerId);
+            var subs = QueryByParentId (AccountId, ServerId, true);
             Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0}", ServerId);
             foreach (var sub in subs) {
                 Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0} (subordinate)", sub.ServerId);
                 sub.Delete ();
             }
+            DeleteNonFolderByParentId (AccountId, ServerId);
             return base.Delete ();
         }
 
-        public static IEnumerable<McPath> QueryByParentId (int accountId, string parentId)
+        public static IEnumerable<McPath> QueryByParentId (int accountId, string parentId, bool isFolder)
         {
             return NcModel.Instance.Db.Table<McPath> ().Where (pe =>
-                pe.ParentId == parentId && pe.AccountId == accountId);
+                pe.ParentId == parentId && pe.AccountId == accountId && pe.IsFolder == isFolder);
         }
 
         public static McPath QueryByServerId (int accountId, string serverId)
@@ -129,6 +132,15 @@ namespace NachoCore.Model
                 }
             }
             return paths.First ();
+        }
+
+        public static void DeleteNonFolderByParentId (int accountId, string parentId)
+        {
+            NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
+                "DELETE FROM McPath WHERE " +
+                "AccountId = ? AND " +
+                "ParentId = ? AND " +
+                "IsFolder = 0 ", accountId, parentId);
         }
     }
 }
