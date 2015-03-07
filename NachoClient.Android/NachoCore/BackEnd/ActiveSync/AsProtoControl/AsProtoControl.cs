@@ -1293,7 +1293,7 @@ namespace NachoCore.ActiveSync
         private void ExecuteCmd ()
         {
             if (null != PushAssist) {
-                PushAssist.HoldOff ();
+                PushAssist.Defer ();
             }
             Cmd.Execute (Sm);
         }

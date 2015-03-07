@@ -33,6 +33,9 @@ namespace NachoCore
     public class PushAssist : IDisposable
     {
         public static Type HttpClientType = typeof(MockableHttpClient);
+        public static int IncrementalDelayMsec = 500;
+        public static int MinDelayMsec = 5000;
+        public static int MaxDelayMsec = 15000;
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
@@ -42,6 +45,7 @@ namespace NachoCore
         private bool IsDisposed;
         private string ClientContext;
         protected string SessionToken;
+        protected int NumRetries;
 
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
@@ -76,6 +80,14 @@ namespace NachoCore
             }
         }
 
+        protected int RetryDelayMsec {
+            get {
+                // Linear backoff with clipping
+                int delay = (MinDelayMsec + (NumRetries * IncrementalDelayMsec));
+                return (MaxDelayMsec > delay ? delay : MaxDelayMsec);
+            }
+        }
+
         public enum Lst : uint
         {
             // We start out waiting for the device token from iOS (app registration process).
@@ -102,7 +114,7 @@ namespace NachoCore
                 // The client token has disappeared.
                 CliTokLoss,
                 // The protocol controller wants us to hold-off the pinger.
-                HoldOff,
+                Defer,
                 // The protocol controller wants us to cancel pinger service and chill.
                 Park,
             };
@@ -192,7 +204,7 @@ namespace NachoCore
                             (uint)PAEvt.E.DevTokLoss,
                             (uint)PAEvt.E.CliTok,
                             (uint)PAEvt.E.CliTokLoss,
-                            (uint)PAEvt.E.HoldOff,
+                            (uint)PAEvt.E.Defer,
                             (uint)PAEvt.E.Park,
                         },
                         Invalid = new [] {
@@ -209,7 +221,7 @@ namespace NachoCore
                         Drop = new [] {
                             (uint)PAEvt.E.CliTok,
                             (uint)PAEvt.E.CliTokLoss,
-                            (uint)PAEvt.E.HoldOff,
+                            (uint)PAEvt.E.Defer,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -231,7 +243,7 @@ namespace NachoCore
                         State = (uint)Lst.CliTokW,
                         Drop = new [] {
                             (uint)PAEvt.E.DevTok,
-                            (uint)PAEvt.E.HoldOff,
+                            (uint)PAEvt.E.Defer,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -245,13 +257,17 @@ namespace NachoCore
                                 Act = DoGetDevTok,
                                 State = (uint)Lst.DevTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.CliTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTok,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans {
                                 Event = (uint)PAEvt.E.CliTokLoss,
                                 Act = DoGetCliTok,
                                 State = (uint)Lst.CliTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -259,13 +275,25 @@ namespace NachoCore
                         Drop = new [] {
                             (uint)PAEvt.E.DevTok,
                             (uint)PAEvt.E.CliTok,
-                            (uint)PAEvt.E.HoldOff,
+                            (uint)PAEvt.E.Defer,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetSess, State = (uint)Lst.SessTokW },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Active },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetSess, State = (uint)Lst.SessTokW },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoGetSess, State = (uint)Lst.SessTokW },
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans {
                                 Event = (uint)PAEvt.E.DevTokLoss,
                                 Act = DoGetDevTok,
@@ -276,7 +304,7 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)Lst.CliTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -288,20 +316,28 @@ namespace NachoCore
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
-                            new Trans { Event = (uint)PAEvt.E.DevTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTok,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans {
                                 Event = (uint)PAEvt.E.DevTokLoss,
                                 Act = DoGetDevTok,
                                 State = (uint)Lst.DevTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.CliTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTok,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans {
                                 Event = (uint)PAEvt.E.CliTokLoss,
                                 Act = DoGetCliTok,
                                 State = (uint)Lst.CliTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.HoldOff, Act = DoHoldOff, State = (uint)Lst.Active },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Defer, Act = DoDeferSession, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
                         }
                     },
                 }
@@ -335,26 +371,58 @@ namespace NachoCore
             }
         }
 
+        // PUBLIC API SECTION
+        //
+        // Three public API:
+        // 1. Execute - Start advancing the statet machine.
+        // 2. Defer - Temporarily stop pigner from pinging. The client should only call this when it is pinging
+        // 3. Stop - Stop pinger from pinging permanently.
         public void Execute ()
         {
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "PAEXE");
+            PostEvent (SmEvt.E.Launch, "PAEXE");
         }
 
-        public void HoldOff ()
+        public void Defer ()
         {
-            Sm.PostEvent ((uint)PAEvt.E.HoldOff, "PAHO");
+            PostEvent (PAEvt.E.Defer, "PAHO");
         }
 
         public void Stop ()
         {
-            Sm.PostEvent ((uint)PAEvt.E.Park, "PAPARK");
+            PostEvent (PAEvt.E.Park, "PAPARK");
+        }
+
+        // ACTION FUNCTIONS
+        private void PostEvent (SmEvt.E evt, string mnemonic)
+        {
+            Sm.PostEvent ((uint)evt, mnemonic);
+        }
+
+        private void PostEvent (PAEvt.E evt, string mnemoic)
+        {
+            Sm.PostEvent ((uint)evt, mnemoic);
+        }
+
+        private void PostSuccess (string mnemonic)
+        {
+            PostEvent (SmEvt.E.Success, mnemonic);
+        }
+
+        private void PostTempFail (string mnemonic)
+        {
+            PostEvent (SmEvt.E.TempFail, mnemonic);
+        }
+
+        private void PostHardFail (string mnemonic)
+        {
+            PostEvent (SmEvt.E.HardFail, mnemonic);
         }
 
         private void DoNop ()
         {
         }
 
-        private async void DoCancel ()
+        private async void DoStopSession ()
         {
             // FIXME Cancel any outstanding http request. This is tricky, given concurrency.
             // Only one SM action can execute at a time, but there is a Q in front of the SM.
@@ -363,9 +431,9 @@ namespace NachoCore
                 String.IsNullOrEmpty (ClientContext) ||
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
-                    "DoCancel: missing required parameters (clientId={0}, clientContext={1}, token={2})",
+                    "DoStopSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
                     clientId, ClientContext, SessionToken);
-                Sm.PostEvent ((uint)SmEvt.E.HardFail, "PAPARAMERROR");
+                PostHardFail ("PA_PARAM_ERROR");
             }
             var jsonRequest = new StopSessionRequest () {
                 ClientId = NcApplication.Instance.ClientId,
@@ -378,20 +446,23 @@ namespace NachoCore
                 var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoCancel: HTTP failure (statusCode={0}, content={1})",
+                    Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0}, content={1})",
                         httpResponse.StatusCode, httpResponse.Content);
+                    NumRetries++;
+                    PostTempFail ("HTTP_FAIL");
                     return;
                 }
 
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOk ()) {
-                    Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                    NumRetries++;
+                    PostTempFail ("STOP_FAIL");
                 }
             } catch (OperationCanceledException) {
                 throw;
             } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "DoCancel: Caught push assist http exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught push assist http exception - {0}", e);
             }
         }
 
@@ -399,7 +470,7 @@ namespace NachoCore
         {
             var devTok = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
             if (null != devTok) {
-                Sm.PostEvent ((uint)PAEvt.E.DevTok, "DEVTOKFOUND");
+                PostEvent (PAEvt.E.DevTok, "DEV_TOK_FOUND");
             }
         }
 
@@ -407,7 +478,8 @@ namespace NachoCore
         {
             var clientId = NcApplication.Instance.ClientId;
             if (null != clientId) {
-                Sm.PostEvent ((uint)PAEvt.E.CliTok, "GOTCLITOK");
+                NumRetries = 0;
+                PostEvent (PAEvt.E.CliTok, "GOT_CLI_TOK");
             }
         }
 
@@ -461,17 +533,18 @@ namespace NachoCore
             }
         }
 
-        private async void DoGetSess ()
+        private async void DoStartSession ()
         {
             var clientId = NcApplication.Instance.ClientId;
             if (null == clientId) {
-                Sm.PostEvent ((uint)PAEvt.E.CliTokLoss, "DOSESSCTL");
+                PostEvent (PAEvt.E.CliTokLoss, "DOSESSCTL");
                 return;
             }
             var cred = McCred.QueryByAccountId<McCred> (AccountId).FirstOrDefault ();
             if (null == cred) {
                 // Yes, the SM is SOL at this point.
-                Log.Error (Log.LOG_PUSH, "DoGetSess: No McCred for accountId {0}", AccountId);
+                Log.Error (Log.LOG_PUSH, "DoStartSession: No McCred for accountId {0}", AccountId);
+                PostHardFail ("PARAM_ERROR");
                 return;
             }
             var parameters = Owner.PushAssistParameters ();
@@ -513,26 +586,29 @@ namespace NachoCore
                 var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoGetSess: HTTP failure (statusCode={0}, content={1})",
+                    Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}, content={1})",
                         httpResponse.StatusCode, httpResponse.Content);
+                    NumRetries++;
+                    PostTempFail ("HTTP_ERROR");
                     return;
                 }
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                 var response = ParsePingerResponse (jsonResponse);
-                if (!response.IsOkOrWarn ()) {
-                    Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
+                    NumRetries++;
+                    PostTempFail ("START_SESS_FAIL");
                 } else {
                     SessionToken = response.Token;
-                    Sm.PostEvent ((uint)SmEvt.E.Success, "GETSESSOK");
+                    PostSuccess ("START_SESS_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
             } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "DoGetSess: Caught push assist http exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught push assist http exception - {0}", e);
             }
         }
 
-        private async void DoHoldOff ()
+        private async void DoDeferSession ()
         {
             var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
@@ -540,9 +616,9 @@ namespace NachoCore
                 String.IsNullOrEmpty (ClientContext) ||
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
-                    "DoHoldOff: missing required parameters (clientId={0}, clientContext={1}, token={2})",
+                    "DoDeferSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
                     clientId, ClientContext, SessionToken);
-                Sm.PostEvent ((uint)SmEvt.E.HardFail, "PAPARAMERROR");
+                PostHardFail ("PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
                 ClientId = clientId,
@@ -556,20 +632,25 @@ namespace NachoCore
                 var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoHoldOff: HTTP failure (statusCode={0}, content={1})",
+                    Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0}, content={1})",
                         httpResponse.StatusCode, httpResponse.Content);
+                    NumRetries++;
+                    PostTempFail ("HTTP_ERROR");
                     return;
                 }
 
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOk ()) {
-                    Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                    NumRetries++;
+                    PostTempFail ("STOP_FAIL");
+                } else {
+                    PostSuccess ("STOP_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
             } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "DoHoldOff: Caught push assist http exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught push assist http exception - {0}", e);
             }
         }
 
@@ -589,7 +670,7 @@ namespace NachoCore
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
                 {
                     if (null == siea.Status.Value) {
-                        Sm.PostEvent ((uint)PAEvt.E.CliTokLoss, "CLITOKLOST");
+                        PostEvent (PAEvt.E.CliTokLoss, "CLITOKLOST");
                     } else {
                         DoGetCliTok ();
                     }
@@ -603,7 +684,7 @@ namespace NachoCore
         {
             var b64tok = Convert.ToBase64String (deviceToken);
             McMutables.Set (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken, b64tok);
-            Sm.PostEvent ((uint)PAEvt.E.DevTok, "DEVTOKSET");
+            PostEvent (PAEvt.E.DevTok, "DEVTOKSET");
         }
 
         // This API is called by platform code to clear the APNS/GCD device token.
@@ -612,7 +693,7 @@ namespace NachoCore
             // Because we aren't interlocking the DB delete and the SM event, all code
             // must check device token before using it.
             McMutables.Delete (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
-            Sm.PostEvent ((uint)PAEvt.E.DevTokLoss, "DEVTOKLOSS");
+            PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
         }
 
 
@@ -631,6 +712,8 @@ namespace NachoCore
 
         protected async Task<HttpResponseMessage> DoHttpRequest (string url, object jsonRequest, CancellationToken cToken)
         {
+            await Task.Delay (new TimeSpan (0, 0, 0, 0, RetryDelayMsec), cToken).ConfigureAwait (false);
+
             if (String.IsNullOrEmpty (url)) {
                 Log.Error (Log.LOG_PUSH, "null URL");
                 return null;
@@ -657,12 +740,17 @@ namespace NachoCore
                 .ConfigureAwait (false);
             Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
                 await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
+
+            // On any successful call to pinger. Clear the retry count
+            if (HttpStatusCode.OK == response.StatusCode) {
+                NumRetries = 0;
+            }
             return response;
         }
 
         private void DeviceTokenLost ()
         {
-            Sm.PostEvent ((uint)PAEvt.E.DevTokLoss, "DEVTOKLOSS");
+            PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
         }
     }
 }

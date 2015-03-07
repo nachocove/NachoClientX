@@ -237,38 +237,54 @@ namespace Test.Common
             return content;
         }
 
-        private HttpResponseMessage StartSessionOkResponse (HttpRequestMessage httpRequest)
+        private HttpResponseMessage PingerResponse (HttpRequestMessage httpRequest, string status, string message, string token = null)
         {
             var httpResponse = new HttpResponseMessage ();
             httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
 
             var jsonResponse = new PingerResponse () {
-                Status = "OK",
-                Message = "",
-                Token = SessionToken,
+                Status = status,
+                Message = message,
+                Token = token,
             };
             httpResponse.Content = EncodeJsonResponse (jsonResponse);
 
             return httpResponse;
+        }
+
+        private HttpResponseMessage StartSessionOkResponse (HttpRequestMessage httpRequest)
+        {
+            return PingerResponse (httpRequest, "OK", "", SessionToken);
+        }
+
+        private HttpResponseMessage StartSessionWarnResponse (HttpRequestMessage httpRequest)
+        {
+            return PingerResponse (httpRequest, "WARN", "Something is not right", SessionToken);
+        }
+
+        private HttpResponseMessage StartSessionErrorResponse (HttpRequestMessage httpRequest)
+        {
+            return PingerResponse (httpRequest, "ERROR", "Oh crap!");
         }
 
         private HttpResponseMessage DeferSessionOkResponse (HttpRequestMessage httpRequest)
         {
-            var httpResponse = new HttpResponseMessage ();
-            httpResponse.StatusCode = System.Net.HttpStatusCode.OK;
+            return PingerResponse (httpRequest, "OK", "");
+        }
 
-            var jsonResponse = new PingerResponse () {
-                Status = "OK",
-                Message = "",
-            };
-            httpResponse.Content = EncodeJsonResponse (jsonResponse);
+        private HttpResponseMessage DeferSessionWarnResponse (HttpRequestMessage httpRequest)
+        {
+            return PingerResponse (httpRequest, "WARN", "Something is not right");
+        }
 
-            return httpResponse;
+        private HttpResponseMessage DeferSessionErrorResponse (HttpRequestMessage httpRequest)
+        {
+            return PingerResponse (httpRequest, "ERROR", "Oh crap!");
         }
 
         private HttpResponseMessage StopSessionOkResponse (HttpRequestMessage httpRequest)
         {
-            return DeferSessionOkResponse (httpRequest);
+            return PingerResponse (httpRequest, "OK", "");
         }
 
         // Start -> DevTokW -> CliTokW -> SessTokW -> Active
@@ -296,7 +312,7 @@ namespace Test.Common
             // [defer] -> Active
             MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = DeferSessionOkResponse;
-            Wpa.HoldOff ();
+            Wpa.Defer ();
             WaitForState ((uint)PushAssist.Lst.Active);
 
             // [stop] -> Start
@@ -325,10 +341,52 @@ namespace Test.Common
             // -> Active
             MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = DeferSessionOkResponse;
-            Wpa.HoldOff ();
+            Wpa.Defer ();
             WaitForState ((uint)PushAssist.Lst.Active);
 
             // -> Start
+            MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
+            Wpa.Stop ();
+            WaitForState ((uint)St.Start);
+        }
+
+        [Test]
+        public void StartSessionWithWarning ()
+        {
+            MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = StartSessionWarnResponse;
+            Wpa.SetDeviceToken (DeviceToken);
+            NcApplication.Instance.ClientId = ClientToken;
+
+            WaitForState ((uint)St.Start);
+            Wpa.Execute ();
+
+            WaitForState ((uint)PushAssist.Lst.Active);
+        }
+
+        [Test]
+        public void StartSessionWithError ()
+        {
+            MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
+            PushAssist.MinDelayMsec = 100;
+            PushAssist.MaxDelayMsec = 100;
+            int numErrors = 0;
+            MockHttpClient.ProvideHttpResponseMessage = (request) => {
+                numErrors++;
+                if (3 > numErrors) {
+                    return StartSessionErrorResponse (request);
+                }
+                return StartSessionOkResponse (request);
+            };
+            Wpa.SetDeviceToken (DeviceToken);
+            NcApplication.Instance.ClientId = ClientToken;
+
+            WaitForState ((uint)St.Start);
+            Wpa.Execute ();
+            WaitForState ((uint)PushAssist.Lst.Active);
+            Assert.AreEqual (3, numErrors);
+
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
             Wpa.Stop ();
