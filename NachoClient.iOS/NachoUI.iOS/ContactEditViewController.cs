@@ -748,6 +748,7 @@ namespace NachoClient.iOS
         {
             contactCopy = new McContact ();
             contactCopy.AccountId = contact.AccountId;
+            contactCopy.Source = contact.Source;
             contactCopy.Insert ();
             ContactsHelper.CopyContact (contact, ref contactCopy);
             contactCopy.Update ();
@@ -2007,7 +2008,7 @@ namespace NachoClient.iOS
                     this.dateLabel.TextColor = A.Color_NachoTeal;
                     LayoutView ();
                 } else {
-                    dateAttribute.Value = datePicker.Date.ToDateTime();
+                    dateAttribute.Value = datePicker.Date.ToDateTime ();
                     dateView.Hidden = true;
                     this.dateLabel.TextColor = A.Color_NachoGreen;
                     ConfigureView ();
@@ -2029,7 +2030,7 @@ namespace NachoClient.iOS
 
             protected void DateLabelClicked (object sender, EventArgs e)
             {
-                dateAttribute.Value = datePicker.Date.ToDateTime();
+                dateAttribute.Value = datePicker.Date.ToDateTime ();
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Date;
                 owner.editingDateCell = this;
