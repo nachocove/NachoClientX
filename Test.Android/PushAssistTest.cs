@@ -91,6 +91,12 @@ namespace Test.Common
             }
         }
 
+        public int EventQueueDepth {
+            get {
+                return Sm.EventQueueDepth ();
+            }
+        }
+
         public new string ProtocolToString (PushAssistProtocol protocol)
         {
             return base.ProtocolToString (protocol);
@@ -111,6 +117,8 @@ namespace Test.Common
 
         private MockPushAssistOwnwer Owner;
         private WrapPushAssist Wpa;
+        private int OriginalMinDelayMsec;
+        private int OriginalIncrementalDelayMsec;
 
         public _PushAssistTest ()
         {
@@ -144,19 +152,28 @@ namespace Test.Common
             PushAssist.HttpClientType = typeof(MockHttpClient);
             Wpa = new WrapPushAssist (Owner);
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
+
+            OriginalMinDelayMsec = PushAssist.MinDelayMsec;
+            OriginalIncrementalDelayMsec = PushAssist.IncrementalDelayMsec;
+            PushAssist.MinDelayMsec = 100;
+            PushAssist.IncrementalDelayMsec = 100;
         }
 
         [TearDown]
         public void Teardown ()
         {
+            Wpa.Dispose ();
+            Wpa = null;
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
             NcApplication.Instance.ClientId = null;
+            PushAssist.MinDelayMsec = OriginalMinDelayMsec;
+            PushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
         }
 
         private void WaitForState (uint expectedState)
         {
             DateTime now = DateTime.UtcNow;
-            while (expectedState != Wpa.State) {
+            while ((0 < Wpa.EventQueueDepth) && (expectedState != Wpa.State)) {
                 Thread.Sleep (100);
                 if (1000 < (DateTime.UtcNow - now).TotalMilliseconds) {
                     Assert.AreEqual (expectedState, Wpa.State);
@@ -384,6 +401,37 @@ namespace Test.Common
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
+            WaitForState ((uint)PushAssist.Lst.Active);
+            Assert.AreEqual (3, numErrors);
+
+            MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
+            Wpa.Stop ();
+            WaitForState ((uint)St.Start);
+        }
+
+        [Test]
+        public void DeferSessionWithError ()
+        {
+            MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
+            MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
+            Wpa.SetDeviceToken (DeviceToken);
+            NcApplication.Instance.ClientId = ClientToken;
+
+            WaitForState ((uint)St.Start);
+            Wpa.Execute ();
+            WaitForState ((uint)PushAssist.Lst.Active);
+
+            MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
+            int numErrors = 0;
+            MockHttpClient.ProvideHttpResponseMessage = (request) => {
+                numErrors++;
+                if (3 > numErrors) {
+                    return DeferSessionErrorResponse (request);
+                }
+                return DeferSessionOkResponse (request);
+            };
+            Wpa.Defer ();
             WaitForState ((uint)PushAssist.Lst.Active);
             Assert.AreEqual (3, numErrors);
 

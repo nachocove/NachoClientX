@@ -311,7 +311,6 @@ namespace NachoCore
                         State = (uint)Lst.Active,
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
@@ -337,6 +336,11 @@ namespace NachoCore
                                 State = (uint)Lst.CliTokW
                             },
                             new Trans { Event = (uint)PAEvt.E.Defer, Act = DoDeferSession, State = (uint)Lst.Active },
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = DoDeferSession,
+                                State = (uint)Lst.Active
+                            },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
                         }
                     },
@@ -643,9 +647,9 @@ namespace NachoCore
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOk ()) {
                     NumRetries++;
-                    PostTempFail ("STOP_FAIL");
+                    PostTempFail ("DEFER_FAIL");
                 } else {
-                    PostSuccess ("STOP_OK");
+                    PostSuccess ("DEFER_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
