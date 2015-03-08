@@ -738,7 +738,7 @@ namespace NachoCore.ActiveSync
                 // TODO: all this can be one SQL JOIN.
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
                 if (0 == folders.Count) {
-                    Log.Error (Log.LOG_AS, "Are we scoring emails that aren't in folders (e.g. to-be-sent)?");
+                    // This can happen - we score a message, and then it gets moved to a client-owned folder.
                     continue;
                 }
                 fetchBodies.Add (new FetchKit.FetchBody () {

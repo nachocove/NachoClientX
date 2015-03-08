@@ -251,7 +251,8 @@ namespace NachoCore.ActiveSync
             foreach (var xmlResult in xmlResults) {
                 var xmlProperties = xmlResult.ElementAnyNs (Xml.Search.Properties);
                 if (null == xmlProperties) {
-                    Log.Error (Log.LOG_AS, "Search result without Properties");
+                    // You can get success and an empty response.
+                    Log.Info (Log.LOG_AS, "Search result without Properties");
                 } else {
                     var xmlFrom = xmlProperties.ElementAnyNs (Xml.Email.From);
                     var xmlDateReceived = xmlProperties.ElementAnyNs (Xml.Email.DateReceived);
@@ -260,11 +261,12 @@ namespace NachoCore.ActiveSync
                     } else {
                         var dateRecv = AsHelpers.ParseAsDateTime (xmlDateReceived.Value);
                         var hopefullyOne = McEmailMessage.QueryByDateReceivedAndFrom (BEContext.Account.Id, dateRecv, xmlFrom.Value);
-                        if (1 != hopefullyOne.Count) {
-                            Log.Error (Log.LOG_AS, "Search result with != 1 match: {0}", hopefullyOne.Count);
-                        }
-                        if (0 < hopefullyOne.Count) {
+                        if (1 < hopefullyOne.Count) {
+                            Log.Warn (Log.LOG_AS, "Search result with > 1 match: {0}", hopefullyOne.Count);
+                        } else if (1 == hopefullyOne.Count) {
                             vector.Add (hopefullyOne.First ());
+                        } else {
+                            Log.Warn (Log.LOG_AS, "Search result not found in DB {0}", hopefullyOne.Count);
                         }
                     }
                 }
