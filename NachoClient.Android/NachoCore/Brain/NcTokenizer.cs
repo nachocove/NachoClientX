@@ -121,7 +121,8 @@ namespace NachoCore.Brain
                     return ProcessMixedMultipart (multipart);
                 } else {
                     // Unsupported multipart
-                    Log.Warn (Log.LOG_BRAIN, "unsupported multipart type {0}", multipart.ContentType.Name);
+                    Log.Warn (Log.LOG_BRAIN, "ProcessMimeEntity: unsupported multipart type {0}/{1}",
+                        multipart.ContentType.MediaType, multipart.ContentType.MediaSubtype);
                 }
                 return new List<TextPart> ();
             }
