@@ -193,6 +193,96 @@ namespace NachoCore.Model
             return ClassCodeEnum.NeverInFolder;
         }
 
+        // *******************************************************************************
+        // Generic routines that provide the algorithms for managing a collection of items
+        // that are ancillary to (a.k.a. children of) this item.  The pieces of code that
+        // depend on the specific type of the ancillary item are passed in as delegates.
+        // *******************************************************************************
+
+        protected delegate List<T> CollectionFromDbDelegate<T> ();
+
+        protected void ReadAncillaryCollection<T> (
+            ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null == dbCollection) {
+                if (0 == this.Id) {
+                    dbCollection = new List<T> ();
+                } else {
+                    dbCollection = CollectionFromDb ();
+                }
+            }
+        }
+
+        protected IList<T> GetAncillaryCollection<T> (
+            IList<T> appCollection, ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null != appCollection) {
+                return appCollection;
+            }
+            ReadAncillaryCollection (ref dbCollection, CollectionFromDb);
+            return dbCollection.AsReadOnly ();
+        }
+
+        protected void DeleteAncillaryCollection<T> (
+            ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb)
+            where T : McAbstrObjectPerAcc
+        {
+            ReadAncillaryCollection (ref dbCollection, CollectionFromDb);
+            foreach (var item in dbCollection) {
+                item.Delete ();
+            }
+            dbCollection = null;
+        }
+
+        protected delegate void InitializeItemDelegate<T> (T item);
+        protected delegate bool CheckItemDelegate<T> (T item);
+
+        protected void SaveAncillaryCollection<T> (
+            ref IList<T> appCollection, ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb, InitializeItemDelegate<T> InitializeItem, CheckItemDelegate<T> CheckItem)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null == appCollection) {
+                return;
+            }
+            ReadAncillaryCollection (ref dbCollection, CollectionFromDb);
+            HashSet<int> reusedItemIds = new HashSet<int> ();
+            foreach (var item in appCollection) {
+                if (0 == item.Id) {
+                    InitializeItem (item);
+                    item.Insert ();
+                } else {
+                    NcAssert.True (CheckItem (item), "An ancillary item is being transfered from one parent item to another.");
+                    item.Update ();
+                    reusedItemIds.Add (item.Id);
+                }
+            }
+            foreach (var dbItem in dbCollection) {
+                if (!reusedItemIds.Contains (dbItem.Id)) {
+                    dbItem.Delete ();
+                }
+            }
+            dbCollection = new List<T> (appCollection);
+            appCollection = null;
+        }
+
+        protected void InsertAncillaryCollection<T> (
+            ref IList<T> appCollection, ref List<T> dbCollection, InitializeItemDelegate<T> InitializeItem)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null == appCollection) {
+                dbCollection = new List<T> ();
+                return;
+            }
+            foreach (var item in appCollection) {
+                NcAssert.True (0 == item.Id);
+                InitializeItem (item);
+                item.Insert ();
+            }
+            dbCollection = new List<T> (appCollection);
+            appCollection = null;
+        }
     }
 }
 

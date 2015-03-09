@@ -54,13 +54,9 @@ namespace NachoCore.Model
 
         protected bool HasReadAncillaryData;
 
-        [Ignore]
-        private List<McRecurrence> DbRecurrences { get; set; }
-
         public McMeetingRequest () : base ()
         {
             HasReadAncillaryData = false;
-            DbRecurrences = new List<McRecurrence> ();
         }
 
         public NcInstanceType InstanceType { get; set; }
@@ -73,16 +69,48 @@ namespace NachoCore.Model
 
         public NcMeetingMessageType MeetingMessageType { get; set; }
 
+        // Recurrences that are stored in the database.
+        private List<McRecurrence> dbRecurrences = null;
+        // Recurrences that were set by the app, either the UI or sync.  They don't get saved to the database
+        // until Insert() or Update() is called.
+        private IList<McRecurrence> appRecurrences = null;
+
         [Ignore]
-        public List<McRecurrence> recurrences {
+        public IList<McRecurrence> recurrences {
             get {
-                ReadAncillaryData ();
-                return DbRecurrences;
+                return GetAncillaryCollection (appRecurrences, ref dbRecurrences, ReadDbRecurrences);
             }
             set {
-                ReadAncillaryData ();
-                DbRecurrences = value;
+                NcAssert.NotNull (value, "To clear the recurrences, use an empty list instead of null");
+                appRecurrences = value;
             }
+        }
+
+        private List<McRecurrence> ReadDbRecurrences ()
+        {
+            return NcModel.Instance.Db.Table<McRecurrence> ()
+                .Where (x => x.MeetingRequestId == this.Id).ToList ();
+        }
+
+        private void DeleteDbRecurrences ()
+        {
+            DeleteAncillaryCollection (ref dbRecurrences, ReadDbRecurrences);
+        }
+
+        private void SaveRecurrences ()
+        {
+            SaveAncillaryCollection (ref appRecurrences, ref dbRecurrences, ReadDbRecurrences, (McRecurrence recurrence) => {
+                recurrence.MeetingRequestId = this.Id;
+            }, (McRecurrence recurrence) => {
+                return recurrence.MeetingRequestId == this.Id;
+            });
+        }
+
+        private void InsertRecurrences ()
+        {
+            InsertAncillaryCollection (ref appRecurrences, ref dbRecurrences, (McRecurrence recurrence) => {
+                recurrence.MeetingRequestId = this.Id;
+            });
         }
 
         /// <summary>
@@ -135,66 +163,28 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            // FIXME db transaction.
-            int retval = base.Insert ();
-            InsertAncillaryData ();
+            int retval = -1;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Insert ();
+                InsertRecurrences ();
+            });
             return retval;
-        }
-
-        private NcResult InsertAncillaryData ()
-        {
-            foreach (var r in recurrences) {
-                r.Id = 0;
-                r.MeetingRequestId = this.Id;
-                r.Insert ();
-            }
-            return NcResult.OK ();
         }
 
         public override int Update ()
         {
-            // FIXME db transaction
-            int retval = base.Update ();
-            UpdateAncillaryData (NcModel.Instance.Db);
+            int retval = -1;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Update ();
+                SaveRecurrences ();
+            });
             return retval;
-        }
-
-        public void UpdateAncillaryData (SQLiteConnection db)
-        {
-            ReadAncillaryData ();
-            DeleteAncillaryDataFromDB (db);
-            InsertAncillaryData ();
-        }
-
-        private NcResult ReadAncillaryData ()
-        {
-            if (HasReadAncillaryData) {
-                return NcResult.OK ();
-            }
-            if (0 == Id) {
-                HasReadAncillaryData = true;
-                return NcResult.OK ();
-            }
-            DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.MeetingRequestId == Id).ToList ();
-            HasReadAncillaryData = true;
-            return NcResult.OK ();
         }
 
         public override void DeleteAncillary ()
         {
-            NcAssert.True (NcModel.Instance.IsInTransaction ());
             base.DeleteAncillary ();
-            DeleteAncillaryDataFromDB (NcModel.Instance.Db);
-        }
-
-        private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
-        {
-            NcAssert.True (0 != Id);
-            var recurrences = db.Table<McRecurrence> ().Where (x => x.MeetingRequestId == Id).ToList ();
-            foreach (var r in recurrences) {
-                r.Delete ();
-            }
-            return NcResult.OK ();
+            DeleteDbRecurrences ();
         }
     }
 }

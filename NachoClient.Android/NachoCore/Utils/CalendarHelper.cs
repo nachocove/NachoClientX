@@ -1014,7 +1014,7 @@ namespace NachoCore.Utils
 
                         // Delete any existing events that are later than calendarItem.RecurrencesGeneratedUntil.
                         // These events can exist for two reasons: (1) The app was killed while generating events
-                        // for this item. (2) The calendar item as edited and it RecurrencesGeneratedUntil was
+                        // for this item. (2) The calendar item was edited and its RecurrencesGeneratedUntil was
                         // reset.
                         foreach (var evt in McEvent.QueryEventsForCalendarItemAfter (calendarItem.Id, calendarItem.RecurrencesGeneratedUntil)) {
                             evt.Delete ();

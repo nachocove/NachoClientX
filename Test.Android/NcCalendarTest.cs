@@ -556,11 +556,9 @@ namespace Test.Common
                     ExceptionStartTime = new DateTime (2011, 3, 18),
                 });
                 c.exceptions = exceptions;
-                // Not in db; exceptions are not ancillary
             }
 
             c.Insert ();
-            c.SaveExceptions (c.exceptions);
             var e = McCalendar.QueryById<McCalendar> (c.Id);
 
             if (type.Equals ("attendees")) {
@@ -672,7 +670,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("recurs");
 
-            var recurrences = c.recurrences;
+            var recurrences = new List<McRecurrence> (c.recurrences);
             recurrences.Add (new McRecurrence (1));
             c.recurrences = recurrences;
             c.Update ();
@@ -686,7 +684,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("recurs");
 
-            var recurrences = c.recurrences;
+            var recurrences = new List<McRecurrence> (c.recurrences);
             recurrences.RemoveAt (0);
             c.recurrences = recurrences;
             c.Update ();
@@ -700,8 +698,6 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("recurs");
 
-            var recurrences = c.recurrences;
-            recurrences.RemoveAt (0);
             c.recurrences = new List<McRecurrence> ();
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -709,24 +705,15 @@ namespace Test.Common
             Assert.AreEqual (0, f.recurrences.Count);
         }
 
-        protected void ClearExceptionList (List<McException> list)
-        {
-            foreach (var e in list) {
-                e.Id = 0;
-            }
-        }
-
         [Test]
         public void CreateNcCalendarExceptionAdd ()
         {
             var c = InsertSimpleEvent ("exceptions");
 
-            var exceptions = c.exceptions;
+            var exceptions = new List<McException> (c.exceptions);
             exceptions.Add (new McException () { AccountId = c.AccountId });
+            c.exceptions = exceptions;
             c.Update ();
-            c.DeleteRelatedExceptions ();
-            ClearExceptionList (exceptions);
-            c.SaveExceptions (exceptions);
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (3, c.exceptions.Count);
             f.exceptions = f.QueryRelatedExceptions ();
@@ -738,13 +725,10 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("exceptions");
 
-            var exceptions = c.exceptions;
+            var exceptions = new List<McException> (c.exceptions);
             exceptions.RemoveAt (0);
             c.exceptions = exceptions;
             c.Update ();
-            c.DeleteRelatedExceptions ();
-            ClearExceptionList (exceptions);
-            c.SaveExceptions (exceptions);
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (1, c.exceptions.Count);
             f.exceptions = f.QueryRelatedExceptions ();
@@ -756,12 +740,8 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("exceptions");
 
-            var exceptions = c.exceptions;
-            exceptions.RemoveAt (0);
             c.exceptions = new List<McException> ();
             c.Update ();
-            c.DeleteRelatedExceptions ();
-            c.SaveExceptions (c.exceptions);
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (0, c.exceptions.Count);
             f.exceptions = f.QueryRelatedExceptions ();

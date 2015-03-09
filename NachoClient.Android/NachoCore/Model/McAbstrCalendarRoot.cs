@@ -92,17 +92,10 @@ namespace NachoCore.Model
         // until Insert() or Update() is called.
         private IList<McAttendee> appAttendees = null;
 
-        /// <summary>
-        /// The attendees for the meeting.  The collection that is returned by the getter is read-only.
-        /// </summary>
         [Ignore]
         public IList<McAttendee> attendees {
             get {
-                if (null != appAttendees) {
-                    return appAttendees;
-                }
-                ReadDbAttendees ();
-                return dbAttendees.AsReadOnly ();
+                return GetAncillaryCollection (appAttendees, ref dbAttendees, ReadDbAttendees);
             }
             set {
                 NcAssert.NotNull (value, "To clear the attendees, use an empty list instead of null.");
@@ -110,65 +103,33 @@ namespace NachoCore.Model
             }
         }
 
-        /// <summary>
-        /// Load this meeting's attendees from the database.
-        /// </summary>
-        private void ReadDbAttendees ()
+        private List<McAttendee> ReadDbAttendees ()
         {
-            if (null == dbAttendees) {
-                if (0 == this.Id) {
-                    dbAttendees = new List<McAttendee> ();
-                } else {
-                    var attendeeParentType = McAttendee.GetParentType (this);
-                    dbAttendees = NcModel.Instance.Db.Table<McAttendee> ()
-                        .Where (x => x.ParentId == Id && x.ParentType == attendeeParentType).ToList ();
-                }
-            }
+            var attendeeParentType = McAttendee.GetParentType (this);
+            return NcModel.Instance.Db.Table<McAttendee> ()
+                .Where (x => x.ParentId == this.Id && x.ParentType == attendeeParentType).ToList ();
         }
 
-        /// <summary>
-        /// Delete this meeting's attendees from the database.
-        /// </summary>
         private void DeleteDbAttendees ()
         {
-            ReadDbAttendees ();
-            foreach (var attendee in dbAttendees) {
-                attendee.Delete ();
-            }
-            dbAttendees = null;
+            DeleteAncillaryCollection (ref dbAttendees, ReadDbAttendees);
         }
 
-        /// <summary>
-        /// Save this meeting's attendees to the database.
-        /// </summary>
         private void SaveAttendees ()
         {
-            if (null == appAttendees) {
-                return;
-            }
-            ReadDbAttendees ();
-            HashSet<int> reusedAttendeeIds = new HashSet<int> ();
             var attendeeParentType = McAttendee.GetParentType (this);
-            foreach (var attendee in appAttendees) {
-                if (0 == attendee.Id) {
-                    attendee.SetParent (this);
-                    attendee.Insert ();
-                } else {
-                    NcAssert.True (attendee.ParentId == this.Id && attendee.ParentType == attendeeParentType,
-                        "An attendee from one calendar item has been added to a different calendar item.");
-                    attendee.Update ();
-                    reusedAttendeeIds.Add (attendee.Id);
-                }
-            }
-            foreach (var dbAttendee in dbAttendees) {
-                if (!reusedAttendeeIds.Contains (dbAttendee.Id)) {
-                    dbAttendee.Delete ();
-                }
-            }
-            // Since everything was just saved, appAttendees is now an accurate list of what it is in
-            // the database, so transfer it to dbAttendees.
-            dbAttendees = new List<McAttendee> (appAttendees);
-            appAttendees = null;
+            SaveAncillaryCollection (ref appAttendees, ref dbAttendees, ReadDbAttendees, (McAttendee attendee) => {
+                attendee.SetParent (this);
+            }, (McAttendee attendee) => {
+                return attendee.ParentId == this.Id && attendee.ParentType == attendeeParentType;
+            });
+        }
+
+        private void InsertAttendees ()
+        {
+            InsertAncillaryCollection (ref appAttendees, ref dbAttendees, (McAttendee attendee) => {
+                attendee.SetParent (this);
+            });
         }
 
         // Categories that are stored in the database.
@@ -177,17 +138,10 @@ namespace NachoCore.Model
         // until Insert() or Update() is called.
         private IList<McCalendarCategory> appCategories = null;
 
-        /// <summary>
-        /// The categories for the event.  The collection that is returned by the getter is read-only.
-        /// </summary>
         [Ignore]
         public IList<McCalendarCategory> categories {
             get {
-                if (null != appCategories) {
-                    return appCategories;
-                }
-                ReadDbCategories ();
-                return dbCategories.AsReadOnly ();
+                return GetAncillaryCollection (appCategories, ref dbCategories, ReadDbCategories);
             }
             set {
                 NcAssert.NotNull (value, "To clear the categories, use an empty list instead of null.");
@@ -195,64 +149,33 @@ namespace NachoCore.Model
             }
         }
 
-        /// <summary>
-        /// Load this event's categories from the database.
-        /// </summary>
-        private void ReadDbCategories ()
+        private List<McCalendarCategory> ReadDbCategories ()
         {
-            if (null == dbCategories) {
-                if (0 == this.Id) {
-                    dbCategories = new List<McCalendarCategory> ();
-                } else {
-                    var categoryParentType = McCalendarCategory.GetParentType (this);
-                    dbCategories = NcModel.Instance.Db.Table<McCalendarCategory> ()
-                        .Where (x => x.ParentId == Id && x.ParentType == categoryParentType).ToList ();
-                }
-            }
+            var categoryParentType = McCalendarCategory.GetParentType (this);
+            return NcModel.Instance.Db.Table<McCalendarCategory> ()
+                .Where (x => x.ParentId == this.Id && x.ParentType == categoryParentType).ToList ();
         }
 
-        /// <summary>
-        /// Delete this event's categories from the database.
-        /// </summary>
         private void DeleteDbCategories ()
         {
-            ReadDbCategories ();
-            foreach (var category in dbCategories) {
-                category.Delete ();
-            }
+            DeleteAncillaryCollection (ref dbCategories, ReadDbCategories);
         }
 
-        /// <summary>
-        /// Save this event's categories to the database.
-        /// </summary>
         private void SaveCategories ()
         {
-            if (null == appCategories) {
-                return;
-            }
-            ReadDbCategories ();
-            HashSet<int> reusedCategoryIds = new HashSet<int> ();
-            var categoryParentType = McCalendarCategory.GetParentType (this);
-            foreach (var category in appCategories) {
-                if (0 == category.Id) {
-                    category.SetParent (this);
-                    category.Insert ();
-                } else {
-                    NcAssert.True(category.ParentId == this.Id && category.ParentType == categoryParentType,
-                        "A category from one calendar item has been added to a different calendar item.");
-                    category.Update();
-                    reusedCategoryIds.Add(category.Id);
-                }
-            }
-            foreach (var dbCategory in dbCategories) {
-                if (!reusedCategoryIds.Contains(dbCategory.Id)) {
-                    dbCategory.Delete();
-                }
-            }
-            // Since everything was just saved, appCategories is now an accurate list of what it is in
-            // the database.  So transfer it to dbCategories.
-            dbCategories = new List<McCalendarCategory> (appCategories);
-            appCategories = null;
+            SaveAncillaryCollection (ref appCategories, ref dbCategories, ReadDbCategories, (McCalendarCategory category) => {
+                category.SetParent (this);
+            }, (McCalendarCategory category) => {
+                var categoryParentType = McCalendarCategory.GetParentType (this);
+                return category.ParentId == this.Id && category.ParentType == categoryParentType;
+            });
+        }
+
+        private void InsertCategories ()
+        {
+            InsertAncillaryCollection (ref appCategories, ref dbCategories, (McCalendarCategory category) => {
+                category.SetParent (this);
+            });
         }
 
         /// <summary>
@@ -483,8 +406,8 @@ namespace NachoCore.Model
         {
             UpdateDescription (); // Must be called before base.Insert()
             int retval = base.Insert ();
-            SaveAttendees ();
-            SaveCategories ();
+            InsertAttendees ();
+            InsertCategories ();
             UpdateAttachments ();
             return retval;
         }
@@ -499,12 +422,12 @@ namespace NachoCore.Model
             return retval;
         }
 
-        public override int Delete ()
+        public override void DeleteAncillary ()
         {
+            base.DeleteAncillary ();
             DeleteDbAttendees ();
             DeleteDbCategories ();
             DeleteAttachments ();
-            return base.Delete ();
         }
     }
 

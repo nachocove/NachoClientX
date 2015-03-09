@@ -84,14 +84,8 @@ namespace NachoCore.Model
         /// All To addresses, comma separated (optional)
         public string To { set; get; }
 
-        /// Indexes of To in McEmailAddress table
-        protected List<int> dbToEmailAddressId { set; get; }
-
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
-
-        /// Indexes of Cc in McEmailAddress table
-        protected List<int> dbCcEmailAddressId { set; get; }
 
         /// Email address of the sender (optional)
         public string From { set; get; }
@@ -199,14 +193,6 @@ namespace NachoCore.Model
         public bool WaitingForAttachmentsToDownload { set; get; }
 
         [Ignore]
-        /// Internal list of category elements
-        protected List<McEmailMessageCategory> _Categories{ get; set; }
-
-        [Ignore]
-        /// Internal copy of McMeetingRequest
-        protected McMeetingRequest _MeetingRequest { get; set; }
-
-        [Ignore]
         /// List of xml attachments for the email
         public IEnumerable<XElement> xmlAttachments { get; set; }
 
@@ -272,12 +258,6 @@ namespace NachoCore.Model
         ///
 
         /// Attachments are separate
-
-        //This is strictly used for testing purposes
-        public List<McEmailMessageCategory> getInternalCategoriesList ()
-        {
-            return _Categories;
-        }
 
         /// TODO: Support other types besides mime!
         public Stream ToMime (out long length)
@@ -774,49 +754,143 @@ namespace NachoCore.Model
 
     public partial class McEmailMessage
     {
-        protected Boolean isAncillaryInMemory;
+        private bool emailAddressesChanged = false;
 
-        public McEmailMessage () : base ()
-        {
-            _Categories = new List<McEmailMessageCategory> ();
-            _MeetingRequest = null;
-            isAncillaryInMemory = false;
-            dbToEmailAddressId = new List<int> ();
-            dbCcEmailAddressId = new List<int> ();
-        }
+        /// Indexes of To in McEmailAddress table
+        private List<int> dbToEmailAddressId = null;
+
+        /// Indexes of Cc in McEmailAddress table
+        private List<int> dbCcEmailAddressId = null;
+
+        private List<McEmailMessageCategory> dbCategories = null;
+        private IList<McEmailMessageCategory> appCategories = null;
 
         [Ignore]
-        public List<McEmailMessageCategory> Categories {
+        public IList<McEmailMessageCategory> Categories {
             get {
-                ReadAncillaryData ();
-                return _Categories;
+                return GetAncillaryCollection (appCategories, ref dbCategories, ReadDbCategories);
             }
             set {
-                ReadAncillaryData ();
-                _Categories = value;
+                NcAssert.NotNull (value, "To clear the categories, use an empty list instead of null.");
+                appCategories = value;
             }
         }
+
+        private List<McEmailMessageCategory> ReadDbCategories ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+        }
+
+        private void DeleteDbCategories ()
+        {
+            DeleteAncillaryCollection (ref dbCategories, ReadDbCategories);
+        }
+
+        private void SaveCategories ()
+        {
+            SaveAncillaryCollection (ref appCategories, ref dbCategories, ReadDbCategories, (McEmailMessageCategory category) => {
+                category.SetParent (this);
+            }, (McEmailMessageCategory category) => {
+                return category.ParentId == this.Id;
+            });
+        }
+
+        private void InsertCategories ()
+        {
+            InsertAncillaryCollection (ref appCategories, ref dbCategories, (McEmailMessageCategory category) => {
+                category.SetParent (this);
+            });
+        }
+
+        private McMeetingRequest dbMeetingRequest = null;
+        private McMeetingRequest appMeetingRequest = null;
+        private bool dbMeetingRequestRead = false;
+        private bool appMeetingRequestSet = false;
 
         [Ignore]
         public McMeetingRequest MeetingRequest {
             get {
-                ReadAncillaryData ();
-                return _MeetingRequest;
+                if (appMeetingRequestSet) {
+                    return appMeetingRequest;
+                }
+                ReadDbMeetingRequest ();
+                return dbMeetingRequest;
             }
             set {
-                ReadAncillaryData ();
-                _MeetingRequest = value;
+                appMeetingRequest = value;
+                appMeetingRequestSet = true;
             }
+        }
+
+        private void ReadDbMeetingRequest ()
+        {
+            if (!dbMeetingRequestRead) {
+                if (0 != this.Id) {
+                    dbMeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
+                }
+                dbMeetingRequestRead = true;
+            }
+        }
+
+        private void DeleteDbMeetingRequest ()
+        {
+            ReadDbMeetingRequest ();
+            if (null != dbMeetingRequest) {
+                dbMeetingRequest.Delete ();
+                dbMeetingRequest = null;
+            }
+        }
+
+        private void InsertMeetingRequest ()
+        {
+            NcAssert.True (null == dbMeetingRequest);
+            if (!appMeetingRequestSet) {
+                dbMeetingRequestRead = true;
+                return;
+            }
+            if (null != appMeetingRequest) {
+                NcAssert.True (0 == appMeetingRequest.Id);
+                appMeetingRequest.AccountId = this.AccountId;
+                appMeetingRequest.EmailMessageId = this.Id;
+                appMeetingRequest.Insert ();
+            }
+            dbMeetingRequest = appMeetingRequest;
+            dbMeetingRequestRead = true;
+            appMeetingRequest = null;
+            appMeetingRequestSet = false;
+        }
+
+        private void SaveMeetingRequest ()
+        {
+            if (!appMeetingRequestSet) {
+                return;
+            }
+            ReadDbMeetingRequest ();
+            if (null == appMeetingRequest) {
+                DeleteDbMeetingRequest ();
+            } else if (0 == appMeetingRequest.Id) {
+                DeleteDbMeetingRequest ();
+                appMeetingRequest.AccountId = this.AccountId;
+                appMeetingRequest.EmailMessageId = this.Id;
+                appMeetingRequest.Insert ();
+            } else {
+                NcAssert.True (appMeetingRequest.EmailMessageId == this.Id);
+                appMeetingRequest.Update ();
+            }
+            dbMeetingRequest = appMeetingRequest;
+            dbMeetingRequestRead = true;
+            appMeetingRequest = null;
+            appMeetingRequestSet = false;
         }
 
         [Ignore]
         public List<int> ToEmailAddressId {
             get {
-                ReadAncillaryData ();
+                ReadAddressMaps ();
                 return dbToEmailAddressId;
             }
             set {
-                ReadAncillaryData ();
+                emailAddressesChanged = true;
                 dbToEmailAddressId = value;
             }
         }
@@ -824,96 +898,62 @@ namespace NachoCore.Model
         [Ignore]
         public List<int> CcEmailAddressId {
             get {
-                ReadAncillaryData ();
+                ReadAddressMaps ();
                 return dbCcEmailAddressId;
             }
             set {
-                ReadAncillaryData ();
+                emailAddressesChanged = true;
                 dbCcEmailAddressId = value;
             }
         }
 
-        protected NcResult ReadAncillaryData ()
+        protected void ReadAddressMaps ()
         {
-            NcAssert.True (!isDeleted);
-            if (isAncillaryInMemory) {
-                return NcResult.OK ();
+            if (null == dbToEmailAddressId) {
+                if (0 == this.Id) {
+                    dbToEmailAddressId = new List<int> ();
+                } else {
+                    dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
+                }
             }
-            if (0 == Id) {
-                isAncillaryInMemory = true;
-                return NcResult.OK ();
+            if (null == dbCcEmailAddressId) {
+                if (0 == this.Id) {
+                    dbCcEmailAddressId = new List<int> ();
+                } else {
+                    dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
+                }
             }
-            _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
-            _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
-            isAncillaryInMemory = true;
-            dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
-            dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
-
-            return NcResult.OK ();
-        }
-
-        protected NcResult InsertAncillaryData ()
-        {
-            NcAssert.True (0 != Id);
-
-            InsertCategories ();
-
-            if (null != _MeetingRequest) {
-                _MeetingRequest.Id = 0;
-                _MeetingRequest.EmailMessageId = Id;
-                _MeetingRequest.AccountId = AccountId;
-                _MeetingRequest.Insert ();
-            }
-
-            InsertAddressMaps ();
-
-            return NcResult.OK ();
-        }
-
-        protected NcResult InsertCategories ()
-        {
-            foreach (var c in _Categories) {
-                c.Id = 0;
-                c.SetParent (this);
-                c.Insert ();
-            }
-            return NcResult.OK ();
-        }
-
-        protected void DeleteAncillaryData ()
-        {
-            NcAssert.True (0 != Id);
-            NcModel.Instance.RunInTransaction (() => {
-                NcModel.Instance.Db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
-                NcModel.Instance.Db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
-                DeleteAddressMaps ();
-            });
         }
 
         private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
         {
-            foreach (var addressId in addressIdList) {
-                var map = CreateAddressMap ();
-                map.EmailAddressId = addressId;
-                map.AddressType = kind;
-                map.Insert ();
+            if (null != addressIdList) {
+                foreach (var addressId in addressIdList) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = addressId;
+                    map.AddressType = kind;
+                    map.Insert ();
+                }
             }
         }
 
         private void InsertAddressMaps ()
         {
-            var map = CreateAddressMap ();
-            map.EmailAddressId = FromEmailAddressId;
-            map.AddressType = NcEmailAddress.Kind.From;
-            map.Insert ();
+            if (0 < FromEmailAddressId) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = FromEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.From;
+                map.Insert ();
+            }
             if (0 < SenderEmailAddressId) {
-                map = CreateAddressMap ();
+                var map = CreateAddressMap ();
                 map.EmailAddressId = SenderEmailAddressId;
                 map.AddressType = NcEmailAddress.Kind.Sender;
                 map.Insert ();
             }
             InsertAddressList (dbToEmailAddressId, NcEmailAddress.Kind.To);
             InsertAddressList (dbCcEmailAddressId, NcEmailAddress.Kind.Cc);
+            emailAddressesChanged = false;
         }
 
         private void DeleteAddressMaps ()
@@ -935,7 +975,9 @@ namespace NachoCore.Model
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Insert ();
-                InsertAncillaryData ();
+                InsertAddressMaps ();
+                InsertMeetingRequest ();
+                InsertCategories ();
             });
               
             return returnVal;
@@ -947,9 +989,12 @@ namespace NachoCore.Model
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Update ();
-                ReadAncillaryData ();
-                DeleteAncillaryData ();
-                InsertAncillaryData ();
+                SaveMeetingRequest ();
+                SaveCategories ();
+                if (emailAddressesChanged) {
+                    DeleteAddressMaps ();
+                    InsertAddressMaps ();
+                }
             });
 
             return returnVal;
@@ -969,16 +1014,15 @@ namespace NachoCore.Model
                     }
                 }
             }
+            DeleteDbMeetingRequest ();
+            DeleteDbCategories ();
             DeleteAttachments ();
-            DeleteAncillaryData ();
+            DeleteAddressMaps ();
         }
 
         public override int Delete ()
         {
-            int returnVal = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                returnVal = base.Delete ();
-            });
+            int returnVal = base.Delete ();
             NcBrain.SharedInstance.UnindexEmailMessage (this);
             return returnVal;
         }
