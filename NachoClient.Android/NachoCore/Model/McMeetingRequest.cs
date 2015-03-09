@@ -163,7 +163,7 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int retval = -1;
+            int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
                 retval = base.Insert ();
                 InsertRecurrences ();
@@ -173,7 +173,7 @@ namespace NachoCore.Model
 
         public override int Update ()
         {
-            int retval = -1;
+            int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
                 retval = base.Update ();
                 SaveRecurrences ();

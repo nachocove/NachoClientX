@@ -37,5 +37,23 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendarId);
         }
+
+        public override int Insert ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Insert ();
+            });
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Update ();
+            });
+            return retval;
+        }
     }
 }
