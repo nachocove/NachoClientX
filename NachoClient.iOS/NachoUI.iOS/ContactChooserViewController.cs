@@ -223,7 +223,9 @@ namespace NachoClient.iOS
 
         public void CancelSelected ()
         {
-            owner.DismissINachoContactChooser (this);
+            if (null != owner) {
+                owner.DismissINachoContactChooser (this);
+            }
         }
 
         /// <summary>
