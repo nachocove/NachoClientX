@@ -50,7 +50,7 @@ namespace NachoCore
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
 
-        public static string PingerHostName = "pinger.officetaco.com";
+        public static string PingerHostName = "pingers.officetaco.com";
         //public static string PingerHostName = "localhost";
 
         public const int ApiVersion = 1;
@@ -267,7 +267,7 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)Lst.CliTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -304,7 +304,7 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)Lst.CliTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -341,7 +341,7 @@ namespace NachoCore
                                 Act = DoDeferSession,
                                 State = (uint)Lst.Active
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoStopSession, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)St.Start },
                         }
                     },
                 }
@@ -379,8 +379,10 @@ namespace NachoCore
         //
         // Three public API:
         // 1. Execute - Start advancing the statet machine.
-        // 2. Defer - Temporarily stop pigner from pinging. The client should only call this when it is pinging
-        // 3. Stop - Stop pinger from pinging permanently.
+        // 2. Defer - Delay pigner from pinging. The client should only call this when it is pinging.
+        // 3. Park - Stop push assist SM from further communication with pinger. But the last issued start or defer
+        //           session is not canceled.
+        // 4. Stop - Like Park, but the outstanding pinger session (to server) is canceled as well.
         public void Execute ()
         {
             PostEvent (SmEvt.E.Launch, "PAEXE");
@@ -391,12 +393,16 @@ namespace NachoCore
             PostEvent (PAEvt.E.Defer, "PAHO");
         }
 
-        public void Stop ()
+        public void Park ()
         {
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
-        // ACTION FUNCTIONS
+        public void Stop ()
+        {
+            PostEvent (PAEvt.E.Park, "PASTOP");
+        }
+
         private void PostEvent (SmEvt.E evt, string mnemonic)
         {
             Sm.PostEvent ((uint)evt, mnemonic);
@@ -420,71 +426,6 @@ namespace NachoCore
         private void PostHardFail (string mnemonic)
         {
             PostEvent (SmEvt.E.HardFail, mnemonic);
-        }
-
-        private void DoNop ()
-        {
-        }
-
-        private async void DoStopSession ()
-        {
-            // FIXME Cancel any outstanding http request. This is tricky, given concurrency.
-            // Only one SM action can execute at a time, but there is a Q in front of the SM.
-            var clientId = NcApplication.Instance.ClientId;
-            if (String.IsNullOrEmpty (clientId) ||
-                String.IsNullOrEmpty (ClientContext) ||
-                String.IsNullOrEmpty (SessionToken)) {
-                Log.Error (Log.LOG_PUSH,
-                    "DoStopSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
-                PostHardFail ("PA_PARAM_ERROR");
-            }
-            var jsonRequest = new StopSessionRequest () {
-                ClientId = NcApplication.Instance.ClientId,
-                DeviceId = NachoPlatform.Device.Instance.Identity (),
-                ClientContext = ClientContext,
-                Token = SessionToken,
-            };
-
-            try {
-                var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
-                var httpResponse = task.Result;
-                if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0}, content={1})",
-                        httpResponse.StatusCode, httpResponse.Content);
-                    NumRetries++;
-                    PostTempFail ("HTTP_FAIL");
-                    return;
-                }
-
-                var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
-                var response = ParsePingerResponse (jsonResponse);
-                if (!response.IsOk ()) {
-                    NumRetries++;
-                    PostTempFail ("STOP_FAIL");
-                }
-            } catch (OperationCanceledException) {
-                throw;
-            } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught push assist http exception - {0}", e);
-            }
-        }
-
-        private void DoGetDevTok ()
-        {
-            var devTok = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
-            if (null != devTok) {
-                PostEvent (PAEvt.E.DevTok, "DEV_TOK_FOUND");
-            }
-        }
-
-        private void DoGetCliTok ()
-        {
-            var clientId = NcApplication.Instance.ClientId;
-            if (null != clientId) {
-                NumRetries = 0;
-                PostEvent (PAEvt.E.CliTok, "GOT_CLI_TOK");
-            }
         }
 
         private string SafeToBase64 (byte[] bytes)
@@ -534,6 +475,29 @@ namespace NachoCore
             } catch (Exception e) {
                 Log.Error (Log.LOG_PUSH, "ParsePingerResponse: Fail to parse JSON response (jsonResponse={0}, exception={1})", jsonResponse, e);
                 return null;
+            }
+        }
+
+        // ACTION FUNCTIONS FOR STATE MACHINE
+        private void DoNop ()
+        {
+        }
+
+
+        private void DoGetDevTok ()
+        {
+            var devTok = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
+            if (null != devTok) {
+                PostEvent (PAEvt.E.DevTok, "DEV_TOK_FOUND");
+            }
+        }
+
+        private void DoGetCliTok ()
+        {
+            var clientId = NcApplication.Instance.ClientId;
+            if (null != clientId) {
+                NumRetries = 0;
+                PostEvent (PAEvt.E.CliTok, "GOT_CLI_TOK");
             }
         }
 
@@ -600,15 +564,21 @@ namespace NachoCore
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
                     NumRetries++;
-                    PostTempFail ("START_SESS_FAIL");
+                    PostTempFail ("START_SESS_ERROR");
                 } else {
                     SessionToken = response.Token;
                     PostSuccess ("START_SESS_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
+            } catch (System.Net.WebException e) {
+                Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
+                NumRetries++;
+                PostTempFail ("NET_ERROR");
             } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught push assist http exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught unexpected exception - {0}", e);
+                NumRetries++;
+                PostHardFail ("UNEXPECTED_EX");
             }
         }
 
@@ -647,17 +617,78 @@ namespace NachoCore
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOk ()) {
                     NumRetries++;
-                    PostTempFail ("DEFER_FAIL");
+                    PostTempFail ("DEFER_SESS_ERROR");
                 } else {
-                    PostSuccess ("DEFER_OK");
+                    PostSuccess ("DEFER_SESS_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
+            } catch (System.Net.WebException e) {
+                Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
+                NumRetries++;
+                PostTempFail ("NET_ERROR");
             } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught push assist http exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught unexpected exception - {0}", e);
+                NumRetries++;
+                PostHardFail ("UNEXPECTED_ERROR");
             }
         }
 
+        private async void DoStopSession ()
+        {
+            Sm.ClearEventQueue ();
+            var clientId = NcApplication.Instance.ClientId;
+            if (String.IsNullOrEmpty (clientId) ||
+                String.IsNullOrEmpty (ClientContext) ||
+                String.IsNullOrEmpty (SessionToken)) {
+                Log.Error (Log.LOG_PUSH,
+                    "DoStopSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
+                    clientId, ClientContext, SessionToken);
+                PostHardFail ("PARAM_ERROR");
+            }
+            var jsonRequest = new StopSessionRequest () {
+                ClientId = NcApplication.Instance.ClientId,
+                DeviceId = NachoPlatform.Device.Instance.Identity (),
+                ClientContext = ClientContext,
+                Token = SessionToken,
+            };
+
+            try {
+                var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
+                var httpResponse = task.Result;
+                if (HttpStatusCode.OK != httpResponse.StatusCode) {
+                    Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0}, content={1})",
+                        httpResponse.StatusCode, httpResponse.Content);
+                    NumRetries++;
+                    PostTempFail ("HTTP_ERROR");
+                    return;
+                }
+
+                var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+                var response = ParsePingerResponse (jsonResponse);
+                if (!response.IsOk ()) {
+                    NumRetries++;
+                    PostTempFail ("STOP_SESS_ERROR");
+                }
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (System.Net.WebException e) {
+                Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught network exception - {0}", e);
+                NumRetries++;
+                PostTempFail ("NET_ERROR");
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught unexpected http exception - {0}", e);
+                NumRetries++;
+                PostHardFail ("UNEXPECTED_ERROR");
+            }
+        }
+
+        private void DoPark ()
+        {
+            // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
+        }
+
+        // MISCELLANEOUS STUFF
         private void TokensWatcher (object sender, EventArgs ea)
         {
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;

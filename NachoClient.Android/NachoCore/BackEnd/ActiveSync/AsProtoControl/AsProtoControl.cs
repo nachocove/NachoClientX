@@ -1256,6 +1256,9 @@ namespace NachoCore.ActiveSync
 
         private void DoPark ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
