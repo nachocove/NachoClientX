@@ -471,6 +471,7 @@ namespace NachoCore.ActiveSync
         // UTILITY METHODS.
         private void AddAndStartRobot (StepRobot.Steps step, string domain)
         {
+            Log.Info(Log.LOG_AS, "AUTOD:{0}:BEGIN:Starting discovery for {1}/step {2}", step, domain, step);
             var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain);
             Robots.Add (robot);
             robot.Execute ();
@@ -478,6 +479,7 @@ namespace NachoCore.ActiveSync
 
         private void KillAllRobots ()
         {
+            Log.Info(Log.LOG_AS, "AUTOD::END:Stopping all robots.");
             if (null != Robots) {
                 foreach (var robot in Robots) {
                     robot.Cancel ();
@@ -562,6 +564,7 @@ namespace NachoCore.ActiveSync
             Robots = new List<StepRobot> ();
             AskingRobotQ = new Queue<StepRobot> ();
             SuccessfulRobotQ = new Queue<StepRobot> ();
+            Log.Info(Log.LOG_AS, "AUTOD::BEGIN:Starting all robots...");
             AddAndStartRobot (StepRobot.Steps.S1, Domain);
             AddAndStartRobot (StepRobot.Steps.S2, Domain);
             AddAndStartRobot (StepRobot.Steps.S3, Domain);
@@ -662,6 +665,7 @@ namespace NachoCore.ActiveSync
         private void DoTestFromRobot ()
         {
             AutoDSucceeded = true;
+            Log.Info (Log.LOG_AS, "AUTOD::END: Auto discovery succeeded.");
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
             ServerCandidate = McServer.Create (Account.Id, robot.SrServerUri);
