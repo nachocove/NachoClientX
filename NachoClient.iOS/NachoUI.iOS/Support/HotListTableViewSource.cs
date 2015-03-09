@@ -623,8 +623,12 @@ namespace NachoClient.iOS
             var inboxButton = (UIButton)footer.ViewWithTag (INBOX_BUTTON_TAG);
             var inboxLabel = (UILabel)footer.ViewWithTag (INBOX_LABEL);
             inboxLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
+
             var inboxFolder = NcEmailManager.InboxFolder ();
-            var unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+            var unreadInboxMessagesCount = 0;
+            if (null != inboxFolder) {
+                unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+            }
 
             inboxLabel.Text = "Go to Inbox (" + unreadInboxMessagesCount + " unread)";
             inboxButton.Enabled = true;

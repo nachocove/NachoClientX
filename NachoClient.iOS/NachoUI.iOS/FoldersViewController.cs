@@ -286,7 +286,7 @@ namespace NachoClient.iOS
                 topFolderCount = 0;
                 var folder = McFolder.GetDefaultInboxFolder (account.Id);
                 if (null != folder) {
-                    CreateTopFolderCell ("Inbox", topFolderCount, true, () => {
+                    CreateTopFolderCell (folder.DisplayName, topFolderCount, true, () => {
                         PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
                     });
                     topFolderCount += 1;

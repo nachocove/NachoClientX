@@ -129,10 +129,17 @@ namespace Test.Common
             c.Insert ();
             expected2.Link (c);
 
+            c = new McContact ();
+            c.AccountId = 1;
+            c.Source = McAbstrItem.ItemSource.ActiveSync;
+            c.CompanyName = "Joe's Coffee";
+            c.Insert ();
+            expected2.Link (c);
+
             var l = McContact.AllContactsSortedByName ();
             var m = McContact.AllContactsSortedByName (1);
             Assert.AreEqual (l.Count, m.Count);
-            Assert.AreEqual (10, l.Count);
+            Assert.AreEqual (11, l.Count);
 
             for (int i = 0; i < l.Count; i++) {
                 Assert.AreEqual (l [i].Id, m [i].Id);
@@ -148,6 +155,7 @@ namespace Test.Common
             Assert.AreEqual ("Gary Glitter", l [7].GetContact ().GetDisplayNameOrEmailAddress ());
             Assert.AreEqual ("Holmes", l [8].GetContact ().GetDisplayNameOrEmailAddress ());
             Assert.AreEqual ("Ingrid", l [9].GetContact ().GetDisplayNameOrEmailAddress ());
+            Assert.AreEqual ("Joe's Coffee", l [10].GetContact ().GetDisplayNameOrEmailAddress ());
 
             var e = McContact.AllContactsWithEmailAddresses ();
             Assert.AreEqual (4, e.Count);

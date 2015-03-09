@@ -1252,19 +1252,30 @@ namespace NachoCore.Model
                 (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
         }
 
-        static string GetContactSearchString (bool withEclipsing, int accountId = 0)
+        static string GetAllContactsQueryString (bool withEclipsing, int accountId = 0)
         {
-            var fmt = " SELECT DISTINCT Id, substr(SORT_ORDER, 1, 1) as FirstLetter FROM   " +
-                      " (  " +
-                      "     SELECT c.Id as Id, trim(trim(coalesce(c.FirstName,'') || ' ' || coalesce(c.LastName, '')) || ' ' || coalesce(ltrim(s.Value,'\"'), '')) AS SORT_ORDER  " +
-                      "     FROM McContact AS c  " +
-                      "     LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId  " +
-                      "     WHERE " +
-                      (withEclipsing ? " (c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
-                      "     {0} " +
-                      "     c.IsAwaitingDelete = 0  " +
-                      " )  " +
-                      " ORDER BY SORT_ORDER COLLATE NOCASE ASC";
+            string fmt =
+                " SELECT DISTINCT Id, substr(FullIndex, 1, 1) as FirstLetter FROM " +
+                " ( " +
+                " SELECT " +
+                "     c.Id as Id, FirstName, LastName, s.Value, CompanyName, " +
+                "     ltrim( " +
+                "         ifnull(c.FirstName,'') || ' ' || " +
+                "         ifnull(c.LastName,'') || ' ' || " +
+                "         ifnull(ltrim(s.Value,'\"'),'') || ' ' || " +
+                "         ifnull(c.CompanyName,'') " +
+                "     ) as FullIndex " +
+                " FROM McContact AS c   " +
+                " LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId   " +
+                " WHERE  " +
+                (withEclipsing ? " (c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
+                " {0} " +
+                " c.IsAwaitingDelete = 0   " +
+                " ORDER BY " +
+                " FullIndex " +
+                " COLLATE NOCASE ASC" +
+                " ) ";
+
             if (0 == accountId) {
                 return String.Format (fmt, "");
             } else {
@@ -1275,12 +1286,12 @@ namespace NachoCore.Model
 
         public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (withEclipsing, accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+            return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+            return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> AllContactsWithEmailAddresses (bool withEclipsing = false)
@@ -1346,7 +1357,11 @@ namespace NachoCore.Model
             if (!String.IsNullOrEmpty (LastName)) {
                 value.Add (LastName);
             }
-            return String.Join (" ", value);
+            var name = String.Join (" ", value);
+            if (String.IsNullOrEmpty (name)) {
+                name = CompanyName;
+            }
+            return name;
         }
 
         public string GetEmailAddress ()
