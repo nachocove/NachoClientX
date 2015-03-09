@@ -417,6 +417,21 @@ namespace NachoClient.iOS
                 return;
             }
 
+            string token = PlatformHelpers.DownloadAttachment (a);
+            token = null;
+            if (null == token) {
+                UIAlertView alert = new UIAlertView (
+                    "Download Error", 
+                    "There was a problem downloading this attachment.", 
+                    null, 
+                    "OK"
+                );
+                alert.Show ();
+                return;
+            }
+
+            Token = token; // make this the attachment that will get opened next
+
             // Start, or re-state, the downloading animation
             if (McAbstrFileDesc.FilePresenceEnum.Partial == a.FilePresence) {
                 AttachmentsTableViewSource.StopAnimationsOnCell (cell);
@@ -424,10 +439,7 @@ namespace NachoClient.iOS
             } else {
                 AttachmentsSource.StartDownloadingAnimation (cell);
             }
-
-            string token = PlatformHelpers.DownloadAttachment (a);
-            Token = token; // make this the attachment that will get opened next
-            NcAssert.NotNull (Token, "Found token should not be null");
+                
             EventHandler fileAction = null;
 
             // Handle download-related status inds
