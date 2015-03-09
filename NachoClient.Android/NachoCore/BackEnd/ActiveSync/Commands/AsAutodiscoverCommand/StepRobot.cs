@@ -509,6 +509,7 @@ namespace NachoCore.ActiveSync
             private void DoRobotHttp ()
             {
                 var currentUri = CurrentServerUri ();
+                Log.Info(Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
                     LastUri = currentUri;
@@ -521,6 +522,7 @@ namespace NachoCore.ActiveSync
             private void DoRobotDns ()
             {
                 if (0 < RetriesLeft--) {
+                    Log.Info(Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending DNS request to {1}", Step, this.DnsHost (null));
                     DnsOp = new AsDnsOperation (this, new TimeSpan(0, 0, 10));
                     DnsOp.Execute (StepSm);
                 } else {
@@ -639,6 +641,8 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotAuthFail ()
             {
+                var currentUri = CurrentServerUri ();
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUri);
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 
@@ -662,44 +666,44 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotPostHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST failed: {1}.", Step, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: POST failed: {1}.", Step, LastUri);
                 DoRobotHardFail ();
             }
 
             private void DoRobotGetHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: GET failed: {1}.", Step, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: GET failed: {1}.", Step, LastUri);
                 DoRobotHardFail ();
             }
 
             private void DoRobotDnsSrvHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS SRV failed.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: DNS query SRV rec to {1} failed.", Step, this.DnsHost (null));
                 DoRobotHardFail ();
             }
 
             private void DoRobotDnsMxHardFail ()
             {
                 Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXNotFound;
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS MX failed.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: DNS query MX rec to {1} failed.", Step, this.DnsHost (null));
                 DoRobotHardFail ();
             }
 
             private void DoRobotGetCertHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Could not retrieve sever SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Could not retrieve sever SSL cert.", Step);
                 DoRobotHardFail ();
             }
 
             private void DoRobotCertOkHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: User rejected server SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: User rejected server SSL cert.", Step);
                 DoRobotHardFail ();
             }
 
             private void DoRobotReDirHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: {1} failed: {2}.", Step, MethodToUse, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: {1} failed: {2}.", Step, MethodToUse, LastUri);
                 DoRobotHardFail ();
             }
 
