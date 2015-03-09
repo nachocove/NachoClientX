@@ -564,7 +564,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGet2ReDir ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET to {1}", Step, ReDirUri);
                 DoRobot2ReDir ();
             }
 
@@ -643,7 +643,10 @@ namespace NachoCore.ActiveSync
             {
                 var currentUri = CurrentServerUri ();
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUri);
-                ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
+                // Once cancelled, we must post NO event to TL SM.
+                if (!Ct.IsCancellationRequested) {
+                    Command.HandleRobotAuthFail (this, Step, SrDomain);
+                }
             }
 
             private void DoRobotPostSuccess ()

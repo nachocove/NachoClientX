@@ -92,6 +92,7 @@ namespace NachoCore.ActiveSync
         private List<StepRobot> Robots;
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
+        private ConcurrentQueue<Event> AuthFailQueue;
         private AsCommand TestCmd;
         private ConcurrentBag<object> DisposedJunk;
         private string Domain;
@@ -545,6 +546,7 @@ namespace NachoCore.ActiveSync
             KillAllRobots ();
             AskingRobotQ = null;
             SuccessfulRobotQ = null;
+            AuthFailQueue = null;
             if (null != TestCmd) {
                 TestCmd.Cancel ();
                 DisposedJunk.Add (TestCmd);
@@ -564,6 +566,7 @@ namespace NachoCore.ActiveSync
             Robots = new List<StepRobot> ();
             AskingRobotQ = new Queue<StepRobot> ();
             SuccessfulRobotQ = new Queue<StepRobot> ();
+            AuthFailQueue = new ConcurrentQueue<Event> ();
             Log.Info(Log.LOG_AS, "AUTOD::BEGIN:Starting all robots...");
             AddAndStartRobot (StepRobot.Steps.S1, Domain);
             AddAndStartRobot (StepRobot.Steps.S2, Domain);
@@ -591,8 +594,43 @@ namespace NachoCore.ActiveSync
                     // against the Google server before giving up.
                     Sm.PostEvent ((uint)TlEvt.E.TestDefaultServer, "AUTODTRYG");
                 } else {
-                    Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
+                    ProcessQueuedAuthFailEvents ();
                 }
+            }
+        }
+
+        // process all queued AuthFail events that the base domain robots may have sent
+        private void ProcessQueuedAuthFailEvents()
+        {
+            if (AuthFailQueue.IsEmpty) {
+                // no Auth Fail Events Queued up
+                Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
+            }
+            else{
+                Event Event;
+                while (!AuthFailQueue.IsEmpty) {
+                    if (AuthFailQueue.TryDequeue(out Event))
+                    {
+                        Log.Info (Log.LOG_AS, "AUTOD::Auto Discovery failed. Sending queued Auth Fail Event to SM for base domain {0}", BaseDomain);
+                        Sm.PostEvent (Event);
+                    }
+                }
+            }
+        }
+
+        // handle robot auth fail
+        private void HandleRobotAuthFail (StepRobot Robot, StepRobot.Steps Step, String RobotDomain)
+        {
+            // if base domain is different from domain and robot reporting auth fail is running discovery for base domain
+            if  (!BaseDomain.Equals(Domain, StringComparison.Ordinal)
+                && RobotDomain.Equals(BaseDomain, StringComparison.Ordinal)) {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Auth Fail Event for base domain {1}", Step, RobotDomain);
+                AuthFailQueue.Enqueue (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", Robot));  
+                Sm.PostEvent(Event.Create ((uint)SmEvt.E.HardFail, "SRHARDFAIL", Robot));
+
+            } else {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:Sending Auth Fail Event to SM", Step);
+                Sm.PostEvent(Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", Robot));
             }
         }
 
