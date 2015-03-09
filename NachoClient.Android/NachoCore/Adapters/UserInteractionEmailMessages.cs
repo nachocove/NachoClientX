@@ -24,21 +24,7 @@ namespace NachoCore
             List<int> deletes;
             Refresh (out adds, out deletes);
         }
-
-        // FIXME: Be smarter about getting Inbox
-        protected static McFolder InboxFolder (int accountId)
-        {
-            NcAssert.True (0 != accountId);
-            var emailFolders = new NachoFolders (accountId, NachoFolders.FilterForEmail);
-            for (int i = 0; i < emailFolders.Count (); i++) {
-                McFolder f = emailFolders.GetFolder (i);
-                if (f.DisplayName.Equals ("Inbox")) {
-                    return f;
-                }
-            }
-            return null;
-        }
-
+            
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
             adds = null;
@@ -47,7 +33,7 @@ namespace NachoCore
                 threadList = new List<McEmailMessageThread> ();
                 return true;
             }
-            var folder = InboxFolder (contact.AccountId);
+            var folder = McFolder.GetDefaultInboxFolder (contact.AccountId);
             if (null == folder) {
                 threadList = new List<McEmailMessageThread> ();
                 return true;
