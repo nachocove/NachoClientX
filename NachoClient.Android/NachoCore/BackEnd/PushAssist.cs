@@ -50,7 +50,7 @@ namespace NachoCore
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
 
-        public static string PingerHostName = "pingers.officetaco.com";
+        public static string PingerHostName = "pinger.officetaco.com";
         //public static string PingerHostName = "localhost";
 
         public const int ApiVersion = 1;
@@ -377,7 +377,7 @@ namespace NachoCore
 
         // PUBLIC API SECTION
         //
-        // Three public API:
+        // Four public API:
         // 1. Execute - Start advancing the statet machine.
         // 2. Defer - Delay pigner from pinging. The client should only call this when it is pinging.
         // 3. Park - Stop push assist SM from further communication with pinger. But the last issued start or defer
