@@ -908,6 +908,7 @@ namespace NachoCore.ActiveSync
                 case Xml.Email.MeetingRequest:
                     if (child.HasElements) {
                         var e = new  McMeetingRequest ();
+                        var recurrences = new List<McRecurrence> ();
                         foreach (var meetingRequestPart in child.Elements()) {
                             switch (meetingRequestPart.Name.LocalName) {
                             case Xml.Email.AllDayEvent:
@@ -939,12 +940,10 @@ namespace NachoCore.ActiveSync
                                 break;
                             case Xml.Email.Recurrences:
                                 if (meetingRequestPart.HasElements) {
-                                    var recurrences = new List<McRecurrence> ();
                                     foreach (var recurrencePart in meetingRequestPart.Elements()) {
                                         var recurrence = ParseRecurrence (folder.AccountId, nsEmail, recurrencePart, Xml.Email.Recurrence);
                                         recurrences.Add (recurrence);
                                     }
-                                    e.recurrences = recurrences;
                                 }
                                 break;
                             case Xml.Email.Sensitivity:
@@ -969,6 +968,7 @@ namespace NachoCore.ActiveSync
                                 break;
                             }
                         }
+                        e.recurrences = recurrences;
                         emailMessage.MeetingRequest = e;
                     }
                     break;
