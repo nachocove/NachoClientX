@@ -458,7 +458,8 @@ namespace NachoCore.Utils
                     // This isn't entirely correct. The multipart/related could have a "start"
                     // parameter that points to the root entity that is not the first one.
                     // But it is hard to write code to handle that without having a real life
-                    // message to test with.
+                    // message to test with.  All the examples that I have seen list the root
+                    // entity first.
                     MimeEntityDisplayList (multipart [0], ref list);
                     return;
                 }
@@ -478,10 +479,14 @@ namespace NachoCore.Utils
 
             // The conversion from TNEF to MIME will sometimes create a TextPart
             // with a null ContentObject, which will result in a NullReferenceException
-            // when accessing the Text property.  Render all non-calendar TextParts,
-            // except for those bogus ones.
-            if (part is TextPart && null != part.ContentObject && !part.ContentType.Matches ("text", "calendar")) {
-                list.Add (part);
+            // when accessing the Text property.  Discard those bogus TextParts.  Discard
+            // calendar parts, which are handled differently.  Render all other TextParts.
+            if (part is TextPart) {
+                if (null == part.ContentObject) {
+                    Log.Info (Log.LOG_EMAIL, "Discarding a {0} MIME section that has a null ContentObject.", part.ContentType);
+                } else if (!part.ContentType.Matches("text", "calendar")) {
+                    list.Add (part);
+                }
                 return;
             }
 
@@ -499,16 +504,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            if (entity.ContentType.Matches ("application", "ics")) {
-                NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled ics: {0}\n", part.ContentType);
-                return;
-            }
-            if (entity.ContentType.Matches ("application", "octet-stream")) {
-                NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled octet-stream: {0}\n", part.ContentType);
-                return;
-            }
-
-            NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled Render: {0}\n", part.ContentType);
+            NachoCore.Utils.Log.Warn (Log.LOG_EMAIL, "Unhandled MIME part: {0}\n", part.ContentType);
         }
 
         /// <summary>
