@@ -623,10 +623,11 @@ namespace NachoCore.ActiveSync
         {
             Event Event;
             while (!RobotEventsQ.IsEmpty) {
-                if (RobotEventsQ.TryDequeue(out Event))
-                {
+                if (RobotEventsQ.TryDequeue (out Event)) {
                     Log.Info (Log.LOG_AS, "AUTOD::Sending queued Event to SM for base domain {0}", BaseDomain);
                     Sm.PostEvent (Event);
+                } else if (!RobotEventsQ.IsEmpty) {
+                    Log.Error (Log.LOG_AS, "Unable to dequeue event from RobotEventsQ even though it's not empty.");
                 }
             }
         }
