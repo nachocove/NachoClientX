@@ -587,7 +587,7 @@ namespace NachoCore.ActiveSync
             StepRobot robot = (StepRobot)Sm.Arg;
             // Robot can't be on either ask or success queue, or it would not be reporting failure.
             Robots.Remove (robot);
-            if (ShouldDeQueueRobotEvents()) {
+            if (ShouldDeQueueRobotEvents ()) {
                 DeQueueRobotEvents ();
             }
             if (0 == Robots.Count) {
@@ -648,7 +648,7 @@ namespace NachoCore.ActiveSync
             // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
             if  (!Robot.SrDomain.Equals(Domain, StringComparison.Ordinal)) {
                 // enqueue base domain robot events only if subdomain robots are not done 
-                if (!AreSubDomainRobotsDone()) {
+                if (!AreSubDomainRobotsDone ()) {
                     // enqueue all events from base domain
                     return true;
                 } else {
