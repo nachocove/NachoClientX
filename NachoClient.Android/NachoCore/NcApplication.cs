@@ -91,13 +91,16 @@ namespace NachoCore
                 return _ClientId;
             }
             set {
+                bool same = (value == _ClientId);
                 _ClientId = value;
-                var status = new StatusIndEventArgs () {
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                };
-                status.Status.Value = value;
-                InvokeStatusIndEvent (status);
+                if (!same) {
+                    var status = new StatusIndEventArgs () {
+                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken),
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    };
+                    status.Status.Value = value;
+                    InvokeStatusIndEvent (status);
+                }
             }
         }
 
