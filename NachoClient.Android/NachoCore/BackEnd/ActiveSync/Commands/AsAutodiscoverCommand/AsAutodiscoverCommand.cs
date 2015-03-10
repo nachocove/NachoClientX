@@ -621,6 +621,9 @@ namespace NachoCore.ActiveSync
                         return false;
                     }
                 }
+            } else {
+                Log.Error (Log.LOG_AS, "Checking for Robots' status when Robots list is null.");
+                return true;
             }
             Log.Info (Log.LOG_AS, "AUTOD::subdomain robots done auto discovery.");
             return true;
@@ -652,9 +655,8 @@ namespace NachoCore.ActiveSync
 
         private bool ShouldEnQueueRobotEvent (Event Event, StepRobot Robot)
         {
-            // if base domain is different from domain and the robot reporting auth fail is running discovery for base domain
-            if  (!BaseDomain.Equals(Domain, StringComparison.Ordinal)
-                && Robot.SrDomain.Equals(BaseDomain, StringComparison.Ordinal)) {
+            // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
+            if  (!Robot.SrDomain.Equals(Domain, StringComparison.Ordinal)) {
                 // enqueue base domain robot events only if subdomain robots are not done 
                 if (!AreSubDomainRobotsDone()) {
                     switch (Event.EventCode){
