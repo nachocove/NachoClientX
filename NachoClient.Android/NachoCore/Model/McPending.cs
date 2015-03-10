@@ -968,7 +968,7 @@ namespace NachoCore.Model
                     if (0 != successors.Count) {
                         Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
                         foreach (var succ in successors) {
-                            succ.Delete();
+                            succ.Delete ();
                         }
                     }
                 }
