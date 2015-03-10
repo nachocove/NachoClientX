@@ -570,8 +570,8 @@ namespace NachoCore.ActiveSync
 
             var attendees = new List<McAttendee> ();
             var categories = new List<McCalendarCategory> ();
-            c.exceptions = new List<McException> ();
-            c.recurrences = new List<McRecurrence> ();
+            var recurrences = new List<McRecurrence> ();
+            List<McException> exceptions = null;
 
             XNamespace nsCalendar = "Calendar";
             // <ApplicationData>...</ApplicationData>
@@ -589,12 +589,13 @@ namespace NachoCore.ActiveSync
                     categories.AddRange (ParseCategories (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
-                    var exceptions = ParseExceptions (accountId, nsCalendar, child);
-                    c.exceptions.AddRange (exceptions);
+                    if (null == exceptions) {
+                        exceptions = new List<McException> ();
+                    }
+                    exceptions.AddRange (ParseExceptions (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Recurrence:
-                    var recurrence = ParseRecurrence (accountId, nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
-                    c.recurrences.Add (recurrence);
+                    recurrences.Add (ParseRecurrence (accountId, nsCalendar, child, Xml.Calendar.Calendar_Recurrence));
                     break;
                 case Xml.AirSyncBase.Body:
                     c.ApplyAsXmlBody (child);
@@ -662,6 +663,10 @@ namespace NachoCore.ActiveSync
             }
             c.attendees = attendees;
             c.categories = categories;
+            c.recurrences = recurrences;
+            if (null != exceptions) {
+                c.exceptions = exceptions;
+            }
             return NcResult.OK (c);
         }
 
@@ -685,6 +690,8 @@ namespace NachoCore.ActiveSync
             XNamespace nsEmail = "Email";
 
             emailMessage.xmlAttachments = null;
+
+            var categories = new List<McEmailMessageCategory> ();
 
             foreach (var child in appData.Elements()) {
                 switch (child.Name.LocalName) {
@@ -896,16 +903,12 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                    var categories = AsHelpers.ParseEmailCategories (folder.AccountId, nsEmail, child);
-                    if (0 == emailMessage.Categories.Count) {
-                        emailMessage.Categories = categories;
-                    } else {
-                        emailMessage.Categories.AddRange (categories);
-                    }
+                    categories.AddRange (AsHelpers.ParseEmailCategories (folder.AccountId, nsEmail, child));
                     break;
                 case Xml.Email.MeetingRequest:
                     if (child.HasElements) {
                         var e = new  McMeetingRequest ();
+                        var recurrences = new List<McRecurrence> ();
                         foreach (var meetingRequestPart in child.Elements()) {
                             switch (meetingRequestPart.Name.LocalName) {
                             case Xml.Email.AllDayEvent:
@@ -939,7 +942,7 @@ namespace NachoCore.ActiveSync
                                 if (meetingRequestPart.HasElements) {
                                     foreach (var recurrencePart in meetingRequestPart.Elements()) {
                                         var recurrence = ParseRecurrence (folder.AccountId, nsEmail, recurrencePart, Xml.Email.Recurrence);
-                                        e.recurrences.Add (recurrence);
+                                        recurrences.Add (recurrence);
                                     }
                                 }
                                 break;
@@ -965,6 +968,7 @@ namespace NachoCore.ActiveSync
                                 break;
                             }
                         }
+                        e.recurrences = recurrences;
                         emailMessage.MeetingRequest = e;
                     }
                     break;
@@ -979,6 +983,7 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+            emailMessage.Categories = categories;
             if (null == emailMessage.ConversationId) {
                 Log.Info (Log.LOG_AS, "ProcessEmailItem conversation id is null: {0}", emailMessage.ServerId);
                 emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();

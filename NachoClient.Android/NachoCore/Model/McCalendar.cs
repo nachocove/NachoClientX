@@ -10,11 +10,6 @@ namespace NachoCore.Model
 {
     public partial class McCalendar : McAbstrCalendarRoot
     {
-        /// Implicit [Ignore]
-        public List<McException> exceptions;
-        /// Implicit [Ignore]
-        private List<McRecurrence> DbRecurrences;
-
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
 
@@ -51,24 +46,85 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Calendar;
         }
 
-        protected bool HasReadAncillaryData;
-
-        public McCalendar () : base ()
-        {
-            HasReadAncillaryData = false;
-            DbRecurrences = new List<McRecurrence> ();
-        }
+        private List<McException> dbExceptions = null;
+        private IList<McException> appExceptions = null;
 
         [Ignore]
-        public List<McRecurrence> recurrences {
+        public IList<McException> exceptions {
             get {
-                ReadAncillaryData ();
-                return DbRecurrences;
+                return GetAncillaryCollection (appExceptions, ref dbExceptions, ReadDbExceptions);
             }
             set {
-                ReadAncillaryData ();
-                DbRecurrences = value;
+                NcAssert.NotNull (value, "To clean the exceptions, use an empty list instead of null.");
+                appExceptions = value;
             }
+        }
+
+        private List<McException> ReadDbExceptions ()
+        {
+            return McException.QueryExceptionsForCalendarItem (this.Id).ToList ();
+        }
+
+        private void DeleteDbExceptions ()
+        {
+            DeleteAncillaryCollection (ref dbExceptions, ReadDbExceptions);
+        }
+
+        private void SaveExceptions ()
+        {
+            SaveAncillaryCollection (ref appExceptions, ref dbExceptions, ReadDbExceptions, (McException exception) => {
+                exception.CalendarId = this.Id;
+            }, (McException exception) => {
+                return exception.CalendarId == this.Id;
+            });
+        }
+
+        private void InsertExceptions ()
+        {
+            InsertAncillaryCollection (ref appExceptions, ref dbExceptions, (McException exception) => {
+                exception.CalendarId = this.Id;
+            });
+        }
+
+        private List<McRecurrence> dbRecurrences = null;
+        private IList<McRecurrence> appRecurrences = null;
+
+        [Ignore]
+        public IList<McRecurrence> recurrences {
+            get {
+                return GetAncillaryCollection (appRecurrences, ref dbRecurrences, ReadDbRecurrences);
+            }
+            set {
+                NcAssert.NotNull (value, "To clear the recurrences, use an empty list instead of null.");
+                appRecurrences = value;
+            }
+        }
+
+        private List<McRecurrence> ReadDbRecurrences ()
+        {
+            return NcModel.Instance.Db.Table<McRecurrence> ()
+                .Where (x => x.CalendarId == this.Id).ToList ();
+        }
+
+        private void DeleteDbRecurrences ()
+        {
+            DeleteAncillaryCollection (ref dbRecurrences, ReadDbRecurrences);
+        }
+
+        private void SaveRecurrences ()
+        {
+            SaveAncillaryCollection (ref appRecurrences, ref dbRecurrences, ReadDbRecurrences, (McRecurrence recurrence) => {
+                recurrence.CalendarId = this.Id;
+            }, (McRecurrence recurrence) => {
+                return recurrence.CalendarId == this.Id;
+            });
+        }
+
+        private void InsertRecurrences ()
+        {
+            InsertAncillaryCollection (ref appRecurrences, ref dbRecurrences, (McRecurrence recurrence) => {
+                recurrence.CalendarId = this.Id;
+            });
         }
 
         private void InsertAddressMap ()
@@ -90,20 +146,11 @@ namespace NachoCore.Model
             NcModel.Instance.RunInTransaction (() => {
                 OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
                 retval = base.Insert ();
-                InsertAncillaryData ();
+                InsertExceptions ();
+                InsertRecurrences ();
                 InsertAddressMap ();
             });
             return retval;
-        }
-
-        private NcResult InsertAncillaryData ()
-        {
-            foreach (var r in recurrences) {
-                r.Id = 0;
-                r.CalendarId = this.Id;
-                r.Insert ();
-            }
-            return NcResult.OK ();
         }
 
         public override int Update ()
@@ -114,46 +161,10 @@ namespace NachoCore.Model
                 DeleteAddressMap ();
                 InsertAddressMap ();
                 retval = base.Update ();
-                UpdateAncillaryData (NcModel.Instance.Db);
+                SaveExceptions ();
+                SaveRecurrences ();
             });
             return retval;
-        }
-
-        public void UpdateAncillaryData (SQLiteConnection db)
-        {
-            ReadAncillaryData ();
-            DeleteAncillaryDataFromDB (db);
-            InsertAncillaryData ();
-        }
-
-        private NcResult ReadAncillaryData ()
-        {
-            if (HasReadAncillaryData) {
-                return NcResult.OK ();
-            }
-            if (0 == Id) {
-                HasReadAncillaryData = true;
-                return NcResult.OK ();
-            }
-            DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
-            HasReadAncillaryData = true;
-            return NcResult.OK ();
-        }
-
-        public override void DeleteAncillary ()
-        {
-            NcAssert.True (NcModel.Instance.IsInTransaction ());
-            base.DeleteAncillary ();
-            DeleteAncillaryDataFromDB (NcModel.Instance.Db);
-        }
-
-        private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
-        {
-            var recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
-            foreach (var r in recurrences) {
-                r.Delete ();
-            }
-            return NcResult.OK ();
         }
 
         public static McCalendar QueryByDeviceUniqueId (string deviceUniqueId)
@@ -188,45 +199,44 @@ namespace NachoCore.Model
             }
         }
 
+        /// <summary>
+        /// Find all the calendar items that might need to have events created so that all events would be
+        /// accurate up through the given time.
+        /// </summary>
         public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
         {
-            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList ();
+            return NcModel.Instance.Db.Table<McCalendar> ()
+                .Where (x => x.RecurrencesGeneratedUntil < generateUntil && x.IsAwaitingDelete == false).ToList ();
         }
 
         public List<McException> QueryRelatedExceptions ()
         {
-            return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            return McException.QueryExceptionsForCalendarItem (this.Id).ToList ();
         }
 
-        public void SaveExceptions (List<McException> list)
+        public override void DeleteAncillary ()
         {
-            if (null == list) {
-                return;
-            }
-            foreach (var e in list) {
-                e.CalendarId = Id;
-                e.Insert ();
-            }
-        }
-
-        public void DeleteRelatedExceptions ()
-        {
-            foreach (var exception in McException.QueryExceptionsForCalendarItem (this.Id)) {
-                exception.Delete ();
-            }
+            base.DeleteAncillary ();
+            DeleteDbExceptions ();
+            DeleteDbRecurrences ();
+            DeleteAddressMap ();
         }
 
         public override int Delete ()
         {
+            // Normally ancillary data is deleted in DeleteAncillary(), not in Delete(), because
+            // McAbstrItem.Delete() might delay the actual deletion of the item due a McPending
+            // that references it.  But McEvents are treated differently.  We want to delete them
+            // right now so they disappear from the calendar, even if the underlying McCalendar
+            // might stick around for a while longer.
+
             int retval = 0;
             List<NcEventIndex> eventIds = null;
 
             NcModel.Instance.RunInTransaction (() => {
-                DeleteRelatedExceptions ();
                 eventIds = McEvent.QueryEventIdsForCalendarItem (this.Id);
                 McEvent.DeleteEventsForCalendarItem (this.Id);
                 retval = base.Delete ();
-                DeleteAddressMap ();
             });
 
             // Canceling a local notification may require running some code on the UI thread.
