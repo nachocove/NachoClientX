@@ -466,7 +466,7 @@ namespace NachoCore.ActiveSync
             {
                 // Once cancelled, we must post NO event to TL SM.
                 if (!Ct.IsCancellationRequested) {
-                    Command.Sm.PostEvent (Event);
+                    Command.ProcessEventFromRobot (Event, this);
                 }
             }
 
@@ -643,10 +643,7 @@ namespace NachoCore.ActiveSync
             {
                 var currentUri = CurrentServerUri ();
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUri);
-                // Once cancelled, we must post NO event to TL SM.
-                if (!Ct.IsCancellationRequested) {
-                    Command.HandleRobotAuthFail (this, Step, SrDomain);
-                }
+                ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 
             private void DoRobotPostSuccess ()
