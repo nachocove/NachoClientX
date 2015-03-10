@@ -41,6 +41,10 @@ namespace Test.Android
             MailboxAddress[] expected7 = new MailboxAddress[1] {
                 new MailboxAddress ("Henry Kwok", "henryk@nachocove.com"),
             };
+                
+            MailboxAddress[] expected9 = new MailboxAddress[1] {
+                new MailboxAddress("LuXe@", "Info@Luxe1539LuxuryApartments.com"),
+            };
 
             // Single email address, no display name
             InternetAddressList got1 = NcEmailAddress.ParseAddressListString ("henryk@nachocove.com");
@@ -73,6 +77,12 @@ namespace Test.Android
 
             InternetAddressList got7 = NcEmailAddress.ParseAddressListString ("\"Henry Kwok\" <henryk@nachocove.com>");
             Compare (expected7, got7);
+
+            InternetAddressList got8 = NcEmailAddress.ParseAddressListString ("\"LuXe@\" <1539 Info@Luxe1539LuxuryApartments.com>");
+            Assert.AreEqual (0, got8.Count);
+
+            InternetAddressList got9 = NcEmailAddress.ParseAddressListString ("\"LuXe@\" <Info@Luxe1539LuxuryApartments.com>");
+            Compare (expected9, got9);
         }
 
         private void Compare (MailboxAddress[] expected, InternetAddressList got)

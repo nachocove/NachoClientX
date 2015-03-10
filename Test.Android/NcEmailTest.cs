@@ -277,7 +277,7 @@ namespace Test.Common
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories (1)));
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
-            List<McEmailMessageCategory> categories = email1.Categories;
+            IList<McEmailMessageCategory> categories = email1.Categories;
 
             AssertListsAreEquals (categories, email1.Categories);
             email1.Categories = categories;
@@ -292,7 +292,6 @@ namespace Test.Common
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
-            Assert.True (email1.getInternalCategoriesList ().Count == 6);
 
             email1.AccountId = 1;
             email1.Update ();
@@ -326,18 +325,9 @@ namespace Test.Common
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
-            email1.Categories.Clear ();
+            email1.Categories = new List<McEmailMessageCategory> ();
             email1.Update ();
             Assert.True (email1.Categories.Count == 0);
-        }
-        //Check this
-        [Test]
-        public void ReadRecordWithoutAncillary ()
-        {
-            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories (1)));
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
-            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
-            Assert.True (email2.getInternalCategoriesList ().Count () == 0);
         }
 
         [Test]
@@ -352,7 +342,7 @@ namespace Test.Common
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             Assert.True (email2.Categories.Count == 6);
-            email2.Categories.Clear ();
+            email2.Categories = new List<McEmailMessageCategory> ();
             email2.Update ();
             Assert.True (email2.Categories.Count == 0);
             email2.Categories = oneItem;
@@ -360,7 +350,9 @@ namespace Test.Common
             Assert.True (email2.Categories.Count == 1);
 
             email2.To = "No Recip.";
-            email2.Categories.Add (getCategories (1) [2]);
+            var email2Categories = new List<McEmailMessageCategory> (email2.Categories);
+            email2Categories.Add (getCategories (1) [2]);
+            email2.Categories = email2Categories;
             email2.Update ();
 
             McEmailMessage email3 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
@@ -392,9 +384,9 @@ namespace Test.Common
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             email2.Cc = "ChangedTheCC";
-            List<McEmailMessageCategory> listPreUpdate = email2.Categories;
+            IList<McEmailMessageCategory> listPreUpdate = email2.Categories;
             email2.Update ();
-            List<McEmailMessageCategory> listPostUpdate = email2.Categories;
+            IList<McEmailMessageCategory> listPostUpdate = email2.Categories;
 
             AssertListsAreEquals (listPreUpdate, listPostUpdate);
         }
@@ -412,7 +404,7 @@ namespace Test.Common
             Assert.True (email2.Categories [0].Name.Trim ().Equals ("ChangedTheName"));
         }
 
-        private static void AssertListsAreEquals (IList actualList, IList expectedList)
+        private static void AssertListsAreEquals<T> (IList<T> actualList, IList<T> expectedList)
         {
             if (actualList.Count != expectedList.Count)
                 Assert.Fail ("Property {0}.{1} does not match. Expected IList containing {2} elements but was IList containing {3} elements", expectedList.Count, actualList.Count);
@@ -449,36 +441,6 @@ namespace Test.Common
             }
 
             return serverIDs;
-        }
-
-        [Test]
-        public void UpdateEmailSet ()
-        {
-            List<McEmailMessageCategory> categories = getCategories (1);
-            List<McEmailMessage> email = new List<McEmailMessage> ();
-            List<McEmailMessageCategory> updatedCategories = new List<McEmailMessageCategory> ();
-            updatedCategories.Add (categories [0]);
-            updatedCategories.Add (categories [1]);
-            List<string> serverIds = getServerIDs (6);
-            for (int i = 0; i < 6; i++) {
-                email.Add (InsertEmailIntoDB (serverIds [i], categories));
-
-                for (int j = 0; j < email [i].Categories.Count (); j++) {
-                    string spaces = "".PadRight (10 - email [i].Categories [j].Name.Length);
-                    Console.WriteLine ("DB: " + email [i].Categories [j].Name + spaces + " ORIGINAL: " + categories [j].Name);
-                }
-     
-                email [i].Categories = updatedCategories;
-                email [i].Update ();
-
-                for (int j = 0; j < email [i].Categories.Count (); j++) {
-                    string spaces = "".PadRight (10 - email [i].Categories [j].Name.Length);
-                    Console.WriteLine ("DB: " + email [i].Categories [j].Name + spaces + " ORIGINAL: " + updatedCategories [j].Name);
-                    string word1 = email [i].Categories [j].Name.Trim ();
-                    string word2 = updatedCategories [j].Name.Trim ();
-                    Assert.True (word1.CompareTo (word2) == 0);
-                }
-            }
         }
 
         [Test]

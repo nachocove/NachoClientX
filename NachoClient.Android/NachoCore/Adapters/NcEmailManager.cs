@@ -17,14 +17,8 @@ namespace NachoCore
         public static McFolder InboxFolder ()
         {
             var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            var emailFolders = new NachoFolders (account.Id, NachoFolders.FilterForEmail);
-            for (int i = 0; i < emailFolders.Count (); i++) {
-                McFolder f = emailFolders.GetFolder (i);
-                if (f.DisplayName.Equals ("Inbox")) {
-                    return f;
-                }
-            }
-            return null;
+            var inboxFolder = McFolder.GetDefaultInboxFolder (account.Id);
+            return inboxFolder;
         }
 
         public static INachoEmailMessages Inbox ()

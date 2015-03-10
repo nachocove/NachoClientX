@@ -60,7 +60,7 @@ namespace NachoCore.ActiveSync
                     var pending = iterPending;
                     switch (pending.State) {
                     case McPending.StateEnum.Eligible:
-                        pending.Delete ();
+                        pending.ResolveAsCancelled (false);
                         break;
 
                     case McPending.StateEnum.Deferred:

@@ -413,6 +413,11 @@ namespace NachoClient.iOS
                 }
             }
 
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
+                return;
+            }
+
             StartLoginProcess ();
         }
 

@@ -72,8 +72,10 @@ namespace NachoCore.Index
         public IndexEmailMessage (string id, string content, MimeMessage message) :
             base ("message", id, content, message)
         {
-            Doc.Add (GetIndexedField ("subject", Message.Subject));
-            BytesIndexed += Message.Subject.Length;
+            if (!String.IsNullOrEmpty (Message.Subject)) {
+                Doc.Add (GetIndexedField ("subject", Message.Subject));
+                BytesIndexed += Message.Subject.Length;
+            }
 
             var dateString = DateTools.DateToString (Message.Date.DateTime, DateTools.Resolution.SECOND);
             var dateField = GetExactMatchOnlyField ("received_date", dateString);

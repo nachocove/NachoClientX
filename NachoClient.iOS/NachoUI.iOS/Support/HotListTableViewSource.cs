@@ -623,8 +623,12 @@ namespace NachoClient.iOS
             var inboxButton = (UIButton)footer.ViewWithTag (INBOX_BUTTON_TAG);
             var inboxLabel = (UILabel)footer.ViewWithTag (INBOX_LABEL);
             inboxLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
+
             var inboxFolder = NcEmailManager.InboxFolder ();
-            var unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+            var unreadInboxMessagesCount = 0;
+            if (null != inboxFolder) {
+                unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+            }
 
             inboxLabel.Text = "Go to Inbox (" + unreadInboxMessagesCount + " unread)";
             inboxButton.Enabled = true;
@@ -682,12 +686,52 @@ namespace NachoClient.iOS
             }
         }
 
+        private int VisibleRow (UITableView tableView)
+        {
+            var visibleRows = tableView.IndexPathsForVisibleRows;
+            if (1 == visibleRows.Length) {
+                // Only one entry in the hot view.
+                return visibleRows [0].Row;
+            }
+            if (2 == visibleRows.Length) {
+                if (2 == messageThreads.Count ()) {
+                    // There isn't an easy way to tell which row is fully visible and which is only partially visible.
+                    // Pretend that no row is visible, so the caller will use the indexPath passed into RowSelected.
+                    return -1;
+                }
+                if (0 == visibleRows[0].Row) {
+                    // At the beginning.
+                    return 0;
+                } else {
+                    // At the end of the list.
+                    return visibleRows [1].Row;
+                }
+            }
+            if (3 == visibleRows.Length) {
+                // The normal case.  We are somewhere in the middle of the list.
+                return visibleRows [1].Row;
+            }
+            return -1;
+        }
+
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            // There appears to be a bug in Xamarin or iOS where the indexPath that is passed into RowSelected
+            // is sometimes incorrect.  I have not found the pattern for when the bug happens.  So we ignore
+            // the row that is passed in and figure out the message that is currently visible.  (This only works
+            // because the Hot view shows only one message at a time.  If the Hot view changes, this code will
+            // have to change.)
+            int selectedRow = VisibleRow (tableView);
+            if (0 > selectedRow) {
+                selectedRow = indexPath.Row;
+            }
+            if (selectedRow != indexPath.Row) {
+                Log.Warn (Log.LOG_UI, "HotListTableViewSource.RowSelected was passed a row index, {0}, that is not the currently visible cell, {1}", indexPath.Row, selectedRow);
+            }
             if (NoMessageThreads ()) {
                 return;
             }
-            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+            var messageThread = messageThreads.GetEmailThread (selectedRow);
             if (null == messageThread) {
                 return;
             }

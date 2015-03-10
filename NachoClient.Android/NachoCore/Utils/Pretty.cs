@@ -523,7 +523,7 @@ namespace NachoCore.Utils
             return AddOrdinalSuffix (week);
         }
 
-        public static string MakeRecurrenceString (List<McRecurrence> recurrences)
+        public static string MakeRecurrenceString (IList<McRecurrence> recurrences)
         {
             if (0 == recurrences.Count) {
                 return "does not repeat";

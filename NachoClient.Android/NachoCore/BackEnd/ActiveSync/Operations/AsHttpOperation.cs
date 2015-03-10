@@ -607,7 +607,7 @@ namespace NachoCore.ActiveSync
                             capture.Start ();
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
                             capture.Stop ();
-                            if (5000 > capture.ElapsedMilliseconds) {
+                            if (1000 < capture.ElapsedMilliseconds) {
                                 Log.Warn (Log.LOG_HTTP, "LoadBytes took {0}ms", capture.ElapsedMilliseconds);
                             }
                             diaper.Dispose ();

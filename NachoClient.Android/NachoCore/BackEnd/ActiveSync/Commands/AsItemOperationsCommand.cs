@@ -60,11 +60,14 @@ namespace NachoCore.ActiveSync
             XElement fetch = null;
             // Add in the pendings, if any.
             foreach (var pending in PendingList) {
+                fetch = null;
                 switch (pending.Operation) {
                 case McPending.Operations.AttachmentDownload:
                     var attachment = McAbstrObject.QueryById<McAttachment> (pending.AttachmentId);
-                    Attachments.Add (attachment);
-                    fetch = ToAttaFetch (attachment.FileReference);
+                    if (null != attachment) {
+                        Attachments.Add (attachment);
+                        fetch = ToAttaFetch (attachment.FileReference);
+                    }
                     break;
 
                 case McPending.Operations.EmailBodyDownload:
@@ -106,7 +109,10 @@ namespace NachoCore.ActiveSync
                     NcAssert.True (false);
                     break;
                 }
-                itemOp.Add (fetch);
+                // The to-be-fetched attachment can be deleted before we get here.
+                if (null != fetch) {
+                    itemOp.Add (fetch);
+                }
             }
             // Add in the prefetches if any.
             foreach (var pfBody in FetchKit.FetchBodies) {

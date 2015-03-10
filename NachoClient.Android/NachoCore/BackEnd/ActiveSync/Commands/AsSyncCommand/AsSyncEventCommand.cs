@@ -92,7 +92,6 @@ namespace NachoCore.ActiveSync
                 newItem.AccountId = folder.AccountId;
                 NcModel.Instance.RunInTransaction (() => {
                     int ir = newItem.Insert ();
-                    InsertExceptions (newItem);
                     NcAssert.True (0 < ir, "newItem.Insert");
                     folder.Link (newItem);
                 });
@@ -117,14 +116,7 @@ namespace NachoCore.ActiveSync
             newItem.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
             folder.UpdateLink (newItem);
             int ur = newItem.Update ();
-            InsertExceptions (newItem);
             NcAssert.True (0 < ur, "newItem.Update");
-        }
-
-        protected static void InsertExceptions(McCalendar c)
-        {
-            c.DeleteRelatedExceptions ();
-            c.SaveExceptions (c.exceptions);
         }
     }
 }

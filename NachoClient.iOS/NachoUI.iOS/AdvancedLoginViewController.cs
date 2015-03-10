@@ -924,6 +924,14 @@ namespace NachoClient.iOS
                 ConfigureView (LoginStatus.AcceptCertificate);
                 certificateCallbackHandler ();
             }
+            if (NcResult.SubKindEnum.Info_NetworkStatus == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Info_NetworkStatus");
+                if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                    ConfigureView (LoginStatus.NoNetwork);
+                    waitScreen.DismissView ();
+                    stopBeIfRunning ();
+                }
+            }
         }
 
         private void certificateCallbackHandler ()

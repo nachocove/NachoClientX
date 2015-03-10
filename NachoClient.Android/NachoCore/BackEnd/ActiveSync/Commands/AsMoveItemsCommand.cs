@@ -130,7 +130,11 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 var pathElem = McPath.QueryByServerId (BEContext.Account.Id, oldServerId);
-                pathElem.Delete ();
+                if (null == pathElem) {
+                    Log.Error (Log.LOG_AS, "AsMoveItemsCommand: can't find McPath for {0}", oldServerId);
+                } else {
+                    pathElem.Delete ();
+                }
                 pathElem = new McPath (BEContext.Account.Id);
                 pathElem.WasMoveDest = true;
                 pathElem.ServerId = newServerId;
