@@ -47,6 +47,8 @@ namespace NachoCore
         protected string SessionToken;
         protected int NumRetries;
 
+        protected PushAssistParameters CachedParams;
+
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
 
@@ -99,6 +101,7 @@ namespace NachoCore
             // We are finally active. We push-back the Nacho pinger server until we can't!
             Active,
             // We are capable of being active, but we don't want to be right now.
+            Parked,
         };
 
         public class PAEvt : SmEvt
@@ -115,8 +118,12 @@ namespace NachoCore
                 CliTokLoss,
                 // The protocol controller wants us to hold-off the pinger.
                 Defer,
-                // The protocol controller wants us to cancel pinger service and chill.
+                // The protocol controller wants us to stop any current request and future retries but keep
+                // pinger (to-server) session alive.
                 Park,
+                // The protocol controller wants us to stop any current request, future retries and any
+                // pinger session.
+                Stop,
             };
         }
 
@@ -206,6 +213,7 @@ namespace NachoCore
                             (uint)PAEvt.E.CliTokLoss,
                             (uint)PAEvt.E.Defer,
                             (uint)PAEvt.E.Park,
+                            (uint)PAEvt.E.Stop,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -237,6 +245,7 @@ namespace NachoCore
                                 State = (uint)Lst.DevTokW
                             },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoNop, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Stop, Act = DoNop, State = (uint)St.Start },
                         },
                     },
                     new Node {
@@ -267,7 +276,8 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)Lst.CliTokW
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoNop, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Stop, Act = DoNop, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -305,6 +315,7 @@ namespace NachoCore
                                 State = (uint)Lst.CliTokW
                             },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Stop, Act = DoNop, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -341,9 +352,42 @@ namespace NachoCore
                                 Act = DoDeferSession,
                                 State = (uint)Lst.Active
                             },
-                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)St.Start },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
                         }
                     },
+                    new Node {
+                        State = (uint)Lst.Parked,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                        },
+                        On = new [] {
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTok,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTokLoss,
+                                Act = DoGetDevTok,
+                                State = (uint)Lst.DevTokW
+                            },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTok,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTokLoss,
+                                Act = DoGetCliTok,
+                                State = (uint)Lst.CliTokW
+                            },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
+                        }
+                    }
                 }
             };
             NcApplication.Instance.StatusIndEvent += TokensWatcher;
@@ -400,7 +444,17 @@ namespace NachoCore
 
         public void Stop ()
         {
-            PostEvent (PAEvt.E.Park, "PASTOP");
+            PostEvent (PAEvt.E.Stop, "PASTOP");
+        }
+
+        public bool IsActive ()
+        {
+            return ((uint)Lst.Active == Sm.State);
+        }
+
+        public bool IsParked ()
+        {
+            return ((uint)Lst.Parked == Sm.State);
         }
 
         private void PostEvent (SmEvt.E evt, string mnemonic)
@@ -516,6 +570,12 @@ namespace NachoCore
                 return;
             }
             var parameters = Owner.PushAssistParameters ();
+            // FIXME - Figure out why this is not working
+            if (null != parameters.RequestData) {
+                CachedParams = parameters;
+            } else {
+                parameters = CachedParams;
+            }
             Dictionary<string, string> httpHeadersDict = new Dictionary<string, string> ();
             if (null != parameters.RequestHeaders) {
                 foreach (var header in parameters.RequestHeaders) {

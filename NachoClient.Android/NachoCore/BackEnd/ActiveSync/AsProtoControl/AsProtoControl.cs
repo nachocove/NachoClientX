@@ -1247,6 +1247,7 @@ namespace NachoCore.ActiveSync
         private void DoArg ()
         {
             var cmd = Sm.Arg as AsCommand;
+
             if (null != cmd as AsPingCommand && null != PushAssist) {
                 PushAssist.Execute ();
             }
@@ -1296,7 +1297,11 @@ namespace NachoCore.ActiveSync
         private void ExecuteCmd ()
         {
             if (null != PushAssist) {
-                PushAssist.Defer ();
+                if (PushAssist.IsActive ()) {
+                    PushAssist.Defer ();
+                } else if (PushAssist.IsParked ()) {
+                    PushAssist.Execute ();
+                }
             }
             Cmd.Execute (Sm);
         }
