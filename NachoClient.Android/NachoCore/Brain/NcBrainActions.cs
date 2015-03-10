@@ -128,10 +128,14 @@ namespace NachoCore.Brain
                 }
                 var tokenizer = new NcMimeTokenizer (message);
                 var content = tokenizer.Content;
-                var indexDoc = new Index.IndexEmailMessage (emailMessage.Id.ToString (), content, message);
+                try {
+                    var indexDoc = new Index.IndexEmailMessage (emailMessage.Id.ToString (), content, message);
 
-                // Index the document
-                bytesIndexed += index.BatchAdd (indexDoc);
+                    // Index the document
+                    bytesIndexed += index.BatchAdd (indexDoc);
+                } catch (NullReferenceException e) {
+                    Log.Error (Log.LOG_BRAIN, "IndexEmailmessage: caught null exception - {0}", e);
+                }
             } else {
                 Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: null body (emailMessageId={0}, bodyId={1})",
                     emailMessage.Id, emailMessage.BodyId);

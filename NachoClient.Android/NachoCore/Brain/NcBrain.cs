@@ -349,7 +349,7 @@ namespace NachoCore.Brain
                 // get to index any message. What we do is to split the remaining allowed
                 // entries into two halves. 1st half goes to indexing and the leftover goes to
                 // score update.
-                num_entries -= IndexEmailMessages (Math.Min (1, num_entries / 2));
+                num_entries -= IndexEmailMessages (Math.Max (1, num_entries / 2));
                 // This must be the last action. See comment above.
                 num_entries -= UpdateEmailMessageScores (num_entries);
                 break;
