@@ -602,24 +602,24 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private bool ShouldDeQueueRobotEvents()
+        private bool ShouldDeQueueRobotEvents ()
         {
             // if base domain is same as domain, no events should have queued up. remove this check if events can be queued up for different reasons
             if (BaseDomain.Equals (Domain, StringComparison.Ordinal)) {
                 return false;
             }
             // if subdomain robots are done, flush robot event Q
-            return AreSubDomainRobotsDone();
+            return AreSubDomainRobotsDone ();
         }
 
         // check if robots are still doing subdomain discovery
-        private bool AreSubDomainRobotsDone()
+        private bool AreSubDomainRobotsDone ()
         {
             return((Robots.Where(x => x.SrDomain.Equals (Domain, StringComparison.Ordinal))).Count()==0);
         }
 
         // DeQueue all queued events that the base domain robots may have sent
-        private void DeQueueRobotEvents()
+        private void DeQueueRobotEvents ()
         {
             Event Event;
             while (!RobotEventsQ.IsEmpty) {
@@ -635,7 +635,7 @@ namespace NachoCore.ActiveSync
         // handle event from Robot
         private void ProcessEventFromRobot (Event Event, StepRobot Robot)
         {
-            if (ShouldEnQueueRobotEvent(Event, Robot)) {
+            if (ShouldEnQueueRobotEvent (Event, Robot)) {
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Event for base domain {1}", Robot.Step, Robot.SrDomain);
                 RobotEventsQ.Enqueue (Event); 
             } else {
