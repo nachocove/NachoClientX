@@ -404,21 +404,27 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            UpdateDescription (); // Must be called before base.Insert()
-            int retval = base.Insert ();
-            InsertAttendees ();
-            InsertCategories ();
-            UpdateAttachments ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                UpdateDescription (); // Must be called before base.Insert()
+                retval = base.Insert ();
+                InsertAttendees ();
+                InsertCategories ();
+                UpdateAttachments ();
+            });
             return retval;
         }
 
         public override int Update ()
         {
-            UpdateDescription (); // Must be called before base.Update()
-            int retval = base.Update ();
-            SaveAttendees ();
-            SaveCategories ();
-            UpdateAttachments ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                UpdateDescription (); // Must be called before base.Update()
+                retval = base.Update ();
+                SaveAttendees ();
+                SaveCategories ();
+                UpdateAttachments ();
+            });
             return retval;
         }
 
