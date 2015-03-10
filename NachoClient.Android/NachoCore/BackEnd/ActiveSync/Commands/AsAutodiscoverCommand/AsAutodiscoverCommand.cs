@@ -615,18 +615,11 @@ namespace NachoCore.ActiveSync
         // check if robots are still doing subdomain discovery
         private bool AreSubDomainRobotsDone()
         {
-            if (null != Robots) {
-                foreach (var Robot in Robots) {
-                    if (Robot.SrDomain.Equals (Domain, StringComparison.Ordinal)) {
-                        return false;
-                    }
-                }
-            } else {
-                Log.Error (Log.LOG_AS, "Checking for Robots' status when Robots list is null.");
-                return true;
-            }
-            Log.Info (Log.LOG_AS, "AUTOD::subdomain robots done auto discovery.");
-            return true;
+            IEnumerable<StepRobot> SubdomainRobots = 
+                from Robot in Robots
+                    where Robot.SrDomain.Equals (Domain, StringComparison.Ordinal)
+                select Robot;
+            return (SubdomainRobots.Count() == 0);
         }
 
         // DeQueue all queued events that the base domain robots may have sent
@@ -659,13 +652,8 @@ namespace NachoCore.ActiveSync
             if  (!Robot.SrDomain.Equals(Domain, StringComparison.Ordinal)) {
                 // enqueue base domain robot events only if subdomain robots are not done 
                 if (!AreSubDomainRobotsDone()) {
-                    switch (Event.EventCode){
-                    // enqueue auth fail events 
-                    case (uint)AsProtoControl.AsEvt.E.AuthFail:
-                        return true;
-                    default:
-                        return false;
-                    }
+                    // enqueue all events from base domain
+                    return true;
                 } else {
                     return false;
                 }
