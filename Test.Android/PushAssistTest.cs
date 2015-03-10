@@ -173,9 +173,9 @@ namespace Test.Common
         private void WaitForState (uint expectedState)
         {
             DateTime now = DateTime.UtcNow;
-            while ((0 < Wpa.EventQueueDepth) && (expectedState != Wpa.State)) {
+            while ((0 < Wpa.EventQueueDepth) || (expectedState != Wpa.State)) {
                 Thread.Sleep (100);
-                if (1000 < (DateTime.UtcNow - now).TotalMilliseconds) {
+                if (3000 < (DateTime.UtcNow - now).TotalMilliseconds) {
                     Assert.AreEqual (expectedState, Wpa.State);
                 }
             }
@@ -423,17 +423,27 @@ namespace Test.Common
             WaitForState ((uint)PushAssist.Lst.Active);
 
             MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
-            int numErrors = 0;
+            PushAssist.MinDelayMsec = 100;
+            PushAssist.MaxDelayMsec = 100;
+            int numRequests = 0;
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
-                numErrors++;
-                if (3 > numErrors) {
+                numRequests++;
+                if (3 > numRequests) {
                     return DeferSessionErrorResponse (request);
                 }
                 return DeferSessionOkResponse (request);
             };
             Wpa.Defer ();
+            // Wait for the 3 tries (2 retries)
+            DateTime now = DateTime.UtcNow;
+            while (3 > numRequests) {
+                Thread.Sleep (100);
+                if (3000 < (DateTime.UtcNow - now).TotalMilliseconds) {
+                    break;
+                }
+            }
+            Assert.AreEqual (3, numRequests);
             WaitForState ((uint)PushAssist.Lst.Active);
-            Assert.AreEqual (3, numErrors);
 
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;

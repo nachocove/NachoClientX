@@ -57,6 +57,8 @@ namespace NachoCore
 
         public const int ApiVersion = 1;
 
+        protected NcTimer RetryTimer;
+
         private string BaseUrl {
             get {
                 return String.Format ("https://{0}/{1}", PingerHostName, ApiVersion);
@@ -617,16 +619,17 @@ namespace NachoCore
                     Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}, content={1})",
                         httpResponse.StatusCode, httpResponse.Content);
                     NumRetries++;
-                    PostTempFail ("HTTP_ERROR");
+                    ScheduleRetry ((uint)SmEvt.E.Launch, "HTTP_RETRY");
                     return;
                 }
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
                     NumRetries++;
-                    PostTempFail ("START_SESS_ERROR");
+                    ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
                 } else {
                     SessionToken = response.Token;
+                    ClearRetry ();
                     PostSuccess ("START_SESS_OK");
                 }
             } catch (OperationCanceledException) {
@@ -634,11 +637,11 @@ namespace NachoCore
             } catch (System.Net.WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
                 NumRetries++;
-                PostTempFail ("NET_ERROR");
+                ScheduleRetry ((uint)SmEvt.E.Launch, "NET_RETRY");
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught unexpected exception - {0}", e);
                 NumRetries++;
-                PostHardFail ("UNEXPECTED_EX");
+                ScheduleRetry ((uint)SmEvt.E.Launch, "UNEXPECTED_RETRY");
             }
         }
 
@@ -669,7 +672,7 @@ namespace NachoCore
                     Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0}, content={1})",
                         httpResponse.StatusCode, httpResponse.Content);
                     NumRetries++;
-                    PostTempFail ("HTTP_ERROR");
+                    ScheduleRetry ((uint)PAEvt.E.Defer, "HTTP_RETRY");
                     return;
                 }
 
@@ -677,8 +680,9 @@ namespace NachoCore
                 var response = ParsePingerResponse (jsonResponse);
                 if (!response.IsOk ()) {
                     NumRetries++;
-                    PostTempFail ("DEFER_SESS_ERROR");
+                    ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
                 } else {
+                    ClearRetry ();
                     PostSuccess ("DEFER_SESS_OK");
                 }
             } catch (OperationCanceledException) {
@@ -686,11 +690,11 @@ namespace NachoCore
             } catch (System.Net.WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
                 NumRetries++;
-                PostTempFail ("NET_ERROR");
+                ScheduleRetry ((uint)PAEvt.E.Defer, "NET_RETRY");
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught unexpected exception - {0}", e);
                 NumRetries++;
-                PostHardFail ("UNEXPECTED_ERROR");
+                ScheduleRetry ((uint)PAEvt.E.Defer, "UNEXPECTED_RETRY");
             }
         }
 
@@ -729,6 +733,8 @@ namespace NachoCore
                 if (!response.IsOk ()) {
                     NumRetries++;
                     PostTempFail ("STOP_SESS_ERROR");
+                } else {
+                    ClearRetry ();
                 }
             } catch (OperationCanceledException) {
                 throw;
@@ -807,8 +813,6 @@ namespace NachoCore
 
         protected async Task<HttpResponseMessage> DoHttpRequest (string url, object jsonRequest, CancellationToken cToken)
         {
-            await Task.Delay (new TimeSpan (0, 0, 0, 0, RetryDelayMsec), cToken).ConfigureAwait (false);
-
             if (String.IsNullOrEmpty (url)) {
                 Log.Error (Log.LOG_PUSH, "null URL");
                 return null;
@@ -836,16 +840,35 @@ namespace NachoCore
             Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
                 await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
 
-            // On any successful call to pinger. Clear the retry count
-            if (HttpStatusCode.OK == response.StatusCode) {
-                NumRetries = 0;
-            }
             return response;
         }
 
         private void DeviceTokenLost ()
         {
             PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
+        }
+
+        private void ScheduleRetry (uint eventType, string mnemonic)
+        {
+            lock (this) {
+                if (null != RetryTimer) {
+                    RetryTimer.Dispose ();
+                }
+                RetryTimer = new NcTimer ("PARetry", (state) => {
+                    Sm.PostEvent (eventType, mnemonic);
+                }, null, new TimeSpan (0, 0, 0, 0, RetryDelayMsec), TimeSpan.Zero);
+            }
+        }
+
+        private void ClearRetry ()
+        {
+            lock (this) {
+                NumRetries = 0;
+                if (null != RetryTimer) {
+                    RetryTimer.Dispose ();
+                    RetryTimer = null;
+                }
+            }
         }
     }
 }
