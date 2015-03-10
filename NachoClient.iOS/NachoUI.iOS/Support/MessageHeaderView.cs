@@ -101,6 +101,7 @@ namespace NachoClient.iOS
             attachmentImageView.Tag = ATTACHMENT_TAG;
             this.AddSubview (attachmentImageView);
 
+            this.BringSubviewToFront (chiliImageView);
             this.BringSubviewToFront (chiliHitBox);
         }
 
