@@ -615,11 +615,7 @@ namespace NachoCore.ActiveSync
         // check if robots are still doing subdomain discovery
         private bool AreSubDomainRobotsDone()
         {
-            IEnumerable<StepRobot> SubdomainRobots = 
-                from Robot in Robots
-                    where Robot.SrDomain.Equals (Domain, StringComparison.Ordinal)
-                select Robot;
-            return (SubdomainRobots.Count() == 0);
+            return((Robots.Where(x => x.SrDomain.Equals (Domain, StringComparison.Ordinal))).Count()==0);
         }
 
         // DeQueue all queued events that the base domain robots may have sent
