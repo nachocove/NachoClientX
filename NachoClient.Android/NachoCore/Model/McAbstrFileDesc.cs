@@ -152,12 +152,15 @@ namespace NachoCore.Model
 
         public void SetDisplayName (string displayName)
         {
+            DisplayName = displayName;
+            LocalFileName = null;
+            if (null == displayName) {
+                return;
+            }
             string oldPath = null;
             if (0 < Id) {
                 oldPath = GetFilePath ();
             }
-            DisplayName = displayName;
-            LocalFileName = null;
             // See if we can make a legit LocalFileName. If we can't, leave it null.
             var tmp = NcModel.Instance.TmpPath (AccountId);
             Directory.CreateDirectory (tmp);
