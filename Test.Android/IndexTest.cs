@@ -270,13 +270,16 @@ namespace Test.Common
         [Test]
         public void TestEmailBody ()
         {
-            string[] bodies = new string[6] {
+            string[] bodies = new string[8] {
                 "words are words",
                 "sentences have words",
                 "nonsense have words",
                 "words aren't necessarily nonsense",
                 "Preseason will start soon",
                 "preparing for examines",
+                // Corner case to test insertion is ok
+                null,
+                ""
             };
 
             // Add emails to the index
@@ -310,11 +313,14 @@ namespace Test.Common
         [Test]
         public void TestEmailSubject ()
         {
-            string[] subjects = new string[4] {
+            string[] subjects = new string[6] {
                 "important - please read",
                 "not important - please ignore",
                 "daily rambling",
                 "random status",
+                // Corner case to test insertion is ok
+                null,
+                ""
             };
 
             // Add emails to the index
