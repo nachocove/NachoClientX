@@ -164,6 +164,7 @@ namespace NachoCore.Utils
             Info_EmailSearchCommandSucceeded,
             Error_EmailSearchCommandFailed,
             Info_ServerStatus,
+            Info_NetworkStatus,
         };
 
         public enum WhyEnum {

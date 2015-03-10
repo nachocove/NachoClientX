@@ -176,7 +176,14 @@ namespace NachoCore.Utils
                 Speed = speed;
                 Log.Info (Log.LOG_STATE, "UPDATE STATE {0}=>{1} {2}=>{3}", oldStatus, Status, oldSpeed, Speed);
                 if (oldStatus != Status && null != CommStatusNetEvent) {
-                    CommStatusNetEvent (this, new NetStatusEventArgs (Status, Speed));
+                    var info = new NetStatusEventArgs (Status, Speed);
+                    CommStatusNetEvent (this, info);
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NetworkStatus);
+                    result.Value = info;
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
                 }
             }
         }
