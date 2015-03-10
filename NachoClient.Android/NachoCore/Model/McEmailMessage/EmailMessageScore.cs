@@ -109,10 +109,10 @@ namespace NachoCore.Model
                     dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
                     dep.InsertByBrain ();
                 } else {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
             } else {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address", Id);
             }
 
             ScoreVersion++;
