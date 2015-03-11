@@ -1070,15 +1070,19 @@ namespace NachoCore.Utils
                 }
             } else {
                 foreach (var exception in exceptions) {
-                    if (DateTime.MinValue == exception.StartTime) {
-                        exception.StartTime = startTime;
-                    }
-                    if (DateTime.MinValue == exception.EndTime) {
-                        exception.EndTime = endTime;
-                    }
-                    var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
-                    if (exception.ReminderIsSet) {
-                        e.SetReminder (exception.Reminder);
+                    if (0 == exception.Deleted) {
+                        DateTime exceptionStart = exception.StartTime;
+                        if (DateTime.MinValue == exceptionStart) {
+                            exceptionStart = startTime;
+                        }
+                        DateTime exceptionEnd = exception.EndTime;
+                        if (DateTime.MinValue == exceptionEnd) {
+                            exceptionEnd = endTime;
+                        }
+                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.Id, exception.Id);
+                        if (exception.ReminderIsSet) {
+                            e.SetReminder (exception.Reminder);
+                        }
                     }
                 }
             }
