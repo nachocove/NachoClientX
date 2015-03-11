@@ -10,6 +10,7 @@ using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -32,8 +33,9 @@ namespace NachoClient.iOS
 
         public ButtonCallback OnClick;
 
-        McEvent currentEvent;
+        protected McEvent currentEvent;
         protected UITapGestureRecognizer tapRecognizer;
+        protected NcTimer eventEndTimer = null;
 
         // Pre-made swipe action descriptors
 //        private static SwipeActionDescriptor DIAL_IN_BUTTON =
@@ -105,17 +107,50 @@ namespace NachoClient.iOS
             });
             this.AddGestureRecognizer (tapRecognizer);
 
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             // Have the event manager keep the McEvents accurate for at least the next seven days.
             NcEventManager.AddEventWindow (this, new TimeSpan (7, 0, 0, 0));
+        }
 
+        public void ViewWillAppear ()
+        {
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             Configure ();
+        }
+
+        public void ViewWillDisappear ()
+        {
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            if (null != eventEndTimer) {
+                eventEndTimer.Dispose ();
+                eventEndTimer = null;
+            }
         }
 
         public void Configure ()
         {
             currentEvent = McEvent.GetCurrentOrNextEvent ();
             ConfigureCurrentEvent ();
+
+            if (null != eventEndTimer) {
+                eventEndTimer.Dispose ();
+                eventEndTimer = null;
+            }
+
+            // Set a timer to fire at the end of the currently displayed event, so the view can
+            // be reconfigured to show the next event.
+            if (null != currentEvent) {
+                TimeSpan timerDuration = currentEvent.EndTime - DateTime.UtcNow;
+                if (timerDuration < TimeSpan.Zero) {
+                    // The event ended in between GetCurrentOrNextEvent running its query and now.
+                    // Configure the timer to fire immediately.
+                    timerDuration = TimeSpan.Zero;
+                }
+                eventEndTimer = new NcTimer ("HotEventView", (state) => {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        Configure ();
+                    });
+                }, null, timerDuration, TimeSpan.Zero);
+            }
         }
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
@@ -233,12 +268,6 @@ namespace NachoClient.iOS
                 }
             };
         }
-
-        public void Cleanup ()
-        {
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
     }
 }
 
