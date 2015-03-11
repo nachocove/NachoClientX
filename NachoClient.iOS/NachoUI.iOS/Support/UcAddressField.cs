@@ -105,6 +105,12 @@ namespace NachoClient.iOS
             NcAssert.True (null != field);
             field.BecomeFirstResponder ();
         }
+
+        public override void DictationRecordingDidEnd ()
+        {
+            this.Delegate.ShouldChangeCharacters (this, new NSRange (0, this.Text.Length), this.Text);
+            this.Text = "";
+        }
     };
 }
 
