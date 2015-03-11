@@ -324,7 +324,6 @@ namespace NachoCore
                         State = (uint)Lst.Active,
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
@@ -353,6 +352,11 @@ namespace NachoCore
                                 Event = (uint)SmEvt.E.TempFail,
                                 Act = DoDeferSession,
                                 State = (uint)Lst.Active
+                            },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW,
                             },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
@@ -678,12 +682,16 @@ namespace NachoCore
 
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                 var response = ParsePingerResponse (jsonResponse);
-                if (!response.IsOk ()) {
+                if (response.IsOk ()) {
+                    ClearRetry ();
+                    PostSuccess ("DEFER_SESS_OK");
+                } else if (response.IsWarn ()) {
                     NumRetries++;
                     ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
                 } else {
+                    NcAssert.True (response.IsError ());
                     ClearRetry ();
-                    PostSuccess ("DEFER_SESS_OK");
+                    PostHardFail ("DEFER_SESS_ERROR");
                 }
             } catch (OperationCanceledException) {
                 throw;
@@ -752,6 +760,7 @@ namespace NachoCore
         private void DoPark ()
         {
             // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
+            ClearRetry ();
         }
 
         // MISCELLANEOUS STUFF

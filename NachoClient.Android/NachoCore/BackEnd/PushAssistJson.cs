@@ -69,6 +69,11 @@ namespace NachoCore
             return (Warn == Status);
         }
 
+        public bool IsError ()
+        {
+            return (Error == Status);
+        }
+
         public bool IsOkOrWarn ()
         {
             return IsOk () || IsWarn ();
