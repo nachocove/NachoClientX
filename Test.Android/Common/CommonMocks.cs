@@ -352,7 +352,7 @@ namespace Test.iOS
             };
         }
 
-        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders)
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected)
         {
             return new NachoCore.ActiveSync.PingKit () {
                 MaxHeartbeatInterval = 600,

@@ -1365,7 +1365,7 @@ namespace NachoCore.ActiveSync
         // PushAssist support.
         private AsPingCommand GenerateDummyPing ()
         {
-            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false);
+            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
             if (null == pingKit) {
                 return null;
             }
@@ -1404,7 +1404,7 @@ namespace NachoCore.ActiveSync
 
         public int PushAssistTimeout ()
         {
-            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false);
+            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
             return (int)(null == pingKit ? 600 : pingKit.MaxHeartbeatInterval) * 1000;
         }
 
