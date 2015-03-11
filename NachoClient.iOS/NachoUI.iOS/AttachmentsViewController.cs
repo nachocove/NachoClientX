@@ -418,7 +418,6 @@ namespace NachoClient.iOS
             }
 
             string token = PlatformHelpers.DownloadAttachment (a);
-            token = null;
             if (null == token) {
                 UIAlertView alert = new UIAlertView (
                     "Download Error", 
