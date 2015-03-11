@@ -634,7 +634,7 @@ namespace NachoCore
                 }
             } catch (OperationCanceledException) {
                 throw;
-            } catch (System.Net.WebException e) {
+            } catch (WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
                 NumRetries++;
                 ScheduleRetry ((uint)SmEvt.E.Launch, "NET_RETRY");
@@ -687,7 +687,7 @@ namespace NachoCore
                 }
             } catch (OperationCanceledException) {
                 throw;
-            } catch (System.Net.WebException e) {
+            } catch (WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
                 NumRetries++;
                 ScheduleRetry ((uint)PAEvt.E.Defer, "NET_RETRY");
@@ -837,8 +837,12 @@ namespace NachoCore
             var response = await Client
                 .SendAsync (request, HttpCompletionOption.ResponseContentRead, cToken)
                 .ConfigureAwait (false);
-            Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
-                await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
+            if (HttpStatusCode.OK == response.StatusCode) {
+                Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
+                    await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
+            } else {
+                Log.Warn (Log.LOG_PUSH, "PA response: statusCode={0}", response.StatusCode);
+            }
 
             return response;
         }

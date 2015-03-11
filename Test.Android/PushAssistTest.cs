@@ -304,6 +304,18 @@ namespace Test.Common
             return PingerResponse (httpRequest, "OK", "");
         }
 
+        private HttpResponseMessage HttpErrorPingerResponse (HttpRequestMessage httpRequest)
+        {
+            return new HttpResponseMessage () {
+                StatusCode = System.Net.HttpStatusCode.InternalServerError,
+            };
+        }
+
+        private HttpResponseMessage NetworkErrorPingerResponse (HttpRequestMessage httpRequest)
+        {
+            throw new System.Net.WebException ("Network blows up");
+        }
+
         // Start -> DevTokW -> CliTokW -> SessTokW -> Active
         // where both device and client tokens are not immediately available
         [Test]
@@ -382,17 +394,18 @@ namespace Test.Common
             WaitForState ((uint)PushAssist.Lst.Active);
         }
 
-        [Test]
-        public void StartSessionWithError ()
+        private void StartSessionWithErrors (
+            MockHttpClient.ExamineHttpRequestMessageDelegate checkDelegate,
+            MockHttpClient.ProvideHttpResponseMessageDelegate respondDelegate)
         {
-            MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
+            MockHttpClient.ExamineHttpRequestMessage = checkDelegate;
             PushAssist.MinDelayMsec = 100;
             PushAssist.MaxDelayMsec = 100;
             int numErrors = 0;
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 numErrors++;
                 if (3 > numErrors) {
-                    return StartSessionErrorResponse (request);
+                    return respondDelegate (request);
                 }
                 return StartSessionOkResponse (request);
             };
@@ -411,7 +424,26 @@ namespace Test.Common
         }
 
         [Test]
-        public void DeferSessionWithError ()
+        public void StartSessionWithPingerError ()
+        {
+            StartSessionWithErrors (CheckStartSessionRequest, StartSessionErrorResponse);
+        }
+
+        [Test]
+        public void StartSessionWithHttpError ()
+        {
+            StartSessionWithErrors (CheckStartSessionRequest, HttpErrorPingerResponse);
+        }
+
+        [Test]
+        public void StartSessionWithNetworkError ()
+        {
+            StartSessionWithErrors (CheckStartSessionRequest, NetworkErrorPingerResponse);
+        }
+
+        private void DeferSessionWithErrors (
+            MockHttpClient.ExamineHttpRequestMessageDelegate checkDelegate,
+            MockHttpClient.ProvideHttpResponseMessageDelegate respondDelegate)
         {
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
@@ -422,14 +454,14 @@ namespace Test.Common
             Wpa.Execute ();
             WaitForState ((uint)PushAssist.Lst.Active);
 
-            MockHttpClient.ExamineHttpRequestMessage = CheckDeferSessionRequest;
+            MockHttpClient.ExamineHttpRequestMessage = checkDelegate;
             PushAssist.MinDelayMsec = 100;
             PushAssist.MaxDelayMsec = 100;
             int numRequests = 0;
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 numRequests++;
                 if (3 > numRequests) {
-                    return DeferSessionErrorResponse (request);
+                    return respondDelegate (request);
                 }
                 return DeferSessionOkResponse (request);
             };
@@ -449,6 +481,24 @@ namespace Test.Common
             MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
             Wpa.Stop ();
             WaitForState ((uint)St.Start);
+        }
+
+        [Test]
+        public void DeferSessionWithPingerErrors ()
+        {
+            DeferSessionWithErrors (CheckDeferSessionRequest, DeferSessionErrorResponse);
+        }
+
+        [Test]
+        public void DeferSessioWithHttpErrors ()
+        {
+            DeferSessionWithErrors (CheckDeferSessionRequest, HttpErrorPingerResponse);
+        }
+
+        [Test]
+        public void DeferSessionWithNetworkError ()
+        {
+            DeferSessionWithErrors (CheckDeferSessionRequest, NetworkErrorPingerResponse);
         }
     }
 }
