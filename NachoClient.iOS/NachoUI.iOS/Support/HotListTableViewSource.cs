@@ -480,9 +480,9 @@ namespace NachoClient.iOS
             NSMutableAttributedString lastCardMessage = null;
 
             if (NoMessageThreads ()) {
-                lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nStart adding Hot messages by tapping on the  ", stringAttributes);
+                lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nYou can add Hot messages by tapping on the  ", stringAttributes);
             } else {
-                lastCardMessage = new NSMutableAttributedString ("Start adding Hot messages by tapping on the  ", stringAttributes);
+                lastCardMessage = new NSMutableAttributedString ("You can add Hot messages by tapping on the  ", stringAttributes);
             }
             var lastCardMessagePartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
 
