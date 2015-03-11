@@ -96,14 +96,18 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            var subs = QueryByParentId (AccountId, ServerId, true);
-            Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0}", ServerId);
-            foreach (var sub in subs) {
-                Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0} (subordinate)", sub.ServerId);
-                sub.Delete ();
-            }
-            DeleteNonFolderByParentId (AccountId, ServerId);
-            return base.Delete ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                var subs = QueryByParentId (AccountId, ServerId, true);
+                Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0}", ServerId);
+                foreach (var sub in subs) {
+                    Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0} (subordinate)", sub.ServerId);
+                    sub.Delete ();
+                }
+                DeleteNonFolderByParentId (AccountId, ServerId);
+                retval = base.Delete ();
+            }, true);
+            return retval;
         }
 
         public static IEnumerable<McPath> QueryByParentId (int accountId, string parentId, bool isFolder)
