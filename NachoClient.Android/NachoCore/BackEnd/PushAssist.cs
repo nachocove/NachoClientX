@@ -435,21 +435,37 @@ namespace NachoCore
         // 4. Stop - Like Park, but the outstanding pinger session (to server) is canceled as well.
         public void Execute ()
         {
+            // FIXME - Disable for beta for now.
+            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
+                return;
+            }
             PostEvent (SmEvt.E.Launch, "PAEXE");
         }
 
         public void Defer ()
         {
+            // FIXME - Disable for beta for now.
+            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
+                return;
+            }
             PostEvent (PAEvt.E.Defer, "PAHO");
         }
 
         public void Park ()
         {
+            // FIXME - Disable for beta for now.
+            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
+                return;
+            }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
         public void Stop ()
         {
+            // FIXME - Disable for beta for now.
+            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
+                return;
+            }
             PostEvent (PAEvt.E.Stop, "PASTOP");
         }
 
