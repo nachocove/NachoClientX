@@ -520,14 +520,14 @@ namespace NachoCore.Model
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", serverId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/EmailBodyError: can't find McEmailMessage with ServerId {0}", serverId);
                 return;
             }
             McBody body = null;
             if (0 != email.BodyId) {
                 body = McBody.QueryById<McBody> (email.BodyId);
                 if (null == body) {
-                    Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                    Log.Error (Log.LOG_AS, "ResolveAsHardFail/EmailBodyError: BodyId {0} has no body", email.BodyId);
                 }
             }
             if (null == body) {
@@ -544,7 +544,7 @@ namespace NachoCore.Model
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", serverId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/EmailBodyClear: can't find McEmailMessage with ServerId {0}", serverId);
                 return;
             }
             if (0 == email.BodyId) {
@@ -552,7 +552,7 @@ namespace NachoCore.Model
             }
             McBody body = McBody.QueryById<McBody> (email.BodyId);
             if (null == body) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                Log.Error (Log.LOG_AS, "ResolveAsHardFail/EailBodyClear: BodyId {0} has no body", email.BodyId);
                 return;
             }
             body.DeleteFile (); // Sets FilePresence to None and Updates the item
@@ -562,7 +562,7 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/AttachmentError: Attachment {0} does not exist", attachmentId);
                 return;
             }
             attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
@@ -573,7 +573,7 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Error(Log.LOG_AS,"ResolveAsHardFail: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS,"ResolveAsHardFail/AttachmentClear: Attachment {0} does not exist", attachmentId);
                 return;
             }
             attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
