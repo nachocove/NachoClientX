@@ -700,7 +700,6 @@ namespace NachoCore
                 var response = ParsePingerResponse (jsonResponse);
                 if (response.IsOk ()) {
                     ClearRetry ();
-                    PostSuccess ("DEFER_SESS_OK");
                 } else if (response.IsWarn ()) {
                     NumRetries++;
                     ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
@@ -809,8 +808,12 @@ namespace NachoCore
         public void SetDeviceToken (byte[] deviceToken)
         {
             var b64tok = Convert.ToBase64String (deviceToken);
-            McMutables.Set (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken, b64tok);
-            PostEvent (PAEvt.E.DevTok, "DEVTOKSET");
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            var token = McMutables.Get (accountId, KPushAssist, KDeviceToken);
+            if (token != b64tok) {
+                McMutables.Set (accountId, KPushAssist, KDeviceToken, b64tok);
+                PostEvent (PAEvt.E.DevTok, "DEVTOKSET");
+            }
         }
 
         // This API is called by platform code to clear the APNS/GCD device token.
