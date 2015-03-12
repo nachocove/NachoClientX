@@ -190,7 +190,7 @@ namespace NachoCore.Utils
             if (null == calendarItem) {
                 return "";
             } else {
-                return calendarItem.Subject;
+                return calendarItem.GetSubject ();
             }
         }
 

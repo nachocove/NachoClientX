@@ -206,7 +206,7 @@ namespace NachoClient.iOS
             noMessagesLabelView.Hidden = true;
 
             // Subject label view
-            var subject = Pretty.SubjectString (c.Subject);
+            var subject = Pretty.SubjectString (c.GetSubject ());
             subjectLabelView.Text = subject;
             subjectLabelView.Hidden = false;
 
@@ -226,8 +226,8 @@ namespace NachoClient.iOS
             }
 
             var locationString = "";
-            if (!String.IsNullOrEmpty (c.Location)) {
-                locationString = Pretty.SubjectString (c.Location);
+            if (!String.IsNullOrEmpty (c.GetLocation ())) {
+                locationString = Pretty.SubjectString (c.GetLocation ());
             }
 
             var eventString = "";
