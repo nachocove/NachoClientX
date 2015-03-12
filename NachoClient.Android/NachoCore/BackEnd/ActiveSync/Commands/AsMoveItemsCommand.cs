@@ -98,48 +98,50 @@ namespace NachoCore.ActiveSync
                 var oldServerId = xmlSrcMsgId.Value;
                 var newServerId = oldServerId;
                 var xmlDstMsgId = xmlResponse.Element (m_ns + Xml.Mov.DstMsgId);
-                if (null != xmlDstMsgId) {
-                    // We need to re-write the ServerId.
-                    newServerId = xmlDstMsgId.Value;
-                    McAbstrItem item = null;
-                    switch (ClassCode) {
-                    case McAbstrFolderEntry.ClassCodeEnum.Email:
-                        item = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
-                        break;
+                NcModel.Instance.RunInTransaction (() => {
+                    if (null != xmlDstMsgId) {
+                        // We need to re-write the ServerId.
+                        newServerId = xmlDstMsgId.Value;
+                        McAbstrItem item = null;
+                        switch (ClassCode) {
+                        case McAbstrFolderEntry.ClassCodeEnum.Email:
+                            item = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
+                            break;
 
-                    case McAbstrFolderEntry.ClassCodeEnum.Calendar:
-                        item = McAbstrItem.QueryByServerId<McCalendar> (BEContext.Account.Id, PendingSingle.ServerId);
-                        break;
+                        case McAbstrFolderEntry.ClassCodeEnum.Calendar:
+                            item = McAbstrItem.QueryByServerId<McCalendar> (BEContext.Account.Id, PendingSingle.ServerId);
+                            break;
 
-                    case McAbstrFolderEntry.ClassCodeEnum.Contact:
-                        item = McAbstrItem.QueryByServerId<McContact> (BEContext.Account.Id, PendingSingle.ServerId);
-                        break;
+                        case McAbstrFolderEntry.ClassCodeEnum.Contact:
+                            item = McAbstrItem.QueryByServerId<McContact> (BEContext.Account.Id, PendingSingle.ServerId);
+                            break;
 
-                    case McAbstrFolderEntry.ClassCodeEnum.Tasks:
-                        item = McAbstrItem.QueryByServerId<McTask> (BEContext.Account.Id, PendingSingle.ServerId);
-                        break;
+                        case McAbstrFolderEntry.ClassCodeEnum.Tasks:
+                            item = McAbstrItem.QueryByServerId<McTask> (BEContext.Account.Id, PendingSingle.ServerId);
+                            break;
 
-                    default:
-                        NcAssert.True (false);
-                        break;
+                        default:
+                            NcAssert.True (false);
+                            break;
+                        }
+                        if (null != item) {
+                            // The item may have been subsequently deleted.
+                            item.ServerId = newServerId;
+                            item.Update ();
+                        }
                     }
-                    if (null != item) {
-                        // The item may have been subsequently deleted.
-                        item.ServerId = newServerId;
-                        item.Update ();
+                    var pathElem = McPath.QueryByServerId (BEContext.Account.Id, oldServerId);
+                    if (null == pathElem) {
+                        Log.Error (Log.LOG_AS, "AsMoveItemsCommand: can't find McPath for {0}", oldServerId);
+                    } else {
+                        pathElem.Delete ();
                     }
-                }
-                var pathElem = McPath.QueryByServerId (BEContext.Account.Id, oldServerId);
-                if (null == pathElem) {
-                    Log.Error (Log.LOG_AS, "AsMoveItemsCommand: can't find McPath for {0}", oldServerId);
-                } else {
-                    pathElem.Delete ();
-                }
-                pathElem = new McPath (BEContext.Account.Id);
-                pathElem.WasMoveDest = true;
-                pathElem.ServerId = newServerId;
-                pathElem.ParentId = PendingSingle.DestParentId;
-                pathElem.Insert ();
+                    pathElem = new McPath (BEContext.Account.Id);
+                    pathElem.WasMoveDest = true;
+                    pathElem.ServerId = newServerId;
+                    pathElem.ParentId = PendingSingle.DestParentId;
+                    pathElem.Insert ();
+                });
 
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, LocalSuccessInd);

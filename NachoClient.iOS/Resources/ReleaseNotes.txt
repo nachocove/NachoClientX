@@ -1,11 +1,16 @@
-﻿This release requires a fresh install of the app. Please delete your old app prior to installing. We found an issue as we moved from 32-bit support to full 32 and 64 bit support which requires a re-install.
 
-This version has improved threading and search.
+This release updates the current beta release with:
+
+. Faster start up
+
+. Improved search
+
+. Bug fixes
 
 Known issues:
 
-Threading support does not currently work for Google Apps users. This is a known issue and will be fixed in next release.
+. Threading support does not currently work for Google Apps users.
 
-Recurring meetings cannot be created in Nacho Mail at this time.
+. Recurring meetings cannot be created in Nacho Mail at this time.
 
-Canceling a single instance of a recurring meeting is not working at this time.
+. Canceling a single instance of a recurring meeting is not working.

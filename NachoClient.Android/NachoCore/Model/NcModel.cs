@@ -454,12 +454,14 @@ namespace NachoCore.Model
             }
         }
 
-        public void RunInTransaction (Action action)
+        public void RunInTransaction (Action action, bool shouldAlreadyBeInTransaction = false)
         {
             if (NcModel.Instance.IsInTransaction ()) {
                 // If we are already in transaction, then no need to nest - just run the code.
                 action ();
                 return;
+            } else if (shouldAlreadyBeInTransaction) {
+                Log.Error (Log.LOG_DB, "RunInTransaction: Should already be in a transaction here: {0}", new StackTrace (true));
             }
             var threadId = Thread.CurrentThread.ManagedThreadId;
             if (NcApplication.Instance.UiThreadId != threadId) {

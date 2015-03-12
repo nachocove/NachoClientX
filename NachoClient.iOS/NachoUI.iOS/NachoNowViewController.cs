@@ -142,6 +142,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             MaybeRefreshPriorityInbox ();
+            hotEventView.ViewWillAppear ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -188,6 +189,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            hotEventView.ViewWillDisappear ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
