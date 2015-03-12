@@ -691,7 +691,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGetCertHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Could not retrieve sever SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Could not retrieve server SSL cert.", Step);
                 DoRobotHardFail ();
             }
 
