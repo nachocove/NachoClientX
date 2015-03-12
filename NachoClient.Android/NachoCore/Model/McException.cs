@@ -23,6 +23,37 @@ namespace NachoCore.Model
         /// Start time of the original recurring meeting (Compact DateTime). Exception only.
         public DateTime ExceptionStartTime { get; set; }
 
+        public override string GetSubject ()
+        {
+            return this.Subject ?? CalendarItemOrSelf ().Subject;
+        }
+
+        public override string GetLocation ()
+        {
+            return this.Location ?? CalendarItemOrSelf ().Location;
+        }
+
+        public override bool HasReminder ()
+        {
+            return this.ReminderIsSet || CalendarItemOrSelf ().ReminderIsSet;
+        }
+
+        public override uint GetReminder ()
+        {
+            return this.ReminderIsSet ? this.Reminder : CalendarItemOrSelf ().Reminder;
+        }
+
+        private McAbstrCalendarRoot CalendarItemOrSelf ()
+        {
+            if (0 != CalendarId && 0 == Deleted) {
+                var calendarItem = McCalendar.QueryById<McCalendar> ((int)CalendarId);
+                if (null != calendarItem) {
+                    return calendarItem;
+                }
+            }
+            return this;
+        }
+
         public static List<McException> QueryForExceptionId (int calendarId, DateTime exceptionStartTime)
         {
             var query = "SELECT * from McException WHERE CalendarId = ? AND ExceptionStartTime = ?";

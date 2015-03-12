@@ -256,7 +256,7 @@ namespace NachoClient.iOS
             cell.ContentView.Tag = c.Id;
 
             // Subject label view
-            var subject = Pretty.SubjectString (c.Subject);
+            var subject = Pretty.SubjectString (c.GetSubject ());
 
             var dotView = cell.ContentView.ViewWithTag (DOT_TAG) as UIImageView;
             var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
@@ -287,9 +287,9 @@ namespace NachoClient.iOS
             }
 
             var locationString = "";
-            if (!String.IsNullOrEmpty (c.Location)) {
+            if (!String.IsNullOrEmpty (c.GetLocation ())) {
                 locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
-                locationString = Pretty.SubjectString (c.Location);
+                locationString = Pretty.SubjectString (c.GetLocation ());
             }
 
             // Duration
