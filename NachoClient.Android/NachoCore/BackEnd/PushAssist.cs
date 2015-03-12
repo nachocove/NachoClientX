@@ -489,11 +489,6 @@ namespace NachoCore
             Sm.PostEvent ((uint)evt, mnemoic);
         }
 
-        private void PostSuccess (string mnemonic)
-        {
-            PostEvent (SmEvt.E.Success, mnemonic);
-        }
-
         private void PostTempFail (string mnemonic)
         {
             PostEvent (SmEvt.E.TempFail, mnemonic);
@@ -650,7 +645,6 @@ namespace NachoCore
                 } else {
                     SessionToken = response.Token;
                     ClearRetry ();
-                    PostSuccess ("START_SESS_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
