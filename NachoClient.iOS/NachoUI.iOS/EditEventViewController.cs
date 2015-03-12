@@ -525,7 +525,7 @@ namespace NachoClient.iOS
 
             startDatePicker.ValueChanged += (object sender, EventArgs e) => {
                 eventEditStarted = true;
-                DateTime date = startDatePicker.Date.ToDateTime();
+                DateTime date = startDatePicker.Date.ToDateTime ();
                 if (allDaySwitch.On) { 
                     startDateLabel.Text = Pretty.FullDateString (date);
                 } else {
@@ -534,7 +534,7 @@ namespace NachoClient.iOS
                 startDate = date;
                 if (!endChanged && !allDaySwitch.On) {
                     endDate = date.AddHours (1);
-                    endDatePicker.Date = endDate.ToNSDate();
+                    endDatePicker.Date = endDate.ToNSDate ();
                     endDateLabel.Text = Pretty.FullTimeString (endDate);
                     endDateLabel.SizeToFit ();
                     endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
@@ -561,7 +561,7 @@ namespace NachoClient.iOS
                 View.EndEditing (true);
                 if (startDateOpen) {
                     ConfigureDateView ("startClose");
-                    startDate = startDatePicker.Date.ToDateTime();
+                    startDate = startDatePicker.Date.ToDateTime ();
                 } else {
                     if (endDateOpen) {
                         ConfigureDateView ("endClose");
@@ -598,7 +598,7 @@ namespace NachoClient.iOS
             endDatePicker.ValueChanged += (object sender, EventArgs e) => {
                 eventEditStarted = true;
                 endChanged = true;
-                DateTime date = endDatePicker.Date.ToDateTime();
+                DateTime date = endDatePicker.Date.ToDateTime ();
                 if (allDaySwitch.On) { 
                     endDateLabel.Text = Pretty.FullDateString (date);
                 } else {
@@ -626,7 +626,7 @@ namespace NachoClient.iOS
                 View.EndEditing (true);
                 if (endDateOpen) {
                     ConfigureDateView ("endClose");
-                    endDate = endDatePicker.Date.ToDateTime();
+                    endDate = endDatePicker.Date.ToDateTime ();
                     if (0 > endDate.CompareTo (startDate)) {
                         strikethrough.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                         strikethrough.Hidden = false;
@@ -662,13 +662,13 @@ namespace NachoClient.iOS
                         endDate = tempC.EndTime;
                         timesAreSet = !timesAreSet;
                     }
-                    startDatePicker.Date = startDate.ToNSDate();
+                    startDatePicker.Date = startDate.ToNSDate ();
                     startDatePicker.Mode = UIDatePickerMode.DateAndTime;
                     startDateLabel.Text = Pretty.FullDateTimeString (startDate);
                     startDateLabel.SizeToFit ();
                     startDateLabel.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
-                    endDatePicker.Date = endDate.ToNSDate();
+                    endDatePicker.Date = endDate.ToNSDate ();
                     endDatePicker.Mode = UIDatePickerMode.DateAndTime;
                     endDateLabel.Text = Pretty.FullDateTimeString (endDate);
                     endDateLabel.SizeToFit ();
@@ -842,29 +842,8 @@ namespace NachoClient.iOS
             deleteView.AddSubview (deleteIcon);
 
             var deleteTap = new UITapGestureRecognizer ();
-            deleteTap.AddTarget (() => {
-                var actionSheet = new UIActionSheet ();
-                actionSheet.Add ("Delete Event");
-                actionSheet.Add ("Cancel");
-                actionSheet.DestructiveButtonIndex = 0;
-                actionSheet.CancelButtonIndex = 1;
-                actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                    switch (b.ButtonIndex) {
-                    case 0:
-                        DeleteEvent ();
-                        break; 
-                    case 1:
-
-                        break;// Cancel
-                    default:
-                        NcAssert.CaseError ();
-                        break;
-                    }
-                };
-                actionSheet.ShowInView (View);
-            });
+            deleteTap.AddTarget (onDeleteTap);
             deleteView.AddGestureRecognizer (deleteTap);
-
             deleteView.Hidden = true;
 
             //Content View
@@ -933,7 +912,61 @@ namespace NachoClient.iOS
             }
             scrollView.ContentSize = new CGSize (SCREEN_WIDTH, (LINE_OFFSET * 8) + (CELL_HEIGHT * 10) + DELETE_BUTTON_OFFSET);
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+        }
 
+        protected void onDeleteTap ()
+        {
+            if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
+                onDeleteTap8 ();
+            } else {
+                onDeleteTap7 ();
+            }
+        }
+
+        public void onDeleteTap8 ()
+        {
+            var title = "Delete Event";
+            var message = "Delete this event from your calendar";
+            var cancelButtonTitle = "Cancel";
+            var otherButtonTitleOne = "Delete Event";
+
+            var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
+
+            // Create the actions.
+            var cancelAction = UIAlertAction.Create (cancelButtonTitle, UIAlertActionStyle.Cancel, alertAction => {
+                ;
+            });
+            var otherButtonOneAction = UIAlertAction.Create (otherButtonTitleOne, UIAlertActionStyle.Default, alertAction => {
+                DeleteEvent ();
+            });
+
+            // Add the actions.
+            alertController.AddAction (cancelAction);
+            alertController.AddAction (otherButtonOneAction);
+
+            PresentViewController (alertController, true, null);
+        }
+
+        protected void onDeleteTap7 ()
+        {
+            var actionSheet = new UIActionSheet ();
+            actionSheet.Add ("Delete Event");
+            actionSheet.Add ("Cancel");
+            actionSheet.DestructiveButtonIndex = 0;
+            actionSheet.CancelButtonIndex = 1;
+            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    DeleteEvent ();
+                    break; 
+                case 1:
+                    break;// Cancel
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            };
+            actionSheet.ShowInView (View);
         }
 
         protected void ConfigureEditEventView ()

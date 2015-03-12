@@ -420,11 +420,11 @@ namespace NachoClient.iOS
             string token = PlatformHelpers.DownloadAttachment (a);
             if (null == token) {
                 UIAlertView alert = new UIAlertView (
-                    "Download Error", 
-                    "There was a problem downloading this attachment.", 
-                    null, 
-                    "OK"
-                );
+                                        "Download Error", 
+                                        "There was a problem downloading this attachment.", 
+                                        null, 
+                                        "OK"
+                                    );
                 alert.Show ();
                 return;
             }
@@ -547,6 +547,45 @@ namespace NachoClient.iOS
         }
 
         public void FileChooserSheet (McAbstrObject file, Action displayAction)
+        {
+            if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
+                FileChooserSheet8 (file, displayAction);
+            } else {
+                FileChooserSheet7 (file, displayAction);
+            }
+        }
+
+        public void FileChooserSheet8 (McAbstrObject file, Action displayAction)
+        {
+            var title = "Attachment";
+            var message = "Add or preview the attachment";
+            var cancelButtonTitle = "Cancel";
+            var otherButtonTitleOne = "Preview";
+            var otherButtonTitleTwo = "Add as attachment";
+
+            var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
+
+            // Create the actions.
+            var cancelAction = UIAlertAction.Create (cancelButtonTitle, UIAlertActionStyle.Cancel, alertAction => {
+                ;
+            });
+            var otherButtonOneAction = UIAlertAction.Create (otherButtonTitleOne, UIAlertActionStyle.Default, alertAction => {
+                displayAction ();
+            });
+
+            var otherButtonTwoAction = UIAlertAction.Create (otherButtonTitleTwo, UIAlertActionStyle.Default, alertAction => {
+                Owner.SelectFile (this, file);
+            });
+
+            // Add the actions.
+            alertController.AddAction (cancelAction);
+            alertController.AddAction (otherButtonOneAction);
+            alertController.AddAction (otherButtonTwoAction);
+
+            PresentViewController (alertController, true, null);
+        }
+
+        public void FileChooserSheet7 (McAbstrObject file, Action displayAction)
         {
             // We're in "chooser' mode & the attachment is downloaded
             var actionSheet = new UIActionSheet ();
