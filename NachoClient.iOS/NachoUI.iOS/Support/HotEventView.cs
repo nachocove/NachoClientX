@@ -225,13 +225,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            var locationString = "";
-            if (!String.IsNullOrEmpty (c.GetLocation ())) {
-                locationString = Pretty.SubjectString (c.GetLocation ());
-            }
-
-            var eventString = "";
-            eventString = Pretty.Join (startString, locationString, " : ");
+            var locationString = Pretty.SubjectString (c.GetLocation ());
+            var eventString = Pretty.Join (startString, locationString, " : ");
 
             iconView.Hidden = String.IsNullOrEmpty (eventString);
             labelView.Text = eventString;
