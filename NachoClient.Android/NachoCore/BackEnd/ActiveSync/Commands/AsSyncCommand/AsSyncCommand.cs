@@ -784,14 +784,16 @@ namespace NachoCore.ActiveSync
                     var pathElem = new McPath (BEContext.Account.Id);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
-                    pathElem.Insert (BEContext.Server.HostIsGMail ());
-                    var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
-                        ClassCode = classCode,
-                        ServerId = addServerId,
-                        XmlCommand = command,
-                        Folder = folder,
-                    };
-                    applyAdd.ProcessServerCommand ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        pathElem.Insert (BEContext.Server.HostIsGMail ());
+                        var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
+                            ClassCode = classCode,
+                            ServerId = addServerId,
+                            XmlCommand = command,
+                            Folder = folder,
+                        };
+                        applyAdd.ProcessServerCommand ();
+                    });
                     var xmlApplicationData = command.ElementAnyNs ("ApplicationData");
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
@@ -848,17 +850,19 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.SoftDelete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
                     Log.Info (Log.LOG_AS, "AsSyncCommand: Command (Soft)Delete {0} ServerId {1}", classCode, delServerId);
-                    pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
-                    if (null != pathElem) {
-                        pathElem.Delete ();
-                    } else {
-                        Log.Info (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB - may have been subject of MoveItems.", command.Name.LocalName, delServerId);
-                    }
-                    var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
-                        ClassCode = classCode,
-                        ServerId = delServerId,
-                    };
-                    applyDelete.ProcessServerCommand ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
+                        if (null != pathElem) {
+                            pathElem.Delete ();
+                        } else {
+                            Log.Info (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB - may have been subject of MoveItems.", command.Name.LocalName, delServerId);
+                        }
+                        var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
+                            ClassCode = classCode,
+                            ServerId = delServerId,
+                        };
+                        applyDelete.ProcessServerCommand ();
+                    });
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageSetChanges = true;
