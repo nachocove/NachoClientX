@@ -466,7 +466,7 @@ namespace NachoCore.ActiveSync
             {
                 // Once cancelled, we must post NO event to TL SM.
                 if (!Ct.IsCancellationRequested) {
-                    Command.Sm.PostEvent (Event);
+                    Command.ProcessEventFromRobot (Event, this);
                 }
             }
 
@@ -564,7 +564,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGet2ReDir ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET to {1}", Step, ReDirUri);
                 DoRobot2ReDir ();
             }
 
@@ -691,7 +691,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGetCertHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Could not retrieve sever SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Could not retrieve server SSL cert.", Step);
                 DoRobotHardFail ();
             }
 
