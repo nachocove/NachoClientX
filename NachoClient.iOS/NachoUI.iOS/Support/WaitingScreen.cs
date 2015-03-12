@@ -32,8 +32,7 @@ namespace NachoClient.iOS
         protected UIImageView circleMask;
         protected UIView spinnerView;
         protected UIView animationBlocker;
-        public UITapGestureRecognizer tappedLabel;
-        protected UILabel dismissLabel;
+        protected UIButton dismissButton;
         protected const int SPINNER_WIDTH = 150;
         protected const int SPINNER_HEIGHT = 338;
         protected const int MASK_DIAMETER = 80;
@@ -154,18 +153,18 @@ namespace NachoClient.iOS
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
             this.AddSubview (swipeUpLabel);
 
-            dismissLabel = new UILabel (new CGRect (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30, 150, 15));
-            dismissLabel.Font = A.Font_AvenirNextRegular12;
-            dismissLabel.TextColor = UIColor.White;
-            dismissLabel.Text = "Return To Account Setup";
-            dismissLabel.TextAlignment = UITextAlignment.Center;
-            dismissLabel.UserInteractionEnabled = true;
-            UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
-                DismissView ();
-                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
-            });
-            dismissLabel.AddGestureRecognizer (dismissLabelTap);
-            this.AddSubview (dismissLabel);
+            dismissButton = new UIButton (UIButtonType.System);
+            dismissButton.Frame = new CGRect (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30, 150, 15);
+            dismissButton.SetTitle ("Return to Account Setup", UIControlState.Normal);
+            dismissButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+            dismissButton.Font = A.Font_AvenirNextRegular12;
+            dismissButton.ContentMode = UIViewContentMode.Center;
+            dismissButton.BackgroundColor = UIColor.Clear;
+            dismissButton.AccessibilityLabel = "Dismiss";
+            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
+                owner.ReturnToAdvanceView ();
+            };
+            this.AddSubview (dismissButton);
 
             this.Hidden = true;
         }
@@ -211,7 +210,7 @@ namespace NachoClient.iOS
                             owner.PerformSegue ("SegueToHome", this);
                         }
                     } else {
-                        Log.Info(Log.LOG_UI, "avl: segue timer account null");
+                        Log.Info (Log.LOG_UI, "avl: segue timer account null");
                     }
                 });
             }
@@ -290,7 +289,7 @@ namespace NachoClient.iOS
             UIView.AnimateKeyframes (4, .1, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .075, () => {
-                    dismissLabel.Alpha = 0.0f;
+                    dismissButton.Alpha = 0.0f;
                     syncStatusLabel.Alpha = 0.0f;
                 });
 
