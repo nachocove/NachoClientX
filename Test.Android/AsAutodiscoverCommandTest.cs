@@ -150,7 +150,12 @@ namespace Test.iOS
                         return null;
                     }
                 }, (httpRequest, httpResponse) => {
-                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: isSubDomain);
+                    bool urisubdomain = isSubDomain;
+                    if (httpRequest.RequestUri.Host.ToLower() == CommonMockData.Host)
+                    {
+                        urisubdomain = false;
+                    }
+                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: urisubdomain);
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
                         httpResponse.StatusCode = HttpStatusCode.Found;
@@ -553,7 +558,7 @@ namespace Test.iOS
 
         public HttpStatusCode AssignStatusCode (HttpRequestMessage request, MockSteps robotType, MockSteps step, bool isAuthFailFromBaseDomain = false)
         {
-            string requestHost = request.RequestUri.Host.ToLower();;
+            string requestHost = request.RequestUri.Host.ToLower();
 
             if (HasBeenRedirected (request)) {
                 return HttpStatusCode.OK;
@@ -572,8 +577,8 @@ namespace Test.iOS
             case MockSteps.S1:
             case MockSteps.S2:
                 if ((isAuthFailFromBaseDomain == true) && (requestHost == CommonMockData.Host)) {
-                    Log.Info (Log.LOG_AS, "returning not found for step {0} for base domain {1}", step, requestHost);
-                    return HttpStatusCode.NotFound;
+                    Log.Info (Log.LOG_AS, "returning unauthorized for step {0} for base domain {1}", step, requestHost);
+                    return HttpStatusCode.Unauthorized;
                 }
                 else{
                     return HttpStatusCode.OK;
