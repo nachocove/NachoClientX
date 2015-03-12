@@ -53,8 +53,7 @@ namespace NachoCore
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
 
-        public static string PingerHostName = "pinger.officetaco.com";
-        //public static string PingerHostName = "localhost";
+        public static string PingerHostName = NachoClient.Build.BuildInfo.PingerHostname;
 
         public const int ApiVersion = 1;
 
@@ -63,7 +62,6 @@ namespace NachoCore
         private string BaseUrl {
             get {
                 return String.Format ("https://{0}/{1}", PingerHostName, ApiVersion);
-                //return String.Format ("http://{0}:8001/{1}", PingerHostName, ApiVersion);
             }
         }
 
@@ -597,7 +595,6 @@ namespace NachoCore
                 return;
             }
             var parameters = Owner.PushAssistParameters ();
-            // FIXME - Figure out why this is not working
             if (null != parameters.RequestData) {
                 CachedParams = parameters;
             } else {
