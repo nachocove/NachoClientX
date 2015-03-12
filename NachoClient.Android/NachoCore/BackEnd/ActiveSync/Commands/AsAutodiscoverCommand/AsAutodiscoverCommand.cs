@@ -622,13 +622,9 @@ namespace NachoCore.ActiveSync
         private void DeQueueRobotEvents ()
         {
             Event Event;
-            while (!RobotEventsQ.IsEmpty) {
-                if (RobotEventsQ.TryDequeue (out Event)) {
-                    Log.Info (Log.LOG_AS, "AUTOD::Sending queued Event to SM for base domain {0}", BaseDomain);
-                    Sm.PostEvent (Event);
-                } else if (!RobotEventsQ.IsEmpty) {
-                    Log.Error (Log.LOG_AS, "Unable to dequeue event from RobotEventsQ even though it's not empty.");
-                }
+            while (RobotEventsQ.TryDequeue (out Event)) {
+                Log.Info (Log.LOG_AS, "AUTOD::Sending queued Event to SM for base domain {0}", BaseDomain);
+                Sm.PostEvent (Event);
             }
         }
 
@@ -646,16 +642,9 @@ namespace NachoCore.ActiveSync
         private bool ShouldEnQueueRobotEvent (Event Event, StepRobot Robot)
         {
             // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
-            if  (!Robot.SrDomain.Equals(Domain, StringComparison.Ordinal)) {
-                // enqueue base domain robot events only if subdomain robots are not done 
-                if (!AreSubDomainRobotsDone ()) {
-                    // enqueue all events from base domain
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-            return false;
+            // enqueue base domain robot events only if subdomain robots are not done 
+            // enqueue all events from base domain
+            return !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !AreSubDomainRobotsDone ();
         }
 
         private void DoQueueSuccess ()
