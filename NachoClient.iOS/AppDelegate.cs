@@ -145,23 +145,28 @@ namespace NachoClient.iOS
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
-            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
-            result.Value = deviceToken.ToArray ();
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
-            Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications :{0}", deviceToken.ToString ());
+            var deviceTokenBytes = deviceToken.ToArray ();
+            if (PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes))) {
+                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
+                result.Value = deviceTokenBytes;
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = result,
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            }
+            Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications: {0}", deviceToken.ToString ());
         }
 
         public override void FailedToRegisterForRemoteNotifications (UIApplication application, NSError error)
         {
-            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
             // null Value indicates token is lost.
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            if (PushAssist.SetDeviceToken (null)) {
+                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = result,
+                    Account = ConstMcAccount.NotAccountSpecific,
+                });
+            }
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 

@@ -36,6 +36,7 @@ namespace NachoCore
         public static int IncrementalDelayMsec = 500;
         public static int MinDelayMsec = 5000;
         public static int MaxDelayMsec = 15000;
+        protected static string DeviceToken;
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
@@ -129,10 +130,14 @@ namespace NachoCore
             };
         }
 
-        // JEFF_TODO We are using McMutables for now, consider modifying protocol state instead.
-        const string KPushAssist = "pushassist";
-        const string KDeviceToken = "devicetoken";
-        const string KPushAssistState = "pushassiststate";
+        public static bool SetDeviceToken (string token)
+        {
+            if (DeviceToken == token) {
+                return false; // no change
+            }
+            DeviceToken = token;
+            return true;
+        }
 
         public static PushAssist GetPAObjectByContext (string context)
         {
@@ -499,6 +504,11 @@ namespace NachoCore
             PostEvent (SmEvt.E.HardFail, mnemonic);
         }
 
+        private void PostSuccess (string mnemonic)
+        {
+            PostEvent (SmEvt.E.Success, mnemonic);
+        }
+
         private string SafeToBase64 (byte[] bytes)
         {
             if (null == bytes) {
@@ -557,7 +567,7 @@ namespace NachoCore
 
         private void DoGetDevTok ()
         {
-            var devTok = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
+            var devTok = DeviceToken;
             if (null != devTok) {
                 PostEvent (PAEvt.E.DevTok, "DEV_TOK_FOUND");
             }
@@ -623,7 +633,7 @@ namespace NachoCore
                 CommandAcknowledgement = SafeToBase64 (parameters.CommandAcknowledgement),
                 ResponseTimeout = parameters.ResponseTimeoutMsec,
                 WaitBeforeUse = parameters.WaitBeforeUseMsec,
-                PushToken = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken),
+                PushToken = DeviceToken,
                 PushService = NcApplication.Instance.GetPushService (),
             };
 
@@ -645,6 +655,7 @@ namespace NachoCore
                 } else {
                     SessionToken = response.Token;
                     ClearRetry ();
+                    PostSuccess ("START_SESSION_OK");
                 }
             } catch (OperationCanceledException) {
                 throw;
@@ -778,47 +789,23 @@ namespace NachoCore
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_PushAssistDeviceToken:
-                {
-                    if (null == siea.Status.Value) {
-                        ResetDeviceToken ();
-                    } else {
-                        SetDeviceToken ((byte[])siea.Status.Value);
-                    }
-                    break;
+                if (null == siea.Status.Value) {
+                    // Because we aren't interlocking the DB delete and the SM event, all code
+                    // must check device token before using it.
+                    PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
+                } else {
+                    PostEvent (PAEvt.E.DevTok, "DEVTOKSET");
                 }
+                break;
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
-                {
-                    if (null == siea.Status.Value) {
-                        PostEvent (PAEvt.E.CliTokLoss, "CLITOKLOST");
-                    } else {
-                        DoGetCliTok ();
-                    }
-                    break;
+                if (null == siea.Status.Value) {
+                    PostEvent (PAEvt.E.CliTokLoss, "CLITOKLOST");
+                } else {
+                    DoGetCliTok ();
                 }
+                break;
             }
         }
-
-        // This API is "called" by platform code on receipt of the APNS/GCD device token.
-        public void SetDeviceToken (byte[] deviceToken)
-        {
-            var b64tok = Convert.ToBase64String (deviceToken);
-            var accountId = McAccount.GetDeviceAccount ().Id;
-            var token = McMutables.Get (accountId, KPushAssist, KDeviceToken);
-            if (token != b64tok) {
-                McMutables.Set (accountId, KPushAssist, KDeviceToken, b64tok);
-                PostEvent (PAEvt.E.DevTok, "DEVTOKSET");
-            }
-        }
-
-        // This API is called by platform code to clear the APNS/GCD device token.
-        public void ResetDeviceToken ()
-        {
-            // Because we aren't interlocking the DB delete and the SM event, all code
-            // must check device token before using it.
-            McMutables.Delete (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
-            PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
-        }
-
 
         protected string ProtocolToString (PushAssistProtocol protocol)
         {
