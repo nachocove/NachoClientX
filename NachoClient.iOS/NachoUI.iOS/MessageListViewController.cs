@@ -207,11 +207,9 @@ namespace NachoClient.iOS
         {
             threadsNeedsRefresh = true;
             if (!this.IsVisible ()) {
-                Console.WriteLine ("MessageListViewController: skip refresh because not visible");
                 return;
             }
             if (searchDisplayController.Active) {
-                Console.WriteLine ("MessageListViewController: skip refresh because of search controller");
                 return;
             }
             MaybeRefreshThreads ();
