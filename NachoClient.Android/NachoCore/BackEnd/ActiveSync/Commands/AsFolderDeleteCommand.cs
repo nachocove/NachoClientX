@@ -37,6 +37,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "FLDDELCANCEL");
+            }
             McProtocolState protocolState = BEContext.ProtocolState;
             var xmlFolderDelete = doc.Root;
             var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);

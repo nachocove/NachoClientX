@@ -45,6 +45,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "MRESPCANCEL");
+            }
             var xmlMeetingResp = doc.Root;
             var xmlResult = xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Result);
             var xmlStatus = xmlResult.Element (m_ns + Xml.MeetingResp.Status);

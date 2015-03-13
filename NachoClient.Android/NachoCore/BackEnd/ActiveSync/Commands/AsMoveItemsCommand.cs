@@ -67,6 +67,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "MICANCEL");
+            }
             // Right now, there will only be 1 Response because we issue 1 at a time.
             var xmlResponse = doc.Root.Element (m_ns + Xml.Mov.Response);
             var xmlStatus = xmlResponse.Element (m_ns + Xml.Mov.Status);

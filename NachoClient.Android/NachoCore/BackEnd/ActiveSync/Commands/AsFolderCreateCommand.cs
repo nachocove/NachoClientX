@@ -39,6 +39,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "FLDCRECANCEL");
+            }
             var protocolState = BEContext.ProtocolState;
             var xmlFolderCreate = doc.Root;
             var xmlStatus = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.Status);
