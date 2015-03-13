@@ -658,8 +658,15 @@ namespace NachoCore
                 if (null != task.Result.Exception) {
                     NumRetries++;
                     var ex = task.Result.Exception;
-                    ScheduleRetry ((uint)SmEvt.E.Launch,
-                        ex is WebException ? "START_NET_RETRY" : "START_UNEXPECTED_RETRY");
+                    string mnemonic;
+                    if (ex is WebException) {
+                        mnemonic = "START_NET_RETRY";
+                    } else if (ex is TimeoutException) {
+                        mnemonic = "START_TIMEOUT";
+                    } else {
+                        mnemonic = "START_UNEXPECTED_RETRY";
+                    }
+                    ScheduleRetry ((uint)SmEvt.E.Launch, mnemonic);
                     return;
                 }
                 var httpResponse = task.Result.Response;
@@ -710,7 +717,15 @@ namespace NachoCore
             if (null != task.Result.Exception) {
                 NumRetries++;
                 var ex = task.Result.Exception;
-                ScheduleRetry ((uint)PAEvt.E.Defer, ex is WebException ? "DEFER_NET_RETRY" : "DEFER_UNEXPECTED_RETRY");
+                string mnemonic;
+                if (ex is WebException) {
+                    mnemonic = "DEFER_NET_RETRY";
+                } else if (ex is TimeoutException) {
+                    mnemonic = "DEFER_TIMEOUT";
+                } else {
+                    mnemonic = "DEFER_UNEXPECTED_RETRY";
+                }
+                ScheduleRetry ((uint)PAEvt.E.Defer, mnemonic);
                 return;
             }
             var httpResponse = task.Result.Response;
@@ -763,6 +778,8 @@ namespace NachoCore
                 var ex = task.Result.Exception;
                 if (ex is WebException) {
                     PostTempFail ("STOP_NET_ERROR");
+                } else if (ex is TimeoutException) {
+                    PostTempFail ("STOP_TIMEOUT");
                 } else {
                     PostHardFail ("STOP_UNEXPECTED_ERROR");
                 }
@@ -865,7 +882,7 @@ namespace NachoCore
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource (cToken, Cts.Token)) {
                 try {
                     var response = await Client
-                    .SendAsync (request, HttpCompletionOption.ResponseContentRead, cToken)
+                        .SendAsync (request, HttpCompletionOption.ResponseContentRead, cts.Token)
                         .ConfigureAwait (false);
                     if (HttpStatusCode.OK == response.StatusCode) {
                         Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
