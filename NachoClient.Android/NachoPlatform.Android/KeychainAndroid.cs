@@ -38,5 +38,11 @@ namespace NachoPlatform
             NcAssert.True (false);
             return false;
         }
+
+        public bool DeletePassword (int handle)
+        {
+            NcAssert.True (false);
+            return false;
+        }
     }
 }

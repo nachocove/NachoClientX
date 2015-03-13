@@ -72,7 +72,7 @@ namespace NachoPlatform
                 match.ValueData = NSData.FromString (password);
                 res = SecKeyChain.Update (CreateQuery (handle), match);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Update returned {0}", res.ToString ());
                     return false;
                 }
             } else {
@@ -86,6 +86,23 @@ namespace NachoPlatform
                 }
             }
             return true;
+        }
+
+        public bool DeletePassword (int handle)
+        {
+            SecStatusCode res;
+            var match = SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
+            if (SecStatusCode.Success == res) {
+                res = SecKeyChain.Remove (CreateQuery (handle));
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Remove returned {0}", res.ToString ());
+                    return false;
+                }
+            } else { 
+                Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Delete Cannot find cred {0}", res.ToString ());
+                return false;
+            }
+            return true;        
         }
 
         private const string KIdentifierForVendor = "IdentifierForVendor";
