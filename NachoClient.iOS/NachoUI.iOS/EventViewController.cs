@@ -450,12 +450,13 @@ namespace NachoClient.iOS
             }
 
             /// There are three cases which ensure the user is the organizer of an event.  
-            /// 1. The users email and account id match the event's organizer email and event's account id.
-            /// 2. The events ResponseType is set and it is set to Organizer.
-            /// 3. The events MeetingStatus is "Meeting"
-            /// if any of these are true the user is the organizer of the event.
-            isOrganizer = ((account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)
-            || (NcMeetingStatus.Meeting == c.MeetingStatus));
+            /// 1. The user's email and account ID match the event's organizer email and event's account ID.
+            /// 2. The event's ResponseType is set to Organizer.
+            /// 3. The event's MeetingStatus is "Meeting"
+            /// If any of these are true the user is the organizer of the event.
+            isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) ||
+                (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
+                (NcMeetingStatus.Meeting == c.MeetingStatus);
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
@@ -1113,8 +1114,8 @@ namespace NachoClient.iOS
                 declineLabel.Hidden = false;
                 rsvpSeparatorLine.Hidden = false;
 
-                if (c.ResponseTypeIsSet) {
-                    switch (c.ResponseType) {
+                if (c.HasResponseType ()) {
+                    switch (c.GetResponseType ()) {
                     case NcResponseType.Accepted:
                         acceptButton.Selected = true;
                         acceptButton.UserInteractionEnabled = false;

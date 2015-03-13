@@ -106,6 +106,16 @@ namespace NachoCore.Model
             return HasReminder () ? Reminder : 0;
         }
 
+        public virtual bool HasResponseType ()
+        {
+            return ResponseTypeIsSet;
+        }
+
+        public virtual NcResponseType GetResponseType ()
+        {
+            return HasResponseType () ? ResponseType : NcResponseType.None;
+        }
+
         // Attendees that are stored in the database.
         private List<McAttendee> dbAttendees = null;
         // Attendees that were set by the app, either UI or sync.  They don't get saved to the database
@@ -113,7 +123,7 @@ namespace NachoCore.Model
         private IList<McAttendee> appAttendees = null;
 
         [Ignore]
-        public IList<McAttendee> attendees {
+        public virtual IList<McAttendee> attendees {
             get {
                 return GetAncillaryCollection (appAttendees, ref dbAttendees, ReadDbAttendees);
             }
@@ -159,7 +169,7 @@ namespace NachoCore.Model
         private IList<McCalendarCategory> appCategories = null;
 
         [Ignore]
-        public IList<McCalendarCategory> categories {
+        public virtual IList<McCalendarCategory> categories {
             get {
                 return GetAncillaryCollection (appCategories, ref dbCategories, ReadDbCategories);
             }

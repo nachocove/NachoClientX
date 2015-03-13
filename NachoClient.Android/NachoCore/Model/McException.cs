@@ -43,15 +43,66 @@ namespace NachoCore.Model
             return this.ReminderIsSet ? this.Reminder : CalendarItemOrSelf ().Reminder;
         }
 
+        public override bool HasResponseType ()
+        {
+            return this.ResponseTypeIsSet || CalendarItemOrSelf ().ResponseTypeIsSet;
+        }
+
+        public override NcResponseType GetResponseType ()
+        {
+            return this.ResponseTypeIsSet ? this.ResponseType : CalendarItemOrSelf ().ResponseType;
+        }
+
+        [Ignore]
+        public override IList<McAttendee> attendees {
+            get {
+                var exceptionAttendees = base.attendees;
+                if (0 == exceptionAttendees.Count) {
+                    var calendarItem = CalendarItem ();
+                    if (null != calendarItem) {
+                        return calendarItem.attendees;
+                    }
+                }
+                return exceptionAttendees;
+            }
+            set {
+                base.attendees = value;
+            }
+        }
+
+        [Ignore]
+        public override IList<McCalendarCategory> categories {
+            get {
+                var exceptionCategories = base.categories;
+                if (0 == exceptionCategories.Count) {
+                    var calendarItem = CalendarItem ();
+                    if (null != calendarItem) {
+                        return calendarItem.categories;
+                    }
+                }
+                return exceptionCategories;
+            }
+            set {
+                base.categories = value;
+            }
+        }
+
+        private McCalendar cachedCal = null;
+
+        private McCalendar CalendarItem ()
+        {
+            if (0 == CalendarId || 0 != Deleted) {
+                return null;
+            }
+            if (null == cachedCal || CalendarId != cachedCal.Id) {
+                cachedCal = McCalendar.QueryById<McCalendar> ((int)CalendarId);
+            }
+            return cachedCal;
+        }
+
         private McAbstrCalendarRoot CalendarItemOrSelf ()
         {
-            if (0 != CalendarId && 0 == Deleted) {
-                var calendarItem = McCalendar.QueryById<McCalendar> ((int)CalendarId);
-                if (null != calendarItem) {
-                    return calendarItem;
-                }
-            }
-            return this;
+            return (McAbstrCalendarRoot)CalendarItem () ?? this;
         }
 
         public static List<McException> QueryForExceptionId (int calendarId, DateTime exceptionStartTime)
