@@ -633,17 +633,6 @@ namespace NachoCore
             BackEnd.Instance.CertAskResp (accountId, isOkay);
         }
 
-        public string GetPlatformName ()
-        {
-            #if __IOS__
-            return "ios";
-            #elif __ANDROID__
-            return "android";
-            #else
-            throw new PlatformNotSupportedException ();
-            #endif
-        }
-
         public string GetPushService ()
         {
             #if __IOS__

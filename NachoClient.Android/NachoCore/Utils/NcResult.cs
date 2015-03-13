@@ -150,8 +150,6 @@ namespace NachoCore.Utils
             Info_MigrationProgress,
             Info_MigrationDescription,
             Error_CalendarForwardFailed,
-            Info_PushAssistDeviceToken,
-            Info_PushAssistClientToken,
             Error_AccountDoesNotExist,
             Error_ItemMissing,
             Error_FolderMissing,
@@ -167,6 +165,8 @@ namespace NachoCore.Utils
             Error_EmailSearchCommandFailed,
             Info_ServerStatus,
             Info_NetworkStatus,
+            Info_PushAssistDeviceToken,
+            Info_PushAssistClientToken,
         };
 
         public enum WhyEnum
