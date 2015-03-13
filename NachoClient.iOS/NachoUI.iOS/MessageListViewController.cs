@@ -236,7 +236,6 @@ namespace NachoClient.iOS
                 }
                 ReloadCapture.Stop ();
                 NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController MaybeRefreshThreads");
-                ReloadCapture.Stop ();
             }
         }
 
