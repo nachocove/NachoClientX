@@ -30,6 +30,16 @@ namespace NachoCore.Model
 
         public string AsProtocolVersion { get; set; }
 
+        public bool AsProtocolVersion_LT14_0 ()
+        {
+            return Convert.ToDouble (AsProtocolVersion) < 14.0;
+        }
+
+        public bool AsProtocolVersion_GT12_1 ()
+        {
+            return Convert.ToDouble (AsProtocolVersion) > 12.1;
+        }
+
         public string AsPolicyKey { get; set; }
 
         public string AsSyncKey { get; set; }

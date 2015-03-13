@@ -617,6 +617,7 @@ namespace NachoCore.ActiveSync
             }
             // Wide Sync below.
             List<McPending> commands;
+            string commandClass;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
             var retList = new List<SyncKit.PerFolder> ();
@@ -649,6 +650,7 @@ namespace NachoCore.ActiveSync
                  * If we are in serial mode, we will issue no more commands (McPendings).
                  */
                 commands = new List<McPending> ();
+                commandClass = null;
                 if (!folder.AsSyncMetaToClientExpected && 
                     McFolder.AsSyncKey_Initial != folder.AsSyncKey && 
                     !inSerialMode) {
@@ -663,7 +665,18 @@ namespace NachoCore.ActiveSync
                             inSerialMode = true;
                             commands = new List<McPending> () { first };
                         } else {
-                            commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();
+                            // If we are 14.0/14.1, <Class> is under the command. If not, then Class is under the Collection.
+                            // If the later, we can only add/change/delete one class for the folder per sync command.
+                            if (BEContext.ProtocolState.AsProtocolVersion_LT14_0 ()) {
+                                commandClass = AsSyncCommand.AirSyncClassCode (first.Operation);
+                                if (null == commandClass) {
+                                    Log.Error (Log.LOG_AS, "GenSyncKit: null AirSyncClassCode for {0}", first.Operation.ToString ());
+                                }
+                                commands = commands.Where (p => !p.DeferredSerialIssueOnly &&
+                                    AsSyncCommand.AirSyncClassCode (p.Operation) == commandClass).ToList ();
+                            } else {
+                                commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();
+                            }
                         }
                         issuedAtLeast1 = true;
                     }
@@ -673,6 +686,7 @@ namespace NachoCore.ActiveSync
                     var perFolder = new SyncKit.PerFolder () {
                         Folder = folder,
                         Commands = commands,
+                        CommandClass = commandClass,
                         GetChanges = getChanges,
                     };
                     // Parameters are only valid/expressed when not AsSyncKey_Initial.

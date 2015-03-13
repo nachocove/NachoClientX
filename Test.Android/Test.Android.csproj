@@ -133,6 +133,8 @@
     <Compile Include="McEventTest.cs" />
     <Compile Include="PushAssistTest.cs" />
     <Compile Include="HashHelperTest.cs" />
+    <Compile Include="McProtocolStateTest.cs" />
+    <Compile Include="AsSyncCommandTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

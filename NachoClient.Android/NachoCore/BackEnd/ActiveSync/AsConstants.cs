@@ -744,7 +744,12 @@ namespace NachoCore.ActiveSync
             public static string TypeCodeToAirSyncClassCode (TypeCode code)
             {
                 var enumVal = TypeCodeToAirSyncClassCodeEnum (code);
-                switch (enumVal) {
+                return ClassCodeEnumToAirSyncClassCode (enumVal);
+            }
+
+            public static string ClassCodeEnumToAirSyncClassCode (McAbstrFolderEntry.ClassCodeEnum code)
+            {
+                switch (code) {
                 case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                     return AirSync.ClassCode.Calendar;
                 case McAbstrFolderEntry.ClassCodeEnum.Contact:
@@ -759,7 +764,7 @@ namespace NachoCore.ActiveSync
                     return AirSync.ClassCode.Tasks;
 
                 default:
-                    throw new Exception (string.Format ("Un-syncable class code: {0}", enumVal.ToString ()));
+                    throw new Exception (string.Format ("Un-syncable class code: {0}", code.ToString ()));
                 }
             }
         }

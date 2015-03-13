@@ -279,6 +279,12 @@
     <Compile Include="..\Test.Android\HashHelperTest.cs">
       <Link>HashHelperTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McProtocolStateTest.cs">
+      <Link>McProtocolStateTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\AsSyncCommandTest.cs">
+      <Link>AsSyncCommandTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

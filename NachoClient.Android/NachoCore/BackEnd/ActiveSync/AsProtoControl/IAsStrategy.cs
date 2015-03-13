@@ -23,6 +23,7 @@ namespace NachoCore.ActiveSync
             public int WindowSize { get; set; }
             public Xml.Provision.MaxAgeFilterCode FilterCode { get; set; }
             public bool GetChanges { get; set; }
+            public string CommandClass { get; set; }
         }
         public bool IsNarrow { get; set; }
         public int OverallWindowSize { get; set; }

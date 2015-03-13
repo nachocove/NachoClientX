@@ -55,132 +55,154 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private XElement ToEmailDelete (McPending pending)
+        private void MaybeAddClass (McFolder folder, XElement cmd, McAbstrFolderEntry.ClassCodeEnum itemCode)
         {
-            return new XElement (m_ns + Xml.AirSync.Delete,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            if (BEContext.ProtocolState.AsProtocolVersion_GT12_1 () &&
+                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) != itemCode) {
+                cmd.Add (new XElement (m_ns + Xml.AirSync.Class, 
+                    Xml.FolderHierarchy.ClassCodeEnumToAirSyncClassCode (itemCode)));
+            }
         }
-
-        private XElement ToEmailMarkRead (McPending pending)
+        // public for test only.
+        public XElement ToEmailDelete (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Change,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                new XElement (m_ns + Xml.AirSync.ApplicationData,
-                    new XElement (EmailNs + Xml.Email.Read, "1")));
+            var delete = new XElement (m_ns + Xml.AirSync.Delete,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            MaybeAddClass (folder, delete, McAbstrFolderEntry.ClassCodeEnum.Email);
+            return delete;
         }
-
-        private XElement ToEmailSetFlag (McPending pending)
+        // public for test only.
+        public XElement ToEmailMarkRead (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Change,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                new XElement (m_ns + Xml.AirSync.ApplicationData,
-                    new XElement (EmailNs + Xml.Email.Flag,
-                        new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set_2),
-                        new XElement (EmailNs + Xml.Email.FlagType, pending.EmailSetFlag_FlagType),
-                        new XElement (TasksNs + Xml.Tasks.StartDate, pending.EmailSetFlag_Start.ToLocalTime ().ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.UtcStartDate, pending.EmailSetFlag_UtcStart.ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.DueDate, pending.EmailSetFlag_Due.ToLocalTime ().ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.UtcDueDate, pending.EmailSetFlag_UtcDue.ToAsUtcString ()))));
+            var change = new XElement (m_ns + Xml.AirSync.Change,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                 new XElement (EmailNs + Xml.Email.Read, "1")));
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Email);
+            return change;
         }
-
-        private XElement ToEmailClearFlag (McPending pending)
+        // public for test only.
+        public XElement ToEmailSetFlag (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Change,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                new XElement (m_ns + Xml.AirSync.ApplicationData,
-                    new XElement (EmailNs + Xml.Email.Flag)));
+            var change = new XElement (m_ns + Xml.AirSync.Change,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                 new XElement (EmailNs + Xml.Email.Flag,
+                                     new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.Set_2),
+                                     new XElement (EmailNs + Xml.Email.FlagType, pending.EmailSetFlag_FlagType),
+                                     new XElement (TasksNs + Xml.Tasks.StartDate, pending.EmailSetFlag_Start.ToLocalTime ().ToAsUtcString ()),
+                                     new XElement (TasksNs + Xml.Tasks.UtcStartDate, pending.EmailSetFlag_UtcStart.ToAsUtcString ()),
+                                     new XElement (TasksNs + Xml.Tasks.DueDate, pending.EmailSetFlag_Due.ToLocalTime ().ToAsUtcString ()),
+                                     new XElement (TasksNs + Xml.Tasks.UtcDueDate, pending.EmailSetFlag_UtcDue.ToAsUtcString ()))));
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Email);
+            return change;
         }
-
-        private XElement ToEmailMarkFlagDone (McPending pending)
+        // public for test only.
+        public XElement ToEmailClearFlag (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Change,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                new XElement (m_ns + Xml.AirSync.ApplicationData,
-                    new XElement (EmailNs + Xml.Email.Flag,
-                        new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone_1),
-                        new XElement (EmailNs + Xml.Email.CompleteTime, pending.EmailMarkFlagDone_CompleteTime.ToAsUtcString ()),
-                        new XElement (TasksNs + Xml.Tasks.DateCompleted, pending.EmailMarkFlagDone_DateCompleted.ToAsUtcString ()))));
+            var change = new XElement (m_ns + Xml.AirSync.Change,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                 new XElement (EmailNs + Xml.Email.Flag)));
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Email);
+            return change;
         }
-
-        private XElement ToCalCreate (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToEmailMarkFlagDone (McPending pending, McFolder folder)
+        {
+            var change = new XElement (m_ns + Xml.AirSync.Change,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             new XElement (m_ns + Xml.AirSync.ApplicationData,
+                                 new XElement (EmailNs + Xml.Email.Flag,
+                                     new XElement (EmailNs + Xml.Email.Status, (uint)Xml.Email.FlagStatusCode.MarkDone_1),
+                                     new XElement (EmailNs + Xml.Email.CompleteTime, pending.EmailMarkFlagDone_CompleteTime.ToAsUtcString ()),
+                                     new XElement (TasksNs + Xml.Tasks.DateCompleted, pending.EmailMarkFlagDone_DateCompleted.ToAsUtcString ()))));
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Email);
+            return change;
+        }
+        // public for test only.
+        public XElement ToCalCreate (McPending pending, McFolder folder)
         {
             var cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
-            if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
-                McAbstrFolderEntry.ClassCodeEnum.Calendar) {
-                add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar));
-            }
+            MaybeAddClass (folder, add, McAbstrFolderEntry.ClassCodeEnum.Calendar);
             add.Add (AsHelpers.ToXmlApplicationData (cal, BEContext));
             return add;
         }
-
-        private XElement ToCalUpdate (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToCalUpdate (McPending pending, McFolder folder)
         {
             var cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
-            return new XElement (m_ns + Xml.AirSync.Change, 
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                AsHelpers.ToXmlApplicationData (cal, BEContext));
+            var change = new XElement (m_ns + Xml.AirSync.Change, 
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             AsHelpers.ToXmlApplicationData (cal, BEContext));
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Calendar);
+            return change;
         }
-
-        private XElement ToCalDelete (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToCalDelete (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Delete,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            var delete = new XElement (m_ns + Xml.AirSync.Delete,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            MaybeAddClass (folder, delete, McAbstrFolderEntry.ClassCodeEnum.Calendar);
+            return delete;
         }
-
-        private XElement ToContactCreate (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToContactCreate (McPending pending, McFolder folder)
         {
             var contact = McAbstrObject.QueryById<McContact> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
-            if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
-                McAbstrFolderEntry.ClassCodeEnum.Contact) {
-                add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Contacts));
-            }
+            MaybeAddClass (folder, add, McAbstrFolderEntry.ClassCodeEnum.Contact);
             add.Add (contact.ToXmlApplicationData ());
             return add;
         }
-
-        private XElement ToContactUpdate (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToContactUpdate (McPending pending, McFolder folder)
         {
             var contact = McAbstrObject.QueryById<McContact> (pending.ItemId);
-            return new XElement (m_ns + Xml.AirSync.Change, 
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                contact.ToXmlApplicationData ());
+            var change = new XElement (m_ns + Xml.AirSync.Change, 
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             contact.ToXmlApplicationData ());
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Contact);
+            return change;
         }
-
-        private XElement ToContactDelete (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToContactDelete (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Delete,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            var delete = new XElement (m_ns + Xml.AirSync.Delete,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            MaybeAddClass (folder, delete, McAbstrFolderEntry.ClassCodeEnum.Contact);
+            return delete;
         }
-
-        private XElement ToTaskCreate (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToTaskCreate (McPending pending, McFolder folder)
         {
             var task = McAbstrObject.QueryById<McTask> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
-            if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=
-                McAbstrFolderEntry.ClassCodeEnum.Tasks) {
-                add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Tasks));
-            }
+            MaybeAddClass (folder, add, McAbstrFolderEntry.ClassCodeEnum.Tasks);
             add.Add (task.ToXmlApplicationData ());
             return add;
         }
-
-        private XElement ToTaskUpdate (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToTaskUpdate (McPending pending, McFolder folder)
         {
             var task = McAbstrObject.QueryById<McTask> (pending.ItemId);
-            return new XElement (m_ns + Xml.AirSync.Change, 
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                task.ToXmlApplicationData ());
+            var change = new XElement (m_ns + Xml.AirSync.Change, 
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
+                             task.ToXmlApplicationData ());
+            MaybeAddClass (folder, change, McAbstrFolderEntry.ClassCodeEnum.Tasks);
+            return change;
         }
-
-        private XElement ToTaskDelete (McPending pending, McFolder folder)
+        // public for test only.
+        public XElement ToTaskDelete (McPending pending, McFolder folder)
         {
-            return new XElement (m_ns + Xml.AirSync.Delete,
-                new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            var delete = new XElement (m_ns + Xml.AirSync.Delete,
+                             new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
+            MaybeAddClass (folder, delete, McAbstrFolderEntry.ClassCodeEnum.Tasks);
+            return delete;
         }
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
@@ -192,6 +214,11 @@ namespace NachoCore.ActiveSync
                 var collection = new XElement (m_ns + Xml.AirSync.Collection,
                                      new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
                                      new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
+                // Class.
+                if (null != perFolder.CommandClass &&
+                    perFolder.CommandClass != Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type)) {
+                    collection.Add (m_ns + Xml.AirSync.Class, perFolder.CommandClass);
+                }
                 // GetChanges.
                 if (perFolder.GetChanges && McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
@@ -206,7 +233,7 @@ namespace NachoCore.ActiveSync
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         // If the server supports previews, then ask for 0-sized MIME with a preview.
                         // Otherwise, ask for 255 bytes of plain text.
-                        if (BEContext.Server.HostIsGMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                        if (BEContext.Server.HostIsGMail () || BEContext.ProtocolState.AsProtocolVersion_LT14_0 ()) {
                             options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                             options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
@@ -230,7 +257,7 @@ namespace NachoCore.ActiveSync
                             // will be unformatted.  So we may as well just ask for plain text.
                             mimeSupport = (uint)Xml.AirSync.MimeSupportCode.NoMime_0;
                             preferredType = (uint)Xml.AirSync.TypeCode.PlainText_1;
-                        } else if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                        } else if (BEContext.ProtocolState.AsProtocolVersion_LT14_0 ()) {
                             // Exchange 2007 will fail if we ask for MIME.  But it can handle
                             // any other format.  So ask for HTML, which is the non-MIME format
                             // that we handle best.
@@ -250,7 +277,7 @@ namespace NachoCore.ActiveSync
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
                         if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
                             // Expressing BodyPreference for RIC gets Protocol Error.
-                            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                            if (BEContext.ProtocolState.AsProtocolVersion_GT12_1 ()) {
                                 options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
                             }
                         } else {
@@ -280,19 +307,19 @@ namespace NachoCore.ActiveSync
                 foreach (var pending in pendingSubList) {
                     switch (pending.Operation) {
                     case McPending.Operations.EmailDelete:
-                        commands.Add (ToEmailDelete (pending));
+                        commands.Add (ToEmailDelete (pending, folder));
                         break;
                     case McPending.Operations.EmailMarkRead:
-                        commands.Add (ToEmailMarkRead (pending));
+                        commands.Add (ToEmailMarkRead (pending, folder));
                         break;
                     case McPending.Operations.EmailSetFlag:
-                        commands.Add (ToEmailSetFlag (pending));
+                        commands.Add (ToEmailSetFlag (pending, folder));
                         break;
                     case McPending.Operations.EmailClearFlag:
-                        commands.Add (ToEmailClearFlag (pending));
+                        commands.Add (ToEmailClearFlag (pending, folder));
                         break;
                     case McPending.Operations.EmailMarkFlagDone:
-                        commands.Add (ToEmailMarkFlagDone (pending));
+                        commands.Add (ToEmailMarkFlagDone (pending, folder));
                         break;
                     case McPending.Operations.CalCreate:
                         commands.Add (ToCalCreate (pending, folder));
@@ -1033,6 +1060,7 @@ namespace NachoCore.ActiveSync
                     var protocolState = BEContext.ProtoControl.ProtocolState;
                     if (null != Limit) {
                         protocolState.AsSyncLimit = (uint)Limit;
+                        protocolState.Update ();
                     }
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsSuccess (BEContext.ProtoControl);
@@ -1236,6 +1264,36 @@ namespace NachoCore.ActiveSync
                 return true;
             default:
                 return false;
+            }
+        }
+
+        public static string AirSyncClassCode (McPending.Operations op)
+        {
+            switch (op) {
+            case McPending.Operations.EmailMarkRead:
+            case McPending.Operations.EmailSetFlag:
+            case McPending.Operations.EmailClearFlag:
+            case McPending.Operations.EmailMarkFlagDone:
+            case McPending.Operations.EmailDelete:
+                return Xml.AirSync.ClassCode.Email;
+            
+            case McPending.Operations.CalUpdate:
+            case McPending.Operations.CalCreate:
+            case McPending.Operations.CalDelete:
+                return Xml.AirSync.ClassCode.Calendar;
+
+            case McPending.Operations.ContactUpdate:
+            case McPending.Operations.ContactCreate:
+            case McPending.Operations.ContactDelete:
+                return Xml.AirSync.ClassCode.Contacts;
+
+            case McPending.Operations.TaskUpdate:
+            case McPending.Operations.TaskCreate:
+            case McPending.Operations.TaskDelete:
+                return Xml.AirSync.ClassCode.Tasks;
+
+            default:
+                return null;
             }
         }
     }
