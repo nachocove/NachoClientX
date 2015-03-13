@@ -198,11 +198,9 @@ namespace NachoClient.iOS
         {
             contactsNeedsRefresh = true;
             if (!this.IsVisible ()) {
-                Console.WriteLine ("ContactListViewController: skip refresh because not visible");
                 return;
             }
             if (SearchDisplayController.Active) {
-                Console.WriteLine ("ContactListViewController: skip refresh because of search controller");
                 return;
             }
             MaybeRefreshContacts ();

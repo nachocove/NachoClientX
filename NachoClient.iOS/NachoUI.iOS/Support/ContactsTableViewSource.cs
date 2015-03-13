@@ -387,7 +387,6 @@ namespace NachoClient.iOS
                 }
             }
 
-            Console.WriteLine ("SearchAndUpdateResults: {0}", forSearchString);
             // We immediately display matches from our db
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
             var results = McContact.SearchAllContactsWithEmailAddresses (forSearchString, true);
