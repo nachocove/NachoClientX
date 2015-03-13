@@ -388,7 +388,7 @@ namespace NachoCore.Utils
                 vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
             }
             vEvent.Properties.Set ("X-MICROSOFT-CDO-IMPORTANCE", 1);
-            vEvent.Location = cal.Location;
+            vEvent.Location = cal.GetLocation ();
             vEvent.Class = "PUBLIC";
             vEvent.Transparency = TransparencyType.Opaque;
             return iCal;
@@ -971,13 +971,13 @@ namespace NachoCore.Utils
             // then it will have an extra hour in its duration.  So the cutoff for
             // creating an extra event is a quarter of a day.
             McAbstrCalendarRoot reminderItem = (McAbstrCalendarRoot)exception ?? c;
-            bool needsReminder = reminderItem.ReminderIsSet;
+            bool needsReminder = reminderItem.HasReminder ();
             int exceptionId = null == exception ? 0 : exception.Id;
             do {
                 DateTime nextDay = localStartTime.AddDays (1.0);
                 var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
                 if (needsReminder) {
-                    ev.SetReminder (reminderItem.Reminder);
+                    ev.SetReminder (reminderItem.GetReminder ());
                     needsReminder = false; // Only the first day should have a reminder.
                 }
                 localStartTime = nextDay;
@@ -1080,8 +1080,8 @@ namespace NachoCore.Utils
                             exceptionEnd = endTime;
                         }
                         var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.Id, exception.Id);
-                        if (exception.ReminderIsSet) {
-                            e.SetReminder (exception.Reminder);
+                        if (exception.HasReminder ()) {
+                            e.SetReminder (exception.GetReminder ());
                         }
                     }
                 }

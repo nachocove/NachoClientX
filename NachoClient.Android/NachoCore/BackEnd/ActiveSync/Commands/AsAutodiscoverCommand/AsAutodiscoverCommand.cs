@@ -92,6 +92,7 @@ namespace NachoCore.ActiveSync
         private List<StepRobot> Robots;
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
+        private ConcurrentQueue<Event> RobotEventsQ;
         private AsCommand TestCmd;
         private ConcurrentBag<object> DisposedJunk;
         private string Domain;
@@ -545,6 +546,7 @@ namespace NachoCore.ActiveSync
             KillAllRobots ();
             AskingRobotQ = null;
             SuccessfulRobotQ = null;
+            RobotEventsQ = null;
             if (null != TestCmd) {
                 TestCmd.Cancel ();
                 DisposedJunk.Add (TestCmd);
@@ -564,6 +566,7 @@ namespace NachoCore.ActiveSync
             Robots = new List<StepRobot> ();
             AskingRobotQ = new Queue<StepRobot> ();
             SuccessfulRobotQ = new Queue<StepRobot> ();
+            RobotEventsQ = new ConcurrentQueue<Event> ();
             Log.Info(Log.LOG_AS, "AUTOD::BEGIN:Starting all robots...");
             AddAndStartRobot (StepRobot.Steps.S1, Domain);
             AddAndStartRobot (StepRobot.Steps.S2, Domain);
@@ -584,6 +587,9 @@ namespace NachoCore.ActiveSync
             StepRobot robot = (StepRobot)Sm.Arg;
             // Robot can't be on either ask or success queue, or it would not be reporting failure.
             Robots.Remove (robot);
+            if (ShouldDeQueueRobotEvents ()) {
+                DeQueueRobotEvents ();
+            }
             if (0 == Robots.Count) {
                 // This can never happen in AskW - there is still the asking robot in the list.
                 if (McAccount.AccountServiceEnum.GoogleExchange == Account.AccountService) {
@@ -594,6 +600,51 @@ namespace NachoCore.ActiveSync
                     Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
                 }
             }
+        }
+
+        private bool ShouldDeQueueRobotEvents ()
+        {
+            // if base domain is same as domain, no events should have queued up. remove this check if events can be queued up for different reasons
+            if (BaseDomain.Equals (Domain, StringComparison.Ordinal)) {
+                return false;
+            }
+            // if subdomain robots are done, flush robot event Q
+            return AreSubDomainRobotsDone ();
+        }
+
+        // check if robots are still doing subdomain discovery
+        private bool AreSubDomainRobotsDone ()
+        {
+            return((Robots.Where(x => x.SrDomain.Equals (Domain, StringComparison.Ordinal))).Count()==0);
+        }
+
+        // DeQueue all queued events that the base domain robots may have sent
+        private void DeQueueRobotEvents ()
+        {
+            Event Event;
+            while (RobotEventsQ.TryDequeue (out Event)) {
+                Log.Info (Log.LOG_AS, "AUTOD::Sending queued Event to SM for base domain {0}", BaseDomain);
+                Sm.PostEvent (Event);
+            }
+        }
+
+        // handle event from Robot
+        private void ProcessEventFromRobot (Event Event, StepRobot Robot)
+        {
+            if (ShouldEnQueueRobotEvent (Event, Robot)) {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Event for base domain {1}", Robot.Step, Robot.SrDomain);
+                RobotEventsQ.Enqueue (Event); 
+            } else {
+                Sm.PostEvent (Event);
+            }
+        }
+
+        private bool ShouldEnQueueRobotEvent (Event Event, StepRobot Robot)
+        {
+            // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
+            // enqueue base domain robot events only if subdomain robots are not done 
+            // enqueue all events from base domain
+            return !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !AreSubDomainRobotsDone ();
         }
 
         private void DoQueueSuccess ()

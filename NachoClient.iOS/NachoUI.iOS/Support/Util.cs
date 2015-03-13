@@ -234,15 +234,7 @@ namespace NachoClient
                 NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_UI, msg);
             }
         }
-
-        static UIActionSheet sheet;
-
-        public static UIActionSheet GetSheet (string title)
-        {
-            sheet = new UIActionSheet (title);
-            return sheet;
-        }
-
+           
         static CultureInfo americanCulture;
 
         public static CultureInfo AmericanCulture {

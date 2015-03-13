@@ -465,7 +465,7 @@ namespace NachoClient.iOS
             NavigationItem.Title = e.StartTime.ToString ("Y");
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
-            titleLabel.Text = c.Subject;
+            titleLabel.Text = c.GetSubject ();
             titleLabel.Lines = 0;
             titleLabel.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabel.SizeToFit ();
@@ -503,7 +503,7 @@ namespace NachoClient.iOS
             }
 
             var locationLabel = View.ViewWithTag ((int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-            if (string.IsNullOrEmpty (c.Location)) {
+            if (string.IsNullOrEmpty (c.GetLocation ())) {
                 hasLocation = false;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = true;
                 locationLabel.Hidden = true;
@@ -511,7 +511,7 @@ namespace NachoClient.iOS
                 hasLocation = true;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
                 locationLabel.Hidden = false;
-                locationLabel.Text = c.Location;
+                locationLabel.Text = c.GetLocation ();
                 locationLabel.Lines = 0;
                 locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 locationLabel.SizeToFit ();
@@ -526,7 +526,7 @@ namespace NachoClient.iOS
             descriptionView.Configure (c, false);
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
+            alertDetailLabel.Text = Pretty.ReminderString (c.HasReminder (), c.GetReminder ());
             alertDetailLabel.SizeToFit ();
 
             hasAttachments = 0 != c.attachments.Count ();
@@ -768,7 +768,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (c.ReminderIsSet, c.Reminder);
+                dc.SetReminder (c.HasReminder (), c.GetReminder ());
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     uint reminder;
                     c.ReminderIsSet = dc.GetReminder (out reminder);
@@ -1338,7 +1338,7 @@ namespace NachoClient.iOS
                 Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
                 if (null == Note) {
                     Note = new McNote ();
-                    Note.DisplayName = (c.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+                    Note.DisplayName = (c.GetSubject () + " - " + Pretty.ShortDateString (DateTime.UtcNow));
                     Note.TypeId = c.Id;
                     Note.noteType = McNote.NoteType.Event;
                     Note.noteContent = noteText;

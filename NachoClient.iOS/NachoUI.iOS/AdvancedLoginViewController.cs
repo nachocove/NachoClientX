@@ -60,11 +60,13 @@ namespace NachoClient.iOS
             ServerConf,
             NoNetwork,
             EnterInfo,
+            TouchConnect,
         };
 
         string presetEmailAddress = "";
         string presetPassword = "";
         bool showAdvanced = false;
+        bool stayInAdvanced = false;
 
         public void SetAdvanced (string emailAddress, string password)
         {
@@ -154,7 +156,7 @@ namespace NachoClient.iOS
             // Layout before waitScreen.ShowView() hides the nav bar
             LayoutView ();
 
-            if (IsBackEndRunning ()) {
+            if (!stayInAdvanced && IsBackEndRunning ()) {
                 waitScreen.ShowView ();
             } else {
                 NavigationItem.Title = "Account Setup";
@@ -173,6 +175,9 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToSupport")) {
+                // On return, don't automatically
+                // restart the waiting cover view.
+                stayInAdvanced = true;
                 return;
             }
         }
@@ -327,6 +332,7 @@ namespace NachoClient.iOS
 
         void onStartOver ()
         {
+            stayInAdvanced = false;
             if (!IsNcAppicationAccountSet ()) {
                 // Remove our local copies
                 NcModel.Instance.RunInTransaction (() => {
@@ -351,6 +357,8 @@ namespace NachoClient.iOS
         void onConnect (object sender, EventArgs e)
         {
             View.EndEditing (true);
+
+            stayInAdvanced = false;
 
             // Checks for valid user, password, and server
             if (!canUserConnect ()) {
@@ -400,7 +408,7 @@ namespace NachoClient.iOS
             waitScreen.ShowView ();
         }
 
-        public void ConfigureView (LoginStatus currentStatus, string nuance = "")
+        protected void ConfigureView (LoginStatus currentStatus, string nuance = "")
         {
             haveEnteredEmailAndPass ();
             RefreshTheServer ();
@@ -458,6 +466,11 @@ namespace NachoClient.iOS
                 errorMessage.TextColor = A.Color_NachoGreen;
                 setTextToRed (new AdvancedTextField[] { });
                 break;
+            case LoginStatus.TouchConnect:
+                errorMessage.Text = "Touch Connect to continue";
+                errorMessage.TextColor = A.Color_NachoGreen;
+                setTextToRed (new AdvancedTextField[] { });
+                break;
             case LoginStatus.BadUsername:
                 errorMessage.TextColor = A.Color_NachoRed;
                 if (!String.IsNullOrEmpty (usernameView.textField.Text)) {
@@ -487,6 +500,18 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "avl: status={0} {1}", currentStatus, errorMessage.Text);
 
             LayoutView ();
+        }
+
+        /// <summary>
+        /// The user hits the Advanced Login button on the wait screen
+        /// </summary>
+        public void ReturnToAdvanceView ()
+        {
+            showAdvanced = true;
+            stayInAdvanced = true;
+            stopBeIfRunning ();
+            handleStatusEnums ();
+            waitScreen.DismissView ();
         }
 
         void LayoutView ()
@@ -593,9 +618,11 @@ namespace NachoClient.iOS
             case BackEndStateEnum.PostAutoDPreInboxSync:
                 Log.Info (Log.LOG_UI, "avl: PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
                 LoginHelpers.SetAutoDCompleted (accountId, true);
-                errorMessage.Text = "Waiting for Inbox-Sync.";
-                waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                waitScreen.ShowView ();
+                ConfigureView (LoginStatus.TouchConnect);
+                if (!stayInAdvanced) {
+                    waitScreen.SetLoadingText ("Syncing Your Inbox...");
+                    waitScreen.ShowView ();
+                }
                 break;
             case BackEndStateEnum.PostAutoDPostInboxSync:
                 Log.Info (Log.LOG_UI, "avl: PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
@@ -604,8 +631,10 @@ namespace NachoClient.iOS
                 break;
             case BackEndStateEnum.Running:
                 Log.Info (Log.LOG_UI, "avl: Running Auto-D-State-Enum On Page Load");
-                errorMessage.Text = "Auto-D is running.";
-                waitScreen.ShowView ();
+                ConfigureView (LoginStatus.TouchConnect);
+                if (!stayInAdvanced) {
+                    waitScreen.ShowView ();
+                }
                 break;
             default:
                 ConfigureView (LoginStatus.EnterInfo);

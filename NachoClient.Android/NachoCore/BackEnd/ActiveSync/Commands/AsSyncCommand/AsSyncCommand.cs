@@ -957,6 +957,7 @@ namespace NachoCore.ActiveSync
             // Status and ClientId are required to be present.
             var xmlClientId = xmlAdd.Element (m_ns + Xml.AirSync.ClientId);
             var clientId = xmlClientId.Value;
+            XElement xmlServerId = null;
             lock (PendingResolveLockObj) {
                 pending = McPending.QueryByClientId (folder.AccountId, clientId); 
                 if (null == pending) {
@@ -980,6 +981,22 @@ namespace NachoCore.ActiveSync
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, 
                         NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
+                    break;
+
+                case Xml.AirSync.StatusCode.ServerError_5:
+                    // HotMail will send this inside a command response, along with the ServerId!
+                    // In this case, this is actually a successful add.
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
+                    if (null != xmlServerId && null != xmlServerId.Value) {
+                        Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerError_5 w/ServerId");
+                        pending.ResolveAsSuccess (BEContext.ProtoControl);
+                        success = true;
+                    } else {
+                        Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerError_5");
+                        pending.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow,
+                            NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable));
+                    }
                     break;
 
                 case Xml.AirSync.StatusCode.ServerWins_7:
@@ -1048,7 +1065,7 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
                 return;
             }
-            var xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
+            xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
             var serverId = xmlServerId.Value;
             if (null == serverId) {
                 Log.Error (Log.LOG_AS, "AsSyncCommand: Add command response without ServerId.");

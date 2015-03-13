@@ -86,6 +86,26 @@ namespace NachoCore.Model
         // Specifies the original format type of the item
         public int NativeBodyType { get; set; }
 
+        public virtual string GetSubject ()
+        {
+            return Subject;
+        }
+
+        public virtual string GetLocation ()
+        {
+            return Location;
+        }
+
+        public virtual bool HasReminder ()
+        {
+            return ReminderIsSet;
+        }
+
+        public virtual uint GetReminder ()
+        {
+            return HasReminder () ? Reminder : 0;
+        }
+
         // Attendees that are stored in the database.
         private List<McAttendee> dbAttendees = null;
         // Attendees that were set by the app, either UI or sync.  They don't get saved to the database
