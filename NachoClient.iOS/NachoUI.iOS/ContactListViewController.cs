@@ -23,7 +23,12 @@ namespace NachoClient.iOS
         UITableView TableView;
         McAccount account;
 
+        protected bool contactsNeedsRefresh;
+
         ContactsTableViewSource contactTableViewSource;
+
+        protected NcCapture ReloadCapture;
+        private string ReloadCaptureName;
 
         public ContactListViewController (IntPtr handle) : base (handle)
         {
@@ -36,6 +41,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            ReloadCaptureName = "ContactListViewController.Reload";
+            NcCapture.AddKind (ReloadCaptureName);
+            ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
@@ -91,6 +102,9 @@ namespace NachoClient.iOS
             searchButton.Clicked += (object sender, EventArgs e) => {
                 SearchDisplayController.SearchBar.BecomeFirstResponder ();
             };
+
+            // Load when view becomes visible
+            contactsNeedsRefresh = true;
         }
 
         protected void InitializeSearchDisplayController ()
@@ -109,32 +123,28 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
-            LoadContacts ();
+            MaybeRefreshContacts ();
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-//            swipeViewDateSource.SelectButton (0);
             PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
-                LoadContacts ();
+                RefreshContactsIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
-                LoadContacts ();
+                RefreshContactsIfVisible ();
                 var sb = SearchDisplayController.SearchBar;
                 contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
@@ -184,14 +194,33 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        protected void LoadContacts ()
+        protected void RefreshContactsIfVisible ()
         {
-            NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacs");
-            var recents = McContact.RicContactsSortedByRank (account.Id, 5);
-            var contacts = McContact.AllContactsSortedByName (true);
-            contactTableViewSource.SetContacts (recents, contacts, true);
-            TableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacs");
+            contactsNeedsRefresh = true;
+            if (!this.IsVisible ()) {
+                Console.WriteLine ("ContactListViewController: skip refresh because not visible");
+                return;
+            }
+            if (SearchDisplayController.Active) {
+                Console.WriteLine ("ContactListViewController: skip refresh because of search controller");
+                return;
+            }
+            MaybeRefreshContacts ();
+        }
+
+        protected void MaybeRefreshContacts ()
+        {
+            if (contactsNeedsRefresh) {
+                contactsNeedsRefresh = false;
+                ReloadCapture.Start ();
+                NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacts");
+                var recents = McContact.RicContactsSortedByRank (account.Id, 5);
+                var contacts = McContact.AllContactsSortedByName (true);
+                contactTableViewSource.SetContacts (recents, contacts, true);
+                TableView.ReloadData ();
+                NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacts");
+                ReloadCapture.Stop ();
+            }
         }
 
         /// IContactsTableViewSourceDelegate

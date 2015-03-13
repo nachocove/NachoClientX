@@ -376,7 +376,6 @@ namespace NachoClient.iOS
         /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
         public bool UpdateSearchResults (nint forSearchOption, string forSearchString, bool doGalSearch = true)
         {
-            NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
             if ((null != account) && doGalSearch) {
                 // Issue a GAL search. The status indication handler will update the search results
                 // (with doGalSearch = false) to reflect potential matches from GAL.
@@ -387,7 +386,10 @@ namespace NachoClient.iOS
                     BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
                 }
             }
-            // We immeidately display matches from our db.
+
+            Console.WriteLine ("SearchAndUpdateResults: {0}", forSearchString);
+            // We immediately display matches from our db
+            NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
             var results = McContact.SearchAllContactsWithEmailAddresses (forSearchString, true);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
