@@ -1065,6 +1065,10 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
                 return;
             }
+            if (null == item) {
+                Log.Warn (Log.LOG_AS, "AsSyncCommand: item not found ClientId {0}", clientId);
+                return;
+            }
             xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
             var serverId = xmlServerId.Value;
             if (null == serverId) {
