@@ -85,5 +85,16 @@ namespace NachoCore.Model
                 return Password;
             }
         }
+
+        public override int Delete ()
+        {
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.DeletePassword (Id);
+                Password = null;
+                Update ();
+            } 
+            return 0;
+            //return base.Delete ();
+        }
     }
 }

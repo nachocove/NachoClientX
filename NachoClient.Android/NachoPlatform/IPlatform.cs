@@ -182,5 +182,6 @@ namespace NachoPlatform
         bool HasKeychain ();
         string GetPassword (int handle);
         bool SetPassword (int handle, string password);
+        bool DeletePassword (int handle);
     }
 }
