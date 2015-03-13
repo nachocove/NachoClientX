@@ -36,6 +36,7 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
 
+        protected bool threadsNeedsRefresh;
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
@@ -118,7 +119,7 @@ namespace NachoClient.iOS
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
                 RefreshControl.BeginRefreshing ();
                 messageSource.StartSync ();
-                ReloadDataMaintainingPosition ();
+                RefreshThreadsIfVisible ();
                 new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };
 
@@ -134,6 +135,10 @@ namespace NachoClient.iOS
             View.AddSubview (searchBar);
 
             Util.ConfigureNavBar (false, this.NavigationController);
+
+
+            // Load when view becomes visible
+            threadsNeedsRefresh = true;
         }
 
         protected void refreshCallback (object sender)
@@ -198,25 +203,40 @@ namespace NachoClient.iOS
             return path.Row;
         }
 
-        public void ReloadDataMaintainingPosition ()
+        protected void RefreshThreadsIfVisible ()
         {
-            NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController ReloadDataMaintainingPosition");
-            ReloadCapture.Start ();
-            List<int> adds;
-            List<int> deletes;
-            if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
-                Util.UpdateTable (TableView, adds, deletes);
-            } else {
-                messageSource.ReconfigureVisibleCells (TableView);
-            }
-            if (messageSource.NoMessageThreads ()) {
-                MaybeDismissView ();
+            threadsNeedsRefresh = true;
+            if (!this.IsVisible ()) {
+                return;
             }
             if (searchDisplayController.Active) {
-                UpdateSearchResults ();
+                return;
             }
-            ReloadCapture.Stop ();
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
+            MaybeRefreshThreads ();
+        }
+
+        protected void MaybeRefreshThreads ()
+        {
+            if (threadsNeedsRefresh) {
+                threadsNeedsRefresh = false;
+                NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController MaybeRefreshThreads");
+                ReloadCapture.Start ();
+                List<int> adds;
+                List<int> deletes;
+                if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
+                    Util.UpdateTable (TableView, adds, deletes);
+                } else {
+                    messageSource.ReconfigureVisibleCells (TableView);
+                }
+                if (messageSource.NoMessageThreads ()) {
+                    MaybeDismissView ();
+                }
+                if (searchDisplayController.Active) {
+                    UpdateSearchResults ();
+                }
+                ReloadCapture.Stop ();
+                NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController MaybeRefreshThreads");
+            }
         }
 
         public virtual void MaybeDismissView ()
@@ -244,7 +264,7 @@ namespace NachoClient.iOS
 
             NavigationItem.Title = messageSource.GetDisplayName ();
 
-            ReloadDataMaintainingPosition ();
+            MaybeRefreshThreads ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -260,13 +280,13 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                ReloadDataMaintainingPosition ();
+                RefreshThreadsIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded == s.Status.SubKind) {
-                ReloadDataMaintainingPosition ();
+                RefreshThreadsIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded == s.Status.SubKind) {
-                ReloadDataMaintainingPosition ();
+                RefreshThreadsIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
