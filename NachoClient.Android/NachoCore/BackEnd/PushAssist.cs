@@ -899,14 +899,14 @@ namespace NachoCore
                     }
                     if (Cts.Token.IsCancellationRequested) {
                         result.Exception = new TimeoutException ("HTTP operation timed out");
-                        Log.Warn (Log.LOG_PUSH, "DoStopSession: timed out");
+                        Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
                     }
                 } catch (WebException e) {
                     result.Exception = e;
                     Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
                 } catch (Exception e) {
                     result.Exception = e;
-                    Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught unexpected http exception - {0}", e);
+                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
                 }
                 DisposeTimeoutTimer ();
             }
