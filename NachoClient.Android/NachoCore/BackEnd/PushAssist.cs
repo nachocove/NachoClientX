@@ -47,6 +47,7 @@ namespace NachoCore
         private string ClientContext;
         protected string SessionToken;
         protected int NumRetries;
+        private object LockObj;
 
         protected PushAssistParameters CachedParams;
 
@@ -134,6 +135,14 @@ namespace NachoCore
                 return false; // no change
             }
             DeviceToken = token;
+
+            // Notify others a new device token is set
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
+            result.Value = token;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
             return true;
         }
 
@@ -179,12 +188,8 @@ namespace NachoCore
 
         public PushAssist (IPushAssistOwner owner)
         {
-            // FIXME - we will need to do cert-pinning, and also ensure SSL.
-            CookieJar = new CookieContainer ();
-            var handler = new NativeMessageHandler (false, true) {
-                CookieContainer = CookieJar,
-                UseCookies = true,
-            };
+            LockObj = new object ();
+            var handler = new NativeMessageHandler (false, true);
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
             Owner = owner;
             AccountId = Owner.Account.Id;
@@ -557,11 +562,20 @@ namespace NachoCore
             }
         }
 
+        private void FillOutIdentInfo (BaseRequest request)
+        {
+            request.ClientId = NcApplication.Instance.ClientId;
+            request.DeviceId = NachoPlatform.Device.Instance.Identity ();
+            request.ClientContext = ClientContext;
+            request.OSVersion = NachoPlatform.Device.Instance.OsVersion ();
+            request.AppBuildVersion = NachoClient.Build.BuildInfo.Version;
+            request.AppBuildNumber = NachoClient.Build.BuildInfo.BuildNumber;
+        }
+
         // ACTION FUNCTIONS FOR STATE MACHINE
         private void DoNop ()
         {
         }
-
 
         private void DoGetDevTok ()
         {
@@ -612,9 +626,6 @@ namespace NachoCore
                 }
             }
             var jsonRequest = new StartSessionRequest () {
-                ClientId = clientId,
-                DeviceId = NachoPlatform.Device.Instance.Identity (),
-                ClientContext = ClientContext,
                 MailServerUrl = parameters.RequestUrl,
                 MailServerCredentials = new Credentials {
                     Username = cred.Username,
@@ -633,13 +644,14 @@ namespace NachoCore
                 PushToken = DeviceToken,
                 PushService = NcApplication.Instance.GetPushService (),
             };
+            FillOutIdentInfo (jsonRequest);
 
             try {
                 var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}, content={1})",
-                        httpResponse.StatusCode, httpResponse.Content);
+                    Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}",
+                        httpResponse.StatusCode);
                     NumRetries++;
                     ScheduleRetry ((uint)SmEvt.E.Launch, "HTTP_RETRY");
                     return;
@@ -680,19 +692,17 @@ namespace NachoCore
                 PostHardFail ("PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
-                ClientId = clientId,
-                DeviceId = NachoPlatform.Device.Instance.Identity (),
-                ClientContext = ClientContext,
                 Token = SessionToken,
                 ResponseTimeout = parameters.ResponseTimeoutMsec
             };
+            FillOutIdentInfo (jsonRequest);
 
             try {
                 var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0}, content={1})",
-                        httpResponse.StatusCode, httpResponse.Content);
+                    Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0})",
+                        httpResponse.StatusCode);
                     NumRetries++;
                     ScheduleRetry ((uint)PAEvt.E.Defer, "HTTP_RETRY");
                     return;
@@ -708,12 +718,12 @@ namespace NachoCore
                 } else {
                     NcAssert.True (response.IsError ());
                     ClearRetry ();
-                    PostHardFail ("DEFER_SESS_ERROR");
+                    ScheduleRetry ((uint)SmEvt.E.HardFail, "DEFER_SESS_ERROR");
                 }
             } catch (OperationCanceledException) {
                 throw;
             } catch (WebException e) {
-                Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught network exception - {0}", e);
                 NumRetries++;
                 ScheduleRetry ((uint)PAEvt.E.Defer, "NET_RETRY");
             } catch (Exception e) {
@@ -736,18 +746,16 @@ namespace NachoCore
                 PostHardFail ("PARAM_ERROR");
             }
             var jsonRequest = new StopSessionRequest () {
-                ClientId = NcApplication.Instance.ClientId,
-                DeviceId = NachoPlatform.Device.Instance.Identity (),
-                ClientContext = ClientContext,
                 Token = SessionToken,
             };
+            FillOutIdentInfo (jsonRequest);
 
             try {
                 var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0}, content={1})",
-                        httpResponse.StatusCode, httpResponse.Content);
+                    Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0})",
+                        httpResponse.StatusCode);
                     NumRetries++;
                     PostTempFail ("HTTP_ERROR");
                     return;
@@ -860,7 +868,7 @@ namespace NachoCore
 
         private void ScheduleRetry (uint eventType, string mnemonic)
         {
-            lock (this) {
+            lock (LockObj) {
                 if (null != RetryTimer) {
                     RetryTimer.Dispose ();
                 }
@@ -872,7 +880,7 @@ namespace NachoCore
 
         private void ClearRetry ()
         {
-            lock (this) {
+            lock (LockObj) {
                 NumRetries = 0;
                 if (null != RetryTimer) {
                     RetryTimer.Dispose ();

@@ -11,11 +11,23 @@ namespace NachoCore
         public string Password;
     }
 
-    public class StartSessionRequest
+    public class BaseRequest
     {
         public string ClientId;
         public string DeviceId;
         public string ClientContext;
+        public string OSVersion;
+        public string AppBuildVersion;
+        public string AppBuildNumber;
+    }
+
+    public class SessionRequest : BaseRequest
+    {
+        public string Token;
+    }
+
+    public class StartSessionRequest : BaseRequest
+    {
         public string MailServerUrl;
         public Credentials MailServerCredentials;
         public string Protocol;
@@ -32,21 +44,13 @@ namespace NachoCore
         public string PushService;
     }
 
-    public class DeferSessionRequest
+    public class DeferSessionRequest : SessionRequest
     {
-        public string ClientId;
-        public string DeviceId;
-        public string ClientContext;
-        public string Token;
         public int ResponseTimeout;
     }
 
-    public class StopSessionRequest
+    public class StopSessionRequest : SessionRequest
     {
-        public string ClientId;
-        public string DeviceId;
-        public string ClientContext;
-        public string Token;
     }
 
     public class PingerResponse

@@ -146,27 +146,14 @@ namespace NachoClient.iOS
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
             var deviceTokenBytes = deviceToken.ToArray ();
-            if (PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes))) {
-                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
-                result.Value = deviceTokenBytes;
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = result,
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
-            }
+            PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes));
             Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications: {0}", deviceToken.ToString ());
         }
 
         public override void FailedToRegisterForRemoteNotifications (UIApplication application, NSError error)
         {
             // null Value indicates token is lost.
-            if (PushAssist.SetDeviceToken (null)) {
-                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = result,
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
-            }
+            PushAssist.SetDeviceToken (null);
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 

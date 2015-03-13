@@ -109,7 +109,7 @@ namespace Test.Common
 
     public class _PushAssistTest : NcTestBase
     {
-        public byte[] DeviceToken = System.Text.Encoding.ASCII.GetBytes ("abcdef");
+        public string DeviceToken = Convert.ToBase64String (System.Text.Encoding.ASCII.GetBytes ("abcdef"));
         const string ClientToken = "us-1-east:12345";
         const string Email = "bob@company.net";
         const string Password = "Password";
@@ -127,11 +127,7 @@ namespace Test.Common
         [SetUp]
         public void Setup ()
         {
-            // Set up a device account for device token
-            var deviceAccount = new McAccount () {
-                AccountType = McAccount.AccountTypeEnum.Device,
-            };
-            deviceAccount.Insert ();
+            Telemetry.ENABLED = false;
 
             // Set up credential
             var account = new McAccount () {
@@ -168,6 +164,8 @@ namespace Test.Common
             NcApplication.Instance.ClientId = null;
             PushAssist.MinDelayMsec = OriginalMinDelayMsec;
             PushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
+            PushAssist.SetDeviceToken (null);
+            Telemetry.ENABLED = true;
         }
 
         private void WaitForState (uint expectedState)
@@ -329,7 +327,7 @@ namespace Test.Common
             WaitForState ((uint)PushAssist.Lst.DevTokW);
 
             // [got device token] -> CliTokW
-            Wpa.SetDeviceToken (DeviceToken);
+            PushAssist.SetDeviceToken (DeviceToken);
             WaitForState ((uint)PushAssist.Lst.CliTokW);
 
             // [got client token] -> SessTokW -> Active
@@ -355,7 +353,7 @@ namespace Test.Common
         public void StartupWithTokens ()
         {
             // Set device and client tokens first
-            Wpa.SetDeviceToken (DeviceToken);
+            PushAssist.SetDeviceToken (DeviceToken);
             NcApplication.Instance.ClientId = ClientToken;
 
             // Start
@@ -385,7 +383,7 @@ namespace Test.Common
         {
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionWarnResponse;
-            Wpa.SetDeviceToken (DeviceToken);
+            PushAssist.SetDeviceToken (DeviceToken);
             NcApplication.Instance.ClientId = ClientToken;
 
             WaitForState ((uint)St.Start);
@@ -409,7 +407,7 @@ namespace Test.Common
                 }
                 return StartSessionOkResponse (request);
             };
-            Wpa.SetDeviceToken (DeviceToken);
+            PushAssist.SetDeviceToken (DeviceToken);
             NcApplication.Instance.ClientId = ClientToken;
 
             WaitForState ((uint)St.Start);
@@ -442,41 +440,45 @@ namespace Test.Common
         }
 
         private void DeferSessionWithErrors (
-            MockHttpClient.ExamineHttpRequestMessageDelegate checkDelegate,
-            MockHttpClient.ProvideHttpResponseMessageDelegate respondDelegate)
+            MockHttpClient.ExamineHttpRequestMessageDelegate[] checkDelegate,
+            MockHttpClient.ProvideHttpResponseMessageDelegate[] respondDelegate)
         {
+            NcAssert.True (checkDelegate.Length == respondDelegate.Length);
+
+            // Go from Start to Active 
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
-            Wpa.SetDeviceToken (DeviceToken);
+            PushAssist.SetDeviceToken (DeviceToken);
             NcApplication.Instance.ClientId = ClientToken;
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
             WaitForState ((uint)PushAssist.Lst.Active);
 
-            MockHttpClient.ExamineHttpRequestMessage = checkDelegate;
+            // In Active, start a defer
+            int numRequests = 0;
+            MockHttpClient.ExamineHttpRequestMessage = checkDelegate [0];
             PushAssist.MinDelayMsec = 100;
             PushAssist.MaxDelayMsec = 100;
-            int numRequests = 0;
             MockHttpClient.ProvideHttpResponseMessage = (request) => {
                 numRequests++;
-                if (3 > numRequests) {
-                    return respondDelegate (request);
+                if (checkDelegate.Length > numRequests) {
+                    MockHttpClient.ExamineHttpRequestMessage = checkDelegate [numRequests];
                 }
-                return DeferSessionOkResponse (request);
+                return respondDelegate [numRequests - 1] (request);
             };
             Wpa.Defer ();
-            // Wait for the 3 tries (2 retries)
             DateTime now = DateTime.UtcNow;
-            while (3 > numRequests) {
+            while (respondDelegate.Length > numRequests) {
                 Thread.Sleep (100);
                 if (3000 < (DateTime.UtcNow - now).TotalMilliseconds) {
                     break;
                 }
             }
-            Assert.AreEqual (3, numRequests);
+            Assert.AreEqual (respondDelegate.Length, numRequests);
             WaitForState ((uint)PushAssist.Lst.Active);
 
+            // Go to Stop
             MockHttpClient.ExamineHttpRequestMessage = CheckStopSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StopSessionOkResponse;
             Wpa.Stop ();
@@ -484,21 +486,52 @@ namespace Test.Common
         }
 
         [Test]
-        public void DeferSessionWithPingerErrors ()
+        public void DeferSessionWithHttpErrors ()
         {
-            DeferSessionWithErrors (CheckDeferSessionRequest, DeferSessionErrorResponse);
-        }
-
-        [Test]
-        public void DeferSessioWithHttpErrors ()
-        {
-            DeferSessionWithErrors (CheckDeferSessionRequest, HttpErrorPingerResponse);
+            DeferSessionWithErrors (
+                new MockHttpClient.ExamineHttpRequestMessageDelegate [3] { 
+                    CheckDeferSessionRequest, 
+                    CheckDeferSessionRequest, 
+                    CheckDeferSessionRequest, 
+                },
+                new MockHttpClient.ProvideHttpResponseMessageDelegate [3] {
+                    HttpErrorPingerResponse,
+                    HttpErrorPingerResponse,
+                    HttpErrorPingerResponse,
+                }
+            );
         }
 
         [Test]
         public void DeferSessionWithNetworkError ()
         {
-            DeferSessionWithErrors (CheckDeferSessionRequest, NetworkErrorPingerResponse);
+            DeferSessionWithErrors (
+                new MockHttpClient.ExamineHttpRequestMessageDelegate [3] { 
+                    CheckDeferSessionRequest,
+                    CheckDeferSessionRequest, 
+                    CheckDeferSessionRequest, 
+                },
+                new MockHttpClient.ProvideHttpResponseMessageDelegate [3] {
+                    NetworkErrorPingerResponse,
+                    NetworkErrorPingerResponse,
+                    NetworkErrorPingerResponse,
+                }
+            );
+        }
+
+        [Test]
+        public void DeferSessionWithPingerError ()
+        {
+            DeferSessionWithErrors (
+                new MockHttpClient.ExamineHttpRequestMessageDelegate [2] { 
+                    CheckDeferSessionRequest,
+                    CheckStartSessionRequest, 
+                },
+                new MockHttpClient.ProvideHttpResponseMessageDelegate [2] {
+                    DeferSessionErrorResponse,
+                    StartSessionOkResponse,
+                }
+            );
         }
     }
 }
