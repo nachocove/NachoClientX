@@ -91,7 +91,7 @@ namespace NachoPlatform
         public bool DeletePassword (int handle)
         {
             SecStatusCode res;
-            var match = SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
+            SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
             if (SecStatusCode.Success == res) {
                 res = SecKeyChain.Remove (CreateQuery (handle));
                 if (SecStatusCode.Success != res) {
