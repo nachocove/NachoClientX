@@ -1097,7 +1097,7 @@ namespace NachoClient
                 tableView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
             }
             if (0 != addPaths.Count) {
-                tableView.InsertRows (addPaths.ToArray (), UITableViewRowAnimation.Fade);
+                tableView.InsertRows (addPaths.ToArray (), UITableViewRowAnimation.Top);
             }
             tableView.EndUpdates ();
         }
