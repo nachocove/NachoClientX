@@ -843,7 +843,10 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
             SyncStrategy = new AsStrategy (this);
-            PushAssist = new PushAssist (this);
+            // FIXME - Remove this when it is ready for prime time
+            if ("beta" != NachoClient.Build.BuildInfo.AwsPrefix) {
+                PushAssist = new PushAssist (this);
+            }
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -922,7 +925,9 @@ namespace NachoCore.ActiveSync
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
-            PushAssist.Dispose ();
+            if (null != PushAssist) {
+                PushAssist.Dispose ();
+            }
             base.Remove ();
         }
         // Methods callable by the owner.
@@ -1363,61 +1368,24 @@ namespace NachoCore.ActiveSync
         }
 
         // PushAssist support.
-        private AsPingCommand GenerateDummyPing ()
+        public PushAssistParameters PushAssistParameters ()
         {
             var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
             if (null == pingKit) {
-                return null;
+                return null; // should never happen
             }
-            return new AsPingCommand (this, pingKit);
-        }
-
-        public string PushAssistRequestUrl ()
-        {
-            var dummy = GenerateDummyPing ();
-            return (null == dummy) ? null : dummy.PushAssistRequestUrl ();
-        }
-
-        public HttpRequestHeaders PushAssistRequestHeaders ()
-        {
-            var dummy = GenerateDummyPing ();
-            return (null == dummy) ? null : dummy.PushAssistRequestHeaders ();
-        }
-
-        public HttpContentHeaders PushAssistContentHeaders ()
-        {
-            var dummy = GenerateDummyPing ();
-            return (null == dummy) ? null : dummy.PushAssistContentHeaders ();
-        }
-
-        public byte[] PushAssistRequestData ()
-        {
-            var dummy = GenerateDummyPing ();
-            return (null == dummy) ? null : dummy.PushAssistRequestData ();
-        }
-
-        public byte[] PushAssistResponseData ()
-        {
-            var dummy = GenerateDummyPing ();
-            return (null == dummy) ? null : dummy.PushAssistResponseData ();
-        }
-
-        public int PushAssistTimeout ()
-        {
-            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
-            return (int)(null == pingKit ? 600 : pingKit.MaxHeartbeatInterval) * 1000;
-        }
-
-        public PushAssistParameters PushAssistParameters ()
-        {
+            var ping = new AsPingCommand (this, pingKit);
+            if (null == ping) {
+                return null; // should never happen
+            }
             return new NachoCore.PushAssistParameters () {
-                RequestUrl = PushAssistRequestUrl (),
-                RequestData = PushAssistRequestData (),
-                RequestHeaders = PushAssistRequestHeaders (),
-                ContentHeaders = PushAssistContentHeaders (),
-                NoChangeResponseData = PushAssistResponseData (),
+                RequestUrl = ping.PushAssistRequestUrl (),
+                RequestData = ping.PushAssistRequestData (),
+                RequestHeaders = ping.PushAssistRequestHeaders (),
+                ContentHeaders = ping.PushAssistContentHeaders (),
+                NoChangeResponseData = ping.PushAssistResponseData (),
                 Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = PushAssistTimeout (),
+                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
                 WaitBeforeUseMsec = 60 * 1000,
             };
         }

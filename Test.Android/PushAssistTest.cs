@@ -107,7 +107,7 @@ namespace Test.Common
         }
     }
 
-    public class _PushAssistTest : NcTestBase
+    public class PushAssistTest : NcTestBase
     {
         public string DeviceToken = Convert.ToBase64String (System.Text.Encoding.ASCII.GetBytes ("abcdef"));
         const string ClientToken = "us-1-east:12345";
@@ -120,7 +120,7 @@ namespace Test.Common
         private int OriginalMinDelayMsec;
         private int OriginalIncrementalDelayMsec;
 
-        public _PushAssistTest ()
+        public PushAssistTest ()
         {
         }
 
@@ -212,8 +212,8 @@ namespace Test.Common
             Assert.AreEqual (MockPushAssistOwnwer.Cookie, jsonRequest.HttpHeaders ["Cookie"]);
             Assert.AreEqual (MockPushAssistOwnwer.ResponseTimeout, jsonRequest.ResponseTimeout);
             Assert.AreEqual (MockPushAssistOwnwer.WaitBeforeUse, jsonRequest.WaitBeforeUse);
-            CheckContent (MockPushAssistOwnwer.RequestData, jsonRequest.HttpRequestData);
-            CheckContent (MockPushAssistOwnwer.ResponseData, jsonRequest.HttpNoChangeReply);
+            CheckContent (MockPushAssistOwnwer.RequestData, jsonRequest.RequestData);
+            CheckContent (MockPushAssistOwnwer.ResponseData, jsonRequest.NoChangeReply);
         }
 
         private async void CheckDeferSessionRequest (HttpRequestMessage httpRequest)

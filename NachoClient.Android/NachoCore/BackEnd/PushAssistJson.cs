@@ -33,9 +33,9 @@ namespace NachoCore
         public string Protocol;
         public string Platform;
         public Dictionary<string, string> HttpHeaders;
-        public string HttpRequestData;
-        public string HttpExpectedReply;
-        public string HttpNoChangeReply;
+        public string RequestData;
+        public string ExpectedReply;
+        public string NoChangeReply;
         public string CommandTerminator;
         public string CommandAcknowledgement;
         public int ResponseTimeout;
@@ -93,19 +93,8 @@ namespace NachoCore
 
     public class PingerNotification : Dictionary<string, string>
     {
-        public PingerNotificationActionEnum GetAction (string actionStr)
-        {
-            PingerNotificationActionEnum action = PingerNotificationActionEnum.UNKNOWN;
-            switch (actionStr) {
-            case "new":
-                action = PingerNotificationActionEnum.NEW;
-                break;
-            case "register":
-                action = PingerNotificationActionEnum.REGISTER;
-                break;
-            }
-            return action;
-        }
+        public const string NEW = "new";
+        public const string REGISTER = "register";
     }
 
     public class ApsNotification

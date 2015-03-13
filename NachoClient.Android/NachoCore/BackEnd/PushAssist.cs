@@ -41,15 +41,12 @@ namespace NachoCore
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
         protected IHttpClient Client;
-        private CookieContainer CookieJar;
         private int AccountId;
         private bool IsDisposed;
         private string ClientContext;
         protected string SessionToken;
         protected int NumRetries;
         private object LockObj;
-
-        protected PushAssistParameters CachedParams;
 
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
@@ -150,9 +147,7 @@ namespace NachoCore
         {
             WeakReference weakRef;
             if (ContextObjectMap.TryGetValue (context, out weakRef)) {
-                if (weakRef.IsAlive) {
-                    return (PushAssist)weakRef.Target;
-                }
+                return (PushAssist)weakRef.Target;
             }
             return null;
         }
@@ -163,20 +158,24 @@ namespace NachoCore
                 // Look up the account
                 var pa = GetPAObjectByContext (context.Key);
                 if (null == pa) {
+                    Log.Warn (Log.LOG_PUSH, "Cannot find account for context {0} for remote notification", context.Key);
                     continue;
                 }
                 if (0 == pa.AccountId) {
-                    Log.Error (Log.LOG_PUSH, "Cannot find account for context {0} for remote notification", pa.AccountId);
+                    Log.Error (Log.LOG_PUSH, "Invalid account for context {0} for remote notification", context.Key);
                     continue;
                 }
 
-                switch (pinger.GetAction (context.Value)) {
-                case PingerNotificationActionEnum.NEW:
+                switch (context.Value) {
+                case PingerNotification.NEW:
                     fetch (pa.AccountId);
                     break;
-                case PingerNotificationActionEnum.REGISTER:
+                case PingerNotification.REGISTER:
                     pa.DeviceTokenLost ();
                     break;
+                default:
+                    Log.Error (Log.LOG_PUSH, "Unknown action {0} for context {1}", context.Value, context.Key);
+                    continue;
                 }
 
                 // TODO - We don't have multiple account support yet. So, for now, perform fetch always
@@ -195,15 +194,17 @@ namespace NachoCore
             AccountId = Owner.Account.Id;
             var account = McAccount.QueryById<McAccount> (AccountId);
             ClientContext = GetClientContext (account);
-            // FIXME - This entry is never freed even if the account is deleted. If the account is
-            //         recreated, the existing entry will be overwritten. If the account is just 
-            //         deleted, this entry is orphaned. I am assuming account deletion is rare
-            //         enough that leaking a few tens of bytes every once a while is ok.
+            // This entry is never freed even if the account is deleted. If the account is
+            // recreated, the existing entry will be overwritten. If the account is just 
+            // deleted, this entry is orphaned. I am assuming account deletion is rare
+            // enough that leaking a few tens of bytes every once a while is ok.
             var paRef = new WeakReference (this);
             if (!ContextObjectMap.TryAdd (ClientContext, paRef)) {
                 WeakReference oldPaRef = null;
-                ContextObjectMap.TryGetValue (ClientContext, out oldPaRef);
-                ContextObjectMap.TryUpdate (ClientContext, paRef, oldPaRef);
+                var got = ContextObjectMap.TryGetValue (ClientContext, out oldPaRef);
+                NcAssert.True (got); // since we don't delete, this can never fail
+                var updated = ContextObjectMap.TryUpdate (ClientContext, paRef, oldPaRef);
+                NcAssert.True (updated); // since we don't delete, this can never fail
             }
 
             // Normally, the state transition should be:
@@ -420,6 +421,9 @@ namespace NachoCore
                 prefix = "exchange";
                 id = account.EmailAddr;
                 break;
+            default:
+                Log.Error (Log.LOG_PUSH, "GetClientContext: Unexpected account type {0}", (uint)account.AccountType);
+                break;
             }
             return HashHelper.Sha256 (prefix + ":" + id).Substring (0, 8);
         }
@@ -443,37 +447,21 @@ namespace NachoCore
         // 4. Stop - Like Park, but the outstanding pinger session (to server) is canceled as well.
         public void Execute ()
         {
-            // FIXME - Disable for beta for now.
-            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
-                return;
-            }
             PostEvent (SmEvt.E.Launch, "PAEXE");
         }
 
         public void Defer ()
         {
-            // FIXME - Disable for beta for now.
-            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
-                return;
-            }
             PostEvent (PAEvt.E.Defer, "PAHO");
         }
 
         public void Park ()
         {
-            // FIXME - Disable for beta for now.
-            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
-                return;
-            }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
         public void Stop ()
         {
-            // FIXME - Disable for beta for now.
-            if ("beta" == NachoClient.Build.BuildInfo.AwsPrefix) {
-                return;
-            }
             PostEvent (PAEvt.E.Stop, "PASTOP");
         }
 
@@ -538,22 +526,19 @@ namespace NachoCore
                 var response = JsonConvert.DeserializeObject<PingerResponse> (jsonResponse);
                 switch (response.Status) {
                 case PingerResponse.Ok:
-                    {
-                        if (!String.IsNullOrEmpty (response.Message)) {
-                            Log.Info (Log.LOG_PUSH, "ParsePingerResposne: response={0}", response.Message);
-                        }
-                        break;
+                    if (!String.IsNullOrEmpty (response.Message)) {
+                        Log.Info (Log.LOG_PUSH, "ParsePingerResposne: response={0}", response.Message);
                     }
+                    break;
                 case PingerResponse.Warn:
-                    {
-                        Log.Warn (Log.LOG_PUSH, "ParsePingerResposne: response={0}", response.Message);
-                        break;
-                    }
+                    Log.Warn (Log.LOG_PUSH, "ParsePingerResposne: response={0}", response.Message);
+                    break;
                 case PingerResponse.Error:
-                    {
-                        Log.Error (Log.LOG_PUSH, "ParsePingerResponse: response={0}", response.Message);
-                        break;
-                    }
+                    Log.Error (Log.LOG_PUSH, "ParsePingerResponse: response={0}", response.Message);
+                    break;
+                default:
+                    Log.Error (Log.LOG_PUSH, "ParsePingerResponse: unknown status {0}", response.Status);
+                    return null;
                 }
                 return response;
             } catch (Exception e) {
@@ -598,22 +583,19 @@ namespace NachoCore
         {
             var clientId = NcApplication.Instance.ClientId;
             if (null == clientId) {
-                PostEvent (PAEvt.E.CliTokLoss, "DOSESSCTL");
+                PostEvent (PAEvt.E.CliTokLoss, "START_NO_CLI");
                 return;
             }
             var cred = McCred.QueryByAccountId<McCred> (AccountId).FirstOrDefault ();
             if (null == cred) {
                 // Yes, the SM is SOL at this point.
                 Log.Error (Log.LOG_PUSH, "DoStartSession: No McCred for accountId {0}", AccountId);
-                PostHardFail ("PARAM_ERROR");
+                PostHardFail ("START_NO_CRED");
                 return;
             }
             var parameters = Owner.PushAssistParameters ();
-            if (null != parameters.RequestData) {
-                CachedParams = parameters;
-            } else {
-                parameters = CachedParams;
-            }
+            NcAssert.True (null != parameters);
+
             Dictionary<string, string> httpHeadersDict = new Dictionary<string, string> ();
             if (null != parameters.RequestHeaders) {
                 foreach (var header in parameters.RequestHeaders) {
@@ -634,9 +616,9 @@ namespace NachoCore
                 Protocol = ProtocolToString (parameters.Protocol),
                 Platform = NcApplication.Instance.GetPlatformName (),
                 HttpHeaders = httpHeadersDict,
-                HttpRequestData = SafeToBase64 (parameters.RequestData),
-                HttpExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
-                HttpNoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
+                RequestData = SafeToBase64 (parameters.RequestData),
+                ExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
+                NoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
                 CommandTerminator = SafeToBase64 (parameters.CommandTerminator),
                 CommandAcknowledgement = SafeToBase64 (parameters.CommandAcknowledgement),
                 ResponseTimeout = parameters.ResponseTimeoutMsec,
@@ -653,7 +635,7 @@ namespace NachoCore
                     Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}",
                         httpResponse.StatusCode);
                     NumRetries++;
-                    ScheduleRetry ((uint)SmEvt.E.Launch, "HTTP_RETRY");
+                    ScheduleRetry ((uint)SmEvt.E.Launch, "START_HTTP_RETRY");
                     return;
                 }
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
@@ -671,11 +653,11 @@ namespace NachoCore
             } catch (WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught network exception - {0}", e);
                 NumRetries++;
-                ScheduleRetry ((uint)SmEvt.E.Launch, "NET_RETRY");
+                ScheduleRetry ((uint)SmEvt.E.Launch, "START_NET_RETRY");
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: Caught unexpected exception - {0}", e);
                 NumRetries++;
-                ScheduleRetry ((uint)SmEvt.E.Launch, "UNEXPECTED_RETRY");
+                ScheduleRetry ((uint)SmEvt.E.Launch, "START_UNEXPECTED_RETRY");
             }
         }
 
@@ -689,7 +671,7 @@ namespace NachoCore
                 Log.Error (Log.LOG_PUSH,
                     "DoDeferSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
                     clientId, ClientContext, SessionToken);
-                PostHardFail ("PARAM_ERROR");
+                PostHardFail ("DEFER_PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
                 Token = SessionToken,
@@ -704,7 +686,7 @@ namespace NachoCore
                     Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0})",
                         httpResponse.StatusCode);
                     NumRetries++;
-                    ScheduleRetry ((uint)PAEvt.E.Defer, "HTTP_RETRY");
+                    ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_HTTP_RETRY");
                     return;
                 }
 
@@ -725,11 +707,11 @@ namespace NachoCore
             } catch (WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught network exception - {0}", e);
                 NumRetries++;
-                ScheduleRetry ((uint)PAEvt.E.Defer, "NET_RETRY");
+                ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_NET_RETRY");
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "DoDeferSession: Caught unexpected exception - {0}", e);
                 NumRetries++;
-                ScheduleRetry ((uint)PAEvt.E.Defer, "UNEXPECTED_RETRY");
+                ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_UNEXPECTED_RETRY");
             }
         }
 
@@ -757,7 +739,7 @@ namespace NachoCore
                     Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0})",
                         httpResponse.StatusCode);
                     NumRetries++;
-                    PostTempFail ("HTTP_ERROR");
+                    PostTempFail ("STOP_HTTP_ERROR");
                     return;
                 }
 
@@ -774,11 +756,11 @@ namespace NachoCore
             } catch (System.Net.WebException e) {
                 Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught network exception - {0}", e);
                 NumRetries++;
-                PostTempFail ("NET_ERROR");
+                PostTempFail ("STOP_NET_ERROR");
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "DoStopSession: Caught unexpected http exception - {0}", e);
                 NumRetries++;
-                PostHardFail ("UNEXPECTED_ERROR");
+                PostHardFail ("STOP_UNEXPECTED_ERROR");
             }
         }
 
@@ -797,14 +779,14 @@ namespace NachoCore
                 if (null == siea.Status.Value) {
                     // Because we aren't interlocking the DB delete and the SM event, all code
                     // must check device token before using it.
-                    PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
+                    PostEvent (PAEvt.E.DevTokLoss, "DEV_TOK_LOSS");
                 } else {
-                    PostEvent (PAEvt.E.DevTok, "DEVTOKSET");
+                    PostEvent (PAEvt.E.DevTok, "DEV_TOK_SET");
                 }
                 break;
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
                 if (null == siea.Status.Value) {
-                    PostEvent (PAEvt.E.CliTokLoss, "CLITOKLOST");
+                    PostEvent (PAEvt.E.CliTokLoss, "CLI_TOK_LOST");
                 } else {
                     DoGetCliTok ();
                 }
@@ -821,6 +803,9 @@ namespace NachoCore
                 return "ActiveSync";
             case PushAssistProtocol.IMAP:
                 return "IMAP";
+            default:
+                Log.Error (Log.LOG_PUSH, "Unexpected push assist protocol {0}", (uint)protocol);
+                break;
             }
             return null;
         }
@@ -863,7 +848,7 @@ namespace NachoCore
 
         private void DeviceTokenLost ()
         {
-            PostEvent (PAEvt.E.DevTokLoss, "DEVTOKLOSS");
+            PostEvent (PAEvt.E.DevTokLoss, "DEV_TOK_LOSS");
         }
 
         private void ScheduleRetry (uint eventType, string mnemonic)
