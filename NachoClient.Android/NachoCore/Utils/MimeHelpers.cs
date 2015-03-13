@@ -596,22 +596,29 @@ namespace NachoCore.Utils
         public static List<MimeEntity> AllAttachments (MimeMessage message)
         {
             List<MimeEntity> result = new List<MimeEntity> ();
-            FindAttachments (message.Body, result);
+            FindAttachments (message.Body, result, false);
             return result;
         }
 
-        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result)
+        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result, bool insideTnef)
         {
-            if (null != entity.ContentDisposition && entity.ContentDisposition.IsAttachment) {
+            // If this entity originally came from TNEF, then ignore attachments named winmail.dat
+            // with type application/vnd.ms-tnef.  Those are an internal artifact of how some servers
+            // represent recurring meetings with exceptions, and are of no interest to the user.
+            if (null != entity.ContentDisposition && entity.ContentDisposition.IsAttachment &&
+                    (!insideTnef || !entity.ContentType.Matches("application", "vnd.ms-tnef") || entity.ContentType.Name != "winmail.dat")) {
+                // It's an attachment that we are interested in.
                 result.Add (entity);
-            } else if (entity is MimeKit.Tnef.TnefPart) {
-                // Pull apart the TNEF part and see what is inside.
+            } else if (!insideTnef && entity is MimeKit.Tnef.TnefPart) {
+                // Pull apart the TNEF part and see what is inside.  (Unless we are already inside of
+                // a TNEF part, in which case the inner TNEF part represents an exception to a recurring
+                // meeting, not the meeting series that we are interested in.)
                 var tnef = entity as MimeKit.Tnef.TnefPart;
                 var mimeMessage = ConvertTnefToMessage (tnef);
-                FindAttachments (mimeMessage.Body, result);
+                FindAttachments (mimeMessage.Body, result, true);
             } else if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {
-                    FindAttachments (subpart, result);
+                    FindAttachments (subpart, result, insideTnef);
                 }
             }
         }
