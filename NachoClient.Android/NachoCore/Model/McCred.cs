@@ -93,8 +93,7 @@ namespace NachoCore.Model
                 Password = null;
                 Update ();
             } 
-            return 0;
-            //return base.Delete ();
+            return base.Delete ();
         }
     }
 }
