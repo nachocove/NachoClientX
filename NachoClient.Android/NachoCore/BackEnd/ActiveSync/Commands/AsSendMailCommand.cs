@@ -70,6 +70,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SMCANCEL0");
+            }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
@@ -85,6 +88,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SMCANCEL1");
+            }
             // The only applicable TL Status codes are the general ones.
             PendingResolveApply ((pending) => {
                 pending.ResolveAsHardFail (BEContext.ProtoControl, 

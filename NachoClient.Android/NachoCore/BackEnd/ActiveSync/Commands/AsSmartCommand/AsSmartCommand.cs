@@ -72,6 +72,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SMARTCANCEL0");
+            }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
@@ -88,6 +91,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SMARTCANCEL1");
+            }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsHardFail (BEContext.ProtoControl, 
                     NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,

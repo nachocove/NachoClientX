@@ -428,6 +428,9 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL0");
+            }
             List<McFolder> SawMoreAvailableNoCommands = new List<McFolder> ();
             bool SawCommandsInAnyFolder = false;
             bool HasBeenCancelled = false;
@@ -692,6 +695,9 @@ namespace NachoCore.ActiveSync
         // Called when we get an empty Sync response body.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SYNCCANCEL1");
+            }
             // FoldersInRequest NOT stale here.
             var now = DateTime.UtcNow;
             foreach (var iterFolder in FoldersInRequest) {
@@ -1063,6 +1069,10 @@ namespace NachoCore.ActiveSync
                 break;
             default:
                 Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED class " + classCode);
+                return;
+            }
+            if (null == item) {
+                Log.Warn (Log.LOG_AS, "AsSyncCommand: item not found ClientId {0}", clientId);
                 return;
             }
             xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);

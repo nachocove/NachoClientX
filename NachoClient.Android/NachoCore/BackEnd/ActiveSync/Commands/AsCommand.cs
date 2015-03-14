@@ -47,6 +47,8 @@ namespace NachoCore.ActiveSync
         protected NcResult SuccessInd;
         protected NcResult FailureInd;
         protected Object LockObj = new Object ();
+        private bool Cancelled = false;
+        private bool ProcessResponseOwnsPendingCleanup = false;
 
         private TimeSpan _Timeout;
         public TimeSpan Timeout { 
@@ -104,18 +106,19 @@ namespace NachoCore.ActiveSync
                 Op.Cancel ();
                 // Don't null Op here - we might be calling Execute() on another thread. Let GC get it.
             }
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                /* Q: Do we need another state? We need to be smart about the case where
-                 * the cancel comes after the op has been run against the server. The op
-                 * may fail the 2nd time because the item exists. Don't want to bug the user.
-                 */
-                    if (McPending.StateEnum.Dispatched == pending.State) {
-                        pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+            lock (LockObj) {
+                Cancelled = true;
+            }
+            if (!ProcessResponseOwnsPendingCleanup) {
+                lock (PendingResolveLockObj) {
+                    ConsolidatePending ();
+                    foreach (var pending in PendingList) {
+                        if (McPending.StateEnum.Dispatched == pending.State) {
+                            pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+                        }
                     }
+                    PendingList.Clear ();
                 }
-                PendingList.Clear ();
             }
         }
 
@@ -237,6 +240,20 @@ namespace NachoCore.ActiveSync
             } else {
                 if (null != FailureInd) {
                     BEContext.Owner.StatusInd (BEContext.ProtoControl, FailureInd);
+                }
+            }
+        }
+
+        protected bool SiezePendingCleanup ()
+        {
+            lock (LockObj) {
+                // If we haven't been cancelled yet, own the McPending cleanup.
+                // If we have been cancelled, don't even process the response.
+                if (Cancelled) {
+                    return false;
+                } else {
+                    ProcessResponseOwnsPendingCleanup = true;
+                    return true;
                 }
             }
         }
