@@ -382,7 +382,7 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)HttpOpEvt.E.Final, "HTTPOPFIN", endEvent, null);
         }
 
-        private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
+        public bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
         {
             request = null;
             XDocument doc;

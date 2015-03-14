@@ -193,7 +193,6 @@
     <Compile Include="NachoCore\Utils\Pretty.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs" />
     <Compile Include="NachoCore\Adapters\NcContactManager.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\IBEContext.cs" />
     <Compile Include="NachoCore\Model\McMapFolderFolderEntry.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\AsStrategy.cs" />
     <Compile Include="NachoCore\Mockables\MockableHttpClient.cs" />
@@ -361,6 +360,10 @@
     <Compile Include="NachoCore\Brain\NcObjectParser.cs" />
     <Compile Include="NachoCore\Brain\NcTokenizer.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration4.cs" />
+    <Compile Include="NachoCore\BackEnd\IBEContext.cs" />
+    <Compile Include="NachoCore\BackEnd\PushAssist.cs" />
+    <Compile Include="NachoCore\BackEnd\IPushAssistOwner.cs" />
+    <Compile Include="NachoCore\BackEnd\PushAssistJson.cs" />
     <Compile Include="NachoCore\Adapters\NcEventsCalendarMap.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration5.cs" />
     <Compile Include="NachoCore\Brain\NcBrainActions.cs" />

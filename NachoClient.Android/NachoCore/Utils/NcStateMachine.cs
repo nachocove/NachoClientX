@@ -182,6 +182,11 @@ namespace NachoCore.Utils
             }
         }
 
+        public int EventQueueDepth ()
+        {
+            return EventQ.Count;
+        }
+
         public void PostEvent (uint eventCode, string mnemonic)
         {
             PostEvent (eventCode, mnemonic, null, null);

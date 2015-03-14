@@ -165,15 +165,19 @@ namespace NachoCore.Utils
             Error_EmailSearchCommandFailed,
             Info_ServerStatus,
             Info_NetworkStatus,
+            Info_PushAssistDeviceToken,
+            Info_PushAssistClientToken,
         };
 
-        public enum WhyEnum {
+        public enum WhyEnum
+        {
             NotSpecified = 0,
             Unknown,
             ProtocolError,
             ServerError,
             ServerOffline,
-            QuotaExceeded, // Other than storage capacity.
+            QuotaExceeded,
+            // Other than storage capacity.
             NoSpace,
             ConflictWithServer,
             InvalidDest,

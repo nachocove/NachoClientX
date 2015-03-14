@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
@@ -106,6 +107,47 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD1");
             }
+        }
+
+        // PushAssist support.
+        public string PushAssistRequestUrl ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ServerUri (Op).ToString ();
+        }
+
+        public HttpRequestHeaders PushAssistRequestHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Headers;
+        }
+
+        public HttpContentHeaders PushAssistContentHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Content.Headers;
+        }
+
+        public byte[] PushAssistRequestData ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ToXDocument (Op).ToWbxml ();
+        }
+
+        public byte[] PushAssistResponseData ()
+        {
+            var response = ToEmptyXDocument ();
+            response.Add (new XElement (m_ns + Xml.Ping.Ns,
+                new XElement (m_ns + Xml.Ping.Status, "1")));
+            return response.ToWbxml ();
         }
     }
 }

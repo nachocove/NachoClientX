@@ -695,7 +695,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders)
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected)
         {
             var maxHeartbeatInterval = (stillHaveUnsyncedFolders) ? 60 : BEContext.ProtocolState.HeartbeatInterval;
             var folders = FolderListProvider (accountId, Scope.StrategyRung (protocolState), isNarrow);
@@ -703,7 +703,7 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "GenPingKit: no folders");
                 return null;
             }
-            if (folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
+            if (!ignoreToClientExpected && folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
                 return null;
             }
             if (protocolState.MaxFolders >= folders.Count) {
@@ -1046,7 +1046,7 @@ namespace NachoCore.ActiveSync
                 if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id) &&
                     !BEContext.Server.HostIsHotMail () &&
                     !BEContext.Server.HostIsGMail ()) {
-                    var rlPingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders);
+                    var rlPingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders, false);
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
@@ -1088,11 +1088,11 @@ namespace NachoCore.ActiveSync
                 PingKit pingKit = null;
                 if (0.8 < CoinToss.NextDouble ()) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit try generating wide PingKit.");
-                    pingKit = GenPingKit (accountId, protocolState, false, stillHaveUnsyncedFolders);
+                    pingKit = GenPingKit (accountId, protocolState, false, stillHaveUnsyncedFolders, false);
                 }
                 if (null == pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit will be narrow.");
-                    pingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders);
+                    pingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders, false);
                 }
                 if (null != pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");

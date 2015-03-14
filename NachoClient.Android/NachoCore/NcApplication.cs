@@ -66,6 +66,12 @@ namespace NachoCore
             }
         }
 
+        public bool IsForeground {
+            get {
+                return (ExecutionContextEnum.Foreground == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
@@ -73,6 +79,28 @@ namespace NachoCore
             get {
                 var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
                 return Path.Combine (documents, "startup.log");
+            }
+        }
+
+        // Client Id is a string that uniquely identifies a NachoMail client on
+        // all cloud servers (telemetry, pinger, etc.)
+        private string _ClientId;
+
+        public string ClientId {
+            get {
+                return _ClientId;
+            }
+            set {
+                bool same = (value == _ClientId);
+                _ClientId = value;
+                if (!same) {
+                    var status = new StatusIndEventArgs () {
+                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken),
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    };
+                    status.Status.Value = value;
+                    InvokeStatusIndEvent (status);
+                }
             }
         }
 
@@ -603,6 +631,17 @@ namespace NachoCore
                     BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
             }
             BackEnd.Instance.CertAskResp (accountId, isOkay);
+        }
+
+        public string GetPushService ()
+        {
+            #if __IOS__
+            return "APNS";
+            #elif __ANDROID__
+            return "GCM";
+            #else
+            throw new PlatformNotSupportedException ();
+            #endif
         }
 
         private bool ShouldEnterSafeMode ()

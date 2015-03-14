@@ -1,6 +1,7 @@
 #define HA_AUTH_ANONYMOUS
 //#define HA_AUTH_USER
 //#define HA_AUTH_EMAIL
+#define NO_CERT_VALIDATION // curl -k
 
 using System;
 using System.IO;
@@ -23,11 +24,17 @@ using NachoCore.Brain;
 using NachoPlatform;
 using NachoClient.iOS;
 using SQLite;
+using Newtonsoft.Json;
 using NachoCore.Wbxml;
 using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
+
+#if NO_CERT_VALIDATION
+using System.Net.Security;
+using System.Net;
+#endif
 
 namespace NachoClient.iOS
 {
@@ -138,14 +145,42 @@ namespace NachoClient.iOS
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
-            PushAssist.Instance.SetDeviceToken (deviceToken.ToArray ());
-            Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications :{0}", deviceToken.ToString ());
+            var deviceTokenBytes = deviceToken.ToArray ();
+            PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes));
+            Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications: {0}", deviceToken.ToString ());
         }
 
         public override void FailedToRegisterForRemoteNotifications (UIApplication application, NSError error)
         {
-            PushAssist.Instance.ResetDeviceToken ();
+            // null Value indicates token is lost.
+            PushAssist.SetDeviceToken (null);
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
+        }
+
+        public override void DidRegisterUserNotificationSettings (UIApplication application, UIUserNotificationSettings notificationSettings)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "DidRegisteredUserNotificationSettings: {0}", notificationSettings);
+        }
+
+        public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "Got remote notification - {0}", userInfo);
+            // Amazingly, it turns out the most programmatically simple way to convert a NSDictionary
+            // to our own model objects.
+            NSError error;
+            var jsonData = NSJsonSerialization.Serialize (userInfo, NSJsonWritingOptions.PrettyPrinted, out error);
+            var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
+            var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
+            if (notification.HasPingerSection ()) {
+                PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
+                    if (NcApplication.Instance.IsForeground) {
+                        var inbox = NcEmailManager.PriorityInbox ();
+                        inbox.StartSync ();
+                    } else {
+                        PerformFetch (application, completionHandler);
+                    }
+                });
+            }
         }
 
         /// This is not a service but rather initialization of some native
@@ -205,6 +240,13 @@ namespace NachoClient.iOS
 //            });
         }
 
+        #if NO_CERT_VALIDATION
+        private bool CertCheck (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
+        #endif
+
         // This method is common to both launching into the background and into the foreground.
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
@@ -216,6 +258,9 @@ namespace NachoClient.iOS
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            #if NO_CERT_VALIDATION
+            ServicePointManager.ServerCertificateValidationCallback = CertCheck;
+            #endif
             // One-time initialization that do not need to be shut down later.
             if (!StartCrashReportingHasHappened) {
                 StartCrashReportingHasHappened = true;
@@ -245,8 +290,19 @@ namespace NachoClient.iOS
             navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
-            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
-                UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+            if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
+                // iOS 8 and after
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Sound, null);
+                UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
+                UIApplication.SharedApplication.RegisterForRemoteNotifications ();
+            } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
+                // iOS 7 and before
+                // TODO: revist why we need the sound.
+                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
+                    UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+            } else {
+                Log.Error (Log.LOG_PUSH, "notification not registered!");
+            }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(CidImageProtocol)));

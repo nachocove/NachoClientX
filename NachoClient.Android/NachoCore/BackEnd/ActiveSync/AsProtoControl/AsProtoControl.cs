@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public partial class AsProtoControl : ProtoControl, IBEContext
+    public partial class AsProtoControl : ProtoControl, IPushAssistOwner
     {
         private IAsCommand Cmd;
         private AsValidateConfig Validator;
@@ -80,7 +81,7 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.HotQOpW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.IdleW:
-                     return (ProtocolState.HasSyncedInbox) ? 
+                    return (ProtocolState.HasSyncedInbox) ? 
                         BackEndStateEnum.PostAutoDPostInboxSync : 
                         BackEndStateEnum.PostAutoDPreInboxSync;
 
@@ -92,6 +93,7 @@ namespace NachoCore.ActiveSync
         }
 
         private X509Certificate2 _ServerCertToBeExamined;
+
         public override X509Certificate2 ServerCertToBeExamined {
             get {
                 return _ServerCertToBeExamined;
@@ -137,6 +139,8 @@ namespace NachoCore.ActiveSync
         public AsProtoControl ProtoControl { set; get; }
 
         public IAsStrategy SyncStrategy { set; get; }
+
+        private PushAssist PushAssist { set; get; }
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
@@ -839,7 +843,10 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
             SyncStrategy = new AsStrategy (this);
-
+            // FIXME - Remove this when it is ready for prime time
+            if ("beta" != NachoClient.Build.BuildInfo.AwsPrefix) {
+                PushAssist = new PushAssist (this);
+            }
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -918,6 +925,9 @@ namespace NachoCore.ActiveSync
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            if (null != PushAssist) {
+                PushAssist.Dispose ();
+            }
             base.Remove ();
         }
         // Methods callable by the owner.
@@ -1044,13 +1054,13 @@ namespace NachoCore.ActiveSync
         private void DoDisc ()
         {
             SetCmd (new AsAutodiscoverCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoOpt ()
         {
             SetCmd (new AsOptionsCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoProv ()
@@ -1059,7 +1069,7 @@ namespace NachoCore.ActiveSync
                 Sm.PostEvent ((uint)SmEvt.E.Success, "DOPROVNOPROV");
             } else {
                 SetCmd (new AsProvisionCommand (this));
-                Cmd.Execute (Sm);
+                ExecuteCmd ();
             }
         }
 
@@ -1073,13 +1083,13 @@ namespace NachoCore.ActiveSync
         private void DoSettings ()
         {
             SetCmd (new AsSettingsCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoFSync ()
         {
             SetCmd (new AsFolderSyncCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoNopOrPick ()
@@ -1236,18 +1246,25 @@ namespace NachoCore.ActiveSync
                 }
             }
             SetCmd (cmd);
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoArg ()
         {
             var cmd = Sm.Arg as AsCommand;
+
+            if (null != cmd as AsPingCommand && null != PushAssist) {
+                PushAssist.Execute ();
+            }
             SetCmd (cmd);
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoPark ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
@@ -1280,6 +1297,18 @@ namespace NachoCore.ActiveSync
                 Cmd.Cancel ();
             }
             Cmd = nextCmd;
+        }
+
+        private void ExecuteCmd ()
+        {
+            if (null != PushAssist) {
+                if (PushAssist.IsActive ()) {
+                    PushAssist.Defer ();
+                } else if (PushAssist.IsParked ()) {
+                    PushAssist.Execute ();
+                }
+            }
+            Cmd.Execute (Sm);
         }
 
         public override void ForceStop ()
@@ -1336,6 +1365,29 @@ namespace NachoCore.ActiveSync
                 // The "Down" case.
                 Sm.PostEvent ((uint)CtlEvt.E.Park, "NSEHPARK");
             }
+        }
+
+        // PushAssist support.
+        public PushAssistParameters PushAssistParameters ()
+        {
+            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
+            if (null == pingKit) {
+                return null; // should never happen
+            }
+            var ping = new AsPingCommand (this, pingKit);
+            if (null == ping) {
+                return null; // should never happen
+            }
+            return new NachoCore.PushAssistParameters () {
+                RequestUrl = ping.PushAssistRequestUrl (),
+                RequestData = ping.PushAssistRequestData (),
+                RequestHeaders = ping.PushAssistRequestHeaders (),
+                ContentHeaders = ping.PushAssistContentHeaders (),
+                NoChangeResponseData = ping.PushAssistResponseData (),
+                Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                WaitBeforeUseMsec = 60 * 1000,
+            };
         }
     }
 }

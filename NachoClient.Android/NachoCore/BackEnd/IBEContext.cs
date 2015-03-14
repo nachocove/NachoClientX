@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.ActiveSync; // TODO - remove this reference.
 
-namespace NachoCore.ActiveSync
+namespace NachoCore
 {
     public interface IBEContext
     {

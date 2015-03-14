@@ -44,7 +44,7 @@ namespace Test.iOS
         public static string SubHost = "foo.utopiasystems.net";
 
         // DNS tests depends on RedirectionUrl being exactly this because the certificate contains this url
-        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml"; 
+        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml";
         public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
         public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
 
@@ -74,14 +74,17 @@ namespace Test.iOS
     {
         // TODO: do we need to go the factory route and get rid of the statics?
         public delegate void ExamineHttpRequestMessageDelegate (HttpRequestMessage request);
+
         public static ExamineHttpRequestMessageDelegate ExamineHttpRequestMessage { set; get; }
 
         // Provide the request message so that the type of auto-d can be checked
         public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate (HttpRequestMessage request);
+
         public static ProvideHttpResponseMessageDelegate ProvideHttpResponseMessage { set; get; }
 
         // Turn on/off server certificate validation callback
         public delegate bool HasServerCertificateDelegate ();
+
         public static HasServerCertificateDelegate HasServerCertificate { set; get; }
 
         public static uint AsyncCalledCount { set; get; }
@@ -126,15 +129,15 @@ namespace Test.iOS
             }
 
             // Create and return a mock response
-            var mockResponse = new HttpResponseMessage () {};
+            var mockResponse = new HttpResponseMessage () { };
             return Task.Run<HttpResponseMessage> (delegate {
                 return mockResponse;
             });
         }
 
         public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
-            HttpCompletionOption completionOption,
-            CancellationToken cancellationToken)
+                                                    HttpCompletionOption completionOption,
+                                                    CancellationToken cancellationToken)
         {
             AsyncCalledCount++;
 
@@ -151,10 +154,15 @@ namespace Test.iOS
     public class MockContext : IBEContext
     {
         public IProtoControlOwner Owner { set; get; }
+
         public AsProtoControl ProtoControl { set; get; }
+
         public McProtocolState ProtocolState { get; set; }
+
         public McServer Server { get; set; }
+
         public McAccount Account { set; get; }
+
         public McCred Cred { set; get; }
 
         public MockContext (AsProtoControl protoControl = null, McServer server = null)
@@ -193,6 +201,7 @@ namespace Test.iOS
     {
         // register a callback in order to track StatusInd notifications
         public delegate void ViewStatusIndMessageDelegate (NcResult result);
+
         public static event ViewStatusIndMessageDelegate StatusIndCallback;
 
         // Helper property added for test purposes only
@@ -221,17 +230,30 @@ namespace Test.iOS
         }
 
         // we aren't interested in these
-        public void CredReq (ProtoControl sender) {}
-        public void ServConfReq (ProtoControl sender) {}
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {}
-        public void SearchContactsResp (ProtoControl sender, string prefix, string token) {}
+        public void CredReq (ProtoControl sender)
+        {
+        }
+
+        public void ServConfReq (ProtoControl sender)
+        {
+        }
+
+        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+        {
+        }
+
+        public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+        {
+        }
     }
 
     public class MockNcCommStatus : INcCommStatus
     {
         private static volatile MockNcCommStatus instance;
 
-        private MockNcCommStatus () {}
+        private MockNcCommStatus ()
+        {
+        }
 
         public static MockNcCommStatus Instance { 
             get {
@@ -239,7 +261,8 @@ namespace Test.iOS
                     instance = new MockNcCommStatus ();
                 }
                 return instance;
-            } set {
+            }
+            set {
                 // allow MockNcCommStatus to be reset to null between tests
                 instance = value;
             }
@@ -250,7 +273,9 @@ namespace Test.iOS
             return false;
         }
 
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        {
+        }
 
         #pragma warning disable 067
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
@@ -280,12 +305,20 @@ namespace Test.iOS
         }
 
         public int AccountId { get; set; }
+
         public string Host { get; set; }
+
         public bool DidFailGenerally { get; set; }
+
         public DateTime DelayUntil;
 
-        public void Reset (int serverId) {}
-        public void Refresh () {}
+        public void Reset (int serverId)
+        {
+        }
+
+        public void Refresh ()
+        {
+        }
     }
 
     public class MockStrategy : IAsStrategy
@@ -316,6 +349,14 @@ namespace Test.iOS
                         GetChanges = true,
                     }
                 },
+            };
+        }
+
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected)
+        {
+            return new NachoCore.ActiveSync.PingKit () {
+                MaxHeartbeatInterval = 600,
+                Folders = new List<McFolder> (),
             };
         }
 

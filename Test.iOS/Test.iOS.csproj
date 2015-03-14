@@ -105,7 +105,6 @@
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
-    <Reference Include="Xamarin.iOS" />
     <Reference Include="antlr.runtime.iOS">
       <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
     </Reference>
@@ -114,6 +113,10 @@
     </Reference>
     <Reference Include="DDay.iCal.iOS">
       <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.iCal.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.iOS" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -269,6 +272,9 @@
     </Compile>
     <Compile Include="..\Test.Android\McEventTest.cs">
       <Link>McEventTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\PushAssistTest.cs">
+      <Link>PushAssistTest.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

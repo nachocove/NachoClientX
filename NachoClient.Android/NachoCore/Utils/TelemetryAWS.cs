@@ -35,7 +35,18 @@ namespace NachoCore.Utils
         private static Table UiTable;
         private static Table WbxmlTable;
 
-        private static string ClientId;
+        private static string _ClientId;
+
+        private static string ClientId {
+            get {
+                return _ClientId;
+            }
+            set {
+                _ClientId = value;
+                // Currently, the telemetry client id is the application's client id.
+                NcApplication.Instance.ClientId = _ClientId;
+            }
+        }
 
         private bool FreshInstall;
 
@@ -93,6 +104,13 @@ namespace NachoCore.Utils
                 }
                 FreshInstall = true;
             }
+
+            // Notify others (e.g. push assist SM) about the client id
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken);
+            result.Value = ClientId;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = result,
+            });
 
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);

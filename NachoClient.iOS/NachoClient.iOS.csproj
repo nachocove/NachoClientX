@@ -95,7 +95,6 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignProvision>092e4558-294a-451d-bd26-d96e0f3ae748</CodesignProvision>
-    <CodesignProvision>c156d97b-132e-4786-8c2f-96a296a76283</CodesignProvision>
     <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
@@ -545,9 +544,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcContactManager.cs">
       <Link>NachoCore\Adapters\NcContactManager.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\IBEContext.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\IBEContext.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
       <DependentUpon>MessageViewController.cs</DependentUpon>
@@ -836,7 +832,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
       <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
     </Compile>
-    <Compile Include="PushAssist.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ITimer.cs">
       <Link>NachoCore\Utils\ITimer.cs</Link>
     </Compile>
@@ -1234,6 +1229,18 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
       <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IBEContext.cs">
+      <Link>NachoCore\BackEnd\IBEContext.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssist.cs">
+      <Link>NachoCore\BackEnd\PushAssist.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IPushAssistOwner.cs">
+      <Link>NachoCore\BackEnd\IPushAssistOwner.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssistJson.cs">
+      <Link>NachoCore\BackEnd\PushAssistJson.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCalendarMap.cs">
       <Link>NachoCore\Adapters\NcEventsCalendarMap.cs</Link>
@@ -2138,6 +2145,7 @@
     <BundleResource Include="Resources\gen-deadlinethread%403x.png" />
     <BundleResource Include="Resources\gen-deadlinethread%404x.png" />
     <BundleResource Include="Resources\gen-deadlinethread%406x.png" />
+    <BundleResource Include="Resources\silent.wav" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
