@@ -386,6 +386,8 @@ namespace NachoCore
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
+                            (uint)PAEvt.E.Defer,
+                            (uint)PAEvt.E.Park,
                         },
                         On = new [] {
                             new Trans {
@@ -414,6 +416,7 @@ namespace NachoCore
                     }
                 }
             };
+            Sm.Validate ();
             NcApplication.Instance.StatusIndEvent += TokensWatcher;
         }
 
@@ -650,45 +653,41 @@ namespace NachoCore
             };
             FillOutIdentInfo (jsonRequest);
 
-            try {
-                var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
-                if (null == task) {
-                    return;
-                }
-                if (null != task.Result.Exception) {
-                    NumRetries++;
-                    var ex = task.Result.Exception;
-                    string mnemonic;
-                    if (ex is WebException) {
-                        mnemonic = "START_NET_RETRY";
-                    } else if (ex is TimeoutException) {
-                        mnemonic = "START_TIMEOUT";
-                    } else {
-                        mnemonic = "START_UNEXPECTED_RETRY";
-                    }
-                    ScheduleRetry ((uint)SmEvt.E.Launch, mnemonic);
-                    return;
-                }
-                var httpResponse = task.Result.Response;
-                if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}",
-                        httpResponse.StatusCode);
-                    NumRetries++;
-                    ScheduleRetry ((uint)SmEvt.E.Launch, "START_HTTP_RETRY");
-                    return;
-                }
-                var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
-                var response = ParsePingerResponse (jsonResponse);
-                if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
-                    NumRetries++;
-                    ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
+            var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
+            if (null == task) {
+                return;
+            }
+            if (null != task.Result.Exception) {
+                NumRetries++;
+                var ex = task.Result.Exception;
+                string mnemonic;
+                if (ex is WebException) {
+                    mnemonic = "START_NET_RETRY";
+                } else if (ex is TimeoutException) {
+                    mnemonic = "START_TIMEOUT";
                 } else {
-                    SessionToken = response.Token;
-                    ClearRetry ();
-                    PostSuccess ("START_SESSION_OK");
+                    mnemonic = "START_UNEXPECTED_RETRY";
                 }
-            } catch (WebException e) {
-            } catch (Exception e) {
+                ScheduleRetry ((uint)SmEvt.E.Launch, mnemonic);
+                return;
+            }
+            var httpResponse = task.Result.Response;
+            if (HttpStatusCode.OK != httpResponse.StatusCode) {
+                Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}",
+                    httpResponse.StatusCode);
+                NumRetries++;
+                ScheduleRetry ((uint)SmEvt.E.Launch, "START_HTTP_RETRY");
+                return;
+            }
+            var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+            var response = ParsePingerResponse (jsonResponse);
+            if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
+                NumRetries++;
+                ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
+            } else {
+                SessionToken = response.Token;
+                ClearRetry ();
+                PostSuccess ("START_SESSION_OK");
             }
         }
 
