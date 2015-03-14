@@ -382,7 +382,7 @@ namespace NachoCore
                     },
                     new Node {
                         State = (uint)Lst.Parked,
-                        Invalid = new [] {
+                        Drop = new [] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
@@ -807,6 +807,8 @@ namespace NachoCore
         {
             // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
             ClearRetry ();
+            DisposeTimeoutTimer ();
+            DisposeCts ();
         }
 
         // MISCELLANEOUS STUFF
