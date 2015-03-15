@@ -386,6 +386,7 @@ namespace NachoCore
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
+                            (uint)PAEvt.E.Park,
                         },
                         On = new [] {
                             new Trans {
@@ -659,6 +660,10 @@ namespace NachoCore
                     NumRetries++;
                     var ex = task.Result.Exception;
                     string mnemonic;
+                    if (ex is OperationCanceledException) {
+                        PostEvent (PAEvt.E.Park, "START_CANCELED");
+                        return;
+                    }
                     if (ex is WebException) {
                         mnemonic = "START_NET_RETRY";
                     } else if (ex is TimeoutException) {
@@ -718,6 +723,10 @@ namespace NachoCore
                 NumRetries++;
                 var ex = task.Result.Exception;
                 string mnemonic;
+                if (ex is OperationCanceledException) {
+                    PostEvent (PAEvt.E.Park, "DEFER_CANCELED");
+                    return;
+                }
                 if (ex is WebException) {
                     mnemonic = "DEFER_NET_RETRY";
                 } else if (ex is TimeoutException) {
@@ -778,6 +787,8 @@ namespace NachoCore
                 var ex = task.Result.Exception;
                 if (ex is WebException) {
                     PostTempFail ("STOP_NET_ERROR");
+                } else if (ex is OperationCanceledException) {
+                    PostTempFail ("STOP_CANCELED");
                 } else if (ex is TimeoutException) {
                     PostTempFail ("STOP_TIMEOUT");
                 } else {
@@ -808,7 +819,9 @@ namespace NachoCore
             // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
             ClearRetry ();
             DisposeTimeoutTimer ();
-            DisposeCts ();
+            if (null != Cts) {
+                Cts.Cancel ();
+            }
         }
 
         // MISCELLANEOUS STUFF
@@ -893,11 +906,12 @@ namespace NachoCore
                         Log.Warn (Log.LOG_PUSH, "PA response: statusCode={0}", response.StatusCode);
                     }
                     result.Response = response;
-                } catch (OperationCanceledException) {
+                } catch (OperationCanceledException e) {
                     if (cToken.IsCancellationRequested) {
                         DisposeTimeoutTimer ();
                         DisposeRetryTimer ();
-                        throw;
+                        result.Exception = e;
+                        Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
                     }
                     if (Cts.Token.IsCancellationRequested) {
                         result.Exception = new TimeoutException ("HTTP operation timed out");
@@ -910,8 +924,9 @@ namespace NachoCore
                     result.Exception = e;
                     Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
                 }
-                DisposeTimeoutTimer ();
             }
+            DisposeTimeoutTimer ();
+            DisposeCts ();
 
             return result;
         }
