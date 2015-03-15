@@ -1135,7 +1135,7 @@ namespace NachoClient
         public static DateTime ToDateTime (this NSDate nsDate)
         {
             // TODO: Why not just a cast?
-            return (new DateTime (2001, 1, 1, 0, 0, 0)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+            return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
         }
 
         public static string PrettyPointF (CGPoint p)

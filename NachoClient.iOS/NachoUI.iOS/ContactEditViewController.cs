@@ -2008,7 +2008,12 @@ namespace NachoClient.iOS
                     this.dateLabel.TextColor = A.Color_NachoTeal;
                     LayoutView ();
                 } else {
-                    dateAttribute.Value = datePicker.Date.ToDateTime ();
+                    // The user selected a date/time in the local time zone.  (The picker only showed the date, but
+                    // there was also a hidden time component.)  But datePicker.Date returns a date/time in UTC, which
+                    // might be on a different date.  So we need to convert back to local time, extract the date,
+                    // then construct a new DateTime with that date in UTC.
+                    DateTime selectedDate = datePicker.Date.ToDateTime ().ToLocalTime ().Date;
+                    dateAttribute.Value = new DateTime (selectedDate.Year, selectedDate.Month, selectedDate.Day, 0, 0, 0, DateTimeKind.Utc);
                     dateView.Hidden = true;
                     this.dateLabel.TextColor = A.Color_NachoGreen;
                     ConfigureView ();
@@ -2030,7 +2035,9 @@ namespace NachoClient.iOS
 
             protected void DateLabelClicked (object sender, EventArgs e)
             {
-                dateAttribute.Value = datePicker.Date.ToDateTime ();
+                // See comment in DateClicked(), above.
+                DateTime selectedDate = datePicker.Date.ToDateTime ().ToLocalTime ().Date;
+                dateAttribute.Value = new DateTime (selectedDate.Year, selectedDate.Month, selectedDate.Day, 0, 0, 0, DateTimeKind.Utc);
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Date;
                 owner.editingDateCell = this;
