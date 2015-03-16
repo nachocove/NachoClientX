@@ -131,7 +131,7 @@ namespace NachoClient.iOS
                         var ex = e.ExceptionObject as Exception;
                         if (null != ex) {
                             // See if we can get the part of the stack that is getting lost in ThrowExceptionAsNative().
-                            Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex.Message);
+                            Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex);
                         }
                     } catch {
                     }
