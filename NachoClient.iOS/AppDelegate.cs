@@ -251,6 +251,13 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            // One-time initialization that do not need to be shut down later.
+            if (!StartCrashReportingHasHappened) {
+                StartCrashReportingHasHappened = true;
+                StartCrashReporting ();
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
+            }
+
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
@@ -261,12 +268,6 @@ namespace NachoClient.iOS
             #if NO_CERT_VALIDATION
             ServicePointManager.ServerCertificateValidationCallback = CertCheck;
             #endif
-            // One-time initialization that do not need to be shut down later.
-            if (!StartCrashReportingHasHappened) {
-                StartCrashReportingHasHappened = true;
-                StartCrashReporting ();
-                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
-            }
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
             StartUIMonitor ();
