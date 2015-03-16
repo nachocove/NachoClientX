@@ -240,7 +240,7 @@ namespace NachoCore.Model
                 Db.CreateTable<McMapEmailAddressEntry> ();
                 Db.CreateTable<McMigration> ();
             });
-            watch.Stop();
+            watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
             ConfigureDb (Db);
         }
@@ -317,6 +317,12 @@ namespace NachoCore.Model
                     }
                 }
                 return instance; 
+            }
+        }
+
+        public static bool IsInitialized {
+            get {
+                return (null != instance);
             }
         }
 
