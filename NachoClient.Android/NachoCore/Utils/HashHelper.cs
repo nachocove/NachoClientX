@@ -24,7 +24,7 @@ namespace NachoCore.Utils
 
         public static string HashEmailAddressesInString (string value)
         {
-            string emailPattern = "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}\\b";
+            string emailPattern = "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]+\\b";
             string hashed = Regex.Replace(value, emailPattern, delegate(Match match)
                 {
                     // not doing a short hash here since email address can be long
