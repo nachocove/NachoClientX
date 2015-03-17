@@ -17,10 +17,22 @@ source repos.sh
 ./fetch.py $repos
 
 # Tag all repos
-sh checkout_tag.sh "v$1_$2"
+tag="v$1_$2"
+sh checkout_tag.sh "$tag"
 
 # Build everything else
 make -f build.mk
+if [ $? -neq 0 ]
+then
+    echo "Fail to build auxillary packages"
+    exit 1
+fi
 
 # Build NachoClient
 VERSION="$1" BUILD="$2" RELEASE="beta" make release
+if [ $? -eq 0 ]
+then
+    echo "Beta build $tag is made."
+else
+    echo "Beta build fails!"
+fi
