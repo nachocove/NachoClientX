@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using Org.BouncyCastle.Crypto;
 
 namespace NachoCore.Utils
 {
@@ -91,7 +90,7 @@ namespace NachoCore.Utils
 
         public ConcurrentDictionary<string, X509Certificate2> Cache;
 
-        protected ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> Policies;
+        private ConcurrentDictionary<ServerIdentity, ServerValidationPolicy> Policies;
 
         public static ServerCertificatePeek Instance {
             get {
@@ -113,9 +112,6 @@ namespace NachoCore.Utils
         public static void Initialize ()
         {
             ServicePointManager.ServerCertificateValidationCallback = ServerCertificatePeek.CertificateValidationCallback;
-            ServerCertificatePeek.Instance.AddPolicy (
-                new ServerIdentity (new Uri ("https://" + NachoClient.Build.BuildInfo.PingerHostname)),
-                new ServerValidationPolicy ());
         }
 
         // Note: public only for test code!
@@ -151,9 +147,13 @@ namespace NachoCore.Utils
                     // Custom validation
                     ok = policy.Validator (request, certificate2, chain, ok);
                 }
+
                 if (!ok) {
                     Log.Warn (Log.LOG_HTTP, "Cert validation failure (uri={0})", request.RequestUri.AbsoluteUri);
                     return false;
+                } else if (null != policy.Validator) {
+                    // If there is a custom validator and it says yes, overwrite all previous validation results.
+                    sslPolicyErrors = SslPolicyErrors.None;
                 }
             }
 

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using ModernHttpClient;
 using Newtonsoft.Json;
 using NachoCore.Utils;
@@ -133,6 +134,21 @@ namespace NachoCore
                 // pinger session.
                 Stop,
             };
+        }
+
+        public static void Initialize ()
+        {
+            var identity = new ServerIdentity (new Uri ("https://" + NachoClient.Build.BuildInfo.PingerHostname));
+            var policy = new ServerValidationPolicy () {
+                Validator = ValidatorHack,
+            };
+            ServerCertificatePeek.Instance.AddPolicy (identity, policy);
+        }
+
+        public static bool ValidatorHack (IHttpWebRequest sender, X509Certificate2 certificate, X509Chain chain, bool result)
+        {
+            // FIXME - Until we have the cert hierarchy fully verified, just accept pinger cert. 
+            return true;
         }
 
         public static bool SetDeviceToken (string token)

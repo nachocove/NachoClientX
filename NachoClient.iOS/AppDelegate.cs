@@ -62,7 +62,7 @@ namespace NachoClient.iOS
 
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
-        private bool StartCrashReportingHasHappened = false;
+        private bool FirstLaunchInitialization = false;
         private bool DidEnterBackgroundCalled = false;
         private bool hasFirstSyncCompleted;
 
@@ -239,12 +239,14 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             // One-time initialization that do not need to be shut down later.
-            if (!StartCrashReportingHasHappened) {
-                StartCrashReportingHasHappened = true;
+            if (!FirstLaunchInitialization) {
+                FirstLaunchInitialization = true;
                 StartCrashReporting ();
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
+
+                PushAssist.Initialize ();
+                ServerCertificatePeek.Initialize ();
             }
-            ServerCertificatePeek.Initialize ();
 
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
