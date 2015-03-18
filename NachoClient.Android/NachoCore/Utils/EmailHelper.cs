@@ -407,6 +407,37 @@ namespace NachoCore.Utils
             result.Append ("\n\n");
             return result.ToString ();
         }
+
+        public static string Initials (string fromAddressString)
+        {
+            // Parse the from address
+            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (fromAddressString);
+            if (null == mailboxAddress) {
+                return "";
+            }
+            McContact contact = new McContact ();
+            NcEmailAddress.SplitName (mailboxAddress, ref contact);
+            // Using the name
+            string initials = "";
+            if (!String.IsNullOrEmpty (contact.FirstName)) {
+                initials += Char.ToUpper (contact.FirstName [0]);
+            }
+            if (!String.IsNullOrEmpty (contact.LastName)) {
+                initials += Char.ToUpper (contact.LastName [0]);
+            }
+            // Or, failing that, the first char
+            if (String.IsNullOrEmpty (initials)) {
+                if (!String.IsNullOrEmpty (fromAddressString)) {
+                    foreach (char c in fromAddressString) {
+                        if (Char.IsLetterOrDigit (c)) {
+                            initials += Char.ToUpper (c);
+                            break;
+                        }
+                    }
+                }
+            }
+            return initials;
+        }
     }
 }
 

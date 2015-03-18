@@ -42,7 +42,17 @@ namespace NachoCore.ActiveSync
                 emailMessage.IsIncomplete = true;
             }
 
-            emailMessage.FromEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.From);
+            McEmailAddress fromEmailAddress;
+            if (McEmailAddress.Get (folder.AccountId, emailMessage.From, out fromEmailAddress)) {
+                emailMessage.FromEmailAddressId = fromEmailAddress.Id;
+                emailMessage.cachedFromLetters = EmailHelper.Initials(emailMessage.From);
+                emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
+            } else {
+                emailMessage.FromEmailAddressId = 0;
+                emailMessage.cachedFromLetters = "";
+                emailMessage.cachedFromColor = 1;
+            }
+
             emailMessage.SenderEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.Sender);
             emailMessage.ToEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.To);
             emailMessage.CcEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.Cc);

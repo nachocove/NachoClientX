@@ -547,9 +547,6 @@ namespace NachoClient.iOS
                 userImageView.Image = userImage;
             } else {
                 userLabelView.Hidden = false;
-                if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 > message.cachedFromColor)) {
-                    Util.CacheUserMessageFields (message);
-                }
                 userLabelView.Text = message.cachedFromLetters;
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
