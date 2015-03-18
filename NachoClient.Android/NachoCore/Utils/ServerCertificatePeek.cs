@@ -134,7 +134,7 @@ namespace NachoCore.Utils
             ServerIdentity ident = new ServerIdentity (request.RequestUri);
             ServerValidationPolicy policy;
             if (Instance.Policies.TryGetValue (ident, out policy)) {
-                if (null != policy.PinnedCertPem) {
+                if (null != policy.PinnedCert) {
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
@@ -143,7 +143,7 @@ namespace NachoCore.Utils
                         }
                     }
                     chain.ChainPolicy.ExtraStore.RemoveRange (selfSignedCerts);
-                    chain.ChainPolicy.ExtraStore.Add (policy.PinnedCertPem);
+                    chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                 }
 
                 var ok = chain.Build (certificate2);
