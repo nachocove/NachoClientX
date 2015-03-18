@@ -19,7 +19,7 @@ namespace NachoCore.Utils
         {
         }
 
-        public string formatCertificateData (X509Certificate2 certificate)
+        public static string FormatCertificateData (X509Certificate2 certificate)
         {
             string subject = certificate.Subject;
             string issuer = certificate.Issuer;
@@ -79,6 +79,17 @@ namespace NachoCore.Utils
             return GetField (certificate, new String[] { "O", "OU" });
         }
 
+        public static string DebugInfo (X509Certificate2 certificate)
+        {
+            return String.Format (
+                "Subject: {0}\n" +
+                "Issuer: {1}\n" +
+                "Version: {2}\n" +
+                "Serial #: {3}\n" +
+                "Not Valid Before: {4}\n" +
+                "Not Valid After: {5}\n", certificate.Subject, certificate.Issuer, certificate.Version,
+                certificate.SerialNumber, certificate.NotBefore, certificate.NotAfter);
+        }
     }
 }
 

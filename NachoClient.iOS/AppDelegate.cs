@@ -1,7 +1,6 @@
 #define HA_AUTH_ANONYMOUS
 //#define HA_AUTH_USER
 //#define HA_AUTH_EMAIL
-#define NO_CERT_VALIDATION // curl -k
 
 using System;
 using System.IO;
@@ -30,11 +29,6 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
-
-#if NO_CERT_VALIDATION
-using System.Net.Security;
-using System.Net;
-#endif
 
 namespace NachoClient.iOS
 {
@@ -240,13 +234,6 @@ namespace NachoClient.iOS
 //            });
         }
 
-        #if NO_CERT_VALIDATION
-        private bool CertCheck (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            return true;
-        }
-        #endif
-
         // This method is common to both launching into the background and into the foreground.
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
@@ -257,6 +244,7 @@ namespace NachoClient.iOS
                 StartCrashReporting ();
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
             }
+            ServerCertificatePeek.Initialize ();
 
             if (null == NcApplication.Instance.CrashFolder) {
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
@@ -265,9 +253,6 @@ namespace NachoClient.iOS
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
-            #if NO_CERT_VALIDATION
-            ServicePointManager.ServerCertificateValidationCallback = CertCheck;
-            #endif
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
             StartUIMonitor ();
