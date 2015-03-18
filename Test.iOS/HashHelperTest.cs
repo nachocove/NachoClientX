@@ -8,7 +8,7 @@ namespace Test.iOS
     [TestFixture]
     public class HashHelperTest 
     {
-        public static string[] emailAddresses = new string[] {"johnq@nachocove.com", "Peter@smithsonian.museum", "philip@us.gov", "ramesh@timesofindia.in", "tester@d2.officeburrito.com"};
+        public static string[] emailAddresses = new string[] {"johnq@nachocove.com", "jēn@späm.de", "Peter@smithsonian.museum", "philip@us.gov", "ramesh@timesofindia.in", "tester@d2.officeburrito.com"};
         public static string urlPrefixFrag = "https://mail.d2.officeburrito.com/Microsoft-Server-ActiveSync?Cmd=ItemOperations&User=";
         public static string urlSuffixFrag = "&DeviceId=Nchob8f6b1150c41&DeviceType=iPhone";
 
