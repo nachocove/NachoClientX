@@ -915,12 +915,12 @@ namespace NachoCore.Utils
             DateTime eventEnd = ConvertTimeFromUtc (c.EndTime, timeZone);
             var duration = eventEnd - eventStart;
 
-            int maxOccurrences = r.OccurencesIsSet ? r.Occurences : int.MaxValue;
-            DateTime lastOccurence = r.Until == default(DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
+            int maxOccurrences = r.OccurrencesIsSet ? r.Occurrences : int.MaxValue;
+            DateTime lastOccurrence = r.Until == default(DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
 
             int occurrence = 0;
 
-            while (occurrence < maxOccurrences && eventStart <= lastOccurence) {
+            while (occurrence < maxOccurrences && eventStart <= lastOccurrence) {
                 DateTime eventStartUtc = ConvertTimeToUtc (eventStart, timeZone);
                 if (eventStartUtc > startingTime) {
                     DateTime eventEndUtc = ConvertTimeToUtc (eventStart + duration, timeZone);

@@ -241,8 +241,8 @@ namespace NachoCore.ActiveSync
                     if (recurrence.IntervalIsSet) {
                         xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Interval, recurrence.Interval));
                     }
-                    if (recurrence.OccurencesIsSet) {
-                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Occurrences, recurrence.Occurences));
+                    if (recurrence.OccurrencesIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Occurrences, recurrence.Occurrences));
                     }
                     if (NcRecurrenceType.Monthly == recurrence.Type || NcRecurrenceType.Yearly == recurrence.Type) {
                         xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.DayOfMonth, recurrence.DayOfMonth));
@@ -469,8 +469,8 @@ namespace NachoCore.ActiveSync
                     r.MonthOfYear = child.Value.ToInt ();
                     break;
                 case Xml.Calendar.Recurrence.Occurrences:
-                    r.Occurences = int.Parse (child.Value);
-                    r.OccurencesIsSet = true;
+                    r.Occurrences = int.Parse (child.Value);
+                    r.OccurrencesIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.Type:
                     r.Type = child.Value.ParseInteger<NcRecurrenceType> ();
