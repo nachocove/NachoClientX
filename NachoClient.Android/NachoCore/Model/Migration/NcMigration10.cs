@@ -20,12 +20,19 @@ namespace NachoCore.Model
                 if (0 != emailMessage.FromEmailAddressId) {
                     fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
                 }
-                if (null == fromEmailAddress) {
-                    emailMessage.cachedFromColor = 1;
-                    emailMessage.cachedFromLetters = "";
-                } else {
-                    emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                    emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
+                if (0 == emailMessage.cachedFromColor) {
+                    if (null == fromEmailAddress) {
+                        emailMessage.cachedFromColor = 1;
+                    } else {
+                        emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
+                    }
+                }
+                if (String.IsNullOrEmpty (emailMessage.cachedFromLetters)) {
+                    if (null == fromEmailAddress) {
+                        emailMessage.cachedFromLetters = "";
+                    } else {
+                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    }
                 }
                 emailMessage.Update ();
                 UpdateProgress (1);

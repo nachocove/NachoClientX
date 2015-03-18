@@ -408,10 +408,10 @@ namespace NachoCore.Utils
             return result.ToString ();
         }
 
-        public static string Initials (string from)
+        public static string Initials (string fromAddressString)
         {
             // Parse the from address
-            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (from);
+            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (fromAddressString);
             if (null == mailboxAddress) {
                 return "";
             }
@@ -427,8 +427,8 @@ namespace NachoCore.Utils
             }
             // Or, failing that, the first char
             if (String.IsNullOrEmpty (initials)) {
-                if (!String.IsNullOrEmpty (from)) {
-                    foreach (char c in from) {
+                if (!String.IsNullOrEmpty (fromAddressString)) {
+                    foreach (char c in fromAddressString) {
                         if (Char.IsLetterOrDigit (c)) {
                             initials += Char.ToUpper (c);
                             break;
