@@ -1278,6 +1278,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration9.cs">
       <Link>NachoCore\Model\Migration\NcMigration9.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\ManageItemsViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ManageItems.cs">
+      <Link>NachoCore\Utils\ManageItems.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
