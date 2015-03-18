@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
             var response = ToEmptyXDocument ();
             response.Add (new XElement (m_ns + Xml.Ping.Ns,
                 new XElement (m_ns + Xml.Ping.Status, "1")));
-            return response.ToWbxml ();
+            return response.ToWbxml (doFiltering: false);
         }
     }
 }
