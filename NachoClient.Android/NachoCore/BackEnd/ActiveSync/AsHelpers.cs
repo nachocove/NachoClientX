@@ -232,9 +232,38 @@ namespace NachoCore.ActiveSync
                 foreach (var category in cal.categories) {
                     xmlCategories.Add (new XElement (CalendarNs + Xml.Calendar.Category, category.Name));
                 }
+                xmlAppData.Add (xmlCategories);
+            }
+            if (0 != cal.recurrences.Count) {
+                foreach (var recurrence in cal.recurrences) {
+                    var xmlRecurrence = new XElement (CalendarNs + Xml.Calendar.Calendar_Recurrence);
+                    xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Type, (int)recurrence.Type));
+                    if (recurrence.IntervalIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Interval, recurrence.Interval));
+                    }
+                    if (recurrence.OccurencesIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Occurrences, recurrence.Occurences));
+                    }
+                    if (NcRecurrenceType.Monthly == recurrence.Type || NcRecurrenceType.Yearly == recurrence.Type) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.DayOfMonth, recurrence.DayOfMonth));
+                    }
+                    if (NcRecurrenceType.Yearly == recurrence.Type || NcRecurrenceType.YearlyOnDay == recurrence.Type) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.MonthOfYear, recurrence.MonthOfYear));
+                    }
+                    if (NcRecurrenceType.MonthlyOnDay == recurrence.Type || NcRecurrenceType.YearlyOnDay == recurrence.Type) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.WeekOfMonth, recurrence.WeekOfMonth));
+                    }
+                    if (recurrence.DayOfWeekIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.DayOfWeek, (int)recurrence.DayOfWeek));
+                    }
+                    if (recurrence.FirstDayOfWeekIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.FirstDayOfWeek, recurrence.FirstDayOfWeek));
+                    }
+                    xmlAppData.Add (xmlRecurrence);
+                }
             }
             // TODO: exceptions.
-            // TODO recurrences.
+
 
             if (cal.ResponseRequestedIsSet && 14.0 <= Convert.ToDouble (beContext.ProtocolState.AsProtocolVersion)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
