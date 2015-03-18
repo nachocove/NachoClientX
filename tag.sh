@@ -14,7 +14,7 @@ function gitTag()
 {
     pushd "../$1" 1> /dev/null
 	echo "Tagging `pwd` as $tag..."
-	git tag -a $tag -m $message
+	git tag -a "$tag" -m "$message"
 	popd 1> /dev/null
 }
 

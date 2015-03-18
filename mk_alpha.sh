@@ -17,10 +17,24 @@ source repos.sh
 ./fetch.py $repos
 
 # Tag all repos
-sh tag.sh "v$1_$2" "v$1_$2"
+tag="v$1_$2"
+sh tag.sh "$tag" "$tag"
 
 # Build everything else
 make -f build.mk
+if [ $? -neq 0 ]
+then
+    echo "Fail to build auxillary packages"
+    exit 1
+fi
 
 # Build NachoClient
 VERSION="$1" BUILD="$2" RELEASE="alpha" make release
+if [ $? -eq 0 ]
+then
+    sh push_tag.sh "$tag"
+    echo "Build $tag is made."
+else
+    echo "Build fails!"
+fi
+

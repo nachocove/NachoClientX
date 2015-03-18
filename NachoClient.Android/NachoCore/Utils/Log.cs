@@ -243,24 +243,49 @@ namespace NachoCore.Utils
             }
         }
 
+        private void QueueLog (int threadId, ulong subsystem, LogElement.LevelEnum level, string message)
+        {
+            Log.IndirectQ.Enqueue (new LogElement () {
+                ThreadId = threadId,
+                Subsystem = subsystem,
+                Level = level,
+                Message = message,
+                Occurred = DateTime.UtcNow,
+            });
+        }
+
+        private void _TryLog (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,
+                              string fmt, string level, LogElement.LevelEnum queueLevel, params object[] list)
+        {
+            if (NachoCore.Model.NcModel.IsInitialized) {
+                _Log (threadId, subsystem, settings, teleType, fmt, level, list);
+            } else {
+                QueueLog (threadId, subsystem, queueLevel, String.Format (fmt, list));
+            }
+        }
+
         public void Error (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Error, TelemetryEventType.ERROR, fmt, "Error", list);
+            _TryLog (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Error, TelemetryEventType.ERROR, fmt,
+                "Error", LogElement.LevelEnum.Error, list);
         }
 
         public void Warn (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Warn, TelemetryEventType.WARN, fmt, "Warn", list);
+            _TryLog (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Warn, TelemetryEventType.WARN, fmt,
+                "Warn", LogElement.LevelEnum.Warn, list);
         }
 
         public void Info (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Info, TelemetryEventType.INFO, fmt, "Info", list);
+            _TryLog (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Info, TelemetryEventType.INFO, fmt,
+                "Info", LogElement.LevelEnum.Info, list);
         }
 
         public void Debug (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Debug, TelemetryEventType.DEBUG, fmt, "Debug", list);
+            _TryLog (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Debug, TelemetryEventType.DEBUG, fmt,
+                "Debug", LogElement.LevelEnum.Debug, list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
