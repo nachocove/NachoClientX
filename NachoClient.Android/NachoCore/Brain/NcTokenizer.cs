@@ -119,6 +119,11 @@ namespace NachoCore.Brain
                     return ProcessAlternativeMultipart (multipart);
                 } else if (multipart.ContentType.Matches ("multipart", "mixed")) {
                     return ProcessMixedMultipart (multipart);
+                } else if (multipart.ContentType.Matches ("multipart", "related")) {
+                    // The handling of multipart/related is the same as multipart/mixed.
+                    // Just iterate through all its subparts and add the ones that can be
+                    // indexed.
+                    return ProcessMixedMultipart (multipart);
                 } else {
                     // Unsupported multipart
                     Log.Warn (Log.LOG_BRAIN, "ProcessMimeEntity: unsupported multipart type {0}/{1}",
