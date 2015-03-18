@@ -610,13 +610,13 @@ namespace NachoClient.iOS
 
                     spacing += (attendeeImageDiameter + iconPadding);
                     if (4 <= ++attendeeNum && 5 < c.attendees.Count) {
-                        // There is room for four attendees in the view.  If the meeting
+                        // There is room for five attendees in the view.  If the meeting
                         // has more than five attendees, only show four of them and save
                         // the last slot for showing the number of extra attendees.
                         break;
                     }
                 }
-                if (4 < c.attendees.Count) {
+                if (5 < c.attendees.Count) {
                     extraAttendeesButton = UIButton.FromType (UIButtonType.RoundedRect);
                     extraAttendeesButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     extraAttendeesButton.Layer.MasksToBounds = true;
