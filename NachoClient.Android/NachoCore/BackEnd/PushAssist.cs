@@ -148,6 +148,7 @@ namespace NachoCore
         public static bool ValidatorHack (IHttpWebRequest sender, X509Certificate2 certificate, X509Chain chain, bool result)
         {
             // FIXME - Until we have the cert hierarchy fully verified, just accept pinger cert. 
+            Log.Warn (Log.LOG_PUSH, "Blindly accept the certificate. Alpha build only");
             return true;
         }
 
