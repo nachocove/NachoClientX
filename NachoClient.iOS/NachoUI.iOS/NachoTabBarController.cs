@@ -63,6 +63,18 @@ namespace NachoClient.iOS
             foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "more-files", "more-files-active"); // Done
 
+            // This code is for testing purposes only.  It must never be compiled as part of a product build.
+            // Change "#if false" to "#if true" when you want to run this code in the simulator, then discard
+            // the change when you are done testing.  The committed version of the file must always have
+            // "#if false".
+            #if false
+            var existingControllers = new List<UIViewController> (ViewControllers);
+            existingControllers.Add (new ManageItemsViewController ());
+            ViewControllers = existingControllers.ToArray ();
+            // Use the same icons as the Settings tab.
+            SetTabBarItem ("NachoClient.iOS.ManageItemsViewController", "Manage", "more-settings", "more-settings-active");
+            #endif
+
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
             };
