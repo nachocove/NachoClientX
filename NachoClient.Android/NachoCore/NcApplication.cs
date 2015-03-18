@@ -765,12 +765,6 @@ namespace NachoCore
 
         public void UnmarkStartup ()
         {
-            if (!StartupMarked) {
-                return; // already unmarked
-            }
-            if (30 > (DateTime.UtcNow - _LaunchTimeUTc).TotalSeconds) {
-                return; // wait 30 seconds before unmark. should give enough time to upload crash log and some telemetry
-            }
             var startupLog = StartupLog;
             if (File.Exists (startupLog)) {
                 try {
