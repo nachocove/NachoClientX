@@ -17,17 +17,7 @@ namespace NachoCore.Utils
         public static void PopulateCalendar ()
         {
             var account = NcApplication.Instance.Account;
-
-            // Find the correct calendar folder.
-            var calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
-            var folder = calendars.GetFolder (0);
-            for (int i = 1; i < calendars.Count (); ++i) {
-                var calFolder = calendars.GetFolder (i);
-                if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == calFolder.Type) {
-                    folder = calFolder;
-                    break;
-                }
-            }
+            var folder = McFolder.GetDefaultCalendarFolder (account.Id);
 
             // The current year and month.
             int year = DateTime.Now.Year;
