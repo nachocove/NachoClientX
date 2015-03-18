@@ -444,16 +444,6 @@ namespace NachoClient
             return capturedImage;
         }
 
-        public static void CacheUserMessageFields (McEmailMessage emailMessage)
-        {
-            int ColorIndex;
-            string Initials;
-            UserMessageField (emailMessage.From, emailMessage.AccountId, out ColorIndex, out Initials);
-            emailMessage.cachedFromColor = ColorIndex;
-            emailMessage.cachedFromLetters = Initials;
-            emailMessage.Update ();
-        }
-
         public static void UserMessageField (string from, int accountId, out int ColorIndex, out string Initials)
         {
             // Parse the from address
