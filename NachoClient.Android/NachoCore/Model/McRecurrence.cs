@@ -31,9 +31,9 @@ namespace NachoCore.Model
         public NcRecurrenceType Type { get; set; }
 
         /// Maximum is 999
-        public int Occurences { get; set; }
+        public int Occurrences { get; set; }
 
-        public bool OccurencesIsSet { get; set; }
+        public bool OccurrencesIsSet { get; set; }
 
         /// Interval between recurrences, range is 0 to 999
         public int Interval { get; set; }

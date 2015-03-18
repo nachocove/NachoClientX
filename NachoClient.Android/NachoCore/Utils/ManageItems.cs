@@ -122,8 +122,8 @@ namespace NachoCore.Utils
                 recurrence.Interval = 1;
             }
             if (0 < occurrences) {
-                recurrence.OccurencesIsSet = true;
-                recurrence.Occurences = occurrences;
+                recurrence.OccurrencesIsSet = true;
+                recurrence.Occurrences = occurrences;
             }
             var recurrences = new List<McRecurrence> ();
             recurrences.Add (recurrence);
