@@ -9,10 +9,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using ModernHttpClient;
 using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoClient.Build;
 
 /* INTEGRATION NOTES (JAN/HENRY)
  * PushAssist.cs is to be platform-independent and protocol-independent (AS or IMAP or ...)
@@ -58,7 +60,7 @@ namespace NachoCore
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
 
-        public static string PingerHostName = NachoClient.Build.BuildInfo.PingerHostname;
+        public static string PingerHostName = BuildInfo.PingerHostname;
 
         public const int ApiVersion = 1;
 
@@ -133,6 +135,25 @@ namespace NachoCore
                 // pinger session.
                 Stop,
             };
+        }
+
+        public static void Initialize ()
+        {
+            var identity = new ServerIdentity (new Uri ("https://" + BuildInfo.PingerHostname));
+            var pem = System.Text.ASCIIEncoding.ASCII.GetBytes (BuildInfo.PingerCertPem);
+            var rootCert = new X509Certificate2 (pem);
+            var policy = new ServerValidationPolicy () {
+                PinnedCert = rootCert,
+                Validator = ValidatorHack,
+            };
+            ServerCertificatePeek.Instance.AddPolicy (identity, policy);
+        }
+
+        public static bool ValidatorHack (IHttpWebRequest sender, X509Certificate2 certificate, X509Chain chain, bool result)
+        {
+            // FIXME - Until we have the cert hierarchy fully verified, just accept pinger cert. 
+            Log.Warn (Log.LOG_PUSH, "Blindly accept the certificate. Alpha build only");
+            return true;
         }
 
         public static bool SetDeviceToken (string token)

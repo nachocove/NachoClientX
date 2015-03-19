@@ -24,7 +24,8 @@ projects = {
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
         },
         'pinger': {
-            'hostname': 'pinger.officetaco.com'
+            'hostname': 'pinger.officetaco.com',
+            'root_cert': 'pinger.pem'
         }
     },
     'alpha': {
@@ -45,7 +46,8 @@ projects = {
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
         },
         'pinger': {
-            'hostname': 'alphapinger.officetaco.com'
+            'hostname': 'alphapinger.officetaco.com',
+            'root_cert': 'pinger.pem'
         }
     },
     'beta': {
@@ -66,7 +68,8 @@ projects = {
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
         },
         'pinger': {
-            'hostname': 'pinger.officetaco.com'
+            'hostname': 'pinger.officetaco.com',
+            'root_cert': 'pinger.pem'
         }
     },
 }
