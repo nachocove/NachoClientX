@@ -10,11 +10,11 @@ namespace NachoCore.Utils
 {
     public static partial class XDocument_Extension
     {
-        public static byte[] ToWbxml (this XDocument doc)
+        public static byte[] ToWbxml (this XDocument doc, Boolean? doFiltering = null)
         {
             ASWBXML encoder = new ASWBXML (new CancellationToken (false));
             encoder.XmlDoc = doc;
-            return encoder.GetBytes ();
+            return encoder.GetBytes (doFiltering);
         }
 
         public static Stream ToWbxmlStream (this XDocument doc, int accountId, bool isLarge, CancellationToken cToken)

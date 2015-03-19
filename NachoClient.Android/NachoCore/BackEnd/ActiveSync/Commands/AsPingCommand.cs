@@ -139,7 +139,7 @@ namespace NachoCore.ActiveSync
         public byte[] PushAssistRequestData ()
         {
             Op = new AsHttpOperation (CommandName, this, BEContext);
-            return ToXDocument (Op).ToWbxml ();
+            return ToXDocument (Op).ToWbxml (doFiltering: false);
         }
 
         public byte[] PushAssistResponseData ()
@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
             var response = ToEmptyXDocument ();
             response.Add (new XElement (m_ns + Xml.Ping.Ns,
                 new XElement (m_ns + Xml.Ping.Status, "1")));
-            return response.ToWbxml ();
+            return response.ToWbxml (doFiltering: false);
         }
     }
 }
