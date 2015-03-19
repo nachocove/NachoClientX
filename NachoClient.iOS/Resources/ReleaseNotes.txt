@@ -1,9 +1,9 @@
 
 This release updates the current beta release with:
 
-. Faster start up
+. Better handling of complex calendar events.
 
-. Improved search
+. Faster start up and general performance improvements.
 
 . Bug fixes
 
