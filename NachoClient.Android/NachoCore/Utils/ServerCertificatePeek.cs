@@ -130,7 +130,8 @@ namespace NachoCore.Utils
             ServerIdentity ident = new ServerIdentity (request.RequestUri);
             ServerValidationPolicy policy;
             if (Instance.Policies.TryGetValue (ident, out policy)) {
-                if (null != policy.PinnedCert) {
+                bool hasPinning = (null != policy.PinnedCert);
+                if (hasPinning) {
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
@@ -143,6 +144,19 @@ namespace NachoCore.Utils
                 }
 
                 var ok = chain.Build (certificate2);
+                if (ok && hasPinning) {
+                    // We use our own cert for pinning so there should be at most one status of untrusted cert
+                    if ((1 < chain.ChainStatus.Length) ||
+                        (X509ChainStatusFlags.UntrustedRoot != chain.ChainStatus [0].Status)) {
+                        ok = false;
+                    }
+                    if (!ok) {
+                        // We change the result. Log the reason
+                        foreach (var status in chain.ChainStatus) {
+                            Log.Warn (Log.LOG_HTTP, "Cert chain status: {0}", status.Status);
+                        }
+                    }
+                }
                 if (null != policy.Validator) {
                     // Custom validation
                     ok = policy.Validator (request, certificate2, chain, ok);
