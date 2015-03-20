@@ -1313,6 +1313,9 @@ namespace NachoCore.ActiveSync
 
         public override void ForceStop ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             Sm.PostEvent ((uint)CtlEvt.E.Park, "FORCESTOP");
             if (null != PendingOnTimeTimer) {
                 PendingOnTimeTimer.Dispose ();
