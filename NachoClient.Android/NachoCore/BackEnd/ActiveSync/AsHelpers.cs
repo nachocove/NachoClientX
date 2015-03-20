@@ -325,12 +325,6 @@ namespace NachoCore.ActiveSync
                     if (null != exception.Location) {
                         xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Location, exception.Location));
                     }
-                    if (null != exception.OnlineMeetingConfLink) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.OnlineMeetingConfLink, exception.OnlineMeetingConfLink));
-                    }
-                    if (null != exception.OnlineMeetingExternalLink) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.OnlineMeetingExternalLink, exception.OnlineMeetingExternalLink));
-                    }
                     // TODO Body.  Sending a body for an exception is complicated.  Just leave the body out for now,
                     // which means the exception will inherit its body from the main calendar event.
                     xmlExceptions.Add (xmlException);
