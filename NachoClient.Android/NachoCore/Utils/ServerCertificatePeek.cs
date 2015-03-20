@@ -121,7 +121,10 @@ namespace NachoCore.Utils
                                                           SslPolicyErrors sslPolicyErrors)
         {
             IHttpWebRequest request = new MockableHttpWebRequest ((HttpWebRequest)sender);
-            X509Certificate2 certificate2 = new X509Certificate2 (certificate);
+            X509Certificate2 certificate2 = null;
+            if (null != certificate) {
+                certificate2 = new X509Certificate2 (certificate);
+            }
             if (null != Instance.ValidationEvent) {
                 Instance.ValidationEvent (request, certificate2, chain, sslPolicyErrors, EventArgs.Empty);
             }
@@ -143,7 +146,7 @@ namespace NachoCore.Utils
                     chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
                 }
 
-                var ok = chain.Build (certificate2);
+                var ok = (null == certificate2 ? false : chain.Build (certificate2));
                 if (ok && hasPinning) {
                     // We use our own cert for pinning so there should be at most one status of untrusted cert
                     if ((1 < chain.ChainStatus.Length) ||
