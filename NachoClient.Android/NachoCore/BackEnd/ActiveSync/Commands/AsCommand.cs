@@ -146,20 +146,33 @@ namespace NachoCore.ActiveSync
         {
             return null;
         }
+
         // Override if the subclass wants total control over the query string.
         public virtual string QueryString (AsHttpOperation Sender)
         {
+            return QueryString (Sender);
+        }
+
+        private string QueryString (AsHttpOperation Sender, bool isEmailRedacted=false)
+        {
             var ident = Device.Instance.Identity ();
+            string username;
+
+            if (isEmailRedacted) {
+                username = HashHelper.Sha256 (BEContext.Cred.Username);
+            } else {
+                username = BEContext.Cred.Username;
+            }
             return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
                 CommandName, 
-                BEContext.Cred.Username,
+                username,
                 ident,
                 Device.Instance.Type ());
         }
 
-        public virtual Uri ServerUri (AsHttpOperation Sender)
+        public virtual Uri ServerUri (AsHttpOperation Sender, bool isEmailRedacted = false)
         {
-            var requestLine = QueryString (Sender);
+            var requestLine = QueryString (Sender, isEmailRedacted);
             var rlParams = ExtraQueryStringParams (Sender);
             if (null != rlParams) {
                 foreach (KeyValuePair<string,string> pair in rlParams) {
@@ -169,7 +182,7 @@ namespace NachoCore.ActiveSync
             }
             return new Uri (BEContext.Server.BaseUri (), requestLine);
         }
-
+           
         public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
         {
             var server = BEContext.Server;

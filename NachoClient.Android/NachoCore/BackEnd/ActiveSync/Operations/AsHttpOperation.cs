@@ -98,6 +98,7 @@ namespace NachoCore.ActiveSync
         private NcStateMachine HttpOpSm;
         private NcStateMachine OwnerSm;
         private Uri ServerUri;
+        private string RedactedServerUri;
         private bool ServerUriBeingTested;
         private Stream ContentData;
         private string ContentType;
@@ -257,6 +258,7 @@ namespace NachoCore.ActiveSync
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             ServerUri = Owner.ServerUri (this);
+            RedactedServerUri = Owner.ServerUri (this, true).ToString();
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "HTTPOPEXE");
         }
 
@@ -454,10 +456,10 @@ namespace NachoCore.ActiveSync
                 TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
                     System.Threading.Timeout.InfiniteTimeSpan);
                 try {
-                    Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", HashHelper.HashEmailAddressesInString(request.RequestUri.ToString ()));
+                    Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
-                    Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message);
+                    Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);
                     CancelTimeoutTimer ("OperationCanceledException");
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
@@ -466,7 +468,7 @@ namespace NachoCore.ActiveSync
                     }
                     return;
                 } catch (WebException ex) {
-                    Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message);
+                    Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, ex.Message);
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("WebException");
                         ReportCommResult (ServerUri.Host, true);
@@ -476,7 +478,7 @@ namespace NachoCore.ActiveSync
                     }
                     return;
                 } catch (NullReferenceException ex) {
-                    Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message);
+                    Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", RedactedServerUri, ex.Message);
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("NullReferenceException");
@@ -501,7 +503,7 @@ namespace NachoCore.ActiveSync
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         CancelTimeoutTimer ("Exception creating ContentData");
-                        Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message, ex.StackTrace);
+                        Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, RedactedServerUri, ex.Message, ex.StackTrace);
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
                         return;
                     }
@@ -514,7 +516,7 @@ namespace NachoCore.ActiveSync
                             HttpOpSm.PostEvent (evt);
                         }
                     } catch (Exception ex) {
-                        Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception {2}\n{3}", ex, HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message, ex.StackTrace);
+                        Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception {2}\n{3}", ex, RedactedServerUri, ex.Message, ex.StackTrace);
                         // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
                         Owner.ResolveAllFailed (NcResult.WhyEnum.Unknown);
                         HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
@@ -785,9 +787,10 @@ namespace NachoCore.ActiveSync
                         var dummy = McServer.Create (BEContext.Account.Id, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (dummy.BaseUri (), query);
+                        RedactedServerUri  = HashHelper.HashEmailAddressesInUrl(ServerUri.ToString());
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
-                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message);
+                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, RedactedServerUri, ex.Message);
                         Owner.ResolveAllDeferred ();
                         return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451D");
                     }
@@ -871,7 +874,7 @@ namespace NachoCore.ActiveSync
                             bestSecs = ((maybe_secs > 0) ? (uint)maybe_secs : configuredSecs);
                         } catch (Exception ex) {
                             Log.Info (Log.LOG_HTTP, "Rejected DateTime string: {0}", value);
-                            Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, HashHelper.HashEmailAddressesInString(ServerUri.ToString()), ex.Message);
+                            Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, RedactedServerUri, ex.Message);
                             return DelayOrFinalHardFail (bestSecs, "HTTPOP503A", "Could not parse Retry-After value.");
                         }
                     }

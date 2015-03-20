@@ -22,7 +22,7 @@ namespace NachoCore.Utils
             return hash;
         }
 
-        public static string HashEmailAddressesInString (string value)
+        public static string HashEmailAddressesInUrl (string value)
         {
             string hashed = Regex.Replace(value,
                 @"User=(?("")("".+?(?<!\\)""@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^`\{\}\|~\w])*)(?<=[0-9a-z])@))" +

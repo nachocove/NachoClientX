@@ -746,7 +746,7 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Uri ServerUri (AsHttpOperation Sender)
+            public Uri ServerUri (AsHttpOperation Sender, bool isEmailRedacted = false)
             {
                 return CurrentServerUri ();
             }

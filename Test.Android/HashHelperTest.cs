@@ -25,7 +25,7 @@ namespace Test.iOS
             {
                 string plainUrl = urlPrefixFrag + emailAddress + urlSuffixFrag;
                 string expectedUrl = urlPrefixFrag + HashHelper.Sha256 (emailAddress) + urlSuffixFrag;
-                string hashedUrl = HashHelper.HashEmailAddressesInString(plainUrl);
+                string hashedUrl = HashHelper.HashEmailAddressesInUrl(plainUrl);
                 Assert.AreEqual (expectedUrl, hashedUrl, "Hashed Email does not match.");
             }
         }
