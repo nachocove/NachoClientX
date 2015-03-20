@@ -1273,6 +1273,11 @@ namespace NachoCore.ActiveSync
 
         private void DoDrive ()
         {
+            if (null != PushAssist) {
+                if (PushAssist.IsStartOrParked ()) {
+                    PushAssist.Execute ();
+                }
+            }
             switch (ProtocolState.ProtoControlState) {
             case (uint)Lst.UiCertOkW:
             case (uint)Lst.UiDCrdW:
@@ -1304,7 +1309,7 @@ namespace NachoCore.ActiveSync
             if (null != PushAssist) {
                 if (PushAssist.IsActive ()) {
                     PushAssist.Defer ();
-                } else if (PushAssist.IsParked ()) {
+                } else if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
                 }
             }
