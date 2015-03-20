@@ -512,6 +512,16 @@ namespace NachoCore
             return ((uint)Lst.Parked == Sm.State);
         }
 
+        public bool IsStart ()
+        {
+            return ((uint)St.Start == Sm.State);
+        }
+
+        public bool IsStartOrParked ()
+        {
+            return IsStart () || IsParked ();
+        }
+
         private void PostEvent (SmEvt.E evt, string mnemonic)
         {
             Sm.PostEvent ((uint)evt, mnemonic);
