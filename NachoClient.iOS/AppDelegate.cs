@@ -553,6 +553,7 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
+                BadgeNotifUpdate ();
                 CompletePerformFetch ();
                 break;
 
@@ -709,7 +710,7 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && null != ea.Account && ea.Account.Id == NcApplication.Instance.Account.Id) {
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
                 BadgeNotifUpdate ();
             }
         }
@@ -871,6 +872,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
             if (!BadgeNotifAllowed) {
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: early exit");
                 return;
             }
             var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
