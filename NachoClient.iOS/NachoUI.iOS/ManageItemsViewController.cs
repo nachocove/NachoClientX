@@ -11,6 +11,7 @@ namespace NachoClient.iOS
     public class ManageItemsViewController : NcUIViewControllerNoLeaks
     {
         private UIButton populateCalendarButton;
+        private UIButton megaMeetingButton;
         private UIButton cleanCalendarButton;
 
         public ManageItemsViewController ()
@@ -41,8 +42,16 @@ namespace NachoClient.iOS
             populateCalendarButton.TouchUpInside += PopulateCalendar;
             View.AddSubview (populateCalendarButton);
 
+            megaMeetingButton = new UIButton (UIButtonType.System);
+            megaMeetingButton.Frame = new CGRect (10, 70, 200, 50);
+            megaMeetingButton.SetTitle ("Mega Meeting", UIControlState.Normal);
+            megaMeetingButton.SetTitle ("Creating meeting...", UIControlState.Selected);
+            megaMeetingButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            megaMeetingButton.TouchUpInside += MegaMeeting;
+            View.AddSubview (megaMeetingButton);
+
             cleanCalendarButton = new UIButton (UIButtonType.System);
-            cleanCalendarButton.Frame = new CGRect (10, 70, 200, 50);
+            cleanCalendarButton.Frame = new CGRect (10, 130, 200, 50);
             cleanCalendarButton.SetTitle ("Clean Calendar", UIControlState.Normal);
             cleanCalendarButton.SetTitle ("Cleaning Calendar...", UIControlState.Selected);
             cleanCalendarButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
@@ -57,14 +66,21 @@ namespace NachoClient.iOS
         protected override void Cleanup ()
         {
             populateCalendarButton.TouchUpInside -= PopulateCalendar;
+            megaMeetingButton.TouchUpInside -= MegaMeeting;
             cleanCalendarButton.TouchUpInside -= CleanCalendar;
             populateCalendarButton = null;
+            megaMeetingButton = null;
             cleanCalendarButton = null;
         }
 
         private void PopulateCalendar (object sender, EventArgs args)
         {
             ButtonTouched (populateCalendarButton, ManageItems.PopulateCalendar, "FillCalendar");
+        }
+
+        private void MegaMeeting (object sender, EventArgs args)
+        {
+            ButtonTouched (megaMeetingButton, ManageItems.MegaMeeting, "MegaMeeting");
         }
 
         private void CleanCalendar (object sender, EventArgs args)
