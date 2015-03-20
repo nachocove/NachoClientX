@@ -132,6 +132,7 @@
     <Compile Include="NcContactGleanerTest.cs" />
     <Compile Include="McEventTest.cs" />
     <Compile Include="PushAssistTest.cs" />
+    <Compile Include="HashHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

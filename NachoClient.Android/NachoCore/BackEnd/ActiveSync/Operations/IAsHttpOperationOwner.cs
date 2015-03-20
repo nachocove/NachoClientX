@@ -20,7 +20,7 @@ namespace NachoCore.ActiveSync
         Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc);
         bool SafeToXDocument (AsHttpOperation Sender, out XDocument doc);
         bool SafeToMime (AsHttpOperation Sender, out Stream mime);
-        Uri ServerUri (AsHttpOperation Sender);
+        Uri ServerUri (AsHttpOperation Sender, bool isEmailRedacted = false);
         void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender);
         HttpMethod Method (AsHttpOperation Sender);
         bool UseWbxml (AsHttpOperation Sender);
