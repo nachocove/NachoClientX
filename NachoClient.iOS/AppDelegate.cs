@@ -851,7 +851,7 @@ namespace NachoClient.iOS
         static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
-        private bool BadgeNotifAllowed = false;
+        private bool BadgeNotifAllowed = true;
 
         private void BadgeNotifClear ()
         {
@@ -900,7 +900,8 @@ namespace NachoClient.iOS
                 }
                 var notif = new UILocalNotification () {
                     AlertAction = null,
-                    AlertBody = subjectString + "From " + fromString,
+                    AlertTitle = fromString,
+                    AlertBody = subjectString,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
                 };
                 if (!soundExpressed) {
