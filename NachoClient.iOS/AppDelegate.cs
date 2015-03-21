@@ -280,7 +280,8 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Sound, null);
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (
+                                   UIUserNotificationType.Sound | UIUserNotificationType.Badge | UIUserNotificationType.Alert, null);
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
