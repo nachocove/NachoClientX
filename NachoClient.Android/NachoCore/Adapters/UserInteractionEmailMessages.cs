@@ -24,7 +24,7 @@ namespace NachoCore
             List<int> deletes;
             Refresh (out adds, out deletes);
         }
-            
+
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
             adds = null;
@@ -55,7 +55,21 @@ namespace NachoCore
         public McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
+            t.Source = this;
             return t;
+        }
+
+
+        // Add messages make up the thread, just the user ones
+        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        {
+            var message = McEmailMessage.QueryById<McEmailMessage> (id);
+            if (null == message) {
+                return new List<McEmailMessageThread> ();
+            } else {
+                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, message.ConversationId);
+                return thread;
+            }
         }
 
         public string DisplayName ()

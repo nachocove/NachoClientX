@@ -290,7 +290,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
-                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
+                UpdateSearchResultsFromServer (s.Status.GetValue<List<McEmailMessageThread>> ());
             }
         }
 
@@ -523,7 +523,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> list)
+        protected void UpdateSearchResultsFromServer (List<McEmailMessageThread> list)
         {
             searchResultsMessages.UpdateServerMatches (list);
             List<int> adds;

@@ -79,17 +79,6 @@ namespace NachoClient.iOS
             return messageThreads.GetAdapterForThread (threadId);
         }
 
-        public McEmailMessageThread GetFirstThread ()
-        {
-            if (null == this.messageThreads) {
-                return null;
-            }
-            if (0 == this.messageThreads.Count ()) {
-                return null;
-            }
-            return this.messageThreads.GetEmailThread (0);
-        }
-
         public bool RefreshEmailMessages (out List<int> adds, out List<int> deletes)
         {
             RefreshCapture.Start ();

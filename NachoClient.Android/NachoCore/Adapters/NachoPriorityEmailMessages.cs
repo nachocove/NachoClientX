@@ -24,21 +24,10 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            List<NcEmailMessageIndex> hotList = new List<NcEmailMessageIndex> ();
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
-            hotList = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
-            if (null == hotList) {
-                hotList = new List<NcEmailMessageIndex> ();
-            }
-
-            List<NcEmailMessageIndex> list = new List<NcEmailMessageIndex> ();
-            foreach (var hotMessage in hotList) {
-                var relatedList = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, hotMessage.ThreadId);
-                list.AddRange (relatedList);
-            }
-
+            var list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -55,7 +44,20 @@ namespace NachoCore
         public McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
+            t.Source = this;
             return t;
+        }
+
+        // Add messages, not just hot ones
+        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        {
+            var message = McEmailMessage.QueryById<McEmailMessage> (id);
+            if (null == message) {
+                return new List<McEmailMessageThread> ();
+            } else {
+                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, message.ConversationId);
+                return thread;
+            }
         }
 
         public string DisplayName ()
