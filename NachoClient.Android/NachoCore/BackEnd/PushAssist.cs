@@ -494,6 +494,9 @@ namespace NachoCore
 
         public void Park ()
         {
+            if (!IsActive () && !IsStartOrParked ()) {
+                Log.Warn (Log.LOG_PUSH, "A start session is not established before being parked. Notifications will not be pushed.");
+            }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
