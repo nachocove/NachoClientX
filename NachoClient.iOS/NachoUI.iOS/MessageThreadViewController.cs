@@ -13,10 +13,11 @@ namespace NachoClient.iOS
 		{
 		}
 
-        public override void MaybeDismissView()
+        public override bool MaybeDismissView()
         {
             // Yes, thread views disappear when empty
             NavigationController.PopViewController (true);
+            return true;
         }
 	}
 }
