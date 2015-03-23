@@ -280,7 +280,8 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Sound, null);
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (
+                                   UIUserNotificationType.Sound | UIUserNotificationType.Badge | UIUserNotificationType.Alert, null);
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
@@ -851,7 +852,7 @@ namespace NachoClient.iOS
         static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
-        private bool BadgeNotifAllowed = false;
+        private bool BadgeNotifAllowed = true;
 
         private void BadgeNotifClear ()
         {
@@ -900,7 +901,8 @@ namespace NachoClient.iOS
                 }
                 var notif = new UILocalNotification () {
                     AlertAction = null,
-                    AlertBody = subjectString + "From " + fromString,
+                    AlertTitle = fromString,
+                    AlertBody = subjectString,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
                 };
                 if (!soundExpressed) {

@@ -587,7 +587,7 @@ namespace NachoCore.Model
         {
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderByDescending (x => x.CreatedAt);
+                false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderBy (x => x.DateReceived);
         }
 
         public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
