@@ -178,9 +178,8 @@ namespace NachoClient.iOS
                 var messageId = int.Parse (emailNotification.Value);
                 emailNotification.Delete ();
                 var t = new McEmailMessageThread ();
-                var m = new NcEmailMessageIndex ();
-                m.Id = messageId;
-                t.Add (m);
+                t.FirstMessageId = messageId;
+                t.MessageCount = 1;
                 PerformSegue ("NachoNowToMessageView", new SegueHolder (t));
                 return;
             }

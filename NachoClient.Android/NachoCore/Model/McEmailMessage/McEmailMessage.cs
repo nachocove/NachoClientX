@@ -55,12 +55,20 @@ namespace NachoCore.Model
     {
         public int Id { set; get; }
 
-        public string ThreadId { set; get; }
+        public NcEmailMessageIndex ()
+        {
+        }
+
+        public NcEmailMessageIndex (int Id)
+        {
+            this.Id = Id;
+        }
 
         public McEmailMessage GetMessage ()
         {
             return McEmailMessage.QueryById<McEmailMessage> (Id);
         }
+
     }
 
     public class NcEmailMessageIndexComparer : IEqualityComparer<NcEmailMessageIndex>
@@ -348,10 +356,10 @@ namespace NachoCore.Model
             }
         }
 
-        public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
+        public static List<McEmailMessageThread> QueryInteractions (int accountId, McContact contact)
         {
             if (String.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
-                return new List<NcEmailMessageIndex> ();
+                return new List<McEmailMessageThread> ();
             }
 
             string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress () + "%";
@@ -360,8 +368,8 @@ namespace NachoCore.Model
             McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
             var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
 
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT DISTINCT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT DISTINCT e.Id as FirstMessageId, Count(e.Id) as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McFolder AS f ON m.FolderId = f.Id " +
                 " WHERE " +
@@ -372,14 +380,16 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.FolderId != ? AND " +
                 " e.[From] LIKE ? OR " +
-                " e.[To] Like ? ORDER BY e.DateReceived DESC",
+                " e.[To] Like ? " +
+                " GROUP BY e.ConversationId " +
+                " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
+        public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, Count(e.Id) as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
@@ -388,14 +398,15 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? " +
-                " ORDER BY e.DateReceived DESC",
+                " GROUP BY e.ConversationId " +
+                " ORDER BY e.DateReceived DESC ",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByThreadId (int accountId, int folderId, string threadId)
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByThreadId (int accountId, int folderId, string threadId)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.ConversationId = ? AND " +
@@ -464,10 +475,12 @@ namespace NachoCore.Model
                 limit);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId, e.DateReceived FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
+                " ( " +
+                " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
@@ -479,7 +492,7 @@ namespace NachoCore.Model
                 " e.UserAction > -1 AND " +
                 " (e.Score >= ? OR e.UserAction = 1) " +
                 "UNION " +
-                "SELECT e.Id as Id, e.ConversationId as ThreadId, e.DateReceived FROM McEmailMessage AS e " +
+                "SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
@@ -489,17 +502,19 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
-                " ORDER BY e.DateReceived DESC",
+                " ) " +
+                " GROUP BY ConversationId " +
+                " ORDER BY DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, hotScore,
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
         /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
-        public static List<NcEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
+        public static List<McEmailMessageThread> QueryDeferredMessageItemsAllAccounts ()
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " e.FlagStatus <> 0 AND " +
@@ -510,10 +525,10 @@ namespace NachoCore.Model
 
         /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
-        public static List<NcEmailMessageIndex> QueryDeferredMessageItemsAllAccountsByThreadId (string threadId)
+        public static List<McEmailMessageThread> QueryDeferredMessageItemsAllAccountsByThreadId (string threadId)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.ConversationId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
@@ -523,10 +538,10 @@ namespace NachoCore.Model
                 threadId, DateTime.UtcNow);
         }
 
-        public static List<NcEmailMessageIndex> QueryDueDateMessageItemsAllAccounts ()
+        public static List<McEmailMessageThread> QueryDueDateMessageItemsAllAccounts ()
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.IsAwaitingDelete = 0 AND" +
                 " e.FlagStatus <> 0 AND" +
@@ -534,10 +549,10 @@ namespace NachoCore.Model
                 "Defer until");
         }
 
-        public static List<NcEmailMessageIndex> QueryDueDateMessageItemsAllAccountsByThreadId (string threadId)
+        public static List<McEmailMessageThread> QueryDueDateMessageItemsAllAccountsByThreadId (string threadId)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.ConversationId as ThreadId FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.ConversationId = ? AND" +
                 " e.IsAwaitingDelete = 0 AND" +
@@ -578,7 +593,7 @@ namespace NachoCore.Model
         public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id AS Id, e.ConversationId as ThreadId FROM McEmailMessage AS e WHERE " +
+                "SELECT e.Id as Id FROM McEmailMessage AS e WHERE " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " e.DateReceived = ? AND " +
@@ -664,42 +679,23 @@ namespace NachoCore.Model
 
     public class McEmailMessageThread
     {
-        List<NcEmailMessageIndex> thread;
+        public int MessageCount { set; get; }
 
-        public McEmailMessageThread ()
-        {
-            thread = new List<NcEmailMessageIndex> ();
-        }
+        public int FirstMessageId { set; get; }
 
-        public void Add (NcEmailMessageIndex index)
-        {
-            if (!thread.Contains (index, new NcEmailMessageIndexComparer ())) {
-                thread.Add (index);
-            }
-        }
+        public INachoEmailMessages Source;
 
-        public NcEmailMessageIndex GetEmailMessageIndex (int i)
-        {
-            return thread.ElementAt (i);
-        }
+        // Filled on demand
+        List<McEmailMessageThread> thread;
 
-        public McEmailMessage GetEmailMessage (int i)
-        {
-            return thread.ElementAt (i).GetMessage ();
-        }
-
-        /// <summary>
-        /// Applies to only the first message of a thread
-        /// </summary>
         public McEmailMessage FirstMessageSpecialCase ()
         {
-            var message = GetEmailMessage (0);
-            return message;
+            return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
         }
 
         public int FirstMessageSpecialCaseIndex ()
         {
-            return GetEmailMessageIndex (0).Id;
+            return FirstMessageId;
         }
 
         /// <summary>
@@ -707,20 +703,13 @@ namespace NachoCore.Model
         /// </summary>
         public McEmailMessage SingleMessageSpecialCase ()
         {
-            NcAssert.True (1 == thread.Count);
-            var message = GetEmailMessage (0);
-            return message;
-        }
-
-        public int SingleMessageSpecialCaseIndex ()
-        {
-            NcAssert.True (1 == thread.Count);
-            return GetEmailMessageIndex (0).Id;
+//            NcAssert.True (1 == thread.Count);
+            return FirstMessageSpecialCase ();
         }
 
         public int Count {
             get {
-                return thread.Count;
+                return MessageCount;
             }
         }
 
@@ -731,7 +720,7 @@ namespace NachoCore.Model
 
         public string GetThreadId ()
         {
-            return thread.ElementAt (0).ThreadId;
+            return FirstMessageSpecialCase ().ConversationId;
         }
 
         public string GetSubject ()
@@ -741,14 +730,32 @@ namespace NachoCore.Model
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
         {
-            using (IEnumerator<NcEmailMessageIndex> ie = thread.GetEnumerator ()) {
+            NcAssert.NotNull (Source);
+
+            if (null == thread) {
+                thread = Source.GetEmailThreadMessages (FirstMessageId);
+            }
+            using (IEnumerator<McEmailMessageThread> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
-                    var message = ie.Current.GetMessage ();
+                    var message = ie.Current.SingleMessageSpecialCase ();
                     if (null != message) {
                         yield return message;
                     }
                 }
             }
+        }
+    }
+
+    public class McEmailMessageThreadIndexComparer : IEqualityComparer<McEmailMessageThread>
+    {
+        public bool Equals (McEmailMessageThread a, McEmailMessageThread b)
+        {
+            return a.FirstMessageId == b.FirstMessageId;
+        }
+
+        public int GetHashCode (McEmailMessageThread i)
+        {
+            return i.FirstMessageId;
         }
     }
 

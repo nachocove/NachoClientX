@@ -68,6 +68,12 @@ namespace NachoCore
                 return null;
             }
 
+            public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+            {
+                NcAssert.CaseError ();
+                return null;
+            }
+
             public string DisplayName ()
             {
                 return displayName;
