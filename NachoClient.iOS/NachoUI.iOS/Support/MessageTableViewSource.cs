@@ -47,8 +47,60 @@ namespace NachoClient.iOS
             new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
                 "Defer", A.Color_NachoSwipeEmailDefer);
 
-        // Short-term cache from GetHeight to GetCell
-        private Dictionary<int, McEmailMessage> messageCache;
+        int[] first = new int[3];
+        List<McEmailMessage>[] cache = new List<McEmailMessage>[3];
+
+        void ClearCache ()
+        {
+            for (var i = 0; i < first.Length; i++) {
+                first [i] = -1;
+            }
+        }
+
+        McEmailMessage GetCachedMessage (int i)
+        {
+            var block = i / 32;
+            var cacheIndex = block % 3;
+
+            if (block != first [cacheIndex]) {
+                MaybeReadBlock (block);
+            } else {
+                MaybeReadBlock (block - 1);
+                MaybeReadBlock (block + 1);
+            }
+
+            var index = i % 32;
+            return cache [cacheIndex] [index];
+        }
+
+        void MaybeReadBlock (int block)
+        {
+            if (0 > block) {
+                return;
+            }
+            var cacheIndex = block % 3;
+            if (block == first [cacheIndex]) {
+                return;
+            }
+            Console.WriteLine ("Readblock {0}", block);
+            var start = block * 32;
+            var finish = (messageThreads.Count () < (start + 32)) ? messageThreads.Count () : start + 32;
+            var indexList = new List<int> ();
+            for (var i = start; i < finish; i++) {
+                indexList.Add (messageThreads.GetEmailThread (i).FirstMessageSpecialCaseIndex ());
+            }
+            cache [cacheIndex] = new List<McEmailMessage> ();
+            var resultList = McEmailMessage.QueryForSet (indexList);
+            foreach (var i in indexList) {
+                foreach (var result in resultList) {
+                    if (i == result.Id) {
+                        cache [cacheIndex].Add (result);
+                        break;
+                    }
+                }
+            }
+            first [cacheIndex] = block;
+        }
 
         public MessageTableViewSource ()
         {
@@ -61,7 +113,6 @@ namespace NachoClient.iOS
             RefreshCaptureName = "MessageTableViewSource.Refresh";
             NcCapture.AddKind (RefreshCaptureName);
             RefreshCapture = NcCapture.Create (RefreshCaptureName);
-            messageCache = new Dictionary<int, McEmailMessage> ();
         }
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -74,7 +125,7 @@ namespace NachoClient.iOS
             return messageThreads.DisplayName ();
         }
 
-        public INachoEmailMessages GetAdapterForThread(string threadId)
+        public INachoEmailMessages GetAdapterForThread (string threadId)
         {
             return messageThreads.GetAdapterForThread (threadId);
         }
@@ -82,7 +133,7 @@ namespace NachoClient.iOS
         public bool RefreshEmailMessages (out List<int> adds, out List<int> deletes)
         {
             RefreshCapture.Start ();
-            messageCache.Clear ();
+            ClearCache ();
             var didRefresh = messageThreads.Refresh (out adds, out deletes);
             RefreshCapture.Stop ();
             return didRefresh;
@@ -132,35 +183,31 @@ namespace NachoClient.iOS
             return NORMAL_ROW_HEIGHT;
         }
 
-        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
-        {
-            if (NoMessageThreads ()) {
-                return NORMAL_ROW_HEIGHT;
-            }
-
-            McEmailMessage message;
-            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
-
-            if (null == messageThread) {
-                return NORMAL_ROW_HEIGHT;
-            }
-
-            // Avoid looking up msg twice in quick succession (see ConfigureMessageCell)
-            var messageIndex = messageThread.FirstMessageSpecialCaseIndex ();
-            if (messageCache.TryGetValue (messageIndex, out message)) {
-                messageCache.Remove (messageIndex);
-            } else {
-                message = messageThread.FirstMessageSpecialCase ();
-                messageCache [messageIndex] = message;
-            }
-                
-            return HeightForMessage (message);
-        }
-
-        public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
-        {
-            return NORMAL_ROW_HEIGHT;
-        }
+//        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+//        {
+//            Console.WriteLine ("mtvs: GetHeightForRow: {0}", indexPath.Row);
+//
+//            if (NoMessageThreads ()) {
+//                return NORMAL_ROW_HEIGHT;
+//            }
+//
+//            McEmailMessage message;
+//            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+//
+//            if (null == messageThread) {
+//                return NORMAL_ROW_HEIGHT;
+//            }
+//                
+//            message = GetCachedMessage (indexPath.Row);
+//                
+//            return HeightForMessage (message);
+//        }
+//
+//        public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
+//        {
+//            Console.WriteLine ("mtvs: EstimatedHeight: {0}", indexPath.Row);
+//            return NORMAL_ROW_HEIGHT;
+//        }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
@@ -460,14 +507,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            // Avoid looking up msg twice in quick succession (see GetHeight)
-            var messageIndex = messageThread.FirstMessageSpecialCaseIndex ();
-            if (messageCache.TryGetValue (messageIndex, out message)) {
-                messageCache.Remove (messageIndex);
-            } else {
-                message = messageThread.FirstMessageSpecialCase ();
-                messageCache [messageIndex] = message;
-            }
+            message = GetCachedMessage (messageThreadIndex);
 
             if (null == message) {
                 ConfigureAsUnavailable (cell);
@@ -600,6 +640,7 @@ namespace NachoClient.iOS
             if (null == tableView) {
                 return;
             }
+            ClearCache ();
             var paths = tableView.IndexPathsForVisibleRows;
             if (null != paths) {
                 foreach (var path in paths) {
@@ -770,7 +811,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            foreach(var message in messageThread) {
+            foreach (var message in messageThread) {
                 if (null != message) {
                     Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
                 }
