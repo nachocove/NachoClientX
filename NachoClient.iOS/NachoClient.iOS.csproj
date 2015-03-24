@@ -75,7 +75,7 @@
     <WarningLevel>4</WarningLevel>
     <MtouchDebug>true</MtouchDebug>
     <ConsolePause>false</ConsolePause>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Developer: Azim Ozakil (B6CQ87967C)</CodesignKey>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>west</MtouchI18n>
@@ -297,6 +297,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McSQLiteMaster.cs">
+      <Link>NachoCore\Model\McSQLiteMaster.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>

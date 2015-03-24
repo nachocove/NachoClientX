@@ -3,6 +3,7 @@
 //#define HA_AUTH_EMAIL
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -252,6 +253,11 @@ namespace NachoClient.iOS
                 var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
+            }
+            // if not done removing account, finish up 
+            // TODO: need to confirm if this is the right place to hook this up.
+            if (GetIsRemovingAccount ()) {
+                ContinueRemovingAccount ();
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
@@ -986,15 +992,121 @@ namespace NachoClient.iOS
             });
         }
 
+        // TODO : keeping these here for now, till I confirm that we want to user userdefaults for saving this value
+        // Are we in the process of removing an account
+        public bool GetIsRemovingAccount ()
+        {
+            return NSUserDefaults.StandardUserDefaults.BoolForKey ("IsRemovingAccount");
+        }
+
+        // update user defaults for removing account status
+        public void SetIsRemovingAccount (bool value)
+        {
+            NSUserDefaults.StandardUserDefaults.SetBool (value, "IsRemovingAccount");
+        }
+
+        // Get the AccountId for the account being removed
+        public int GetRemovingAccountId ()
+        {
+            return (int) NSUserDefaults.StandardUserDefaults.IntForKey ("RemovingAccountId");
+        }
+
+        // update user defaults for removing account id
+        public void SetRemovingAccountId (int id)
+        {
+            NSUserDefaults.StandardUserDefaults.SetInt (id, "RemovingAccountId");
+        }
+
+
+        // continue interrupted account removal
+        public void ContinueRemovingAccount ()
+        {
+            int Id = GetRemovingAccountId();
+            if (Id == 0) {
+                NcAssert.True (0 < Id, "Cannot remove account id 0");
+            } else {
+                Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", Id);
+                RemoveAccountDBAndFilesForId (Id);
+            }
+        }
+
+        // remove all the db data referenced by the account related to the given id
+        public void RemoveAccountDBData(int Id)
+        {
+            Log.Info (Log.LOG_UI, "RemoveAccount: removing db data for account {0}", Id);
+            List<string> DeleteStatements = new List<string> ();
+
+            List<McSQLiteMaster> AllTables = McSQLiteMaster.QueryAllTables ();
+            foreach (McSQLiteMaster Table in AllTables) {
+                List<SQLite.SQLiteConnection.ColumnInfo> Columns = NcModel.Instance.Db.GetTableInfo (Table.name);
+                foreach (SQLite.SQLiteConnection.ColumnInfo Column in Columns) {
+                    if (Column.Name == "AccountId") {
+                        Log.Info (Log.LOG_UI, "RemoveAccount: Will be removing rows from Table {0} for account {1}", Table.name, Id);
+                        DeleteStatements.Add ("DELETE FROM " + Table.name + " WHERE AccountId = ?");
+                        break;
+                    }
+                }
+            }
+            Log.Info (Log.LOG_UI, "RemoveAccount: removing all table rows for account {0}", Id);
+
+            foreach (string stmt in DeleteStatements) {
+                NcModel.Instance.Db.Execute (stmt, Id);
+            }
+
+            Log.Info (Log.LOG_UI, "RemoveAccount: removed db data for account {0}", Id);
+
+              //Log.Info (Log.LOG_UI, "RemoveAccount: McAccount column is {0}", CI.Name);
+            //SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY 1
+        }
+
+        // remove all the files referenced by the account related to the given id
+        public void RemoveAccountFiles(int Id)
+        {
+            Log.Info (Log.LOG_UI, "RemoveAccount: removing file data for account {0}", Id);
+        }
+
+        // remove all the db data and files referenced by the account related to the given id
+        public void RemoveAccountDBAndFilesForId(int Id)
+        {
+            // delete all DB data for account id - is db running?
+            RemoveAccountDBData (Id);
+
+            // delete all file system data for account id
+            RemoveAccountFiles (Id);
+
+            //BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
+            // if there is only one account. TODO: deal with multi-account
+            NcApplication.Instance.Account = null;
+            // if successful, unmark account is being removed since it is completed.
+            SetIsRemovingAccount (false);
+            SetRemovingAccountId (0);
+        }
+
         // TODO this needs to get moved out of AppDelegate.
+        // TODO - this need to handle multiple accounts
         public void RemoveAccount ()
         {
             if (null != NcApplication.Instance.Account) {
+                // mark account is being removed so that we don't do anything else other than the remove till it is completed.
+                SetIsRemovingAccount (true);
+                SetRemovingAccountId (NcApplication.Instance.Account.Id);
+
                 Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
                 BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
-                BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
-                NcApplication.Instance.Account = null;
+
+                NcApplication.Instance.StopClass4Services();
+                Log.Info (Log.LOG_UI, "RemoveAccount: StopClass4Services complete");
+                NcApplication.Instance.StopBasalServices ();
+                Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
+
+                RemoveAccountDBAndFilesForId (NcApplication.Instance.Account.Id);
+
+                NcApplication.Instance.StartBasalServices ();
+                Log.Info (Log.LOG_UI, "RemoveAccount:  StartBasalServices complete");
+                NcApplication.Instance.StartClass4Services ();
+                Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
             }
+            // go back to main screen
             var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             var vc = storyboard.InstantiateInitialViewController ();
             Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
