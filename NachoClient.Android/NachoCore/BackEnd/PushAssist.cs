@@ -653,7 +653,10 @@ namespace NachoCore
                 return;
             }
             var parameters = Owner.PushAssistParameters ();
-            NcAssert.True (null != parameters);
+            if (null == parameters) {
+                ScheduleRetry ((uint)SmEvt.E.Launch, "START_NO_PARAMS");
+                return;
+            }
 
             Dictionary<string, string> httpHeadersDict = new Dictionary<string, string> ();
             if (null != parameters.RequestHeaders) {
