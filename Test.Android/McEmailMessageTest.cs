@@ -55,6 +55,8 @@ namespace Test.Common
             message.IsAwaitingDelete = false;
             message.FlagUtcStartDate = new DateTime ();
             message.DateReceived = dateReceived;
+            message.ConversationId = System.Guid.NewGuid ().ToString ();
+
 
             message.Insert ();
             NcAssert.True (0 < message.Id);
@@ -73,11 +75,11 @@ namespace Test.Common
             NcAssert.True (0 < dep.Id);
         }
 
-        public void CheckMessages (McEmailMessage[] messages, List<NcEmailMessageIndex> got, params int[] expectedIndices)
+        public void CheckMessages (McEmailMessage[] messages, List<McEmailMessageThread> got, params int[] expectedIndices)
         {
             Assert.AreEqual (expectedIndices.Length, got.Count);
             for (int n = 0; n < expectedIndices.Length; n++) {
-                Assert.AreEqual (messages [expectedIndices [n]].Id, got [n].Id);
+                Assert.AreEqual (messages [expectedIndices [n]].Id, got [n].FirstMessageId);
             }
         }
 
@@ -126,7 +128,7 @@ namespace Test.Common
                 SetupDependency (messages [n], addresses [n]);
             }
 
-            List<NcEmailMessageIndex> messageList =
+            List<McEmailMessageThread> messageList =
                 McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.6);
             CheckMessages (messages, messageList, 8, 5, 4, 2);
 
@@ -245,9 +247,9 @@ namespace Test.Common
 
             var deadlines = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
             foreach (var deadline in deadlines) {
-                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagStatus);
-                Assert.AreNotEqual ("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagType);
-                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (deadline.Id).IsAwaitingDelete);
+                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (deadline.FirstMessageId).FlagStatus);
+                Assert.AreNotEqual ("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.FirstMessageId).FlagType);
+                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (deadline.FirstMessageId).IsAwaitingDelete);
             }
             Assert.AreEqual (2, deadlines.Count);
         }
@@ -305,9 +307,9 @@ namespace Test.Common
 
             var deferred = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
             foreach (var d in deferred) {
-                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.Id).FlagStatus);
-                NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.Id).FlagUtcStartDate > DateTime.UtcNow);
-                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.Id).IsAwaitingDelete);
+                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagStatus);
+                NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).FlagUtcStartDate > DateTime.UtcNow);
+                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.FirstMessageId).IsAwaitingDelete);
             }
             Assert.AreEqual (3, deferred.Count);
         }

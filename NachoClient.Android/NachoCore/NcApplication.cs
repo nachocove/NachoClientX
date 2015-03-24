@@ -104,8 +104,6 @@ namespace NachoCore
             }
         }
 
-        private bool StartupMarked;
-
         public bool IsUp ()
         {
             return (ExecutionContextEnum.Migrating != ExecutionContext) && (ExecutionContextEnum.Initializing != ExecutionContext);
@@ -761,7 +759,6 @@ namespace NachoCore
                 var timestamp = String.Format ("{0}\n", DateTime.UtcNow);
                 var bytes = Encoding.ASCII.GetBytes (timestamp);
                 fileStream.Write (bytes, 0, bytes.Length);
-                StartupMarked = true;
             }
         }
 
@@ -771,7 +768,6 @@ namespace NachoCore
             if (File.Exists (startupLog)) {
                 try {
                     File.Delete (startupLog);
-                    StartupMarked = false;
                 } catch (Exception e) {
                     Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
                 }

@@ -171,10 +171,17 @@ namespace NachoClient.iOS
                         var inbox = NcEmailManager.PriorityInbox ();
                         inbox.StartSync ();
                     } else {
-                        PerformFetch (application, completionHandler);
+                        if (doingPerformFetch) {
+                            Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
+                        } else {
+                            PerformFetch (application, completionHandler);
+                            return; // completeHandler is called at the completion of perform fetch.
+                        }
                     }
                 });
             }
+            // Actually, we don't really know if we have data. Fudge it.
+            completionHandler (UIBackgroundFetchResult.NoData);
         }
 
         /// This is not a service but rather initialization of some native
@@ -280,7 +287,8 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Sound, null);
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (
+                                   UIUserNotificationType.Sound | UIUserNotificationType.Badge | UIUserNotificationType.Alert, null);
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
@@ -553,6 +561,7 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
+                BadgeNotifUpdate ();
                 CompletePerformFetch ();
                 break;
 
@@ -709,7 +718,7 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && null != ea.Account && ea.Account.Id == NcApplication.Instance.Account.Id) {
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
                 BadgeNotifUpdate ();
             }
         }
@@ -850,7 +859,7 @@ namespace NachoClient.iOS
         static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
         static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
-        private bool BadgeNotifAllowed = false;
+        private bool BadgeNotifAllowed = true;
 
         private void BadgeNotifClear ()
         {
@@ -871,6 +880,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
             if (!BadgeNotifAllowed) {
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: early exit");
                 return;
             }
             var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
@@ -898,7 +908,8 @@ namespace NachoClient.iOS
                 }
                 var notif = new UILocalNotification () {
                     AlertAction = null,
-                    AlertBody = subjectString + "From " + fromString,
+                    AlertTitle = fromString,
+                    AlertBody = subjectString,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
                 };
                 if (!soundExpressed) {

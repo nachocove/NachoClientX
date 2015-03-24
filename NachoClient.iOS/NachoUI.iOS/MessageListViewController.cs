@@ -217,6 +217,8 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshThreads ()
         {
+            bool refreshVisibleCells = true;
+
             if (threadsNeedsRefresh) {
                 threadsNeedsRefresh = false;
                 NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController MaybeRefreshThreads");
@@ -225,23 +227,26 @@ namespace NachoClient.iOS
                 List<int> deletes;
                 if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
                     Util.UpdateTable (TableView, adds, deletes);
-                } else {
-                    messageSource.ReconfigureVisibleCells (TableView);
+                    refreshVisibleCells = false;
                 }
                 if (messageSource.NoMessageThreads ()) {
-                    MaybeDismissView ();
+                    refreshVisibleCells = !MaybeDismissView ();
                 }
                 if (searchDisplayController.Active) {
                     UpdateSearchResults ();
+                    refreshVisibleCells = false;
                 }
                 ReloadCapture.Stop ();
                 NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController MaybeRefreshThreads");
             }
+            if (refreshVisibleCells) {
+                messageSource.ReconfigureVisibleCells (TableView);
+            }
         }
 
-        public virtual void MaybeDismissView ()
+        public virtual bool MaybeDismissView ()
         {
-            // Nope, message views show 'empty'
+            return false;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -290,7 +295,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
-                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
+                UpdateSearchResultsFromServer (s.Status.GetValue<List<McEmailMessageThread>> ());
             }
         }
 
@@ -523,7 +528,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> list)
+        protected void UpdateSearchResultsFromServer (List<McEmailMessageThread> list)
         {
             searchResultsMessages.UpdateServerMatches (list);
             List<int> adds;

@@ -12,11 +12,11 @@ namespace NachoCore
     public class NachoMessageSearchResults : INachoEmailMessages
     {
 
-        List<NcEmailMessageIndex> list;
+        List<McEmailMessageThread> list;
         List<McEmailMessageThread> threadList;
 
         List<Index.MatchedItem> matches;
-        List<NcEmailMessageIndex> serverMatches;
+        List<McEmailMessageThread> serverMatches;
 
         public NachoMessageSearchResults ()
         {
@@ -29,7 +29,7 @@ namespace NachoCore
             UpdateResults ();
         }
 
-        public void UpdateServerMatches (List<NcEmailMessageIndex> serverMatches)
+        public void UpdateServerMatches (List<McEmailMessageThread> serverMatches)
         {
             this.serverMatches = serverMatches;
             UpdateResults ();
@@ -40,35 +40,36 @@ namespace NachoCore
             List<int> adds;
             List<int> deletes;
 
-            list = new List<NcEmailMessageIndex> ();
+            list = new List<McEmailMessageThread> ();
 
             if (null != matches) {
                 foreach (var match in matches) {
                     if ("message" == match.Type) {
-                        var messageIndex = new NcEmailMessageIndex ();
-                        messageIndex.Id = int.Parse (match.Id);
-                        list.Add (messageIndex);
+                        var thread = new McEmailMessageThread ();
+                        thread.FirstMessageId = int.Parse (match.Id);
+                        thread.MessageCount = 1;
+                        list.Add (thread);
                     }
                 }
             }
             if (null != serverMatches) {
                 foreach (var serverMatch in serverMatches) {
-                    if (!list.Contains (serverMatch, new NcEmailMessageIndexComparer ())) {
+                    if (!list.Contains (serverMatch, new McEmailMessageThreadIndexComparer ())) {
                         list.Add (serverMatch);
                     }
                 }
             }
 
-            list.RemoveAll ((NcEmailMessageIndex obj) => IsValid (obj));
+            list.RemoveAll ((McEmailMessageThread obj) => IsValid (obj));
 
             Refresh (out adds, out deletes);
         }
 
         // As messages are moved, they change index & become
         // unavailable.  Deferred messages should be hidden.
-        protected bool IsValid (NcEmailMessageIndex messageIndex)
+        protected bool IsValid (McEmailMessageThread messageIndex)
         {
-            var message = messageIndex.GetMessage ();
+            var message = messageIndex.FirstMessageSpecialCase ();
             if ((null == message) || message.IsDeferred ()) {
                 return true;
             }
@@ -93,7 +94,18 @@ namespace NachoCore
         public McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
+            t.Source = this;
             return t;
+        }
+
+        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        {
+            var thread = new List<McEmailMessageThread> ();
+            var m = new McEmailMessageThread ();
+            m.FirstMessageId = id;
+            m.MessageCount = 1;
+            thread.Add (m);
+            return thread;
         }
 
         public string DisplayName ()

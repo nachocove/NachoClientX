@@ -14,41 +14,24 @@ namespace NachoCore.Brain
         {
         }
 
-        static public List<McEmailMessageThread> ThreadByConversation (List<NcEmailMessageIndex> list)
+        static public List<McEmailMessageThread> ThreadByConversation (List<McEmailMessageThread> list)
         {
             if (null == list) {
                 return new List<McEmailMessageThread> ();
+            } else {
+                return list;
             }
-            var conversationList = new List<McEmailMessageThread> ();
-            var conversationId = new Dictionary<string, McEmailMessageThread> ();
-            for (int i = 0; i < list.Count; i++) {
-                McEmailMessageThread message;
-                if (!conversationId.TryGetValue (list [i].ThreadId, out message)) {
-                    message = new McEmailMessageThread ();
-                    conversationList.Add (message);
-                    conversationId.Add (list [i].ThreadId, message);
-                }
-                message.Add (list [i]);
-            }
-            return conversationList;
         }
 
-        static public List<McEmailMessageThread> ThreadByMessage (List<NcEmailMessageIndex> list)
+        static public List<McEmailMessageThread> ThreadByMessage (List<McEmailMessageThread> list)
         {
             if (null == list) {
                 return new List<McEmailMessageThread> ();
+            } else {
+                return list;
             }
-            var threadList = new List<McEmailMessageThread> ();
-            for (var i = 0; i < list.Count; i++) {
-                var newEmailMessageIndex = new NcEmailMessageIndex ();
-                newEmailMessageIndex.Id = list [i].Id;
-                var newEmailMessageThread = new McEmailMessageThread ();
-                newEmailMessageThread.Add (newEmailMessageIndex);
-                threadList.Add (newEmailMessageThread);
-            }
-            return threadList;
         }
-
+            
         // Return true or false if old and new lists are different.
         // Return 'deletes' if a series of deletes can transform oldList into newList.
         protected static bool CheckForDeletes (List<McEmailMessageThread> oldList, List<McEmailMessageThread> newList, out List<int> deletes)
@@ -68,8 +51,8 @@ namespace NachoCore.Brain
             int oldListIndex = 0;
             int newListIndex = 0;
             while ((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
-                var oldId = oldList [oldListIndex].GetEmailMessageIndex (0).Id;
-                var newId = newList [newListIndex].GetEmailMessageIndex (0).Id;
+                var oldId = oldList [oldListIndex].FirstMessageSpecialCaseIndex ();
+                var newId = newList [newListIndex].FirstMessageSpecialCaseIndex ();
                 if (oldId != newId) {
                     deletes.Add (oldListIndex);
                 } else {
@@ -117,8 +100,8 @@ namespace NachoCore.Brain
             int newListIndex = 0;
 
             while ((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
-                var oldId = oldList [oldListIndex].GetEmailMessageIndex (0).Id;
-                var newId = newList [newListIndex].GetEmailMessageIndex (0).Id;
+                var oldId = oldList [oldListIndex].FirstMessageSpecialCaseIndex ();
+                var newId = newList [newListIndex].FirstMessageSpecialCaseIndex ();
                 if (oldId != newId) {
                     adds.Add (newListIndex);
                 } else {

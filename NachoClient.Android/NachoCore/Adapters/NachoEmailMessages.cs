@@ -50,7 +50,19 @@ namespace NachoCore
                 return null;
             }
             var t = threadList.ElementAt (i);
+            t.Source = this;
             return t;
+        }
+
+        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        {
+            var message = McEmailMessage.QueryById<McEmailMessage> (id);
+            if (null == message) {
+                return new List<McEmailMessageThread> ();
+            } else {
+                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, message.ConversationId);
+                return thread;
+            }
         }
 
         public string DisplayName ()

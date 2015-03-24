@@ -27,22 +27,22 @@ namespace Test.Common
             var list = new List<McEmailMessageThread> ();
 
             foreach (var v in values) {
-                var n = new NcEmailMessageIndex ();
-                n.Id = v;
-                var e = new McEmailMessageThread ();
-                e.Add (n);
-                list.Add (e);
+                var n = new McEmailMessageThread ();
+                n.FirstMessageId = v;
+                n.MessageCount = 1;
+                list.Add (n);
             }
             return list;
         }
 
         public List<McEmailMessageThread> CreateMessageIndexList (params int[] values)
         {
-            var list = new List<NcEmailMessageIndex> ();
+            var list = new List<McEmailMessageThread> ();
 
             foreach (var v in values) {
-                var n = new NcEmailMessageIndex ();
-                n.Id = v;
+                var n = new McEmailMessageThread ();
+                n.FirstMessageId = v;
+                n.MessageCount = 1;
                 list.Add (n);
             }
             return NcMessageThreads.ThreadByMessage (list);
@@ -139,26 +139,26 @@ namespace Test.Common
 
         }
 
-        [Test]
-        public void NoDups()
-        {
-            var t = new McEmailMessageThread ();
-            var m1a = new NcEmailMessageIndex ();
-            m1a.Id = 1;
-            t.Add (m1a);
-            var m1b = new NcEmailMessageIndex ();
-            m1b.Id = 1;
-            t.Add (m1b);
-            Assert.AreEqual (1, t.Count);
-            var m2a = new NcEmailMessageIndex ();
-            m2a.Id = 2;
-            t.Add (m2a);
-            Assert.AreEqual (2, t.Count);
-            var m2b = new NcEmailMessageIndex ();
-            m2b.Id = 2;
-            t.Add (m2b);
-            Assert.AreEqual (2, t.Count);
-        }
+//        [Test]
+//        public void NoDups()
+//        {
+//            var t = new McEmailMessageThread ();
+//            var m1a = new NcEmailMessageIndex ();
+//            m1a.Id = 1;
+//            t.Add (m1a);
+//            var m1b = new NcEmailMessageIndex ();
+//            m1b.Id = 1;
+//            t.Add (m1b);
+//            Assert.AreEqual (1, t.Count);
+//            var m2a = new NcEmailMessageIndex ();
+//            m2a.Id = 2;
+//            t.Add (m2a);
+//            Assert.AreEqual (2, t.Count);
+//            var m2b = new NcEmailMessageIndex ();
+//            m2b.Id = 2;
+//            t.Add (m2b);
+//            Assert.AreEqual (2, t.Count);
+//        }
     }
 }
 

@@ -39,7 +39,19 @@ namespace NachoCore
         public McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
+            t.Source = this;
             return t;
+        }
+
+        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        {
+            var message = McEmailMessage.QueryById<McEmailMessage> (id);
+            if (null == message) {
+                return new List<McEmailMessageThread> ();
+            } else {
+                var thread = McEmailMessage.QueryDueDateMessageItemsAllAccountsByThreadId (message.ConversationId);
+                return thread;
+            }
         }
 
         public string DisplayName ()
@@ -90,7 +102,18 @@ namespace NachoCore
         public McEmailMessageThread GetEmailThread (int i)
         {
             var t = threadList.ElementAt (i);
+            t.Source = this;
             return t;
+        }
+
+        public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+        {
+            var thread = new List<McEmailMessageThread> ();
+            var m = new McEmailMessageThread ();
+            m.FirstMessageId = id;
+            m.MessageCount = 1;
+            thread.Add (m);
+            return thread;
         }
 
         public string DisplayName ()

@@ -500,6 +500,9 @@ namespace NachoCore
 
         public void Park ()
         {
+            if (!IsActive () && !IsStartOrParked ()) {
+                Log.Warn (Log.LOG_PUSH, "A start session is not established before being parked. Notifications will not be pushed.");
+            }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
@@ -516,6 +519,16 @@ namespace NachoCore
         public bool IsParked ()
         {
             return ((uint)Lst.Parked == Sm.State);
+        }
+
+        public bool IsStart ()
+        {
+            return ((uint)St.Start == Sm.State);
+        }
+
+        public bool IsStartOrParked ()
+        {
+            return IsStart () || IsParked ();
         }
 
         private void PostEvent (SmEvt.E evt, string mnemonic)
@@ -646,7 +659,10 @@ namespace NachoCore
                 return;
             }
             var parameters = Owner.PushAssistParameters ();
-            NcAssert.True (null != parameters);
+            if (null == parameters) {
+                ScheduleRetry ((uint)SmEvt.E.Launch, "START_NO_PARAMS");
+                return;
+            }
 
             Dictionary<string, string> httpHeadersDict = new Dictionary<string, string> ();
             if (null != parameters.RequestHeaders) {

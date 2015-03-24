@@ -23,6 +23,14 @@ namespace NachoCore.Model
         /// Start time of the original recurring meeting (Compact DateTime). Exception only.
         public DateTime ExceptionStartTime { get; set; }
 
+        /// <summary>
+        /// Calendar events don't need to know whether or not AllDayEvent was present in the XML,
+        /// because a missing AllDayEvent always means the same thing as setting it to false.
+        /// But exceptions to a recurring meeting do need to know that, because a missing AllDayEvent
+        /// means "inherit the value from the parent item," not that the value is false.
+        /// </summary>
+        public bool AllDayEventIsSet { get; set; }
+
         public override string GetSubject ()
         {
             return this.Subject ?? CalendarItemOrSelf ().Subject;

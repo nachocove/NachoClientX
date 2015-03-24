@@ -94,7 +94,7 @@ namespace Test.iOS
             return true;
         }
 
-        public virtual Uri ServerUri (AsHttpOperation sender)
+        public virtual Uri ServerUri (AsHttpOperation sender, bool isEmailRedacted = false)
         {
             return ProvidedUri;
         }
