@@ -548,6 +548,8 @@ namespace NachoClient.iOS
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
         private Timer performFetchTimer = null;
+        private bool fetchComplete;
+        private bool pushAssistArmComplete;
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -561,8 +563,19 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
+                fetchComplete = true;
                 BadgeNotifUpdate ();
-                CompletePerformFetch ();
+                if (fetchComplete && pushAssistArmComplete) {
+                    CompletePerformFetch ();
+                }
+                break;
+
+            case NcResult.SubKindEnum.Info_PushAssistArmed:
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
+                pushAssistArmComplete = true;
+                if (fetchComplete && pushAssistArmComplete) {
+                    CompletePerformFetch ();
+                }
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
@@ -573,6 +586,7 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
+                BadgeNotifUpdate ();
                 CompletePerformFetch ();
                 break;
             }
@@ -586,19 +600,25 @@ namespace NachoClient.iOS
             });
         }
 
-        protected void CompletePerformFetchWithoutShutdown ()
+        protected void CleanupPerformFetchStates ()
         {
             performFetchTimer.Dispose ();
             performFetchTimer = null;
             NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
-            CompletionHandler (fetchResult);
             doingPerformFetch = false;
+        }
+
+        protected void CompletePerformFetchWithoutShutdown ()
+        {
+            CleanupPerformFetchStates ();
+            CompletionHandler (fetchResult);
         }
 
         protected void CompletePerformFetch ()
         {
-            CompletePerformFetchWithoutShutdown ();
+            CleanupPerformFetchStates ();
             FinalShutdown (null);
+            CompletionHandler (fetchResult);
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
@@ -627,6 +647,8 @@ namespace NachoClient.iOS
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
                 });
             }), null, KPerformFetchTimeoutSeconds * 1000, Timeout.Infinite);
+            fetchComplete = false;
+            pushAssistArmComplete = false;
             doingPerformFetch = true;
         }
 
