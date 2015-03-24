@@ -66,9 +66,6 @@
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net" />
-    <Reference Include="BouncyCastle.Android">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\BouncyCastle.Android.dll</HintPath>
-    </Reference>
     <Reference Include="Xamarin.Android.Support.v4">
       <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v4.dll</HintPath>
     </Reference>
@@ -587,6 +584,10 @@
     <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\bc-csharp\crypto\BouncyCastle.Android.csproj">
+      <Project>{A0D302CB-8866-4AB1-98B9-F0772EABF5DF}</Project>
+      <Name>BouncyCastle.Android</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
