@@ -132,6 +132,7 @@ namespace NachoClient.iOS
             searchResultsSource.SetEmailMessages (searchResultsMessages);
             searchResultsSource.owner = this;
             searchDisplayController.SearchResultsSource = searchResultsSource;
+            searchDisplayController.SearchResultsTableView.RowHeight = 126;
 
             View.AddSubview (searchBar);
 
@@ -296,7 +297,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
-                UpdateSearchResultsFromServer (s.Status.GetValue<List<McEmailMessageThread>> ());
+                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
             }
         }
 
@@ -529,9 +530,16 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void UpdateSearchResultsFromServer (List<McEmailMessageThread> list)
+        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> indexList)
         {
-            searchResultsMessages.UpdateServerMatches (list);
+            var threadList = new List<McEmailMessageThread> ();
+            foreach (var i in indexList) {
+                var thread = new McEmailMessageThread ();
+                thread.FirstMessageId = i.Id;
+                thread.MessageCount = 1;
+                threadList.Add (thread);
+            }
+            searchResultsMessages.UpdateServerMatches (threadList);
             List<int> adds;
             List<int> deletes;
             searchResultsSource.RefreshEmailMessages (out adds, out deletes);
