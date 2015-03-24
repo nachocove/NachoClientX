@@ -834,10 +834,10 @@ namespace NachoCore.ActiveSync
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
                 // if the mail server host is well-known (e.g google.com, hotmail.com) , do not do ReDiscovery.
                 if (BEContext.Server.HostIsWellKnown ()) {
-                    return Final ((uint)SmEvt.E.TempFail, "HTTPOP500");
+                    return Final ((uint)SmEvt.E.TempFail, "HTTPOP500A");
                 }
                 else{
-                    return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500");
+                    return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500B");
                 }
 
             case (HttpStatusCode)501:
