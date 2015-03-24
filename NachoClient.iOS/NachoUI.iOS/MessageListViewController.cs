@@ -49,7 +49,7 @@ namespace NachoClient.iOS
         {
             messageSource = new MessageTableViewSource ();
         }
-
+            
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -98,6 +98,7 @@ namespace NachoClient.iOS
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.Clicked += onClickSearchButton;
 
+            TableView.RowHeight = 126;
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);

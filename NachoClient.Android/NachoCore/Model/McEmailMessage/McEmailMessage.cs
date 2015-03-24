@@ -575,6 +575,13 @@ namespace NachoCore.Model
             );
         }
 
+        public static List<McEmailMessage> QueryForSet(List<int> indexList)
+        {
+            var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
+            var cmd = String.Format ("SELECT e.* FROM McEmailMessage as e WHERE e.ID IN {0}", set);
+            return NcModel.Instance.Db.Query<McEmailMessage> (cmd);
+        }
+
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (

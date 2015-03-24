@@ -510,18 +510,19 @@ namespace NachoClient
 
         public static UIImage ImageOfSender (int accountId, string emailAddress)
         {
-            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
-            if ((null == contacts) || (0 == contacts.Count)) {
-                return null;
-            }
-            // There may be more than one contact that matches an email address.
-            // Search thru all of them and look for the first one that has a portrait.
-            foreach (var contact in contacts) {
-                UIImage image = ImageOfContact (contact);
-                if (null != image) {
-                    return image;
-                }
-            }
+            // FIXME: Should push the images
+//            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+//            if ((null == contacts) || (0 == contacts.Count)) {
+//                return null;
+//            }
+//            // There may be more than one contact that matches an email address.
+//            // Search thru all of them and look for the first one that has a portrait.
+//            foreach (var contact in contacts) {
+//                UIImage image = ImageOfContact (contact);
+//                if (null != image) {
+//                    return image;
+//                }
+//            }
             return null;
         }
 
