@@ -114,6 +114,7 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
+            ClearCache ();
             this.messageThreads = messageThreads;
         }
 
