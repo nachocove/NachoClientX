@@ -728,6 +728,10 @@ namespace NachoCore
             } else {
                 SessionToken = response.Token;
                 ClearRetry ();
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistArmed),
+                    Account = Owner.Account,
+                });
                 PostSuccess ("START_SESSION_OK");
             }
         }
