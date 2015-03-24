@@ -832,7 +832,13 @@ namespace NachoCore.ActiveSync
                 }
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
-                return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500");
+                // if the mail server host is well-known (e.g google.com, hotmail.com) , do not do ReDiscovery.
+                if (BEContext.Server.HostIsWellKnown ()) {
+                    return Final ((uint)SmEvt.E.TempFail, "HTTPOP500");
+                }
+                else{
+                    return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500");
+                }
 
             case (HttpStatusCode)501:
                 ReportCommResult (ServerUri.Host, false);
