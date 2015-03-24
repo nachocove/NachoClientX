@@ -49,6 +49,7 @@ namespace NachoClient.iOS
 
         int[] first = new int[3];
         List<McEmailMessage>[] cache = new List<McEmailMessage>[3];
+        const int CACHEBLOCKSIZE = 32;
 
         void ClearCache ()
         {
@@ -59,7 +60,7 @@ namespace NachoClient.iOS
 
         McEmailMessage GetCachedMessage (int i)
         {
-            var block = i / 32;
+            var block = i / CACHEBLOCKSIZE;
             var cacheIndex = block % 3;
 
             if (block != first [cacheIndex]) {
@@ -69,7 +70,7 @@ namespace NachoClient.iOS
                 MaybeReadBlock (block + 1);
             }
 
-            var index = i % 32;
+            var index = i % CACHEBLOCKSIZE;
             return cache [cacheIndex] [index];
         }
 
@@ -82,22 +83,18 @@ namespace NachoClient.iOS
             if (block == first [cacheIndex]) {
                 return;
             }
-            Console.WriteLine ("Readblock {0}", block);
-            var start = block * 32;
-            var finish = (messageThreads.Count () < (start + 32)) ? messageThreads.Count () : start + 32;
+            var start = block * CACHEBLOCKSIZE;
+            var finish = (messageThreads.Count () < (start + CACHEBLOCKSIZE)) ? messageThreads.Count () : start + CACHEBLOCKSIZE;
             var indexList = new List<int> ();
             for (var i = start; i < finish; i++) {
                 indexList.Add (messageThreads.GetEmailThread (i).FirstMessageSpecialCaseIndex ());
             }
             cache [cacheIndex] = new List<McEmailMessage> ();
             var resultList = McEmailMessage.QueryForSet (indexList);
+            // Reorder the list, add in nulls for missing entries
             foreach (var i in indexList) {
-                foreach (var result in resultList) {
-                    if (i == result.Id) {
-                        cache [cacheIndex].Add (result);
-                        break;
-                    }
-                }
+                var result = resultList.Find (x => x.Id == i);
+                cache [cacheIndex].Add (result);
             }
             first [cacheIndex] = block;
         }
@@ -183,31 +180,28 @@ namespace NachoClient.iOS
             return NORMAL_ROW_HEIGHT;
         }
 
-//        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
-//        {
-//            Console.WriteLine ("mtvs: GetHeightForRow: {0}", indexPath.Row);
-//
-//            if (NoMessageThreads ()) {
-//                return NORMAL_ROW_HEIGHT;
-//            }
-//
-//            McEmailMessage message;
-//            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
-//
-//            if (null == messageThread) {
-//                return NORMAL_ROW_HEIGHT;
-//            }
-//                
-//            message = GetCachedMessage (indexPath.Row);
-//                
-//            return HeightForMessage (message);
-//        }
-//
-//        public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
-//        {
-//            Console.WriteLine ("mtvs: EstimatedHeight: {0}", indexPath.Row);
-//            return NORMAL_ROW_HEIGHT;
-//        }
+        //        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        //        {
+        //            if (NoMessageThreads ()) {
+        //                return NORMAL_ROW_HEIGHT;
+        //            }
+        //
+        //            McEmailMessage message;
+        //            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+        //
+        //            if (null == messageThread) {
+        //                return NORMAL_ROW_HEIGHT;
+        //            }
+        //
+        //            message = GetCachedMessage (indexPath.Row);
+        //
+        //            return HeightForMessage (message);
+        //        }
+        //
+        //        public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
+        //        {
+        //            return NORMAL_ROW_HEIGHT;
+        //        }
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {

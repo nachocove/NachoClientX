@@ -464,7 +464,7 @@ namespace Test.Common
         public void TestQueryByDateReceivedAndFrom ()
         {
             var accountId = 9;
-            var magicTime1 = DateTime.UtcNow.AddDays(-5);
+            var magicTime1 = DateTime.UtcNow.AddDays (-5);
             var magicTime2 = magicTime1.AddDays (1);
             var magicFrom1 = "foo@bar.com";
             var winner1 = "winner@foo.com";
@@ -503,7 +503,7 @@ namespace Test.Common
             InsertAndCheckMessage (message3);
             // will not be found
             var message4 = new McEmailMessage () {
-                AccountId = accountId+1,
+                AccountId = accountId + 1,
                 DateReceived = magicTime2,
                 From = magicFrom1,
                 To = loser,
@@ -551,6 +551,74 @@ namespace Test.Common
             Assert.AreEqual (winner2, chosen.To);
             Assert.AreEqual (magicFrom1, chosen.From);
             Assert.AreEqual (magicTime2, chosen.DateReceived);
+        }
+
+        [Test]
+        public void QueryForSetTest ()
+        {
+            var message1 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 30, 00),
+                BodyId = 0,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message1);
+
+            var message2 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 35, 00),
+                BodyId = 0,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message2);
+
+            var message3 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 40, 00),
+                BodyId = 0,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message3);
+
+            var none = new List<int> ();
+            CheckSetQuery (none, new List<McEmailMessage> ());
+
+            var some = new List<int> () { 1, 2 };
+            CheckSetQuery (some, new List<McEmailMessage> () { message1, message2 });
+
+            var gone = new List<int> () { 1, 2, 3, 4 };
+            CheckSetQuery (gone, new List<McEmailMessage> () { message1, message2, message3, null });
+
+            var nulz = new List<int> () { 4, 5, 6 };
+            CheckSetQuery (nulz, new List<McEmailMessage> () { null, null, null });
+
+            var full = new List<int> () { 1, 2, 3 };
+            CheckSetQuery (full, new List<McEmailMessage> () { message1, message2, message3 });
+
+            var spin = new List<int> () { 3, 1, 2 };
+            CheckSetQuery (spin, new List<McEmailMessage> () { message3, message1, message2 });
+
+        }
+
+        void CheckSetQuery (List<int> request, List<McEmailMessage> expected)
+        {
+            var resultList = McEmailMessage.QueryForSet (request);
+            var cleanList = new List<McEmailMessage> ();
+
+            foreach (var i in request) {
+                var result = resultList.Find (x => x.Id == i);
+                cleanList.Add (result);
+            }
+
+            Assert.AreEqual (expected.Count (), cleanList.Count ());
+
+            for (var i = 0; i < expected.Count (); i++) {
+                if (null == expected [i]) {
+                    Assert.AreEqual (expected [i], cleanList [i]);
+                } else {
+                    Assert.AreEqual (expected [i].Id, cleanList [i].Id);
+                }
+            }
         }
     }
 }
