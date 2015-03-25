@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
-    public class McNote : McAbstrObject, IFilesViewItem
+    public class McNote : McAbstrObjectPerAcc, IFilesViewItem
     {
         public enum NoteType
         {
