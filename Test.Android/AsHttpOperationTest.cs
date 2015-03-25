@@ -802,6 +802,12 @@ namespace Test.iOS
                                 },
                                 State = (uint)St.Start },
                             new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = delegate () {
+                                    action();
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
                                 Act = delegate () {
                                     action();
