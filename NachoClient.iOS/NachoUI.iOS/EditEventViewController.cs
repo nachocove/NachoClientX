@@ -421,10 +421,12 @@ namespace NachoClient.iOS
             };
 
             doneButton.Clicked += (sender, e) => {
-                ExtractValues ();
-                SyncMeetingRequest ();
-                PrepareInvites ();
-                DismissView ();
+                if (CanBeSaved ()) {
+                    ExtractValues ();
+                    SyncMeetingRequest ();
+                    PrepareInvites ();
+                    DismissView ();
+                }
             };
 
             NavigationItem.LeftBarButtonItem = cancelButton;
@@ -1317,6 +1319,26 @@ namespace NachoClient.iOS
             var frame = view.Frame;
             frame.Y = yOffset;
             view.Frame = frame;
+        }
+
+        /// <summary>
+        /// Check if the data that the user entered is valid and can be saved as an event.  If not,
+        /// throw up a dialog explaining the problem to the user.
+        /// </summary>
+        /// <returns><c>true</c> if this instance can be saved; otherwise, <c>false</c>.</returns>
+        protected bool CanBeSaved ()
+        {
+            if (string.IsNullOrEmpty (titleField.Text)) {
+                var alert = new UIAlertView ("Cannot Save Event", "The title of the event must not be empty.", null, "OK");
+                alert.Show ();
+                return false;
+            }
+            if (startDate > endDate) {
+                var alert = new UIAlertView ("Cannot Save Event", "The starting time must be no later than the ending time.", null, "OK");
+                alert.Show ();
+                return false;
+            }
+            return true;
         }
 
         protected void ExtractValues ()
