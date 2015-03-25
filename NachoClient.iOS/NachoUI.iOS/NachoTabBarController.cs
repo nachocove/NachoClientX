@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         }
 
         protected UITabBarItem nachoNowItem;
+        protected UITabBarItem settingsItem;
         protected UITabBarItem foldersItem;
 
         protected const int TABLEVIEW_TAG = 1999;
@@ -56,7 +57,7 @@ namespace NachoClient.iOS
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
             // SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
+            settingsItem = SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
             // SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
             // SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
@@ -77,6 +78,7 @@ namespace NachoClient.iOS
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
+                UpdateNotificationBadge();
             };
 
             ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
@@ -91,7 +93,9 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            var accountId = LoginHelpers.GetCurrentAccountId ();
+            UpdateNotificationBadge ();
+
+            var accountId = NcApplication.Instance.Account.Id;
 
             var emailMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey, accountId.ToString ());
             if (!String.IsNullOrEmpty (emailMessageIdString)) {
@@ -132,6 +136,9 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
                 LayoutMoreTable ();
+            }
+            if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
+                UpdateNotificationBadge ();
             }
         }
 
@@ -220,17 +227,33 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public void SetSettingsBadge (bool isDirty)
+        protected bool IsItemVisible (UITabBarItem item)
         {
+            nint visibleItems = 5; // default
+
+            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
+            if (null != tableView) {
+                visibleItems = ViewControllers.Length - tableView.NumberOfRowsInSection (0);
+            }
+
             for (int i = 0; i < ViewControllers.Length; i++) {
-                if (ViewControllers [i].GetType () == typeof(GeneralSettingsViewController)) {
-                    ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                    if (i > (TabBar.Items.Length - 2) && isDirty) {
-                        MoreNavigationController.TabBarItem.BadgeValue = @"!";
-                    } else {
-                        MoreNavigationController.TabBarItem.BadgeValue = null;
-                    }
+                if (ViewControllers [i].TabBarItem == item) {
+                    return (i < visibleItems);
                 }
+            }
+            return false;
+        }
+
+        protected void UpdateNotificationBadge ()
+        {
+            var showNotificationBadge = LoginHelpers.DoesBackEndHaveIssues (NcApplication.Instance.Account.Id);
+
+            settingsItem.BadgeValue = (showNotificationBadge ? @"!" : null);
+
+            if (!IsItemVisible (settingsItem)) {
+                MoreNavigationController.TabBarItem.BadgeValue = (showNotificationBadge ? @"!" : null);
+            } else {
+                MoreNavigationController.TabBarItem.BadgeValue = null;
             }
         }
 
@@ -295,8 +318,7 @@ namespace NachoClient.iOS
 
         public void ConfigureAccountInfo ()
         {
-            var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            accountInfoView.Configure (account);
+            accountInfoView.Configure (NcApplication.Instance.Account);
         }
 
         public static void ReconfigureMoreTab ()
