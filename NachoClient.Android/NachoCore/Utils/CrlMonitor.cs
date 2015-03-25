@@ -103,6 +103,7 @@ namespace NachoCore.Utils
             Url = url;
             var handler = new NativeMessageHandler (false, true);
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
+            Revoked = new HashSet<string> ();
         }
 
         private void StopTimer ()
@@ -137,7 +138,8 @@ namespace NachoCore.Utils
                     Crl = await response.Content.ReadAsStringAsync ().ConfigureAwait (false);
                     LastUpdated = DateTime.UtcNow;
                     var revoked = new HashSet<string> ();
-                    var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (Crl, null);
+                    // FIXME - Need a different signing scheme so we can present the signing cert to verify the CRL.
+                    var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (Crl);
                     if (null != snList) {
                         foreach (var sn in snList) {
                             revoked.Add (sn);
