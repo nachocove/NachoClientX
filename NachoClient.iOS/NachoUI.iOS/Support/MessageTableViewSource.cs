@@ -326,10 +326,21 @@ namespace NachoClient.iOS
                         cell.UserInteractionEnabled = !active;
                     } else {
                         cell.UserInteractionEnabled = true;
+                        if (swipingActive) {
+                            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+                        } else {
+                            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+                        }
                     }
                 }
             }
 
+        }
+
+        // Don't select row when swiper is active
+        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
+        {
+            return (swipingActive ? null : indexPath);
         }
 
         /// <summary>
