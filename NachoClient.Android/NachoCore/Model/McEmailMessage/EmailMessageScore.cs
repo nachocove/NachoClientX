@@ -190,6 +190,7 @@ namespace NachoCore.Model
                 return;
             }
             SyncInfo = new McEmailMessageScoreSyncInfo ();
+            SyncInfo.AccountId = AccountId;
             SyncInfo.EmailMessageId = Id;
             SyncInfo.InsertByBrain ();
         }

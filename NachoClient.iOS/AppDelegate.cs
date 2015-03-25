@@ -256,8 +256,10 @@ namespace NachoClient.iOS
             }
             // if not done removing account, finish up 
             // TODO: need to confirm if this is the right place to hook this up.
-            if (GetIsRemovingAccount ()) {
-                ContinueRemovingAccount ();
+            int AccountId = GetRemovingAccountIdFromFile ();
+            if (AccountId > 0 ) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
+                RemoveAccountDBAndFilesForId (AccountId);
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
@@ -993,40 +995,51 @@ namespace NachoClient.iOS
         }
 
         // TODO : keeping these here for now, till I confirm that we want to user userdefaults for saving this value
-        // Are we in the process of removing an account
-        public bool GetIsRemovingAccount ()
-        {
-            return NSUserDefaults.StandardUserDefaults.BoolForKey ("IsRemovingAccount");
-        }
-
-        // update user defaults for removing account status
-        public void SetIsRemovingAccount (bool value)
-        {
-            NSUserDefaults.StandardUserDefaults.SetBool (value, "IsRemovingAccount");
-        }
 
         // Get the AccountId for the account being removed
-        public int GetRemovingAccountId ()
+        public int GetRemovingAccountIdFromFile ()
         {
-            return (int) NSUserDefaults.StandardUserDefaults.IntForKey ("RemovingAccountId");
+            string AccountIdString;
+            int AccountId = 0;
+            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var RemovingAccountFile = Path.Combine (documents, "removing-account_id");
+            if (File.Exists (RemovingAccountFile)) {
+                // Get the account id from the file
+                using (var stream = new FileStream (RemovingAccountFile, FileMode.Open, FileAccess.Read)) {
+                    using (var reader = new StreamReader (stream)) {
+                        AccountIdString = reader.ReadLine ();
+                        int.TryParse(AccountIdString, out AccountId);
+                    }
+                }
+            }
+            return AccountId;
         }
 
-        // update user defaults for removing account id
-        public void SetRemovingAccountId (int id)
+        // write the removing AccountId to file
+        public void WriteRemovingAccountIdToFile (int AccountId)
         {
-            NSUserDefaults.StandardUserDefaults.SetInt (id, "RemovingAccountId");
+            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var RemovingAccountFile = Path.Combine (documents, "removing-account_id");
+            using (var stream = new FileStream (RemovingAccountFile, FileMode.Create, FileAccess.Write)) {
+                using (var writer = new StreamWriter (stream)) {
+                    writer.WriteLine (AccountId);
+                }
+            }
         }
 
-
-        // continue interrupted account removal
-        public void ContinueRemovingAccount ()
+        // delete the file 
+        public bool DeleteRemovingAccounFile ()
         {
-            int Id = GetRemovingAccountId();
-            if (Id == 0) {
-                NcAssert.True (0 < Id, "Cannot remove account id 0");
-            } else {
-                Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", Id);
-                RemoveAccountDBAndFilesForId (Id);
+            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var RemovingAccountFile = Path.Combine (documents, "removing-account_id");
+            try
+            {
+                File.Delete(RemovingAccountFile);
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
             }
         }
 
@@ -1048,10 +1061,14 @@ namespace NachoClient.iOS
                 }
             }
             Log.Info (Log.LOG_UI, "RemoveAccount: removing all table rows for account {0}", Id);
-
-            foreach (string stmt in DeleteStatements) {
-                NcModel.Instance.Db.Execute (stmt, Id);
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (string stmt in DeleteStatements) {
+                    NcModel.Instance.Db.Execute (stmt, Id);
+                }
+                Log.Info (Log.LOG_UI, "RemoveAccount: removed McAccount for id {0}", Id);
+                var account = McAccount.QueryById<McAccount> (Id);
+                account.Delete ();
+            });
 
             Log.Info (Log.LOG_UI, "RemoveAccount: removed db data for account {0}", Id);
 
@@ -1078,8 +1095,7 @@ namespace NachoClient.iOS
             // if there is only one account. TODO: deal with multi-account
             NcApplication.Instance.Account = null;
             // if successful, unmark account is being removed since it is completed.
-            SetIsRemovingAccount (false);
-            SetRemovingAccountId (0);
+            DeleteRemovingAccounFile ();
         }
 
         // TODO this needs to get moved out of AppDelegate.
@@ -1088,8 +1104,7 @@ namespace NachoClient.iOS
         {
             if (null != NcApplication.Instance.Account) {
                 // mark account is being removed so that we don't do anything else other than the remove till it is completed.
-                SetIsRemovingAccount (true);
-                SetRemovingAccountId (NcApplication.Instance.Account.Id);
+                WriteRemovingAccountIdToFile (NcApplication.Instance.Account.Id);
 
                 Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
                 BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
