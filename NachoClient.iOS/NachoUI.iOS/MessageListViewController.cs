@@ -40,6 +40,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        bool StatusIndCallbackIsSet = false;
+
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads);
@@ -98,7 +100,6 @@ namespace NachoClient.iOS
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.Clicked += onClickSearchButton;
 
-            TableView.RowHeight = 126;
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
@@ -138,9 +139,20 @@ namespace NachoClient.iOS
 
             Util.ConfigureNavBar (false, this.NavigationController);
 
+            SetRowHeight ();
+
+
+            StatusIndCallbackIsSet = true;
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Load when view becomes visible
             threadsNeedsRefresh = true;
+        }
+
+        protected virtual void SetRowHeight()
+        {
+            TableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight =  MessageTableViewSource.NORMAL_ROW_HEIGHT;
         }
 
         protected void refreshCallback (object sender)
@@ -255,6 +267,10 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
+            if (!StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+
             // TODO: Figure this out
             // When this view is loaded directly from the tab bar,
             // the first time the view is displayed, the content
@@ -267,7 +283,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             NavigationItem.Title = messageSource.GetDisplayName ();
 
@@ -277,10 +292,18 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+            if (this.IsViewLoaded && null == this.NavigationController) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

@@ -15,9 +15,15 @@ namespace NachoClient.iOS
             SetEmailMessages (new NachoDeferredEmailMessages ());
         }
 
-//        protected override void CustomizeBackButton ()
-//        {
-//            BackShouldSwitchToFolders ();
-//        }
+        protected override void SetRowHeight ()
+        {
+            TableView.RowHeight = MessageTableViewSource.DATED_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewSource.DATED_ROW_HEIGHT;
+        }
+
+        //        protected override void CustomizeBackButton ()
+        //        {
+        //            BackShouldSwitchToFolders ();
+        //        }
     }
 }
