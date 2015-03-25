@@ -395,9 +395,9 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
-                    Log.Info (Log.LOG_HTTP, "CreateHttpRequest: create stream (#1313)");
+                    //Log.Info (Log.LOG_HTTP, "CreateHttpRequest: create stream (#1313)");
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
-                    Log.Info (Log.LOG_HTTP, "CreateHttpRequest: stream created (#1313)");
+                    //Log.Info (Log.LOG_HTTP, "CreateHttpRequest: stream created (#1313)");
                     var content = new StreamContent (stream);
                     request.Content = content;
                     request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
