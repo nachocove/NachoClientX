@@ -1,189 +1,189 @@
 <xml namespace="Provision">
    <PolicyType>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </PolicyType>
    <PolicyKey>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </PolicyKey>
    <EASProvisionDoc>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <DevicePasswordEnabled>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </DevicePasswordEnabled>
       <AlphanumericDevicePasswordRequired>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AlphanumericDevicePasswordRequired>
       <PasswordRecoveryEnabled>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </PasswordRecoveryEnabled>
       <RequireStorageCardEncryption>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireStorageCardEncryption>
       <AttachmentsEnabled>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AttachmentsEnabled>
       <MinDevicePasswordLength>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MinDevicePasswordLength>
       <MaxInactivityTimeDeviceLock>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxInactivityTimeDeviceLock>
       <MaxDevicePasswordFailedAttempts>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxDevicePasswordFailedAttempts>
       <MaxAttachmentSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxAttachmentSize>
       <AllowSimpleDevicePassword>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowSimpleDevicePassword>
       <DevicePasswordExpiration>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </DevicePasswordExpiration>
       <DevicePasswordHistory>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </DevicePasswordHistory>
       <AllowStorageCard>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowStorageCard>
       <AllowCamera>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowCamera>
       <RequireDeviceEncryption>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireDeviceEncryption>
       <AllowUnsignedApplications>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowUnsignedApplications>
       <AllowUnsignedInstallationPackages>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowUnsignedInstallationPackages>
       <MinDevicePasswordComplexCharacters>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MinDevicePasswordComplexCharacters>
       <AllowWiFi>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowWiFi>
       <AllowTextMessaging>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowTextMessaging>
       <AllowPOPIMAPEmail>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowPOPIMAPEmail>
       <AllowBluetooth>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowBluetooth>
       <AllowIrDA>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowIrDA>
       <RequireManualSyncWhenRoaming>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireManualSyncWhenRoaming>
       <AllowDesktopSync>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowDesktopSync>
       <MaxCalendarAgeFilter>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxCalendarAgeFilter>
       <AllowHTMLEmail>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowHTMLEmail>
       <MaxEmailAgeFilter>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxEmailAgeFilter>
       <MaxEmailBodyTruncationSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxEmailBodyTruncationSize>
       <MaxEmailHTMLBodyTruncationSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxEmailHTMLBodyTruncationSize>
       <RequireSignedSMIMEMessages>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireSignedSMIMEMessages>
       <RequireEncryptedSMIMEMessages>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireEncryptedSMIMEMessages>
       <RequireSignedSMIMEAlgorithm>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireSignedSMIMEAlgorithm>
       <RequireEncryptionSMIMEAlgorithm>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </RequireEncryptionSMIMEAlgorithm>
       <AllowSMIMEEncryptionAlgorithmNegotiation>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowSMIMEEncryptionAlgorithmNegotiation>
       <AllowSMIMESoftCerts>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowSMIMESoftCerts>
       <AllowBrowser>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowBrowser>
       <AllowConsumerEmail>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowConsumerEmail>
       <AllowRemoteDesktop>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowRemoteDesktop>
       <AllowInternetSharing>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllowInternetSharing>
       <UnapprovedInROMApplicationList>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <ApplicationName>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </ApplicationName>
       </UnapprovedInROMApplicationList>
       <ApprovedApplicationList>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <Hash>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </Hash>
       </ApprovedApplicationList>
    </EASProvisionDoc>
@@ -197,16 +197,16 @@
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
             <PolicyType>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </PolicyType>
             <PolicyKey>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </PolicyKey>
             <Status>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Status>
          </Policy>
       </Policies>
@@ -214,8 +214,8 @@
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <Status>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </Status>
       </RemoteWipe>
    </Provision>
