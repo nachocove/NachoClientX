@@ -34,6 +34,7 @@ namespace NachoCore.ActiveSync
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             XNamespace m_nsEmail = Xml.Email.Ns;
+            XNamespace m_nsAirSync = Xml.AirSync.Ns;
             var doc = AsCommand.ToEmptyXDocument ();
             XElement search;
             var options = new XElement (m_ns + Xml.Search.Options,
@@ -60,6 +61,7 @@ namespace NachoCore.ActiveSync
                         new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.Mailbox),
                         new XElement (m_ns + Xml.Search.Query, 
                             new XElement (m_ns + Xml.Search.And,
+                                new XElement (m_nsAirSync + Xml.AirSync.Class, Xml.AirSync.ClassCode.Email),
                                 new XElement (m_ns + Xml.Search.FreeText, PendingSingle.Search_Prefix),
                                 new XElement (m_ns + Xml.Search.LessThan,
                                     new XElement (m_nsEmail + Xml.Email.DateReceived),
