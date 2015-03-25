@@ -925,17 +925,23 @@ namespace NachoClient.iOS
                 if (!String.IsNullOrEmpty (subjectString)) {
                     subjectString += " ";
                 }
-                var notif = new UILocalNotification () {
-                    AlertAction = null,
-                    AlertTitle = fromString,
-                    AlertBody = subjectString,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
-                };
-                if (!soundExpressed) {
-                    notif.SoundName = UILocalNotification.DefaultSoundName;
-                    soundExpressed = true;
+
+                try {
+                    // nachocove/qa#188 - This is not a fix but trying to gather more information about this failure.
+                    var notif = new UILocalNotification () {
+                        AlertAction = null,
+                        AlertTitle = fromString,
+                        AlertBody = subjectString,
+                        UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
+                    };
+                    if (!soundExpressed) {
+                        notif.SoundName = UILocalNotification.DefaultSoundName;
+                        soundExpressed = true;
+                    }
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                } catch (Exception e) {
+                    Log.Error ("Cannot create local notification - {0}", e);
                 }
-                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
                 message.HasBeenNotified = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
