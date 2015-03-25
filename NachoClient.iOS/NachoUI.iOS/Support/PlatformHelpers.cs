@@ -195,17 +195,18 @@ namespace NachoClient
             Preview.PresentPreview (true);
         }
 
-        public static string DownloadAttachment (McAttachment attachment)
+        public static NcResult DownloadAttachment (McAttachment attachment)
         {
             if (McAbstrFileDesc.FilePresenceEnum.Error == attachment.FilePresence) {
                 // Clear the error code so the download will be attempted again.
                 attachment.DeleteFile ();
             }
             if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
-                // TODO: Add more precise error messages based on NcResult like BodyView
-                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true).GetValue<string> ();
+                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true);
             } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+                var token = McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+                var nr = NcResult.OK (token); // null is potentially ok; callers expect it.
+                return nr;
             } 
             NcAssert.True (false, "Should not try to download an already-downloaded attachment");
             return null;
