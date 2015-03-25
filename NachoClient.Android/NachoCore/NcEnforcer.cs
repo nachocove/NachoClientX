@@ -42,8 +42,9 @@ namespace NachoCore
         {
             var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.SetPassword (cred.Id, string.Empty);
+                Keychain.Instance.DeletePassword (cred.Id);
             }
+            McAccountHandler.Instance.RemoveAccount ();
             return Device.Instance.Wipe (cred.Username, cred.GetPassword (), url, protoVersion);
         }
     }
