@@ -167,8 +167,8 @@ namespace NachoClient.iOS
             }
         }
 
-        static readonly nfloat NORMAL_ROW_HEIGHT = 126.0f;
-        static readonly nfloat DATED_ROW_HEIGHT = 161.0f;
+        static public readonly nfloat NORMAL_ROW_HEIGHT = 126.0f;
+        static public readonly nfloat DATED_ROW_HEIGHT = 161.0f;
 
         protected nfloat HeightForMessage (McEmailMessage message)
         {

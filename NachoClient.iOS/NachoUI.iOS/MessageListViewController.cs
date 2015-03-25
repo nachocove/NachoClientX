@@ -98,7 +98,6 @@ namespace NachoClient.iOS
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.Clicked += onClickSearchButton;
 
-            TableView.RowHeight = 126;
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
@@ -138,9 +137,18 @@ namespace NachoClient.iOS
 
             Util.ConfigureNavBar (false, this.NavigationController);
 
+            SetRowHeight ();
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Load when view becomes visible
             threadsNeedsRefresh = true;
+        }
+
+        protected virtual void SetRowHeight()
+        {
+            TableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight =  MessageTableViewSource.NORMAL_ROW_HEIGHT;
         }
 
         protected void refreshCallback (object sender)
@@ -267,7 +275,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             NavigationItem.Title = messageSource.GetDisplayName ();
 
@@ -277,7 +284,6 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
