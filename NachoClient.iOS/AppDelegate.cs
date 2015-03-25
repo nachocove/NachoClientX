@@ -1122,11 +1122,6 @@ namespace NachoClient.iOS
                 NcApplication.Instance.StartClass4Services ();
                 Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
             }
-            // go back to main screen
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = storyboard.InstantiateInitialViewController ();
-            Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
-            Window.RootViewController = (UIViewController)vc;
         }
     }
 
