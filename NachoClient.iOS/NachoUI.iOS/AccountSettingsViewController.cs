@@ -895,7 +895,7 @@ namespace NachoClient.iOS
             editButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
             Action action = () => {
-                appDelegate.RemoveAccount ();
+                McAccountHandler.Instance.RemoveAccount ();
                 InvokeOnMainThread (() => {
                     backButton.Enabled = true;
                     editButton.Enabled = true;

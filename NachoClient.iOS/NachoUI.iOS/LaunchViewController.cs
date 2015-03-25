@@ -448,7 +448,7 @@ namespace NachoClient.iOS
         private void StartLoginProcess ()
         {
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            appDelegate.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
+            McAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
             BackEnd.Instance.Start (NcApplication.Instance.Account.Id);
             PerformSegue (StartupViewController.NextSegue (), this);
         }
