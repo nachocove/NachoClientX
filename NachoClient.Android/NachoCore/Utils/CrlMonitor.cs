@@ -31,6 +31,8 @@ namespace NachoCore.Utils
 
         public String Crl { get; protected set; }
 
+        public HashSet<string> Revoked { get; protected set; }
+
         public DateTime LastUpdated { get; protected set; }
 
         private IHttpClient Client;
@@ -83,6 +85,18 @@ namespace NachoCore.Utils
             }
         }
 
+        public static bool IsRevoked (string serialNumber)
+        {
+            lock (LockObj) {
+                foreach (var monitor in Monitors.Values) {
+                    if (monitor.Revoked.Contains (serialNumber)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         public CrlMonitor (string url)
         {
             Id = Interlocked.Increment (ref NextId);
@@ -122,6 +136,12 @@ namespace NachoCore.Utils
                 if (HttpStatusCode.OK == response.StatusCode) {
                     Crl = await response.Content.ReadAsStringAsync ().ConfigureAwait (false);
                     LastUpdated = DateTime.UtcNow;
+                    var revoked = new HashSet<string> ();
+                    var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (Crl, null);
+                    foreach (var sn in snList) {
+                        revoked.Add (sn);
+                    }
+                    Revoked = revoked;
                     Log.Info (Log.LOG_PUSH, "CRL pull response: statusCode={0}, content={1}", response.StatusCode, Crl);
                     return;
                 } else {
