@@ -138,10 +138,14 @@ namespace NachoCore.Utils
                     LastUpdated = DateTime.UtcNow;
                     var revoked = new HashSet<string> ();
                     var snList = NachoPlatformBinding.Crypto.CrlGetRevoked (Crl, null);
-                    foreach (var sn in snList) {
-                        revoked.Add (sn);
+                    if (null != snList) {
+                        foreach (var sn in snList) {
+                            revoked.Add (sn);
+                        }
+                        Revoked = revoked;
+                    } else {
+                        Log.Error (Log.LOG_PUSH, "Unable to parse CRL for {0}", Url);
                     }
-                    Revoked = revoked;
                     Log.Info (Log.LOG_PUSH, "CRL pull response: statusCode={0}, content={1}", response.StatusCode, Crl);
                     return;
                 } else {
