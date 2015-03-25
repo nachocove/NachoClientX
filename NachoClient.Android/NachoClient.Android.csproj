@@ -373,6 +373,7 @@
     <Compile Include="NachoCore\Utils\ManageItems.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration10.cs" />
     <Compile Include="NachoCore\Utils\CrlMonitor.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration11.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

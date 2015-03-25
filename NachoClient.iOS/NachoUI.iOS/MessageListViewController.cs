@@ -40,6 +40,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        bool StatusIndCallbackIsSet = false;
+
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads);
@@ -49,7 +51,7 @@ namespace NachoClient.iOS
         {
             messageSource = new MessageTableViewSource ();
         }
-
+            
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -131,14 +133,26 @@ namespace NachoClient.iOS
             searchResultsSource.SetEmailMessages (searchResultsMessages);
             searchResultsSource.owner = this;
             searchDisplayController.SearchResultsSource = searchResultsSource;
+            searchDisplayController.SearchResultsTableView.RowHeight = 126;
 
             View.AddSubview (searchBar);
 
             Util.ConfigureNavBar (false, this.NavigationController);
 
+            SetRowHeight ();
+
+
+            StatusIndCallbackIsSet = true;
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Load when view becomes visible
             threadsNeedsRefresh = true;
+        }
+
+        protected virtual void SetRowHeight()
+        {
+            TableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight =  MessageTableViewSource.NORMAL_ROW_HEIGHT;
         }
 
         protected void refreshCallback (object sender)
@@ -253,6 +267,10 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
+            if (!StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+
             // TODO: Figure this out
             // When this view is loaded directly from the tab bar,
             // the first time the view is displayed, the content
@@ -265,7 +283,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             NavigationItem.Title = messageSource.GetDisplayName ();
 
@@ -275,10 +292,18 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+            if (this.IsViewLoaded && null == this.NavigationController) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -295,7 +320,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
-                UpdateSearchResultsFromServer (s.Status.GetValue<List<McEmailMessageThread>> ());
+                UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
             }
         }
 
@@ -528,9 +553,16 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void UpdateSearchResultsFromServer (List<McEmailMessageThread> list)
+        protected void UpdateSearchResultsFromServer (List<NcEmailMessageIndex> indexList)
         {
-            searchResultsMessages.UpdateServerMatches (list);
+            var threadList = new List<McEmailMessageThread> ();
+            foreach (var i in indexList) {
+                var thread = new McEmailMessageThread ();
+                thread.FirstMessageId = i.Id;
+                thread.MessageCount = 1;
+                threadList.Add (thread);
+            }
+            searchResultsMessages.UpdateServerMatches (threadList);
             List<int> adds;
             List<int> deletes;
             searchResultsSource.RefreshEmailMessages (out adds, out deletes);

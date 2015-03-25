@@ -18,9 +18,7 @@ namespace NachoCore
         public NachoEmailMessages (McFolder folder)
         {
             this.folder = folder;
-            List<int> adds;
-            List<int> deletes;
-            Refresh (out adds, out deletes);
+            threadList = new List<McEmailMessageThread>();
         }
 
         public bool Refresh (out List<int> adds, out List<int> deletes)

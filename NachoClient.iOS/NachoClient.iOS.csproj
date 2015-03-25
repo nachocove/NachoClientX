@@ -1287,6 +1287,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CrlMonitor.cs">
       <Link>NachoCore\Utils\CrlMonitor.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
+      <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
