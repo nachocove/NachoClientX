@@ -779,7 +779,6 @@ namespace NachoClient.iOS
                 // called if server name is wrong
                 // cancel should call "exit program, enter new server name should be updated server
 
-                Util.GetActiveTabBar ().SetSettingsBadge (true);
                 LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
 
                 var Mo = NcModel.Instance;
@@ -796,7 +795,6 @@ namespace NachoClient.iOS
                     var parent = (UIAlertView)a;
                     if (b.ButtonIndex == 0) {
 
-                        Util.GetActiveTabBar ().SetSettingsBadge (false);
                         LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
 
                         var txt = parent.GetTextField (0).Text;
@@ -861,7 +859,6 @@ namespace NachoClient.iOS
 
         protected void DisplayCredentialsFixView ()
         {
-            Util.GetActiveTabBar ().SetSettingsBadge (true);
             LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
 
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);

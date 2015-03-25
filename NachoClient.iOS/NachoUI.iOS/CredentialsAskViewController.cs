@@ -165,7 +165,6 @@ namespace NachoClient.iOS
                     BackEnd.Instance.CredResp(UsersAccount.Id);
                     View.EndEditing(true);
                     DismissViewController(true, null);
-                    this.sendersTabBar.SetSettingsBadge(false);
                     LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
                 }else{
                     errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
@@ -283,7 +282,6 @@ namespace NachoClient.iOS
         public void AcceptCertificate ()
         {
             NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
-            Util.GetActiveTabBar().SetSettingsBadge(false);
             LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
             View.EndEditing(true);
             DismissViewController(true, null);

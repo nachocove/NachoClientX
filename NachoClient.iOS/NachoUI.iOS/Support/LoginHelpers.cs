@@ -39,6 +39,11 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "SetDoesBackEndHaveIssues: {0}={1}", accountId, toWhat);
             NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "doesBackEndHaveIssues", toWhat);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_UserInterventionFlagChanged),
+                Account = McAccount.QueryById<McAccount> (accountId),
+                Tokens = new string[] { DateTime.Now.ToString () },
+            });
         }
 
         static public bool DoesBackEndHaveIssues (int accountId)
