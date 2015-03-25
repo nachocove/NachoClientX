@@ -255,10 +255,10 @@ namespace NachoClient.iOS
                 NcApplication.Instance.MarkStartup ();
             }
             // if not done removing account, finish up 
-            int AccountId = McAccountHandler.Instance.GetRemovingAccountIdFromFile ();
+            int AccountId = NcAccountHandler.Instance.GetRemovingAccountIdFromFile ();
             if (AccountId > 0 ) {
                 Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
-                McAccountHandler.Instance.RemoveAccountDBAndFilesForId (AccountId);
+                NcAccountHandler.Instance.RemoveAccountDBAndFilesForId (AccountId);
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");

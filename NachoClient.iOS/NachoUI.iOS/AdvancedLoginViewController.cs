@@ -352,7 +352,7 @@ namespace NachoClient.iOS
             // Segues to LaunchViewController
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
             Action action = () => {
-                McAccountHandler.Instance.RemoveAccount ();
+                NcAccountHandler.Instance.RemoveAccount ();
                 InvokeOnMainThread (() => {
                     // go back to main screen
                     var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
@@ -381,7 +381,7 @@ namespace NachoClient.iOS
             if (freshAccount) {
                 Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                McAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
+                NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
                 NcAssert.True (IsNcAppicationAccountSet ());
                 RefreshTheAccount ();
             } 

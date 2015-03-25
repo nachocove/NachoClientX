@@ -1293,8 +1293,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
       <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccountHandler.cs">
-      <Link>NachoCore\Model\McAccountHandler.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
+      <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

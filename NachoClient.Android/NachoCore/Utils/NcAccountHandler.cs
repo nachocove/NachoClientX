@@ -9,24 +9,24 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McAccountHandler
+    public class NcAccountHandler
     {
-        private static volatile McAccountHandler instance;
+        private static volatile NcAccountHandler instance;
         private static object syncRoot = new Object ();
 
-        public static McAccountHandler Instance {
+        public static NcAccountHandler Instance {
             get {
                 if (instance == null) {
                     lock (syncRoot) {
                         if (instance == null) {
-                            instance = new McAccountHandler ();
+                            instance = new NcAccountHandler ();
                         }
                     }
                 }
                 return instance; 
             }
         }
-        public McAccountHandler ()
+        public NcAccountHandler ()
         {
         }
 

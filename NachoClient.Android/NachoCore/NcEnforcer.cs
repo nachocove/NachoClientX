@@ -44,7 +44,7 @@ namespace NachoCore
             if (Keychain.Instance.HasKeychain ()) {
                 Keychain.Instance.DeletePassword (cred.Id);
             }
-            McAccountHandler.Instance.RemoveAccount ();
+            NcAccountHandler.Instance.RemoveAccount ();
             return Device.Instance.Wipe (cred.Username, cred.GetPassword (), url, protoVersion);
         }
     }
