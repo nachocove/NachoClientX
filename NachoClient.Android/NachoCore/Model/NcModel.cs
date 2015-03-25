@@ -70,6 +70,8 @@ namespace NachoCore.Model
 
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
+        private const string KRemovingAccountLockFile = "removing_account_lockfile";
+
 
         public string DbFileName { set; get; }
 
@@ -138,6 +140,16 @@ namespace NachoCore.Model
         public string GetFileDirPath (int accountId, string segment)
         {
             return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
+        }
+
+        public string GetAccountDirPath (int accountId)
+        {
+            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString ());
+        }
+
+        public string GetRemovingAccounLockFilePath ()
+        {
+            return Path.Combine (Documents, KRemovingAccountLockFile);
         }
 
         public string GetIndexPath (int accountId)

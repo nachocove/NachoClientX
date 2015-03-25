@@ -1001,11 +1001,10 @@ namespace NachoClient.iOS
         {
             string AccountIdString;
             int AccountId = 0;
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            var RemovingAccountFile = Path.Combine (documents, "removing-account_id");
-            if (File.Exists (RemovingAccountFile)) {
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccounLockFilePath ();
+            if (File.Exists (RemovingAccountLockFile)) {
                 // Get the account id from the file
-                using (var stream = new FileStream (RemovingAccountFile, FileMode.Open, FileAccess.Read)) {
+                using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Open, FileAccess.Read)) {
                     using (var reader = new StreamReader (stream)) {
                         AccountIdString = reader.ReadLine ();
                         int.TryParse(AccountIdString, out AccountId);
@@ -1018,9 +1017,8 @@ namespace NachoClient.iOS
         // write the removing AccountId to file
         public void WriteRemovingAccountIdToFile (int AccountId)
         {
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            var RemovingAccountFile = Path.Combine (documents, "removing-account_id");
-            using (var stream = new FileStream (RemovingAccountFile, FileMode.Create, FileAccess.Write)) {
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccounLockFilePath ();
+            using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Create, FileAccess.Write)) {
                 using (var writer = new StreamWriter (stream)) {
                     writer.WriteLine (AccountId);
                 }
@@ -1030,11 +1028,10 @@ namespace NachoClient.iOS
         // delete the file 
         public bool DeleteRemovingAccounFile ()
         {
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            var RemovingAccountFile = Path.Combine (documents, "removing-account_id");
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccounLockFilePath ();
             try
             {
-                File.Delete(RemovingAccountFile);
+                File.Delete(RemovingAccountLockFile);
                 return true;
             }
             catch (IOException)
@@ -1067,7 +1064,9 @@ namespace NachoClient.iOS
                 }
                 Log.Info (Log.LOG_UI, "RemoveAccount: removed McAccount for id {0}", Id);
                 var account = McAccount.QueryById<McAccount> (Id);
-                account.Delete ();
+                if (account != null){
+                    account.Delete ();
+                }
             });
 
             Log.Info (Log.LOG_UI, "RemoveAccount: removed db data for account {0}", Id);
@@ -1080,6 +1079,8 @@ namespace NachoClient.iOS
         public void RemoveAccountFiles(int Id)
         {
             Log.Info (Log.LOG_UI, "RemoveAccount: removing file data for account {0}", Id);
+            String AccountDirPath = NcModel.Instance.GetAccountDirPath (Id);
+            Directory.Delete(AccountDirPath, true);
         }
 
         // remove all the db data and files referenced by the account related to the given id
