@@ -205,7 +205,7 @@ namespace NachoCore.Utils
         public void PostEvent (Event smEvent)
         {
             BuildEventDicts ();
-
+            bool addFailed = false;
             lock (LockObj) {
                 // Enter critical section.
                 if ((uint)SmEvt.Sequence == smEvent.EventCode) {
@@ -215,7 +215,12 @@ namespace NachoCore.Utils
                     }
                 } else {
                     NcAssert.True (null == smEvent.Sequence);
-                    EventQ.Add (smEvent);
+                    if (!EventQ.TryAdd (smEvent)) {
+                        addFailed = true;
+                    }
+                }
+                if (addFailed) {
+                    Log.Error (Log.LOG_STATE, "EventQ.TryAdd failed");
                 }
                 if (InProcess) {
                     // If another thread is already working on this SM, then let it process

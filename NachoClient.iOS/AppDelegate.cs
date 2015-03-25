@@ -940,7 +940,7 @@ namespace NachoClient.iOS
                     }
                     UIApplication.SharedApplication.ScheduleLocalNotification (notif);
                 } catch (Exception e) {
-                    Log.Error ("Cannot create local notification - {0}", e);
+                    Log.Error (Log.LOG_LIFECYCLE, "Cannot create local notification - {0}", e);
                 }
                 message.HasBeenNotified = true;
                 message.Update ();
