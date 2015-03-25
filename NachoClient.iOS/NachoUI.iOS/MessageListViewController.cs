@@ -40,6 +40,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        bool StatusIndCallbackIsSet = false;
+
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads);
@@ -139,6 +141,8 @@ namespace NachoClient.iOS
 
             SetRowHeight ();
 
+
+            StatusIndCallbackIsSet = true;
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Load when view becomes visible
@@ -263,6 +267,10 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
+            if (!StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+
             // TODO: Figure this out
             // When this view is loaded directly from the tab bar,
             // the first time the view is displayed, the content
@@ -287,6 +295,15 @@ namespace NachoClient.iOS
             CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+            if (this.IsViewLoaded && null == this.NavigationController) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
