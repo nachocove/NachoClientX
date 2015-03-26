@@ -376,8 +376,8 @@
     <Compile Include="NachoCore\Utils\ManageItems.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration10.cs" />
     <Compile Include="NachoCore\Model\McSQLiteMaster.cs" />
-    <Compile Include="NachoCore\Model\Migration\NcMigration11.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration12.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration13.cs" />
     <Compile Include="NachoCore\Utils\NcAccountHandler.cs"/>
   </ItemGroup>
   <ItemGroup>

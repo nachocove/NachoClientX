@@ -1288,11 +1288,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration10.cs">
       <Link>NachoCore\Model\Migration\NcMigration10.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
-      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
       <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration13.cs">
+      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
       <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
