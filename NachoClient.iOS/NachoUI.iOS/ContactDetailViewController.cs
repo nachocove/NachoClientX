@@ -631,7 +631,7 @@ namespace NachoClient.iOS
                 notesView.Hidden = true;
                 break;
             case 1:
-                editContact.Enabled = true;
+                editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = true;
                 interactionsTableView.Hidden = false;
                 notesView.Hidden = true;
