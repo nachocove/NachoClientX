@@ -25,7 +25,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchLink>None</MtouchLink>
     <MtouchDebug>true</MtouchDebug>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>i386</MtouchArch>
@@ -52,7 +52,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
     <CodesignKey>iPhone Developer</CodesignKey>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>

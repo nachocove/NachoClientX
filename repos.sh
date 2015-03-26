@@ -10,6 +10,7 @@ SwipeViewBinding
 UIImageEffects
 SWRevealViewController
 SWRevealViewControllerBinding
+ios-openssl
 NachoPlatformBinding
 NachoUIMonitorBinding
 bc-csharp
