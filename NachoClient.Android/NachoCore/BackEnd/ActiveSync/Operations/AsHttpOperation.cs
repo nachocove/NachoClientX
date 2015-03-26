@@ -80,6 +80,7 @@ namespace NachoCore.ActiveSync
         private const int KDefaultRetries = 8;
         private const int KConsec401ThenReDisc = 5;
         private const string KLoadBytes = "LoadBytes";
+        private const string KToWbxmlStream = "ToWbxmlStream";
         private string CommandName;
 
         // HttpClient factory stuff.
@@ -162,6 +163,7 @@ namespace NachoCore.ActiveSync
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KLoadBytes);
+            NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
             int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", 
@@ -291,7 +293,9 @@ namespace NachoCore.ActiveSync
                     Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * TimeoutExpander));
                 }
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
-                AttemptHttp ();
+                // Remove NcTask.Run once #1313 solved.
+                // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
+                NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
@@ -395,9 +399,17 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
-                    //Log.Info (Log.LOG_HTTP, "CreateHttpRequest: create stream (#1313)");
+                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
+                        (state) => {
+                            if (!cToken.IsCancellationRequested) {
+                                Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
+                            }
+                        },
+                        cToken, 10 * 1000, System.Threading.Timeout.Infinite);
+                    var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
-                    //Log.Info (Log.LOG_HTTP, "CreateHttpRequest: stream created (#1313)");
+                    capture.Stop ();
+                    diaper.Dispose ();
                     var content = new StreamContent (stream);
                     request.Content = content;
                     request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
@@ -441,20 +453,22 @@ namespace NachoCore.ActiveSync
             }
 
             HttpRequestMessage request = null;
+            // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+            // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
+            // change the value once you start using the client. So we use our own per-request timeout.
+            // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
+            TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
+                System.Threading.Timeout.InfiniteTimeSpan);
+            
             if (!CreateHttpRequest (out request, cToken)) {
                 Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
+                CancelTimeoutTimer ("Intentional");
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
                 return;
             }
             HttpResponseMessage response = null;
-
             try {
                 ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
-                // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
-                // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
-                // change the value once you start using the client. So we use our own per-request timeout.
-                TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
-                    System.Threading.Timeout.InfiniteTimeSpan);
                 try {
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
