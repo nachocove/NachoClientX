@@ -330,7 +330,10 @@ namespace NachoClient
 
         public static UIColor ColorForUser (int index)
         {
-            NcAssert.True (0 < index);
+            if (0 > index) {
+                NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_UI, "ColorForUser not set");
+                index = 1;
+            }
             return colors [index];
         }
 
