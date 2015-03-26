@@ -170,9 +170,11 @@ namespace NachoClient.iOS
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox ();
                         inbox.StartSync ();
+                        completionHandler (UIBackgroundFetchResult.NoData);
                     } else {
                         if (doingPerformFetch) {
                             Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
+                            completionHandler (UIBackgroundFetchResult.NoData);
                         } else {
                             PerformFetch (application, completionHandler);
                             return; // completeHandler is called at the completion of perform fetch.
@@ -180,8 +182,6 @@ namespace NachoClient.iOS
                     }
                 });
             }
-            // Actually, we don't really know if we have data. Fudge it.
-            completionHandler (UIBackgroundFetchResult.NoData);
         }
 
         /// This is not a service but rather initialization of some native
