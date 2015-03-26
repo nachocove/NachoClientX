@@ -406,8 +406,7 @@ namespace NachoCore.ActiveSync
                             }
                         },
                         cToken, 10 * 1000, System.Threading.Timeout.Infinite);
-                    var capture = NcCapture.Create (KLoadBytes);
-                    capture.Start ();
+                    var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
                     capture.Stop ();
                     diaper.Dispose ();
