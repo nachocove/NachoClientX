@@ -75,7 +75,7 @@
     <WarningLevel>4</WarningLevel>
     <MtouchDebug>true</MtouchDebug>
     <ConsolePause>false</ConsolePause>
-    <CodesignKey>iPhone Developer: Azim Ozakil (B6CQ87967C)</CodesignKey>
+    <CodesignKey>iPhone Developer</CodesignKey>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>west</MtouchI18n>
@@ -95,6 +95,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignProvision>d93676d2-c917-475a-84f9-c718bcc4f666</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -1288,7 +1289,7 @@
       <Link>NachoCore\Model\Migration\NcMigration10.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
-      <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
+      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
       <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>

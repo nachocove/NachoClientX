@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
-    public class McSQLiteMaster : McAbstrObject, IFilesViewItem
+    public class McSQLiteMaster
     {
 //        CREATE TABLE sqlite_master (
 //            type TEXT,
@@ -17,7 +17,6 @@ namespace NachoCore.Model
 //            rootpage INTEGER,
 //            sql TEXT
 //        );
-
         public string type { get; set; }
 
         public string name { get; set; }
@@ -27,9 +26,7 @@ namespace NachoCore.Model
         public int rootpage { get; set; }
 
         public string sql { get; set; }
-
-        public string DisplayName { get; set; }
-     
+             
         public static List<McSQLiteMaster> QueryAllTables ()
         {
             var all = NcModel.Instance.Db.Query<McSQLiteMaster> ("SELECT * FROM sqlite_master WHERE type= ?", "table");

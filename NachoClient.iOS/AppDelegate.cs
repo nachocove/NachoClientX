@@ -254,12 +254,8 @@ namespace NachoClient.iOS
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
             }
-            // if not done removing account, finish up 
-            int AccountId = NcAccountHandler.Instance.GetRemovingAccountIdFromFile ();
-            if (AccountId > 0 ) {
-                Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
-                NcAccountHandler.Instance.RemoveAccountDBAndFilesForId (AccountId);
-            }
+
+            NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;

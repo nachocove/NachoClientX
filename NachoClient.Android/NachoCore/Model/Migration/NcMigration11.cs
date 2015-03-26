@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace NachoCore.Model
 {
-    public class NcMigration11 : NcMigration
+    public class NcMigration13 : NcMigration
     {
         public override int GetNumberOfObjects ()
         {

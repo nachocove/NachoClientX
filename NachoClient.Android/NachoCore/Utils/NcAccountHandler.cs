@@ -6,6 +6,7 @@ using System.IO;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.Model
 {
@@ -13,6 +14,9 @@ namespace NachoCore.Model
     {
         private static volatile NcAccountHandler instance;
         private static object syncRoot = new Object ();
+        public static string[] exemptTables = new string[]  { 
+            "McAccount", "sqlite_sequence", "McMigration",
+        };
 
         public static NcAccountHandler Instance {
             get {
@@ -30,7 +34,6 @@ namespace NachoCore.Model
         {
         }
 
-        // TODO this needs to get moved out of AppDelegate.
         public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
         {
             NcModel.Instance.RunInTransaction (() => {
@@ -58,41 +61,10 @@ namespace NachoCore.Model
             });
         }
 
-        // TODO : keeping these here for now, till I confirm that we want to user userdefaults for saving this value
-
-        // Get the AccountId for the account being removed
-        public int GetRemovingAccountIdFromFile ()
-        {
-            string AccountIdString;
-            int AccountId = 0;
-            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccounLockFilePath ();
-            if (File.Exists (RemovingAccountLockFile)) {
-                // Get the account id from the file
-                using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Open, FileAccess.Read)) {
-                    using (var reader = new StreamReader (stream)) {
-                        AccountIdString = reader.ReadLine ();
-                        int.TryParse(AccountIdString, out AccountId);
-                    }
-                }
-            }
-            return AccountId;
-        }
-
-        // write the removing AccountId to file
-        public void WriteRemovingAccountIdToFile (int AccountId)
-        {
-            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccounLockFilePath ();
-            using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Create, FileAccess.Write)) {
-                using (var writer = new StreamWriter (stream)) {
-                    writer.WriteLine (AccountId);
-                }
-            }
-        }
-
         // delete the file 
-        public bool DeleteRemovingAccounFile ()
+        public bool DeleteRemovingAccountFile ()
         {
-            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccounLockFilePath ();
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
             try
             {
                 File.Delete(RemovingAccountLockFile);
@@ -105,62 +77,63 @@ namespace NachoCore.Model
         }
 
         // remove all the db data referenced by the account related to the given id
-        public void RemoveAccountDBData(int Id)
+        public void RemoveAccountDBData(int AccountId)
         {
-            Log.Info (Log.LOG_UI, "RemoveAccount: removing db data for account {0}", Id);
+            Log.Info (Log.LOG_DB, "RemoveAccount: removing db data for account {0}", AccountId);
             List<string> DeleteStatements = new List<string> ();
 
             List<McSQLiteMaster> AllTables = McSQLiteMaster.QueryAllTables ();
             foreach (McSQLiteMaster Table in AllTables) {
-                List<SQLite.SQLiteConnection.ColumnInfo> Columns = NcModel.Instance.Db.GetTableInfo (Table.name);
-                foreach (SQLite.SQLiteConnection.ColumnInfo Column in Columns) {
-                    if (Column.Name == "AccountId") {
-                        Log.Info (Log.LOG_UI, "RemoveAccount: Will be removing rows from Table {0} for account {1}", Table.name, Id);
+                if (!((IList<string>) exemptTables).Contains (Table.name)) {
+                    Log.Info (Log.LOG_DB, "RemoveAccount: Will be removing rows from Table {0} for account {1}", Table.name, AccountId);
+                    Regex r = new Regex("^[a-zA-Z0-9]*$");
+                    if (r.IsMatch (Table.name)) {
                         DeleteStatements.Add ("DELETE FROM " + Table.name + " WHERE AccountId = ?");
-                        break;
+                    } else {
+                        Log.Warn (Log.LOG_DB, "RemoveAccount: Table name '{0}' is not alphanumeric. Possible SQL Injection. Rejecting....", Table.name);
                     }
                 }
             }
-            Log.Info (Log.LOG_UI, "RemoveAccount: removing all table rows for account {0}", Id);
+            Log.Info (Log.LOG_DB, "RemoveAccount: removing all table rows for account {0}", AccountId);
             NcModel.Instance.RunInTransaction (() => {
                 foreach (string stmt in DeleteStatements) {
-                    NcModel.Instance.Db.Execute (stmt, Id);
+                    NcModel.Instance.Db.Execute (stmt, AccountId);
                 }
-                Log.Info (Log.LOG_UI, "RemoveAccount: removed McAccount for id {0}", Id);
-                var account = McAccount.QueryById<McAccount> (Id);
+                Log.Info (Log.LOG_DB, "RemoveAccount: removed McAccount for id {0}", AccountId);
+                var account = McAccount.QueryById<McAccount> (AccountId);
                 if (account != null){
                     account.Delete ();
                 }
             });
 
-            Log.Info (Log.LOG_UI, "RemoveAccount: removed db data for account {0}", Id);
+            Log.Info (Log.LOG_DB, "RemoveAccount: removed db data for account {0}", AccountId);
 
             //Log.Info (Log.LOG_UI, "RemoveAccount: McAccount column is {0}", CI.Name);
             //SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY 1
         }
 
         // remove all the files referenced by the account related to the given id
-        public void RemoveAccountFiles(int Id)
+        public void RemoveAccountFiles(int AccountId)
         {
-            Log.Info (Log.LOG_UI, "RemoveAccount: removing file data for account {0}", Id);
-            String AccountDirPath = NcModel.Instance.GetAccountDirPath (Id);
+            Log.Info (Log.LOG_DB, "RemoveAccount: removing file data for account {0}", AccountId);
+            String AccountDirPath = NcModel.Instance.GetAccountDirPath (AccountId);
             Directory.Delete(AccountDirPath, true);
         }
 
         // remove all the db data and files referenced by the account related to the given id
-        public void RemoveAccountDBAndFilesForId(int Id)
+        public void RemoveAccountDBAndFilesForAccountId(int AccountId)
         {
             // delete all DB data for account id - is db running?
-            RemoveAccountDBData (Id);
+            RemoveAccountDBData (AccountId);
 
             // delete all file system data for account id
-            RemoveAccountFiles (Id);
+            RemoveAccountFiles (AccountId);
 
             //BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
             // if there is only one account. TODO: deal with multi-account
             NcApplication.Instance.Account = null;
             // if successful, unmark account is being removed since it is completed.
-            DeleteRemovingAccounFile ();
+            DeleteRemovingAccountFile ();
         }
 
         // TODO - this need to handle multiple accounts
@@ -168,7 +141,7 @@ namespace NachoCore.Model
         {
             if (null != NcApplication.Instance.Account) {
                 // mark account is being removed so that we don't do anything else other than the remove till it is completed.
-                WriteRemovingAccountIdToFile (NcApplication.Instance.Account.Id);
+                NcModel.Instance.WriteRemovingAccountIdToFile (NcApplication.Instance.Account.Id);
 
                 Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
                 BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
@@ -180,7 +153,7 @@ namespace NachoCore.Model
                     Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
                 }
 
-                RemoveAccountDBAndFilesForId (NcApplication.Instance.Account.Id);
+                RemoveAccountDBAndFilesForAccountId (NcApplication.Instance.Account.Id);
 
                 if (stopStartServices) {
                     NcApplication.Instance.StartBasalServices ();

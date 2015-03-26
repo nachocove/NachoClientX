@@ -147,9 +147,51 @@ namespace NachoCore.Model
             return Path.Combine (Documents, KFilesPathSegment, accountId.ToString ());
         }
 
-        public string GetRemovingAccounLockFilePath ()
+        public string GetRemovingAccountLockFilePath ()
         {
             return Path.Combine (Documents, KRemovingAccountLockFile);
+        }
+
+        // Get the AccountId for the account being removed
+        public int GetRemovingAccountIdFromFile ()
+        {
+            string AccountIdString;
+            int AccountId = 0;
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
+            if (File.Exists (RemovingAccountLockFile)) {
+                // Get the account id from the file
+                try{
+                    using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Open, FileAccess.Read)) {
+                        using (var reader = new StreamReader (stream)) {
+                            AccountIdString = reader.ReadLine ();
+                            bool result = int.TryParse(AccountIdString, out AccountId);
+                            if (!result) {                     
+                                Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to parse AccountId from file.");
+                            }
+                        }
+                    }
+                }
+                catch (IOException e) {
+                    Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to read RemoveAccountLockFile.");
+                }
+            }
+            return AccountId;
+        }
+
+        // write the removing AccountId to file
+        public void WriteRemovingAccountIdToFile (int AccountId)
+        {
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
+            try{
+                using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Create, FileAccess.Write)) {
+                    using (var writer = new StreamWriter (stream)) {
+                        writer.WriteLine (AccountId);
+                    }
+                }
+            }
+            catch (IOException e) {
+                Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.");
+            }
         }
 
         public string GetIndexPath (int accountId)
