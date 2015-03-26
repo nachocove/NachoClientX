@@ -120,11 +120,13 @@ namespace NachoClient.iOS
                 NcMigration.NumberOfMigrations);
             MigrationMessageTextView.BackgroundColor = A.Color_NachoGreen;
             MigrationMessageTextView.TextAlignment = UITextAlignment.Center;
+            MigrationMessageTextView.Hidden = (0 == NcMigration.NumberOfMigrations);
 
             MigrationProgressBar = new UIProgressView (frame);
             ViewFramer.Create (MigrationProgressBar).Y (halfHeight + 10.0f).AdjustHeight (20.0f);
             MigrationProgressBar.ProgressTintColor = A.Color_NachoYellow;
             MigrationProgressBar.TrackTintColor = A.Color_NachoIconGray;
+            MigrationProgressBar.Hidden = (0 == NcMigration.NumberOfMigrations);
             this.Add (MigrationMessageTextView);
             this.Add (MigrationProgressBar);
         }
