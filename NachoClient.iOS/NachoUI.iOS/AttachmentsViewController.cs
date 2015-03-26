@@ -417,7 +417,9 @@ namespace NachoClient.iOS
                 return;
             }
 
-            string token = PlatformHelpers.DownloadAttachment (a);
+            // FIXME: Better status reporting
+            var nr = PlatformHelpers.DownloadAttachment (a);
+            var token = nr.GetValue<String> ();
             if (null == token) {
                 UIAlertView alert = new UIAlertView (
                                         "Download Error", 
