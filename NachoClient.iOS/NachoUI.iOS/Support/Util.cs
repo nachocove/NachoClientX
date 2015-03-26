@@ -1129,6 +1129,29 @@ namespace NachoClient
             return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
         }
 
+        /// <summary>
+        /// Set the minimum and maximum dates for a date picker.  By default, the range is from ten years
+        /// in the past to 100 years in the future.  But extend that range as necessary so it includes the
+        /// year surrounding a given date.
+        /// </summary>
+        public static void ConstrainDatePicker (UIDatePicker datePicker, DateTime referenceDate)
+        {
+            DateTime pickerMin = DateTime.UtcNow.AddYears (-10);
+            DateTime pickerMax = DateTime.UtcNow.AddYears (100);
+            if (DateTime.MinValue != referenceDate) {
+                DateTime referenceMin = referenceDate.AddYears (-1);
+                if (referenceMin < pickerMin) {
+                    pickerMin = referenceMin;
+                }
+                DateTime referenceMax = referenceDate.AddYears (1);
+                if (referenceMax > pickerMax) {
+                    pickerMax = referenceMax;
+                }
+            }
+            datePicker.MinimumDate = pickerMin.ToNSDate ();
+            datePicker.MaximumDate = pickerMax.ToNSDate ();
+        }
+
         public static string PrettyPointF (CGPoint p)
         {
             return String.Format ("({0},{1})", p.X, p.Y);
