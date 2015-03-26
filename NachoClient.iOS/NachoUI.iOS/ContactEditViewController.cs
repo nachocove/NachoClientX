@@ -1959,6 +1959,8 @@ namespace NachoClient.iOS
 
                 datePicker = new UIDatePicker (new CGRect (0, 0, owner.View.Frame.Width, 216));
                 datePicker.Mode = UIDatePickerMode.Date;
+                // This date picker is used to select birthdays, so set the minimum date to 110 years in the past.
+                Util.ConstrainDatePicker (datePicker, DateTime.UtcNow.AddYears (-110));
                 dateView.AddSubview (datePicker);
 
                 trashButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));

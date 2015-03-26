@@ -1010,6 +1010,7 @@ namespace NachoClient.iOS
             }
             startDate = c.StartTime;
             startDatePicker.Date = c.StartTime.ToNSDate ();
+            Util.ConstrainDatePicker (startDatePicker, startDate);
             startDateLabelView.SizeToFit ();
             startDateLabelView.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -1027,6 +1028,7 @@ namespace NachoClient.iOS
                 endDate = c.EndTime;
                 endDatePicker.Date = c.EndTime.ToNSDate ();
             }
+            Util.ConstrainDatePicker (endDatePicker, endDate);
             endDateLabelView.SizeToFit ();
             endDateLabelView.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
