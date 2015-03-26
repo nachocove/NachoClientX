@@ -4,7 +4,7 @@ PROJECT_ROOT=.
 PROJECT=$(PROJECT_ROOT)/NachoPlatform.xcodeproj
 TARGET=NachoPlatform
 
-all: libNachoPlatformSDK.a
+all: libNachoPlatformSDK.a libcrypto.a
 
 gen_srcs: src/tld-canon.h
 
@@ -29,6 +29,9 @@ libNachoPlatform-arm64.a: gen_srcs
 
 libNachoPlatformSDK.a: libNachoPlatform-i386.a libNachoPlatform-armv7.a libNachoPlatform-arm64.a
 	lipo -create -output $@ $^
+
+libcrypto.a: 
+	cp ../../ios-openssl/lib/libcrypto.a .
 
 clean:
 	rm -fr build

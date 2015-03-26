@@ -179,6 +179,17 @@ namespace NachoClient.iOS
 //                AppDelegate.TestScheduleCalendarNotification ();
 //            };
 //            yOffset = testCalendarNotificationButton.Frame.Bottom;
+//
+//            var testUserNotificationButton = new UIButton (UIButtonType.RoundedRect);
+//            testUserNotificationButton.SetTitle ("Test user error notification", UIControlState.Normal);
+//            testUserNotificationButton.BackgroundColor = UIColor.Red;
+//            testUserNotificationButton.Frame = new CGRect (33, yOffset + 12, 284, 30);
+//            contentView.AddSubview (testUserNotificationButton);
+//            testUserNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
+//                var flip = !LoginHelpers.DoesBackEndHaveIssues (NcApplication.Instance.Account.Id);
+//                LoginHelpers.SetDoesBackEndHaveIssues (NcApplication.Instance.Account.Id, flip);
+//            };
+//            yOffset = testUserNotificationButton.Frame.Bottom;
         }
 
         protected override void ConfigureAndLayout ()

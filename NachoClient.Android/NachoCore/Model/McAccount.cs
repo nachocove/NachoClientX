@@ -24,6 +24,11 @@ namespace NachoCore.Model
             GoogleExchange,
         };
 
+        public McAccount ()
+        {
+            DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
+        }
+
         public AccountTypeEnum AccountType { get; set; }
 
         public AccountServiceEnum AccountService { get; set; }
@@ -40,8 +45,10 @@ namespace NachoCore.Model
 
         public string Culture { get; set; }
 
+        // Default is OneMonth_5. The only other supported valued is SyncAll_0.
         public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncEmail { get; set; }
 
+        // DaysToSyncCalendar NYI.
         public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncCalendar { get; set; }
 
         public int PreferredConferenceId { get; set; }

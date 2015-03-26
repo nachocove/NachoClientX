@@ -504,7 +504,7 @@ namespace NachoCore.ActiveSync
                     propUint.SetValue (targetObj, 0u);
                 } else {
                     propEnum.SetValue (targetObj, McPolicy.MaxEmailTruncationSizeValue.PerSizeBytes);
-                    propUint.SetValue (targetObj, numValue);
+                    propUint.SetValue (targetObj, (uint)numValue);
                 }
             } catch (Exception ex) {
                 Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Bad value {0} or property {1}: {2}.", value, targetProp, 

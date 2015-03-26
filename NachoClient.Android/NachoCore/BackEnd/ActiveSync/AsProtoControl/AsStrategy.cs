@@ -77,6 +77,7 @@ namespace NachoCore.ActiveSync
 
             public static int[,] Ladder;
 
+            /* We achived stability while using this setup. Going back to try the old graduated sync filter scheme.
             public static int[,] ProductionLadder = new int[,] {
                 // { Email, Cal, Contact, Action }
                 { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
@@ -87,6 +88,52 @@ namespace NachoCore.ActiveSync
                 }, {
                     (int)EmailEnum.All1m,
                     (int)CalEnum.All1m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                },
+            };
+            */
+
+            public static int[,] ProductionLadder = new int[,] {
+                // { Email, Cal, Contact, Action }
+                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
+                    (int)EmailEnum.Def1d,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.RicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
+                }, {
+                    (int)EmailEnum.Def3d,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.RicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
+                }, {
+                    (int)EmailEnum.Def1w,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.RicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk | (int)FlagEnum.IgnorePower
+                }, {
+                    (int)EmailEnum.Def2w,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.DefRicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk | (int)FlagEnum.IgnorePower
+                }, {
+                    (int)EmailEnum.All1m,
+                    (int)CalEnum.All1m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.All1m,
+                    (int)CalEnum.All3m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.AllInf,
+                    (int)CalEnum.All6m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.AllInf,
+                    (int)CalEnum.AllInf,
                     (int)ContactEnum.AllInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
                 },
@@ -257,6 +304,23 @@ namespace NachoCore.ActiveSync
                     Log.Info (Log.LOG_AS, "Strategy: CanAdvance: {0} still has {0} commands.", folder.ServerId, commands.Count);
                     return false;
                 }
+            }
+            // Would the next run take us beyond the configured email sync scope?
+            var account = McAccount.QueryById<McAccount> (accountId);
+            var nextEmail = Scope.EmailScope (rung + 1);
+            switch (account.DaysToSyncEmail) {
+            case Xml.Provision.MaxAgeFilterCode.OneMonth_5:
+                if (nextEmail == Scope.EmailEnum.AllInf) {
+                    Log.Info (Log.LOG_AS, "Strategy: CanAdvance: inhibiting advance past rung {0}", rung);
+                    return false;
+                }
+                break;
+            case Xml.Provision.MaxAgeFilterCode.SyncAll_0:
+                // No stopping needed!
+                break;
+            default:
+                Log.Error (Log.LOG_AS, "Strategy: CanAdvance: ignoring invalid account.DaysToSyncEmail {0}", account.DaysToSyncEmail);
+                break;
             }
             Log.Info (Log.LOG_AS, "Strategy: CanAdvance: true.");
             return true;

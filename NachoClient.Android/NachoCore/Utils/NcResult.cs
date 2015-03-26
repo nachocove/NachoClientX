@@ -167,6 +167,8 @@ namespace NachoCore.Utils
             Info_NetworkStatus,
             Info_PushAssistDeviceToken,
             Info_PushAssistClientToken,
+            Info_PushAssistArmed,
+            Info_UserInterventionFlagChanged,
         };
 
         public enum WhyEnum

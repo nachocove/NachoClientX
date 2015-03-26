@@ -214,7 +214,9 @@ namespace NachoClient.iOS
         private void StartDownload ()
         {
             MaybeRegisterStatusInd ();
-            downloadToken = PlatformHelpers.DownloadAttachment (attachment);
+            // FIXME: Better status reporting
+            var nr = PlatformHelpers.DownloadAttachment (attachment);
+            downloadToken = nr.GetValue<String> ();
             if (null == downloadToken) {
                 RefreshStatus ();
                 return;

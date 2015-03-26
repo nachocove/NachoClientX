@@ -171,8 +171,15 @@ namespace NachoClient.iOS
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox ();
                         inbox.StartSync ();
+                        completionHandler (UIBackgroundFetchResult.NoData);
                     } else {
-                        PerformFetch (application, completionHandler);
+                        if (doingPerformFetch) {
+                            Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
+                            completionHandler (UIBackgroundFetchResult.NoData);
+                        } else {
+                            PerformFetch (application, completionHandler);
+                            return; // completeHandler is called at the completion of perform fetch.
+                        }
                     }
                 });
             }
@@ -544,6 +551,8 @@ namespace NachoClient.iOS
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
         private Timer performFetchTimer = null;
+        private bool fetchComplete;
+        private bool pushAssistArmComplete;
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -557,8 +566,19 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
+                fetchComplete = true;
                 BadgeNotifUpdate ();
-                CompletePerformFetch ();
+                if (fetchComplete && pushAssistArmComplete) {
+                    CompletePerformFetch ();
+                }
+                break;
+
+            case NcResult.SubKindEnum.Info_PushAssistArmed:
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
+                pushAssistArmComplete = true;
+                if (fetchComplete && pushAssistArmComplete) {
+                    CompletePerformFetch ();
+                }
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
@@ -569,6 +589,7 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
+                BadgeNotifUpdate ();
                 CompletePerformFetch ();
                 break;
             }
@@ -582,26 +603,32 @@ namespace NachoClient.iOS
             });
         }
 
-        protected void CompletePerformFetchWithoutShutdown ()
+        protected void CleanupPerformFetchStates ()
         {
             performFetchTimer.Dispose ();
             performFetchTimer = null;
             NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
-            CompletionHandler (fetchResult);
             doingPerformFetch = false;
+        }
+
+        protected void CompletePerformFetchWithoutShutdown ()
+        {
+            CleanupPerformFetchStates ();
+            CompletionHandler (fetchResult);
         }
 
         protected void CompletePerformFetch ()
         {
-            CompletePerformFetchWithoutShutdown ();
+            CleanupPerformFetchStates ();
             FinalShutdown (null);
+            CompletionHandler (fetchResult);
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
             if (doingPerformFetch) {
-                Log.Error (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
+                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
             CompletionHandler = completionHandler;
@@ -623,6 +650,8 @@ namespace NachoClient.iOS
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
                 });
             }), null, KPerformFetchTimeoutSeconds * 1000, Timeout.Infinite);
+            fetchComplete = false;
+            pushAssistArmComplete = false;
             doingPerformFetch = true;
         }
 
@@ -753,7 +782,6 @@ namespace NachoClient.iOS
                 // called if server name is wrong
                 // cancel should call "exit program, enter new server name should be updated server
 
-                Util.GetActiveTabBar ().SetSettingsBadge (true);
                 LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
 
                 var Mo = NcModel.Instance;
@@ -770,7 +798,6 @@ namespace NachoClient.iOS
                     var parent = (UIAlertView)a;
                     if (b.ButtonIndex == 0) {
 
-                        Util.GetActiveTabBar ().SetSettingsBadge (false);
                         LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
 
                         var txt = parent.GetTextField (0).Text;
@@ -835,7 +862,6 @@ namespace NachoClient.iOS
 
         protected void DisplayCredentialsFixView ()
         {
-            Util.GetActiveTabBar ().SetSettingsBadge (true);
             LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
 
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
@@ -902,17 +928,23 @@ namespace NachoClient.iOS
                 if (!String.IsNullOrEmpty (subjectString)) {
                     subjectString += " ";
                 }
-                var notif = new UILocalNotification () {
-                    AlertAction = null,
-                    AlertTitle = fromString,
-                    AlertBody = subjectString,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
-                };
-                if (!soundExpressed) {
-                    notif.SoundName = UILocalNotification.DefaultSoundName;
-                    soundExpressed = true;
+
+                try {
+                    // nachocove/qa#188 - This is not a fix but trying to gather more information about this failure.
+                    var notif = new UILocalNotification () {
+                        AlertAction = null,
+                        AlertTitle = fromString,
+                        AlertBody = subjectString,
+                        UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
+                    };
+                    if (!soundExpressed) {
+                        notif.SoundName = UILocalNotification.DefaultSoundName;
+                        soundExpressed = true;
+                    }
+                    UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_LIFECYCLE, "Cannot create local notification - {0}", e);
                 }
-                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
                 message.HasBeenNotified = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");

@@ -279,9 +279,9 @@ namespace NachoClient.iOS
             item = FileFromIndexPath (tableView, indexPath);
 
             //Swipe view
-            var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.LeftSwipeActionButtons.Clear ();
-            view.RightSwipeActionButtons.Clear ();
+            var view = (SwipeActionView) cell.ViewWithTag (SWIPE_TAG);
+            view.ClearActions (SwipeSide.LEFT);
+            view.ClearActions (SwipeSide.RIGHT);
             view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
             view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
@@ -395,9 +395,8 @@ namespace NachoClient.iOS
                     downloaded = true;
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = true;
-
-                    view.LeftSwipeActionButtons.Clear ();
-                    view.RightSwipeActionButtons.Clear ();
+                    view.ClearActions (SwipeSide.LEFT);
+                    view.ClearActions (SwipeSide.RIGHT);
                     view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
                     view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
@@ -421,8 +420,8 @@ namespace NachoClient.iOS
                     break;
                 case McAbstrFileDesc.FilePresenceEnum.Partial:
                     vc.AttachmentAction (attachment.Id, cell);
-                    view.LeftSwipeActionButtons.Clear ();
-                    view.RightSwipeActionButtons.Clear ();
+                    view.ClearActions (SwipeSide.LEFT);
+                    view.ClearActions (SwipeSide.RIGHT);
                     view.SetAction (DOWNLOAD_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (PREVIEW_BUTTON, SwipeSide.LEFT);
 
@@ -444,8 +443,8 @@ namespace NachoClient.iOS
                     (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = false;
-                    view.LeftSwipeActionButtons.Clear ();
-                    view.RightSwipeActionButtons.Clear ();
+                    view.ClearActions (SwipeSide.LEFT);
+                    view.ClearActions (SwipeSide.RIGHT);
                     view.SetAction (DOWNLOAD_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (PREVIEW_BUTTON, SwipeSide.LEFT);
 
@@ -521,8 +520,8 @@ namespace NachoClient.iOS
             dateTextLabel.Text = "";
             iconView.Image = UIImage.FromBundle ("");
             downloadImageView.Hidden = true;
-            view.LeftSwipeActionButtons.Clear ();
-            view.RightSwipeActionButtons.Clear ();
+            view.ClearActions (SwipeSide.LEFT);
+            view.ClearActions (SwipeSide.RIGHT);
         }
 
         private string DateToString (DateTime date)

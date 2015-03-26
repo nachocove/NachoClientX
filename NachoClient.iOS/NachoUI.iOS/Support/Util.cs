@@ -510,18 +510,19 @@ namespace NachoClient
 
         public static UIImage ImageOfSender (int accountId, string emailAddress)
         {
-            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
-            if ((null == contacts) || (0 == contacts.Count)) {
-                return null;
-            }
-            // There may be more than one contact that matches an email address.
-            // Search thru all of them and look for the first one that has a portrait.
-            foreach (var contact in contacts) {
-                UIImage image = ImageOfContact (contact);
-                if (null != image) {
-                    return image;
-                }
-            }
+            // FIXME: Should push the images
+//            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+//            if ((null == contacts) || (0 == contacts.Count)) {
+//                return null;
+//            }
+//            // There may be more than one contact that matches an email address.
+//            // Search thru all of them and look for the first one that has a portrait.
+//            foreach (var contact in contacts) {
+//                UIImage image = ImageOfContact (contact);
+//                if (null != image) {
+//                    return image;
+//                }
+//            }
             return null;
         }
 
@@ -1126,6 +1127,29 @@ namespace NachoClient
         {
             // TODO: Why not just a cast?
             return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+        }
+
+        /// <summary>
+        /// Set the minimum and maximum dates for a date picker.  By default, the range is from ten years
+        /// in the past to 100 years in the future.  But extend that range as necessary so it includes the
+        /// year surrounding a given date.
+        /// </summary>
+        public static void ConstrainDatePicker (UIDatePicker datePicker, DateTime referenceDate)
+        {
+            DateTime pickerMin = DateTime.UtcNow.AddYears (-10);
+            DateTime pickerMax = DateTime.UtcNow.AddYears (100);
+            if (DateTime.MinValue != referenceDate) {
+                DateTime referenceMin = referenceDate.AddYears (-1);
+                if (referenceMin < pickerMin) {
+                    pickerMin = referenceMin;
+                }
+                DateTime referenceMax = referenceDate.AddYears (1);
+                if (referenceMax > pickerMax) {
+                    pickerMax = referenceMax;
+                }
+            }
+            datePicker.MinimumDate = pickerMin.ToNSDate ();
+            datePicker.MaximumDate = pickerMax.ToNSDate ();
         }
 
         public static string PrettyPointF (CGPoint p)

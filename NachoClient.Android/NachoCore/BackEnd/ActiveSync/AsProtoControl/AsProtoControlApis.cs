@@ -494,6 +494,7 @@ namespace NachoCore.ActiveSync
                 emailMessage.FlagUtcDue = utcDue;
                 emailMessage.Update ();
             });
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSF");
             }, "SetEmailFlagCmd");
@@ -522,6 +523,7 @@ namespace NachoCore.ActiveSync
                 emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
                 emailMessage.Update ();
             });
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
             }, "ClearEmailFlagCmd");

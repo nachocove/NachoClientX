@@ -240,6 +240,14 @@ namespace Test.iOS
             conFolder.UpdateSet_AsSyncMetaToClientExpected (false);
             result = Strategy.CanAdvance (Account.Id, 5);
             Assert.True (result);
+            result = Strategy.CanAdvance (Account.Id, 6);
+            Assert.False (result);
+            Account.DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.SyncAll_0;
+            Account.Update ();
+            result = Strategy.CanAdvance (Account.Id, 6);
+            Assert.True (result);
+            Account.DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
+            Account.Update ();
             // Add a McPending.
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.ContactDelete,

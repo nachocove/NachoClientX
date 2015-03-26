@@ -366,6 +366,7 @@ namespace NachoClient.iOS
             statusMessage.TextColor = UIColor.Black;
             statusMessage.Text = "Validating Credentials";
             statusMessage.TextAlignment = UITextAlignment.Center;
+            statusMessage.Editable = false;
             statusView.AddSubview (statusMessage);
 
             UIActivityIndicatorView theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
