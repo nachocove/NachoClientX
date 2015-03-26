@@ -38,14 +38,19 @@ namespace NachoCore
             return Xml.Provision.PolicyReqStatusCode.Success_1;
         }
 
-        public bool Wipe (McAccount account, string url, string protoVersion)
+        public bool Wipe (McAccount account, string url, string protoVersion, bool testing = false)
         {
             var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if (Keychain.Instance.HasKeychain ()) {
                 Keychain.Instance.DeletePassword (cred.Id);
             }
-            NcAccountHandler.Instance.RemoveAccount ();
-            return Device.Instance.Wipe (cred.Username, cred.GetPassword (), url, protoVersion);
+            NcAccountHandler.Instance.RemoveAccount (stopStartServices : !testing);
+            // TODO: need to remove the testing flag check for tests
+            if (!testing) {
+                return Device.Instance.Wipe (cred.Username, cred.GetPassword (), url, protoVersion);
+            } else {
+                return true;
+            }
         }
     }
 }

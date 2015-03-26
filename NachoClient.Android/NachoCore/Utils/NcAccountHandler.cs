@@ -163,9 +163,8 @@ namespace NachoCore.Model
             DeleteRemovingAccounFile ();
         }
 
-        // TODO this needs to get moved out of AppDelegate.
         // TODO - this need to handle multiple accounts
-        public void RemoveAccount ()
+        public void RemoveAccount (bool stopStartServices = true)
         {
             if (null != NcApplication.Instance.Account) {
                 // mark account is being removed so that we don't do anything else other than the remove till it is completed.
@@ -174,17 +173,21 @@ namespace NachoCore.Model
                 Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
                 BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
 
-                NcApplication.Instance.StopClass4Services();
-                Log.Info (Log.LOG_UI, "RemoveAccount: StopClass4Services complete");
-                NcApplication.Instance.StopBasalServices ();
-                Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
+                if (stopStartServices) {
+                    NcApplication.Instance.StopClass4Services ();
+                    Log.Info (Log.LOG_UI, "RemoveAccount: StopClass4Services complete");
+                    NcApplication.Instance.StopBasalServices ();
+                    Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
+                }
 
                 RemoveAccountDBAndFilesForId (NcApplication.Instance.Account.Id);
 
-                NcApplication.Instance.StartBasalServices ();
-                Log.Info (Log.LOG_UI, "RemoveAccount:  StartBasalServices complete");
-                NcApplication.Instance.StartClass4Services ();
-                Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
+                if (stopStartServices) {
+                    NcApplication.Instance.StartBasalServices ();
+                    Log.Info (Log.LOG_UI, "RemoveAccount:  StartBasalServices complete");
+                    NcApplication.Instance.StartClass4Services ();
+                    Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
+                }
             }
         }
     }
