@@ -1288,6 +1288,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
       <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
+      <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
