@@ -369,7 +369,7 @@ namespace NachoCore.Model
             var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
 
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT DISTINCT e.Id as FirstMessageId, Count(e.Id) as MessageCount FROM McEmailMessage AS e " +
+                "SELECT DISTINCT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McFolder AS f ON m.FolderId = f.Id " +
                 " WHERE " +
@@ -381,7 +381,6 @@ namespace NachoCore.Model
                 " m.FolderId != ? AND " +
                 " e.[From] LIKE ? OR " +
                 " e.[To] Like ? " +
-                " GROUP BY e.ConversationId " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
