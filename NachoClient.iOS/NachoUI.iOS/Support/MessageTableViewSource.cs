@@ -14,6 +14,7 @@ namespace NachoClient.iOS
 {
     public class MessageTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
     {
+        string messageWhenEmpty;
         INachoEmailMessages messageThreads;
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -112,10 +113,11 @@ namespace NachoClient.iOS
             RefreshCapture = NcCapture.Create (RefreshCaptureName);
         }
 
-        public void SetEmailMessages (INachoEmailMessages messageThreads)
+        public void SetEmailMessages (INachoEmailMessages messageThreads, string messageWhenEmpty)
         {
             ClearCache ();
             this.messageThreads = messageThreads;
+            this.messageWhenEmpty = messageWhenEmpty;
         }
 
         public string GetDisplayName ()
@@ -477,7 +479,7 @@ namespace NachoClient.iOS
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
             if (cell.ReuseIdentifier.ToString ().Equals (UICellReuseIdentifier)) {
-                cell.TextLabel.Text = "No messages";
+                cell.TextLabel.Text = messageWhenEmpty;
                 return;
             }
 
@@ -633,9 +635,15 @@ namespace NachoClient.iOS
                 cell = CellWithReuseIdentifier (tableView, cellIdentifier);
             }
 
-            cell.Layer.CornerRadius = 15;
-            cell.Layer.MasksToBounds = true;
-            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+            if (NoMessageThreads ()) {
+                cell.BackgroundColor = A.Color_NachoBackgroundGray;
+                cell.ContentView.BackgroundColor = A.Color_NachoBackgroundGray;
+                cell.UserInteractionEnabled = false;
+            } else {
+                cell.Layer.CornerRadius = 15;
+                cell.Layer.MasksToBounds = true;
+                cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+            }
 
             ConfigureCell (tableView, cell, indexPath);
             return cell;

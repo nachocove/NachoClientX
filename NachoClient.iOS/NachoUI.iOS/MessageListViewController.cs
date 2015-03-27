@@ -44,14 +44,14 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
-            this.messageSource.SetEmailMessages (messageThreads);
+            this.messageSource.SetEmailMessages (messageThreads, "No messages");
         }
 
         public MessageListViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource ();
         }
-            
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -130,17 +130,18 @@ namespace NachoClient.iOS
             searchDisplayController = new UISearchDisplayController (searchBar, this);
             searchResultsMessages = new NachoMessageSearchResults ();
             searchResultsSource = new MessageTableViewSource ();
-            searchResultsSource.SetEmailMessages (searchResultsMessages);
+            searchResultsSource.SetEmailMessages (searchResultsMessages, "");
             searchResultsSource.owner = this;
             searchDisplayController.SearchResultsSource = searchResultsSource;
             searchDisplayController.SearchResultsTableView.RowHeight = 126;
+            searchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
+            searchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             View.AddSubview (searchBar);
 
             Util.ConfigureNavBar (false, this.NavigationController);
 
             SetRowHeight ();
-
 
             StatusIndCallbackIsSet = true;
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
@@ -149,10 +150,10 @@ namespace NachoClient.iOS
             threadsNeedsRefresh = true;
         }
 
-        protected virtual void SetRowHeight()
+        protected virtual void SetRowHeight ()
         {
             TableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
-            searchDisplayController.SearchResultsTableView.RowHeight =  MessageTableViewSource.NORMAL_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
         }
 
         protected void refreshCallback (object sender)
@@ -520,21 +521,26 @@ namespace NachoClient.iOS
             if (null == NcApplication.Instance.Account) {
                 return;
             }
-            searchResultsMessages.UpdateMatches (null);
-            searchResultsMessages.UpdateServerMatches (null);
             Search (searchBar);
         }
 
         protected void Search (UISearchBar searchBar)
         {
+            if (String.IsNullOrEmpty (searchBar.Text)) {
+                searchResultsMessages.UpdateMatches (null);
+                searchResultsMessages.UpdateServerMatches (null);
+                return; 
+            }
             // Ask the server
             KickoffSearchApi (0, searchBar.Text);
             // On-device index
             var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
             var index = new NachoCore.Index.NcIndex (indexPath);
             var match = searchBar.Text;
-            var pattern = String.Format ("to:\"{0}\" subject:\"{0}\"  body:\"{0}\"", match);
-            var matches = index.Search (pattern);
+            var quoted = Lucene.Net.QueryParsers.QueryParser.Escape (match);
+            var wildcard = (char.IsWhiteSpace(quoted.Last<char>())) ? "" : "*";
+            var query = quoted + wildcard;
+            var matches = index.SearchAllFields (query);
             searchResultsMessages.UpdateMatches (matches);
             List<int> adds;
             List<int> deletes;

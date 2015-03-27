@@ -1184,7 +1184,7 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
-            this.messageSource.SetEmailMessages (messageThreads);
+            this.messageSource.SetEmailMessages (messageThreads, "No interactions");
         }
 
         public void SaveNote (int accountId, string noteText)
