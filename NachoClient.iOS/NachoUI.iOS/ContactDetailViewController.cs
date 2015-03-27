@@ -133,6 +133,7 @@ namespace NachoClient.iOS
             if (null != contact) {
                 contact = McContact.QueryById<McContact> (contact.Id);
             }
+            RefreshData ();
             ConfigureAndLayout ();
         }
 
@@ -389,6 +390,7 @@ namespace NachoClient.iOS
             interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
+            interactionsTableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
