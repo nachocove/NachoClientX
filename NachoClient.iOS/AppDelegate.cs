@@ -949,7 +949,7 @@ namespace NachoClient.iOS
             if (withSound) {
                 notif.SoundName = UILocalNotification.DefaultSoundName;
             }
-            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+            UIApplication.SharedApplication.PresentLocalNotificationNow (notif);
 
             return true;
         }
