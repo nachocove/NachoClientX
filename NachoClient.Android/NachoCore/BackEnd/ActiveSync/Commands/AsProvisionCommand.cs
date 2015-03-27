@@ -171,7 +171,6 @@ namespace NachoCore.ActiveSync
             case Xml.Provision.ProvisionStatusCode.Success_1:
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
-                    // The way that wipe is implemented now, the following will not return - it will cause SIGBUS.
                     WipeSucceeded = NcEnforcer.Instance.Wipe (BEContext.Account, 
                         ServerUri (Op).ToString (), BEContext.ProtocolState.AsProtocolVersion);
                     if (! BEContext.ProtocolState.IsWipeRequired) {

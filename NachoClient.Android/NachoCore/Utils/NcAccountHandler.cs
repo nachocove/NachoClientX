@@ -124,7 +124,7 @@ namespace NachoCore.Model
             }
             catch (Exception e)
             {
-                Log.Error (Log.LOG_DB, "RemoveAccount: cannot remove file data for account {0}", AccountId);
+                Log.Error (Log.LOG_DB, "RemoveAccount: cannot remove file data for account {0}. {1}", AccountId, e.Message);
             }
         }
 

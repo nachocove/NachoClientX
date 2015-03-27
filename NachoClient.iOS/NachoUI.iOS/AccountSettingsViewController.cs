@@ -9,6 +9,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using System.Linq;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -891,7 +892,6 @@ namespace NachoClient.iOS
 
         void onDeleteAccount (object sender, EventArgs e)
         {
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
             backButton.Enabled = false;
             editButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
@@ -902,10 +902,7 @@ namespace NachoClient.iOS
                     editButton.Enabled = true;
                     ToggleDeleteAccountSpinnerView ();
                     // go back to main screen
-                    var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                    var vc = storyboard.InstantiateInitialViewController ();
-                    Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
-                    appDelegate.Window.RootViewController = (UIViewController)vc;
+                    UIRedirector.Instance.GoBackToMainScreen();  
                 });
             };
             NcTask.Run (action, "RemoveAccount");

@@ -1,10 +1,10 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
+using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoCore
 {
@@ -14,6 +14,7 @@ namespace NachoCore
         private static object syncRoot = new Object();
 
         private NcEnforcer () {}
+        private NcTimer DelayTimer;
 
         public static NcEnforcer Instance
         {
@@ -37,10 +38,28 @@ namespace NachoCore
             return Xml.Provision.PolicyReqStatusCode.Success_1;
         }
 
-        public bool Wipe (McAccount account, string url, string protoVersion, bool testing = false)
+        private void WipeAccountAndRestart(Object state)
         {
-            NcAccountHandler.Instance.RemoveAccount (stopStartServices : !testing);
-            // we have initiated remove account. This will go thru even if the app is stopped/restarted.
+            // dont bother checking for ack from the server since as per spec : The client SHOULD NOT wait for or rely on any specific response from the server before proceeding with the remote wipe.
+            Log.Info (Log.LOG_AS, "Remote Wipe Initiated");
+            DelayTimer.Dispose ();
+            DelayTimer = null;
+            Action action = () => {
+                InvokeOnUIThread.Instance.Invoke (delegate () {
+                    NcAccountHandler.Instance.RemoveAccount ();
+                    UIRedirector.Instance.GoBackToMainScreen();                        
+                    Log.Info (Log.LOG_AS, "Remote Wipe Completed.");
+                });
+            };
+            NcTask.Run (action, "RemoveAccount");
+        }
+
+        public bool Wipe (McAccount account, string url, string protoVersion)
+        {
+            Log.Info (Log.LOG_AS, "Remote Wipe Marked");
+            // mark wipe in progress. This will go thru even if the app is stopped/restarted.
+            NcModel.Instance.WriteRemovingAccountIdToFile (NcApplication.Instance.Account.Id);
+            DelayTimer = new NcTimer ("RemoteWipeTimer", WipeAccountAndRestart, this, 1000, 1000);
             return true;
         }
     }

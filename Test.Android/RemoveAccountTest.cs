@@ -40,6 +40,14 @@ namespace Test.iOS
             // create attachment
             var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
 
+            // create cred
+            var cred = new McCred () {
+                AccountId = account.Id,
+                Username = Email,
+            };
+            cred.Insert ();
+            cred.UpdatePassword (Password);
+
             // assert founds 
             McAccount foundAccount = McAccount.QueryById<McAccount> (defaultAccountId);
             Assert.NotNull (foundAccount);
@@ -50,59 +58,14 @@ namespace Test.iOS
             string AccountDirPath = NcModel.Instance.GetAccountDirPath (account.Id);
             Assert.True(Directory.Exists(AccountDirPath));
 
-            // remove account
-            NcAccountHandler.Instance.RemoveAccount (stopStartServices: false);
-
-            // assert not founds
-            foundAccount = McAccount.QueryById<McAccount> (defaultAccountId);
-            Assert.Null (foundAccount);
-            foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, defaultServerId);
-            Assert.Null (foundEmail);
-            foundAtts = McAttachment.QueryByItemId(email);
-            Assert.IsTrue (foundAtts.Count == 0);
-            Assert.False(Directory.Exists(AccountDirPath));
-        }
-
-        //        public bool Wipe (McAccount account, string url, string protoVersion)
-        [Test]
-        public void TestEnforcerWipe ()
-        {
-            // create account
-            McAccount account = CreateAccount();
-            NachoCore.NcApplication.Instance.Account = account;
-
-            // create email
-            var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: defaultServerId);
-
-            // create attachment
-            var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
-           
-            // create cred
-            var cred = new McCred () {
-                AccountId = account.Id,
-                Username = Email,
-            };
-            cred.Insert ();
-            cred.UpdatePassword (Password);
-
-            // assert founds
-            McAccount foundAccount = McAccount.QueryById<McAccount> (defaultAccountId);
-            Assert.NotNull (foundAccount);
-            var foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, defaultServerId);
-            Assert.NotNull (foundEmail);
-            List<McAttachment> foundAtts = McAttachment.QueryByItemId(foundEmail);
-            Assert.IsTrue (foundAtts.Count > 0);
-            string AccountDirPath = NcModel.Instance.GetAccountDirPath (account.Id);
-            Assert.True (Directory.Exists (AccountDirPath));
-
-            // create password in keychain
+            // check password in keychain
             if (Keychain.Instance.HasKeychain ()) {
                 string retPassword = Keychain.Instance.GetPassword (cred.Id);
                 Assert.AreEqual (retPassword, Password);
             }
 
-            // WIPE 
-            NachoCore.NcEnforcer.Instance.Wipe(account, "url", "protoVersion", testing : true);
+            // remove account
+            NcAccountHandler.Instance.RemoveAccount (stopStartServices: false);
 
             // assert not founds
             foundAccount = McAccount.QueryById<McAccount> (defaultAccountId);

@@ -350,15 +350,11 @@ namespace NachoClient.iOS
                 });
             }
             // Segues to LaunchViewController
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
             Action action = () => {
                 NcAccountHandler.Instance.RemoveAccount ();
                 InvokeOnMainThread (() => {
                     // go back to main screen
-                    var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                    var vc = storyboard.InstantiateInitialViewController ();
-                    Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
-                    appDelegate.Window.RootViewController = (UIViewController)vc;
+                    UIRedirector.Instance.GoBackToMainScreen();                        
                 });
             };
             NcTask.Run (action, "RemoveAccount");

@@ -380,6 +380,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration12.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration13.cs" />
     <Compile Include="NachoCore\Utils\NcAccountHandler.cs" />
+    <Compile Include="NachoPlatform.Android\UIRedirectorAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
