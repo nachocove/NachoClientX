@@ -7,6 +7,8 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Text.RegularExpressions;
+using NachoPlatform;
+using System.Linq;
 
 namespace NachoCore.Model
 {
@@ -117,19 +119,30 @@ namespace NachoCore.Model
         {
             Log.Info (Log.LOG_DB, "RemoveAccount: removing file data for account {0}", AccountId);
             String AccountDirPath = NcModel.Instance.GetAccountDirPath (AccountId);
-            Directory.Delete(AccountDirPath, true);
+            try{
+                Directory.Delete(AccountDirPath, true);
+            }
+            catch (Exception e)
+            {
+                Log.Error (Log.LOG_DB, "RemoveAccount: cannot remove file data for account {0}", AccountId);
+            }
         }
 
         // remove all the db data and files referenced by the account related to the given id
         public void RemoveAccountDBAndFilesForAccountId(int AccountId)
         {
+            // remove password from keychain
+            var cred = McCred.QueryByAccountId<McCred> (AccountId).SingleOrDefault ();
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.DeletePassword (cred.Id);
+            }
+
             // delete all DB data for account id - is db running?
             RemoveAccountDBData (AccountId);
 
             // delete all file system data for account id
             RemoveAccountFiles (AccountId);
 
-            //BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
             // if there is only one account. TODO: deal with multi-account
             NcApplication.Instance.Account = null;
             // if successful, unmark account is being removed since it is completed.

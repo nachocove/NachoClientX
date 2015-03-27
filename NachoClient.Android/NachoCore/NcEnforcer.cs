@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
-using NachoPlatform;
 
 namespace NachoCore
 {
@@ -40,17 +39,9 @@ namespace NachoCore
 
         public bool Wipe (McAccount account, string url, string protoVersion, bool testing = false)
         {
-            var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.DeletePassword (cred.Id);
-            }
             NcAccountHandler.Instance.RemoveAccount (stopStartServices : !testing);
-            // TODO: need to remove the testing flag check for tests
-            if (!testing) {
-                return Device.Instance.Wipe (cred.Username, cred.GetPassword (), url, protoVersion);
-            } else {
-                return true;
-            }
+            // we have initiated remove account. This will go thru even if the app is stopped/restarted.
+            return true;
         }
     }
 }

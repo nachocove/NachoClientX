@@ -172,7 +172,7 @@ namespace NachoCore.Model
                     }
                 }
                 catch (IOException e) {
-                    Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to read RemoveAccountLockFile.");
+                    Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to read RemoveAccountLockFile.{0}", e.Message);
                 }
             }
             return AccountId;
@@ -190,7 +190,7 @@ namespace NachoCore.Model
                 }
             }
             catch (IOException e) {
-                Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.");
+                Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.{0}", e.Message);
             }
         }
 
