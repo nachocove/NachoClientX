@@ -135,6 +135,10 @@ namespace NachoCore.Utils
             public void Report (string kind)
             {
                 Telemetry.RecordCapture (kind, Count, Min, Max, Total, Total2);
+                if (kind.StartsWith ("SSAOCE")) {
+                    Console.WriteLine ("SLUGGO! {0},count={1},min={2},max={3},total={4},total2={5}",
+                        kind, Count, Min, Max, Total, Total2);
+                }
                 if (null != Xtra) {
                     foreach (var key in Xtra.Keys) {
                         Xtra [key].Report (key);

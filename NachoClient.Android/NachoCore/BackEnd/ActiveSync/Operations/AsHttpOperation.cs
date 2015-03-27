@@ -619,8 +619,7 @@ namespace NachoCore.ActiveSync
                                     }
                                 },
                                              cToken, 180 * 1000, System.Threading.Timeout.Infinite);
-                            var capture = NcCapture.Create (KLoadBytes);
-                            capture.Start ();
+                            var capture = NcCapture.CreateAndStart (KLoadBytes);
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
                             capture.Stop ();
                             if (1000 < capture.ElapsedMilliseconds) {
