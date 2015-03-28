@@ -4,7 +4,6 @@ all:
 	make -C ../SwipeViewBinding
 	make -C ../UIImageEffects
 	make -C ../SWRevealViewControllerBinding
-	make -C ../ios-openssl
 	make -C ../NachoPlatformBinding
 	make -C ../NachoUIMonitorBinding
 	make -C ../bc-csharp -f ../NachoClientX/bc-csharp.mk
@@ -12,7 +11,6 @@ all:
 	make -C ../DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
 	make -C ../DDay-iCal-Xamarin
 	make -C ../ModernHttpClient
-	make -C ../ios-openssl
 	make -C native.iOS
 	make -C native.Android
 	make

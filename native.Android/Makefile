@@ -38,4 +38,4 @@ jni/nacho-system-properties.c:
 clean:
 	rm -rf ../NachoClient.Android/lib
 	rm -f jni/tld-canon.h jni/regdom.h jni/regdom.c jni/nacho-dkim-regdom.c jni/nacho-system-properties.c
-	rm -f libs/*/*
+	rm -fr libs/ obj/
