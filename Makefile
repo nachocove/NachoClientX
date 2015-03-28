@@ -12,6 +12,9 @@ PROJECTS:= \
 	$(TOP)/aws-sdk-xamarin/AWS.XamarinSDK/AWSSDK_iOS \
 	$(TOP)/MobileHtmlAgilityPack \
 	IndexLib \
+	$(TOP)/lucene.net-3.0.3/Lucene.Net \
+	$(TOP)/lucene.net-3.0.3/Lucene.Net.Android \
+	$(TOP)/lucene.net-3.0.3/Lucene.Net.iOS \
 
 DIRS:= \
 	$(foreach dir,$(PROJECTS),$(call mk_bin_obj_dirs,$(dir))) \
