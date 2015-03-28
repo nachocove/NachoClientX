@@ -753,10 +753,7 @@ namespace Test.iOS
                 });
             };
 
-            McServer server = new McServer () {
-                    Host = "foo.utopiasystems.net",
-                };
-            Context = new MockContext ( protoControl : null, server : server);
+            Context = new MockContext ();
 
             // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);
@@ -802,6 +799,12 @@ namespace Test.iOS
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
                                     errorIndicator ("Unexpected HardFail event");
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = delegate () {
+                                    action();
                                 },
                                 State = (uint)St.Start },
                             new Trans {
