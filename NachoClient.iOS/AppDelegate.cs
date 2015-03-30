@@ -51,6 +51,8 @@ namespace NachoClient.iOS
         // class-level declarations
         public override UIWindow Window { get; set; }
 
+        private const UIUserNotificationType KNotificationSettings = 
+            UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound;
         // iOS kills us after 30, so make sure we dont get there
         private const int KPerformFetchTimeoutSeconds = 25;
         private nint BackgroundIosTaskId = -1;
@@ -153,7 +155,7 @@ namespace NachoClient.iOS
 
         public override void DidRegisterUserNotificationSettings (UIApplication application, UIUserNotificationSettings notificationSettings)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "DidRegisteredUserNotificationSettings: {0}", notificationSettings);
+            Log.Info (Log.LOG_LIFECYCLE, "DidRegisteredUserNotificationSettings: 0x{0:X}", (ulong)notificationSettings.Types);
         }
 
         public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
@@ -287,8 +289,7 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (
-                                   UIUserNotificationType.Sound | UIUserNotificationType.Badge | UIUserNotificationType.Alert, null);
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (KNotificationSettings, null);
                 UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
                 UIApplication.SharedApplication.RegisterForRemoteNotifications ();
             } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
@@ -914,9 +915,6 @@ namespace NachoClient.iOS
             if (null == message) {
                 return false;
             }
-            if (message.HasBeenNotified) {
-                return false;
-            }
             if (String.IsNullOrEmpty (message.From)) {
                 // Don't notify or count in badge number from-me messages.
                 Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", NcApplication.Instance.Account.EmailAddr);
@@ -949,7 +947,10 @@ namespace NachoClient.iOS
             if (withSound) {
                 notif.SoundName = UILocalNotification.DefaultSoundName;
             }
-            UIApplication.SharedApplication.PresentLocalNotificationNow (notif);
+            if ((ulong)KNotificationSettings != (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types) {
+                Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
+            }
+            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
 
             return true;
         }
@@ -962,6 +963,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: early exit");
                 return;
             }
+
             var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
@@ -970,6 +972,9 @@ namespace NachoClient.iOS
             int remainingVisibleSlots = 10;
 
             foreach (var message in unreadAndHot) {
+                if (message.HasBeenNotified) {
+                    continue;
+                }
                 if (!NotifyEmailMessage (message, !soundExpressed)) {
                     --badgeCount;
                     continue;
