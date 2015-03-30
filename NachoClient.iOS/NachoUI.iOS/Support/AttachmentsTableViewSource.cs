@@ -333,8 +333,6 @@ namespace NachoClient.iOS
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
             cellIconImageView.Frame = new CGRect (18 + xOffset, 28, 24, 24);
 
-
-
             //Text label
             var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
             textLabel.Frame = new CGRect (60 + xOffset, 11, cellWidth - xOffset - 112, 19.5f);
@@ -440,7 +438,7 @@ namespace NachoClient.iOS
                     };
                     break;
                 default:
-                    (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
+                    downloadImageView.Superview.BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = false;
                     view.ClearActions (SwipeSide.LEFT);
@@ -730,6 +728,7 @@ namespace NachoClient.iOS
                 subview.Layer.RemoveAllAnimations ();
                 subview.RemoveFromSuperview ();
             }
+            iv.Hidden = true;
             cell.UserInteractionEnabled = true;
         }
 
@@ -953,8 +952,10 @@ namespace NachoClient.iOS
         {
             List<NcFileIndex> results = new List<NcFileIndex> ();
             foreach (var item in Items) {
-                if ((item.DisplayName.ToLower ()).Contains (searchString.ToLower ())) {
-                    results.Add (item);
+                if (!String.IsNullOrEmpty (item.DisplayName)) {
+                    if (-1 != item.DisplayName.IndexOf (searchString, StringComparison.OrdinalIgnoreCase)) {
+                        results.Add (item);
+                    }
                 }
             }
             return results;
