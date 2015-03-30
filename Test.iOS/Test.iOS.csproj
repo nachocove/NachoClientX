@@ -279,6 +279,9 @@
     <Compile Include="..\Test.Android\HashHelperTest.cs">
       <Link>HashHelperTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\RemoveAccountTest.cs">
+      <Link>RemoveAccountTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

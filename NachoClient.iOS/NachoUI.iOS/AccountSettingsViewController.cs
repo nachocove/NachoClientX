@@ -9,6 +9,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using System.Linq;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -54,6 +55,8 @@ namespace NachoClient.iOS
 
         protected const int GREY_BACKGROUND_VIEW_TAG = 200;
         protected const int STATUS_VIEW_TAG = 201;
+        protected const int DELETE_ACCOUNT_BACKGROUND_VIEW_TAG = 202;
+        protected const int DELETE_ACCOUNT_SPINNER_TAG = 203;
 
         protected const int CANCEL_VALIDATION_BUTTON_TAG = 304;
         protected const int SIGNATURE_VIEW_TAG = 305;
@@ -339,7 +342,7 @@ namespace NachoClient.iOS
             deleteAccountView.AddSubview (deleteAccountButton);
 
             // Fixme: delete account is still a test thing
-            // contentView.Add (deleteAccountView);
+            contentView.Add (deleteAccountView);
 
             yOffset = deleteAccountView.Frame.Bottom + A.Card_Vertical_Indent;
 
@@ -393,6 +396,36 @@ namespace NachoClient.iOS
 
             statusView.AddSubview (cancelValidation);
             View.AddSubview (statusView);
+
+            // Delete Account Spinner - Keeping this separate from the validate credential spinner 
+            UIView deleteAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
+            deleteAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
+            deleteAccountBackgroundView.Tag = DELETE_ACCOUNT_BACKGROUND_VIEW_TAG;
+            deleteAccountBackgroundView.Hidden = true;
+            deleteAccountBackgroundView.Alpha = 0.0f;
+            View.AddSubview (deleteAccountBackgroundView);
+
+            UIView alertMimicView = new UIView (new CGRect (deleteAccountBackgroundView.Frame.Width / 2 - 90, deleteAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
+            alertMimicView.BackgroundColor = UIColor.White;
+            alertMimicView.Layer.CornerRadius = 6.0f;
+            deleteAccountBackgroundView.AddSubview (alertMimicView);
+
+            UILabel deleteAccountStatusMessage = new UILabel (new CGRect (8, 10, alertMimicView.Frame.Width - 16, 25));
+            deleteAccountStatusMessage.BackgroundColor = UIColor.White;
+            deleteAccountStatusMessage.Alpha = 1.0f;
+            deleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
+            deleteAccountStatusMessage.TextColor = UIColor.Black;
+            deleteAccountStatusMessage.Text = "Deleting Account";
+            deleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
+            alertMimicView.AddSubview (deleteAccountStatusMessage);
+
+            UIActivityIndicatorView deleteAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
+            deleteAccountActivityIndicator.Frame = new CGRect (alertMimicView.Frame.Width / 2 - 20, deleteAccountStatusMessage.Frame.Bottom + 15, 40, 40);
+            deleteAccountActivityIndicator.Color = A.Color_SystemBlue;
+            deleteAccountActivityIndicator.Alpha = 1.0f;
+            deleteAccountActivityIndicator.StartAnimating ();
+            deleteAccountActivityIndicator.Tag = DELETE_ACCOUNT_SPINNER_TAG;
+            alertMimicView.AddSubview (deleteAccountActivityIndicator);
         }
 
         protected override void ConfigureAndLayout ()
@@ -859,10 +892,39 @@ namespace NachoClient.iOS
 
         void onDeleteAccount (object sender, EventArgs e)
         {
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            appDelegate.RemoveAccount ();
+            backButton.Enabled = false;
+            editButton.Enabled = false;
+            ToggleDeleteAccountSpinnerView ();
+            Action action = () => {
+                NcAccountHandler.Instance.RemoveAccount ();
+                InvokeOnMainThread (() => {
+                    backButton.Enabled = true;
+                    editButton.Enabled = true;
+                    ToggleDeleteAccountSpinnerView ();
+                    // go back to main screen
+                    NcUIRedirector.Instance.GoBackToMainScreen();  
+                });
+            };
+            NcTask.Run (action, "RemoveAccount");
         }
 
+        protected void ToggleDeleteAccountSpinnerView ()
+        {
+            UIView deleteAccountBackgroundView = (UIView)View.ViewWithTag (DELETE_ACCOUNT_BACKGROUND_VIEW_TAG);
+            UIActivityIndicatorView deleteAccountActivityIndicator = (UIActivityIndicatorView)View.ViewWithTag (DELETE_ACCOUNT_SPINNER_TAG);
+
+            deleteAccountBackgroundView.Hidden = !deleteAccountBackgroundView.Hidden;
+
+            if (deleteAccountBackgroundView.Hidden) {
+                deleteAccountActivityIndicator.StopAnimating ();
+                deleteAccountBackgroundView.Alpha = 0.0f;
+            } else {
+                UIView.Animate (.15, () => {
+                    deleteAccountBackgroundView.Alpha = 1.0f;
+                });
+                deleteAccountActivityIndicator.StartAnimating ();
+            }
+        }
 
         protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {

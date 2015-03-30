@@ -3,6 +3,7 @@
 //#define HA_AUTH_EMAIL
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -260,6 +261,8 @@ namespace NachoClient.iOS
                 NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
             }
+
+            NcApplication.Instance.ContinueRemoveAccountIfNeeded ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
@@ -1026,47 +1029,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.MonitorReport ();
         }
 
-        // TODO this needs to get moved out of AppDelegate.
-        public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
-        {
-            NcModel.Instance.RunInTransaction (() => {
-                // Need to regex-validate UI inputs.
-                // You will always need to supply user credentials (until certs, for sure).
-                // You will always need to supply the user's email address.
-                var account = new McAccount () { EmailAddr = emailAddress };
-                account.Signature = "Sent from Nacho Mail";
-                account.AccountService = service;
-                account.DisplayName = McAccount.AccountServiceName (service);
-                account.Insert ();
-                var cred = new McCred () { 
-                    AccountId = account.Id,
-                    Username = emailAddress,
-                };
-                cred.Insert ();
-                if (null != password) {
-                    cred.UpdatePassword (password);
-                }
-                Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
-                NcApplication.Instance.Account = account;
-                Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
-                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
-            });
-        }
 
-        // TODO this needs to get moved out of AppDelegate.
-        public void RemoveAccount ()
-        {
-            if (null != NcApplication.Instance.Account) {
-                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
-                BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
-                BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
-                NcApplication.Instance.Account = null;
-            }
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = storyboard.InstantiateInitialViewController ();
-            Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
-            Window.RootViewController = (UIViewController)vc;
-        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate

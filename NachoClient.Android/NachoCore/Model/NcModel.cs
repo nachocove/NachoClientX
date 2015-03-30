@@ -70,6 +70,8 @@ namespace NachoCore.Model
 
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
+        private const string KRemovingAccountLockFile = "removing_account_lockfile";
+
 
         public string DbFileName { set; get; }
 
@@ -138,6 +140,58 @@ namespace NachoCore.Model
         public string GetFileDirPath (int accountId, string segment)
         {
             return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
+        }
+
+        public string GetAccountDirPath (int accountId)
+        {
+            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString ());
+        }
+
+        public string GetRemovingAccountLockFilePath ()
+        {
+            return Path.Combine (Documents, KRemovingAccountLockFile);
+        }
+
+        // Get the AccountId for the account being removed
+        public int GetRemovingAccountIdFromFile ()
+        {
+            string AccountIdString;
+            int AccountId = 0;
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
+            if (File.Exists (RemovingAccountLockFile)) {
+                // Get the account id from the file
+                try{
+                    using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Open, FileAccess.Read)) {
+                        using (var reader = new StreamReader (stream)) {
+                            AccountIdString = reader.ReadLine ();
+                            bool result = int.TryParse(AccountIdString, out AccountId);
+                            if (!result) {                     
+                                Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to parse AccountId from file.");
+                            }
+                        }
+                    }
+                }
+                catch (IOException e) {
+                    Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to read RemoveAccountLockFile.{0}", e.Message);
+                }
+            }
+            return AccountId;
+        }
+
+        // write the removing AccountId to file
+        public void WriteRemovingAccountIdToFile (int AccountId)
+        {
+            var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
+            try{
+                using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Create, FileAccess.Write)) {
+                    using (var writer = new StreamWriter (stream)) {
+                        writer.WriteLine (AccountId);
+                    }
+                }
+            }
+            catch (IOException e) {
+                Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.{0}", e.Message);
+            }
         }
 
         public string GetIndexPath (int accountId)

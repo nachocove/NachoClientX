@@ -299,6 +299,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McSQLiteMaster.cs">
+      <Link>NachoCore\Model\McSQLiteMaster.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
     </Compile>
@@ -1288,6 +1291,16 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
       <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
+      <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration13.cs">
+      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
+      <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
       <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
     </Compile>

@@ -282,6 +282,16 @@ namespace NachoCore
             }
         }
 
+        public void ContinueRemoveAccountIfNeeded()
+        {
+            // if not done removing account, finish up 
+            int AccountId = NcModel.Instance.GetRemovingAccountIdFromFile ();
+            if (AccountId > 0 ) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
+                NcAccountHandler.Instance.RemoveAccountDBAndFilesForAccountId (AccountId);
+            }
+        }
+
         private void StartBasalServicesCompletion ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion called.");

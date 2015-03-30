@@ -184,4 +184,9 @@ namespace NachoPlatform
         bool SetPassword (int handle, string password);
         bool DeletePassword (int handle);
     }
+
+    public interface IPlatformUIRedirector
+    {
+        void GoBackToMainScreen ();
+    }
 }
