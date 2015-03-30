@@ -177,7 +177,7 @@ namespace NachoClient.iOS
                             Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
                             completionHandler (UIBackgroundFetchResult.NoData);
                         } else {
-                            PerformFetch (application, completionHandler);
+                            StartFetch (application, completionHandler, "RN");
                             return; // completeHandler is called at the completion of perform fetch.
                         }
                     }
@@ -553,6 +553,7 @@ namespace NachoClient.iOS
         private Timer performFetchTimer = null;
         private bool fetchComplete;
         private bool pushAssistArmComplete;
+        private string fetchCause;
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -603,6 +604,14 @@ namespace NachoClient.iOS
             });
         }
 
+        protected void FinalizePerformFetch (UIBackgroundFetchResult result)
+        {
+            var handler = CompletionHandler;
+            CompletionHandler = null;
+            fetchCause = null;
+            handler (result);
+        }
+
         protected void CleanupPerformFetchStates ()
         {
             performFetchTimer.Dispose ();
@@ -614,24 +623,32 @@ namespace NachoClient.iOS
         protected void CompletePerformFetchWithoutShutdown ()
         {
             CleanupPerformFetchStates ();
-            CompletionHandler (fetchResult);
+            FinalizePerformFetch (fetchResult);
         }
 
         protected void CompletePerformFetch ()
         {
             CleanupPerformFetchStates ();
             FinalShutdown (null);
-            CompletionHandler (fetchResult);
+            FinalizePerformFetch (fetchResult);
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
+            StartFetch (application, completionHandler, "PF");
+        }
+
+        protected void StartFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler, string cause)
+        {
             if (doingPerformFetch) {
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
                 CompletePerformFetchWithoutShutdown ();
             }
             CompletionHandler = completionHandler;
+            fetchComplete = false;
+            pushAssistArmComplete = false;
+            fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.QuickSync;
@@ -650,8 +667,6 @@ namespace NachoClient.iOS
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
                 });
             }), null, KPerformFetchTimeoutSeconds * 1000, Timeout.Infinite);
-            fetchComplete = false;
-            pushAssistArmComplete = false;
             doingPerformFetch = true;
         }
 
@@ -897,6 +912,51 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
         }
 
+        private bool NotifyEmailMessage (McEmailMessage message, bool withSound)
+        {
+            if (null == message) {
+                return false;
+            }
+            if (message.HasBeenNotified) {
+                return false;
+            }
+            if (String.IsNullOrEmpty (message.From)) {
+                // Don't notify or count in badge number from-me messages.
+                Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", NcApplication.Instance.Account.EmailAddr);
+                return false;
+            }
+
+            var fromString = Pretty.SenderString (message.From);
+            var subjectString = Pretty.SubjectString (message.Subject);
+            if (!String.IsNullOrEmpty (subjectString)) {
+                subjectString += " ";
+            }
+
+            if (BuildInfoHelper.IsDev || BuildInfoHelper.IsAlpha) {
+                // Add debugging info for dev & alpha
+                var latency = (DateTime.UtcNow - message.DateReceived).TotalSeconds;
+                var cause = (null == fetchCause ? "BG" : fetchCause);
+                subjectString += String.Format ("[{0}:{1:N1}s]", cause, latency);
+            }
+
+            var notif = new UILocalNotification ();
+            var className = NachoPlatformBinding.PlatformProcess.GetClassName (notif.Handle);
+            if (("UIConcreteLocalNotification" != className) && ("UILocalNotification" != className)) {
+                Log.Error (Log.LOG_UI, "Get an object of unknown type {0}", className);
+                return true;
+            }
+            notif.AlertAction = null;
+            notif.AlertTitle = fromString;
+            notif.AlertBody = subjectString;
+            notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
+            if (withSound) {
+                notif.SoundName = UILocalNotification.DefaultSoundName;
+            }
+            UIApplication.SharedApplication.PresentLocalNotificationNow (notif);
+
+            return true;
+        }
+
         // It is okay if this function is called more than it needs to be.
         private void BadgeNotifUpdate ()
         {
@@ -913,38 +973,13 @@ namespace NachoClient.iOS
             int remainingVisibleSlots = 10;
 
             foreach (var message in unreadAndHot) {
-                if (message.HasBeenNotified) {
-                    // Notify once.
-                    continue;
-                }
-                if (String.IsNullOrEmpty (message.From)) {
-                    // Don't notify or count in badge number from-me messages.
-                    Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", NcApplication.Instance.Account.EmailAddr);
+                if (!NotifyEmailMessage (message, !soundExpressed)) {
                     --badgeCount;
                     continue;
-                }
-                var fromString = Pretty.SenderString (message.From);
-                var subjectString = Pretty.SubjectString (message.Subject);
-                if (!String.IsNullOrEmpty (subjectString)) {
-                    subjectString += " ";
+                } else {
+                    soundExpressed = true;
                 }
 
-                try {
-                    // nachocove/qa#188 - This is not a fix but trying to gather more information about this failure.
-                    var notif = new UILocalNotification () {
-                        AlertAction = null,
-                        AlertTitle = fromString,
-                        AlertBody = subjectString,
-                        UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
-                    };
-                    if (!soundExpressed) {
-                        notif.SoundName = UILocalNotification.DefaultSoundName;
-                        soundExpressed = true;
-                    }
-                    UIApplication.SharedApplication.ScheduleLocalNotification (notif);
-                } catch (Exception e) {
-                    Log.Error (Log.LOG_LIFECYCLE, "Cannot create local notification - {0}", e);
-                }
                 message.HasBeenNotified = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");

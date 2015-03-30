@@ -38,6 +38,7 @@ namespace NachoCore
             Xml.FolderHierarchy.TypeCode.DefaultSent_5,
             Xml.FolderHierarchy.TypeCode.DefaultOutbox_6,
             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
+            Xml.FolderHierarchy.TypeCode.Unknown_18,
         };
 
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForCalendars = {

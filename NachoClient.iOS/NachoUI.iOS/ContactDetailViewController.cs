@@ -133,6 +133,7 @@ namespace NachoClient.iOS
             if (null != contact) {
                 contact = McContact.QueryById<McContact> (contact.Id);
             }
+            RefreshData ();
             ConfigureAndLayout ();
         }
 
@@ -389,6 +390,7 @@ namespace NachoClient.iOS
             interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
+            interactionsTableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
@@ -631,7 +633,7 @@ namespace NachoClient.iOS
                 notesView.Hidden = true;
                 break;
             case 1:
-                editContact.Enabled = true;
+                editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = true;
                 interactionsTableView.Hidden = false;
                 notesView.Hidden = true;
@@ -1184,7 +1186,7 @@ namespace NachoClient.iOS
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
-            this.messageSource.SetEmailMessages (messageThreads);
+            this.messageSource.SetEmailMessages (messageThreads, "No interactions");
         }
 
         public void SaveNote (int accountId, string noteText)

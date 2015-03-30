@@ -6,4 +6,4 @@ clean:
 	rm -fr ./crypto/bin
 	rm -fr ./crypto/obj
 	rm -fr ./crypto/doc
-
+	rm -fr MimeKit/bin MimeKit/obj

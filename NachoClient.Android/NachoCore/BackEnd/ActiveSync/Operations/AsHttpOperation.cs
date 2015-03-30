@@ -453,23 +453,23 @@ namespace NachoCore.ActiveSync
             }
 
             HttpRequestMessage request = null;
-            // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
-            // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
-            // change the value once you start using the client. So we use our own per-request timeout.
-            // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
-            TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
-                System.Threading.Timeout.InfiniteTimeSpan);
-            
-            if (!CreateHttpRequest (out request, cToken)) {
-                Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
-                CancelTimeoutTimer ("Intentional");
-                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
-                return;
-            }
             HttpResponseMessage response = null;
             try {
-                ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
                 try {
+                    // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+                    // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
+                    // change the value once you start using the client. So we use our own per-request timeout.
+
+                    // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
+                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
+                        System.Threading.Timeout.InfiniteTimeSpan);
+                    if (!CreateHttpRequest (out request, cToken)) {
+                        Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
+                        CancelTimeoutTimer ("Intentional");
+                        HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                        return;
+                    }
+                    ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
@@ -869,14 +869,16 @@ namespace NachoCore.ActiveSync
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsAsThrottle)) {
                     Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsAsThrottle);
+                    protocolState = BEContext.ProtocolState;
+                    protocolState.HasBeenRateLimited = true;
                     try {
-                        protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsAsThrottle).First ();
                         protocolState.SetAsThrottleReason (value);
-                        protocolState.Update ();
                     } catch {
                         Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
+                    protocolState.Update ();
+
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
                     configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
                 } else {
