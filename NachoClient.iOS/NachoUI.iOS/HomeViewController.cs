@@ -25,18 +25,15 @@ namespace NachoClient.iOS
         {
             return false;
         }
+
         /// <summary>
         /// On first run, push the modal LaunchViewController to get credentials.
         /// </summary>
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            // Help & demo pages
             InitializePageViewController ();
-
         }
-
 
         public override void ViewWillAppear (bool animated)
         {
@@ -45,7 +42,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.NavigationBar.Hidden = true;
-
             }
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
@@ -81,44 +77,26 @@ namespace NachoClient.iOS
             }
         }
 
-
         public void InitializePageViewController ()
         {
             View.BackgroundColor = A.Color_NachoGreen;
-            // Initialize the first page
-            HomePageController firstPageController = new HomePageController (0);
-            firstPageController.owner = this;   // set up our own "dots" for page indicator
-            // remove the navigation bars
-            // overlay the page controller and the dismiss button
+            NavigationController.NavigationBarHidden = true;
+
+            UIView dotsAndDismissContainerView = new UIView (); // contain pageDots and the dismiss button
+            dotsAndDismissContainerView.Frame = new CoreGraphics.CGRect (0, this.View.Frame.Bottom - 35, this.View.Frame.Width, 35);
+            dotsAndDismissContainerView.BackgroundColor = UIColor.White;
 
             pageDots = new UIPageControl (); // page indicators; will get updates as datasource updates
-            UIView dotsAndDismissContainerView = new UIView(); // contain pageDots and the dismiss button
-            //setup 
             pageDots.Pages = this.TotalPages;
             pageDots.CurrentPage = 0;
             pageDots.BackgroundColor = UIColor.White;
             pageDots.PageIndicatorTintColor = UIColor.Gray;
             pageDots.CurrentPageIndicatorTintColor = UIColor.Black;
-
-            //containerView.Frame = new System.Drawing.RectangleF (0, View.Frame.Bottom - 50, View.Frame.Width, 50);
-            dotsAndDismissContainerView.Frame = new CoreGraphics.CGRect (0, this.View.Frame.Bottom-35  , this.View.Frame.Width, 35);
-            dotsAndDismissContainerView.BackgroundColor = UIColor.White;
-            pageDots.Frame = new CoreGraphics.CGRect(20,0, 62, 35);  // relative to containerView
-            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
-                UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.None);
-
-            this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
-                false, s => {
-                });
-            this.NavigationController.NavigationBarHidden = true;
-            this.pageController.DataSource = new PageDataSource (this);
-
-
-            this.pageController.View.Frame = this.View.Bounds;
-            this.View.AddSubview (this.pageController.View);
+            pageDots.Frame = new CoreGraphics.CGRect (20, 0, 62, 35);  // relative to dotsAndDismissContainterView
+            dotsAndDismissContainerView.Add (pageDots);
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
-            closeTutorial = new UIButton (new CoreGraphics.CGRect (View.Frame.Width-145, 0, 130, 35));
+            closeTutorial = new UIButton (new CoreGraphics.CGRect (View.Frame.Width - 145, 0, 130, 35));
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
             closeTutorial.AccessibilityLabel = "Dismiss";
@@ -130,14 +108,35 @@ namespace NachoClient.iOS
             closeTutorial.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
-                PerformSegue(StartupViewController.NextSegue(), this);
+                PerformSegue (StartupViewController.NextSegue (), this);
             };
-            dotsAndDismissContainerView.Add (pageDots);
             dotsAndDismissContainerView.Add (closeTutorial);
 
             Util.AddHorizontalLine (0, 0, dotsAndDismissContainerView.Frame.Width, A.Color_NachoBorderGray, dotsAndDismissContainerView);
 
             View.Add (dotsAndDismissContainerView);
+
+            // Initialize the first page
+            HomePageController firstPageController = new HomePageController (0);
+            firstPageController.owner = this;   // set up our own "dots" for page indicator
+
+            this.pageController = new UIPageViewController (
+                UIPageViewControllerTransitionStyle.Scroll, 
+                UIPageViewControllerNavigationOrientation.Horizontal,
+                UIPageViewControllerSpineLocation.None
+            );
+
+            this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, false,
+                s => {
+                }
+            );
+            this.pageController.DataSource = new PageDataSource (this);
+
+            this.pageController.View.Frame = this.View.Bounds;
+            this.View.AddSubview (this.pageController.View);
+
+            // KLUDGE!
+            View.BringSubviewToFront(dotsAndDismissContainerView);
         }
 
         /// <summary>
@@ -163,7 +162,6 @@ namespace NachoClient.iOS
 
             public override UIViewController GetPreviousViewController (UIPageViewController pageViewController, UIViewController referenceViewController)
             {
-
                 HomePageController currentPageController = referenceViewController as HomePageController;
 
                 // Determine if we are on the first page
@@ -192,22 +190,6 @@ namespace NachoClient.iOS
                 }
 
             }
-
-            /* 
-           public override int GetPresentationCount (UIPageViewController pageViewController)
-            {
-                // NOTE: Don't call the base implementation on a Model class
-                // see http://docs.xamarin.com/guides/ios/application_fundamentals/delegates,_protocols,_and_events
-                //throw new NotImplementedException ();
-                return 4;
-            }
-            public override int GetPresentationIndex (UIPageViewController pageViewController)
-            {
-                // NOTE: Don't call the base implementation on a Model class
-                // see http://docs.xamarin.com/guides/ios/application_fundamentals/delegates,_protocols,_and_events
-                return 0;
-            }
-            */
 
         }
     }
