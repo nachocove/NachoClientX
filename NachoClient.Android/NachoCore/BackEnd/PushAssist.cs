@@ -50,7 +50,16 @@ namespace NachoCore
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
         protected IHttpClient Client;
-        private int AccountId;
+
+        private int AccountId {
+            get {
+                if ((null == Owner) || (null == Owner.Account)) {
+                    return 0;
+                }
+                return Owner.Account.Id;
+            }
+        }
+
         private bool IsDisposed;
         private string ClientContext;
         protected string SessionToken;
@@ -221,7 +230,6 @@ namespace NachoCore
             var handler = new NativeMessageHandler (false, true);
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
             Owner = owner;
-            AccountId = Owner.Account.Id;
             var account = McAccount.QueryById<McAccount> (AccountId);
             ClientContext = GetClientContext (account);
             // This entry is never freed even if the account is deleted. If the account is
@@ -361,7 +369,7 @@ namespace NachoCore
                     },
                     new Node {
                         State = (uint)Lst.Active,
-                        Invalid = new [] {
+                        Drop = new [] {
                             (uint)SmEvt.E.Success,
                         },
                         On = new [] {
@@ -414,22 +422,22 @@ namespace NachoCore
                             new Trans {
                                 Event = (uint)PAEvt.E.DevTok,
                                 Act = DoStartSession,
-                                State = (uint)Lst.SessTokW
+                                State = (uint)St.Start
                             },
                             new Trans {
                                 Event = (uint)PAEvt.E.DevTokLoss,
                                 Act = DoGetDevTok,
-                                State = (uint)Lst.DevTokW
+                                State = (uint)St.Start
                             },
                             new Trans {
                                 Event = (uint)PAEvt.E.CliTok,
                                 Act = DoStartSession,
-                                State = (uint)Lst.SessTokW
+                                State = (uint)St.Start
                             },
                             new Trans {
                                 Event = (uint)PAEvt.E.CliTokLoss,
                                 Act = DoGetCliTok,
-                                State = (uint)Lst.CliTokW
+                                State = (uint)St.Start
                             },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
                             new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
