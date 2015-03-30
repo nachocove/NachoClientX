@@ -766,7 +766,9 @@ namespace NachoClient.iOS
                     List<FolderStruct> subFolders = new List<FolderStruct> ();
                     subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
 
-                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type || NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type) {
+                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type || 
+                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type ||
+                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.Unknown_18 == folder.Type) {
                         yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
                     } else {
                         nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
