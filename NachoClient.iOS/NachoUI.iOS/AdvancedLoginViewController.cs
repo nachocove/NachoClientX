@@ -776,6 +776,7 @@ namespace NachoClient.iOS
             if (!theAccount.Server.IsSameServer (temp)) {
                 theAccount.Server.CopyFrom (temp);
                 theAccount.Server.UserSpecifiedServerName = serverView.textField.Text;
+                theAccount.Server.UsedBefore = false;
                 theAccount.Server.Update ();
                 Log.Info (Log.LOG_UI, "avl: update server {0}", theAccount.Server.UserSpecifiedServerName);
             }
