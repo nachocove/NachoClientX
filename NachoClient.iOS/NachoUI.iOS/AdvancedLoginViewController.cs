@@ -349,12 +349,11 @@ namespace NachoClient.iOS
                     }
                 });
             }
-            // Segues to LaunchViewController
             Action action = () => {
                 NcAccountHandler.Instance.RemoveAccount ();
                 InvokeOnMainThread (() => {
                     // go back to main screen
-                    UIRedirector.Instance.GoBackToMainScreen();                        
+                    NcUIRedirector.Instance.GoBackToMainScreen();                        
                 });
             };
             NcTask.Run (action, "RemoveAccount");

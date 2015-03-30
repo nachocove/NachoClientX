@@ -1300,7 +1300,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
       <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
     </Compile>
-    <Compile Include="NachoPlatform.iOS\UIRedirectoriOS.cs" />
+    <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

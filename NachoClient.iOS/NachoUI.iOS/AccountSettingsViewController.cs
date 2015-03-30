@@ -902,7 +902,7 @@ namespace NachoClient.iOS
                     editButton.Enabled = true;
                     ToggleDeleteAccountSpinnerView ();
                     // go back to main screen
-                    UIRedirector.Instance.GoBackToMainScreen();  
+                    NcUIRedirector.Instance.GoBackToMainScreen();  
                 });
             };
             NcTask.Run (action, "RemoveAccount");

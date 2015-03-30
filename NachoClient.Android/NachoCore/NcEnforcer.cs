@@ -47,7 +47,7 @@ namespace NachoCore
             Action action = () => {
                 InvokeOnUIThread.Instance.Invoke (delegate () {
                     NcAccountHandler.Instance.RemoveAccount ();
-                    UIRedirector.Instance.GoBackToMainScreen();                        
+                    NcUIRedirector.Instance.GoBackToMainScreen();                        
                     Log.Info (Log.LOG_AS, "Remote Wipe Completed.");
                 });
             };

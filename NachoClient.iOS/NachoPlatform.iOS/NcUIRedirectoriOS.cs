@@ -6,21 +6,21 @@ using NachoCore.Utils;
 
 namespace NachoPlatform
 {
-    public class UIRedirector : IPlatformUIRedirector
+    public class NcUIRedirector : IPlatformUIRedirector
     {
-        private static volatile UIRedirector instance;
+        private static volatile NcUIRedirector instance;
         private static object syncRoot = new Object ();
 
-        private UIRedirector ()
+        private NcUIRedirector ()
         {
         }
 
-        public static UIRedirector Instance {
+        public static NcUIRedirector Instance {
             get {
                 if (instance == null) {
                     lock (syncRoot) {
                         if (instance == null)
-                            instance = new UIRedirector ();
+                            instance = new NcUIRedirector ();
                     }
                 }
                 return instance;
