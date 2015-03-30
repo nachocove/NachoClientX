@@ -52,6 +52,10 @@ namespace NachoPlatform
             var match = SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
             if (SecStatusCode.Success == res) {
                 var iData = match.ValueData;
+                if (null == iData) {
+                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned ValueData of null");
+                    return null;
+                }
                 var bytes = iData.ToArray ();
                 var password = System.Text.Encoding.UTF8.GetString (bytes);
                 return password;
