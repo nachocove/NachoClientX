@@ -869,14 +869,16 @@ namespace NachoCore.ActiveSync
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsAsThrottle)) {
                     Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsAsThrottle);
+                    protocolState = BEContext.ProtocolState;
+                    protocolState.HasBeenRateLimited = true;
                     try {
-                        protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsAsThrottle).First ();
                         protocolState.SetAsThrottleReason (value);
-                        protocolState.Update ();
                     } catch {
                         Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
+                    protocolState.Update ();
+
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
                     configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
                 } else {
