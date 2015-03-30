@@ -66,6 +66,8 @@ namespace NachoCore.Model
 
         public bool DisableProvisionCommand { get; set; }
 
+        public bool HasBeenRateLimited { get; set; }
+
         public void IncrementAsFolderSyncEpoch ()
         {
             ++AsFolderSyncEpoch;
