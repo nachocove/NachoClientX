@@ -225,6 +225,7 @@ namespace NachoClient.iOS
                     multiAttachButton,
                     multiOpenInButton
                 };
+                NavigationItem.HidesBackButton = true;
                 NavigationItem.Title = "";
                 ToggleSearchBar (false);
                 isMultiSelecting = true;
@@ -245,6 +246,7 @@ namespace NachoClient.iOS
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     multiSelectButton
                 };
+                NavigationItem.HidesBackButton = false;
                 NavigationItem.Title = "Files";
                 ToggleSearchBar (true);
                 isMultiSelecting = false;
