@@ -277,24 +277,27 @@ namespace NachoClient.iOS
             locationLabelView.Hidden = false;
             locationIconView.Hidden = false;
 
-            var durationString = "";
+            // Starting time and duration
+            var startAndDuration = "";
             if (c.AllDayEvent) {
-                durationString = "ALL DAY";
+                startAndDuration = "ALL DAY";
             } else {
                 var start = Pretty.ShortTimeString (e.StartTime);
-                var duration = Pretty.CompactDuration (e.StartTime, e.EndTime);
-                durationString = String.Join (" - ", new string[] { start, duration });
+                if (e.EndTime > e.StartTime) {
+                    var duration = Pretty.CompactDuration (e.StartTime, e.EndTime);
+                    startAndDuration = String.Join (" - ", new string[] { start, duration });
+                } else {
+                    startAndDuration = start;
+                }
             }
+            durationLabelView.Text = startAndDuration;
 
+            // Location
             var locationString = "";
             if (!String.IsNullOrEmpty (c.GetLocation ())) {
                 locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
                 locationString = Pretty.SubjectString (c.GetLocation ());
             }
-
-            // Duration
-            durationLabelView.Text = durationString;
-            // Location view
             if (String.IsNullOrEmpty (locationString)) {
                 locationIconView.Hidden = true;
                 locationLabelView.Hidden = true;
