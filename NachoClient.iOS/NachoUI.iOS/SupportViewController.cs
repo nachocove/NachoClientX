@@ -118,7 +118,7 @@ namespace NachoClient.iOS
             callUsLabel.Font = A.Font_AvenirNextMedium14;
             callUsLabel.TextColor = A.Color_NachoBlack;
             callUsLabel.TextAlignment = UITextAlignment.Left;
-            callUsLabel.Text = "Call us at +1 (404) 436-2246";
+            callUsLabel.Text = "Call us at +1 (971) 803-6226";
             supportView.AddSubview (callUsLabel);
 
             yOffset = callUsLabel.Frame.Bottom + INDENT;
