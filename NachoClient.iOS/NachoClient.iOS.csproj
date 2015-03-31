@@ -194,9 +194,6 @@
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
-    <Reference Include="BouncyCastle">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\BouncyCastle.dll</HintPath>
-    </Reference>
     <Reference Include="antlr.runtime.iOS">
       <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
     </Reference>
@@ -210,6 +207,9 @@
       <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
+    <Reference Include="BouncyCastle">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
