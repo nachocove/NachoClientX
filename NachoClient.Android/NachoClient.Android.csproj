@@ -382,6 +382,7 @@
     <Compile Include="NachoCore\Utils\NcAccountHandler.cs" />
     <Compile Include="NachoPlatform.Android\NcUIRedirectorAndroid.cs" />
     <Compile Include="NachoCore\Utils\BuildInfoHelper.cs" />
+    <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

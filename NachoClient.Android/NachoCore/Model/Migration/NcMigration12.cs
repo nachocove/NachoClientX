@@ -17,8 +17,10 @@ namespace NachoCore.Model
         {
             McAccount ExchangeAccount =  McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).SingleOrDefault ();
 
-            int rowsUpdated =  NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScoreSyncInfo WHERE AccountId = ?", ExchangeAccount.Id);
-            UpdateProgress (rowsUpdated);
+            if (ExchangeAccount != null) {
+                int rowsUpdated = NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScoreSyncInfo WHERE AccountId = ?", ExchangeAccount.Id);
+                UpdateProgress (rowsUpdated);
+            }
         }
     }
 }
