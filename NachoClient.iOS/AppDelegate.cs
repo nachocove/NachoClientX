@@ -280,6 +280,7 @@ namespace NachoClient.iOS
 
                 PushAssist.Initialize ();
                 ServerCertificatePeek.Initialize ();
+                StartUIMonitor ();
             }
 
             if (null == NcApplication.Instance.CrashFolder) {
@@ -293,7 +294,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
-            StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
             // end of one-time initialization
