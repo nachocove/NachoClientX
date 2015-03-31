@@ -69,6 +69,30 @@ namespace NachoClient.iOS
         private bool DidEnterBackgroundCalled = false;
         private bool hasFirstSyncCompleted;
 
+        private ulong UserNotificationSettings {
+            get {
+                return (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types;
+            }
+        }
+
+        private bool NotificationCanAlert {
+            get {
+                return (0 != (UserNotificationSettings & (ulong)UIUserNotificationType.Alert));
+            }
+        }
+
+        private bool NotificationCanSound {
+            get {
+                return (0 != (UserNotificationSettings & (ulong)UIUserNotificationType.Sound));
+            }
+        }
+
+        private bool NotificationCanBadge {
+            get {
+                return (0 != (UserNotificationSettings & (ulong)UIUserNotificationType.Badge));
+            }
+        }
+
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -937,23 +961,28 @@ namespace NachoClient.iOS
                 subjectString += String.Format ("[{0}:{1:N1}s]", cause, latency);
             }
 
-            var notif = new UILocalNotification ();
-            var className = NachoPlatformBinding.PlatformProcess.GetClassName (notif.Handle);
-            if (("UIConcreteLocalNotification" != className) && ("UILocalNotification" != className)) {
-                Log.Error (Log.LOG_UI, "Get an object of unknown type {0}", className);
-                return true;
-            }
-            notif.AlertAction = null;
-            notif.AlertTitle = fromString;
-            notif.AlertBody = subjectString;
-            notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
-            if (withSound) {
-                notif.SoundName = UILocalNotification.DefaultSoundName;
-            }
-            if ((ulong)KNotificationSettings != (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types) {
+            if (NotificationCanAlert) {
+                var notif = new UILocalNotification ();
+                var className = NachoPlatformBinding.PlatformProcess.GetClassName (notif.Handle);
+                if (("UIConcreteLocalNotification" != className) && ("UILocalNotification" != className)) {
+                    Log.Error (Log.LOG_UI, "Get an object of unknown type {0}", className);
+                    return true;
+                }
+                notif.AlertAction = null;
+                notif.AlertTitle = fromString;
+                notif.AlertBody = subjectString;
+                notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
+                if (withSound) {
+                    if (NotificationCanSound) {
+                        notif.SoundName = UILocalNotification.DefaultSoundName;
+                    } else {
+                        Log.Warn (Log.LOG_UI, "No permission to play sound. (emailMessageId={0})", message.Id);
+                    }
+                }
+                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+            } else {
                 Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
             }
-            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
 
             return true;
         }
@@ -994,7 +1023,11 @@ namespace NachoClient.iOS
                 }
             }
 
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
+            if (NotificationCanBadge) {
+                UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
+            } else {
+                Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
+            }
         }
 
         public static void TestScheduleEmailNotification ()
