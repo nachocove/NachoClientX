@@ -291,8 +291,8 @@ namespace NachoClient.iOS
 
             //Swipe view
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.LeftSwipeActionButtons.Clear ();
-            view.RightSwipeActionButtons.Clear ();
+            view.ClearActions (SwipeSide.LEFT);
+            view.ClearActions (SwipeSide.RIGHT);
             if (organizer) {
                 if (!editing) {
                     view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
