@@ -6,6 +6,7 @@ using Foundation;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {

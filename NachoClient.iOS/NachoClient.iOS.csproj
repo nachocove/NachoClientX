@@ -992,7 +992,6 @@
       <Link>NachoCore\Model\McNote.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
-    <Compile Include="NachoUI.iOS\Support\LoginHelpers.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\RegexUtilities.cs">
       <Link>NachoCore\Utils\RegexUtilities.cs</Link>
     </Compile>
@@ -1303,6 +1302,9 @@
     <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
       <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
+      <Link>NachoCore\Utils\LoginHelpers.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
