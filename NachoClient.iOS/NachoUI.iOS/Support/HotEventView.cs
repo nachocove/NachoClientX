@@ -160,6 +160,7 @@ namespace NachoClient.iOS
             switch (statusEvent.Status.SubKind) {
 
             case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 Configure ();
                 break;
             }

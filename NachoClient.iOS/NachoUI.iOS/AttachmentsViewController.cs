@@ -109,6 +109,10 @@ namespace NachoClient.iOS
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: AttachmentsSetChanged");
                 RefreshTableSource ();
             }
+            if (NcResult.SubKindEnum.Info_SystemTimeZoneChanged == s.Status.SubKind) {
+                // Refresh the view so that the displayed times will reflect the new time zone.
+                RefreshTableSource ();
+            }
         }
 
         private void CreateView ()
