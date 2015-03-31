@@ -194,6 +194,9 @@
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
+    <Reference Include="BouncyCastle">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
+    </Reference>
     <Reference Include="antlr.runtime.iOS">
       <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
     </Reference>
