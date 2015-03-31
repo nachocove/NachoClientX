@@ -877,20 +877,24 @@ namespace NachoCore
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_PushAssistDeviceToken:
-                if (null == siea.Status.Value) {
-                    // Because we aren't interlocking the DB delete and the SM event, all code
-                    // must check device token before using it.
-                    PostEvent (PAEvt.E.DevTokLoss, "DEV_TOK_LOSS");
-                } else {
-                    PostEvent (PAEvt.E.DevTok, "DEV_TOK_SET");
-                }
+                NcTask.Run (() => {
+                    if (null == siea.Status.Value) {
+                        // Because we aren't interlocking the DB delete and the SM event, all code
+                        // must check device token before using it.
+                        PostEvent (PAEvt.E.DevTokLoss, "DEV_TOK_LOSS");
+                    } else {
+                        PostEvent (PAEvt.E.DevTok, "DEV_TOK_SET");
+                    }
+                }, "PushAssistDeviceToken");
                 break;
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
-                if (null == siea.Status.Value) {
-                    PostEvent (PAEvt.E.CliTokLoss, "CLI_TOK_LOST");
-                } else {
-                    DoGetCliTok ();
-                }
+                NcTask.Run (() => {
+                    if (null == siea.Status.Value) {
+                        PostEvent (PAEvt.E.CliTokLoss, "CLI_TOK_LOST");
+                    } else {
+                        DoGetCliTok ();
+                    }
+                }, "PushAssistClientToken");
                 break;
             }
         }
