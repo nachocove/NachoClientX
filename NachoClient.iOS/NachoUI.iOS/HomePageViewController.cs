@@ -72,6 +72,8 @@ namespace NachoClient.iOS
         //View Three Components
         protected UIImageView pullDownDotView;
         protected UIImageView meetingMessage;
+        protected UIImageView calendarMessage;
+        protected UIImageView calendarDotView;
 
         protected NSTimer flashPullDotTimer;
 
@@ -115,7 +117,7 @@ namespace NachoClient.iOS
         const string BodyZero = "This tutorial will help you use <br> NachoMail";
         const string BodyOne = "Important messages go to your <font color=\"FF3F20\">Hot List</font>. <br> All messages can be found in <font color=\"1CCEC2\">Mail</font>.";
         const string BodyTwo = "Quickly browse through your Hot <br> List by swiping up and down.";
-        const string BodyThree = "Your next meeting is <font color=\"FF3F20\">here</font>. Manage <br> your schedule using Calendar.";
+        const string BodyThree = "Your next meeting is <font color=\"FF3F20\">here</font>. Manage <br> your schedule using <font color=\"1CCEC2\">Calendar</font>.";
         const string BodyFour = "Sliding right or left elsewhere will get you <br> shortcuts and options for the items";
 
         const string contentscreen = "Slide1-3";
@@ -370,7 +372,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle (Util.GetImage ("Slide02BG"))) {
                 nachoNowImageView.Image = image;
             }
-            nachoNowImageView.Frame = (new CGRect (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
+            nachoNowImageView.Frame = (new CGRect (0, 0, imageContainer.Frame.Width , imageContainer.Frame.Height));
             imageContainer.AddSubview (nachoNowImageView);
 
             using (var image = UIImage.FromBundle (Util.GetImage ("Slide02RedMarker"))) {
@@ -457,6 +459,7 @@ namespace NachoClient.iOS
 
         protected void CreateViewThree ()
         {
+            // Picture of the message
             UIImageView calendarBackground = new UIImageView ();
             using (var image = UIImage.FromBundle (Util.GetImage ("Slide04BG"))) {
                 calendarBackground.Image = image;
@@ -464,6 +467,7 @@ namespace NachoClient.iOS
             calendarBackground.Frame = (new CGRect (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
             imageContainer.AddSubview (calendarBackground);
 
+            // "Next Meeting Here"
             using (var image = UIImage.FromBundle (Util.GetImage ("Slide04MessageUp"))) {
                 meetingMessage = new UIImageView (image);
             }
@@ -471,12 +475,30 @@ namespace NachoClient.iOS
             meetingMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             imageContainer.AddSubview (meetingMessage);
 
+            // Red dot
             using (var image = UIImage.FromBundle (Util.GetImage ("Slide02RedMarker"))) {
                 pullDownDotView = new UIImageView (image);
             }
             pullDownDotView.Center = new CGPoint (meetingMessage.Center.X, 25 * GetImageScale ());
             pullDownDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             imageContainer.AddSubview (pullDownDotView);
+
+            // "All Meetings Here"
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02MessageDown-Meetings"))) {
+                calendarMessage = new UIImageView (image);
+            }
+            var c = (this.imageContainer.Frame.Width / 4) + 9;
+            calendarMessage.Center = new CGPoint (c, this.imageContainer.Frame.Height - 60 * GetImageScale ());
+            calendarMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            imageContainer.AddSubview (calendarMessage);
+
+            // Green dot
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02TealMarker"))) {
+                calendarDotView = new UIImageView (image);
+            }
+            calendarDotView.Center = new CGPoint (c, this.imageContainer.Frame.Height - 25 * GetImageScale ());
+            calendarDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            imageContainer.AddSubview (calendarDotView);
 
             CreateHelperText ();
             imageContainer.ClipsToBounds = true;
@@ -660,6 +682,8 @@ namespace NachoClient.iOS
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
                         pullDownDotView.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                         meetingMessage.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        calendarMessage.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        calendarDotView.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                     });
                 }, ((bool finished) => {
                 }));
@@ -836,6 +860,8 @@ namespace NachoClient.iOS
 
             pullDownDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             meetingMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            calendarMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            calendarDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
         }
 
         protected void ResetViewFour ()

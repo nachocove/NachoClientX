@@ -2174,6 +2174,11 @@
     <BundleResource Include="Resources\gen-deadlinethread%404x.png" />
     <BundleResource Include="Resources\gen-deadlinethread%406x.png" />
     <BundleResource Include="Resources\silent.wav" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%403x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%404x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
