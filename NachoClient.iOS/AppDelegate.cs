@@ -1029,6 +1029,21 @@ namespace NachoClient.iOS
             NcApplication.Instance.MonitorReport ();
         }
 
+        public override void ApplicationSignificantTimeChange (UIApplication application)
+        {
+            // This is called in a variety of situations, including at midnight, when changing to or from
+            // daylight saving time, or when the system time changes.  We are only interested in time zone
+            // changes, so check for that before invoking the app's time zone change status indicator.
+            var oldLocal = TimeZoneInfo.Local;
+            TimeZoneInfo.ClearCachedData ();
+            var newLocal = TimeZoneInfo.Local;
+            if (oldLocal.Id != newLocal.Id || oldLocal.BaseUtcOffset != newLocal.BaseUtcOffset) {
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Account = ConstMcAccount.NotAccountSpecific,
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_SystemTimeZoneChanged),
+                });
+            }
+        }
 
     }
 
