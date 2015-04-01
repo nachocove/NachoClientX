@@ -403,7 +403,7 @@ namespace NachoClient.iOS
 
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
-            bodyTextView = new UITextView (new CGRect (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
+            bodyTextView = new NcTextView (new CGRect (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
             bodyTextView.Font = composeFont;
             bodyTextView.TextColor = composeColor;
             bodyTextView.BackgroundColor = UIColor.White;

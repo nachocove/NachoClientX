@@ -1309,6 +1309,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration14.cs">
       <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
