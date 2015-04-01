@@ -89,19 +89,6 @@ namespace NachoClient.iOS
 
             saveButton = null;
             cancelButton = null;
-
-            var dismissChangesAlertView = (UIAlertView)View.ViewWithTag (DISMISS_CHANGES_ALERT_VIEW_TAG);
-            if (null != dismissChangesAlertView) {
-                dismissChangesAlertView.Clicked -= DismissChangesClicked;
-                dismissChangesAlertView = null;
-            }
-        }
-
-        protected void DismissChangesClicked (object sender, UIButtonEventArgs b)
-        {
-            if (b.ButtonIndex == 0) {
-                DismissViewController (true, null);
-            }
         }
 
         protected void SaveButtonClicked (object sender, EventArgs e)
@@ -119,10 +106,11 @@ namespace NachoClient.iOS
             if (!DidUserEditSignature ()) {
                 DismissViewController (true, null);
             } else {
-                UIAlertView dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
-                dismissChanges.Tag = DISMISS_CHANGES_ALERT_VIEW_TAG;
-                dismissChanges.Clicked += DismissChangesClicked;
-                dismissChanges.Show ();
+                NcAlertView.Show (this, "Dismiss Changes", "If you leave this screen, your changes will not be saved.",
+                    new NcAlertAction ("OK", NcAlertActionStyle.Destructive, () => {
+                        DismissViewController (true, null);
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
             }
         }
 

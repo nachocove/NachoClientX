@@ -260,11 +260,8 @@ namespace NachoClient.iOS
             UITextView messageInfoTextView = (UITextView)View.ViewWithTag (MESSAGEBODY_VIEW_TAG);
 
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
-                UIAlertView badNetworkConnection = new UIAlertView ("Network Error",
-                    "There is an issue with the network and we cannot send this message. Please try again when you have a connection.",
-                    null,
-                    "Ok");
-                badNetworkConnection.Show ();
+                NcAlertView.ShowMessage (this, "Network Error",
+                    "A networking issue prevents this message from being sent. Please try again when you have a network connection.");
             } else {
                 sendMessageTimer = NSTimer.CreateScheduledTimer (WAIT_TIMER_LENGTH, delegate {
                     MessageReceived (false);
@@ -352,30 +349,19 @@ namespace NachoClient.iOS
                 }
 
                 if (didSend) {
-                    UIAlertView confirmSentAlert = new UIAlertView();
-                    confirmSentAlert.Title = "Message Successfully Sent";
-                    confirmSentAlert.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
-                    confirmSentAlert.AddButton("Close");
-                    confirmSentAlert.Clicked += DismissFromAlert;
-                    confirmSentAlert.Show ();
+                    NcAlertView.Show (this, "Message Sent",
+                        "We have received your message and will respond shortly. Thank you for your feedback.",
+                        new NcAlertAction ("Close", NcAlertActionStyle.Cancel, () => {
+                            DismissViewController (true, null);
+                        }));
                 } else {
-                    UIAlertView sendFailedAlert = new UIAlertView();
-                    sendFailedAlert.Title = "Message Was Not Sent";
-                    sendFailedAlert.Message = "There was a delay in sending the message. We will continue trying to send the message in the background.";
-                    sendFailedAlert.AddButton("Close");
-                    sendFailedAlert.Clicked += DismissFromAlert;
-                    sendFailedAlert.Show ();
+                    NcAlertView.Show (this, "Message Not Sent",
+                        "There was a delay while sending the message. We will continue trying to send the message in the background.",
+                        new NcAlertAction ("Close", NcAlertActionStyle.Cancel, () => {
+                            DismissViewController (true, null);
+                        }));
                 }
             }
-        }
-
-        protected void DismissFromAlert (object sender, UIButtonEventArgs e)
-        {
-            this.DismissViewController (true, null);
-
-            UIAlertView alert = (UIAlertView)sender;
-            alert.Clicked -= DismissFromAlert;
-            alert = null;
         }
 
         protected override void Cleanup ()

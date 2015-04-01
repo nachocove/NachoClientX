@@ -1053,8 +1053,7 @@ namespace NachoClient.iOS
 
         protected void ComplainAbout (string complaintTitle, string complaintMessage)
         {
-            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
-            alert.Show ();
+            NcAlertView.ShowMessage (this, complaintTitle, complaintMessage);
         }
 
         protected void VipButtonTouchUpInside (object sender, EventArgs e)
