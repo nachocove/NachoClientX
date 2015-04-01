@@ -282,9 +282,9 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 startAndDuration = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (e.StartTime);
+                var start = Pretty.ShortTimeString (e.GetStartTimeUtc ());
                 if (e.EndTime > e.StartTime) {
-                    var duration = Pretty.CompactDuration (e.StartTime, e.EndTime);
+                    var duration = Pretty.CompactDuration (e.GetStartTimeUtc (), e.GetEndTimeUtc ());
                     startAndDuration = String.Join (" - ", new string[] { start, duration });
                 } else {
                     startAndDuration = start;

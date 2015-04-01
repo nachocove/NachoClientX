@@ -962,7 +962,7 @@ namespace NachoCore.Utils
 
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
             DateTime organizersTime = ConvertTimeFromUtc (start, timeZone);
-            DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
+            DateTime dayStart = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Utc);
             double days = (end - start).TotalDays;
 
             // Use a do/while loop so we will always create at least one event, even if
@@ -974,13 +974,13 @@ namespace NachoCore.Utils
             bool needsReminder = reminderItem.HasReminder ();
             int exceptionId = null == exception ? 0 : exception.Id;
             do {
-                DateTime nextDay = localStartTime.AddDays (1.0);
-                var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
+                DateTime nextDay = dayStart.AddDays (1.0);
+                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, true, c.Id, exceptionId);
                 if (needsReminder) {
                     ev.SetReminder (reminderItem.GetReminder ());
                     needsReminder = false; // Only the first day should have a reminder.
                 }
-                localStartTime = nextDay;
+                dayStart = nextDay;
                 days -= 1.0;
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             } while (days > 0.25);
@@ -1064,7 +1064,7 @@ namespace NachoCore.Utils
             var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
-                var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
+                var e = McEvent.Create (c.AccountId, startTime, endTime, false, c.Id, 0);
                 if (c.ReminderIsSet) {
                     e.SetReminder (c.Reminder);
                 }
@@ -1079,7 +1079,7 @@ namespace NachoCore.Utils
                         if (DateTime.MinValue == exceptionEnd) {
                             exceptionEnd = endTime;
                         }
-                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.Id, exception.Id);
+                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, false, c.Id, exception.Id);
                         if (exception.HasReminder ()) {
                             e.SetReminder (exception.GetReminder ());
                         }

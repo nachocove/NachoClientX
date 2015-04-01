@@ -138,10 +138,10 @@ namespace NachoCore.Utils
             }
             DateTime now = DateTime.UtcNow;
             if (ev.ReminderTime < now) {
-                if (ev.EndTime > now) {
+                if (ev.GetEndTimeUtc () > now) {
                     // The reminder time has passed, but the event isn't over yet.
                     // Notify the user right now.
-                    string message = Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.StartTime - now));
+                    string message = Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.GetStartTimeUtc () - now));
                     NachoPlatform.Notif.Instance.ImmediateNotification (ev.Id, message);
                 }
                 return;
@@ -196,7 +196,7 @@ namespace NachoCore.Utils
 
         private static string NotificationMessage (McEvent ev)
         {
-            return Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.StartTime - ev.ReminderTime));
+            return Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.GetStartTimeUtc () - ev.ReminderTime));
         }
 
         private static void StatusIndicatorCallback (object sender, EventArgs e)

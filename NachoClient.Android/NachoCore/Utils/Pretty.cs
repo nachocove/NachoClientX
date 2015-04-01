@@ -33,7 +33,7 @@ namespace NachoCore.Utils
 
         /// <summary>
         /// Calendar event duration, 0h0m style.
-        /// Returns empty string for an appointment.
+        /// Returns an empty string for a zero length time span.
         /// </summary>
         static public string CompactDuration (DateTime StartTime, DateTime EndTime)
         {

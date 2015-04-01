@@ -731,7 +731,7 @@ namespace NachoClient.iOS
                                 } else {
                                     subject = "Event at ";
                                 }
-                                var msg = subject + Pretty.FullDateTimeString (eventItem.StartTime);
+                                var msg = subject + Pretty.FullDateTimeString (eventItem.GetStartTimeUtc ());
                                 UIAlertView alert = new UIAlertView ("Reminder", msg, null, "OK", null);
 
                                 alert.Show ();
