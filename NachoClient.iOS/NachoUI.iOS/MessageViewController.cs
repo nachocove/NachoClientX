@@ -58,11 +58,7 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
-        
-
-
-
-#else
+        #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
         nfloat HEADER_TOP_MARGIN = 0;

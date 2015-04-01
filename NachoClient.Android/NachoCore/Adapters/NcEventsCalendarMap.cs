@@ -81,7 +81,7 @@ namespace NachoCore
             }
             int endEvent = events.Count;
             for (int e = days [NumberOfDays ()]; e < events.Count; ++e) {
-                DateTime start = events [e].StartTime.ToLocalTime ();
+                DateTime start = events [e].GetStartTimeLocal ();
                 if (start >= untilDate) {
                     endEvent = e;
                     break;
@@ -137,7 +137,7 @@ namespace NachoCore
             date = date.ToLocalTime ();
             int day = IndexOfDate (date);
             for (int i = days [day]; i < events.Count; ++i) {
-                if (date <= events [i].StartTime.ToLocalTime ()) {
+                if (date <= events [i].GetStartTimeLocal ()) {
                     while (days [day + 1] <= i) {
                         ++day;
                     }
@@ -173,6 +173,21 @@ namespace NachoCore
                     // Find all the events that are to be displayed.
                     var newEvents = GetEvents ();
 
+                    // The start times for all-day events are stored differently from the start times
+                    // for regular events.  This can result in the database returning the events in a
+                    // slightly different order than what we want.  So the events need to be sorted.
+                    // Hopefully this is fast, since the events should be in almost the correct order.
+                    newEvents.Sort(((McEvent x, McEvent y) => {
+                        TimeSpan diff = x.GetStartTimeUtc () - y.GetStartTimeUtc ();
+                        if (0 > diff.Ticks) {
+                            return -1;
+                        } else if (0 < diff.Ticks) {
+                            return 1;
+                        } else {
+                            return 0;
+                        }
+                    }));
+
                     // Make a copy of the end date, in case it changes while the events are being processed.
                     DateTime untilDate = finalDay;
 
@@ -185,7 +200,7 @@ namespace NachoCore
 
                     // Iterate over all the events, figuring out on which day they occur.
                     for (int e = 0; e < newEvents.Count; ++e) {
-                        DateTime start = newEvents [e].StartTime.ToLocalTime ();
+                        DateTime start = newEvents [e].GetStartTimeLocal ();
                         if (start >= untilDate) {
                             // This event is after our end date.  We can stop processing.
                             endEvent = e;

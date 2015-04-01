@@ -156,8 +156,9 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             switch (s.Status.SubKind) {
 
-            // When the events change, refresh the UI to reflect the changes.
+            // When the events change, or when the time zone changes, refresh the UI to reflect the changes.
             case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 calendarSource.Refresh (delegate {
                     ReloadDataWithoutScrolling ();
                     UpdateDateDotView ();

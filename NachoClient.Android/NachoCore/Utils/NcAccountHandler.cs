@@ -59,8 +59,7 @@ namespace NachoCore.Model
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
                 NcApplication.Instance.Account = account;
                 Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
-                // TODO: move LoginHelpers to appropriate location so that we don't need to reference NachoClient.iOS namespace here. I think, LoginHelpers should sit in Model.
-                NachoClient.iOS.LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
+                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
             });
         }
 

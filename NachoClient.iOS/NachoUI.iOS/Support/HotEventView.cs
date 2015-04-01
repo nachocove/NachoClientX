@@ -139,7 +139,7 @@ namespace NachoClient.iOS
             // Set a timer to fire at the end of the currently displayed event, so the view can
             // be reconfigured to show the next event.
             if (null != currentEvent) {
-                TimeSpan timerDuration = currentEvent.EndTime - DateTime.UtcNow;
+                TimeSpan timerDuration = currentEvent.GetEndTimeUtc () - DateTime.UtcNow;
                 if (timerDuration < TimeSpan.Zero) {
                     // The event ended in between GetCurrentOrNextEvent running its query and now.
                     // Configure the timer to fire immediately.
@@ -160,6 +160,7 @@ namespace NachoClient.iOS
             switch (statusEvent.Status.SubKind) {
 
             case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 Configure ();
                 break;
             }
@@ -216,12 +217,12 @@ namespace NachoClient.iOS
 
             var startString = "";
             if (c.AllDayEvent) {
-                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.StartTime);
+                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.GetStartTimeUtc ());
             } else {
-                if ((currentEvent.StartTime - DateTime.UtcNow).TotalHours < 12) {
-                    startString = Pretty.ShortTimeString (currentEvent.StartTime);
+                if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
+                    startString = Pretty.ShortTimeString (currentEvent.GetStartTimeUtc ());
                 } else {
-                    startString = Pretty.ShortDayTimeString (currentEvent.StartTime);
+                    startString = Pretty.ShortDayTimeString (currentEvent.GetStartTimeUtc ());
                 }
             }
 

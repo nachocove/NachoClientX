@@ -2,12 +2,10 @@
 //
 using System;
 using NachoCore.Model;
-using NachoClient;
-using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 
-namespace NachoClient.iOS
+namespace NachoCore.Utils
 {
     public class LoginHelpers
     {

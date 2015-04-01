@@ -463,7 +463,7 @@ namespace NachoClient.iOS
             }
             ConfigureRsvpBar (isOrganizer);
 
-            NavigationItem.Title = e.StartTime.ToString ("Y");
+            NavigationItem.Title = e.GetStartTimeLocal ().ToString ("Y");
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabel.Text = c.GetSubject ();
@@ -472,7 +472,7 @@ namespace NachoClient.iOS
             titleLabel.SizeToFit ();
 
             var whenLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
-            whenLabel.Text = Pretty.ExtendedDateString (e.StartTime);
+            whenLabel.Text = Pretty.ExtendedDateString (e.GetStartTimeUtc ());
 
             var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
             if (c.AllDayEvent) {
@@ -482,12 +482,12 @@ namespace NachoClient.iOS
                         Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime (c.EndTime)));
                 }
             } else {
-                if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {
+                if (e.GetStartTimeLocal ().DayOfYear == e.GetEndTimeLocal ().DayOfYear) {
                     durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (e.StartTime), Pretty.FullTimeString (e.EndTime));
+                        Pretty.FullTimeString (e.GetStartTimeUtc ()), Pretty.FullTimeString (e.GetEndTimeUtc ()));
                 } else {
                     durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
+                        Pretty.FullTimeString (e.GetStartTimeUtc ()), Pretty.FullDateTimeString (e.GetEndTimeUtc ()));
                 }
             }
             durationLabel.Frame = new CGRect (durationLabel.Frame.X, durationLabel.Frame.Y, SCREEN_WIDTH - 90, 20);

@@ -385,6 +385,8 @@
     <Compile Include="NachoPlatform.Android\StoreHandlerAndroid.cs" />
     <Compile Include="NachoPlatform.Android\CloudHandlerAndroid.cs" />
     <Compile Include="NachoCore\Extensions\String+ToDateTime.cs" />
+    <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration14.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
