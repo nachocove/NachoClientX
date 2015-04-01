@@ -1307,9 +1307,7 @@ namespace NachoCore.ActiveSync
         private void ExecuteCmd ()
         {
             if (null != PushAssist) {
-                if (PushAssist.IsActive ()) {
-                    PushAssist.Defer ();
-                } else if (PushAssist.IsStartOrParked ()) {
+                if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
                 }
             }
