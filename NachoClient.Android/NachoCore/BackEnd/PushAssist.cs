@@ -45,6 +45,7 @@ namespace NachoCore
         public static int MinDelayMsec = 5000;
         public static int MaxDelayMsec = 15000;
         public static int MaxTimeoutMsec = 10000;
+        public static int DeferPeriodMsec = 30 * 1000;
         protected static string DeviceToken;
 
         protected IPushAssistOwner Owner;
@@ -75,6 +76,7 @@ namespace NachoCore
 
         protected NcTimer RetryTimer;
         protected NcTimer TimeoutTimer;
+        protected NcTimer DeferTimer;
         protected CancellationTokenSource Cts;
 
         private string BaseUrl {
@@ -342,7 +344,7 @@ namespace NachoCore
                                 Act = DoStartSession,
                                 State = (uint)Lst.SessTokW
                             },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoActive, State = (uint)Lst.Active },
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
                                 Act = DoStartSession,
@@ -439,7 +441,7 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)St.Start
                             },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoActive, State = (uint)Lst.Active },
                             new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
                         }
                     }
@@ -477,6 +479,7 @@ namespace NachoCore
                 NcApplication.Instance.StatusIndEvent -= TokensWatcher;
                 DisposeRetryTimer ();
                 DisposeTimeoutTimer ();
+                DisposeDeferTimer ();
                 DisposeCts ();
                 Client.Dispose ();
             }
@@ -744,6 +747,12 @@ namespace NachoCore
             }
         }
 
+        private void DoActive ()
+        {
+            // Enter Active state. Start periodic defer timer.
+            ResetDefer ();
+        }
+
         private async void DoDeferSession ()
         {
             var clientId = NcApplication.Instance.ClientId;
@@ -810,6 +819,7 @@ namespace NachoCore
 
         private async void DoStopSession ()
         {
+            DisposeDeferTimer ();
             Sm.ClearEventQueue ();
             var clientId = NcApplication.Instance.ClientId;
             if (String.IsNullOrEmpty (clientId) ||
@@ -866,6 +876,7 @@ namespace NachoCore
             // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
             ClearRetry ();
             DisposeTimeoutTimer ();
+            DisposeDeferTimer ();
             if (null != Cts) {
                 Cts.Cancel ();
             }
@@ -1023,6 +1034,14 @@ namespace NachoCore
             }
         }
 
+        private void DisposeDeferTimer ()
+        {
+            if (null != DeferTimer) {
+                DeferTimer.Dispose ();
+                DeferTimer = null;
+            }
+        }
+
         private void DisposeCts ()
         {
             if (null != Cts) {
@@ -1039,6 +1058,14 @@ namespace NachoCore
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
                 Cts.Cancel ();
             }, null, new TimeSpan (0, 0, 0, 0, MaxTimeoutMsec), TimeSpan.Zero);
+        }
+
+        private void ResetDefer ()
+        {
+            DisposeDeferTimer ();
+            DeferTimer = new NcTimer ("PADefer", (state) => {
+                Defer ();
+            }, null, DeferPeriodMsec, DeferPeriodMsec); 
         }
     }
 }

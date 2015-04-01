@@ -968,6 +968,7 @@ namespace NachoClient.iOS
                     Log.Error (Log.LOG_UI, "Get an object of unknown type {0}", className);
                     return true;
                 }
+                #if NOT_WORKING
                 notif.AlertAction = null;
                 notif.AlertTitle = fromString;
                 notif.AlertBody = subjectString;
@@ -980,6 +981,11 @@ namespace NachoClient.iOS
                     }
                 }
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                #else
+                // FIXME - This is a test to see if this is really a Xamarin bug
+                var userInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
+                NachoPlatformBinding.PlatformProcess.ScheduleNotification (fromString, subjectString, userInfo, withSound);
+                #endif
             } else {
                 Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
             }
