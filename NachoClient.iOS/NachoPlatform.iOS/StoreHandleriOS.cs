@@ -14,7 +14,7 @@ namespace NachoPlatform
         private static object syncRoot = new Object ();
 
         private List<string> productNamesList;
-        private const string NachoClientLicenseProductId = "com.alternateworlds.storekit.testing.annually";
+        private const string NachoClientLicenseProductId = "com.nachcove.nachoclient.annual";
         private InAppPurchaseManager InAppPurchaseManager;
         private PaymentObserver PaymentObserver;
         private NSObject PriceObserver, PurchaseSucceedObserver, PurchaseFailedObserver, RequestObserver;

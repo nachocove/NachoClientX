@@ -33,9 +33,6 @@ namespace NachoClient.iOS
         UIButton customerSupportButton;
         UIButton advancedButton;
         UIButton restartButton;
-        UIButton buyButton;
-        UIButton restoreButton;
-
 
         UIScrollView scrollView;
         UIView contentView;
@@ -322,42 +319,6 @@ namespace NachoClient.iOS
             contentView.AddSubview (restartButton);
             yOffset = restartButton.Frame.Bottom + 20;
 
-            /// TODO: remove these two buttons after your are done testing. before merge back to master
-            restoreButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
-            restoreButton.AccessibilityLabel = "Restore Purchase";
-            restoreButton.BackgroundColor = A.Color_NachoNowBackground;
-            restoreButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            restoreButton.SetTitle ("Restore Purchase", UIControlState.Normal);
-            restoreButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            restoreButton.SetTitle("Restore Purchase *", UIControlState.Disabled);
-            restoreButton.SetTitleColor(UIColor.Gray, UIControlState.Disabled);
-            restoreButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            restoreButton.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                doRestore ();
-            };
-            contentView.AddSubview (restoreButton);
-            yOffset = restoreButton.Frame.Bottom + 20;
-
-
-            buyButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
-            buyButton.AccessibilityLabel = "Buy License";
-            buyButton.BackgroundColor = A.Color_NachoNowBackground;
-            buyButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            buyButton.SetTitle ("Buy License", UIControlState.Normal);
-            buyButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            buyButton.SetTitle("Buy License *", UIControlState.Disabled);
-            buyButton.SetTitleColor(UIColor.Gray, UIControlState.Disabled);
-            buyButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            buyButton.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                doPurchase ();
-            };
-            contentView.AddSubview (buyButton);
-            yOffset = buyButton.Frame.Bottom + 20;
-            /// TODO: remove these two buttons above after your are done testing. before merge back to master
-
-
             loadingCover = new UIView (View.Frame);
             loadingCover.BackgroundColor = A.Color_NachoGreen;
             contentView.Add (loadingCover);
@@ -368,18 +329,7 @@ namespace NachoClient.iOS
             inputViews.Add (usernameView);
             inputViews.Add (passwordView);
         }
-        void doPurchase ()
-        {
-            StoreHandler.Instance.BuyLicenseFromStore ();
-        }
 
-        void doRestore ()
-        {
-            StoreHandler.Instance.RestoreLicenseFromStore ();
-
-        }
-
-      
         void onStartOver ()
         {
             stayInAdvanced = false;
@@ -621,19 +571,6 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (restartButton).Y (yOffset);
             yOffset = restartButton.Frame.Bottom + 20;
-
-            /// TODO: remove these two buttons after your are done testing. before merge back to master
-            ViewFramer.Create (buyButton).Y (yOffset);
-            yOffset = buyButton.Frame.Bottom + 20;
-
-            ViewFramer.Create (restoreButton).Y (yOffset);
-            yOffset = restoreButton.Frame.Bottom + 20;
-
-            if (StoreHandler.Instance.GetPurchasedStatus ()) {
-                restoreButton.Enabled = false;
-                buyButton.Enabled = false;
-            }
-            /// TODO: remove these two buttons after your are done testing. before merge back to master
 
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
