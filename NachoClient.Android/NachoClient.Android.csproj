@@ -382,6 +382,9 @@
     <Compile Include="NachoCore\Utils\NcAccountHandler.cs" />
     <Compile Include="NachoPlatform.Android\NcUIRedirectorAndroid.cs" />
     <Compile Include="NachoCore\Utils\BuildInfoHelper.cs" />
+    <Compile Include="NachoPlatform.Android\StoreHandlerAndroid.cs" />
+    <Compile Include="NachoPlatform.Android\CloudHandlerAndroid.cs" />
+    <Compile Include="NachoCore\Extensions\String+ToDateTime.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

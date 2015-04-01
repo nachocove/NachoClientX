@@ -1313,6 +1313,9 @@
     <Compile Include="NachoPlatform.iOS\StoreHandleriOS.cs" />
     <Compile Include="NachoPlatform.iOS\InAppPurchaseManageriOS.cs" />
     <Compile Include="NachoPlatform.iOS\CloudHandlerIOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+ToDateTime.cs">
+      <Link>NachoCore\Extensions\String+ToDateTime.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

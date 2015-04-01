@@ -4,9 +4,7 @@ using System;
 using System.Collections.Generic;
 using Foundation;
 using StoreKit;
-using System.Linq;
 using NachoCore.Utils;
-using NachoCore;
 
 namespace NachoPlatform
 {
@@ -75,7 +73,8 @@ namespace NachoPlatform
                 return true;
             }
             if (!ProductDataLoaded) {
-                Log.Info (Log.LOG_SYS, "InAppPurchase: Product Information not yet received from store.");
+                Log.Info (Log.LOG_SYS, "InAppPurchase: Product Information not yet received from store. Trying to load again.");
+                LoadProductDataFromStore ();
                 return false;
             } else if (Purchasing) {
                 Log.Info (Log.LOG_SYS, "InAppPurchase: NachoClient license is already in the process of being purchased.");
@@ -97,19 +96,25 @@ namespace NachoPlatform
                 return true;
             }
             if (!ProductDataLoaded) {
-                Log.Info (Log.LOG_SYS, "InAppPurchase: Product Information not yet received from store.");
+                Log.Info (Log.LOG_SYS, "InAppPurchase: Product Information not yet received from store. Trying to load again.");
+                LoadProductDataFromStore ();
                 return false;
             } else if (Purchasing) {
                 Log.Info (Log.LOG_SYS, "InAppPurchase: NachoClient license is already in the process of being purchased.");
                 return true;
             } else {
                 Log.Info (Log.LOG_SYS, "Restoring NachoClient license from store...");
-                InAppPurchaseManager.Restore ();
+                // No point restoring non renewable subscription
+                //InAppPurchaseManager.Restore ();
+                // buy again instead
+                // you will need to do this only in the case that iCloud is disabled and this is a fresh install
+                InAppPurchaseManager.PurchaseProduct (NachoClientLicenseProductId);
                 Purchasing = true;
                 return true;
             }
         }
 
+        // from IPlatformStoreHandler
         public void SetPurchasingStatus(bool status)
         {
             Purchasing = status;
@@ -169,12 +174,14 @@ namespace NachoPlatform
                 });
         }
 
+        // from IPlatformStoreHandler
         // get the purchase status
         public bool GetPurchasedStatus () {
             return CloudHandler.Instance.GetPurchasedStatus (NachoClientLicenseProductId);
         }
 
 
+        // from IPlatformStoreHandler
         public void RegisterPurchase (string productId, DateTime purchaseDate)
         {
             // Register the purchase, so it is remembered for next time 
@@ -197,6 +204,7 @@ namespace NachoPlatform
 
 
 
+        // from IPlatformStoreHandler
         // call this when shutting down
         public void Stop ()
         {

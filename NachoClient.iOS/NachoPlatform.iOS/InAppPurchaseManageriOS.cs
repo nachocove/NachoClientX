@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using UIKit;
 using StoreKit;
 using Foundation;
 using NachoCore.Utils;
@@ -71,8 +68,10 @@ namespace NachoPlatform
 		public void FailedTransaction (SKPaymentTransaction transaction)
 		{
 			//SKErrorPaymentCancelled == 2
-			string errorDescription = transaction.Error.Code == 2 ? "User Cancelled FailedTransaction" : "FailedTransaction";
-            Log.Info(Log.LOG_SYS, "InAppPurchase: {0} Code={1} {2}", errorDescription, transaction.Error.Code, transaction.Error.LocalizedDescription);
+            if (transaction.Error != null) {
+                string errorDescription = transaction.Error.Code == 2 ? "User Cancelled FailedTransaction" : "FailedTransaction";
+                Log.Info (Log.LOG_SYS, "InAppPurchase: {0} Code={1} {2}", errorDescription, transaction.Error.Code, transaction.Error.LocalizedDescription);
+            }
 			FinishTransaction(transaction, false);
 		}
 
@@ -100,7 +99,7 @@ namespace NachoPlatform
 		/// Request failed : Probably could not connect to the App Store (network unavailable?)
 		public override void RequestFailed (SKRequest request, NSError error)
 		{
-            Log.Info(Log.LOG_SYS, "InAppPurchase: Purchase Request failed", error.LocalizedDescription);
+            Log.Info(Log.LOG_SYS, "InAppPurchase: Purchase Request failed {0}", error.LocalizedDescription);
 
 			// send out a notification for the failed transaction
 			NSDictionary userInfo = new NSDictionary ("error", error);
@@ -152,12 +151,15 @@ namespace NachoPlatform
                     // do nothing
                     break;
                 case SKPaymentTransactionState.Purchased:
+                    Log.Info(Log.LOG_SYS, "InAppPurchase: Purchased.");
                     InAppPurchaseManager.CompleteTransaction(transaction);
                     break;
                 case SKPaymentTransactionState.Failed:
+                    Log.Info(Log.LOG_SYS, "InAppPurchase: Failed.");
                     InAppPurchaseManager.FailedTransaction(transaction);
                     break;
                 case SKPaymentTransactionState.Restored:
+                    Log.Info(Log.LOG_SYS, "InAppPurchase: Restored.");
                     InAppPurchaseManager.RestoreTransaction(transaction);
                     break;
                 case SKPaymentTransactionState.Deferred:

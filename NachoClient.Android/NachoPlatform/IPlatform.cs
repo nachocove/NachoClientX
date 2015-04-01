@@ -208,8 +208,10 @@ namespace NachoPlatform
         string GetUserId ();
         void SetUserId (string UserId);
         bool GetPurchasedStatus (string productId);
-        string GetPurchasedDate (string productId);
+        DateTime GetPurchasedDate (string productId);
         void SetPurchasedStatus (string productId, DateTime purchaseDate);
+        void SetAppInstallDate (DateTime installDate);
+        DateTime GetAppInstallDate ();
         void Stop ();
     }
 }
