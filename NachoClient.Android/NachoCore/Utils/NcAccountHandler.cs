@@ -16,7 +16,7 @@ namespace NachoCore.Model
     {
         private static volatile NcAccountHandler instance;
         private static object syncRoot = new Object ();
-        public static string[] exemptTables = new string[]  { 
+        public static string[] exemptTables = new string[] { 
             "McAccount", "sqlite_sequence", "McMigration",
         };
 
@@ -32,6 +32,7 @@ namespace NachoCore.Model
                 return instance; 
             }
         }
+
         public NcAccountHandler ()
         {
         }
@@ -63,32 +64,29 @@ namespace NachoCore.Model
             });
         }
 
-        // delete the file 
+        // delete the file
         public bool DeleteRemovingAccountFile ()
         {
             var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
-            try
-            {
-                File.Delete(RemovingAccountLockFile);
+            try {
+                File.Delete (RemovingAccountLockFile);
                 return true;
-            }
-            catch (IOException)
-            {
+            } catch (IOException) {
                 return false;
             }
         }
 
         // remove all the db data referenced by the account related to the given id
-        public void RemoveAccountDBData(int AccountId)
+        public void RemoveAccountDBData (int AccountId)
         {
             Log.Info (Log.LOG_DB, "RemoveAccount: removing db data for account {0}", AccountId);
             List<string> DeleteStatements = new List<string> ();
 
             List<McSQLiteMaster> AllTables = McSQLiteMaster.QueryAllTables ();
             foreach (McSQLiteMaster Table in AllTables) {
-                if (!((IList<string>) exemptTables).Contains (Table.name)) {
+                if (!((IList<string>)exemptTables).Contains (Table.name)) {
                     Log.Info (Log.LOG_DB, "RemoveAccount: Will be removing rows from Table {0} for account {1}", Table.name, AccountId);
-                    Regex r = new Regex("^[a-zA-Z0-9]*$");
+                    Regex r = new Regex ("^[a-zA-Z0-9]*$");
                     if (r.IsMatch (Table.name)) {
                         DeleteStatements.Add ("DELETE FROM " + Table.name + " WHERE AccountId = ?");
                     } else {
@@ -103,7 +101,7 @@ namespace NachoCore.Model
                 }
                 Log.Info (Log.LOG_DB, "RemoveAccount: removed McAccount for id {0}", AccountId);
                 var account = McAccount.QueryById<McAccount> (AccountId);
-                if (account != null){
+                if (account != null) {
                     account.Delete ();
                 }
             });
@@ -115,21 +113,19 @@ namespace NachoCore.Model
         }
 
         // remove all the files referenced by the account related to the given id
-        public void RemoveAccountFiles(int AccountId)
+        public void RemoveAccountFiles (int AccountId)
         {
             Log.Info (Log.LOG_DB, "RemoveAccount: removing file data for account {0}", AccountId);
             String AccountDirPath = NcModel.Instance.GetAccountDirPath (AccountId);
-            try{
-                Directory.Delete(AccountDirPath, true);
-            }
-            catch (Exception e)
-            {
+            try {
+                Directory.Delete (AccountDirPath, true);
+            } catch (Exception e) {
                 Log.Error (Log.LOG_DB, "RemoveAccount: cannot remove file data for account {0}. {1}", AccountId, e.Message);
             }
         }
 
         // remove all the db data and files referenced by the account related to the given id
-        public void RemoveAccountDBAndFilesForAccountId(int AccountId)
+        public void RemoveAccountDBAndFilesForAccountId (int AccountId)
         {
             // remove password from keychain
             var cred = McCred.QueryByAccountId<McCred> (AccountId).SingleOrDefault ();

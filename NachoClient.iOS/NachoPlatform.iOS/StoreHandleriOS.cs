@@ -40,8 +40,8 @@ namespace NachoPlatform
 
         public void Start ()
         {
-            productNamesList = new List<string>() {NachoClientLicenseProductId};
-            InAppPurchaseManager = new InAppPurchaseManager();
+            productNamesList = new List<string> () { NachoClientLicenseProductId };
+            InAppPurchaseManager = new InAppPurchaseManager ();
             PaymentObserver = new PaymentObserver (InAppPurchaseManager);
             SetupObservers ();
             LoadProductDataFromStore ();
@@ -52,15 +52,15 @@ namespace NachoPlatform
         public void LoadProductDataFromStore ()
         {
             // only if we can make payments, request the prices
-            if (InAppPurchaseManager.CanMakePayments()) {
+            if (InAppPurchaseManager.CanMakePayments ()) {
                 // now go get prices, if we don't have them already
                 if (!ProductDataLoaded) {
-                    Log.Info(Log.LOG_SYS, "InAppPurchase: Requesting product data from store");
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Requesting product data from store");
                     InAppPurchaseManager.RequestProductData (productNamesList); // async request via StoreKit -> App Store
                 }
             } else {
                 // can't make payments (purchases turned off in Settings?)
-                Log.Info(Log.LOG_SYS, "InAppPurchase: Cannot make payments");
+                Log.Info (Log.LOG_SYS, "InAppPurchase: Cannot make payments");
             }
         }
 
@@ -115,16 +115,16 @@ namespace NachoPlatform
         }
 
         // from IPlatformStoreHandler
-        public void SetPurchasingStatus(bool status)
+        public void SetPurchasingStatus (bool status)
         {
             Purchasing = status;
         }
-      
-        public void SetupObservers()
+
+        public void SetupObservers ()
         {
             // Call this once upon startup of in-app-purchase activities
             // This also kicks off the TransactionObserver which handles the various communications
-            SKPaymentQueue.DefaultQueue.AddTransactionObserver(PaymentObserver);
+            SKPaymentQueue.DefaultQueue.AddTransactionObserver (PaymentObserver);
 
 
             // setup an observer to wait for prices to come back from StoreKit <- AppStore
@@ -133,12 +133,12 @@ namespace NachoPlatform
                     NSDictionary info = notification.UserInfo;
                     if (info == null) {
                         // if info is null, probably NO valid prices returned, therefore it doesn't exist at all
-                        Log.Info(Log.LOG_SYS, "InAppPurchase: No valid prices returned from store.");
+                        Log.Info (Log.LOG_SYS, "InAppPurchase: No valid prices returned from store.");
                         return;
                     }
 
                     // mark that product information has been loaded
-                    var key = new NSString(NachoClientLicenseProductId);
+                    var key = new NSString (NachoClientLicenseProductId);
                     if (!NachoClientLicensePurchased && info.ContainsKey (key)) {
                         ProductDataLoaded = true;
 
@@ -151,9 +151,9 @@ namespace NachoPlatform
             PurchaseSucceedObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerTransactionSucceededNotification,
                 (notification) => {
                     // update the status after a successful purchase
-                    Log.Info(Log.LOG_SYS, "InAppPurchase: Purchase transaction successful");         
-                    if (GetPurchasedStatus() == true) {
-                        Log.Info(Log.LOG_SYS, "InAppPurchase: Purchased {0}", NachoClientLicenseProductId);         
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase transaction successful");         
+                    if (GetPurchasedStatus () == true) {
+                        Log.Info (Log.LOG_SYS, "InAppPurchase: Purchased {0}", NachoClientLicenseProductId);         
                         NachoClientLicensePurchased = true;
                         Purchasing = false;
                     }
@@ -162,21 +162,22 @@ namespace NachoPlatform
             //set up an observer to wait for transaction failed notifications
             PurchaseFailedObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerTransactionFailedNotification,
                 (notification) => {
-                    Log.Info(Log.LOG_SYS, "InAppPurchase: Purchase transaction failed"); 
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase transaction failed"); 
                     Purchasing = false;
                 });
 
             //set up an observer to wait for request failed notifications
             RequestObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerRequestFailedNotification,
                 (notification) => {
-                    Log.Info(Log.LOG_SYS, "InAppPurchase: Request failed");
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Request failed");
                     Purchasing = false;
                 });
         }
 
         // from IPlatformStoreHandler
         // get the purchase status
-        public bool GetPurchasedStatus () {
+        public bool GetPurchasedStatus ()
+        {
             return CloudHandler.Instance.GetPurchasedStatus (NachoClientLicenseProductId);
         }
 
@@ -188,18 +189,17 @@ namespace NachoPlatform
             if (productId == NachoClientLicenseProductId) {
                 Log.Info (Log.LOG_SYS, "InAppPurchase: Registering NachoClient license purchase status.");
                 CloudHandler.Instance.SetPurchasedStatus (NachoClientLicenseProductId, purchaseDate);
-            }
-            else{
-                Log.Warn(Log.LOG_SYS, "InAppPurchase: Cannot register product purchased status for product {0}", productId);
+            } else {
+                Log.Warn (Log.LOG_SYS, "InAppPurchase: Cannot register product purchased status for product {0}", productId);
             }
         }
 
-        private void PrintProductDetails(SKProduct product)
+        private void PrintProductDetails (SKProduct product)
         {            
-            Log.Info(Log.LOG_SYS, "InAppPurchase: Found product id: {0}", product.ProductIdentifier);
-            Log.Info(Log.LOG_SYS, "InAppPurchase: Product title: {0}", product.LocalizedTitle);
-            Log.Info(Log.LOG_SYS, "InAppPurchase: Product description: {0}", product.LocalizedDescription);
-            Log.Info(Log.LOG_SYS, "InAppPurchase: Product l10n price: {0}", product.LocalizedPrice());
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Found product id: {0}", product.ProductIdentifier);
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Product title: {0}", product.LocalizedTitle);
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Product description: {0}", product.LocalizedDescription);
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Product l10n price: {0}", product.LocalizedPrice ());
         }
 
 

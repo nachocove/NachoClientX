@@ -1,4 +1,5 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
+//
 using System;
 using Foundation;
 using NachoCore.Utils;
@@ -34,18 +35,15 @@ namespace NachoPlatform
         public CloudHandler ()
         {
             // Checks to see if the user of this device has iCloud enabled
-            var uburl = NSFileManager.DefaultManager.GetUrlForUbiquityContainer(null);                
+            var uburl = NSFileManager.DefaultManager.GetUrlForUbiquityContainer (null);                
             // Connected to iCloud?
-            if (uburl == null)
-            {
+            if (uburl == null) {
                 // No
                 HasiCloud = false;
-                iCloudUrl =null;
+                iCloudUrl = null;
                 Store = null;
                 Log.Info (Log.LOG_SYS, "CloudHandler: Unable to connect to iCloud");
-            }
-            else
-            {    
+            } else {    
                 // Yes, 
                 HasiCloud = true;
                 iCloudUrl = uburl;
@@ -53,7 +51,7 @@ namespace NachoPlatform
                 Log.Info (Log.LOG_SYS, "CloudHandler: Connected to iCloud. Url is {0}", iCloudUrl);
             }
             SetAppInstallDate (DateTime.UtcNow);
-            Log.Info(Log.LOG_SYS, "App install date is {0}", GetAppInstallDate());
+            Log.Info (Log.LOG_SYS, "App install date is {0}", GetAppInstallDate ());
         }
 
         public string GetUserId ()
@@ -184,27 +182,26 @@ namespace NachoPlatform
             // start listening to changes in cloud keys
             CloudKeyObserver = 
                 NSNotificationCenter.DefaultCenter.AddObserver (
-                    NSUbiquitousKeyValueStore.DidChangeExternallyNotification
+                NSUbiquitousKeyValueStore.DidChangeExternallyNotification
                     , delegate (NSNotification n) {
-                        NSDictionary userInfo = n.UserInfo;
-                        NSNumber reasonNumber = (NSNumber)userInfo.ObjectForKey(NSUbiquitousKeyValueStore.ChangeReasonKey);
-                        int reason = reasonNumber.Int32Value; // reason change was triggered
-                        Log.Info (Log.LOG_SYS, "CloudHandler: Notification change reason {0}", reason);
+                NSDictionary userInfo = n.UserInfo;
+                NSNumber reasonNumber = (NSNumber)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangeReasonKey);
+                int reason = reasonNumber.Int32Value; // reason change was triggered
+                Log.Info (Log.LOG_SYS, "CloudHandler: Notification change reason {0}", reason);
 
-                        NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
-                        for (uint i = 0; i < changedKeys.Count; i++) {
-                            string key = Marshal.PtrToStringAuto(changedKeys.ValueAt(i));
-                            if (key == "UserId")
-                            {
-                                // ICloud override local - TODO: confirm this
-                                string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString("UserId");
-                                if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
-                                    Log.Info (Log.LOG_SYS, "CloudHandler: Replacing Client {0} with userId {0} from Cloud",NcApplication.Instance.ClientId, userId);
-                                    NcApplication.Instance.ClientId = userId;
-                                }
-                            }
+                NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
+                for (uint i = 0; i < changedKeys.Count; i++) {
+                    string key = Marshal.PtrToStringAuto (changedKeys.ValueAt (i));
+                    if (key == "UserId") {
+                        // ICloud override local - TODO: confirm this
+                        string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString ("UserId");
+                        if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
+                            Log.Info (Log.LOG_SYS, "CloudHandler: Replacing Client {0} with userId {0} from Cloud", NcApplication.Instance.ClientId, userId);
+                            NcApplication.Instance.ClientId = userId;
                         }
-                    });
+                    }
+                }
+            });
         }
 
         public void Stop ()
@@ -218,11 +215,17 @@ namespace NachoPlatform
     public class CIObject
     {
         public string UserId { get; set; }
+
         public NSData AppStoreReceipt { get; set; }
+
         public DateTime FirstInstallDate { get; set; }
+
         public DateTime PayByDate { get; set; }
+
         public DateTime AskByDate { get; set; }
+
         public DateTime PurchaseDate { get; set; }
+
         public bool IsReceiptValidated { get; set; }
 
         public CIObject ()

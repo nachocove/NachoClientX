@@ -7,36 +7,58 @@ using NachoCore.Utils;
 
 namespace NachoPlatform
 {
-	public interface IPlatformAssets
-	{
-		Stream Open (string relPath);
-		bool Exists (string relPath);
-		string[] List (string relPath);
-	}
+    public interface IPlatformAssets
+    {
+        Stream Open (string relPath);
+
+        bool Exists (string relPath);
+
+        string[] List (string relPath);
+    }
+
     public interface IPlatformRegDom
     {
         string RegDomFromFqdn (string domain);
     }
-    public enum OsCode {iOS, Android};
+
+    public enum OsCode
+    {
+        iOS,
+        Android}
+
+    ;
 
     public interface IPlatformDevice
     {
-        // For iOS, model usually is described like 'iPhone6,1'. But for some earlier 
+        // For iOS, model usually is described like 'iPhone6,1'. But for some earlier
         // version of iOS, the user agent string has 'C' instead of ','. So, we define
         // a separate UserAgentModel().
         string UserAgentModel ();
+
         string Model ();
+
         string Type ();
+
         string Identity ();
-        string OsType (); // iOS, Android, MacOS, etc
-        string OsVersion (); // 7.1, 4.2.2, ...
+
+        string OsType ();
+        // iOS, Android, MacOS, etc
+        string OsVersion ();
+        // 7.1, 4.2.2, ...
         string Os ();
-        OsCode BaseOs (); 
+
+        OsCode BaseOs ();
+
         string OsLanguage ();
+
         string FriendlyName ();
+
         string UserAgent ();
+
         bool IsSimulator ();
+
         bool Wipe (string username, string password, string url, string protoVersion);
+
         SQLite3.ErrorLogCallback GetSQLite3ErrorCallback (Action<int, string> action);
     }
 
@@ -58,6 +80,7 @@ namespace NachoPlatform
     public class NetStatusEventArgs : EventArgs
     {
         public NetStatusStatusEnum Status { get; set; }
+
         public NetStatusSpeedEnum Speed { get; set; }
 
         public NetStatusEventArgs (NetStatusStatusEnum status, NetStatusSpeedEnum speed)
@@ -71,6 +94,7 @@ namespace NachoPlatform
     {
         // This event MUST fire on status change, and MAY fire on speed change.
         event NetStatusEventHandler NetStatusEvent;
+
         void GetCurrentStatus (out NetStatusStatusEnum status, out NetStatusSpeedEnum speed);
     }
 
@@ -87,6 +111,7 @@ namespace NachoPlatform
         public int Handle;
         public DateTime When;
         public string Message;
+
         public NotificationInfo (int handle, DateTime when, string message)
         {
             Handle = handle;
@@ -137,7 +162,9 @@ namespace NachoPlatform
     public abstract class PlatformContactRecord
     {
         public abstract string UniqueId { get; }
+
         public abstract DateTime LastUpdate { get; }
+
         public abstract NcResult ToMcContact (McContact contactToUpdate);
     }
 
@@ -152,7 +179,9 @@ namespace NachoPlatform
     public abstract class PlatformCalendarRecord
     {
         public abstract string UniqueId { get; }
+
         public abstract DateTime LastUpdate { get; }
+
         public abstract NcResult ToMcCalendar ();
     }
 
@@ -164,7 +193,15 @@ namespace NachoPlatform
         void AskForPermission (Action<bool> result);
     }
 
-    public enum PowerStateEnum { Unknown, Plugged, PluggedUSB, PluggedAC, Unplugged }
+    public enum PowerStateEnum
+    {
+        Unknown,
+        Plugged,
+        PluggedUSB,
+        PluggedAC,
+        Unplugged
+
+    }
 
     public interface IPlatformPower
     {
@@ -180,8 +217,11 @@ namespace NachoPlatform
     public interface IPlatformKeychain
     {
         bool HasKeychain ();
+
         string GetPassword (int handle);
+
         bool SetPassword (int handle, string password);
+
         bool DeletePassword (int handle);
     }
 
@@ -192,26 +232,41 @@ namespace NachoPlatform
 
     public interface IPlatformStoreHandler
     {
-        void Start ();  
-        void LoadProductDataFromStore ();  
-        bool BuyLicenseFromStore ();         
-        bool RestoreLicenseFromStore ();  
+        void Start ();
+
+        void LoadProductDataFromStore ();
+
+        bool BuyLicenseFromStore ();
+
+        bool RestoreLicenseFromStore ();
+
         bool GetPurchasedStatus ();
+
         void RegisterPurchase (string productId, DateTime purchaseDate);
-        void SetPurchasingStatus(bool status);
+
+        void SetPurchasingStatus (bool status);
+
         void Stop ();
     }
 
     public interface IPlatformCloudHandler
     {
-        void Start ();  
+        void Start ();
+
         string GetUserId ();
+
         void SetUserId (string UserId);
+
         bool GetPurchasedStatus (string productId);
+
         DateTime GetPurchasedDate (string productId);
+
         void SetPurchasedStatus (string productId, DateTime purchaseDate);
+
         void SetAppInstallDate (DateTime installDate);
+
         DateTime GetAppInstallDate ();
+
         void Stop ();
     }
 }

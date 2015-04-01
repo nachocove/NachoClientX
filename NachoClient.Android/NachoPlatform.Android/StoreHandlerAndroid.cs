@@ -50,13 +50,13 @@ namespace NachoPlatform
         }
 
         // from IPlatformStoreHandler
-        public void SetPurchasingStatus(bool status)
+        public void SetPurchasingStatus (bool status)
         {
         }
 
         // from IPlatformStoreHandler
         // get the purchase status
-        public bool GetPurchasedStatus () 
+        public bool GetPurchasedStatus ()
         {
             return false;
         }

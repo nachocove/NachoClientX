@@ -7,10 +7,9 @@ namespace NachoCore.Utils
 {
     public static partial class String_Extension
     {
-        public static DateTime ToDateTime(this string value)
+        public static DateTime ToDateTime (this string value)
         {
-            if (value == null)
-            {
+            if (value == null) {
                 return DateTime.MinValue;
             }
             DateTime convertedDate = DateTime.MinValue;
@@ -20,8 +19,7 @@ namespace NachoCore.Utils
                 DateTimeOffset dto = DateTimeOffset.ParseExact
                     (value, pattern, CultureInfo.InvariantCulture);
                 convertedDate = dto.DateTime;
-            }
-            catch (FormatException) {
+            } catch (FormatException) {
                 convertedDate = DateTime.MinValue;
             }
             return convertedDate;
