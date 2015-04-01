@@ -963,15 +963,13 @@ namespace NachoClient.iOS
 
             if (NotificationCanAlert) {
                 var notif = new UILocalNotification ();
-                var className = NachoPlatformBinding.PlatformProcess.GetClassName (notif.Handle);
-                if (("UIConcreteLocalNotification" != className) && ("UILocalNotification" != className)) {
-                    Log.Error (Log.LOG_UI, "Get an object of unknown type {0}", className);
-                    return true;
+                if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
+                    notif.AlertTitle = fromString;
+                    notif.AlertBody = subjectString;
+                } else {
+                    notif.AlertBody = subjectString + " from " + fromString;
                 }
-                #if NOT_WORKING
                 notif.AlertAction = null;
-                notif.AlertTitle = fromString;
-                notif.AlertBody = subjectString;
                 notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
                 if (withSound) {
                     if (NotificationCanSound) {
@@ -981,11 +979,6 @@ namespace NachoClient.iOS
                     }
                 }
                 UIApplication.SharedApplication.ScheduleLocalNotification (notif);
-                #else
-                // FIXME - This is a test to see if this is really a Xamarin bug
-                var userInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
-                NachoPlatformBinding.PlatformProcess.ScheduleNotification (fromString, subjectString, userInfo, withSound);
-                #endif
             } else {
                 Log.Warn (Log.LOG_UI, "No permission to badge. (emailMessageId={0})", message.Id);
             }
