@@ -189,4 +189,27 @@ namespace NachoPlatform
     {
         void GoBackToMainScreen ();
     }
+
+    public interface IPlatformStoreHandler
+    {
+        void Start ();  
+        void LoadProductDataFromStore ();  
+        bool BuyLicenseFromStore ();         
+        bool RestoreLicenseFromStore ();  
+        bool GetPurchasedStatus ();
+        void RegisterPurchase (string productId, DateTime purchaseDate);
+        void SetPurchasingStatus(bool status);
+        void Stop ();
+    }
+
+    public interface IPlatformCloudHandler
+    {
+        void Start ();  
+        string GetUserId ();
+        void SetUserId (string UserId);
+        bool GetPurchasedStatus (string productId);
+        string GetPurchasedDate (string productId);
+        void SetPurchasedStatus (string productId, DateTime purchaseDate);
+        void Stop ();
+    }
 }

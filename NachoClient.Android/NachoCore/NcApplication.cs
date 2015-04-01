@@ -305,7 +305,9 @@ namespace NachoCore
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
-            ExecutionContext = _PlatformIndication;
+            ExecutionContext = _PlatformIndication; 
+            // load products from app store
+            StoreHandler.Instance.Start (); 
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
@@ -314,6 +316,11 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "{0}-bit App", 8 * IntPtr.Size);
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
+            CloudHandler.Instance.Start ();
+            if (ClientId == null) {
+                // this can be null if cloud is not accessible or if this the first time
+                ClientId = CloudHandler.Instance.GetUserId (); 
+            }
             Telemetry.StartService ();
             Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
@@ -399,6 +406,11 @@ namespace NachoCore
             NcContactGleaner.Stop ();
             NcBrain.StopService ();
             NcModel.Instance.Stop ();
+            StoreHandler.Instance.Stop (); 
+            CloudHandler.Instance.Stop (); 
+
+
+
             if (null != StartupUnmarkTimer) {
                 StartupUnmarkTimer.Dispose ();
                 StartupUnmarkTimer = null;
