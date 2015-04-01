@@ -195,7 +195,19 @@ namespace NachoCore
 
         public static void ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
         {
+            bool ranOnce = false;
             foreach (var context in pinger) {
+                if ("timestamp" == context.Key) {
+                    // Look for the timestamp and measure the pinger to client latency
+                    var timestamp = DateTime.Parse (context.Value);
+                    var elapsed = (DateTime.Now - timestamp).TotalSeconds;
+                    if (300 <= elapsed) {
+                        Log.Warn (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
+                    } else {
+                        Log.Info (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
+                    }
+                    continue; // this key is the time when pinger pushes not an actual context
+                }
                 // Look up the account
                 var pa = GetPAObjectByContext (context.Key);
                 if (null == pa) {
@@ -206,6 +218,14 @@ namespace NachoCore
                     Log.Error (Log.LOG_PUSH, "Invalid account for context {0} for remote notification", context.Key);
                     continue;
                 }
+
+                // TODO - We don't have multiple account support yet. So, for now, perform fetch always
+                //        fetches the one account. In the future, we have to figure out which account
+                //        should participate in the fetch and pass them in.
+                if (ranOnce) {
+                    continue;
+                }
+                ranOnce = true;
 
                 switch (context.Value) {
                 case PingerNotification.NEW:
@@ -218,11 +238,6 @@ namespace NachoCore
                     Log.Error (Log.LOG_PUSH, "Unknown action {0} for context {1}", context.Value, context.Key);
                     continue;
                 }
-
-                // TODO - We don't have multiple account support yet. So, for now, perform fetch always
-                //        fetches the one account. In the future, we have to figure out which account
-                //        should participate in the fetch and pass them in.
-                break;
             }
         }
 
@@ -651,6 +666,10 @@ namespace NachoCore
 
         private async void DoStartSession ()
         {
+            // TODO - maybe turn these to debug logs once ping stablizes??
+            Log.Info (Log.LOG_PUSH, "[PA] start session starts: client_id={0}, context={1}",
+                NcApplication.Instance.ClientId, ClientContext);
+            
             var clientId = NcApplication.Instance.ClientId;
             if (null == clientId) {
                 PostEvent (PAEvt.E.CliTokLoss, "START_NO_CLI");
@@ -744,6 +763,8 @@ namespace NachoCore
                     Account = Owner.Account,
                 });
                 PostSuccess ("START_SESSION_OK");
+                Log.Info (Log.LOG_PUSH, "[PA] start session succeeds: client_id={0}, context={1}, token={2}",
+                    NcApplication.Instance.ClientId, ClientContext, SessionToken);
             }
         }
 
@@ -755,6 +776,9 @@ namespace NachoCore
 
         private async void DoDeferSession ()
         {
+            Log.Info (Log.LOG_PUSH, "[PA] defer session starts: client_id={0}, context={1}, token={2}",
+                NcApplication.Instance.ClientId, ClientContext, SessionToken);
+            
             var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
             if (String.IsNullOrEmpty (clientId) ||
@@ -807,6 +831,8 @@ namespace NachoCore
             var response = ParsePingerResponse (jsonResponse);
             if (response.IsOk ()) {
                 ClearRetry ();
+                Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
+                    NcApplication.Instance.ClientId, ClientContext, SessionToken);
             } else if (response.IsWarn ()) {
                 NumRetries++;
                 ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
