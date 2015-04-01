@@ -13,10 +13,11 @@ using Test.iOS;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.ActiveSync;
 
 namespace Test.Common
 {
-    public class MockPushAssistOwnwer : MockContext, IPushAssistOwner
+    public class MockPushAssistOwnwer : IBEContext, IPushAssistOwner
     {
         public const string ContentType = "application/vnd.ms-sync.wbxml";
         public const string Cookie = "123ABC";
@@ -26,8 +27,22 @@ namespace Test.Common
         public const int ResponseTimeout = 600 * 1000;
         public const int WaitBeforeUse = 60 * 1000;
 
+        // IBEContext
+        public IProtoControlOwner Owner { set; get; }
+        // TODO - this is AS-specific.
+        public AsProtoControl ProtoControl { set; get; }
+
+        public McProtocolState ProtocolState { get; set; }
+
+        public McServer Server { get; set; }
+
+        public McAccount Account { get; set; }
+
+        public McCred Cred { get; set; }
+
         public MockPushAssistOwnwer ()
         {
+            Owner = new MockOwner ();
         }
 
         public PushAssistParameters PushAssistParameters ()
@@ -102,6 +117,11 @@ namespace Test.Common
             return base.ProtocolToString (protocol);
         }
 
+        public new static void SetDeviceToken (string token)
+        {
+            DeviceToken = token;
+        }
+
         public WrapPushAssist (IPushAssistOwner owner) : base (owner)
         {
         }
@@ -128,6 +148,7 @@ namespace Test.Common
         public void Setup ()
         {
             Telemetry.ENABLED = false;
+            NcTask.StartService ();
 
             // Set up credential
             var account = new McAccount () {
@@ -164,7 +185,7 @@ namespace Test.Common
             NcApplication.Instance.ClientId = null;
             PushAssist.MinDelayMsec = OriginalMinDelayMsec;
             PushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
-            PushAssist.SetDeviceToken (null);
+            WrapPushAssist.SetDeviceToken (null); // do not use PushAssist.SetDeviceToken() as it creates a new task.
             Telemetry.ENABLED = true;
         }
 
