@@ -210,9 +210,6 @@
       <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
-    <Reference Include="BouncyCastle">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -2233,6 +2230,10 @@
     <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
+      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
+      <Name>MailKit.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
