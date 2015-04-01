@@ -185,7 +185,8 @@ namespace NachoClient.iOS
 
         public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "Got remote notification - {0}", userInfo);
+            Log.Info (Log.LOG_LIFECYCLE, "[PA] Got remote notification - {0}", userInfo);
+
             // Amazingly, it turns out the most programmatically simple way to convert a NSDictionary
             // to our own model objects.
             NSError error;
@@ -281,6 +282,10 @@ namespace NachoClient.iOS
                 PushAssist.Initialize ();
                 ServerCertificatePeek.Initialize ();
                 StartUIMonitor ();
+            }
+
+            if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Remote notification");
             }
 
             if (null == NcApplication.Instance.CrashFolder) {
@@ -484,6 +489,7 @@ namespace NachoClient.iOS
             }
             FinalShutdownHasHappened = true;
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Exit");
+            Log.Info (Log.LOG_PUSH, "[PA] finalshutdown: client_id={0}", NcApplication.Instance.ClientId);
         }
 
         private void ReverseFinalShutdown ()
@@ -959,6 +965,8 @@ namespace NachoClient.iOS
                 var latency = (DateTime.UtcNow - message.DateReceived).TotalSeconds;
                 var cause = (null == fetchCause ? "BG" : fetchCause);
                 subjectString += String.Format ("[{0}:{1:N1}s]", cause, latency);
+                Log.Info (Log.LOG_PUSH, "[PA] notify email message: client_id={0}, message_id={1}, cause={2}, delay={3}",
+                    NcApplication.Instance.ClientId, message.Id, cause, latency);
             }
 
             if (NotificationCanAlert) {
@@ -1023,6 +1031,7 @@ namespace NachoClient.iOS
             }
 
             if (NotificationCanBadge) {
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: badge count = {0}", badgeCount);
                 UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
             } else {
                 Log.Info (Log.LOG_UI, "Skip badging due to lack of user permission.");
