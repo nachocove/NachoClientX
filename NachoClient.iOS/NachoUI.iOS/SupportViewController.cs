@@ -165,7 +165,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                UIApplication.SharedApplication.OpenUrl (new NSUrl ("telprompt://14044362246"));
+                UIApplication.SharedApplication.OpenUrl (new NSUrl ("telprompt://19718036226"));
             }
         }
 
