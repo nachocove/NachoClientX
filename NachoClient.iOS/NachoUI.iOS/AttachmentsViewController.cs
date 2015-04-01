@@ -548,10 +548,33 @@ namespace NachoClient.iOS
         public void OpenInOtherApp (McAttachment attachment, UITableViewCell cell)
         {
             DownloadAndDoAction (attachment.Id, cell, (a) => {
-                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.GetFilePath ()));
-                Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
-                Preview.PresentOpenInMenu (View.Frame, View, true);
+                DoOpenInOtherApp (a);
             });
+        }
+
+        // Xammit!  Looks like Preview gets GC'd
+        // when its in the Preview function while
+        // the UI is asking how to share the file.
+        UIDocumentInteractionController Preview;
+
+        public void DoOpenInOtherApp (McAttachment attachment)
+        {
+            var path = attachment.GetFilePath ();
+            if (!String.IsNullOrEmpty (path)) {
+                var url = NSUrl.FromFilename (path);
+                // Xammit!  Preview seems to have been GC'd
+                Preview = UIDocumentInteractionController.FromUrl (url);
+                Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
+                if (!Preview.PresentOpenInMenu (View.Frame, View, true)) {
+                    UIAlertView alert = new UIAlertView (
+                        "Nacho Mail", 
+                        "No viewer is available for this attachment.", 
+                        null, 
+                        "OK"
+                    );
+                    alert.Show ();
+                }
+            }
         }
 
         public void FileChooserSheet (McAbstrObject file, Action displayAction)
@@ -627,9 +650,9 @@ namespace NachoClient.iOS
             DownloadAndDoAction (attachmentId, cell, (a) => {
                 if (null == Owner) {
                     PlatformHelpers.DisplayAttachment (this, a);
-                    return;
+                } else {
+                    FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
                 }
-                FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
             });
         }
 
@@ -637,10 +660,9 @@ namespace NachoClient.iOS
         {
             if (null == Owner) {
                 PlatformHelpers.DisplayFile (this, document);
-                return;
+            } else {
+                FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
             }
-
-            FileChooserSheet (document, () => PlatformHelpers.DisplayFile (this, document));
         }
 
         public void NoteAction (McNote note)
