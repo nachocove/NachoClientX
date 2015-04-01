@@ -30,6 +30,8 @@ namespace NachoCore.Model
         [Indexed]
         public DateTime EndTime { get; set; }
 
+        public bool AllDayEvent { get; set; }
+
         [Indexed]
         public DateTime ReminderTime { get; set; }
 
@@ -39,13 +41,14 @@ namespace NachoCore.Model
         [Indexed]
         public int ExceptionId { get; set; }
 
-        static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, int calendarId, int exceptionId)
+        static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, bool allDayEvent, int calendarId, int exceptionId)
         {
             // Save the event
             var e = new McEvent ();
             e.AccountId = accountId;
             e.StartTime = startTime;
             e.EndTime = endTime;
+            e.AllDayEvent = allDayEvent;
             e.CalendarId = calendarId;
             e.ExceptionId = exceptionId;
             e.Insert ();
@@ -58,9 +61,45 @@ namespace NachoCore.Model
             return e;
         }
 
+        public DateTime GetStartTimeUtc ()
+        {
+            if (AllDayEvent) {
+                return DateTime.SpecifyKind (StartTime, DateTimeKind.Local).ToUniversalTime ();
+            } else {
+                return StartTime;
+            }
+        }
+
+        public DateTime GetEndTimeUtc ()
+        {
+            if (AllDayEvent) {
+                return DateTime.SpecifyKind (EndTime, DateTimeKind.Local).ToUniversalTime ();
+            } else {
+                return EndTime;
+            }
+        }
+
+        public DateTime GetStartTimeLocal ()
+        {
+            if (AllDayEvent) {
+                return DateTime.SpecifyKind (StartTime, DateTimeKind.Local);
+            } else {
+                return StartTime.ToLocalTime ();
+            }
+        }
+
+        public DateTime GetEndTimeLocal ()
+        {
+            if (AllDayEvent) {
+                return DateTime.SpecifyKind (EndTime, DateTimeKind.Local);
+            } else {
+                return EndTime.ToLocalTime ();
+            }
+        }
+
         public void SetReminder (uint reminderMinutes)
         {
-            ReminderTime = StartTime - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
+            ReminderTime = GetStartTimeUtc () - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
             Update ();
             LocalNotificationManager.ScheduleNotification (this);
         }
@@ -87,17 +126,38 @@ namespace NachoCore.Model
         /// </summary>
         public static McEvent GetCurrentOrNextEvent()
         {
+            // Due to the way that all-day events are stored, the StartTime field of the event may be different than
+            // the start time that we want to present to the user.  So we have to handle the case where the database
+            // returns events in what appears to be the wrong order.
             DateTime now = DateTime.UtcNow;
             DateTime weekInFuture = now + new TimeSpan (7, 0, 0, 0);
+            McEvent result = null;
             foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= now && x.StartTime < weekInFuture).OrderBy (x => x.StartTime)) {
                 var cal = evt.GetCalendarItemforEvent ();
-                if (null != cal && NcMeetingStatus.MeetingCancelled != cal.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != cal.MeetingStatus) {
-                    // An event that hasn't been canceled.  This is what we are looking for.
-                    return evt;
+                if (null != cal && (NcMeetingStatus.MeetingCancelled == cal.MeetingStatus || NcMeetingStatus.ForwardedMeetingCancelled == cal.MeetingStatus)) {
+                    // A meeting that has been canceled.  Ignore it.
+                    continue;
                 }
-                // The event was canceled.  Go to the next one in the list.
+                if (null == result) {
+                    // The first event that we have looked at.  Make a note of it and keep looking.
+                    result = evt;
+                } else if (evt.GetStartTimeUtc () < result.GetStartTimeUtc ()) {
+                    // Found an out-of-order event.  None of the later events will be any earlier, so we can quit now.
+                    result = evt;
+                    break;
+                } else if (result.AllDayEvent && evt.GetStartTimeUtc () > result.GetStartTimeUtc ()) {
+                    // None of the later events will be any earlier than the all-day event that we already have,
+                    // so we can quit now.
+                    break;
+                } else if (!result.AllDayEvent && (evt.AllDayEvent || evt.GetStartTimeUtc () > DateTime.SpecifyKind (result.GetStartTimeLocal ().Date, DateTimeKind.Utc))) {
+                    // We found an event whose starting time (as recorded in the database) is later than the
+                    // starting time of an all-day event on the current day.  Therefore, if we keep looking we
+                    // will not find any all-day events that start earlier than the non-all-day event that we
+                    // already have.  So we can quit now.
+                    break;
+                }
             }
-            return null;
+            return result;
         }
 
         /// <summary>

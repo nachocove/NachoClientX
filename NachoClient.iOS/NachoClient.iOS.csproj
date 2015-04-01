@@ -1306,6 +1306,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
       <Link>NachoCore\Utils\LoginHelpers.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration14.cs">
+      <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

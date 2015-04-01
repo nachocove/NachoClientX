@@ -383,6 +383,7 @@
     <Compile Include="NachoPlatform.Android\NcUIRedirectorAndroid.cs" />
     <Compile Include="NachoCore\Utils\BuildInfoHelper.cs" />
     <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration14.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
