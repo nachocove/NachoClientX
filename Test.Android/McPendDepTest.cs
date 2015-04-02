@@ -33,7 +33,7 @@ namespace Test.Common
                     ClientId = iter.ToString(),
                 };
                 pending.Insert ();
-                pending.MarkPredBlocked (createFolder.Id);
+                pending = pending.MarkPredBlocked (createFolder.Id);
                 depPendIdList.Add (pending.Id);
             }
             // Verify all are blocked.

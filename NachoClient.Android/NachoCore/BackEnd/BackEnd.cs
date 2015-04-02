@@ -247,20 +247,24 @@ namespace NachoCore
         }
 
         // TODO - should these take Token?
-        public void UnblockPendingCmd (int accountId, int pendingId)
+        public McPending UnblockPendingCmd (int accountId, int pendingId)
         {
+            McPending retval = null;
             ServiceFromAccountId (accountId, (service) => {
-                service.UnblockPendingCmd (pendingId);
+                retval = service.UnblockPendingCmd (pendingId);
                 return NcResult.OK ();
             });
+            return retval;
         }
 
-        public void DeletePendingCmd (int accountId, int pendingId)
+        public McPending DeletePendingCmd (int accountId, int pendingId)
         {
+            McPending retval = null;
             ServiceFromAccountId (accountId, (service) => {
-                service.DeletePendingCmd (pendingId);
+                retval = service.DeletePendingCmd (pendingId);
                 return NcResult.OK ();
             });
+            return retval;
         }
 
         private NcResult CmdInDoNotDelayContext (int accountId, Func<ProtoControl, NcResult> cmd)

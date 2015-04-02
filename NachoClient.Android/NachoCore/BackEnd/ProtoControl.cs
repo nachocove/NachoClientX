@@ -110,12 +110,14 @@ namespace NachoCore
             return false;
         }
 
-        public virtual void UnblockPendingCmd (int pendingId)
+        public virtual McPending UnblockPendingCmd (int pendingId)
         {
+            return null;
         }
 
-        public virtual void DeletePendingCmd (int pendingId)
+        public virtual McPending DeletePendingCmd (int pendingId)
         {
+            return null;
         }
 
         public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)
