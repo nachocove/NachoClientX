@@ -240,6 +240,7 @@
     <Folder Include="NachoCore\Model\McEmailMessage\" />
     <Folder Include="NachoCore\Index\" />
     <Folder Include="NachoCore\Model\Migration\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
