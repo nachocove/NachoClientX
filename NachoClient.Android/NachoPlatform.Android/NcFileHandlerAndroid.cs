@@ -29,8 +29,8 @@ namespace NachoPlatform
         public void MarkFileForSkipBackup (string filename)
         {
             //TODO: stub
+            NcAssert.True (false);
         }
-
     }
 }
 
