@@ -86,7 +86,13 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case McPending.StateEnum.Dispatched:
-                    // TODO: find a way to prevent re-try, and at least mark as do-not-delay.
+                        // Prevent any more high-level attempts after Cancel().
+                        // TODO - need method to find executing Op/Cmd so we can prevent HTTP retries.
+                        pending.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.DefersRemaining = 0;
+                            return true;
+                        });
                         retval = false;
                         break;
 
