@@ -96,12 +96,8 @@ namespace NachoClient.iOS
 
             if (!NcMigration.IsCompatible ()) {
                 // Display an alert view and wait to get out
-                UIAlertView av = new UIAlertView ();
-                av.Title = "Incompatible Version";
-                av.Message = "Running this older version results in an incompatible " +
-                "downgrade from the previously installed version. Please install a newer version.";
-                av.AccessibilityLabel = "Incompatible Version";
-                av.Show ();
+                NcAlertView.ShowMessage (this, "Incompatible Version",
+                    "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.");
                 return;
             }
 

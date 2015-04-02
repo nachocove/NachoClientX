@@ -927,19 +927,12 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            UIAlertView alert = new UIAlertView ();
-            alert.Title = "Discard Changes?";
-            alert.Message = "Going back will discard your changes. Are you sure you want to do this?";
-            alert.AddButton ("Cancel");
-            alert.AddButton ("Yes");
-            alert.CancelButtonIndex = 0;
-            alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                if (1 == alertEvent.ButtonIndex) {
+            NcAlertView.Show (this, "Discard Changes?", "Going back will discard your changes. Are you sure?",
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
+                new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
                     contactCopy.Delete ();
                     NavigationController.PopViewController (true);
-                }
-            };
-            alert.Show ();
+                }));
         }
 
         protected void DoneButtonClicked (object sender, EventArgs e)
@@ -977,11 +970,8 @@ namespace NachoClient.iOS
                 }
                 NavigationController.PopViewController (true);
             } else {
-                UIAlertView alert = new UIAlertView ();
-                alert.Title = "Email Entered Incorrectly";
-                alert.Message = "One (or more) of the email addresses you entered is not entered in a valid format.";
-                alert.AddButton ("Ok");
-                alert.Show ();
+                NcAlertView.ShowMessage (this, "Incorrect E-mail Address",
+                    "At least one of the e-mail addresses is in an invalid format.");
                 LayoutView ();
             }
         }
@@ -1137,20 +1127,14 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            UIAlertView alert = new UIAlertView ();
-            alert.Title = "Delete Contact?";
-            alert.Message = "Are you sure you want to delete this contact? This operation cannot be undone.";
-            alert.AddButton ("Cancel");
-            alert.AddButton ("Yes");
-            alert.CancelButtonIndex = 0;
-            alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                if (1 == alertEvent.ButtonIndex) {
+            NcAlertView.Show (this, "Delete Contact",
+                "Are you sure that you want to delete this contact? This operation cannot be undone.",
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
+                new NcAlertAction ("Delete", NcAlertActionStyle.Destructive, () => {
                     contactCopy.Delete ();
                     BackEnd.Instance.DeleteContactCmd (contact.AccountId, contact.Id);
                     NavigationController.PopToRootViewController (true);
-                }
-            };
-            alert.Show ();
+                }));
         }
 
         protected void AddPhoneTouchUpInside (object sender, EventArgs e)
@@ -2497,14 +2481,8 @@ namespace NachoClient.iOS
 
         protected void DisplayNoMoreSlotsAlert (string headerPlural, string msgSingular)
         {
-            UIAlertView noSlotsAvailable = new UIAlertView (
-                                               "No Available " + headerPlural, 
-                                               "There are no available " + msgSingular + " slots left for this contact. You cannot add another.",
-                                               null,
-                                               "Ok",
-                                               null
-                                           );
-            noSlotsAvailable.Show ();
+            NcAlertView.ShowMessage (this, string.Format ("No Available {0}", headerPlural),
+                string.Format ("There are no more {0} slots available for this contact.", msgSingular));
             return;
         }
 
