@@ -524,7 +524,8 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_DB, "RunInTransaction: Should already be in a transaction here: {0}", new StackTrace (true));
             }
             var threadId = Thread.CurrentThread.ManagedThreadId;
-            if (NcApplication.Instance.UiThreadId != threadId) {
+            bool onUiThread = NcApplication.Instance.UiThreadId == threadId;
+            if (!onUiThread) {
                 // We aren't in a transaction yet. If not UI thread, adhere to rate limiting.
                 RateLimiter.TakeTokenOrSleep ();
             }
@@ -535,25 +536,44 @@ namespace NachoCore.Model
                 exitValue = oldValue;
                 return oldValue + 1;
             });
-            Stopwatch watch = new Stopwatch ();
+            Stopwatch lockWatch = new Stopwatch ();
+            Stopwatch workWatch = new Stopwatch ();
             try {
                 var whoa = DateTime.UtcNow.AddSeconds (5.0);
                 // It is okay to loop here, because a busy will have caused us to ROLLBACK and release
                 // all locks. We can then run the action code again.
                 do {
                     try {
-                        watch.Start ();
+                        lockWatch.Start ();
                         lock (WriteNTransLockObj) {
+                            lockWatch.Stop ();
+                            workWatch.Start ();
                             Db.RunInTransaction (action);
                         }
-                        watch.Stop ();
-                        var span = watch.ElapsedMilliseconds;
-                        if (1000 < span) {
-                            Log.Error (Log.LOG_DB, "RunInTransaction: {0}ms for {1}", span, new StackTrace (true));
+                        workWatch.Stop ();
+                        var lockSpan = lockWatch.ElapsedMilliseconds;
+                        var workSpan = workWatch.ElapsedMilliseconds;
+                        // Use different threshholds for reporting long transactions based on whether or not
+                        // this is the UI thread.
+                        if (onUiThread) {
+                            if (100 < lockSpan) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: UI thread spent {0}ms waiting to acquire the database write lock. {1}", lockSpan, new StackTrace (true));
+                            }
+                            if (100 < workSpan) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: UI thread spent {0}ms running a transaction. {1}", workSpan, new StackTrace (true));
+                            }
+                        } else {
+                            if (500 < lockSpan) {
+                                Log.Warn (Log.LOG_DB, "RunInTransaction: Background thread spent {0}ms waiting to acquire the database write lock. {1}", lockSpan, new StackTrace (true));
+                            }
+                            if (1000 < workSpan) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: Background thread spent {0}ms running a transaction. {1}", workSpan, new StackTrace (true));
+                            } else if (500 < workSpan) {
+                                Log.Warn (Log.LOG_DB, "RunInTransaction: Background thread spent {0}ms running a transaction. {1}", workSpan, new StackTrace (true));
+                            }
                         }
                         break;
                     } catch (SQLiteException ex) {
-                        watch.Reset ();
                         if (SQLite3.Result.Busy == ex.Result) {
                             Log.Warn (Log.LOG_DB, "RunInTransaction: Caught a Busy");
                         } else {
@@ -561,6 +581,8 @@ namespace NachoCore.Model
                             throw;
                         }
                     }
+                    lockWatch.Reset ();
+                    workWatch.Reset ();
                 } while (DateTime.UtcNow < whoa);
             } finally {
                 NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
