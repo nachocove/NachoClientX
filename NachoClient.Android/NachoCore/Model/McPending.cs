@@ -492,6 +492,11 @@ namespace NachoCore.Model
                 NcAssert.True (null != control);
                 control.StatusInd (result, new [] { Token });
             }
+            if (Operation == Operations.EmailSend ||
+                Operation == Operations.EmailForward ||
+                Operation == Operations.EmailReply) {
+                control.Owner.SendEmailResp (control, ItemId, true);
+            }
             State = StateEnum.Deleted;
             Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}:{1}", Id, Token);
@@ -605,6 +610,11 @@ namespace NachoCore.Model
                 UnblockSuccessors (control, DelayNotAllowed ? StateEnum.Eligible : StateEnum.Failed);
             });
             control.StatusInd (result, new [] { Token });
+            if (Operation == Operations.EmailSend ||
+                Operation == Operations.EmailForward ||
+                Operation == Operations.EmailReply) {
+                control.Owner.SendEmailResp (control, ItemId, false);
+            }
             if (DelayNotAllowed) {
                 Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
             } else {
@@ -1138,6 +1148,17 @@ namespace NachoCore.Model
                     rec.AccountId == accountId &&
                     rec.AttachmentId == AttachmentId
             ).FirstOrDefault ();
+        }
+
+        public static McPending QueryByEmailMessageId (int accountId, int emailMessageId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.ItemId == emailMessageId &&
+                    (rec.Operation == Operations.EmailSend ||
+                        rec.Operation == Operations.EmailForward ||
+                        rec.Operation == Operations.EmailReply)).FirstOrDefault ();
         }
 
         public static IEnumerable<McPending> QueryOlderThanByState (int accountId, DateTime olderThan, StateEnum state)

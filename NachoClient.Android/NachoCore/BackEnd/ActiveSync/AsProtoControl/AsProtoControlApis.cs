@@ -52,8 +52,9 @@ namespace NachoCore.ActiveSync
             });
         }
 
-        public override void Cancel (string token)
+        public override bool Cancel (string token)
         {
+            var retval = false;
             NcModel.Instance.RunInTransaction (() => {
                 var pendings = McPending.QueryByToken (Account.Id, token);
                 foreach (var iterPending in pendings) {
@@ -61,6 +62,7 @@ namespace NachoCore.ActiveSync
                     switch (pending.State) {
                     case McPending.StateEnum.Eligible:
                         pending.ResolveAsCancelled (false);
+                        retval = true;
                         break;
 
                     case McPending.StateEnum.Deferred:
@@ -73,14 +75,17 @@ namespace NachoCore.ActiveSync
                         } else {
                             pending.ResolveAsCancelled ();
                         }
+                        retval = true;
                         break;
 
                     case McPending.StateEnum.Dispatched:
                     // TODO: find a way to prevent re-try, and at least mark as do-not-delay.
+                        retval = false;
                         break;
 
                     case McPending.StateEnum.Deleted:
                     // Nothing to do.
+                        retval = true;
                         break;
 
                     default:
@@ -89,6 +94,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
             });
+            return retval;
         }
 
         public override NcResult StartSearchEmailReq (string keywords, uint? maxResults)
