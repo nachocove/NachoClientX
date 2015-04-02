@@ -1072,7 +1072,7 @@ namespace NachoClient.iOS
 
             if (0 == toView.AddressList.Count) {
                 NcAlertView.ShowMessage (this, "No Recipients",
-                    "This message is not being sent to anybody. Please choose a contact to receive this message.");
+                    "This message is not being sent to anybody. Please add a recipient to the 'To' field.");
                 return false;
             }
             return true;

@@ -649,7 +649,7 @@ namespace NachoClient.iOS
             }
             if (McAbstrFileDesc.FilePresenceEnum.Complete != tempAttachment.FilePresence) {
                 NcAlertView.ShowMessage (vc, "Not Downloaded",
-                    "Attachments must be downloaded before they can be atteched to an e-mail message.");
+                    "Attachments must be downloaded before they can be attached to an e-mail message.");
                 return;
             } else {
                 tempAttachmentList.Add (tempAttachment);
