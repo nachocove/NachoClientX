@@ -641,6 +641,33 @@ namespace NachoCore.Utils
             }
             return System.IO.Path.GetExtension (path).ToUpper ();
         }
+
+        public static string MaxAgeFilter(ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        {
+            switch(code) {
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
+                return "All messages";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
+                return "One day";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeDays_2:
+                return "Three days";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneWeek_3:
+                return "One week";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
+                return "Two weeks";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
+                return "One month";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
+                return "Three months";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
+                return "Six months";
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            return "";
+        }
+
     }
 }
 
