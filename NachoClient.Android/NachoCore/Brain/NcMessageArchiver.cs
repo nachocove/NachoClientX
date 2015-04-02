@@ -34,7 +34,7 @@ namespace NachoCore
         public static void Archive (McEmailMessage message)
         {
             McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
-            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, archiveFolder.Id);
+            Move (message, archiveFolder); // Do not archive messages in Archive folder
         }
 
         public static void Archive (McEmailMessageThread thread)
