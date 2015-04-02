@@ -36,9 +36,11 @@ namespace Test.iOS
 
             // create email
             var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: defaultServerId);
+            Assert.NotNull (email);
 
             // create attachment
             var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+            Assert.NotNull (att);
 
             // create cred
             var cred = new McCred () {
