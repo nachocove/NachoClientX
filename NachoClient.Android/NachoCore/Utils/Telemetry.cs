@@ -510,6 +510,7 @@ namespace NachoCore.Utils
                 McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
                 dbEvent.Insert ();
             }
+            MayPurgeEvents (200000);
             Telemetry.SharedInstance.DbUpdated.Set ();
         }
 
