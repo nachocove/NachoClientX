@@ -756,29 +756,15 @@ namespace NachoClient.iOS
 
         protected void DaysToSyncTapHandler (NSObject sender)
         {
-            var actionSheet = new UIActionSheet ();
-            actionSheet.TintColor = A.Color_NachoBlue;
-            actionSheet.Add (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5));
-            actionSheet.Add (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0));
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 2;
-
-            actionSheet.Clicked += delegate(object s, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
+            NcActionSheet.Show (View, this,
+                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
                     UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
-                    break; 
-                case 1:
+                }),
+                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
                     UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
-                    break;
-                case 2:
-                    break; // Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-            actionSheet.ShowInView (View);
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+            );
         }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
