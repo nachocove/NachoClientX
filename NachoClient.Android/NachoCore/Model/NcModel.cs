@@ -160,18 +160,17 @@ namespace NachoCore.Model
             var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
             if (File.Exists (RemovingAccountLockFile)) {
                 // Get the account id from the file
-                try{
+                try {
                     using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Open, FileAccess.Read)) {
                         using (var reader = new StreamReader (stream)) {
                             AccountIdString = reader.ReadLine ();
-                            bool result = int.TryParse(AccountIdString, out AccountId);
+                            bool result = int.TryParse (AccountIdString, out AccountId);
                             if (!result) {                     
                                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to parse AccountId from file.");
                             }
                         }
                     }
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to read RemoveAccountLockFile.{0}", e.Message);
                 }
             }
@@ -182,14 +181,13 @@ namespace NachoCore.Model
         public void WriteRemovingAccountIdToFile (int AccountId)
         {
             var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
-            try{
+            try {
                 using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Create, FileAccess.Write)) {
                     using (var writer = new StreamWriter (stream)) {
                         writer.WriteLine (AccountId);
                     }
                 }
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.{0}", e.Message);
             }
         }
