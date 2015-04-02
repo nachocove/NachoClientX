@@ -125,8 +125,13 @@ namespace NachoCore.Model
 
         public static int QueryCount ()
         {
+            return QueryCount<McTelemetryEvent> ();
+        }
+
+        protected static int QueryCount<T> () where T : McTelemetryEvent, new()
+        {
             try {
-                return NcModel.Instance.TeleDb.Table<McTelemetryEvent> ().Count ();
+                return NcModel.Instance.TeleDb.Table<T> ().Count ();
             } catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
                     NcModel.Instance.ResetTeleDb ();
@@ -135,6 +140,32 @@ namespace NachoCore.Model
                     throw;
                 }
             }
+        }
+
+        public static void Purge<T> (int limit) where T : McTelemetryEvent, new()
+        {
+            int count = QueryCount ();
+            if (limit < count) {
+                // SQLITE_ENABLE_UPDATE_DELETE_LIMIT is not enabled on a lot of 
+                // platforms. Cannot count its avail.
+                var tableName = typeof(T).Name;
+                var dbEventList =
+                    NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
+                        String.Format ("SELECT * FROM {0} ORDER BY Id DESC LIMIT ?", tableName), count - limit
+                    );
+                var dbEvent = dbEventList.LastOrDefault ();
+                if (null == dbEvent) {
+                    return;
+                }
+                NcModel.Instance.TeleDb.Query<T> (
+                    String.Format ("DELETE FROM {0} WHERE Id >= ?", tableName), dbEvent.Id
+                );
+            }
+        }
+
+        public static T QueryById<T> (int id) where T : McTelemetryEvent, new()
+        {
+            return NcModel.Instance.TeleDb.Table<T> ().Where (x => x.Id == id).SingleOrDefault ();
         }
     }
 
@@ -166,6 +197,11 @@ namespace NachoCore.Model
                     throw;
                 }
             }
+        }
+
+        public static int QueryCount ()
+        {
+            return QueryCount<McTelemetrySupportEvent> ();
         }
     }
 }
