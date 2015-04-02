@@ -246,6 +246,10 @@ namespace Test.iOS
         public void SearchContactsResp (ProtoControl sender, string prefix, string token)
         {
         }
+
+        public void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend)
+        {
+        }
     }
 
     public class MockNcCommStatus : INcCommStatus

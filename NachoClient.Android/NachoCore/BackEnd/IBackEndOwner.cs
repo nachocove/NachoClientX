@@ -32,6 +32,8 @@ namespace NachoCore
         void CertAskReq (int accountId, X509Certificate2 certificate);
 
         void SearchContactsResp (int accountId, string prefix, string token);
+
+        void SendEmailResp (int accountId, int emailMessageId, bool didSend);
     }
 }
 

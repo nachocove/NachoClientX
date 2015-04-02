@@ -581,5 +581,12 @@ namespace NachoCore
                 Owner.SearchContactsResp (sender.AccountId, prefix, token);
             });
         }
+
+        public void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend)
+        {
+            InvokeOnUIThread.Instance.Invoke (delegate () {
+                Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend);
+            });
+        }
     }
 }

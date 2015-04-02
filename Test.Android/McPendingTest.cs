@@ -916,6 +916,30 @@ namespace Test.iOS
                 var noItem = badPend.QueryItemUsingServerId ();
                 Assert.Null (noItem, "Should return null if a non-move operation is queried");
             }
+
+            [Test]
+            public void TestQueryByEmailMessageId ()
+            {
+                var email1 = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: "e1");
+                var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: "c1");
+                var email2 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: 3, serverId: "e2");
+                var pend1 = CreatePending (operation: Operations.EmailSend, item: email1);
+                var pend2 = CreatePending (operation: Operations.EmailBodyDownload, item: email1);
+                var pend3 = CreatePending (accountId:5, operation: Operations.EmailSend, item: email1);
+                var pend4 = CreatePending (operation: Operations.EmailSend, item: email2);
+                var pend5 = CreatePending (operation: Operations.CalDelete, item: cal);
+
+                var found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+                pend1.Operation = Operations.EmailForward;
+                pend1.Update ();
+                found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+                pend1.Operation = Operations.EmailReply;
+                pend1.Update ();
+                found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+            }
         }
 
         public class TestDependencyCreation : BaseMcPendingTest
