@@ -105,8 +105,9 @@ namespace NachoCore
         {
         }
 
-        public virtual void Cancel (string token)
+        public virtual bool Cancel (string token)
         {
+            return false;
         }
 
         public virtual void UnblockPendingCmd (int pendingId)
