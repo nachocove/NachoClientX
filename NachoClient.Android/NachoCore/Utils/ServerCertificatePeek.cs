@@ -120,7 +120,11 @@ namespace NachoCore.Utils
                                                           X509Chain chain,
                                                           SslPolicyErrors sslPolicyErrors)
         {
-            IHttpWebRequest request = new MockableHttpWebRequest ((HttpWebRequest)sender);
+            var maybeRequest = sender as HttpWebRequest;
+            if (null == maybeRequest) {
+                return SslPolicyErrors.None == sslPolicyErrors;
+            }
+            IHttpWebRequest request = new MockableHttpWebRequest (maybeRequest);
             X509Certificate2 certificate2 = null;
             if (null != certificate) {
                 certificate2 = new X509Certificate2 (certificate);
