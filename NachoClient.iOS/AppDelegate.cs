@@ -943,8 +943,12 @@ namespace NachoClient.iOS
                 return true;
             }
             notif.AlertAction = null;
-            notif.AlertTitle = fromString;
-            notif.AlertBody = subjectString;
+            if (notif.RespondsToSelector (new Selector ("setAlertTitle:"))) {
+                notif.AlertTitle = fromString;
+                notif.AlertBody = subjectString;
+            } else {
+                notif.AlertBody = subjectString + " from " + fromString;
+            }
             notif.UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey);
             if (withSound) {
                 notif.SoundName = UILocalNotification.DefaultSoundName;
