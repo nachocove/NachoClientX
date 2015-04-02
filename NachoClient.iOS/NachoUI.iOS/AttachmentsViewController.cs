@@ -427,13 +427,7 @@ namespace NachoClient.iOS
             var nr = PlatformHelpers.DownloadAttachment (a);
             var token = nr.GetValue<String> ();
             if (null == token) {
-                UIAlertView alert = new UIAlertView (
-                                        "Download Error", 
-                                        "There was a problem downloading this attachment.", 
-                                        null, 
-                                        "OK"
-                                    );
-                alert.Show ();
+                NcAlertView.ShowMessage (this, "Download Error", "There was a problem downloading this attachment.");
                 return;
             }
 
@@ -486,13 +480,8 @@ namespace NachoClient.iOS
         {
             if (null != attachment) {
                 if (attachment.IsInline) {
-                    UIAlertView alert = new UIAlertView (
-                                            "File is Inline", 
-                                            "Attachments that are contained within the body of an email cannot be deleted", 
-                                            null, 
-                                            "OK"
-                                        );
-                    alert.Show ();
+                    NcAlertView.ShowMessage (this, "File is Inline",
+                        "Attachments that are contained within the body of an e-mail message cannot be deleted.");
                 } else {
                     attachment.DeleteFile ();
                 
@@ -566,83 +555,22 @@ namespace NachoClient.iOS
                 Preview = UIDocumentInteractionController.FromUrl (url);
                 Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
                 if (!Preview.PresentOpenInMenu (View.Frame, View, true)) {
-                    UIAlertView alert = new UIAlertView (
-                        "Nacho Mail", 
-                        "No viewer is available for this attachment.", 
-                        null, 
-                        "OK"
-                    );
-                    alert.Show ();
+                    NcAlertView.ShowMessage (this, "Nacho Mail", "No viewer is available for this attachment.");
                 }
             }
         }
 
         public void FileChooserSheet (McAbstrObject file, Action displayAction)
         {
-            if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
-                FileChooserSheet8 (file, displayAction);
-            } else {
-                FileChooserSheet7 (file, displayAction);
-            }
-        }
-
-        public void FileChooserSheet8 (McAbstrObject file, Action displayAction)
-        {
-            var title = "Attachment";
-            var message = "Add or preview the attachment";
-            var cancelButtonTitle = "Cancel";
-            var otherButtonTitleOne = "Preview";
-            var otherButtonTitleTwo = "Add as attachment";
-
-            var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
-
-            // Create the actions.
-            var cancelAction = UIAlertAction.Create (cancelButtonTitle, UIAlertActionStyle.Cancel, alertAction => {
-                ;
-            });
-            var otherButtonOneAction = UIAlertAction.Create (otherButtonTitleOne, UIAlertActionStyle.Default, alertAction => {
-                displayAction ();
-            });
-
-            var otherButtonTwoAction = UIAlertAction.Create (otherButtonTitleTwo, UIAlertActionStyle.Default, alertAction => {
-                Owner.SelectFile (this, file);
-            });
-
-            // Add the actions.
-            alertController.AddAction (cancelAction);
-            alertController.AddAction (otherButtonOneAction);
-            alertController.AddAction (otherButtonTwoAction);
-
-            PresentViewController (alertController, true, null);
-        }
-
-        public void FileChooserSheet7 (McAbstrObject file, Action displayAction)
-        {
-            // We're in "chooser' mode & the attachment is downloaded
-            var actionSheet = new UIActionSheet ();
-            actionSheet.TintColor = A.Color_NachoBlue;
-            actionSheet.Add ("Preview");
-            actionSheet.Add ("Add as attachment");
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 2;
-
-            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
+            NcActionSheet.Show (View, this,
+                new NcAlertAction ("Preview", () => {
                     displayAction ();
-                    break; 
-                case 1:
+                }),
+                new NcAlertAction ("Add as attachment", () => {
                     Owner.SelectFile (this, file);
-                    break;
-                case 2:
-                    break; // Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-
-            actionSheet.ShowInView (View);
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+            );
         }
 
         public void AttachmentAction (int attachmentId, UITableViewCell cell)
@@ -723,13 +651,8 @@ namespace NachoClient.iOS
                     break;
                 }
                 if (McAbstrFileDesc.FilePresenceEnum.Complete != tempAttachment.FilePresence) {
-                    UIAlertView alert = new UIAlertView (
-                                            "Hold on!", 
-                                            "All attachments must be downloaded before they can be attached to an email.", 
-                                            null, 
-                                            "OK"
-                                        );
-                    alert.Show ();
+                    NcAlertView.ShowMessage (this, "Hold on!",
+                        "All attachments must be downloaded before they can be attached to an e-mail message.");
                     return;
                 } else {
                     tempAttachmentsList.Add (tempAttachment);

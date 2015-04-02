@@ -613,9 +613,13 @@ namespace NachoClient.iOS
 
             // TODO: Add more precise error messages based on NcResult
             if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred).isOK ()) {
-                var badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
-                badNetworkConnection.Clicked += SaveAnywayClicked;
-                badNetworkConnection.Show ();
+                NcAlertView.Show (this, "Network Error",
+                    "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?",
+                    new NcAlertAction ("Save", () => {
+                        SaveAccountSettings ();
+                        ToggleEditing ();
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
             } else {
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
                 ShowStatusView ();
@@ -686,9 +690,11 @@ namespace NachoClient.iOS
         protected void CancelButtonClicked (object sender, EventArgs e)
         {
             if (DidUserEditAccount ()) {
-                var dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
-                dismissChanges.Clicked += DismissChangesClicked;
-                dismissChanges.Show ();
+                NcAlertView.Show (this, "Dismiss Changes", "If you leave this screen, your changes will not be saved.",
+                    new NcAlertAction ("OK", () => {
+                        ToggleEditing ();
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
             } else {
                 ToggleEditing ();
             }
@@ -701,10 +707,13 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             HideStatusView ();
 
-            var cancelledValidationAlertView = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
-            cancelledValidationAlertView.Clicked += SaveAnywayClicked;
-            cancelledValidationAlertView.Show ();
-
+            NcAlertView.Show (this, "Validation Cancelled",
+                "Your settings have not been validated. Would you like to save them anyway?",
+                new NcAlertAction ("Save", () => {
+                    SaveAccountSettings ();
+                    ToggleEditing ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
         protected void CaptureOriginalSettings ()
@@ -735,25 +744,6 @@ namespace NachoClient.iOS
             if (null != theConference.DefaultPhoneNumber) {
                 originalConferenceValue = theConference.DefaultPhoneNumber;
             }
-        }
-
-        protected void DismissChangesClicked (object sender, UIButtonEventArgs b)
-        {
-            if (b.ButtonIndex == 0) {
-                ToggleEditing ();
-            }
-            var me = (UIAlertView)sender;
-            me.Clicked -= DismissChangesClicked;
-        }
-
-        protected void SaveAnywayClicked (object sender, UIButtonEventArgs b)
-        {
-            if (b.ButtonIndex == 0) {
-                SaveAccountSettings ();
-                ToggleEditing ();
-            }
-            var me = (UIAlertView)sender;
-            me.Clicked -= SaveAnywayClicked;
         }
 
         protected void SignatureTapHandler (NSObject sender)
@@ -825,9 +815,13 @@ namespace NachoClient.iOS
                 break;
             }
 
-            var errorAlertView = new UIAlertView (alertViewHeader, alertViewMessage, null, "Save", "Cancel");
-            errorAlertView.Clicked += SaveAnywayClicked;
-            errorAlertView.Show ();
+            NcAlertView.Show (this, alertViewHeader, alertViewMessage,
+                new NcAlertAction ("Save", () => {
+                    SaveAccountSettings ();
+                    ToggleEditing ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+            
             handleStatusEnums = false;
 
             ColorTextFields ();
