@@ -403,18 +403,11 @@ namespace NachoClient.iOS
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
                 if (eventEditStarted) {
-                    UIAlertView alert = new UIAlertView ();
-                    alert.Title = "Are you sure?";
-                    alert.Message = "This event will not be saved";
-                    alert.AddButton ("Cancel");
-                    alert.AddButton ("Yes");
-                    alert.CancelButtonIndex = 0;
-                    alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                        if (1 == alertEvent.ButtonIndex) {
+                    NcAlertView.Show (this, "Are you sure?", "This event will not be saved.",
+                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
+                        new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
                             DismissView ();
-                        }
-                    };
-                    alert.Show ();
+                        }));
                 } else {
                     DismissView ();
                 }
@@ -918,57 +911,11 @@ namespace NachoClient.iOS
 
         protected void onDeleteTap ()
         {
-            if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
-                onDeleteTap8 ();
-            } else {
-                onDeleteTap7 ();
-            }
-        }
-
-        public void onDeleteTap8 ()
-        {
-            var title = "Delete Event";
-            var message = "Delete this event from your calendar";
-            var cancelButtonTitle = "Cancel";
-            var otherButtonTitleOne = "Delete Event";
-
-            var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
-
-            // Create the actions.
-            var cancelAction = UIAlertAction.Create (cancelButtonTitle, UIAlertActionStyle.Cancel, alertAction => {
-                ;
-            });
-            var otherButtonOneAction = UIAlertAction.Create (otherButtonTitleOne, UIAlertActionStyle.Default, alertAction => {
-                DeleteEvent ();
-            });
-
-            // Add the actions.
-            alertController.AddAction (cancelAction);
-            alertController.AddAction (otherButtonOneAction);
-
-            PresentViewController (alertController, true, null);
-        }
-
-        protected void onDeleteTap7 ()
-        {
-            var actionSheet = new UIActionSheet ();
-            actionSheet.Add ("Delete Event");
-            actionSheet.Add ("Cancel");
-            actionSheet.DestructiveButtonIndex = 0;
-            actionSheet.CancelButtonIndex = 1;
-            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
+            NcActionSheet.Show (View, this,
+                new NcAlertAction ("Delete Event",  NcAlertActionStyle.Destructive, () => {
                     DeleteEvent ();
-                    break; 
-                case 1:
-                    break;// Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-            actionSheet.ShowInView (View);
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
         protected void ConfigureEditEventView ()
@@ -1331,13 +1278,12 @@ namespace NachoClient.iOS
         protected bool CanBeSaved ()
         {
             if (string.IsNullOrEmpty (titleField.Text)) {
-                var alert = new UIAlertView ("Cannot Save Event", "The title of the event must not be empty.", null, "OK");
-                alert.Show ();
+                NcAlertView.ShowMessage (this, "Cannot Save Event", "The title of the event must not be empty.");
                 return false;
             }
             if (startDate > endDate) {
-                var alert = new UIAlertView ("Cannot Save Event", "The starting time must be no later than the ending time.", null, "OK");
-                alert.Show ();
+                NcAlertView.ShowMessage (this, "Cannot Save Event",
+                    "The starting time must be no later than the ending time.");
                 return false;
             }
             return true;
