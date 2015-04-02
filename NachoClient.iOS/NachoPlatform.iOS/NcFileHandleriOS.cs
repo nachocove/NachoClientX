@@ -37,7 +37,7 @@ namespace NachoPlatform
                     Log.Info (Log.LOG_DB, "Backup: Error marking file/dir for skip backup {0} : {1}", filename, error.LocalizedDescription);
                 }
             } else {
-                Log.Info (Log.LOG_DB, "Backup: File/Directory does not exist {0}", filename);
+                Log.Error (Log.LOG_DB, "Backup: File/Directory does not exist {0}", filename);
             }
         }
 
