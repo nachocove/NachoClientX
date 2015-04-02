@@ -1310,6 +1310,7 @@
       <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
+    <Compile Include="NachoPlatform.iOS\NcFileHandleriOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

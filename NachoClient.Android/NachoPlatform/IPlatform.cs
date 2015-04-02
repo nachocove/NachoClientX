@@ -189,4 +189,9 @@ namespace NachoPlatform
     {
         void GoBackToMainScreen ();
     }
+
+    public interface IPlatformFileHandler
+    {
+        void MarkFileForSkipBackup (string filename);
+    }
 }

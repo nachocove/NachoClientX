@@ -72,6 +72,10 @@ namespace NachoCore.Model
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
 
+        public static string[] SkipBackupFiles = new string[] { 
+            "db", "db-shm", "db-wal", "teledb", "teledb-shm", "teledb-wal", KFilesPathSegment,
+        };
+
 
         public string DbFileName { set; get; }
 
@@ -190,6 +194,17 @@ namespace NachoCore.Model
             } catch (IOException e) {
                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.{0}", e.Message);
             }
+            NcFileHandler.Instance.MarkFileForSkipBackup (RemovingAccountLockFile);
+        }
+
+        // mark directories in Documents for no backup
+        public void MarkFilesForSkipBackup ()
+        {
+            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            foreach (string file in SkipBackupFiles) {    
+                var filename = Path.Combine (documents, file);
+                NcFileHandler.Instance.MarkFileForSkipBackup (filename);
+            }
         }
 
         public string GetIndexPath (int accountId)
@@ -197,13 +212,14 @@ namespace NachoCore.Model
             return NcModel.Instance.GetFileDirPath (accountId, "index");
         }
 
-        public void InitalizeDirs (int accountId)
+        public void InitializeDirs (int accountId)
         {
             Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McDocument ().GetFilePathSegment ()));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McAttachment ().GetFilePathSegment ()));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McBody ().GetFilePathSegment ()));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McPortrait ().GetFilePathSegment ()));
+            MarkFilesForSkipBackup ();
         }
 
         private void ConfigureDb (SQLiteConnection db)
@@ -352,6 +368,8 @@ namespace NachoCore.Model
             NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
                 Scrub ();
             };
+            //mark all the files for skip backup
+            MarkFilesForSkipBackup ();
         }
 
         private static volatile NcModel instance;

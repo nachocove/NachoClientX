@@ -384,6 +384,7 @@
     <Compile Include="NachoCore\Utils\BuildInfoHelper.cs" />
     <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration14.cs" />
+    <Compile Include="NachoPlatform.Android\NcFileHandlerAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

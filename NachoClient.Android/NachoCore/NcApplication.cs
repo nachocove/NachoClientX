@@ -526,7 +526,7 @@ namespace NachoCore
                 }
             });
             // Create file directories.
-            NcModel.Instance.InitalizeDirs (deviceAccount.Id);
+            NcModel.Instance.InitializeDirs (deviceAccount.Id);
 
             // Create Device contacts/calendars if not yet there.
             NcModel.Instance.RunInTransaction (() => {
