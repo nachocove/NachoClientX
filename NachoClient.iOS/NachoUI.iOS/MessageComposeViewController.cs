@@ -186,19 +186,12 @@ namespace NachoClient.iOS
 
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
-                UIAlertView alert = new UIAlertView ();
-                alert.Title = "Are you sure?";
-                alert.Message = "This message will not be saved";
-                alert.AddButton ("Cancel");
-                alert.AddButton ("Yes");
-                alert.CancelButtonIndex = 0;
-                alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                    if (1 == alertEvent.ButtonIndex) {
+                NcAlertView.Show (this, "Are you sure?", "This message will not be saved.",
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
                         owner = null;
                         NavigationController.PopViewController (true);
-                    }
-                };
-                alert.Show ();
+                    }));
             };
 
             suppressLayout = true;
@@ -1078,13 +1071,8 @@ namespace NachoClient.iOS
             // for them to be downloaded.
 
             if (0 == toView.AddressList.Count) {
-                UIAlertView alert = new UIAlertView (
-                                        "Hold on!", 
-                                        "Please choose a contact to receive this message.", 
-                                        null, 
-                                        "OK"
-                                    );
-                alert.Show ();
+                NcAlertView.ShowMessage (this, "No Recipients",
+                    "This message is not being sent to anybody. Please add a recipient to the 'To' field.");
                 return false;
             }
             return true;

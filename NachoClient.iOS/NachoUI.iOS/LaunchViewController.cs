@@ -424,9 +424,7 @@ namespace NachoClient.iOS
         private void Complain (string title, string message)
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: Complain {0}", message);
-            var alert = new UIAlertView (title, message, null, "OK", null);
-            alert.AccessibilityLabel = message;
-            alert.Show ();        
+            NcAlertView.ShowMessage (this, title, message);
         }
 
         /// <summary>
@@ -435,14 +433,11 @@ namespace NachoClient.iOS
         private void ConfirmBeforeStarting (string title, string message)
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: Confirm {0}", message);
-            var alert = new UIAlertView (title, message, null, "OK", new string[] { "Cancel" });
-            alert.AccessibilityLabel = "Confirm";
-            alert.Clicked += (s, b) => {
-                if (0 == b.ButtonIndex) {
+            NcAlertView.Show (this, title, message,
+                new NcAlertAction ("OK", () => {
                     StartLoginProcess ();
-                }
-            };
-            alert.Show ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
         private void StartLoginProcess ()

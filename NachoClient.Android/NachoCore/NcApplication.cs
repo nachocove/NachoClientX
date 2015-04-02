@@ -156,6 +156,10 @@ namespace NachoCore
 
         public SearchContactsRespCallbackDele SearchContactsRespCallback { set; get; }
 
+        public delegate void SendEmailRespCallbackDele (int accountId, int emailMessageId, bool didSend);
+
+        public SendEmailRespCallbackDele SendEmailRespCallback { set; get; }
+
         public static event EventHandler<UnobservedTaskExceptionEventArgs> UnobservedTaskException;
 
         public int UiThreadId { get; set; }
@@ -629,6 +633,15 @@ namespace NachoCore
                 SearchContactsRespCallback (accountId, prefix, token);
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SearchContactsRespCallback.");
+            }
+        }
+
+        public void SendEmailResp (int accountId, int emailMessageId, bool didSend)
+        {
+            if (null != SendEmailRespCallback) {
+                SendEmailRespCallback (accountId, emailMessageId, didSend);
+            } else {
+                Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SendEmailRespCallback.");
             }
         }
 
