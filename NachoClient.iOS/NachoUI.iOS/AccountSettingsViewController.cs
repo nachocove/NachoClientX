@@ -457,9 +457,7 @@ namespace NachoClient.iOS
                 conferenceTextField.Text = theConference.DefaultPhoneNumber;
             }
 
-            if (!String.IsNullOrEmpty (theAccount.Signature)) {
-                SignatureBlock.SetValue (theAccount.Signature);
-            }
+            SignatureBlock.SetValue (theAccount.Signature);
 
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (theAccount.DaysToSyncEmail));
 
