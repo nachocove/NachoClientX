@@ -12,7 +12,7 @@ namespace NachoClient.iOS
 {
     public partial class SignatureEditViewController : NcUIViewControllerNoLeaks
     {
-        UINavigationBar navbar = new UINavigationBar();
+        UINavigationBar navbar = new UINavigationBar ();
         protected UIBarButtonItem saveButton;
         protected UIBarButtonItem cancelButton;
 
@@ -20,7 +20,7 @@ namespace NachoClient.iOS
 
         protected const int DISMISS_CHANGES_ALERT_VIEW_TAG = 200;
 
-        protected string ORIGINAL_SIGNATURE_VALUE = "";
+        protected string originalSignature;
 
         public SignatureEditViewController (IntPtr handle) : base (handle)
         {
@@ -34,18 +34,14 @@ namespace NachoClient.iOS
 
         protected void CaptureOriginalSignature ()
         {
-            McAccount theAccount = McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId());
-
-            if (!string.IsNullOrEmpty (theAccount.Signature)) {
-                ORIGINAL_SIGNATURE_VALUE = theAccount.Signature;
-            }
+            McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            originalSignature = theAccount.Signature ?? "";
         }
 
         protected bool DidUserEditSignature ()
         {
             var signatureTextView = (UITextView)View.ViewWithTag (SIGNATURE_TEXT_VIEW_TAG);
-
-            return (signatureTextView.Text != ORIGINAL_SIGNATURE_VALUE);
+            return (signatureTextView.Text != originalSignature);
         }
 
         protected override void CreateViewHierarchy ()
@@ -65,6 +61,7 @@ namespace NachoClient.iOS
             saveButton = new UIBarButtonItem ();
             saveButton.Style = UIBarButtonItemStyle.Done;
             saveButton.Title = "Done";
+            saveButton.Clicked += SaveButtonClicked;
 
             navbar.TopItem.RightBarButtonItem = saveButton;
 
@@ -75,11 +72,16 @@ namespace NachoClient.iOS
             signatureTextView.Font = A.Font_AvenirNextRegular14;
             signatureTextView.Tag = SIGNATURE_TEXT_VIEW_TAG;
 
-            saveButton.Clicked += SaveButtonClicked;
-
             View.Add (signatureTextView);
 
             signatureTextView.BecomeFirstResponder ();
+        }
+
+        protected override void ConfigureAndLayout ()
+        {
+            McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            var signatureTextView = (UITextView)View.ViewWithTag (SIGNATURE_TEXT_VIEW_TAG);
+            signatureTextView.Text = theAccount.Signature ?? "";
         }
 
         protected override void Cleanup ()
@@ -96,8 +98,8 @@ namespace NachoClient.iOS
             McAccount theAccount = McAccount.QueryById <McAccount> (LoginHelpers.GetCurrentAccountId ());
             var signatureTextView = (UITextView)View.ViewWithTag (SIGNATURE_TEXT_VIEW_TAG);
 
-            theAccount.Signature = signatureTextView.Text.Trim();
-            theAccount.Update();
+            theAccount.Signature = signatureTextView.Text.Trim ();
+            theAccount.Update ();
             DismissViewController (true, null);
         }
 
@@ -105,23 +107,15 @@ namespace NachoClient.iOS
         {
             if (!DidUserEditSignature ()) {
                 DismissViewController (true, null);
-            } else {
-                NcAlertView.Show (this, "Dismiss Changes", "If you leave this screen, your changes will not be saved.",
-                    new NcAlertAction ("OK", NcAlertActionStyle.Destructive, () => {
-                        DismissViewController (true, null);
-                    }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+                return;
             }
+            // Make sure user wants to abandon changes
+            NcAlertView.Show (this, "Dismiss Changes", "If you leave this screen, your changes will not be saved.",
+                new NcAlertAction ("OK", NcAlertActionStyle.Destructive, () => {
+                    DismissViewController (true, null);
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
-        protected override void ConfigureAndLayout ()
-        {
-            var signatureTextView = (UITextView)View.ViewWithTag (SIGNATURE_TEXT_VIEW_TAG);
-            McAccount theAccount = McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId());
-
-            if (!string.IsNullOrEmpty (theAccount.Signature)) {
-                signatureTextView.Text = theAccount.Signature;
-            }
-        }
     }
 }
