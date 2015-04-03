@@ -134,6 +134,7 @@
     <Compile Include="PushAssistTest.cs" />
     <Compile Include="HashHelperTest.cs" />
     <Compile Include="RemoveAccountTest.cs" />
+    <Compile Include="McTelemetryEventTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
