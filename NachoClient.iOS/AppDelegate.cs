@@ -71,7 +71,12 @@ namespace NachoClient.iOS
 
         private ulong UserNotificationSettings {
             get {
-                return (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types;
+                if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
+                    return (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types;
+                }
+                // Older iOS does not have this property. So, just assume it's ok and let 
+                // iOS to reject it.
+                return (ulong)KNotificationSettings;
             }
         }
 
