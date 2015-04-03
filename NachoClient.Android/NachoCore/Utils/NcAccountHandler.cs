@@ -16,9 +16,6 @@ namespace NachoCore.Model
     {
         private static volatile NcAccountHandler instance;
         private static object syncRoot = new Object ();
-        public static string[] exemptTables = new string[] { 
-            "McAccount", "sqlite_sequence", "McMigration",
-        };
 
         public static NcAccountHandler Instance {
             get {
@@ -83,7 +80,7 @@ namespace NachoCore.Model
 
             List<McSQLiteMaster> AllTables = McSQLiteMaster.QueryAllTables ();
             foreach (McSQLiteMaster Table in AllTables) {
-                if (!((IList<string>)exemptTables).Contains (Table.name)) {
+                if (!((IList<string>)NcModel.ExemptTables).Contains (Table.name)) {
                     Log.Info (Log.LOG_DB, "RemoveAccount: Will be removing rows from Table {0} for account {1}", Table.name, AccountId);
                     Regex r = new Regex ("^[a-zA-Z0-9]*$");
                     if (r.IsMatch (Table.name)) {

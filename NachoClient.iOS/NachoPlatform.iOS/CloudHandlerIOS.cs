@@ -10,6 +10,8 @@ namespace NachoPlatform
 {
     public class CloudHandler : IPlatformCloudHandler
     {
+        private const string KUserId = "UserId";
+
         private static volatile CloudHandler instance;
         private static object syncRoot = new Object ();
         private NSUbiquitousKeyValueStore Store;
@@ -58,22 +60,22 @@ namespace NachoPlatform
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting UserId");
             if (HasiCloud) {
-                if (Store.GetString ("UserId") != null) {
-                    return Store.GetString ("UserId");
+                if (Store.GetString (KUserId) != null) {
+                    return Store.GetString (KUserId);
                 }
             }
             // if no icloud or not found in iCloud
-            return NSUserDefaults.StandardUserDefaults.StringForKey ("UserId");
+            return NSUserDefaults.StandardUserDefaults.StringForKey (KUserId);
         }
 
         public void SetUserId (string UserId)
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Setting UserId {0}", UserId);
             if (HasiCloud) {
-                Store.SetString ("UserId", UserId);  
+                Store.SetString (KUserId, UserId);  
                 Store.Synchronize ();
             }
-            NSUserDefaults.StandardUserDefaults.SetString (UserId, "UserId");
+            NSUserDefaults.StandardUserDefaults.SetString (UserId, KUserId);
             NSUserDefaults.StandardUserDefaults.Synchronize ();
         }
 
@@ -192,9 +194,9 @@ namespace NachoPlatform
                 NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
                 for (uint i = 0; i < changedKeys.Count; i++) {
                     string key = Marshal.PtrToStringAuto (changedKeys.ValueAt (i));
-                    if (key == "UserId") {
+                            if (key == KUserId) {
                         // ICloud override local - TODO: confirm this
-                        string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString ("UserId");
+                                string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
                         if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
                             Log.Info (Log.LOG_SYS, "CloudHandler: Replacing Client {0} with userId {0} from Cloud", NcApplication.Instance.ClientId, userId);
                             NcApplication.Instance.ClientId = userId;

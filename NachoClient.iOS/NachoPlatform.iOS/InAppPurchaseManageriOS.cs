@@ -70,7 +70,7 @@ namespace NachoPlatform
             //SKErrorPaymentCancelled == 2
             if (transaction.Error != null) {
                 string errorDescription = transaction.Error.Code == 2 ? "User Cancelled FailedTransaction" : "FailedTransaction";
-                Log.Info (Log.LOG_SYS, "InAppPurchase: {0} Code={1} {2}", errorDescription, transaction.Error.Code, transaction.Error.LocalizedDescription);
+                Log.Error (Log.LOG_SYS, "InAppPurchase: {0} Code={1} {2}", errorDescription, transaction.Error.Code, transaction.Error.LocalizedDescription);
             }
             FinishTransaction (transaction, false);
         }
@@ -99,7 +99,7 @@ namespace NachoPlatform
         /// Request failed : Probably could not connect to the App Store (network unavailable?)
         public override void RequestFailed (SKRequest request, NSError error)
         {
-            Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase Request failed {0}", error.LocalizedDescription);
+            Log.Error (Log.LOG_SYS, "InAppPurchase: Purchase Request failed {0}", error.LocalizedDescription);
 
             // send out a notification for the failed transaction
             NSDictionary userInfo = new NSDictionary ("error", error);
@@ -153,7 +153,7 @@ namespace NachoPlatform
                     InAppPurchaseManager.CompleteTransaction (transaction);
                     break;
                 case SKPaymentTransactionState.Failed:
-                    Log.Info (Log.LOG_SYS, "InAppPurchase: Failed.");
+                    Log.Error (Log.LOG_SYS, "InAppPurchase: Failed.");
                     InAppPurchaseManager.FailedTransaction (transaction);
                     break;
                 case SKPaymentTransactionState.Restored:
@@ -183,7 +183,7 @@ namespace NachoPlatform
         // Restore failed somewhere - you can update the UI
         public override void RestoreCompletedTransactionsFailedWithError (SKPaymentQueue queue, NSError error)
         {
-            Log.Info (Log.LOG_SYS, "InAppPurchase: Restore Failed -  RestoreCompletedTransactionsFailedWithError " + error.LocalizedDescription);
+            Log.Error (Log.LOG_SYS, "InAppPurchase: Restore Failed -  RestoreCompletedTransactionsFailedWithError " + error.LocalizedDescription);
             StoreHandler.Instance.SetPurchasingStatus (false);
             //TODO: Hookup UI to display restore failed. Optional
         }
