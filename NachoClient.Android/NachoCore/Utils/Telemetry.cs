@@ -773,7 +773,10 @@ namespace NachoCore.Utils
             try {
                 bool ranOnce = false;
 
+                #if __IOS__
+                // FIXME - Need to build Android version of AWS SDK for this
                 BackEnd = new TelemetryBEAWS ();
+                #endif
                 BackEnd.Initialize ();
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.
