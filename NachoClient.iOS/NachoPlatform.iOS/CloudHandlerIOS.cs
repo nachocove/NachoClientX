@@ -11,6 +11,8 @@ namespace NachoPlatform
     public class CloudHandler : IPlatformCloudHandler
     {
         private const string KUserId = "UserId";
+        private const string KInstallDate = "InstallDate";
+        private const string KPurchaseDate = "PurchaseDate";
 
         private static volatile CloudHandler instance;
         private static object syncRoot = new Object ();
@@ -99,13 +101,13 @@ namespace NachoPlatform
 
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase date for product {0}", productId);
             if (HasiCloud) {
-                if (Store.GetString ("PurchaseDate") != null) {
-                    purchaseDate = Store.GetString ("PurchaseDate");
+                if (Store.GetString (KPurchaseDate) != null) {
+                    purchaseDate = Store.GetString (KPurchaseDate);
                     return purchaseDate.ToDateTime ();
                 }
             }
             // if no icloud or not found in iCloud
-            purchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey ("PurchaseDate");
+            purchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey (KPurchaseDate);
             Log.Info (Log.LOG_SYS, "CloudHandler: Purchase date not found for product {0} in cloud. User defaults value is {1}.", productId, purchaseDate);
             return purchaseDate.ToDateTime ();
         }
@@ -115,11 +117,11 @@ namespace NachoPlatform
             Log.Info (Log.LOG_SYS, "CloudHandler: Setting purchase status(true) for product {0} on {1}", productId, purchaseDate);
             if (HasiCloud) {
                 Store.SetBool (productId, true);  
-                Store.SetString ("PurchaseDate", purchaseDate.ToAsUtcString ());
+                Store.SetString (KPurchaseDate, purchaseDate.ToAsUtcString ());
                 Store.Synchronize ();
             }
             NSUserDefaults.StandardUserDefaults.SetBool (true, productId);
-            NSUserDefaults.StandardUserDefaults.SetString (purchaseDate.ToAsUtcString (), "PurchaseDate");
+            NSUserDefaults.StandardUserDefaults.SetString (purchaseDate.ToAsUtcString (), KPurchaseDate);
             NSUserDefaults.StandardUserDefaults.Synchronize ();        
         }
 
@@ -127,10 +129,10 @@ namespace NachoPlatform
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Setting App Install Date {0}", installDate);
             if (HasiCloud) {
-                Store.SetString ("InstallDate", installDate.ToAsUtcString ());
+                Store.SetString (KInstallDate, installDate.ToAsUtcString ());
                 Store.Synchronize ();
             }
-            NSUserDefaults.StandardUserDefaults.SetString (installDate.ToAsUtcString (), "InstallDate");
+            NSUserDefaults.StandardUserDefaults.SetString (installDate.ToAsUtcString (), KInstallDate);
             NSUserDefaults.StandardUserDefaults.Synchronize ();   
         }
 
@@ -140,13 +142,13 @@ namespace NachoPlatform
 
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting install date for App");
             if (HasiCloud) {
-                if (Store.GetString ("InstallDate") != null) {
-                    installDate = Store.GetString ("InstallDate");
+                if (Store.GetString (KInstallDate) != null) {
+                    installDate = Store.GetString (KInstallDate);
                     return installDate.ToDateTime ();
                 }
             }
             // if no icloud or not found in iCloud
-            installDate = NSUserDefaults.StandardUserDefaults.StringForKey ("InstallDate");
+            installDate = NSUserDefaults.StandardUserDefaults.StringForKey (KInstallDate);
             Log.Info (Log.LOG_SYS, "CloudHandler: App install date not found in cloud. User defaults value is {0}.", installDate);
             return installDate.ToDateTime ();        
         }
