@@ -735,10 +735,13 @@ namespace NachoCore.ActiveSync
                     // We are already doing serial.
                     return false;
                 }
-                foreach (var pending in PendingList) {
-                    pending.DeferredSerialIssueOnly = true;
+                foreach (var iter in PendingList) {
+                    var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                        var target = (McPending)record;
+                        target.DeferredSerialIssueOnly = true;
+                        return true;
+                    });
                     if (pending == firstPending) {
-                        pending.Update ();
                         continue;
                     }
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);

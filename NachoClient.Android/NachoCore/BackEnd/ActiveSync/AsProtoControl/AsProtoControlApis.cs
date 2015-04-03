@@ -14,32 +14,39 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsProtoControl : ProtoControl, IBEContext
     {
-        public override void UnblockPendingCmd (int pendingId)
+        public override McPending UnblockPendingCmd (int pendingId)
         {
+            McPending retval = null;
             NcModel.Instance.RunInTransaction (() => {
                 var pending = McAbstrObject.QueryById<McPending> (pendingId);
                 if (null != pending) {
                     NcAssert.True (Account.Id == pending.AccountId);
                     NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
-                    pending.BlockReason = McPending.BlockReasonEnum.NotBlocked;
-                    pending.State = McPending.StateEnum.Eligible;
-                    pending.Update ();
+                    retval = pending.UpdateWithOCApply<McPending>((record) => {
+                        var target = (McPending)record;
+                        target.BlockReason = McPending.BlockReasonEnum.NotBlocked;
+                        target.State = McPending.StateEnum.Eligible;
+                        return true;
+                    });
                     NcTask.Run (delegate {
                         Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCUNBLK");
                     }, "UnblockPendingCmd");
                 }
             });
+            return retval;
         }
 
-        public override void DeletePendingCmd (int pendingId)
+        public override McPending DeletePendingCmd (int pendingId)
         {
+            McPending retval = null;
             NcModel.Instance.RunInTransaction (() => {
                 var pending = McAbstrObject.QueryById<McPending> (pendingId);
                 if (null != pending) {
                     NcAssert.True (Account.Id == pending.AccountId);
-                    pending.ResolveAsCancelled (false);
+                    retval = pending.ResolveAsCancelled (false);
                 }
             });
+            return retval;
         }
 
         public override void Prioritize (string token)
@@ -79,7 +86,13 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case McPending.StateEnum.Dispatched:
-                    // TODO: find a way to prevent re-try, and at least mark as do-not-delay.
+                        // Prevent any more high-level attempts after Cancel().
+                        // TODO - need method to find executing Op/Cmd so we can prevent HTTP retries.
+                        pending.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.DefersRemaining = 0;
+                            return true;
+                        });
                         retval = false;
                         break;
 
@@ -198,7 +211,7 @@ namespace NachoCore.ActiveSync
                     case McPending.StateEnum.Eligible:
                     case McPending.StateEnum.PredBlocked:
                     case McPending.StateEnum.UserBlocked:
-                        pending.MarkPredBlocked (pendingCalCreId);
+                        pending = pending.MarkPredBlocked (pendingCalCreId);
                         break;
 
                     case McPending.StateEnum.Failed:
