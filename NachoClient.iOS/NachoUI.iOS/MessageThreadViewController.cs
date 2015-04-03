@@ -18,7 +18,14 @@ namespace NachoClient.iOS
         // It just pops the stack. PopViewController
         // just keeps popping, not just this view but for
         // others on top.
-        static bool alreadyDismissed = false;
+        bool alreadyDismissed;
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+
+            alreadyDismissed = false;
+        }
 
         public override bool MaybeDismissView()
         {
