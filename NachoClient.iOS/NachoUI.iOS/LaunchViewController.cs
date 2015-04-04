@@ -401,6 +401,12 @@ namespace NachoClient.iOS
                 return;
             }
 
+
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
+                return;
+            }
+
             if (EmailHelper.IsHotmailServiceAddress (emailAddress)) {
                 if (!emailServices.IsHotmailServiceSelected ()) {
                     ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
@@ -411,11 +417,6 @@ namespace NachoClient.iOS
                     ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
                     return;
                 }
-            }
-
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
-                return;
             }
 
             StartLoginProcess ();
