@@ -157,7 +157,11 @@ namespace NachoClient.iOS
             LayoutView ();
 
             if (!stayInAdvanced && IsBackEndRunning ()) {
-                waitScreen.ShowView ();
+                if (IsAutoDComplete ()) {
+                    handleStatusEnums ();
+                } else {
+                    waitScreen.ShowView ();
+                }
             } else {
                 NavigationItem.Title = "Account Setup";
                 loadingCover.Hidden = true;
@@ -353,7 +357,7 @@ namespace NachoClient.iOS
                 NcAccountHandler.Instance.RemoveAccount ();
                 InvokeOnMainThread (() => {
                     // go back to main screen
-                    NcUIRedirector.Instance.GoBackToMainScreen();                        
+                    NcUIRedirector.Instance.GoBackToMainScreen ();                        
                 });
             };
             NcTask.Run (action, "RemoveAccount");
@@ -855,6 +859,16 @@ namespace NachoClient.iOS
             if (BackEndStateEnum.Running == backEndState) {
                 return true;
             }
+            return IsAutoDComplete ();
+        }
+
+        bool IsAutoDComplete ()
+        {
+            if (null == theAccount.Account) {
+                return false;
+            }
+            NcAssert.True (IsNcAppicationAccountSet ());
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
             if (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) {
                 return true;
             }
