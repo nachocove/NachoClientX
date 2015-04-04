@@ -18,7 +18,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
+            datePicker.Mode = UIDatePickerMode.Date;
             OKButton.TouchUpInside += (object sender, EventArgs e) => {
                 var date = datePicker.Date.ToDateTime();
                 var dateTime = DateTime.SpecifyKind (date, DateTimeKind.Utc);
