@@ -66,13 +66,13 @@ namespace NachoCore.Utils
             }
         }
 
-        public static MimeEntity SearchMessage (string cid, MimeMessage message)
+        public static MimePart SearchMessage (string cid, MimeMessage message)
         {
             NcAssert.True (null != message);
             return SearchMimeEntity (cid, message.Body);
         }
 
-        public static MimeEntity SearchMimeEntity (string cid, MimeEntity entity)
+        public static MimePart SearchMimeEntity (string cid, MimeEntity entity)
         {
             if (null == entity) {
                 return null;
@@ -93,7 +93,7 @@ namespace NachoCore.Utils
             }
             var part = (MimePart)entity;
             if ((null != part.ContentId) && part.ContentId.Contains (cid)) {
-                return entity;
+                return part;
             } else {
                 return null;
             }
@@ -563,31 +563,7 @@ namespace NachoCore.Utils
                 }
             }
         }
-
-        public static MimePart EntityWithContentId (MimeMessage message, string contentId)
-        {
-            return EntityWithContentId (message.Body, contentId);
-        }
-
-        public static MimePart EntityWithContentId (MimeEntity root, string contentId)
-        {
-            if (null == root) {
-                return null;
-            }
-            if (root is MimePart && root.ContentId == contentId) {
-                return (MimePart)root;
-            }
-            if (root is Multipart) {
-                foreach (var subentity in (Multipart)root) {
-                    var match = EntityWithContentId (subentity, contentId);
-                    if (null != match) {
-                        return match;
-                    }
-                }
-            }
-            return null;
-        }
-
+       
         /// <summary>
         /// Find all the attachments in the given MIME message, including those
         /// nested inside a TNEF part.
