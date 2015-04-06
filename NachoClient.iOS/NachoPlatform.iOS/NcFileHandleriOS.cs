@@ -31,7 +31,7 @@ namespace NachoPlatform
         public void MarkFileForSkipBackup (string filename)
         {
             Log.Info (Log.LOG_DB, "Backup: Marking file/dir for skip backup {0}", filename);
-            if (File.Exists (filename) || Directory.Exists(filename)) {
+            if (File.Exists (filename) || Directory.Exists (filename)) {
                 NSError error = NSFileManager.SetSkipBackupAttribute (filename, true);
                 if (error != null) {
                     Log.Info (Log.LOG_DB, "Backup: Error marking file/dir for skip backup {0} : {1}", filename, error.LocalizedDescription);

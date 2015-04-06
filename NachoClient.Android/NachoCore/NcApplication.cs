@@ -77,8 +77,7 @@ namespace NachoCore
 
         public string StartupLog {
             get {
-                var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-                return Path.Combine (documents, "startup.log");
+                return Path.Combine (NcModel.Instance.GetDataDirPath (), "startup.log");
             }
         }
 
@@ -286,11 +285,11 @@ namespace NachoCore
             }
         }
 
-        public void ContinueRemoveAccountIfNeeded()
+        public void ContinueRemoveAccountIfNeeded ()
         {
             // if not done removing account, finish up 
             int AccountId = NcModel.Instance.GetRemovingAccountIdFromFile ();
-            if (AccountId > 0 ) {
+            if (AccountId > 0) {
                 Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
                 NcAccountHandler.Instance.RemoveAccountDBAndFilesForAccountId (AccountId);
             }

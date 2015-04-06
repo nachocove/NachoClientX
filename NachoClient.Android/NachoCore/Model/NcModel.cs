@@ -68,14 +68,10 @@ namespace NachoCore.Model
 
         public bool FreshInstall { private set; get; }
 
+        private const string KDataPathSegment = "Data";
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
-
-        public static string[] SkipBackupFiles = new string[] { 
-            "db", "db-shm", "db-wal", "teledb", "teledb-shm", "teledb-wal", KFilesPathSegment,
-        };
-
 
         public string DbFileName { set; get; }
 
@@ -141,19 +137,31 @@ namespace NachoCore.Model
             }
         }
 
+        public string GetDataDirPath ()
+        {
+            if (Documents == null) {
+                Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            }
+            string dataDirPath =  Path.Combine (Documents, KDataPathSegment);
+            if (!Directory.Exists(dataDirPath)) {
+                Directory.CreateDirectory (dataDirPath);
+            }
+            return dataDirPath;
+        }
+
         public string GetFileDirPath (int accountId, string segment)
         {
-            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
+            return Path.Combine (GetDataDirPath (), KFilesPathSegment, accountId.ToString (), segment);
         }
 
         public string GetAccountDirPath (int accountId)
         {
-            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString ());
+            return Path.Combine (GetDataDirPath (), KFilesPathSegment, accountId.ToString ());
         }
 
         public string GetRemovingAccountLockFilePath ()
         {
-            return Path.Combine (Documents, KRemovingAccountLockFile);
+            return Path.Combine (GetDataDirPath (), KRemovingAccountLockFile);
         }
 
         // Get the AccountId for the account being removed
@@ -194,17 +202,13 @@ namespace NachoCore.Model
             } catch (IOException e) {
                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.{0}", e.Message);
             }
-            NcFileHandler.Instance.MarkFileForSkipBackup (RemovingAccountLockFile);
         }
 
-        // mark directories in Documents for no backup
+        // mark directories in Documents/Data for no backup
         public void MarkFilesForSkipBackup ()
         {
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            foreach (string file in SkipBackupFiles) {    
-                var filename = Path.Combine (documents, file);
-                NcFileHandler.Instance.MarkFileForSkipBackup (filename);
-            }
+            var dataDir = GetDataDirPath ();
+            NcFileHandler.Instance.MarkFileForSkipBackup (dataDir);
         }
 
         public string GetIndexPath (int accountId)
@@ -359,11 +363,10 @@ namespace NachoCore.Model
                     });
                 }), (IntPtr)null);
             }
-            Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            DbFileName = Path.Combine (Documents, "db");
+            DbFileName = Path.Combine (GetDataDirPath (), "db");
             FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (Documents, "teledb");
+            TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
             InitializeTeleDb ();
             NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
                 Scrub ();
@@ -643,7 +646,7 @@ namespace NachoCore.Model
         public void GarbageCollectFiles ()
         {
             // Find any top-level file dir not backed by McAccount. Delete it.
-            var acctLevelDirs = Directory.GetDirectories (Documents);
+            var acctLevelDirs = Directory.GetDirectories (GetDataDirPath ());
             // Foreach account...
             foreach (var acctDir in acctLevelDirs) {
                 int accountId;
