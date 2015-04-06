@@ -96,7 +96,7 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        public static void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact, IContactsTableViewSourceDelegate owner, bool allowSwiping)
+        public static void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact, IContactsTableViewSourceDelegate owner, bool allowSwiping, string alternateEmailAddress = null)
         {
             var titleLabel = (UILabel)cell.ViewWithTag (TITLE_LABEL_TAG);
             var subtitle1Label = (UILabel)cell.ViewWithTag (SUBTITLE1_LABEL_TAG);
@@ -136,7 +136,7 @@ namespace NachoClient.iOS
             var displayTitle = contact.GetDisplayName ();
             var displayTitleColor = A.Color_NachoDarkText;
 
-            var displaySubtitle1 = contact.GetPrimaryCanonicalEmailAddress ();
+            var displaySubtitle1 = (null == alternateEmailAddress ? contact.GetPrimaryCanonicalEmailAddress () : alternateEmailAddress);
             var displaySubtitle1Color = A.Color_NachoDarkText;
 
             var displaySubtitle2 = contact.GetPrimaryPhoneNumber ();
