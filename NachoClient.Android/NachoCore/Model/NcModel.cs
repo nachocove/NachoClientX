@@ -137,13 +137,21 @@ namespace NachoCore.Model
             }
         }
 
-        public string GetDataDirPath ()
+        public string GetDocumentsPath ()
         {
             if (Documents == null) {
                 Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             }
-            string dataDirPath =  Path.Combine (Documents, KDataPathSegment);
-            if (!Directory.Exists(dataDirPath)) {
+            return Documents;
+        }
+
+        public string GetDataDirPath ()
+        {
+            if (Documents == null) {
+                GetDocumentsPath ();
+            }
+            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
+            if (!Directory.Exists (dataDirPath)) {
                 Directory.CreateDirectory (dataDirPath);
             }
             return dataDirPath;
@@ -205,7 +213,7 @@ namespace NachoCore.Model
         }
 
         // mark directories in Documents/Data for no backup
-        public void MarkFilesForSkipBackup ()
+        public void MarkDataDirForSkipBackup ()
         {
             var dataDir = GetDataDirPath ();
             NcFileHandler.Instance.MarkFileForSkipBackup (dataDir);
@@ -223,7 +231,6 @@ namespace NachoCore.Model
             Directory.CreateDirectory (GetFileDirPath (accountId, new McAttachment ().GetFilePathSegment ()));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McBody ().GetFilePathSegment ()));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McPortrait ().GetFilePathSegment ()));
-            MarkFilesForSkipBackup ();
         }
 
         private void ConfigureDb (SQLiteConnection db)
@@ -372,7 +379,7 @@ namespace NachoCore.Model
                 Scrub ();
             };
             //mark all the files for skip backup
-            MarkFilesForSkipBackup ();
+            MarkDataDirForSkipBackup ();
         }
 
         private static volatile NcModel instance;

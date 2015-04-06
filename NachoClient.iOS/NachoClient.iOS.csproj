@@ -1315,6 +1315,7 @@
     <Compile Include="NachoUI.iOS\Support\NcAlertView.cs" />
     <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
     <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
+    <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
