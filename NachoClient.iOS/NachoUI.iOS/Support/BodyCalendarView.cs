@@ -469,7 +469,7 @@ namespace NachoClient.iOS
 
             if (null != organizerEmail && meetingInfo.ResponseRequested) {
 
-                var iCalPart = CalendarHelper.MimeResponseFromEmail (meetingInfo, status, parentMessage.Subject);
+                var iCalPart = CalendarHelper.MimeResponseFromEmail (meetingInfo, status, parentMessage.Subject, meetingInfo.RecurrenceId);
                 // TODO Give the user a chance to enter some text. For now, the message body is empty.
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (account, NcEmailAddress.ParseMailboxAddressString(meetingInfo.Organizer), parentMessage.Subject, null, mimeBody, status);

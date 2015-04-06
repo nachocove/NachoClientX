@@ -47,7 +47,6 @@ namespace NachoClient.iOS
         protected UILabel declineLabel;
         protected UILabel messageLabel;
         protected UIButton removeFromCalendarButton;
-        protected UIButton changeResponseButton;
         protected UIView rsvpSeparatorLine;
         protected UIButton extraAttendeesButton;
         protected UIBarButtonItem editEventButton;
@@ -79,6 +78,10 @@ namespace NachoClient.iOS
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
         protected bool attachmentsDrawerOpen = false;
+        // Keep track of the user's Attend/Maybe/Decline choice, so we don't have to worry about
+        // whether or not the database item is up to date.
+        protected NcResponseType userResponse = NcResponseType.None;
+        protected bool userResponseIsSet = false;
 
         // UI-related constants, or pseudo-constants
         protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -260,16 +263,6 @@ namespace NachoClient.iOS
             removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             removeFromCalendarButton.Hidden = true;
             eventCardView.Add (removeFromCalendarButton);
-
-            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
-            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
-            changeResponseButton.Font = A.Font_AvenirNextMedium14;
-            changeResponseButton.SizeToFit ();
-            changeResponseButton.Frame = new CGRect (EVENT_CARD_WIDTH - changeResponseButton.Frame.Width - 18, 20, changeResponseButton.Frame.Width, 20);
-            changeResponseButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            changeResponseButton.Hidden = true;
-            changeResponseButton.TouchUpInside += ChangeResponseTouchUpInside;
-            eventCardView.Add (changeResponseButton);
 
             yOffset = 60;
 
@@ -461,6 +454,12 @@ namespace NachoClient.iOS
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
+
+            if (!userResponseIsSet) {
+                userResponse = c.HasResponseType () ? c.GetResponseType () : NcResponseType.None;
+                userResponseIsSet = true;
+            }
+
             ConfigureRsvpBar (isOrganizer);
 
             NavigationItem.Title = e.GetStartTimeLocal ().ToString ("Y");
@@ -667,7 +666,6 @@ namespace NachoClient.iOS
             tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
             declineButton.TouchUpInside -= RemoveFromCalendarClicked;
-            changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
             editEventButton.Clicked -= EditButtonClicked;
             removeFromCalendarButton.TouchUpInside -= RemoveFromCalendarClicked;
             //eventNotesTextView.Changed -= NotesChanged;
@@ -694,7 +692,6 @@ namespace NachoClient.iOS
             declineLabel = null;
             messageLabel = null;
             removeFromCalendarButton = null;
-            changeResponseButton = null;
             rsvpSeparatorLine = null;
             extraAttendeesButton = null;
             attendeeTapGestureRecognizer = null;
@@ -706,6 +703,7 @@ namespace NachoClient.iOS
         public void SetCalendarItem (McEvent e)
         {
             this.e = e;
+            userResponseIsSet = false;
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -930,7 +928,6 @@ namespace NachoClient.iOS
             eventCardView.Frame = new CGRect (15, eventCardView.Frame.Y, logicalWidth - 30, internalYOffset + 20);
             contentView.Frame = new CGRect (0, 0, logicalWidth, eventCardView.Frame.Bottom + 20);
             scrollView.ContentSize = contentView.Frame.Size;
-
         }
 
         public virtual bool HandlesKeyboardNotifications {
@@ -1105,31 +1102,9 @@ namespace NachoClient.iOS
 
             } else {
 
-                // Show the Accept, Decline, and Maybe buttons.
-                acceptButton.Hidden = false;
-                acceptLabel.Hidden = false;
-                tentativeButton.Hidden = false;
-                tentativeLabel.Hidden = false;
-                declineButton.Hidden = false;
-                declineLabel.Hidden = false;
+                // Show the Attend, Maybe, and Decline buttons.
+                SelectButtonForResponse (userResponse);
                 rsvpSeparatorLine.Hidden = false;
-
-                if (c.HasResponseType ()) {
-                    switch (c.GetResponseType ()) {
-                    case NcResponseType.Accepted:
-                        acceptButton.Selected = true;
-                        acceptButton.UserInteractionEnabled = false;
-                        break;
-                    case NcResponseType.Tentative:
-                        tentativeButton.Selected = true;
-                        tentativeButton.UserInteractionEnabled = false;
-                        break;
-                    case NcResponseType.Declined:
-                        declineButton.Selected = true;
-                        declineButton.UserInteractionEnabled = false;
-                        break;
-                    }
-                }
             }
         }
 
@@ -1140,119 +1115,36 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void ToggleButtons (NcResponseType r)
+        /// <summary>
+        /// Select the appropriate Attend, Maybe, or Decline button for the given meeting response.
+        /// </summary>
+        protected void SelectButtonForResponse (NcResponseType response)
         {
-            RestoreButtons ();
-            if (NcResponseType.Accepted == r) {
+            ClearResponseButtons ();
+            switch (response) {
+            case NcResponseType.Accepted:
                 acceptButton.Selected = true;
-                tentativeButton.Selected = false;
-                declineButton.Selected = false;
-
                 acceptButton.UserInteractionEnabled = false;
-
-                //                messageLabel.Text = "You are going";
-                //                messageLabel.Hidden = false;
-                //                messageLabel.Alpha = 0;
-                //                changeResponseButton.Hidden = false;
-                //                changeResponseButton.Alpha = 0;
-                //
-                //                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                //                    () => {
-                //                        acceptLabel.Alpha = 0;
-                //                        tentativeButton.Alpha = 0;
-                //                        declineButton.Alpha = 0;
-                //                        tentativeLabel.Alpha = 0;
-                //                        declineLabel.Alpha = 0;
-                //                        messageLabel.Alpha = 1;
-                //                        changeResponseButton.Alpha = 1;
-                //
-                //                        acceptButton.Frame = new RectangleF (18, 18, 24, 24);
-                //                    },
-                //                    () => {
-                //                        acceptLabel.Hidden = true;
-                //                        tentativeButton.Hidden = true;
-                //                        declineButton.Hidden = true;
-                //                        tentativeLabel.Hidden = true;
-                //                        declineLabel.Hidden = true;
-                //                        acceptButton.UserInteractionEnabled = false;
-                //                    }
-                //                );
-            } else if (NcResponseType.Tentative == r) {
-                acceptButton.Selected = false;
+                break;
+            case NcResponseType.Tentative:
                 tentativeButton.Selected = true;
-                declineButton.Selected = false;
-
                 tentativeButton.UserInteractionEnabled = false;
-
-                // Acompli style rsvp UX
-                //                messageLabel.Text = "Tentative";
-                //                messageLabel.Hidden = false;
-                //                messageLabel.Alpha = 0;
-                //                changeResponseButton.Hidden = false;
-                //                changeResponseButton.Alpha = 0;
-                //                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                //                    () => {
-                //                        acceptLabel.Alpha = 0;
-                //                        acceptButton.Alpha = 0;
-                //                        declineButton.Alpha = 0;
-                //                        tentativeLabel.Alpha = 0;
-                //                        declineLabel.Alpha = 0;
-                //                        messageLabel.Alpha = 1;
-                //                        changeResponseButton.Alpha = 1;
-                //
-                //                        tentativeButton.Frame = new RectangleF (18, 18, 24, 24);
-                //                    },
-                //                    () => {
-                //                        acceptLabel.Hidden = true;
-                //                        acceptButton.Hidden = true;
-                //                        declineButton.Hidden = true;
-                //                        tentativeLabel.Hidden = true;
-                //                        declineLabel.Hidden = true;
-                //                        tentativeButton.UserInteractionEnabled = false;
-                //                    }
-                //                );
-            } else {
-                acceptButton.Selected = false;
-                tentativeButton.Selected = false;
+                break;
+            case NcResponseType.Declined:
                 declineButton.Selected = true;
-
                 declineButton.UserInteractionEnabled = false;
-
-
-                //                messageLabel.Text = "You are not going";
-                //                messageLabel.Hidden = false;
-                //                messageLabel.Alpha = 0;
-                //                changeResponseButton.Hidden = false;
-                //                changeResponseButton.Alpha = 0;
-                //
-                //                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                //                    () => {
-                //                        acceptLabel.Alpha = 0;
-                //                        acceptButton.Alpha = 0;
-                //                        tentativeButton.Alpha = 0;
-                //                        tentativeLabel.Alpha = 0;
-                //                        declineLabel.Alpha = 0;
-                //                        messageLabel.Alpha = 1;
-                //                        changeResponseButton.Alpha = 1;
-                //
-                //                        declineButton.Frame = new RectangleF (18, 18, 24, 24);
-                //                    },
-                //                    () => {
-                //                        acceptLabel.Hidden = true;
-                //                        acceptButton.Hidden = true;
-                //                        tentativeButton.Hidden = true;
-                //                        tentativeLabel.Hidden = true;
-                //                        declineLabel.Hidden = true;
-                //                        declineButton.UserInteractionEnabled = false;
-                //
-                //                    }
-                //                );
+                break;
+            default:
+                // For any other response, leave all of the buttons unset.
+                break;
             }
         }
 
-        protected void RestoreButtons ()
+        /// <summary>
+        /// Clear the Attend, Maybe, and Decline buttons so that none of them are selected.
+        /// </summary>
+        protected void ClearResponseButtons ()
         {
-
             acceptButton.Selected = false;
             tentativeButton.Selected = false;
             declineButton.Selected = false;
@@ -1265,30 +1157,6 @@ namespace NachoClient.iOS
             acceptButton.UserInteractionEnabled = true;
             tentativeButton.UserInteractionEnabled = true;
             declineButton.UserInteractionEnabled = true;
-            //
-            //            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-            //                () => {
-            //
-            //                    acceptButton.Alpha = 1;
-            //                    tentativeButton.Alpha = 1;
-            //                    declineButton.Alpha = 1;
-            //                    acceptLabel.Alpha = 1;
-            //                    tentativeLabel.Alpha = 1;
-            //                    declineLabel.Alpha = 1;
-            //
-            //                    messageLabel.Alpha = 0;
-            //                    changeResponseButton.Alpha = 0;
-            //
-            //                    acceptButton.Frame = new RectangleF (18, 18, 24, 24);
-            //                    tentativeButton.Frame = new RectangleF (acceptButton.Frame.X + 42 + 45, 18, 24, 24);
-            //                    declineButton.Frame = new RectangleF (tentativeButton.Frame.X + 38 + 45 + 6, 18, 24, 24);
-            //                },
-            //                () => {
-            //                    messageLabel.Hidden = true;
-            //                    changeResponseButton.Hidden = true;
-            //                }
-            //            );
-
         }
 
         public class TupleList<T1, T2> : List<Tuple<T1, T2>>
@@ -1307,17 +1175,72 @@ namespace NachoClient.iOS
             c = McCalendar.QueryById<McCalendar> (c.Id);
         }
 
-        protected void UpdateStatus (NcResponseType status)
+        protected void UpdateStatus (NcResponseType response)
         {
-            // MeetingResponse command to let the server know about our status
-            BackEnd.Instance.RespondCalCmd (account.Id, c.Id, status);
+            if (isRecurring) {
+                if (NcResponseType.Declined == response) {
+                    NcActionSheet.Show (View, this, null,
+                        "Declining the meeting will also delete the meeting from your calendar.",
+                        new NcAlertAction ("Decline the entire series", NcAlertActionStyle.Destructive, () => {
+                            MakeStatusUpdates (response, false);
+                        }),
+                        new NcAlertAction ("Decline just this occurrence", NcAlertActionStyle.Destructive, () => {
+                            MakeStatusUpdates (response, true);
+                        }),
+                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, () => {
+                            SelectButtonForResponse (userResponse);
+                        }));
+                } else {
+                    NcActionSheet.Show (View, this,
+                        new NcAlertAction ("Respond for the entire series", () => {
+                            MakeStatusUpdates (response, false);
+                        }),
+                        new NcAlertAction ("Respond to just this occurrence", () => {
+                            MakeStatusUpdates (response, true);
+                        }),
+                        new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, () => {
+                            SelectButtonForResponse (userResponse);
+                        }));
+                }
+            } else if (NcResponseType.Declined == response) {
+                NcActionSheet.Show (View, this, null,
+                    "Declining the meeting will also delete the meeting from your calendar.",
+                    new NcAlertAction ("Decline the meeting", NcAlertActionStyle.Destructive, () => {
+                        MakeStatusUpdates (response, false);
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, () => {
+                        SelectButtonForResponse (userResponse);
+                    }));
+            } else {
+                // No prompting necessary.  Just go ahead with the update.
+                MakeStatusUpdates (response, false);
+            }
+        }
 
-            if (c is McCalendar && c.ResponseRequestedIsSet && c.ResponseRequested) {
-                // Send an e-mail message to the organizer with the response.
-                var iCalPart = CalendarHelper.MimeResponseFromCalendar ((McCalendar)c, status);
-                // TODO Give the user a chance to enter some text. For now, the message body is empty.
-                var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
-                CalendarHelper.SendMeetingResponse (account, (McCalendar)c, mimeBody, status);
+        protected void MakeStatusUpdates (NcResponseType response, bool occurrenceOnly)
+        {
+            userResponse = response;
+            userResponseIsSet = true;
+            if (occurrenceOnly) {
+                DateTime occurrenceStartTime;
+                if (c is McException) {
+                    occurrenceStartTime = ((McException)c).ExceptionStartTime;
+                } else {
+                    occurrenceStartTime = e.StartTime;
+                }
+                BackEnd.Instance.RespondCalCmd (account.Id, root.Id, response, occurrenceStartTime);
+                if (root.ResponseRequestedIsSet && root.ResponseRequested) {
+                    var icalpart = CalendarHelper.MimeResponseFromCalendar (root, response, occurrenceStartTime);
+                    var mimeBody = CalendarHelper.CreateMime ("", icalpart, new List<McAttachment> ());
+                    CalendarHelper.SendMeetingResponse (account, root, mimeBody, response);
+                }
+            } else {
+                BackEnd.Instance.RespondCalCmd (account.Id, root.Id, response);
+                if (root.ResponseRequestedIsSet && root.ResponseRequested) {
+                    var iCalPart = CalendarHelper.MimeResponseFromCalendar (root, response);
+                    var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                    CalendarHelper.SendMeetingResponse (account, root, mimeBody, response);
+                }
             }
         }
 
@@ -1401,25 +1324,20 @@ namespace NachoClient.iOS
 
         private void AcceptButtonTouchUpInside (object sender, EventArgs e)
         {
-            ToggleButtons (NcResponseType.Accepted);
+            SelectButtonForResponse (NcResponseType.Accepted);
             UpdateStatus (NcResponseType.Accepted);
         }
 
         private void TentativeButtonTouchUpInside (object sender, EventArgs e)
         {
-            ToggleButtons (NcResponseType.Tentative);
+            SelectButtonForResponse (NcResponseType.Tentative);
             UpdateStatus (NcResponseType.Tentative);
         }
 
         private void DeclineButtonTouchUpInside (object sender, EventArgs e)
         {
-            ToggleButtons (NcResponseType.Declined);
+            SelectButtonForResponse (NcResponseType.Declined);
             UpdateStatus (NcResponseType.Declined);
-        }
-
-        private void ChangeResponseTouchUpInside (object sender, EventArgs e)
-        {
-            RestoreButtons ();
         }
 
         private void EditButtonClicked (object sender, EventArgs e)
