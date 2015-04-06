@@ -51,7 +51,9 @@ namespace NachoClient.iOS
         UIView intentView;
         UILabel intentLabel;
         UILabel intentDisplayLabel;
+        bool ccHasBeenOpened;
         bool alwaysShowIntent;
+        bool alwaysShowAttachments;
 
         UITextView bodyTextView;
         UIButton showQuotedTextButton;
@@ -194,6 +196,7 @@ namespace NachoClient.iOS
                     }));
             };
 
+            alwaysShowAttachments = true;
             suppressLayout = true;
 
             CreateView ();
@@ -353,6 +356,7 @@ namespace NachoClient.iOS
             subjectLabel.Font = labelFont;
             subjectLabel.TextColor = labelColor;
             subjectLabel.SizeToFit ();
+            ViewFramer.Create (subjectLabel).X (LEFT_INDENT).Height (LINE_HEIGHT);
 
             subjectField = new UITextField ();
             subjectField.Font = labelFont;
@@ -363,15 +367,17 @@ namespace NachoClient.iOS
                 subjectField.Text += PresetSubject;
             }
             subjectField.SizeToFit ();
+            ViewFramer.Create (subjectField).X (subjectLabel.Frame.X + subjectLabel.Frame.Width).Width (View.Frame.Width - subjectField.Frame.X).Height (LINE_HEIGHT);
 
-            intentView = new UIView ();
+            intentView = new UIView (new CGRect (0, 0, View.Frame.Width, LINE_HEIGHT));
             intentView.BackgroundColor = UIColor.White;
 
             intentLabel = new UILabel ();
-            intentLabel.Text = "Intent:";
+            intentLabel.Text = "Intent: ";
             intentLabel.Font = labelFont;
             intentLabel.TextColor = labelColor;
             intentLabel.SizeToFit ();
+            ViewFramer.Create (intentLabel).X (LEFT_INDENT).Height (LINE_HEIGHT);
             alwaysShowIntent = false;
 
             intentDisplayLabel = new UILabel ();
@@ -379,6 +385,7 @@ namespace NachoClient.iOS
             intentDisplayLabel.TextColor = labelColor;
             intentDisplayLabel.Text = "NONE";
             intentDisplayLabel.SizeToFit ();
+            ViewFramer.Create (intentDisplayLabel).X (intentLabel.Frame.X + intentLabel.Frame.Width).Width (View.Frame.Width - intentDisplayLabel.Frame.X).Height (LINE_HEIGHT);
 
             UITapGestureRecognizer intentTap = new UITapGestureRecognizer (() => {
                 View.EndEditing (true);
@@ -489,22 +496,30 @@ namespace NachoClient.iOS
 //            View.BackgroundColor = UIColor.Cyan;
         }
 
+        Boolean ShouldMergeCcAndBcc ()
+        {
+            return (!ccHasBeenOpened) && ccView.IsEmpty () && bccView.IsEmpty ();
+        }
+
         protected void ConfigureToView (bool animate)
         {
+            ccHasBeenOpened = ccHasBeenOpened || !ccView.IsEmpty () || !bccView.IsEmpty ();
+
             toView.Hidden = false;
-            ccView.Hidden = false;
-            bccView.Hidden = true;
-            attachmentView.Hidden = calendarInviteIsSet; 
-
-            toView.SetCompact (false, -1);
-            ccView.SetCompact (true, -1);
-            bccView.SetCompact (true, -1);
-            attachmentView.SetCompact (false);
-
             toViewHR.Hidden = false;
+            toView.SetCompact (false, -1);
+
+            ccView.Hidden = false;
             ccViewHR.Hidden = false;
-            bccViewHR.Hidden = true;
+            ccView.SetCompact (true, -1, ShouldMergeCcAndBcc ());
+
+            bccView.Hidden = ShouldMergeCcAndBcc ();
+            bccViewHR.Hidden = ShouldMergeCcAndBcc ();
+            bccView.SetCompact (true, -1);
+
+            attachmentView.Hidden = calendarInviteIsSet;
             attachmentViewHR.Hidden = calendarInviteIsSet;
+            // attachmentView.SetCompact (false);
 
             intentView.Hidden = !alwaysShowIntent;
             intentLabelHR.Hidden = !alwaysShowIntent;
@@ -525,20 +540,23 @@ namespace NachoClient.iOS
 
         protected void ConfigureCcView (bool animate)
         {
+            ccHasBeenOpened = true;
+
             toView.Hidden = false;
-            ccView.Hidden = false;
-            bccView.Hidden = false;
-            attachmentView.Hidden = calendarInviteIsSet; 
-
-            toView.SetCompact (false, -1);
-            ccView.SetCompact (false, -1);
-            bccView.SetCompact (false, -1);
-            attachmentView.SetCompact (false);
-
             toViewHR.Hidden = false;
+            toView.SetCompact (false, -1);
+
+            ccView.Hidden = false;
             ccViewHR.Hidden = false;
+            ccView.SetCompact (false, -1);
+
+            bccView.Hidden = false;
             bccViewHR.Hidden = false;
+            bccView.SetCompact (false, -1);
+
+            attachmentView.Hidden = calendarInviteIsSet;
             attachmentViewHR.Hidden = calendarInviteIsSet;
+            // attachmentView.SetCompact (false);
 
             intentView.Hidden = !alwaysShowIntent;
             intentLabelHR.Hidden = !alwaysShowIntent;
@@ -559,19 +577,23 @@ namespace NachoClient.iOS
 
         protected void ConfigureSubjectEditView (bool animate)
         {
-            // If ccView is hidden,leave it that way.
+            ccHasBeenOpened = ccHasBeenOpened || !ccView.IsEmpty () || !bccView.IsEmpty ();
+
             toView.Hidden = false;
             toViewHR.Hidden = false;
-            // ccView.Hidden = false;
-            bccView.Hidden = true;
-            bccViewHR.Hidden = true;
-
             toView.SetCompact (true, -1);
-            ccView.SetCompact (true, -1);
+
+            ccView.Hidden = false;
+            ccViewHR.Hidden = false;
+            ccView.SetCompact (true, -1, ShouldMergeCcAndBcc ());
+
+            bccView.Hidden = ShouldMergeCcAndBcc ();
+            bccViewHR.Hidden = ShouldMergeCcAndBcc ();
             bccView.SetCompact (true, -1);
+
             attachmentView.Hidden = calendarInviteIsSet;
             attachmentViewHR.Hidden = calendarInviteIsSet;
-            attachmentView.SetCompact (true);
+            // attachmentView.SetCompact (true);
 
             suppressLayout = true;
             toView.ConfigureView ();
@@ -594,20 +616,24 @@ namespace NachoClient.iOS
         protected void ConfigureBodyEditView (bool animate)
         {
             // this might be the place that we set up our initializaiton text
-            toView.SetCompact (true, -1);
             toView.Hidden = false;
             toViewHR.Hidden = false;
+            toView.SetCompact (true, -1);
 
-            // Don't hide cc if there's someone on cc list.
-            ccView.SetCompact (true, -1);
-            ccView.Hidden = (0 == ccView.AddressList.Count);
-            ccViewHR.Hidden = ccView.Hidden;
+            // Reset if cc & bcc are both empty
+            ccHasBeenOpened = !(ccView.IsEmpty () && bccView.IsEmpty ());
 
-            bccView.Hidden = true;
-            bccViewHR.Hidden = true;
+            ccView.Hidden = false;
+            ccViewHR.Hidden = false;
+            ccView.SetCompact (true, -1, ShouldMergeCcAndBcc ());
 
-            attachmentView.Hidden = true;
-            attachmentViewHR.Hidden = true;
+            bccView.Hidden = ShouldMergeCcAndBcc ();
+            bccViewHR.Hidden = ShouldMergeCcAndBcc ();
+            bccView.SetCompact (true, -1);
+
+            attachmentView.Hidden = !alwaysShowAttachments;
+            attachmentViewHR.Hidden = !alwaysShowAttachments;
+            // attachmentView.SetCompact (false);
 
             intentView.Hidden = !alwaysShowIntent;
             intentLabelHR.Hidden = !alwaysShowIntent;
@@ -694,24 +720,18 @@ namespace NachoClient.iOS
                 yOffset = bccViewHR.Frame.Bottom;
             }
 
-            CenterY (subjectLabel, LEFT_INDENT, yOffset, subjectLabel.Frame.Width, LINE_HEIGHT);
-
-            var subjectFieldStart = subjectLabel.Frame.X + subjectLabel.Frame.Width;
-            var subjectFieldWidth = View.Frame.Width - subjectField.Frame.X;
-            CenterY (subjectField, subjectFieldStart, yOffset, subjectFieldWidth, LINE_HEIGHT);
+            ViewFramer.Create (subjectLabel).CenterY (yOffset, LINE_HEIGHT);
+            ViewFramer.Create (subjectField).CenterY (yOffset, LINE_HEIGHT);
+  
             yOffset += LINE_HEIGHT;
 
             ViewFramer.Create (subjectLabelHR).Y (yOffset);
             yOffset += subjectLabelHR.Frame.Height;
 
             // Intent subviews
-            CenterY (intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
-   
-            var intentDisplayStart = intentLabel.Frame.Right + 4;
-            var intentDisplayWidth = View.Frame.Width - intentDisplayStart - 12 - RIGHT_INDENT;
-            CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
-
-            intentView.Frame = new CGRect (0, yOffset, View.Frame.Width, LINE_HEIGHT);
+            ViewFramer.Create (intentLabel).CenterY (0, LINE_HEIGHT);
+            ViewFramer.Create (intentDisplayLabel).CenterY (0, LINE_HEIGHT);
+            ViewFramer.Create (intentView).Y (yOffset);
             ViewFramer.Create (intentLabelHR).Y (intentView.Frame.Bottom);
 
             if (!intentView.Hidden) {
@@ -736,12 +756,6 @@ namespace NachoClient.iOS
             ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
 
             SetBodyAndScrollViewSize (bodyTextView);
-        }
-
-        protected void CenterY (UIView view, nfloat x, nfloat y, nfloat width, nfloat section_height)
-        {
-            var centeredY = y + (section_height / 2) - (view.Frame.Height / 2);
-            view.Frame = new CGRect (x, centeredY, width, view.Frame.Height);
         }
 
         private void OnKeyboardNotification (NSNotification notification)
@@ -1080,20 +1094,11 @@ namespace NachoClient.iOS
 
         public void SendMessage ()
         {
-            var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
-            mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toView.AddressList, NcEmailAddress.Kind.To));
-            mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccView.AddressList, NcEmailAddress.Kind.Cc));
-            mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccView.AddressList, NcEmailAddress.Kind.Bcc));
-            mimeMessage.Date = System.DateTime.UtcNow;
+            var mimeMessage = EmailHelper.CreateMessage (account, toView.AddressList, ccView.AddressList, bccView.AddressList);
+            mimeMessage.Subject = EmailHelper.CreateSubjectWithIntent (subjectField.Text, messageIntent, messageIntentDateType, messageIntentDateTime);
 
-            var subject = Pretty.SubjectString (subjectField.Text);
-            if (McEmailMessage.IntentType.None != messageIntent) {
-                var intentString = NcMessageIntent.GetIntentString (
-                                       messageIntent, messageIntentDateType, messageIntentDateTime);
-                subject = Pretty.Join (intentString, subject, " - ");
-            }
-            mimeMessage.Subject = subject;
+            EmailHelper.SetupReferences(ref mimeMessage, referencedMessage);
+          
 
             var bodyAttributedText = bodyTextView.AttributedText;
             bool originalEmailIsEmbedded = !calendarInviteIsSet && null != initialQuotedText;
@@ -1212,10 +1217,10 @@ namespace NachoClient.iOS
                     ccView.Append (cc);
                 }
             }
-            if (null != referencedMessage) {
-                subjectField.Text = EmailHelper.CreateInitialSubjectLine (action, referencedMessage.Subject);
-            } else {
+            if (null == referencedMessage) {
                 subjectField.Text = "";
+            } else {
+                subjectField.Text = EmailHelper.CreateInitialSubjectLine (action, referencedMessage.Subject);
             }
             alwaysShowIntent |= !string.IsNullOrEmpty (subjectField.Text);
         }
