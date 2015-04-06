@@ -62,8 +62,15 @@ namespace NachoPlatform
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting UserId");
             if (HasiCloud) {
-                if (Store.GetString (KUserId) != null) {
-                    return Store.GetString (KUserId);
+                string remoteUserId = Store.GetString (KUserId);
+                if (remoteUserId != null) {
+                    string localUserId = NSUserDefaults.StandardUserDefaults.StringForKey (KUserId);
+                    if (localUserId != remoteUserId) {
+                        // replace local cached UserId with Cloud UserId
+                        NSUserDefaults.StandardUserDefaults.SetString (remoteUserId, KUserId);
+                        NSUserDefaults.StandardUserDefaults.Synchronize ();
+                    }
+                    return remoteUserId;
                 }
             }
             // if no icloud or not found in iCloud
@@ -85,9 +92,18 @@ namespace NachoPlatform
         {
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase status for product {0}", productId);
             if (HasiCloud) {
-                if (Store.GetBool (productId) != false) {
+                bool remotePurchaseStatus = Store.GetBool (productId);
+                if (remotePurchaseStatus != false) {
                     Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status true for product {0} in cloud", productId);
-                    return Store.GetBool (productId);
+                    if (remotePurchaseStatus == true) {
+                        bool localPurchaseStatus = NSUserDefaults.StandardUserDefaults.BoolForKey (productId);
+                        if (localPurchaseStatus != remotePurchaseStatus) {
+                            // replace local cached purchase status with Cloud purchase status
+                            NSUserDefaults.StandardUserDefaults.SetBool (remotePurchaseStatus, productId);
+                            NSUserDefaults.StandardUserDefaults.Synchronize ();
+                        }
+                        return remotePurchaseStatus;
+                    }
                 }
             }
             // if no icloud or not found in iCloud
@@ -98,11 +114,16 @@ namespace NachoPlatform
         public DateTime GetPurchasedDate (string productId)
         {
             string purchaseDate;
-
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase date for product {0}", productId);
             if (HasiCloud) {
-                if (Store.GetString (KPurchaseDate) != null) {
-                    purchaseDate = Store.GetString (KPurchaseDate);
+                purchaseDate = Store.GetString (KPurchaseDate);
+                if (purchaseDate != null) {
+                    string localPurchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey (KPurchaseDate);
+                    if (localPurchaseDate != purchaseDate) {
+                        // replace local cached purchase date with Cloud purchase date
+                        NSUserDefaults.StandardUserDefaults.SetString (purchaseDate, KPurchaseDate);
+                        NSUserDefaults.StandardUserDefaults.Synchronize ();
+                    }
                     return purchaseDate.ToDateTime ();
                 }
             }
@@ -196,9 +217,9 @@ namespace NachoPlatform
                 NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
                 for (uint i = 0; i < changedKeys.Count; i++) {
                     string key = Marshal.PtrToStringAuto (changedKeys.ValueAt (i));
-                            if (key == KUserId) {
+                    if (key == KUserId) {
                         // ICloud override local - TODO: confirm this
-                                string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
+                        string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
                         if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
                             Log.Info (Log.LOG_SYS, "CloudHandler: Replacing Client {0} with userId {0} from Cloud", NcApplication.Instance.ClientId, userId);
                             NcApplication.Instance.ClientId = userId;
