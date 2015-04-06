@@ -199,7 +199,7 @@ namespace NachoCore.Model
             }
         }
 
-        public static int QueryCount ()
+        public new static int QueryCount ()
         {
             return QueryCount<McTelemetrySupportEvent> ();
         }
