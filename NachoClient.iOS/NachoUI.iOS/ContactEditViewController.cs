@@ -960,13 +960,23 @@ namespace NachoClient.iOS
                     contactCopy.Delete ();
                     break;
                 case ControllerType.Add:
-                    SaveNotesText ();
-                    McFolder f = McFolder.GetDefaultContactFolder (contactCopy.AccountId);
-                    f.Link (contactCopy);
-                    NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId,
-                        contactCopy.Id, f.Id);
-                    contactCopy = McContact.QueryById<McContact> (contactCopy.Id); // Re-read to get fields set by BE
-                    break;
+                    if ((contactCopy.EmailAddresses.Count () == 0)  && 
+                        (contactCopy.Addresses.Count () == 0) && 
+                        (contactCopy.IMAddresses.Count () == 0) &&
+                        (contactCopy.PhoneNumbers.Count () == 0)){
+                        NcAlertView.ShowMessage (this, "Not Enough Information",
+                            "Add at least one address or phone number to save contact.");
+                        LayoutView ();
+                        break;
+                    } else {
+                        SaveNotesText ();
+                        McFolder f = McFolder.GetDefaultContactFolder (contactCopy.AccountId);
+                        f.Link (contactCopy);
+                        NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId,
+                            contactCopy.Id, f.Id);
+                        contactCopy = McContact.QueryById<McContact> (contactCopy.Id); // Re-read to get fields set by BE
+                        break;
+                    }
                 }
                 NavigationController.PopViewController (true);
             } else {
