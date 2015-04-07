@@ -182,7 +182,13 @@ namespace NachoCore.Model
                 if (0 < count) {
                     break;
                 }
-                record = NcModel.Instance.Db.Get<T> (record.Id);
+                try {
+                    record = NcModel.Instance.Db.Get<T> (record.Id);
+                } catch {
+                    Log.Warn (Log.LOG_DB, "UpdateWithOCApply: unable to fetch record");
+                    record = null;
+                    break;
+                }
             }
             if (10 < totalTries - tries) {
                 Log.Warn (Log.LOG_DB, "UpdateWithOCApply: too many tries: {0}", totalTries - tries);
@@ -202,7 +208,9 @@ namespace NachoCore.Model
         {
             int count = 0;
             var record = UpdateWithOCApply<T> (mutator, out count, tries);
-            NcAssert.True (0 < count);
+            if (0 >= count) {
+                return null;
+            }
             return record;
         }
 
