@@ -1262,6 +1262,7 @@ namespace NachoClient.iOS
                 Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
                 if (null == Note) {
                     Note = new McNote ();
+                    Note.AccountId = c.AccountId;
                     Note.DisplayName = (c.GetSubject () + " - " + Pretty.ShortDateString (DateTime.UtcNow));
                     Note.TypeId = c.Id;
                     Note.noteType = McNote.NoteType.Event;
