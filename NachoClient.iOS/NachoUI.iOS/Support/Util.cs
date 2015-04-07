@@ -341,9 +341,7 @@ namespace NachoClient
         {
             if (0 == contact.CircleColor) {
                 contact.CircleColor = PickRandomColorForUser ();
-                //contact.Update ();
             }
-
             return ColorForUser (contact.CircleColor);
         }
 

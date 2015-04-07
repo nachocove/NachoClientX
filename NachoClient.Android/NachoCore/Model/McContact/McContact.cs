@@ -764,7 +764,6 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
-            NcAssert.True (NcModel.Instance.IsInTransaction ());
             DeleteAncillaryData ();
         }
 
