@@ -421,7 +421,6 @@ namespace NachoCore.ActiveSync
         /// <returns>
         /// A list of attendees not yet associated with an NcCalendar or NcException. Not null.
         /// </returns>
-        // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
         public List<McAttendee> ParseAttendees (int accountId, XNamespace ns, XElement attendees)
         {
@@ -433,13 +432,19 @@ namespace NachoCore.ActiveSync
             foreach (var attendee in attendees.Elements()) {
                 NcAssert.True (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
 
-                // Required
+                // Required.  But protect agains a misbehaving server.
+                string name = "";
                 var nameElement = attendee.Element (ns + Xml.Calendar.Attendee.Name);
-                string name = nameElement.Value;
+                if (null != nameElement) {
+                    name = nameElement.Value;
+                }
 
-                // Required
+                // Required.  But we have seen a case where it appears to be missing, so protect against that.
+                string email = "";
                 var emailElement = attendee.Element (ns + Xml.Calendar.Attendee.Email);
-                string email = emailElement.Value;
+                if (null != emailElement) {
+                    email = emailElement.Value;
+                }
 
                 // Optional
                 NcAttendeeStatus status = NcAttendeeStatus.NotResponded;
@@ -448,11 +453,16 @@ namespace NachoCore.ActiveSync
                     status = statusElement.Value.ToEnum<NcAttendeeStatus> ();
                 }
 
-                // Optional.  Default is Required.  (At least that's how GFE behaves.)
+                // Optional.  The default value is "Required".  (At least that's how GFE behaves.)
                 NcAttendeeType type = NcAttendeeType.Required;
                 var typeElement = attendee.Element (ns + Xml.Calendar.Attendee.AttendeeType);
                 if (null != typeElement) {
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
+                }
+
+                // McAttendee barfs if both Name and Email are empty.
+                if (string.IsNullOrEmpty(name) && string.IsNullOrEmpty(email)) {
+                    name = "Unknown";
                 }
 
                 var a = new McAttendee (accountId, name, email, type, status);
