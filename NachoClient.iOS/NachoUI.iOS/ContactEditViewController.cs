@@ -629,7 +629,7 @@ namespace NachoClient.iOS
             contactCopy.MiddleName = middleNameField.Text.Trim ();
             contactCopy.LastName = lastNameField.Text.Trim ();
             contactCopy.Suffix = suffixField.Text.Trim ();
-            contactCopy.Update ();
+            //contactCopy.Update ();
             ConfigureAndLayout ();
         }
 
@@ -712,7 +712,7 @@ namespace NachoClient.iOS
         {
             UITextField companyField = (UITextField)View.ViewWithTag (HEADER_COMPANY_TEXT_FIELD);
             contactCopy.CompanyName = companyField.Text;
-            contactCopy.Update ();
+            //contactCopy.Update ();
         }
 
         protected UIButton AddNewButton (string title, EventHandler action, UIView parent)
@@ -741,7 +741,7 @@ namespace NachoClient.iOS
             contactCopy = new McContact ();
             contactCopy.AccountId = LoginHelpers.GetCurrentAccountId ();
             contactCopy.Source = McAbstrItem.ItemSource.ActiveSync;
-            contactCopy.Insert ();
+            //contactCopy.Insert ();
         }
 
         protected void CopyOriginalContact ()
@@ -749,9 +749,9 @@ namespace NachoClient.iOS
             contactCopy = new McContact ();
             contactCopy.AccountId = contact.AccountId;
             contactCopy.Source = contact.Source;
-            contactCopy.Insert ();
+            //contactCopy.Insert ();
             ContactsHelper.CopyContact (contact, ref contactCopy);
-            contactCopy.Update ();
+            //contactCopy.Update ();
         }
 
         protected void SetViewHeight (UIView view, nfloat height)
@@ -920,7 +920,7 @@ namespace NachoClient.iOS
                 contactCopy.NickName = null;
                 break;
             }
-            contactCopy.Update ();
+            //contactCopy.Update ();
         }
 
         protected void CancelButtonClicked (object sender, EventArgs e)
@@ -930,17 +930,50 @@ namespace NachoClient.iOS
             NcAlertView.Show (this, "Discard Changes?", "Going back will discard your changes. Are you sure?",
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
                 new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
-                    contactCopy.Delete ();
+                    //contactCopy.Delete ();
                     NavigationController.PopViewController (true);
                 }));
         }
 
+        private bool HasInvalidEmail ()
+        {
+            bool badEmailFlag = false;
+            foreach (var e in emailCellList) {
+                if (!new RegexUtilities ().IsValidEmail (e.editField.Text)) {
+                    e.editField.TextColor = A.Color_NachoRed;
+                    badEmailFlag = true;
+                } 
+            }
+            return badEmailFlag;
+        }
+
+        private bool HasEnoughInformation ()
+        {
+            if ((contactCopy.EmailAddresses.Count () == 0) && (contactCopy.Addresses.Count () == 0) &&
+                (contactCopy.IMAddresses.Count () == 0) && (contactCopy.PhoneNumbers.Count () == 0)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
         protected void DoneButtonClicked (object sender, EventArgs e)
         {
+            UpdateContact ();
             View.EndEditing (true);
-            if (UpdateContact ()) {
+            if (HasInvalidEmail ()) {
+                NcAlertView.ShowMessage (this, "Incorrect E-mail Address",
+                    "At least one of the e-mail addresses is in an invalid format.");
+                LayoutView ();
+            } else if (!HasEnoughInformation ()) {
+                NcAlertView.ShowMessage (this, "Not Enough Information",
+                    "Add at least one address or phone number to save contact.");
+                LayoutView ();
+
+            } else {
                 switch (controllerType) {
                 case ControllerType.Edit:
+
                     SaveNotesText ();
                     NcModel.Instance.RunInTransaction (() => {
                         contact.DeleteAncillary ();
@@ -957,32 +990,19 @@ namespace NachoClient.iOS
                     contact.Update ();
                     NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
                     contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
-                    contactCopy.Delete ();
+                    //contactCopy.Delete ();
                     break;
                 case ControllerType.Add:
-                    if ((contactCopy.EmailAddresses.Count () == 0)  && 
-                        (contactCopy.Addresses.Count () == 0) && 
-                        (contactCopy.IMAddresses.Count () == 0) &&
-                        (contactCopy.PhoneNumbers.Count () == 0)){
-                        NcAlertView.ShowMessage (this, "Not Enough Information",
-                            "Add at least one address or phone number to save contact.");
-                        LayoutView ();
-                        break;
-                    } else {
-                        SaveNotesText ();
-                        McFolder f = McFolder.GetDefaultContactFolder (contactCopy.AccountId);
-                        f.Link (contactCopy);
-                        NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId,
-                            contactCopy.Id, f.Id);
-                        contactCopy = McContact.QueryById<McContact> (contactCopy.Id); // Re-read to get fields set by BE
-                        break;
-                    }
+                    SaveNotesText ();
+                    contactCopy.Insert ();
+                    McFolder f = McFolder.GetDefaultContactFolder (contactCopy.AccountId);
+                    f.Link (contactCopy);
+                    NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId,
+                        contactCopy.Id, f.Id);
+                    contactCopy = McContact.QueryById<McContact> (contactCopy.Id); // Re-read to get fields set by BE
+                    break;
                 }
                 NavigationController.PopViewController (true);
-            } else {
-                NcAlertView.ShowMessage (this, "Incorrect E-mail Address",
-                    "At least one of the e-mail addresses is in an invalid format.");
-                LayoutView ();
             }
         }
 
@@ -996,7 +1016,6 @@ namespace NachoClient.iOS
                     , McAbstrFileDesc.BodyTypeEnum.PlainText_1,
                     notesTextView.Text).Id;
             }
-            contactCopy.Update ();
         }
 
         protected string GetNotesText ()
@@ -1048,34 +1067,30 @@ namespace NachoClient.iOS
                 contactCopy.NickName = editingMiscCell.Value;
                 break;
             }
-            contactCopy.Update ();
+            //contactCopy.Update ();
         }
 
-        protected bool UpdateContact ()
+        protected void UpdateContact ()
         {
-            bool badEmailFlag = false;
-
             foreach (var p in phoneCellList) {
                 if (string.IsNullOrEmpty (p.editField.Text)) {
                     contactCopy.PhoneNumbers.Remove (p.phoneAttribute);
-                    p.phoneAttribute.Delete ();
+                    //p.phoneAttribute.Delete ();
                 } else {
                     p.phoneAttribute.Value = p.editField.Text;
-                    p.phoneAttribute.Update ();
-                    contactCopy.Update ();
+                    //p.phoneAttribute.Update ();
+                    //contactCopy.Update ();
                 }
             }
-
             foreach (var e in emailCellList) {
                 if (string.IsNullOrEmpty (e.editField.Text)) {
                     contactCopy.EmailAddresses.Remove (e.emailAttribute);
-                    e.emailAttribute.Delete ();
+                    //e.emailAttribute.Delete ();
                 } else if (!new RegexUtilities ().IsValidEmail (e.editField.Text)) {
                     e.editField.TextColor = A.Color_NachoRed;
-                    badEmailFlag = true;
                 } else {
                     e.emailAttribute.Value = e.editField.Text;
-                    e.emailAttribute.Update ();
+                    //e.emailAttribute.Update ();
                     McEmailAddress email = McEmailAddress.QueryById<McEmailAddress> (e.emailAttribute.EmailAddress);
                     if (null == email) {
                         contactCopy.EmailAddresses.Remove (e.emailAttribute);
@@ -1086,34 +1101,34 @@ namespace NachoClient.iOS
                             e.emailAttribute.Value
                         );
                     }
-                    contactCopy.Update ();
+                    //contactCopy.Update ();
                 }
             }
 
             foreach (var d in dateCellList) {
                 if (DateTime.MinValue == d.dateAttribute.Value) {
                     contactCopy.Dates.Remove (d.dateAttribute);
-                    contactCopy.Update ();
+                    //contactCopy.Update ();
                 }
             }
 
             foreach (var im in imAddressCellList) {
                 if (string.IsNullOrEmpty (im.editField.Text)) {
                     contactCopy.IMAddresses.Remove (im.imAddressAttribute);
-                    im.imAddressAttribute.Delete ();
-                    contactCopy.Update ();
+                    //im.imAddressAttribute.Delete ();
+                    //contactCopy.Update ();
                 }
             }
 
             foreach (var r in relationshipCellList) {
                 if (string.IsNullOrEmpty (r.editField.Text)) {
                     contactCopy.Relationships.Remove (r.relationshipAttribute);
-                    r.relationshipAttribute.Delete ();
-                    contactCopy.Update ();
+                    //r.relationshipAttribute.Delete ();
+                    //contactCopy.Update ();
                 } else {
                     r.relationshipAttribute.Value = r.editField.Text;
-                    r.relationshipAttribute.Update ();
-                    contactCopy.Update ();
+                    //r.relationshipAttribute.Update ();
+                    //contactCopy.Update ();
                 }
             }
 
@@ -1128,9 +1143,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            contactCopy.Update ();
-
-            return !badEmailFlag;
+            //contactCopy.Update ();
         }
 
         protected void DeleteContactButtonTouchUpInside (object sender, EventArgs e)
@@ -1141,7 +1154,7 @@ namespace NachoClient.iOS
                 "Are you sure that you want to delete this contact? This operation cannot be undone.",
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
                 new NcAlertAction ("Delete", NcAlertActionStyle.Destructive, () => {
-                    contactCopy.Delete ();
+                    contact.Delete ();
                     BackEnd.Instance.DeleteContactCmd (contact.AccountId, contact.Id);
                     NavigationController.PopToRootViewController (true);
                 }));
@@ -1161,7 +1174,7 @@ namespace NachoClient.iOS
                                      contactHelper.ExchangeNameToLabel (contactHelper.GetAvailablePhoneNames (contactCopy).First ()),
                                      ""
                                  );
-            contactCopy.Update ();
+            //contactCopy.Update ();
 
             PhoneCell newPhoneCell = new PhoneCell (phoneCellList.Count * CELL_HEIGHT, this, phoneAttribute);
             phoneCellList.Add (newPhoneCell);
@@ -1184,7 +1197,7 @@ namespace NachoClient.iOS
                                      contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableEmailNames (contactCopy).First ()),
                                      ""
                                  );
-            contactCopy.Update ();
+            //contactCopy.Update ();
 
 
             EmailCell newEmailCell = new EmailCell (emailCellList.Count * CELL_HEIGHT, this, emailAttribute);
@@ -1207,7 +1220,7 @@ namespace NachoClient.iOS
                                     contactHelper.GetAvailableDateNames (contactCopy).First (),
                                     contactHelper.GetAvailableDateNames (contactCopy).First (),
                                     DateTime.Now);
-            contactCopy.Update ();
+            //contactCopy.Update ();
 
             DateCell newDateCell = new DateCell (dateCellList.Count * CELL_HEIGHT, this, dateAttribute);
             dateCellList.Add (newDateCell);
@@ -1235,7 +1248,7 @@ namespace NachoClient.iOS
                 addressAttribute.Name,
                 addressAttribute.Label,
                 addressAttribute);
-            contactCopy.Update ();
+            //contactCopy.Update ();
 
             AddressCell addressCell = new AddressCell (addressCellList.Count * CELL_HEIGHT, this, addressAttribute);
             addressCellList.Add (addressCell);
@@ -1260,7 +1273,7 @@ namespace NachoClient.iOS
                                          contactHelper.GetAvailableIMAddressNames (contactCopy).First (),
                                          contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableIMAddressNames (contactCopy).First ()),
                                          "");
-            contactCopy.Update ();
+            //contactCopy.Update ();
 
             IMAddressCell imAddressCell = new IMAddressCell (imAddressCellList.Count * CELL_HEIGHT, this, imAddressAttribute);
             imAddressCellList.Add (imAddressCell);
@@ -1294,7 +1307,7 @@ namespace NachoClient.iOS
                     contactHelper.ExchangeNameToLabel (nextRelationshipName),
                     "");
             }
-            contactCopy.Update ();
+            //contactCopy.Update ();
 
             RelationshipCell relationshipCell = new RelationshipCell (relationshipCellList.Count * CELL_HEIGHT, this, relationshipAttribute);
             relationshipCellList.Add (relationshipCell);
@@ -1496,6 +1509,8 @@ namespace NachoClient.iOS
             cancelButton = null;
             doneButton = null;
 
+            contact = null;
+            contactCopy = null;
             foreach (var p in phoneCellList) {
                 p.Cleanup ();
             }
@@ -1681,15 +1696,15 @@ namespace NachoClient.iOS
             case BlockType.Phone:
                 editingPhoneCell.RemoveFromSuperview ();
                 contactCopy.PhoneNumbers.Remove (editingPhoneCell.phoneAttribute);
-                editingPhoneCell.phoneAttribute.Delete ();
-                contactCopy.Update ();
+                //editingPhoneCell.phoneAttribute.Delete ();
+                //contactCopy.Update ();
                 phoneCellList.Remove (editingPhoneCell);
                 LayoutView ();
                 break;
             case BlockType.Email:
                 editingEmailCell.RemoveFromSuperview ();
                 contactCopy.EmailAddresses.Remove (editingEmailCell.emailAttribute);
-                editingEmailCell.emailAttribute.Delete ();
+                //editingEmailCell.emailAttribute.Delete ();
                 emailCellList.Remove (editingEmailCell);
                 LayoutView ();
                 break;
@@ -1760,7 +1775,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 phoneAttribute.Value = editField.Text;
-                phoneAttribute.Update ();
+                //phoneAttribute.Update ();
             }
 
             public void ConfigureView ()
@@ -1848,7 +1863,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 emailAttribute.Value = editField.Text;
-                emailAttribute.Update ();
+                //emailAttribute.Update ();
             }
 
             public void ConfigureView ()
@@ -2023,8 +2038,8 @@ namespace NachoClient.iOS
                 owner.editingBlockType = BlockType.None;
                 this.RemoveFromSuperview ();
                 owner.contactCopy.Dates.Remove (this.dateAttribute);
-                owner.contactCopy.Update ();
-                this.dateAttribute.Delete ();
+                //owner.contactCopy.Update ();
+                //this.dateAttribute.Delete ();
                 owner.dateCellList.Remove (this);
                 owner.LayoutView ();
             }
@@ -2192,8 +2207,8 @@ namespace NachoClient.iOS
                 owner.editingBlockType = BlockType.None;
                 this.RemoveFromSuperview ();
                 owner.contactCopy.Addresses.Remove (this.addressAttribute);
-                owner.contactCopy.Update ();
-                this.addressAttribute.Delete ();
+                //owner.contactCopy.Update ();
+                //this.addressAttribute.Delete ();
                 owner.addressCellList.Remove (this);
                 owner.LayoutView ();
             }
@@ -2213,7 +2228,7 @@ namespace NachoClient.iOS
                 addressAttribute.State = stateTextField.Text;
                 addressAttribute.PostalCode = zipTextField.Text;
                 addressAttribute.Country = countryTextField.Text;
-                addressAttribute.Update ();
+                //addressAttribute.Update ();
             }
 
             public void Cleanup ()
@@ -2276,7 +2291,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 imAddressAttribute.Value = editField.Text;
-                imAddressAttribute.Update ();
+                //imAddressAttribute.Update ();
             }
 
             protected void LabelClicked (object sender, EventArgs e)
@@ -2294,8 +2309,8 @@ namespace NachoClient.iOS
                 owner.editingBlockType = BlockType.IMAddress;
                 this.RemoveFromSuperview ();
                 owner.contactCopy.IMAddresses.Remove (this.imAddressAttribute);
-                owner.contactCopy.Update ();
-                this.imAddressAttribute.Delete ();
+                //owner.contactCopy.Update ();
+                //this.imAddressAttribute.Delete ();
 
                 owner.imAddressCellList.Remove (this);
                 owner.LayoutView ();
@@ -2354,7 +2369,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 relationshipAttribute.Value = editField.Text;
-                relationshipAttribute.Update ();
+                //relationshipAttribute.Update ();
             }
 
             protected void LabelClicked (object sender, EventArgs e)
@@ -2371,8 +2386,8 @@ namespace NachoClient.iOS
                 owner.editingBlockType = BlockType.None;
                 this.RemoveFromSuperview ();
                 owner.contactCopy.Relationships.Remove (this.relationshipAttribute);
-                owner.contactCopy.Update ();
-                this.relationshipAttribute.Delete ();
+                //owner.contactCopy.Update ();
+                //this.relationshipAttribute.Delete ();
                 owner.relationshipCellList.Remove (this);
                 owner.LayoutView ();
             }
