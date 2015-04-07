@@ -199,6 +199,9 @@
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
+    <Reference Include="BouncyCastle">
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
+    </Reference>
     <Reference Include="antlr.runtime.iOS">
       <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
     </Reference>
@@ -212,9 +215,6 @@
       <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
-    <Reference Include="BouncyCastle">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -245,6 +245,7 @@
     <Folder Include="NachoCore\Model\McEmailMessage\" />
     <Folder Include="NachoCore\Index\" />
     <Folder Include="NachoCore\Model\Migration\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -2242,6 +2243,10 @@
     <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
+      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
+      <Name>MailKit.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

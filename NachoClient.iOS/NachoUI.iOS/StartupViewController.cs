@@ -14,6 +14,9 @@ namespace NachoClient.iOS
     {
         UIProgressView MigrationProgressBar = null;
         UITextView MigrationMessageTextView = null;
+        UIActivityIndicatorView MigrationSpinner = null;
+
+        bool StatusIndCallbackIsSet = false;
 
         public StartupViewController (IntPtr handle) : base (handle)
         {
@@ -25,14 +28,19 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            CreateView ();
+
             if (NcApplication.Instance.IsUp ()) {
                 var segueIdentifer = NextSegue ();
                 Log.Info (Log.LOG_UI, "svc: PerformSegue({0})", segueIdentifer);
                 PerformSegue (NextSegue (), this);
             } else {
-                CreateView ();
+                StatusIndCallbackIsSet = true;
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
+
+            this.View.BackgroundColor = A.Color_NachoGreen;
         }
 
         public static string NextSegue ()
@@ -80,55 +88,65 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            if (!StatusIndCallbackIsSet) {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
+            ConfigureView ();
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            ConfigureView ();
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (this.IsViewLoaded && null == this.NavigationController) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                StatusIndCallbackIsSet = false;
+            }
         }
 
         public void CreateView ()
         {
-            // We need to migrate. Put up a spinner until this is done.
-            this.NavigationItem.Title = "Upgrade";
-            this.View.BackgroundColor = A.Color_NachoGreen;
-
             if (!NcMigration.IsCompatible ()) {
                 // Display an alert view and wait to get out
-                UIAlertView av = new UIAlertView ();
-                av.Title = "Incompatible Version";
-                av.Message = "Running this older version results in an incompatible " +
-                "downgrade from the previously installed version. Please install a newer version.";
-                av.AccessibilityLabel = "Incompatible Version";
-                av.Show ();
+                NcAlertView.ShowMessage (this, "Incompatible Version",
+                    "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.");
                 return;
             }
 
             var frame = this.View.Frame;
             var halfHeight = frame.Height / 2.0f;
 
-            MigrationMessageTextView = new UITextView ();
-            ViewFramer.Create (MigrationMessageTextView)
-                .X (0)
-                .Y (halfHeight - 35.0f)
-                .Width (frame.Width)
-                .Height (35.0f);
+            MigrationMessageTextView = new UITextView (new CoreGraphics.CGRect (0, halfHeight - 35, frame.Width, 35));
             MigrationMessageTextView.TextColor = UIColor.White;
             MigrationMessageTextView.Font = A.Font_AvenirNextRegular14;
-            MigrationMessageTextView.Text = String.Format ("Updating your app with latest features... (1 of {0})",
-                NcMigration.NumberOfMigrations);
             MigrationMessageTextView.BackgroundColor = A.Color_NachoGreen;
             MigrationMessageTextView.TextAlignment = UITextAlignment.Center;
-            MigrationMessageTextView.Hidden = (0 == NcMigration.NumberOfMigrations);
 
-            MigrationProgressBar = new UIProgressView (frame);
-            ViewFramer.Create (MigrationProgressBar).Y (halfHeight + 10.0f).AdjustHeight (20.0f);
+            MigrationProgressBar = new UIProgressView (new CoreGraphics.CGRect (0, halfHeight + 10, frame.Width, 20));
             MigrationProgressBar.ProgressTintColor = A.Color_NachoYellow;
             MigrationProgressBar.TrackTintColor = A.Color_NachoIconGray;
-            MigrationProgressBar.Hidden = (0 == NcMigration.NumberOfMigrations);
+
+            MigrationSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
+            MigrationSpinner.Center = new CoreGraphics.CGPoint (frame.Width / 2, frame.Height / 4);
+            MigrationSpinner.ActivityIndicatorViewStyle = UIActivityIndicatorViewStyle.WhiteLarge;
+            MigrationSpinner.HidesWhenStopped = true;
+
             this.Add (MigrationMessageTextView);
             this.Add (MigrationProgressBar);
+            this.Add (MigrationSpinner);
+        }
+
+        void BlankScreen()
+        {
+            this.NavigationItem.Title = "";
+            MigrationMessageTextView.Text = "";
+            MigrationMessageTextView.Hidden = true;
+            MigrationProgressBar.Hidden = true;
+            MigrationSpinner.StopAnimating ();
         }
 
         void ConfigureView ()
@@ -136,17 +154,35 @@ namespace NachoClient.iOS
             if (!NcMigration.IsCompatible ()) {
                 return;
             }
-            if (NcApplication.ExecutionContextEnum.Migrating == NcApplication.Instance.ExecutionContext) {
+            switch (NcApplication.Instance.ExecutionContext) {
+            case NcApplication.ExecutionContextEnum.Migrating:
                 this.NavigationItem.Title = "Upgrade";
                 MigrationMessageTextView.Hidden = false;
                 MigrationProgressBar.Hidden = false;
-            } else if (NcApplication.ExecutionContextEnum.Initializing == NcApplication.Instance.ExecutionContext) {
-                this.NavigationItem.Title = "Initializing";
-                MigrationMessageTextView.Hidden = true;
-                MigrationProgressBar.Hidden = true;
-            } else {
-                this.NavigationItem.Title = "Initialization";
+                MigrationMessageTextView.Text = String.Format ("Updating your app with latest features... (1 of {0})", NcMigration.NumberOfMigrations);
+                MigrationSpinner.StopAnimating ();
+                break;
+            case NcApplication.ExecutionContextEnum.Initializing:
+                if (NcApplication.Instance.InSafeMode ()) {
+                    this.NavigationItem.Title = "Initializing";
+                    MigrationMessageTextView.Text = String.Format ("We are sorry a crash occurred. We are recovering.");
+                    MigrationMessageTextView.Hidden = false;
+                    MigrationProgressBar.Hidden = true;
+                    MigrationSpinner.StartAnimating ();
+                } else {
+                    BlankScreen ();
+                }
+                break;
+            default:
+                // Rare and will be quick
+                BlankScreen();
+
+                break;
             }
+            ViewFramer.Create (MigrationMessageTextView).Width (View.Frame.Width);
+            MigrationMessageTextView.SizeToFit ();
+            ViewFramer.Create (MigrationMessageTextView).Width (View.Frame.Width);
+            ViewFramer.Create (MigrationProgressBar).Y (MigrationMessageTextView.Frame.Bottom + 10);
             Log.Info (Log.LOG_UI, "svc: {0}", NcApplication.Instance.ExecutionContext);
         }
 
@@ -158,7 +194,7 @@ namespace NachoClient.iOS
                 if (NcApplication.Instance.IsUp ()) {
                     InvokeOnMainThread (() => {
                         if (null != MigrationProgressBar) {
-                            MigrationProgressBar.Hidden = false;
+                            MigrationProgressBar.Hidden = true;
                         }
                         PerformSegue (NextSegue (), this);
                     });
@@ -184,12 +220,6 @@ namespace NachoClient.iOS
                     });
                 }
             }
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)

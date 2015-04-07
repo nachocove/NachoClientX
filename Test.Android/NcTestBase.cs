@@ -13,8 +13,8 @@ namespace Test.Common
         public void SetUp ()
         {
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-            NcModel.Instance.InitalizeDirs (1);
-            NcModel.Instance.InitalizeDirs (2);
+            NcModel.Instance.InitializeDirs (1);
+            NcModel.Instance.InitializeDirs (2);
         }
     }
 }

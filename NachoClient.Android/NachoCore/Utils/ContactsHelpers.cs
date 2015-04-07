@@ -103,6 +103,7 @@ namespace NachoCore.Utils
             { Xml.Contacts2.IMAddress2, "Second IM" },
             { Xml.Contacts2.IMAddress3, "Third IM" },
             { Xml.Contacts.Child, "Child" },
+            { Xml.Contacts.Children, "Children" },
             { Xml.Contacts.Spouse, "Spouse" },
             { Xml.Contacts.AssistantName, "Assistant" },
             { Xml.Contacts2.ManagerName, "Manager" },

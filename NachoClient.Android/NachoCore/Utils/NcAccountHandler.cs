@@ -158,6 +158,7 @@ namespace NachoCore.Model
                     Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
                 }
 
+                BackEnd.Instance.RemoveService (NcApplication.Instance.Account.Id);
                 RemoveAccountDBAndFilesForAccountId (NcApplication.Instance.Account.Id);
 
                 if (stopStartServices) {

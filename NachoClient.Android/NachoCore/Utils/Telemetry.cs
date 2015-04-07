@@ -1,4 +1,4 @@
-//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections;
@@ -441,6 +441,11 @@ namespace NachoCore.Utils
         // clear by class 4 late show event
         public bool Throttling;
 
+        // In order to prevent the teledb file from getting too big when it fails to talk
+        // to DynamoDB, we periodically check if there are too many rows in the tables and
+        // optionally purge them
+        protected static int PurgeCounter = 0;
+
         public Telemetry ()
         {
             BackEnd = null;
@@ -484,6 +489,17 @@ namespace NachoCore.Utils
             SharedInstance.Counters [0].Click ((int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE - 1);
         }
 
+        private static void MayPurgeEvents (int limit)
+        {
+            // Only check once every N events
+            PurgeCounter = (PurgeCounter + 1) % 512;
+            if (0 != PurgeCounter) {
+                return;
+            }
+            McTelemetryEvent.Purge<McTelemetryEvent> (limit);
+            McTelemetrySupportEvent.Purge<McTelemetrySupportEvent> (limit);
+        }
+
         private static void RecordRawEvent (TelemetryEvent tEvent)
         {
             SharedInstance.Counters [(int)tEvent.Type].Click ();
@@ -494,6 +510,7 @@ namespace NachoCore.Utils
                 McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
                 dbEvent.Insert ();
             }
+            MayPurgeEvents (200000);
             Telemetry.SharedInstance.DbUpdated.Set ();
         }
 
@@ -719,11 +736,11 @@ namespace NachoCore.Utils
             #if __IOS__
             // FIXME - Add AWS SDK for Android so we can actually run telemetry for Android.
             SharedInstance.Throttling = true;
-            SharedInstance.Start <TelemetryBEAWS> ();
+            SharedInstance.Start ();
             #endif
         }
 
-        public void Start<T> () where T : ITelemetryBE, new()
+        public void Start ()
         {
             if (!ENABLED) {
                 return;
@@ -731,7 +748,7 @@ namespace NachoCore.Utils
             if (Token.GetHashCode () != NcTask.Cts.Token.GetHashCode ()) {
                 NcTask.Run (() => {
                     Token = NcTask.Cts.Token;
-                    Process<T> ();
+                    Process ();
                 }, "Telemetry", false, true);
             }
         }
@@ -751,12 +768,15 @@ namespace NachoCore.Utils
             }
         }
 
-        private void Process<T> () where T : ITelemetryBE, new()
+        private void Process ()
         {
             try {
                 bool ranOnce = false;
 
-                BackEnd = new T ();
+                #if __IOS__
+                // FIXME - Need to build Android version of AWS SDK for this
+                BackEnd = new TelemetryBEAWS ();
+                #endif
                 BackEnd.Initialize ();
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.

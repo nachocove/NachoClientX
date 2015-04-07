@@ -114,7 +114,6 @@ namespace NachoCore.Model
             return folder;
         }
 
-        // TODO - is there a good way not to specify tries here?
         public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
             if (IsHidden) {

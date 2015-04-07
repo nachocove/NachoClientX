@@ -66,6 +66,8 @@ namespace NachoCore
         protected string SessionToken;
         protected int NumRetries;
         private object LockObj;
+        // This is the first 8 bytes of SHA-256 hash of the session token;
+        protected string DebugSessionToken;
 
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
@@ -523,6 +525,11 @@ namespace NachoCore
             if (!IsActive () && !IsStartOrParked ()) {
                 Log.Warn (Log.LOG_PUSH, "A start session is not established before being parked. Notifications will not be pushed.");
             }
+            // Cancel any HTTP request to pinger. Otherwise, the task that makes the HTTP request
+            // may delay the PA SM from going to Park state immediately.
+            if (null != Cts) {
+                Cts.Cancel ();
+            }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
@@ -757,6 +764,7 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
             } else {
                 SessionToken = response.Token;
+                DebugSessionToken = HashHelper.Sha256 (SessionToken).Substring (0, 8);
                 ClearRetry ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistArmed),
@@ -764,7 +772,7 @@ namespace NachoCore
                 });
                 PostSuccess ("START_SESSION_OK");
                 Log.Info (Log.LOG_PUSH, "[PA] start session succeeds: client_id={0}, context={1}, token={2}",
-                    NcApplication.Instance.ClientId, ClientContext, SessionToken);
+                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
             }
         }
 
@@ -777,7 +785,7 @@ namespace NachoCore
         private async void DoDeferSession ()
         {
             Log.Info (Log.LOG_PUSH, "[PA] defer session starts: client_id={0}, context={1}, token={2}",
-                NcApplication.Instance.ClientId, ClientContext, SessionToken);
+                NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
             
             var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
@@ -786,7 +794,7 @@ namespace NachoCore
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
                     "DoDeferSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
+                    clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("DEFER_PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
@@ -832,7 +840,8 @@ namespace NachoCore
             if (response.IsOk ()) {
                 ClearRetry ();
                 Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
-                    NcApplication.Instance.ClientId, ClientContext, SessionToken);
+                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
+                ResetDefer ();
             } else if (response.IsWarn ()) {
                 NumRetries++;
                 ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
@@ -853,7 +862,7 @@ namespace NachoCore
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
                     "DoStopSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
+                    clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("PARAM_ERROR");
             }
             var jsonRequest = new StopSessionRequest () {
@@ -899,13 +908,9 @@ namespace NachoCore
 
         private void DoPark ()
         {
-            // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
             ClearRetry ();
             DisposeTimeoutTimer ();
             DisposeDeferTimer ();
-            if (null != Cts) {
-                Cts.Cancel ();
-            }
         }
 
         // MISCELLANEOUS STUFF
@@ -1091,7 +1096,7 @@ namespace NachoCore
             DisposeDeferTimer ();
             DeferTimer = new NcTimer ("PADefer", (state) => {
                 Defer ();
-            }, null, DeferPeriodMsec, DeferPeriodMsec); 
+            }, null, DeferPeriodMsec, Timeout.Infinite);
         }
     }
 }

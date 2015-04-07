@@ -13,5 +13,6 @@ namespace NachoCore
         void ServConfReq (ProtoControl sender);
         void CertAskReq (ProtoControl sender, X509Certificate2 certificate);
         void SearchContactsResp (ProtoControl sender, string prefix, string token);
+        void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend);
     }
 }

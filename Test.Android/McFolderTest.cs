@@ -659,6 +659,21 @@ namespace Test.iOS
             }
 
             [Test]
+            public void TestDeleteInUpdateWithOCApply ()
+            {
+                var folder1 = FolderOps.CreateFolder (1, syncMetaToClient: false, isClientOwned: false);
+                var folder2 = McFolder.QueryById<McFolder> (folder1.Id);
+                folder2 = folder2.UpdateSet_AsSyncMetaToClientExpected (true);
+                var folder3 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.Delete ();
+                    return true;
+                });
+                Assert.IsNull (folder3);
+                Assert.AreEqual (folder1.Id, folder2.Id);
+            }
+
+            [Test]
             public void ShouldResetSyncMetaFlag ()
             {
                 McFolder folder1 = FolderOps.CreateFolder (1, syncMetaToClient: false, isClientOwned: false);

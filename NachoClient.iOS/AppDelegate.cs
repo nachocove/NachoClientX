@@ -71,7 +71,12 @@ namespace NachoClient.iOS
 
         private ulong UserNotificationSettings {
             get {
-                return (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types;
+                if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
+                    return (ulong)UIApplication.SharedApplication.CurrentUserNotificationSettings.Types;
+                }
+                // Older iOS does not have this property. So, just assume it's ok and let 
+                // iOS to reject it.
+                return (ulong)KNotificationSettings;
             }
         }
 
@@ -198,11 +203,11 @@ namespace NachoClient.iOS
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox ();
                         inbox.StartSync ();
-                        completionHandler (UIBackgroundFetchResult.NoData);
+                        completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
                         if (doingPerformFetch) {
                             Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
-                            completionHandler (UIBackgroundFetchResult.NoData);
+                            completionHandler (UIBackgroundFetchResult.NewData);
                         } else {
                             StartFetch (application, completionHandler, "RN");
                             return; // completeHandler is called at the completion of perform fetch.
@@ -273,6 +278,8 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            // move data files to Documents/Data if needed
+            NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded();
             // One-time initialization that do not need to be shut down later.
             if (!FirstLaunchInitialization) {
                 FirstLaunchInitialization = true;
@@ -416,9 +423,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
             BadgeNotifClear ();
 
-            NcApplication.Instance.StartClass4Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
-
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
             if (-1 != BackgroundIosTaskId) {
@@ -430,28 +434,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
 
-            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
-
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                switch (backEndState) {
-                case BackEndStateEnum.CertAskWait:
-                    CertAskReqCallback (accountId, null);
-                    Log.Info (Log.LOG_STATE, "OnActived: CERTASKCALLBACK ");
-                    break;
-                case BackEndStateEnum.CredWait:
-                    CredReqCallback (accountId);
-                    Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
-                    break;
-                case BackEndStateEnum.ServerConfWait:
-                    ServConfReqCallback (accountId);
-                    Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
-                    break;
-                default:
-                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-                    break;
-                }
-            }
+            NcApplication.Instance.ContinueOnActivation ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
         }
 

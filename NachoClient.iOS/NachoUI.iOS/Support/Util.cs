@@ -234,7 +234,7 @@ namespace NachoClient
                 NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_UI, msg);
             }
         }
-           
+
         static CultureInfo americanCulture;
 
         public static CultureInfo AmericanCulture {
@@ -341,9 +341,7 @@ namespace NachoClient
         {
             if (0 == contact.CircleColor) {
                 contact.CircleColor = PickRandomColorForUser ();
-                contact.Update ();
             }
-
             return ColorForUser (contact.CircleColor);
         }
 
@@ -365,7 +363,7 @@ namespace NachoClient
             return activeTabBar;
         }
 
-        public static NachoTabBarController GetActiveTabBar()
+        public static NachoTabBarController GetActiveTabBar ()
         {
             var activeTabBar = GetActiveTabBarOrNull ();
             NcAssert.NotNull (activeTabBar);

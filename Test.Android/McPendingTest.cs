@@ -391,12 +391,21 @@ namespace Test.iOS
                 var pending3r = CreatePending (accountId:6, operation:Operations.EmailBodyDownload, serverId:"1:3");
                 // rejected because state is Failed.
                 var pending4r = CreatePending (accountId:5, operation:Operations.EmailBodyDownload, serverId:"1:4");
-                pending2.DelayNotAllowed = true;
-                pending2.Update ();
-                pending3r.DelayNotAllowed = true;
-                pending3r.Update ();
-                pending4r.State = StateEnum.Failed;
-                pending4r.Update ();
+                pending2 = pending2.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.DelayNotAllowed = true;
+                    return true;
+                });
+                pending3r = pending3r.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.DelayNotAllowed = true;
+                    return true;
+                });
+                pending4r = pending4r.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Failed;
+                    return true;
+                });
                 McPending.ResolveAllDelayNotAllowedAsFailed (protoControl, 5);
                 var search = McPending.QueryById<McPending> (pending1r.Id);
                 Assert.True (null != search && pending1r.Id == search.Id);
@@ -730,11 +739,17 @@ namespace Test.iOS
                 CreatePending (accountId: 1);
                 var matcher = CreatePending (accountId: 2); // other pending
                 var isDel = CreatePending (accountId: 2);
-                isDel.State = McPending.StateEnum.Deleted;
-                isDel.Update ();
+                isDel = isDel.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = McPending.StateEnum.Deleted;
+                    return true;
+                });
                 var isFailed = CreatePending (accountId: 2);
-                isFailed.State = McPending.StateEnum.Failed;
-                isFailed.Update ();
+                isFailed = isFailed.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = McPending.StateEnum.Failed;
+                    return true;
+                });
                 var retrieved = McPending.QueryNonFailedNonDeleted (2);
                 Assert.AreEqual (1, retrieved.Count, "Should retrieve pending from correct account");
                 PendingsAreEqual (matcher, retrieved.FirstOrDefault ());
@@ -915,6 +930,36 @@ namespace Test.iOS
                 var badPend = CreatePending (serverId: serverId, operation: Operations.AttachmentDownload);
                 var noItem = badPend.QueryItemUsingServerId ();
                 Assert.Null (noItem, "Should return null if a non-move operation is queried");
+            }
+
+            [Test]
+            public void TestQueryByEmailMessageId ()
+            {
+                var email1 = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: "e1");
+                var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: "c1");
+                var email2 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: 3, serverId: "e2");
+                var pend1 = CreatePending (operation: Operations.EmailSend, item: email1);
+                var pend2 = CreatePending (operation: Operations.EmailBodyDownload, item: email1);
+                var pend3 = CreatePending (accountId:5, operation: Operations.EmailSend, item: email1);
+                var pend4 = CreatePending (operation: Operations.EmailSend, item: email2);
+                var pend5 = CreatePending (operation: Operations.CalDelete, item: cal);
+
+                var found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+                pend1 = pend1.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.Operation = Operations.EmailForward;
+                    return true;
+                });
+                found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+                pend1 = pend1.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.Operation = Operations.EmailReply;
+                    return true;
+                });
+                found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
             }
         }
 
@@ -1141,8 +1186,11 @@ namespace Test.iOS
             public void TestIsDuplicate ()
             {
                 var first = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: firstSId);
-                first.ParentId = "dog";
-                first.Update ();
+                first = first.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.ParentId = "dog";
+                    return true;
+                });
                 var second = new McPending (defaultAccountId) {
                     ServerId = first.ServerId,
                     ParentId = first.ParentId,

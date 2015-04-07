@@ -68,6 +68,7 @@ namespace NachoCore.Model
 
         public bool FreshInstall { private set; get; }
 
+        private const string KDataPathSegment = "Data";
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
@@ -139,19 +140,39 @@ namespace NachoCore.Model
             }
         }
 
+        public string GetDocumentsPath ()
+        {
+            if (Documents == null) {
+                Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            }
+            return Documents;
+        }
+
+        public string GetDataDirPath ()
+        {
+            if (Documents == null) {
+                GetDocumentsPath ();
+            }
+            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
+            if (!Directory.Exists (dataDirPath)) {
+                Directory.CreateDirectory (dataDirPath);
+            }
+            return dataDirPath;
+        }
+
         public string GetFileDirPath (int accountId, string segment)
         {
-            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
+            return Path.Combine (GetDataDirPath (), KFilesPathSegment, accountId.ToString (), segment);
         }
 
         public string GetAccountDirPath (int accountId)
         {
-            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString ());
+            return Path.Combine (GetDataDirPath (), KFilesPathSegment, accountId.ToString ());
         }
 
         public string GetRemovingAccountLockFilePath ()
         {
-            return Path.Combine (Documents, KRemovingAccountLockFile);
+            return Path.Combine (GetDataDirPath (), KRemovingAccountLockFile);
         }
 
         // Get the AccountId for the account being removed
@@ -194,12 +215,19 @@ namespace NachoCore.Model
             }
         }
 
+        // mark directories in Documents/Data for no backup
+        public void MarkDataDirForSkipBackup ()
+        {
+            var dataDir = GetDataDirPath ();
+            NcFileHandler.Instance.MarkFileForSkipBackup (dataDir);
+        }
+
         public string GetIndexPath (int accountId)
         {
             return NcModel.Instance.GetFileDirPath (accountId, "index");
         }
 
-        public void InitalizeDirs (int accountId)
+        public void InitializeDirs (int accountId)
         {
             Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McDocument ().GetFilePathSegment ()));
@@ -345,15 +373,16 @@ namespace NachoCore.Model
                     });
                 }), (IntPtr)null);
             }
-            Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            DbFileName = Path.Combine (Documents, "db");
+            DbFileName = Path.Combine (GetDataDirPath (), "db");
             FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (Documents, "teledb");
+            TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
             InitializeTeleDb ();
             NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
                 Scrub ();
             };
+            //mark all the files for skip backup
+            MarkDataDirForSkipBackup ();
         }
 
         private static volatile NcModel instance;
@@ -524,7 +553,8 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_DB, "RunInTransaction: Should already be in a transaction here: {0}", new StackTrace (true));
             }
             var threadId = Thread.CurrentThread.ManagedThreadId;
-            if (NcApplication.Instance.UiThreadId != threadId) {
+            bool onUiThread = NcApplication.Instance.UiThreadId == threadId;
+            if (!onUiThread) {
                 // We aren't in a transaction yet. If not UI thread, adhere to rate limiting.
                 RateLimiter.TakeTokenOrSleep ();
             }
@@ -535,25 +565,44 @@ namespace NachoCore.Model
                 exitValue = oldValue;
                 return oldValue + 1;
             });
-            Stopwatch watch = new Stopwatch ();
+            Stopwatch lockWatch = new Stopwatch ();
+            Stopwatch workWatch = new Stopwatch ();
             try {
                 var whoa = DateTime.UtcNow.AddSeconds (5.0);
                 // It is okay to loop here, because a busy will have caused us to ROLLBACK and release
                 // all locks. We can then run the action code again.
                 do {
                     try {
-                        watch.Start ();
+                        lockWatch.Start ();
                         lock (WriteNTransLockObj) {
+                            lockWatch.Stop ();
+                            workWatch.Start ();
                             Db.RunInTransaction (action);
                         }
-                        watch.Stop ();
-                        var span = watch.ElapsedMilliseconds;
-                        if (1000 < span) {
-                            Log.Error (Log.LOG_DB, "RunInTransaction: {0}ms for {1}", span, new StackTrace (true));
+                        workWatch.Stop ();
+                        var lockSpan = lockWatch.ElapsedMilliseconds;
+                        var workSpan = workWatch.ElapsedMilliseconds;
+                        // Use different threshholds for reporting long transactions based on whether or not
+                        // this is the UI thread.
+                        if (onUiThread) {
+                            if (100 < lockSpan) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: UI thread spent {0}ms waiting to acquire the database write lock. {1}", lockSpan, new StackTrace (true));
+                            }
+                            if (100 < workSpan) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: UI thread spent {0}ms running a transaction. {1}", workSpan, new StackTrace (true));
+                            }
+                        } else {
+                            if (500 < lockSpan) {
+                                Log.Warn (Log.LOG_DB, "RunInTransaction: Background thread spent {0}ms waiting to acquire the database write lock. {1}", lockSpan, new StackTrace (true));
+                            }
+                            if (1000 < workSpan) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: Background thread spent {0}ms running a transaction. {1}", workSpan, new StackTrace (true));
+                            } else if (500 < workSpan) {
+                                Log.Warn (Log.LOG_DB, "RunInTransaction: Background thread spent {0}ms running a transaction. {1}", workSpan, new StackTrace (true));
+                            }
                         }
                         break;
                     } catch (SQLiteException ex) {
-                        watch.Reset ();
                         if (SQLite3.Result.Busy == ex.Result) {
                             Log.Warn (Log.LOG_DB, "RunInTransaction: Caught a Busy");
                         } else {
@@ -561,6 +610,8 @@ namespace NachoCore.Model
                             throw;
                         }
                     }
+                    lockWatch.Reset ();
+                    workWatch.Reset ();
                 } while (DateTime.UtcNow < whoa);
             } finally {
                 NcAssert.True (TransDepth.TryUpdate (threadId, exitValue, exitValue + 1));
@@ -605,7 +656,7 @@ namespace NachoCore.Model
         public void GarbageCollectFiles ()
         {
             // Find any top-level file dir not backed by McAccount. Delete it.
-            var acctLevelDirs = Directory.GetDirectories (Documents);
+            var acctLevelDirs = Directory.GetDirectories (GetDataDirPath ());
             // Foreach account...
             foreach (var acctDir in acctLevelDirs) {
                 int accountId;
