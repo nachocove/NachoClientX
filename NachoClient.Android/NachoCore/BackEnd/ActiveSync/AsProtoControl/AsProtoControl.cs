@@ -916,7 +916,7 @@ namespace NachoCore.ActiveSync
                 }
             });
             // Create file directories.
-            NcModel.Instance.InitalizeDirs (AccountId);
+            NcModel.Instance.InitializeDirs (AccountId);
         }
 
         public override void Remove ()

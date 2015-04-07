@@ -83,8 +83,7 @@ namespace NachoCore
 
         public string StartupLog {
             get {
-                var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-                return Path.Combine (documents, "startup.log");
+                return Path.Combine (NcModel.Instance.GetDataDirPath (), "startup.log");
             }
         }
 
@@ -575,7 +574,7 @@ namespace NachoCore
                 }
             });
             // Create file directories.
-            NcModel.Instance.InitalizeDirs (deviceAccount.Id);
+            NcModel.Instance.InitializeDirs (deviceAccount.Id);
 
             // Create Device contacts/calendars if not yet there.
             NcModel.Instance.RunInTransaction (() => {

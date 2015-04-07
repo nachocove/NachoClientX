@@ -278,6 +278,8 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            // move data files to Documents/Data if needed
+            NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded();
             // One-time initialization that do not need to be shut down later.
             if (!FirstLaunchInitialization) {
                 FirstLaunchInitialization = true;

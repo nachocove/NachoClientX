@@ -19,6 +19,7 @@ using Amazon;
 
 using NachoPlatform;
 using NachoClient.Build;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -82,8 +83,7 @@ namespace NachoCore.Utils
             // If it does not exist, we save the current Cognito id into the file. After
             // the 1st time, we use the id in the file as the client id. Note that we 
             // still need to talk to Cognito in order to get the session token.
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            var clientIdFile = Path.Combine (documents, "client_id");
+            var clientIdFile = Path.Combine (NcModel.Instance.GetDataDirPath (), "client_id");
             if (File.Exists (clientIdFile)) {
                 // Get the client id from the file
                 using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {

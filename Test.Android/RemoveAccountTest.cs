@@ -15,7 +15,7 @@ namespace Test.iOS
         public const string defaultServerId = "5";
         const string Email = "bob@company.net";
         const string Password = "Plassword";
-        public static string[] exemptTables = new string[]  { 
+        public static string[] exemptTables = new string[] { 
             "McAccount", "sqlite_sequence", "McMigration",
         };
 
@@ -31,14 +31,16 @@ namespace Test.iOS
         public void TestRemoveAccount ()
         {
             // create account
-            McAccount account = CreateAccount();
+            McAccount account = CreateAccount ();
             NachoCore.NcApplication.Instance.Account = account;
 
             // create email
             var email = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: defaultAccountId, serverId: defaultServerId);
+            Assert.NotNull (email);
 
             // create attachment
             var att = FolderOps.CreateAttachment (item: email, displayName: "My-Attachment");
+            Assert.NotNull (att);
 
             // create cred
             var cred = new McCred () {
@@ -53,10 +55,10 @@ namespace Test.iOS
             Assert.NotNull (foundAccount);
             var foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, defaultServerId);
             Assert.NotNull (foundEmail);
-            List<McAttachment> foundAtts = McAttachment.QueryByItemId(foundEmail);
+            List<McAttachment> foundAtts = McAttachment.QueryByItemId (foundEmail);
             Assert.IsTrue (foundAtts.Count > 0);
             string AccountDirPath = NcModel.Instance.GetAccountDirPath (account.Id);
-            Assert.True(Directory.Exists(AccountDirPath));
+            Assert.True (Directory.Exists (AccountDirPath));
 
             // check password in keychain
             if (Keychain.Instance.HasKeychain ()) {
@@ -72,9 +74,9 @@ namespace Test.iOS
             Assert.Null (foundAccount);
             foundEmail = McEmailMessage.QueryByServerId<McEmailMessage> (defaultAccountId, defaultServerId);
             Assert.Null (foundEmail);
-            foundAtts = McAttachment.QueryByItemId(email);
+            foundAtts = McAttachment.QueryByItemId (email);
             Assert.IsTrue (foundAtts.Count == 0);
-            Assert.False(Directory.Exists(AccountDirPath));
+            Assert.False (Directory.Exists (AccountDirPath));
 
             // confirm that the password is deleted from the keychain
             if (Keychain.Instance.HasKeychain ()) {
@@ -97,7 +99,7 @@ namespace Test.iOS
                         break;
                     }
                 }
-                if (!((IList<string>) exemptTables).Contains (Table.name)) {
+                if (!((IList<string>)exemptTables).Contains (Table.name)) {
                     Assert.IsTrue (foundAccountId, Table.name + " table is missing the column AccountId");
                 }
             }

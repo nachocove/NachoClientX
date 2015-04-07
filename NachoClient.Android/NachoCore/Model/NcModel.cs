@@ -68,10 +68,10 @@ namespace NachoCore.Model
 
         public bool FreshInstall { private set; get; }
 
+        private const string KDataPathSegment = "Data";
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
-
 
         public string DbFileName { set; get; }
 
@@ -137,19 +137,39 @@ namespace NachoCore.Model
             }
         }
 
+        public string GetDocumentsPath ()
+        {
+            if (Documents == null) {
+                Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            }
+            return Documents;
+        }
+
+        public string GetDataDirPath ()
+        {
+            if (Documents == null) {
+                GetDocumentsPath ();
+            }
+            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
+            if (!Directory.Exists (dataDirPath)) {
+                Directory.CreateDirectory (dataDirPath);
+            }
+            return dataDirPath;
+        }
+
         public string GetFileDirPath (int accountId, string segment)
         {
-            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
+            return Path.Combine (GetDataDirPath (), KFilesPathSegment, accountId.ToString (), segment);
         }
 
         public string GetAccountDirPath (int accountId)
         {
-            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString ());
+            return Path.Combine (GetDataDirPath (), KFilesPathSegment, accountId.ToString ());
         }
 
         public string GetRemovingAccountLockFilePath ()
         {
-            return Path.Combine (Documents, KRemovingAccountLockFile);
+            return Path.Combine (GetDataDirPath (), KRemovingAccountLockFile);
         }
 
         // Get the AccountId for the account being removed
@@ -160,18 +180,17 @@ namespace NachoCore.Model
             var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
             if (File.Exists (RemovingAccountLockFile)) {
                 // Get the account id from the file
-                try{
+                try {
                     using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Open, FileAccess.Read)) {
                         using (var reader = new StreamReader (stream)) {
                             AccountIdString = reader.ReadLine ();
-                            bool result = int.TryParse(AccountIdString, out AccountId);
+                            bool result = int.TryParse (AccountIdString, out AccountId);
                             if (!result) {                     
                                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to parse AccountId from file.");
                             }
                         }
                     }
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to read RemoveAccountLockFile.{0}", e.Message);
                 }
             }
@@ -182,16 +201,22 @@ namespace NachoCore.Model
         public void WriteRemovingAccountIdToFile (int AccountId)
         {
             var RemovingAccountLockFile = NcModel.Instance.GetRemovingAccountLockFilePath ();
-            try{
+            try {
                 using (var stream = new FileStream (RemovingAccountLockFile, FileMode.Create, FileAccess.Write)) {
                     using (var writer = new StreamWriter (stream)) {
                         writer.WriteLine (AccountId);
                     }
                 }
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Log.Warn (Log.LOG_DB, "RemoveAccount: Unable to write RemoveAccountLockFile.{0}", e.Message);
             }
+        }
+
+        // mark directories in Documents/Data for no backup
+        public void MarkDataDirForSkipBackup ()
+        {
+            var dataDir = GetDataDirPath ();
+            NcFileHandler.Instance.MarkFileForSkipBackup (dataDir);
         }
 
         public string GetIndexPath (int accountId)
@@ -199,7 +224,7 @@ namespace NachoCore.Model
             return NcModel.Instance.GetFileDirPath (accountId, "index");
         }
 
-        public void InitalizeDirs (int accountId)
+        public void InitializeDirs (int accountId)
         {
             Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));
             Directory.CreateDirectory (GetFileDirPath (accountId, new McDocument ().GetFilePathSegment ()));
@@ -345,15 +370,16 @@ namespace NachoCore.Model
                     });
                 }), (IntPtr)null);
             }
-            Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            DbFileName = Path.Combine (Documents, "db");
+            DbFileName = Path.Combine (GetDataDirPath (), "db");
             FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (Documents, "teledb");
+            TeleDbFileName = Path.Combine (GetDataDirPath (), "teledb");
             InitializeTeleDb ();
             NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
                 Scrub ();
             };
+            //mark all the files for skip backup
+            MarkDataDirForSkipBackup ();
         }
 
         private static volatile NcModel instance;
@@ -627,7 +653,7 @@ namespace NachoCore.Model
         public void GarbageCollectFiles ()
         {
             // Find any top-level file dir not backed by McAccount. Delete it.
-            var acctLevelDirs = Directory.GetDirectories (Documents);
+            var acctLevelDirs = Directory.GetDirectories (GetDataDirPath ());
             // Foreach account...
             foreach (var acctDir in acctLevelDirs) {
                 int accountId;
