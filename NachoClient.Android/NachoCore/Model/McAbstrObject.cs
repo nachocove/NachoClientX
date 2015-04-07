@@ -208,9 +208,7 @@ namespace NachoCore.Model
         {
             int count = 0;
             var record = UpdateWithOCApply<T> (mutator, out count, tries);
-            if (0 >= count) {
-                return null;
-            }
+            NcAssert.True (0 < count || null == record);
             return record;
         }
 
