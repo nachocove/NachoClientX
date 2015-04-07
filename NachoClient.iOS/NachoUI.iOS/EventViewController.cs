@@ -77,6 +77,7 @@ namespace NachoClient.iOS
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
+        protected bool hasBeenEdited = false;
         protected bool attachmentsDrawerOpen = false;
         // Keep track of the user's Attend/Maybe/Decline choice, so we don't have to worry about
         // whether or not the database item is up to date.
@@ -419,6 +420,10 @@ namespace NachoClient.iOS
             yOffset += 20;
 
             scrollView.ContentSize = new CGSize (SCREEN_WIDTH, eventCardView.Frame.Bottom + 15);
+
+            // This is not UI related, but this flag should be reset at the same time that the
+            // view hierarchy is created.
+            hasBeenEdited = false;
         }
 
         protected override void ConfigureAndLayout ()
@@ -462,7 +467,39 @@ namespace NachoClient.iOS
 
             ConfigureRsvpBar (isOrganizer);
 
-            NavigationItem.Title = e.GetStartTimeLocal ().ToString ("Y");
+            // If the user has just edited the event, changing the start or end times, then the McEvent object
+            // that we have is stale.  There is not a reliable way to refresh the McEvent object.  Instead, we
+            // sometimes pull the start and end times from the McCalendar object rather than the McEvent object.
+            // TODO This logic doesn't work when a recurring meeting has been edited.  Recurring meetings can't
+            // be edited yet.  But when that support is added, this code will have to change.
+            DateTime startTime;
+            DateTime endTime;
+            if (hasBeenEdited && !isRecurring) {
+                // The user might have edited the event.  Use the McCalendar object.
+                if (c.AllDayEvent) {
+                    // If the time of the McEvent falls within the McCalendar's times, use the McEvent.
+                    // Otherwise, use the first day of the McCalendar.
+                    if (c.StartTime <= e.GetStartTimeUtc () && e.GetStartTimeUtc () < c.EndTime) {
+                        startTime = e.GetStartTimeUtc ();
+                        endTime = e.GetEndTimeUtc ();
+                    } else {
+                        // Convert the McCalendar's start time to the event's time zone, extract the date,
+                        // make that a local time, and then convert it to UTC.
+                        startTime = DateTime.SpecifyKind (
+                            CalendarHelper.ConvertTimeFromUtc (c.StartTime, new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ()).Date,
+                            DateTimeKind.Local).ToUniversalTime ();
+                        endTime = startTime.AddDays (1);
+                    }
+                } else {
+                    startTime = c.StartTime;
+                    endTime = c.EndTime;
+                }
+            } else {
+                startTime = e.GetStartTimeUtc ();
+                endTime = e.GetEndTimeUtc ();
+            }
+
+            NavigationItem.Title = startTime.ToLocalTime ().ToString ("Y");
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabel.Text = c.GetSubject ();
@@ -471,7 +508,7 @@ namespace NachoClient.iOS
             titleLabel.SizeToFit ();
 
             var whenLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
-            whenLabel.Text = Pretty.ExtendedDateString (e.GetStartTimeUtc ());
+            whenLabel.Text = Pretty.ExtendedDateString (startTime);
 
             var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
             if (c.AllDayEvent) {
@@ -481,12 +518,12 @@ namespace NachoClient.iOS
                         Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime (c.EndTime)));
                 }
             } else {
-                if (e.GetStartTimeLocal ().DayOfYear == e.GetEndTimeLocal ().DayOfYear) {
+                if (startTime.ToLocalTime ().DayOfYear == endTime.ToLocalTime ().DayOfYear) {
                     durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (e.GetStartTimeUtc ()), Pretty.FullTimeString (e.GetEndTimeUtc ()));
+                        Pretty.FullTimeString (startTime), Pretty.FullTimeString (endTime));
                 } else {
                     durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullTimeString (e.GetStartTimeUtc ()), Pretty.FullDateTimeString (e.GetEndTimeUtc ()));
+                        Pretty.FullTimeString (startTime), Pretty.FullDateTimeString (endTime));
                 }
             }
             durationLabel.Frame = new CGRect (durationLabel.Frame.X, durationLabel.Frame.Y, SCREEN_WIDTH - 90, 20);
@@ -1343,6 +1380,7 @@ namespace NachoClient.iOS
 
         private void EditButtonClicked (object sender, EventArgs e)
         {
+            hasBeenEdited = true;
             PerformSegue ("EventToEditEvent", this);
         }
 
