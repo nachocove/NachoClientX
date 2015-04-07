@@ -203,11 +203,11 @@ namespace NachoClient.iOS
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox ();
                         inbox.StartSync ();
-                        completionHandler (UIBackgroundFetchResult.NoData);
+                        completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
                         if (doingPerformFetch) {
                             Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
-                            completionHandler (UIBackgroundFetchResult.NoData);
+                            completionHandler (UIBackgroundFetchResult.NewData);
                         } else {
                             StartFetch (application, completionHandler, "RN");
                             return; // completeHandler is called at the completion of perform fetch.

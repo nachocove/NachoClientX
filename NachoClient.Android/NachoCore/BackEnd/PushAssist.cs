@@ -525,6 +525,11 @@ namespace NachoCore
             if (!IsActive () && !IsStartOrParked ()) {
                 Log.Warn (Log.LOG_PUSH, "A start session is not established before being parked. Notifications will not be pushed.");
             }
+            // Cancel any HTTP request to pinger. Otherwise, the task that makes the HTTP request
+            // may delay the PA SM from going to Park state immediately.
+            if (null != Cts) {
+                Cts.Cancel ();
+            }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
@@ -836,6 +841,7 @@ namespace NachoCore
                 ClearRetry ();
                 Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
                     NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
+                ResetDefer ();
             } else if (response.IsWarn ()) {
                 NumRetries++;
                 ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
@@ -902,13 +908,9 @@ namespace NachoCore
 
         private void DoPark ()
         {
-            // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
             ClearRetry ();
             DisposeTimeoutTimer ();
             DisposeDeferTimer ();
-            if (null != Cts) {
-                Cts.Cancel ();
-            }
         }
 
         // MISCELLANEOUS STUFF
@@ -1094,7 +1096,7 @@ namespace NachoCore
             DisposeDeferTimer ();
             DeferTimer = new NcTimer ("PADefer", (state) => {
                 Defer ();
-            }, null, DeferPeriodMsec, DeferPeriodMsec); 
+            }, null, DeferPeriodMsec, Timeout.Infinite);
         }
     }
 }
