@@ -80,8 +80,6 @@ namespace NachoCore.ActiveSync
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
 
-            EmailMessage.Delete ();
-
             var sentFolder = McFolder.GetDefaultSentFolder (BEContext.Account.Id);
             if (null != sentFolder) {
                 sentFolder.UpdateSet_AsSyncMetaToClientExpected (true);
