@@ -292,11 +292,11 @@ namespace NachoCore
             }
         }
 
-        public void ContinueRemoveAccountIfNeeded()
+        public void ContinueRemoveAccountIfNeeded ()
         {
             // if not done removing account, finish up 
             int AccountId = NcModel.Instance.GetRemovingAccountIdFromFile ();
-            if (AccountId > 0 ) {
+            if (AccountId > 0) {
                 Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
                 NcAccountHandler.Instance.RemoveAccountDBAndFilesForAccountId (AccountId);
             }
@@ -332,11 +332,8 @@ namespace NachoCore
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
             // we need to sequence these properly.
             NcMigration.Setup ();
-
             if (ShouldEnterSafeMode ()) {
-                if (!NcMigration.WillStartService ()) {
-                    ExecutionContext = ExecutionContextEnum.Initializing;
-                }
+                ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
@@ -347,6 +344,7 @@ namespace NachoCore
                         StartBasalServicesCompletion ();
                     } else {
                         Log.Info (Log.LOG_LIFECYCLE, "Starting migration after exiting safe mode");
+                        ExecutionContext = ExecutionContextEnum.Migrating;
                         NcMigration.StartService (
                             StartBasalServicesCompletion,
                             (percentage) => {
@@ -377,6 +375,7 @@ namespace NachoCore
 
             // Start Migrations, if any.
             if (NcMigration.WillStartService ()) {
+                ExecutionContext = ExecutionContextEnum.Migrating;
                 NcMigration.StartService (
                     StartBasalServicesCompletion,
                     (percentage) => {
@@ -709,6 +708,11 @@ namespace NachoCore
             #else
             throw new PlatformNotSupportedException ();
             #endif
+        }
+
+        public bool InSafeMode ()
+        {
+            return SafeMode;
         }
 
         private bool ShouldEnterSafeMode ()
