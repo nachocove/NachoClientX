@@ -66,6 +66,8 @@ namespace NachoCore
         protected string SessionToken;
         protected int NumRetries;
         private object LockObj;
+        // This is the first 8 bytes of SHA-256 hash of the session token;
+        protected string DebugSessionToken;
 
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
@@ -760,6 +762,7 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
             } else {
                 SessionToken = response.Token;
+                DebugSessionToken = HashHelper.Sha256 (SessionToken).Substring (0, 8);
                 ClearRetry ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistArmed),
@@ -767,7 +770,7 @@ namespace NachoCore
                 });
                 PostSuccess ("START_SESSION_OK");
                 Log.Info (Log.LOG_PUSH, "[PA] start session succeeds: client_id={0}, context={1}, token={2}",
-                    NcApplication.Instance.ClientId, ClientContext, SessionToken);
+                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
             }
         }
 
@@ -780,7 +783,7 @@ namespace NachoCore
         private async void DoDeferSession ()
         {
             Log.Info (Log.LOG_PUSH, "[PA] defer session starts: client_id={0}, context={1}, token={2}",
-                NcApplication.Instance.ClientId, ClientContext, SessionToken);
+                NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
             
             var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
@@ -789,7 +792,7 @@ namespace NachoCore
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
                     "DoDeferSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
+                    clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("DEFER_PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
@@ -835,7 +838,7 @@ namespace NachoCore
             if (response.IsOk ()) {
                 ClearRetry ();
                 Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
-                    NcApplication.Instance.ClientId, ClientContext, SessionToken);
+                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
                 ResetDefer ();
             } else if (response.IsWarn ()) {
                 NumRetries++;
@@ -857,7 +860,7 @@ namespace NachoCore
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
                     "DoStopSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
+                    clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("PARAM_ERROR");
             }
             var jsonRequest = new StopSessionRequest () {

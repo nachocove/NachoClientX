@@ -13,15 +13,15 @@ namespace NachoClient.iOS
     public class NcActionSheet
     {
         /// <summary>
-        /// Show an action sheet with custom actions.
+        /// Show an action sheet with custom actions.  On iOS 8, inclde a title and message.
         /// </summary>
         public static void Show (
-            UIView parentView, UIViewController parentViewController, params NcAlertAction[] actions)
+            UIView parentView, UIViewController parentViewController, string title, string message, params NcAlertAction[] actions)
         {
             if (UIDevice.CurrentDevice.CheckSystemVersion (8, 0)) {
 
                 // iOS 8 or higher.  Use UIAlertController.
-                var alertController = UIAlertController.Create (null, null, UIAlertControllerStyle.ActionSheet);
+                var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.ActionSheet);
                 foreach (var action in actions) {
                     alertController.AddAction (UIAlertAction.Create (action.Title, action.UIStyle (), (UIAlertAction obj) => {
                         if (null != action.Action) {
@@ -59,6 +59,15 @@ namespace NachoClient.iOS
                 actionSheet.Clicked += clickAction;
                 actionSheet.ShowInView (parentView);
             }
+        }
+
+        /// <summary>
+        /// Show an action sheet with custom actions.
+        /// </summary>
+        public static void Show (
+            UIView parentView, UIViewController parentViewController, params NcAlertAction[] actions)
+        {
+            Show (parentView, parentViewController, null, null, actions);
         }
     }
 }

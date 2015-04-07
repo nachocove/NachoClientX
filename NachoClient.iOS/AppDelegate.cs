@@ -421,9 +421,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
             BadgeNotifClear ();
 
-            NcApplication.Instance.StartClass4Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
-
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
             if (-1 != BackgroundIosTaskId) {
@@ -435,28 +432,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
 
-            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
-
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                switch (backEndState) {
-                case BackEndStateEnum.CertAskWait:
-                    CertAskReqCallback (accountId, null);
-                    Log.Info (Log.LOG_STATE, "OnActived: CERTASKCALLBACK ");
-                    break;
-                case BackEndStateEnum.CredWait:
-                    CredReqCallback (accountId);
-                    Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
-                    break;
-                case BackEndStateEnum.ServerConfWait:
-                    ServConfReqCallback (accountId);
-                    Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
-                    break;
-                default:
-                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-                    break;
-                }
-            }
+            NcApplication.Instance.ContinueOnActivation ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
         }
 

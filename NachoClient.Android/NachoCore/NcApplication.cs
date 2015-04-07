@@ -72,6 +72,12 @@ namespace NachoCore
             }
         }
 
+        public bool IsMigrating {
+            get {
+                return (ExecutionContextEnum.Migrating == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
@@ -310,6 +316,7 @@ namespace NachoCore
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
             ExecutionContext = _PlatformIndication;
+            ContinueOnActivation ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
@@ -391,7 +398,6 @@ namespace NachoCore
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/migration).");
                 return;
             }
-
             StartBasalServicesCompletion ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/out migration).");
         }
@@ -461,6 +467,46 @@ namespace NachoCore
                 NcTimeVariance.PauseAll ();
             }
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services exited.");
+        }
+
+        public void ContinueOnActivation ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation called");
+            if (IsMigrating) {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Migration in process. Will run ContinueOnActivation after migration is complete.");
+                return;
+            } else if (!IsForeground) {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: App is still not in the foreground. Will run ContinueOnActivation later.");
+                return;
+            }
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation running...");
+
+            NcApplication.Instance.StartClass4Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
+
+            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+
+                int accountId = LoginHelpers.GetCurrentAccountId ();
+                switch (backEndState) {
+                case BackEndStateEnum.CertAskWait:
+                    CertAskReqCallback (accountId, null);
+                    Log.Info (Log.LOG_STATE, "NcApplication: CERTASKCALLBACK ");
+                    break;
+                case BackEndStateEnum.CredWait:
+                    CredReqCallback (accountId);
+                    Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    ServConfReqCallback (accountId);
+                    Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
+                    break;
+                default:
+                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
+                    break;
+                }
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation exited");
+            }
         }
 
         public void MonitorStart ()

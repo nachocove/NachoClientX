@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using MimeKit;
 using System.Text;
+using NachoCore.Brain;
 using NachoCore.Model;
 
 
@@ -75,6 +76,7 @@ namespace NachoCore.Utils
             FailBadHost,
             FailBadScheme,
         };
+
         public static ParseServerWhyEnum IsValidServer (string serverName)
         {
             McServer dummy = new McServer ();
@@ -437,6 +439,49 @@ namespace NachoCore.Utils
                 }
             }
             return initials;
+        }
+
+        public static MimeMessage CreateMessage (McAccount account, List<NcEmailAddress> toList, List<NcEmailAddress> ccList, List<NcEmailAddress> bccList)
+        {
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
+            mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toList, NcEmailAddress.Kind.To));
+            mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccList, NcEmailAddress.Kind.Cc));
+            mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccList, NcEmailAddress.Kind.Bcc));
+            mimeMessage.Date = System.DateTime.UtcNow;
+            return mimeMessage;
+        }
+
+        public static string CreateSubjectWithIntent (string rawSubject, McEmailMessage.IntentType messageIntent, MessageDeferralType messageIntentDateType, DateTime messageIntentDateTime)
+        {
+            var subject = Pretty.SubjectString (rawSubject);
+            if (McEmailMessage.IntentType.None != messageIntent) {
+                var intentString = NcMessageIntent.GetIntentString (messageIntent, messageIntentDateType, messageIntentDateTime);
+                subject = Pretty.Join (intentString, subject, " - ");
+            }
+            return subject;
+        }
+
+        public static void SetupReferences (ref MimeMessage mimeMessage, McEmailMessage referencedMessage)
+        {
+            mimeMessage.InReplyTo = null;
+            mimeMessage.References.Clear();
+
+            if (null != referencedMessage) {
+                mimeMessage.InReplyTo = referencedMessage.MessageID;
+                if (null != referencedMessage.References) {
+                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences(referencedMessage.References)) {
+                        mimeMessage.References.Add (reference);
+                    }
+                }
+                if (null != referencedMessage.InReplyTo) {
+                    foreach (var reference in MimeKit.Utils.MimeUtils.EnumerateReferences(referencedMessage.InReplyTo)) {
+                        if (!mimeMessage.References.Contains (reference)) {
+                            mimeMessage.References.Add (reference);
+                        }
+                    }
+                }
+            }
         }
     }
 }
