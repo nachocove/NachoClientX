@@ -40,8 +40,9 @@
     <MtouchArch>i386, x86_64</MtouchArch>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Developer: Thomas Enderwick (Z89649H7J4)</CodesignKey>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -1321,6 +1322,12 @@
       <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
+    <Compile Include="NachoPlatform.iOS\NcFileHandleriOS.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcNameValuePair.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAlertView.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
+    <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
