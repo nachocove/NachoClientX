@@ -21,7 +21,9 @@ tag="v$1_$2"
 sh tag.sh "$tag" "$tag"
 
 # Build everything else
-make -f build.mk
+timestamp=`date "+%Y%m%d_%H%M%S"`
+logfile="alpha_build.$tag.$timestamp.log"
+make -f build.mk 2>&1 | tee $logfile
 if [ $? -neq 0 ]
 then
     echo "Fail to build auxillary packages"
@@ -29,7 +31,7 @@ then
 fi
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="alpha" make release
+VERSION="$1" BUILD="$2" RELEASE="alpha" make release 2>&1 | tee -a $logfile
 if [ $? -eq 0 ]
 then
     sh push_tag.sh "$tag"
