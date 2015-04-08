@@ -361,7 +361,7 @@ namespace NachoClient.iOS
                 return cell;
             }
 
-            if (identifier.Equals (EmailMessageReuseIdentifier) || identifier.Equals(DraftsMessageReuseIdentifier)) {
+            if (identifier.Equals (EmailMessageReuseIdentifier) || identifier.Equals (DraftsMessageReuseIdentifier)) {
                 var cell = tableView.DequeueReusableCell (identifier);
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
@@ -439,7 +439,7 @@ namespace NachoClient.iOS
                 view.AddSubview (multiSelectImageView);
 
                 MessageHeaderView messageHeaderView;
-                if(identifier.Equals (EmailMessageReuseIdentifier)) {
+                if (identifier.Equals (EmailMessageReuseIdentifier)) {
                     messageHeaderView = new MessageHeaderView (new CGRect (65, 0, cellWidth - 65, 75));
                 } else {
                     messageHeaderView = new MessageHeaderView (new CGRect (15, 0, cellWidth - 15, 75));
@@ -584,8 +584,8 @@ namespace NachoClient.iOS
             };
 
             // User image view
-            var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var userLabelView = cell.ContentView.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            var userImageView = (UIImageView)cell.ContentView.ViewWithTag (USER_IMAGE_TAG);
+            var userLabelView = (UILabel)cell.ContentView.ViewWithTag (USER_LABEL_TAG);
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 
@@ -607,7 +607,7 @@ namespace NachoClient.iOS
             var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = message.IsRead;
 
-            var messageHeaderView = (MessageHeaderView) cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
+            var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
             messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
@@ -619,7 +619,7 @@ namespace NachoClient.iOS
             ConfigureMultiSelectCell (cell);
 
             // Preview label view
-            var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
+            var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
@@ -699,22 +699,22 @@ namespace NachoClient.iOS
             };
 
             // User image view
-            var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var userLabelView = cell.ContentView.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            var userImageView = (UIImageView)cell.ContentView.ViewWithTag (USER_IMAGE_TAG);
+            var userLabelView = (UILabel)cell.ContentView.ViewWithTag (USER_LABEL_TAG);
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
            
             var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = true;
 
-            var messageHeaderView = (MessageHeaderView) cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
+            var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
             messageHeaderView.ConfigureDraftView (messageThread, message);
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
 
             // Preview label view
-            var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
+            var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
