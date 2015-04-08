@@ -263,6 +263,14 @@ namespace NachoCore.Utils
             }
         }
 
+        static public string RecipientString(string Recipient)
+        {
+            if (null == Recipient) {
+                return "";
+            }
+            return Recipient;
+        }
+
         /// <summary>
         /// Given an organizer name, return a string
         /// worthy of being displayed in the files list.
