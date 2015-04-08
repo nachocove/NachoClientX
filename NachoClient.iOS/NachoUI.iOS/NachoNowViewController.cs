@@ -394,12 +394,12 @@ namespace NachoClient.iOS
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
         {
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectChange (MessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count)
         {
         }
 

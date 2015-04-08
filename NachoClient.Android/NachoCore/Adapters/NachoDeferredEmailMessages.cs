@@ -60,6 +60,16 @@ namespace NachoCore
             return "Deferred";
         }
 
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
+        }
+
         public void StartSync ()
         {
             // TODO: Send status in as if deferreds have changed
@@ -120,6 +130,16 @@ namespace NachoCore
         public string DisplayName ()
         {
             return "Thread";
+        }
+
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
         }
 
         public void StartSync ()
