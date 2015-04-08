@@ -30,6 +30,8 @@ namespace NachoCore.Utils
             var outbox = McFolder.GetOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
                 outbox.Link (messageToSend);
+            } else {
+                Log.Warn (Log.LOG_EMAIL, "GetOutboxFolder returned null");
             }
 
             bool messageSent = false;
@@ -90,6 +92,7 @@ namespace NachoCore.Utils
             var message = McEmailMessage.QueryById<McEmailMessage> (emailMessageId);
 
             if (null == message) {
+                Log.Warn (Log.LOG_EMAIL, "SendEmailRespCallback could not find msg id {0}", emailMessageId);
                 return;
             }
             if (didSend) {
