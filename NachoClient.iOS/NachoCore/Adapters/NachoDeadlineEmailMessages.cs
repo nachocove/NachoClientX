@@ -59,6 +59,16 @@ namespace NachoCore
             return "Deadlines";
         }
 
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
+        }
+
         public void StartSync ()
         {
         }
@@ -119,6 +129,16 @@ namespace NachoCore
         public string DisplayName ()
         {
             return "Deadlines";
+        }
+
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
         }
 
         public void StartSync ()

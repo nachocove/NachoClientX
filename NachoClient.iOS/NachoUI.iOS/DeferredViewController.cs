@@ -17,13 +17,13 @@ namespace NachoClient.iOS
 
         protected override void SetRowHeight ()
         {
-            TableView.RowHeight = MessageTableViewSource.DATED_ROW_HEIGHT;
-            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewSource.DATED_ROW_HEIGHT;
+            TableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
         }
 
-        //        protected override void CustomizeBackButton ()
-        //        {
-        //            BackShouldSwitchToFolders ();
-        //        }
+//        protected override void CustomizeBackButton ()
+//        {
+//            BackShouldSwitchToFolders ();
+//        }
     }
 }

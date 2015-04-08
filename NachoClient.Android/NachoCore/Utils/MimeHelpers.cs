@@ -418,6 +418,9 @@ namespace NachoCore.Utils
             msg.From = CommaSeparatedList (mimeMessage.From);
             msg.Subject = mimeMessage.Subject;
 
+            // For display in Outbox
+            msg.DateReceived = mimeMessage.Date.DateTime;
+
             // Create body
             var body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
                 mimeMessage.WriteTo (stream);

@@ -12,7 +12,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class MessageTableViewSource : UITableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
+    public class MessageTableViewSource : UITableViewSource, IMessageTableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
     {
         string messageWhenEmpty;
         INachoEmailMessages messageThreads;
@@ -47,6 +47,17 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DEFER_BUTTON =
             new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
                 "Defer", A.Color_NachoSwipeEmailDefer);
+
+
+        public INachoEmailMessages GetNachoEmailMessages ()
+        {
+            return messageThreads;
+        }
+
+        public UITableViewSource GetTableViewSource ()
+        {
+            return this;
+        }
 
         int[] first = new int[3];
         List<McEmailMessage>[] cache = new List<McEmailMessage>[3];
@@ -100,9 +111,9 @@ namespace NachoClient.iOS
             first [cacheIndex] = block;
         }
 
-        public MessageTableViewSource ()
+        public MessageTableViewSource (IMessageTableViewSourceDelegate owner)
         {
-            owner = null;
+            this.owner = owner;
             multiSelectAllowed = true;
             MultiSelect = new HashSet<nint> ();
             ArchiveMessageCaptureName = "MessageTableViewSource.ArchiveMessage";
@@ -120,11 +131,6 @@ namespace NachoClient.iOS
             this.messageWhenEmpty = messageWhenEmpty;
         }
 
-        public string GetDisplayName ()
-        {
-            return messageThreads.DisplayName ();
-        }
-
         public INachoEmailMessages GetAdapterForThread (string threadId)
         {
             return messageThreads.GetAdapterForThread (threadId);
@@ -137,11 +143,6 @@ namespace NachoClient.iOS
             var didRefresh = messageThreads.Refresh (out adds, out deletes);
             RefreshCapture.Stop ();
             return didRefresh;
-        }
-
-        public void StartSync ()
-        {
-            messageThreads.StartSync ();
         }
 
         public bool NoMessageThreads ()
@@ -169,18 +170,15 @@ namespace NachoClient.iOS
             }
         }
 
-        static public readonly nfloat NORMAL_ROW_HEIGHT = 126.0f;
-        static public readonly nfloat DATED_ROW_HEIGHT = 161.0f;
-
         protected nfloat HeightForMessage (McEmailMessage message)
         {
             if (null == message) {
-                return NORMAL_ROW_HEIGHT;
+                return MessageTableViewConstants.NORMAL_ROW_HEIGHT;
             }
             if (message.IsDeferred () || message.HasDueDate ()) {
-                return DATED_ROW_HEIGHT;
+                return MessageTableViewConstants.DATED_ROW_HEIGHT;
             }
-            return NORMAL_ROW_HEIGHT;
+            return MessageTableViewConstants.NORMAL_ROW_HEIGHT;
         }
 
         //        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
@@ -231,6 +229,8 @@ namespace NachoClient.iOS
                 }
                 ConfigureMultiSelectCell (cell);
                 owner.MultiSelectChange (this, MultiSelect.Count);
+            } else if (messageThreads.HasOutboxSemantics () || messageThreads.HasDraftsSemantics ()) {
+                // TODO open draft in compose view
             } else {
                 owner.MessageThreadSelected (messageThread);
                 DumpInfo (messageThread);
@@ -284,7 +284,7 @@ namespace NachoClient.iOS
         /// Call when switching in to or out of multi select
         /// to reset cells and adjust nagivation bar buttons.
         /// </summary>
-        protected void MultiSelectToggle (UITableView tableView)
+        public void MultiSelectToggle (UITableView tableView)
         {
             if (!NoMessageThreads ()) {
                 foreach (var cell in tableView.VisibleCells) {
@@ -373,14 +373,18 @@ namespace NachoClient.iOS
 
                 var cellWidth = tableView.Frame.Width;
 
-                var frame = new CGRect (0, 0, tableView.Frame.Width, NORMAL_ROW_HEIGHT);
+                var frame = new CGRect (0, 0, tableView.Frame.Width, MessageTableViewConstants.NORMAL_ROW_HEIGHT);
                 var view = new SwipeActionView (frame);
                 view.Tag = SWIPE_TAG;
 
-                view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
-                view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
-                view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
-                view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
+                if (messageThreads.HasOutboxSemantics () || messageThreads.HasDraftsSemantics ()) {
+                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                } else {
+                    view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
+                    view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
+                }
 
                 cell.ContentView.AddSubview (view);
 
@@ -685,6 +689,10 @@ namespace NachoClient.iOS
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
         {
+            if (messageThreads.HasOutboxSemantics ()) {
+                EmailHelper.DeleteEmailThreadFromOutbox (messageThread);
+                return;
+            }
             NcAssert.NotNull (messageThread);
             Log.Debug (Log.LOG_UI, "DeleteThisMessage");
             NcEmailArchiver.Delete (messageThread);

@@ -167,6 +167,11 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
         }
 
+        public static McFolder GetEmailDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_EmailDrafts);
+        }
+
         public static McFolder GetCalDraftsFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_CalDrafts);
@@ -186,6 +191,27 @@ namespace NachoCore.Model
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
+
+        public bool IsEmailDraftsFolder ()
+        {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+                if (ClientOwned_EmailDrafts == this.ServerId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool IsOutboxFolder ()
+        {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+                if (ClientOwned_Outbox == this.ServerId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
 
         public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
@@ -252,20 +278,6 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
-        public static McFolder GetOrCreateEmailDraftsFolder (int accountId)
-        {
-            McFolder emailDraftsFolder = McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
-            if (null == emailDraftsFolder) {
-                var deviceDraftsFolder = McFolder.Create (accountId, true, false, true, "0",
-                                             McFolder.ClientOwned_EmailDrafts, DRAFTS_DISPLAY_NAME,
-                                             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                deviceDraftsFolder.Insert ();
-                return deviceDraftsFolder;
-            } else {
-                return emailDraftsFolder;
-            }
-        }
-
         public static McFolder GetOrCreateArchiveFolder (int accountId)
         {
             List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
@@ -315,7 +327,7 @@ namespace NachoCore.Model
                     " f.IsHidden = 0 AND " +
                     " f.ServerId = ? ",
                         accountId, serverId).ToList ();
-            NcAssert.True (2 > f.Count());
+            NcAssert.True (2 > f.Count ());
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
             " f.AccountId = ? AND " +
             " f.IsAwaitingDelete = 0 AND " +

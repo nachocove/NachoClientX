@@ -304,7 +304,7 @@
                         <segue destination="SnS-WJ-KWp" kind="push" identifier="SegueToDeferredList" id="rEt-DF-c51"/>
                         <segue destination="S8F-Mj-kVD" kind="push" identifier="SegueToHotList" id="zOx-eF-clw"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToCompose" id="urW-p2-x1h"/>
-                        <segue destination="ieY-RJ-lb8" kind="push" identifier="SegueToDrafts" id="XhY-Kv-dAZ"/>
+                        <segue destination="Png-41-0bk" kind="push" identifier="SegueToDrafts" id="ob4-Hl-1Og"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -384,6 +384,31 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="rSD-4U-AAw" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1747" y="875"/>
+        </scene>
+        <!--Drafts View Controller-->
+        <scene sceneID="DqQ-E2-ipI">
+            <objects>
+                <tableViewController storyboardIdentifier="DraftsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Png-41-0bk" customClass="DraftsViewController" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="op0-CQ-gXU">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <connections>
+                            <outlet property="dataSource" destination="Png-41-0bk" id="dsH-Fr-his"/>
+                            <outlet property="delegate" destination="Png-41-0bk" id="sn2-Q8-IYI"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="267-CG-8aK"/>
+                    <connections>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="YP0-6b-YTW"/>
+                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="iIU-5R-oQQ"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="DraftsToCompose" id="P73-mq-dtr"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="hef-Th-Qhf"/>
+                    </connections>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="T84-cU-GHS" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1745" y="-886"/>
         </scene>
         <!--Chooser-->
         <scene sceneID="Ora-ag-cc2">
@@ -1064,25 +1089,6 @@
             </objects>
             <point key="canvasLocation" x="-3503" y="3772"/>
         </scene>
-        <!--Drafts View Controller-->
-        <scene sceneID="MWL-AW-YZs">
-            <objects>
-                <viewController storyboardIdentifier="DraftsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ieY-RJ-lb8" customClass="DraftsViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="ga7-eE-5XC">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" id="qQn-dR-lrl"/>
-                    <connections>
-                        <segue destination="15q-DA-GFk" kind="push" identifier="SegueToEditEvent" id="RIa-le-dfu"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="vCR-Ey-phf"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="lTN-Vc-O11" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-3344" y="2754"/>
-        </scene>
         <!--Date Picker View Controller-->
         <scene sceneID="Ud2-sL-Gha">
             <objects>
@@ -1583,33 +1589,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="22b-Az-fdF"/>
+        <segue reference="Ar9-Nl-fq9"/>
+        <segue reference="Aba-pv-mzB"/>
         <segue reference="lbY-YF-b2b"/>
-        <segue reference="sa2-Em-8sH"/>
-        <segue reference="emO-35-rbd"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="g4G-tD-G9H"/>
+        <segue reference="sa2-Em-8sH"/>
         <segue reference="XZZ-AT-ZHc"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="rew-s7-VAQ"/>
-        <segue reference="Aba-pv-mzB"/>
+        <segue reference="wZy-ga-YEb"/>
         <segue reference="WNu-7Y-s9s"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="Ar9-Nl-fq9"/>
-        <segue reference="wZy-ga-YEb"/>
-        <segue reference="Kfq-r2-VA6"/>
-        <segue reference="p7w-hx-Y70"/>
+        <segue reference="Bq3-C6-QI6"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="hef-Th-Qhf"/>
+        <segue reference="iIU-5R-oQQ"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="b83-m2-lyF"/>
+        <segue reference="w5M-2I-OPz"/>
+        <segue reference="jZp-Tj-sBa"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="eTD-uL-AQU"/>
+        <segue reference="DDa-hb-SgY"/>
         <segue reference="ay2-o2-R8l"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="zby-Sy-Y3J"/>
-        <segue reference="c2Q-C8-ZgX"/>
-        <segue reference="i6d-Pz-anv"/>
-        <segue reference="lof-V2-Nc4"/>
-        <segue reference="twQ-jE-jZd"/>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="7sK-rg-HQL"/>
+        <segue reference="Kfq-r2-VA6"/>
         <segue reference="B5b-jg-ZNg"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
