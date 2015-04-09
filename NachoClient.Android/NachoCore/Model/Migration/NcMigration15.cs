@@ -13,12 +13,9 @@ namespace NachoCore.Model
 
         public override void Run (System.Threading.CancellationToken token)
         {
-            foreach (var emailMessage in Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified)) {
-                token.ThrowIfCancellationRequested ();
-                emailMessage.HasBeenNotified = true;
-                emailMessage.Update ();
-                UpdateProgress (1);
-            }
+            NcModel.Instance.Db.Execute (
+                "UPDATE McEmailMessage SET HasBeenNotified = ? WHERE HasBeenNotified = ?", true, false);
+            UpdateProgress (TotalObjects);
         }
     }
 }
