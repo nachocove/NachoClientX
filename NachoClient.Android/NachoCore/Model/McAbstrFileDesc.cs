@@ -382,13 +382,5 @@ namespace NachoCore.Model
         {
             return (IsComplete (file) && !file.Truncated);
         }
-
-        public void Reset ()
-        {
-            DeleteFile ();
-            FilePresence = FilePresenceEnum.None;
-            FilePresenceFraction = 0;
-            Update ();
-        }
     }
 }
