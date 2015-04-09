@@ -16,8 +16,9 @@ namespace NachoClient.iOS
     {
         string messageWhenEmpty;
         INachoEmailMessages messageThreads;
-        protected const string UICellReuseIdentifier = "UICell";
+        protected const string NoMessagesReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
+        protected const string DraftsMessageReuseIdentifier = "DraftsMessage";
         protected HashSet<nint> MultiSelect = null;
         protected bool multiSelectAllowed;
         protected bool multiSelectActive;
@@ -250,6 +251,7 @@ namespace NachoClient.iOS
         [Foundation.Export ("ImageViewTapSelector:")]
         public void ImageViewTapSelector (UIGestureRecognizer sender)
         {
+            
 
         }
 
@@ -350,7 +352,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected UITableViewCell CellWithReuseIdentifier (UITableView tableView, string identifier)
         {
-            if (identifier.Equals (UICellReuseIdentifier)) {
+            if (identifier.Equals (NoMessagesReuseIdentifier)) {
                 var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
                 cell.TextLabel.TextAlignment = UITextAlignment.Center;
                 cell.TextLabel.TextColor = UIColor.FromRGB (0x0f, 0x42, 0x4c);
@@ -360,7 +362,7 @@ namespace NachoClient.iOS
                 return cell;
             }
 
-            if (identifier.Equals (EmailMessageReuseIdentifier)) {
+            if (identifier.Equals (EmailMessageReuseIdentifier) || identifier.Equals (DraftsMessageReuseIdentifier)) {
                 var cell = tableView.DequeueReusableCell (identifier);
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
@@ -437,7 +439,12 @@ namespace NachoClient.iOS
                 multiSelectImageView.Hidden = true;
                 view.AddSubview (multiSelectImageView);
 
-                var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, cellWidth - 65, 75));
+                MessageHeaderView messageHeaderView;
+                if (identifier.Equals (EmailMessageReuseIdentifier)) {
+                    messageHeaderView = new MessageHeaderView (new CGRect (65, 0, cellWidth - 65, 75));
+                } else {
+                    messageHeaderView = new MessageHeaderView (new CGRect (15, 0, cellWidth - 15, 75));
+                }
                 messageHeaderView.CreateView ();
                 messageHeaderView.Tag = MESSAGE_HEADER_TAG;
                 messageHeaderView.SetAllBackgroundColors (UIColor.White);
@@ -482,7 +489,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            if (cell.ReuseIdentifier.ToString ().Equals (UICellReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString ().Equals (NoMessagesReuseIdentifier)) {
                 cell.TextLabel.Text = messageWhenEmpty;
                 return;
             }
@@ -491,6 +498,12 @@ namespace NachoClient.iOS
                 ConfigureMessageCell (tableView, cell, indexPath.Row);
                 return;
             }
+
+            if (cell.ReuseIdentifier.ToString ().Equals (DraftsMessageReuseIdentifier)) {
+                ConfigureDraftMessageCell (tableView, cell, indexPath.Row);
+                return;
+            }
+
             NcAssert.CaseError ();
         }
 
@@ -572,8 +585,8 @@ namespace NachoClient.iOS
             };
 
             // User image view
-            var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var userLabelView = cell.ContentView.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            var userImageView = (UIImageView)cell.ContentView.ViewWithTag (USER_IMAGE_TAG);
+            var userLabelView = (UILabel)cell.ContentView.ViewWithTag (USER_LABEL_TAG);
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 
@@ -595,19 +608,19 @@ namespace NachoClient.iOS
             var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = message.IsRead;
 
-            var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
-            messageHeaderView.ConfigureView (messageThread, message);
+            var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
+            messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-                messageHeaderView.ConfigureView (messageThread, message);
+                messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
 
             // Preview label view
-            var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
+            var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
@@ -618,8 +631,8 @@ namespace NachoClient.iOS
             previewLabelView.SizeToFit ();
 
             // Reminder image view and label
-            var reminderImageView = cell.ContentView.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
-            var reminderLabelView = cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
+            var reminderImageView = (UIImageView)cell.ContentView.ViewWithTag (REMINDER_ICON_TAG);
+            var reminderLabelView = (UILabel)cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG);
             if (message.HasDueDate () || message.IsDeferred ()) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
@@ -630,9 +643,99 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void ConfigureDraftMessageCell (UITableView tableView, UITableViewCell cell, int messageThreadIndex)
+        {
+            // Save thread index
+            cell.ContentView.Tag = messageThreadIndex;
+
+            McEmailMessage message;
+            var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
+
+            if (null == messageThread) {
+                ConfigureAsUnavailable (cell);
+                return;
+            }
+
+            message = GetCachedMessage (messageThreadIndex);
+
+            if (null == message) {
+                ConfigureAsUnavailable (cell);
+                return;
+            }
+
+            cell.TextLabel.Text = "";
+            cell.ContentView.Hidden = false;
+
+            var cellWidth = tableView.Frame.Width;
+
+            var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            view.Frame = new CGRect (0, 0, cellWidth, HeightForMessage (message));
+            view.Hidden = false;
+
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case DELETE_TAG:
+                    DeleteThisMessage (messageThread);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                }
+            };
+            view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    ToggleSwiping (tableView, activeView, true);
+                    cell.Layer.CornerRadius = 0;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    ToggleSwiping (tableView, activeView, false);
+                    cell.Layer.CornerRadius = 15;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    ToggleSwiping (tableView, activeView, true);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                }
+            };
+
+            // User image view
+            var userImageView = (UIImageView)cell.ContentView.ViewWithTag (USER_IMAGE_TAG);
+            var userLabelView = (UILabel)cell.ContentView.ViewWithTag (USER_LABEL_TAG);
+            userImageView.Hidden = true;
+            userLabelView.Hidden = true;
+           
+            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            unreadMessageView.Hidden = true;
+
+            var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
+            messageHeaderView.ConfigureDraftView (messageThread, message);
+
+            // User checkmark view
+            ConfigureMultiSelectCell (cell);
+
+            // Preview label view
+            var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
+            previewLabelView.Hidden = false;
+            var rawPreview = message.GetBodyPreviewOrEmpty ();
+            var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+            using (var text = new NSAttributedString (cookedPreview)) {
+                previewLabelView.AttributedText = text;
+            }
+            previewLabelView.Frame = new CGRect (65, 80, cellWidth - 15 - 65, 60);
+            previewLabelView.SizeToFit ();
+        }
+
+
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            string cellIdentifier = (NoMessageThreads () ? UICellReuseIdentifier : EmailMessageReuseIdentifier);
+            string cellIdentifier = EmailMessageReuseIdentifier;
+
+            if (NoMessageThreads ()) {
+                cellIdentifier = NoMessagesReuseIdentifier;
+            } else if (messageThreads.HasDraftsSemantics () || messageThreads.HasOutboxSemantics ()) {
+                cellIdentifier = DraftsMessageReuseIdentifier;
+            }
 
             var cell = tableView.DequeueReusableCell (cellIdentifier);
             if (null == cell) {
