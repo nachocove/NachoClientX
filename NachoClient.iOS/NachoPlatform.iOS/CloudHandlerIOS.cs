@@ -54,7 +54,6 @@ namespace NachoPlatform
                 Store = NSUbiquitousKeyValueStore.DefaultStore;
                 Log.Info (Log.LOG_SYS, "CloudHandler: Connected to iCloud. Url is {0}", iCloudUrl);
             }
-            SetAppInstallDate (DateTime.UtcNow);
             Log.Info (Log.LOG_SYS, "App install date is {0}", GetAppInstallDate ());
         }
 
@@ -163,8 +162,14 @@ namespace NachoPlatform
 
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting install date for App");
             if (HasiCloud) {
-                if (Store.GetString (KInstallDate) != null) {
-                    installDate = Store.GetString (KInstallDate);
+                installDate = Store.GetString (KInstallDate);
+                if (installDate != null) {
+                    string localInstallDate = NSUserDefaults.StandardUserDefaults.StringForKey (KInstallDate);
+                    if (localInstallDate != installDate) {
+                        // replace local cached install date with Cloud install date
+                        NSUserDefaults.StandardUserDefaults.SetString (installDate, KInstallDate);
+                        NSUserDefaults.StandardUserDefaults.Synchronize ();
+                    }
                     return installDate.ToDateTime ();
                 }
             }
@@ -236,26 +241,4 @@ namespace NachoPlatform
         }
 
     }
-
-    public class CIObject
-    {
-        public string UserId { get; set; }
-
-        public NSData AppStoreReceipt { get; set; }
-
-        public DateTime FirstInstallDate { get; set; }
-
-        public DateTime PayByDate { get; set; }
-
-        public DateTime AskByDate { get; set; }
-
-        public DateTime PurchaseDate { get; set; }
-
-        public bool IsReceiptValidated { get; set; }
-
-        public CIObject ()
-        {
-        }
-    }
-
 }

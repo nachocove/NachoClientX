@@ -321,6 +321,7 @@ namespace NachoCore.Model
                 Db.CreateTable<McPortrait> ();
                 Db.CreateTable<McMapEmailAddressEntry> ();
                 Db.CreateTable<McMigration> ();
+                Db.CreateTable<McLicenseInformation> ();
             });
             watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));

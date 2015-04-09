@@ -25,33 +25,24 @@ namespace NachoPlatform
         {
         }
 
+        // from IPlatformStoreHandler
+        // call this when starting up 
         public void Start ()
         {
         }
 
         // from IPlatformStoreHandler
-        // initialize product data from store
-        public void LoadProductDataFromStore ()
-        {
-        }
-
-        // from IPlatformStoreHandler
         // buy a new license
-        public bool BuyLicenseFromStore ()
+        public bool BuyLicense ()
         {
             return false;
         }
 
         // from IPlatformStoreHandler
         // restore previously bought license
-        public bool RestoreLicenseFromStore ()
+        public bool RestoreLicense ()
         {
             return false;
-        }
-
-        // from IPlatformStoreHandler
-        public void SetPurchasingStatus (bool status)
-        {
         }
 
         // from IPlatformStoreHandler
@@ -59,11 +50,6 @@ namespace NachoPlatform
         public bool GetPurchasedStatus ()
         {
             return false;
-        }
-
-        // from IPlatformStoreHandler
-        public void RegisterPurchase (string productId, DateTime purchaseDate)
-        {
         }
             
         // from IPlatformStoreHandler

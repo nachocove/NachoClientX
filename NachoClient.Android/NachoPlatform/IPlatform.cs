@@ -234,17 +234,11 @@ namespace NachoPlatform
     {
         void Start ();
 
-        void LoadProductDataFromStore ();
+        bool BuyLicense ();
 
-        bool BuyLicenseFromStore ();
-
-        bool RestoreLicenseFromStore ();
+        bool RestoreLicense ();
 
         bool GetPurchasedStatus ();
-
-        void RegisterPurchase (string productId, DateTime purchaseDate);
-
-        void SetPurchasingStatus (bool status);
 
         void Stop ();
     }

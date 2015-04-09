@@ -3,66 +3,28 @@ using System.Linq;
 using StoreKit;
 using Foundation;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoPlatform
 {
-    public class InAppPurchaseManager : SKProductsRequestDelegate
-    {
-        private NSMutableDictionary validProducts;
 
-        protected SKProductsRequest ProductsRequest { get; set; }
+    public class InAppPurchaseManager : NSObject
+    {
+        private NSMutableDictionary ValidProducts;
 
         public static readonly NSString InAppPurchaseManagerProductsFetchedNotification = new NSString ("InAppPurchaseManagerProductsFetchedNotification");
         public static readonly NSString InAppPurchaseManagerTransactionFailedNotification = new NSString ("InAppPurchaseManagerTransactionFailedNotification");
         public static readonly NSString InAppPurchaseManagerTransactionSucceededNotification = new NSString ("InAppPurchaseManagerTransactionSucceededNotification");
         public static readonly NSString InAppPurchaseManagerRequestFailedNotification = new NSString ("InAppPurchaseManagerRequestFailedNotification");
 
-
         public InAppPurchaseManager ()
         {
         }
-           
-        // request multiple products at once
-        public void RequestProductData (List<string> productIds)
-        {
-            NSString[] array = productIds.Select (pId => (NSString)pId).ToArray ();
-            NSSet productIdentifiers = NSSet.MakeNSObjectSet<NSString> (array);
-
-            //set up product request for in-app purchase
-            ProductsRequest = new SKProductsRequest (productIdentifiers);
-            ProductsRequest.Delegate = this; // SKProductsRequestDelegate.ReceivedResponse
-            ProductsRequest.Start ();
-        }
-
-        // received response to RequestProductData - with price,title,description info
-        public override void ReceivedResponse (SKProductsRequest request, SKProductsResponse response)
-        {
-            SKProduct[] products = response.Products;
-            if (validProducts == null) {
-                validProducts = new NSMutableDictionary ();
-            } else {
-                validProducts.Clear ();
-            }
-            for (int i = 0; i < products.Length; i++)
-                validProducts.Add ((NSString)products [i].ProductIdentifier, products [i]);
-            NSNotificationCenter.DefaultCenter.PostNotificationName (InAppPurchaseManagerProductsFetchedNotification, this, validProducts);
-
-            foreach (string invalidProductId in response.InvalidProducts)
-                Log.Info (Log.LOG_SYS, "InAppPurchase: Invalid product id: {0}", invalidProductId);
-        }
-
+            
         // Verify that the iTunes account can make this purchase for this application
         public bool CanMakePayments ()
         {
             return SKPaymentQueue.CanMakePayments;
-        }
-
-        public void PurchaseProduct (string appStoreProductId)
-        {
-            SKProduct product = (SKProduct)validProducts [appStoreProductId];
-            SKMutablePayment payment = SKMutablePayment.PaymentWithProduct (product);
-            payment.ApplicationUsername = CloudHandler.Instance.GetUserId ();
-            SKPaymentQueue.DefaultQueue.AddPayment (payment);
         }
 
         public void FailedTransaction (SKPaymentTransaction transaction)
@@ -94,16 +56,6 @@ namespace NachoPlatform
             NSDictionary userInfo = new NSDictionary ("transaction", transaction);
             var notificationKey = wasSuccessful ? InAppPurchaseManagerTransactionSucceededNotification : InAppPurchaseManagerTransactionFailedNotification;
             NSNotificationCenter.DefaultCenter.PostNotificationName (notificationKey, this, userInfo);
-        }
-
-        /// Request failed : Probably could not connect to the App Store (network unavailable?)
-        public override void RequestFailed (SKRequest request, NSError error)
-        {
-            Log.Error (Log.LOG_SYS, "InAppPurchase: Purchase Request failed {0}", error.LocalizedDescription);
-
-            // send out a notification for the failed transaction
-            NSDictionary userInfo = new NSDictionary ("error", error);
-            NSNotificationCenter.DefaultCenter.PostNotificationName (InAppPurchaseManagerRequestFailedNotification, this, userInfo);
         }
 
         /// <summary>
