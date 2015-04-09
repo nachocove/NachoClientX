@@ -115,7 +115,8 @@ namespace NachoCore.Brain
             if (null != body) {
                 var messagePath = body.GetFilePath ();
                 if (!File.Exists (messagePath)) {
-                    Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: {0} does not exist", messagePath);
+                    Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: {0} does not exist (emailMessageId={1}, bodyId={2}, isValid={3}, filePresence={4})",
+                        messagePath, emailMessage.Id, body.Id, body.IsValid, body.FilePresence);
                     return false;
                 }
 
