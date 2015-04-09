@@ -9,23 +9,16 @@ using NachoCore.Model;
 
 namespace NachoPlatform
 {
-    public class StoreHandler : SKProductsRequestDelegate, IPlatformStoreHandler
+    public class StoreHandler : SKProductsRequestDelegate, IPlatformStoreHandler, IPaymentObserverOwner
     {
         private static volatile StoreHandler instance;
         private static object syncRoot = new Object ();
 
         public NcStateMachine Sm { set; get; }
 
+        private PaymentObserver PaymentObserver;
         private McLicenseInformation LicenseInformation;
         private NSMutableDictionary ValidProducts;
-
-
-        private InAppPurchaseManager InAppPurchaseManager;
-        private PaymentObserver PaymentObserver;
-        private NSObject PriceObserver, PurchaseSucceedObserver, PurchaseFailedObserver, RequestObserver;
-        private bool ProductDataLoaded = false;
-        private bool NachoClientLicensePurchased = false;
-        private bool Purchasing = false;
 
         public enum InAppPurchaseState : uint
         {
@@ -49,7 +42,6 @@ namespace NachoPlatform
                 PurchaseExpiredEvt,
                 PurchaseFailedEvt,
                 PurchaseRestoredEvt,
-                PurchaseDeferredEvt,
                 StopEvt,
                 Last = StopEvt,
             };
@@ -83,7 +75,6 @@ namespace NachoPlatform
              *     PurchasedEvt
              *     PurchaseFailedEvt
              *     PurchaseRestoredEvt
-             *     PurchaseDeferredEvt
              * 
              * States:
              *     NotPurchased
@@ -111,7 +102,6 @@ namespace NachoPlatform
                             (uint)InAppPurchaseEvent.E.PurchaseExpiredEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
-                            (uint)InAppPurchaseEvent.E.PurchaseDeferredEvt,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -145,7 +135,6 @@ namespace NachoPlatform
                             (uint)InAppPurchaseEvent.E.PurchaseExpiredEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
-                            (uint)InAppPurchaseEvent.E.PurchaseDeferredEvt,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -189,7 +178,6 @@ namespace NachoPlatform
                             (uint)InAppPurchaseEvent.E.PurchaseExpiredEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
-                            (uint)InAppPurchaseEvent.E.PurchaseDeferredEvt,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -224,6 +212,7 @@ namespace NachoPlatform
                         Drop = new [] {
                             (uint)InAppPurchaseEvent.E.PrdDataReqFailedEvt,
                             (uint)InAppPurchaseEvent.E.PrdDataRecvdEvt,
+                            (uint)InAppPurchaseEvent.E.DoPurchaseEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseExpiredEvt,
                         },
                         Invalid = new [] {
@@ -238,11 +227,6 @@ namespace NachoPlatform
                                 State = (uint)InAppPurchaseState.PurchaseWait
                             },
                             new Trans {
-                                Event = (uint)InAppPurchaseEvent.E.DoPurchaseEvt,
-                                Act = DoRestorePurchase,
-                                State = (uint)InAppPurchaseState.PurchaseWait
-                            },
-                            new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.PrdDataReqSendEvt,
                                 Act = DoSendPurchaseRequest,
                                 State = (uint)InAppPurchaseState.PrdDataWait
@@ -254,18 +238,13 @@ namespace NachoPlatform
                             },
                             new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
-                                Act = DoRecordPurchaseFail,
+                                Act = DoRecordPurchaseFailed,
                                 State = (uint)InAppPurchaseState.NotPurchased
                             },
                             new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
                                 Act = DoRecordPurchaseRestore,
                                 State = (uint)InAppPurchaseState.Purchased
-                            },
-                            new Trans {
-                                Event = (uint)InAppPurchaseEvent.E.PurchaseDeferredEvt,
-                                Act = DoNop,
-                                State = (uint)InAppPurchaseState.PurchaseWait
                             },
                             new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.StopEvt,
@@ -284,8 +263,6 @@ namespace NachoPlatform
                             (uint)InAppPurchaseEvent.E.PurchasedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
-                            (uint)InAppPurchaseEvent.E.PurchaseDeferredEvt,
-
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -318,7 +295,6 @@ namespace NachoPlatform
                             (uint)InAppPurchaseEvent.E.PurchasedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
-                            (uint)InAppPurchaseEvent.E.PurchaseDeferredEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseExpiredEvt,
                         },
                         Invalid = new [] {
@@ -355,6 +331,7 @@ namespace NachoPlatform
             LicenseInformation = McLicenseInformation.Get ();
             NcAssert.NotNull (LicenseInformation, "Null LicenseInformation object.");
             Sm.State = LicenseInformation.InAppPurchaseState;
+            PaymentObserver = new PaymentObserver (this);
         }
 
         public static StoreHandler Instance {
@@ -388,7 +365,7 @@ namespace NachoPlatform
         private void DoSendProductDataRequest ()
         {
             // only if we can make payments, request the prices
-            if (InAppPurchaseManager.CanMakePayments ()) {
+            if (SKPaymentQueue.CanMakePayments) {
                 // now go get prices,
                 Log.Info (Log.LOG_SYS, "InAppPurchase: Requesting product data from store");
 
@@ -431,10 +408,10 @@ namespace NachoPlatform
             }
         }
 
-        /// Request failed : Probably could not connect to the App Store (network unavailable?) - called for both RequestProductData and Purchase
+        /// Request failed : Probably could not connect to the App Store (network unavailable?) - called for both RequestProductData
         public override void RequestFailed (SKRequest request, NSError error)
         {
-            Log.Error (Log.LOG_SYS, "InAppPurchase: Purchase Request failed {0}", error.LocalizedDescription);
+            Log.Error (Log.LOG_SYS, "InAppPurchase: Product Data Request failed {0}", error.LocalizedDescription);
             PostEvent (InAppPurchaseEvent.E.PrdDataReqFailedEvt, "REQUEST_FAILED");
         }
 
@@ -466,31 +443,38 @@ namespace NachoPlatform
 
         private void DoRestorePurchase ()
         {
+            NcAssert.True (false, "Restore Purchase not supported yet");
         }
 
         private void DoRecordPurchaseSuccess ()
         {
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Recording NachoClient license purchase at {1}", PaymentObserver.PurchaseDate.ToAsUtcString ());
+            //TODO: confirm UTC date
+            CloudHandler.Instance.SetPurchasedStatus (McLicenseInformation.NachoClientLicenseProductId, PaymentObserver.PurchaseDate);
+            // TODO: update LicenseInformation
         }
 
-        private void DoRecordPurchaseFail ()
+        private void DoRecordPurchaseFailed ()
         {
+            // TODO: update LicenseInformation
         }
 
         private void DoRecordPurchaseRestore ()
         {
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Recording NachoClient license restore at {1}", PaymentObserver.PurchaseDate.ToAsUtcString ());
+            CloudHandler.Instance.SetPurchasedStatus (McLicenseInformation.NachoClientLicenseProductId, PaymentObserver.PurchaseDate); 
+            // TODO: update LicenseInformation
         }
 
         private void DoExpirePurchase ()
-        {
+        {           
+            // TODO: handle expiry
         }
 
         // from IPlatformStoreHandler
         // call this when starting up
         public void Start ()
         {
-            InAppPurchaseManager = new InAppPurchaseManager ();
-            PaymentObserver = new PaymentObserver (InAppPurchaseManager);
-            SetupObservers ();
             PostEvent (SmEvt.E.Launch, "INAPPSTART");
         }
 
@@ -498,7 +482,7 @@ namespace NachoPlatform
         // buy a new license
         public bool BuyLicense ()
         {
-            if (LicenseInformation.AlreadyPurchased) {
+            if (CloudHandler.Instance.GetPurchasedStatus (McLicenseInformation.NachoClientLicenseProductId)) {
                 Log.Info (Log.LOG_SYS, "InAppPurchase: NachoClient license already purchased. No need to buy again.");
                 return true;
             } else if (LicenseInformation.InAppPurchaseState == (uint)InAppPurchaseState.PurchaseWait) {
@@ -515,90 +499,27 @@ namespace NachoPlatform
         // restore previously bought license
         public bool RestoreLicense ()
         {
-            if (NachoClientLicensePurchased) {
+            if (CloudHandler.Instance.GetPurchasedStatus (McLicenseInformation.NachoClientLicenseProductId)) {
                 Log.Info (Log.LOG_SYS, "InAppPurchase: NachoClient license already purchased. No need to restore.");
                 return true;
-            }
-            if (!ProductDataLoaded) {
-                Log.Info (Log.LOG_SYS, "InAppPurchase: Product Information not yet received from store. Trying to load again.");
-                PostEvent (InAppPurchaseEvent.E.PrdDataReqSendEvt, "CANT_RESTORE_YET");
-                return false;
-            } else if (Purchasing) {
+            } else if (LicenseInformation.InAppPurchaseState == (uint)InAppPurchaseState.PurchaseWait) {
                 Log.Info (Log.LOG_SYS, "InAppPurchase: NachoClient license is already in the process of being purchased.");
-                return true;
+                return true;            
             } else {
                 Log.Info (Log.LOG_SYS, "Restoring NachoClient license from store...");
-                // No point trying to restore non renewable subscription from Apple Store. We need to handle this ourselves.
+                // TODO : No point trying to restore non renewable subscription from Apple Store. We need to handle this ourselves.
+                //SKPaymentQueue.DefaultQueue.RestoreCompletedTransactions (CloudHandler.Instance.GetUserId ());
                 // TODO: the following is for testing only. This will result in duplicate purchase.
-                DoSendPurchaseRequest();
-                return true;
+                NcAssert.True (false, "Restore Purchase not supported yet");
+                return false;
             }
         }
-
-        // from IPlatformStoreHandler
-        public void SetPurchasingStatus (bool status)
-        {
-            Purchasing = status;
-        }
-
-        public void SetupObservers ()
-        {
-            // Call this once upon startup of in-app-purchase activities
-            // This also kicks off the TransactionObserver which handles the various communications
-            SKPaymentQueue.DefaultQueue.AddTransactionObserver (PaymentObserver);
-
-
-            // setup an observer to wait for prices to come back from StoreKit <- AppStore
-            PriceObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerProductsFetchedNotification,
-                (notification) => {
-                  
-                });
-
-            // setup an observer to wait for purchase successful notification
-            PurchaseSucceedObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerTransactionSucceededNotification,
-                (notification) => {
-                    // update the status after a successful purchase
-                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase transaction successful");         
-                    if (GetPurchasedStatus () == true) {
-                        Log.Info (Log.LOG_SYS, "InAppPurchase: Purchased {0}", McLicenseInformation.NachoClientLicenseProductId);         
-                        NachoClientLicensePurchased = true;
-                        Purchasing = false;
-                    }
-                });
-
-            //set up an observer to wait for transaction failed notifications
-            PurchaseFailedObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerTransactionFailedNotification,
-                (notification) => {
-                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase transaction failed"); 
-                    Purchasing = false;
-                });
-
-            //set up an observer to wait for request failed notifications
-            RequestObserver = NSNotificationCenter.DefaultCenter.AddObserver (InAppPurchaseManager.InAppPurchaseManagerRequestFailedNotification,
-                (notification) => {
-                    Log.Info (Log.LOG_SYS, "InAppPurchase: Request failed");
-                    Purchasing = false;
-                });
-        }
-
+            
         // from IPlatformStoreHandler
         // get the purchase status
         public bool GetPurchasedStatus ()
         {
             return CloudHandler.Instance.GetPurchasedStatus (McLicenseInformation.NachoClientLicenseProductId);
-        }
-
-
-        // from IPlatformStoreHandler
-        public void RegisterPurchase (string productId, DateTime purchaseDate)
-        {
-            // Register the purchase, so it is remembered for next time 
-            if (productId == McLicenseInformation.NachoClientLicenseProductId) {
-                Log.Info (Log.LOG_SYS, "InAppPurchase: Registering NachoClient license purchase status.");
-                CloudHandler.Instance.SetPurchasedStatus (McLicenseInformation.NachoClientLicenseProductId, purchaseDate);
-            } else {
-                Log.Warn (Log.LOG_SYS, "InAppPurchase: Cannot register product purchased status for product {0}", productId);
-            }
         }
 
         private void PrintProductDetails (SKProduct product)
@@ -615,11 +536,128 @@ namespace NachoPlatform
         // call this when shutting down
         public void Stop ()
         {
-            NSNotificationCenter.DefaultCenter.RemoveObserver (PriceObserver);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (PurchaseSucceedObserver);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (PurchaseFailedObserver);
-            NSNotificationCenter.DefaultCenter.RemoveObserver (RequestObserver);
             PostEvent (InAppPurchaseEvent.E.StopEvt, "INAPPSTOP");
+        }
+    }
+
+    public interface IPaymentObserverOwner
+    {
+        void PostEvent (StoreHandler.InAppPurchaseEvent.E evt, string mnemonic);
+    }
+
+    public class PaymentObserver : SKPaymentTransactionObserver
+    {
+        private IPaymentObserverOwner Owner;
+        public DateTime PurchaseDate;
+
+        public PaymentObserver (IPaymentObserverOwner owner)
+        {
+            Owner = owner;
+            SKPaymentQueue.DefaultQueue.AddTransactionObserver (this);
+        }
+
+
+        // from SKPaymentTransactionObserver
+        // called when the transaction status is updated
+        public override void UpdatedTransactions (SKPaymentQueue queue, SKPaymentTransaction[] transactions)
+        {
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Updated Transactions. Handle state change.");
+            foreach (SKPaymentTransaction transaction in transactions) {
+                switch (transaction.TransactionState) {
+                case SKPaymentTransactionState.Purchasing:
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchasing...");
+                    // do nothing
+                    break;
+                case SKPaymentTransactionState.Purchased:
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchased.");
+                    CompletePurchaseTransaction (transaction);
+                    break;
+                case SKPaymentTransactionState.Failed:
+                    Log.Error (Log.LOG_SYS, "InAppPurchase: Purchase Failed.");
+                    FailedTransaction (transaction);
+                    break;
+                case SKPaymentTransactionState.Restored:
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase Restored.");
+                    RestoreTransaction (transaction);
+                    break;
+                case SKPaymentTransactionState.Deferred:
+                    Log.Info (Log.LOG_SYS, "InAppPurchase: Purchase Deferred. Waiting for final status.");
+                    // do nothing
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
+        // from SKPaymentTransactionObserver
+        // Restore succeeded - you can update the UI : Optional
+        public override void PaymentQueueRestoreCompletedTransactionsFinished (SKPaymentQueue queue)
+        {
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Restore Completed - PaymentQueueRestoreCompletedTransactionsFinished ");
+        }
+
+        // from SKPaymentTransactionObserver
+        // Restore failed somewhere - you can update the UI : Optional
+        public override void RestoreCompletedTransactionsFailedWithError (SKPaymentQueue queue, NSError error)
+        {
+            Log.Error (Log.LOG_SYS, "InAppPurchase: Restore Failed -  RestoreCompletedTransactionsFailedWithError " + error.LocalizedDescription);
+        }
+
+        // from SKPaymentTransactionObserver
+        // Removed Transactions - you can update the UI : Optional
+        public override void RemovedTransactions (SKPaymentQueue queue, SKPaymentTransaction[] transactions)
+        {
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Removed transactions from queue");
+        }
+
+        public void CompletePurchaseTransaction (SKPaymentTransaction transaction)
+        {
+            string productId = transaction.Payment.ProductIdentifier;
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Completing Purchase Transaction {0} for {1} ", transaction.TransactionIdentifier, productId);
+            SKPaymentQueue.DefaultQueue.FinishTransaction (transaction); 
+            NcAssert.True ((productId == McLicenseInformation.NachoClientLicenseProductId), "Product bought " + productId + " does not match requested product " + McLicenseInformation.NachoClientLicenseProductId);
+            PurchaseDate = transaction.TransactionDate.ToDateTime ();
+            Owner.PostEvent (StoreHandler.InAppPurchaseEvent.E.PurchasedEvt, "PURCHASE_SUCCESSFUL");
+        }
+
+        public void FailedTransaction (SKPaymentTransaction transaction)
+        {
+            //SKErrorPaymentCancelled == 2
+            if (transaction.Error != null) {
+                string errorDescription = transaction.Error.Code == 2 ? "User Cancelled" : "FailedTransaction";
+                Log.Error (Log.LOG_SYS, "InAppPurchase: Failed Purchase {0} Code={1} {2}", errorDescription, transaction.Error.Code, transaction.Error.LocalizedDescription);
+            }
+            SKPaymentQueue.DefaultQueue.FinishTransaction (transaction); 
+            Owner.PostEvent (StoreHandler.InAppPurchaseEvent.E.PurchaseFailedEvt, "PURCHASE_FAILED");
+        }
+
+        public virtual void RestoreTransaction (SKPaymentTransaction transaction)
+        {
+            // TODO: This is not possible for non -renewable subscriptions. Should take it out and Assert
+            // Restored Transactions always have an 'original transaction' attached
+            SKPaymentTransaction orgTransaction = transaction.OriginalTransaction;
+            SKPaymentQueue.DefaultQueue.FinishTransaction (transaction); 
+            Log.Info (Log.LOG_SYS, "InAppPurchase: Restoring Purchase Transaction {0}; OriginalTransaction {1} {2}", transaction.TransactionIdentifier, orgTransaction.TransactionIdentifier, orgTransaction.TransactionDate);
+            string productId = transaction.OriginalTransaction.Payment.ProductIdentifier;
+            NcAssert.True ((productId == McLicenseInformation.NachoClientLicenseProductId), "Product restored " + productId + " does not match requested product " + McLicenseInformation.NachoClientLicenseProductId);
+            PurchaseDate = orgTransaction.TransactionDate.ToDateTime ();        
+            Owner.PostEvent (StoreHandler.InAppPurchaseEvent.E.PurchaseRestoredEvt, "PURCHASE_RESTORED");
+        }
+    }
+
+    public static class SKProductExtension
+    {
+        public static string LocalizedPrice (this SKProduct product)
+        {
+            var formatter = new NSNumberFormatter {
+                FormatterBehavior = NSNumberFormatterBehavior.Version_10_4,
+                NumberStyle = NSNumberFormatterStyle.Currency,
+                Locale = product.PriceLocale,
+            };
+
+            string formattedString = formatter.StringFromNumber (product.Price);
+            return formattedString;
         }
     }
 }
