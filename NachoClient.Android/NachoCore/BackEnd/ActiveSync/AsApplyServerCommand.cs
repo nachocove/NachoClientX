@@ -72,7 +72,7 @@ namespace NachoCore.ActiveSync
                         pending = pending.UpdateWithOCApply<McPending> ((record) => {
                             var target = (McPending)record;
                             // newReWrites already captured above.
-                            ApplyCommandToPending (pending, out action, out cancelDelta);
+                            ApplyCommandToPending (target, out action, out cancelDelta);
                             return true;
                         });
                         break;
