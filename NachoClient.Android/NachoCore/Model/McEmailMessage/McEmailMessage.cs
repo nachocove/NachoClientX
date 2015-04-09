@@ -576,7 +576,7 @@ namespace NachoCore.Model
             );
         }
 
-        public static List<McEmailMessage> QueryForSet(List<int> indexList)
+        public static List<McEmailMessage> QueryForSet (List<int> indexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
             var cmd = String.Format ("SELECT e.* FROM McEmailMessage as e WHERE e.ID IN {0}", set);
@@ -607,6 +607,15 @@ namespace NachoCore.Model
                 " e.DateReceived = ? AND " +
                 " e.[From] = ? ",
                 accountId, dateRecv, from);
+        }
+
+        public static List<McEmailMessage> QueryUnnotified (int accountId = 0)
+        {
+            var emailMessageList = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified);
+            if (0 != accountId) {
+                emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
+            }
+            return emailMessageList.ToList ();
         }
 
         public override ClassCodeEnum GetClassCode ()
@@ -987,6 +996,7 @@ namespace NachoCore.Model
                     Score = emailAddress.Score;
                 }
             }
+            HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Insert ();
@@ -1001,6 +1011,9 @@ namespace NachoCore.Model
         public override int Update ()
         {
             int returnVal = -1;  
+            if (!HasBeenNotified) {
+                HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
+            }
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Update ();

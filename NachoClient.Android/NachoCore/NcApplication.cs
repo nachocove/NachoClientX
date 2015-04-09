@@ -844,6 +844,27 @@ namespace NachoCore
                 }
             }
         }
+
+        public void CheckNotified ()
+        {
+            var latestMigration = McMigration.QueryLatestMigration ();
+            var version = (new NcMigration15 ()).Version ();
+            if ((null == latestMigration) ||
+                (latestMigration.Version < version) ||
+                ((version == latestMigration.Version) && (!latestMigration.Finished))) {
+                // We have not run NcMigration15. Wait till it is finished.
+                return;
+            }
+            foreach (var message in McEmailMessage.QueryUnnotified ()) {
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    return;
+                }
+                Log.Warn (Log.LOG_PUSH, "Unnotified email message (id={0}, dateReceived={1}, createdAt={2})",
+                    message.Id, message.DateReceived, message.CreatedAt);
+                message.HasBeenNotified = true;
+                message.Update ();
+            }
+        }
     }
 }
 
