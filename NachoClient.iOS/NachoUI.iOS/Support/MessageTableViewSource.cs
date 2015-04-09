@@ -251,6 +251,7 @@ namespace NachoClient.iOS
         [Foundation.Export ("ImageViewTapSelector:")]
         public void ImageViewTapSelector (UIGestureRecognizer sender)
         {
+            
 
         }
 
@@ -630,8 +631,8 @@ namespace NachoClient.iOS
             previewLabelView.SizeToFit ();
 
             // Reminder image view and label
-            var reminderImageView = cell.ContentView.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
-            var reminderLabelView = cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
+            var reminderImageView = (UIImageView)cell.ContentView.ViewWithTag (REMINDER_ICON_TAG);
+            var reminderLabelView = (UILabel)cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG);
             if (message.HasDueDate () || message.IsDeferred ()) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
