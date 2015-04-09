@@ -210,6 +210,9 @@ namespace NachoCore
                     }
                     continue; // this key is the time when pinger pushes not an actual context
                 }
+                if ("session" == context.Key) {
+                    continue; // this is a debug key.
+                }
                 // Look up the account
                 var pa = GetPAObjectByContext (context.Key);
                 if (null == pa) {
