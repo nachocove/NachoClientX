@@ -415,6 +415,7 @@ namespace NachoCore.Utils
             msg.AccountId = AccountId;
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);
+            msg.Bcc = CommaSeparatedList (mimeMessage.Bcc);
             msg.From = CommaSeparatedList (mimeMessage.From);
             msg.Subject = mimeMessage.Subject;
 

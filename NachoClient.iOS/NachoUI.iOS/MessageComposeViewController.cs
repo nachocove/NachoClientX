@@ -36,6 +36,7 @@ namespace NachoClient.iOS
         // The message being forwarded or replied to, if any
         protected EmailHelper.Action action;
         // The reason for sending this message
+        protected McEmailMessage draftMessage;
 
         protected bool calendarInviteIsSet;
         bool suppressLayout;
@@ -99,6 +100,74 @@ namespace NachoClient.iOS
         protected MessageDeferralType messageIntentDateType;
         protected DateTime messageIntentDateTime;
 
+        protected void RestoreDraft ()
+        {
+            subjectField.Text = draftMessage.Subject ?? "";
+            toView.SetAddressList (draftMessage.To, NcEmailAddress.Kind.To);
+            ccView.SetAddressList (draftMessage.Cc, NcEmailAddress.Kind.Cc);
+            bccView.SetAddressList (draftMessage.Bcc, NcEmailAddress.Kind.Bcc);
+
+            QRType = draftMessage.QRType;
+            messageIntent = draftMessage.Intent;
+            messageIntentDateTime = draftMessage.IntentDate;
+            messageIntentDateType = draftMessage.IntentDateType;
+
+            // This code will need to get a lot more sophisticated
+            // but for now let's just handle the simple case of text.
+
+            var bodyText = ExtractBodyTextAsNSAttributedString (draftMessage);
+            bodyTextView.AttributedText = bodyText;
+
+            // FIXME: Attachments
+
+            // FIXME: Smart (and dumb) quoted text handling
+
+        }
+
+        public void SaveDraft ()
+        {
+            var mimeMessage = EmailHelper.CreateMessage (account, toView.AddressList, ccView.AddressList, bccView.AddressList);
+            mimeMessage.Subject = subjectField.Text ?? "";
+
+            var bodyAttributedText = bodyTextView.AttributedText;
+
+            // Convert to Helvetica because it's widely available
+            var mutableBodyAttributedText = new NSMutableAttributedString (bodyAttributedText);
+            mutableBodyAttributedText.AddAttribute (UIStringAttributeKey.Font, UIFont.FromName ("Helvetica", 12), new NSRange (0, mutableBodyAttributedText.Length));
+
+            var body = new BodyBuilder ();
+            body.TextBody = bodyTextView.Text;
+
+            var length = Math.Min (bodyTextView.Text.Length, 256);
+            var preview = bodyTextView.Text.Substring (0, length);
+
+            NSError error = null;
+            NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
+                                  new NSRange (0, mutableBodyAttributedText.Length),
+                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                  ref error);
+            body.HtmlBody = htmlData.ToString ();
+
+            mimeMessage.Body = body.ToMessageBody ();
+
+            var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            message.BodyPreview = preview;
+            message.Intent = messageIntent;
+            message.IntentDate = messageIntentDateTime;
+            message.IntentDateType = messageIntentDateType;
+            message.QRType = QRType;
+
+            // Todo: action
+            // Todo: attachments
+
+            message.Update ();
+
+            EmailHelper.SaveEmailMessageInDrafts (message);
+            if (null != draftMessage) {
+                EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
+            }
+        }
+
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
         }
@@ -106,6 +175,11 @@ namespace NachoClient.iOS
         public void SetOwner (INachoMessageEditorParent o)
         {
             owner = o;
+        }
+
+        public void SetDraft (McEmailMessage draftMessage)
+        {
+            this.draftMessage = draftMessage;
         }
 
         public void SetQRType (NcQuickResponse.QRTypeEnum QRType)
@@ -188,18 +262,27 @@ namespace NachoClient.iOS
 
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
-                NcAlertView.Show (this, "Are you sure?", "This message will not be saved.",
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
-                    new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
+                NcActionSheet.Show (View, this,
+                    new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, () => {
                         owner = null;
                         NavigationController.PopViewController (true);
-                    }));
+                    }),
+                    new NcAlertAction ("Save Draft", () => {
+                        SaveDraft ();
+                        NavigationController.PopViewController (true);
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+                );
             };
 
             alwaysShowAttachments = true;
             suppressLayout = true;
 
             CreateView ();
+
+            if (null != draftMessage) {
+                RestoreDraft ();
+            }
 
             if (EmailHelper.IsForwardOrReplyAction (action)) {
                 InitializeMessageForAction ();
@@ -1084,7 +1167,7 @@ namespace NachoClient.iOS
             // Ask the user whether to send without the attachments or to wait
             // for them to be downloaded.
 
-            if (0 == toView.AddressList.Count) {
+            if (0 == (toView.AddressList.Count + ccView.AddressList.Count + bccView.AddressList.Count)) {
                 NcAlertView.ShowMessage (this, "No Recipients",
                     "This message is not being sent to anybody. Please add a recipient to the 'To' field.");
                 return false;
@@ -1150,6 +1233,8 @@ namespace NachoClient.iOS
             var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
             messageToSend.Intent = messageIntent;
             messageToSend.IntentDate = messageIntentDateTime;
+            messageToSend.IntentDateType = messageIntentDateType;
+            messageToSend.QRType = QRType;
 
             if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
                 messageToSend.ReferencedEmailId = referencedMessage.Id;
@@ -1161,8 +1246,12 @@ namespace NachoClient.iOS
             messageToSend.Update ();
 
             EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);
+
+            if (null != draftMessage) {
+                EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
+            }
         }
-      
+
         /// <summary>
         /// Reply, ReplyAll, Forward
         /// FIXME:  Wait for full text to arrive!
@@ -1228,6 +1317,29 @@ namespace NachoClient.iOS
                     initialQuotedText = null;
                 }
             }
+        }
+
+        NSAttributedString ExtractBodyTextAsNSAttributedString (McEmailMessage message)
+        {
+            string html;
+            string text;
+            var initialString = new NSMutableAttributedString ();
+            if (null != message) {
+                if (MimeHelpers.FindText (message, out html, out text)) {
+                    var attributes = new CoreText.CTStringAttributes ();
+                    attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
+                    if (null == html) {
+                        NcAssert.NotNull (text);
+                        initialString.Append (new NSAttributedString (text, attributes));
+                    } else {
+                        NSError error = null;
+                        var d = NSData.FromString (html);
+                        var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
+                        initialString.Append (convertedString);
+                    }
+                }
+            }
+            return initialString;
         }
 
         /// <summary>

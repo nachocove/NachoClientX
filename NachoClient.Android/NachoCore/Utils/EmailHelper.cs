@@ -25,6 +25,7 @@ namespace NachoCore.Utils
             NcApplication.Instance.SendEmailRespCallback = SendEmailRespCallback;
         }
 
+        // Message is saved into Outbox
         public static void SendTheMessage (Action action, McEmailMessage messageToSend, bool originalEmailIsEmbedded, McEmailMessage referencedMessage, bool calendarInviteIsSet, McAbstrCalendarRoot calendarInviteItem)
         {
             var outbox = McFolder.GetOutboxFolder (messageToSend.AccountId);
@@ -79,7 +80,6 @@ namespace NachoCore.Utils
 
         }
 
-
         /// <summary>
         /// Emails are added to the per-account on-device outbox folder just
         /// before calling one of the send-mail APIs. After the back end has
@@ -108,6 +108,27 @@ namespace NachoCore.Utils
             });
         }
 
+        public static McEmailMessage MoveFromOutboxToDrafts (McEmailMessage message)
+        {
+            var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+            if (null != pending) {
+                BackEnd.Instance.Cancel (message.AccountId, pending.Token);
+            }
+            // Move files in client-owned folders manually
+            var draftsFolder = McFolder.GetEmailDraftsFolder (message.AccountId);
+            var outboxFolder = McFolder.GetOutboxFolder (message.AccountId);
+            outboxFolder.Unlink (message);
+            draftsFolder.Link (message);
+            // Send status ind after the message is moved
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+            return message;
+        }
+
+
         /// <summary>
         /// Delete a message from outbox.  Need to stop
         /// the message from being sent before deleting
@@ -132,6 +153,40 @@ namespace NachoCore.Utils
         {
             foreach (var message in thread) {
                 DeleteEmailMessageFromOutbox (message);
+            }
+        }
+
+        public static void SaveEmailMessageInDrafts (McEmailMessage message)
+        {
+            var draftsFolder = McFolder.GetEmailDraftsFolder (message.AccountId);
+            if (null != draftsFolder) {
+                draftsFolder.Link (message);
+            } else {
+                Log.Warn (Log.LOG_EMAIL, "GetEmailDraftsFolder returned null");
+            }
+            // Send status ind because the drafts folder has changed
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
+
+        public static void DeleteEmailMessageFromDrafts (McEmailMessage message)
+        {
+            message.Delete ();
+            // Send status ind after the message is deleted (and unlinked).
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
+
+        public static void DeleteEmailThreadFromDrafts (McEmailMessageThread thread)
+        {
+            foreach (var message in thread) {
+                DeleteEmailMessageFromDrafts (message);
             }
         }
 

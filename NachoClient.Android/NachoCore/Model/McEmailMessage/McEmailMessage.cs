@@ -95,6 +95,9 @@ namespace NachoCore.Model
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
 
+        /// All Bcc addresses, comma separated (optional, for drafts)
+        public string Bcc { set; get; }
+
         /// Email address of the sender (optional)
         public string From { set; get; }
 
@@ -125,6 +128,12 @@ namespace NachoCore.Model
 
         // Due date of selected intent (optional)
         public DateTime IntentDate { set; get; }
+
+        // Type of the due date for the selected intent (optional)
+        public MessageDeferralType IntentDateType { set; get; }
+
+        // QRType of the message (optional, for drafts)
+        public NcQuickResponse.QRTypeEnum QRType { set; get; }
 
         /// Email addresses for replies, semi-colon separated (optional)
         public string ReplyTo { set; get; }
