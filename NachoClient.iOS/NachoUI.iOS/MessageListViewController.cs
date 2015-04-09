@@ -355,6 +355,13 @@ namespace NachoClient.iOS
             if (segue.Identifier == "MessageListToCompose") {
                 return;
             }
+            if (segue.Identifier == "DraftsToCompose") {
+                var vc = (MessageComposeViewController)segue.DestinationViewController;
+                var h = sender as SegueHolder;
+                vc.SetDraft ((McEmailMessage)h.value);
+                vc.SetOwner (this);
+                return;
+            }
             if (segue.Identifier == "NachoNowToMessageView") {
                 var vc = (INachoMessageViewer)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
@@ -401,10 +408,17 @@ namespace NachoClient.iOS
             PerformSegue (identifier, sender);
         }
 
+   
         ///  IMessageTableViewSourceDelegate
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
-            if (messageThread.HasMultipleMessages ()) {
+            var msg = messageSource.GetNachoEmailMessages ();
+            if (msg.HasDraftsSemantics ()) {
+                PerformSegue ("DraftsToCompose", new SegueHolder (messageThread.SingleMessageSpecialCase ()));
+            } else if (msg.HasOutboxSemantics ()) {
+                var message = EmailHelper.MoveFromOutboxToDrafts (messageThread.SingleMessageSpecialCase ());
+                PerformSegue ("DraftsToCompose", new SegueHolder (message));
+            } else if (messageThread.HasMultipleMessages ()) {
                 PerformSegue ("SegueToMessageThreadView", new SegueHolder (messageThread));
             } else {
                 PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));

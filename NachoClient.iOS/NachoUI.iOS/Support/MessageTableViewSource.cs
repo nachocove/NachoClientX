@@ -48,6 +48,9 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DEFER_BUTTON =
             new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
                 "Defer", A.Color_NachoSwipeEmailDefer);
+        private static SwipeActionDescriptor SOLO_DELETE_BUTTON =
+            new SwipeActionDescriptor (DELETE_TAG, 0.50f, UIImage.FromBundle (A.File_NachoSwipeEmailDelete),
+                "Delete", A.Color_NachoSwipeEmailDelete);
 
 
         public INachoEmailMessages GetNachoEmailMessages ()
@@ -230,8 +233,6 @@ namespace NachoClient.iOS
                 }
                 ConfigureMultiSelectCell (cell);
                 owner.MultiSelectChange (this, MultiSelect.Count);
-            } else if (messageThreads.HasOutboxSemantics () || messageThreads.HasDraftsSemantics ()) {
-                // TODO open draft in compose view
             } else {
                 owner.MessageThreadSelected (messageThread);
                 DumpInfo (messageThread);
@@ -380,7 +381,7 @@ namespace NachoClient.iOS
                 view.Tag = SWIPE_TAG;
 
                 if (messageThreads.HasOutboxSemantics () || messageThreads.HasDraftsSemantics ()) {
-                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (SOLO_DELETE_BUTTON, SwipeSide.RIGHT);
                 } else {
                     view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
@@ -717,12 +718,12 @@ namespace NachoClient.iOS
             // Preview label view
             var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
-            var rawPreview = message.GetBodyPreviewOrEmpty ();
+            var rawPreview = message.BodyPreview;
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
             }
-            previewLabelView.Frame = new CGRect (65, 80, cellWidth - 15 - 65, 60);
+            previewLabelView.Frame = new CGRect (15, 80, cellWidth - 15 - 65, 60);
             previewLabelView.SizeToFit ();
         }
 
@@ -794,6 +795,10 @@ namespace NachoClient.iOS
         {
             if (messageThreads.HasOutboxSemantics ()) {
                 EmailHelper.DeleteEmailThreadFromOutbox (messageThread);
+                return;
+            }
+            if (messageThreads.HasDraftsSemantics ()) {
+                EmailHelper.DeleteEmailThreadFromDrafts (messageThread);
                 return;
             }
             NcAssert.NotNull (messageThread);

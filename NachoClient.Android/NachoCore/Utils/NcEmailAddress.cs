@@ -246,7 +246,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private static List<NcEmailAddress> ParseAddressListString (string addressString,
+        public static List<NcEmailAddress> ParseAddressListString (string addressString,
                                                                     Kind addressKind)
         {
             List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
