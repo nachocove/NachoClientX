@@ -9,17 +9,15 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class NachoThreadedEmailMessages : INachoEmailMessages
+    public class NachoDraftMessages : INachoEmailMessages
     {
-        string threadId;
         McFolder folder;
 
         List<McEmailMessageThread> threadList;
 
-        public NachoThreadedEmailMessages (McFolder folder, string threadId)
+        public NachoDraftMessages (McFolder folder)
         {
             this.folder = folder;
-            this.threadId = threadId;
             List<int> adds;
             List<int> deletes;
             Refresh (out adds, out deletes);
@@ -27,7 +25,7 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, threadId);
+            var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id, false);
             var threads = NcMessageThreads.ThreadByMessage (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -60,17 +58,25 @@ namespace NachoCore
 
         public string DisplayName ()
         {
-            return "Thread";
+            if (folder.IsOutboxFolder ()) {
+                return "Outbox";
+            }
+            if (folder.IsEmailDraftsFolder ()) {
+                return "Drafts";
+            }
+            NachoCore.Utils.NcAssert.CaseError (folder.DisplayName);
+            return "";
         }
+
 
         public bool HasOutboxSemantics ()
         {
-            return false;
+            return folder.IsOutboxFolder ();
         }
 
         public bool HasDraftsSemantics ()
         {
-            return false;
+            return folder.IsEmailDraftsFolder ();
         }
 
         public void StartSync ()

@@ -18,7 +18,7 @@ namespace NachoCore
         public NachoEmailMessages (McFolder folder)
         {
             this.folder = folder;
-            threadList = new List<McEmailMessageThread>();
+            threadList = new List<McEmailMessageThread> ();
         }
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
@@ -66,6 +66,16 @@ namespace NachoCore
         public string DisplayName ()
         {
             return folder.DisplayName;
+        }
+
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
         }
 
         public void StartSync ()

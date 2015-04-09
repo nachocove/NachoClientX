@@ -26,5 +26,9 @@ namespace NachoCore
         void StartSync ();
 
         INachoEmailMessages GetAdapterForThread (string threadId);
+
+        bool HasOutboxSemantics ();
+
+        bool HasDraftsSemantics ();
     }
 }

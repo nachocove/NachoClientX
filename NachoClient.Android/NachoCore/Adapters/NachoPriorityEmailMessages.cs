@@ -65,6 +65,16 @@ namespace NachoCore
             return "Hot List";
         }
 
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
+        }
+
         public void StartSync ()
         {
             if (null != folder) {

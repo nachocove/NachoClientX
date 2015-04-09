@@ -113,6 +113,16 @@ namespace NachoCore
             return "Search";
         }
 
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
+        }
+
         public void StartSync ()
         {
 

@@ -385,10 +385,12 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
 
-        public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId)
+        public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT e.Id as FirstMessageId, Count(e.Id) as MessageCount FROM McEmailMessage AS e " +
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
@@ -397,7 +399,7 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? " +
-                " GROUP BY e.ConversationId " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
                 " ORDER BY e.DateReceived DESC ",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }

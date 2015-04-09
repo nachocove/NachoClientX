@@ -28,7 +28,7 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected ContactsHelper contactHelper = new ContactsHelper ();
-        protected MessageTableViewSource messageSource;
+        protected IMessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
         protected nint selectedSegment = 0;
@@ -88,7 +88,7 @@ namespace NachoClient.iOS
 
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
-            messageSource = new MessageTableViewSource ();
+            messageSource = new MessageTableViewSource (this);
             MultiSelect = new HashSet<int> ();
         }
 
@@ -390,7 +390,7 @@ namespace NachoClient.iOS
             interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
-            interactionsTableView.RowHeight = MessageTableViewSource.NORMAL_ROW_HEIGHT;
+            interactionsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
@@ -591,8 +591,7 @@ namespace NachoClient.iOS
 
             //CONFIGURE INTERACTIONS VIEW
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-            messageSource.owner = this;
-            interactionsTableView.Source = messageSource;
+            interactionsTableView.Source = messageSource.GetTableViewSource ();
             MultiSelectToggle (messageSource, false);
             SetEmailMessages (new UserInteractionEmailMessages (contact));
 
@@ -1175,11 +1174,11 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
-        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
         {
         }
 
-        public void MultiSelectChange (MessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count)
         {
         }
 

@@ -1097,7 +1097,7 @@ namespace NachoClient.iOS
             var mimeMessage = EmailHelper.CreateMessage (account, toView.AddressList, ccView.AddressList, bccView.AddressList);
             mimeMessage.Subject = EmailHelper.CreateSubjectWithIntent (subjectField.Text, messageIntent, messageIntentDateType, messageIntentDateTime);
 
-            EmailHelper.SetupReferences(ref mimeMessage, referencedMessage);
+            EmailHelper.SetupReferences (ref mimeMessage, referencedMessage);
           
 
             var bodyAttributedText = bodyTextView.AttributedText;
@@ -1150,57 +1150,19 @@ namespace NachoClient.iOS
             var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
             messageToSend.Intent = messageIntent;
             messageToSend.IntentDate = messageIntentDateTime;
-            messageToSend.Update ();
 
             if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
                 messageToSend.ReferencedEmailId = referencedMessage.Id;
                 messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
                 messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
                 messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                messageToSend.Update ();
             }
 
-            bool messageSent = false;
-            if (EmailHelper.IsForwardOrReplyAction (action) || calendarInviteIsSet) {
-                List<McFolder> folders;
-                if (calendarInviteIsSet) {
-                    folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
-                } else {
-                    folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
-                }
-                if (folders.Count == 0) {
-                    Log.Error (Log.LOG_UI, "The message or event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
-                    // Fall through and send it as a regular message.  Or don't send it at all if it is an event.
-                } else {
-                    if (folders.Count > 1) {
-                        Log.Warn (Log.LOG_UI, "The message or event being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message.", folders.Count);
-                    }
-                    int folderId = folders [0].Id;
-                    if (calendarInviteIsSet) {
-                        NachoCore.BackEnd.Instance.ForwardCalCmd (
-                            messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
-                    } else if (EmailHelper.IsForwardAction (action)) {
-                        NachoCore.BackEnd.Instance.ForwardEmailCmd (
-                            messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                    } else {
-                        NachoCore.BackEnd.Instance.ReplyEmailCmd (
-                            messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                    }
-                    messageSent = true;
-                }
-            }
-            if (!messageSent && !calendarInviteIsSet) {
-                // A new outgoing message.  Or a forward/reply that has problems.
-                NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
-                // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
-                // BE goes to reference the object later on, and it is missing.
-                messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
-                messageToSend.Delete ();
-            }
+            messageToSend.Update ();
 
+            EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);
         }
-
+      
         /// <summary>
         /// Reply, ReplyAll, Forward
         /// FIXME:  Wait for full text to arrive!

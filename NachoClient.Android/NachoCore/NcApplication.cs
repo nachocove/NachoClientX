@@ -311,6 +311,7 @@ namespace NachoCore
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
             NcContactGleaner.Start ();
+            EmailHelper.Setup ();
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
