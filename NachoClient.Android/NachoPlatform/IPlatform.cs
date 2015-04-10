@@ -234,11 +234,13 @@ namespace NachoPlatform
     {
         void Start ();
 
-        bool BuyLicense ();
+        bool PurchaseLicense ();
 
         bool RestoreLicense ();
 
-        bool GetPurchasedStatus ();
+        bool IsAlreadyPurchased ();
+
+        bool CanPurchase ();
 
         void Stop ();
     }
@@ -251,15 +253,15 @@ namespace NachoPlatform
 
         void SetUserId (string UserId);
 
-        bool GetPurchasedStatus (string productId);
+        bool IsAlreadyPurchased ();
 
-        DateTime GetPurchasedDate (string productId);
+        DateTime GetPurchaseDate ();
 
-        void SetPurchasedStatus (string productId, DateTime purchaseDate);
+        void RecordPurchase (DateTime purchaseDate);
 
-        void SetAppInstallDate (DateTime installDate);
+        void SetFirstInstallDate (DateTime installDate);
 
-        DateTime GetAppInstallDate ();
+        DateTime GetFirstInstallDate ();
 
         void Stop ();
     }

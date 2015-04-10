@@ -32,8 +32,8 @@ namespace NachoPlatform
         }
 
         // from IPlatformStoreHandler
-        // buy a new license
-        public bool BuyLicense ()
+        // purchase a new license
+        public bool PurchaseLicense ()
         {
             return false;
         }
@@ -47,7 +47,14 @@ namespace NachoPlatform
 
         // from IPlatformStoreHandler
         // get the purchase status
-        public bool GetPurchasedStatus ()
+        public bool IsAlreadyPurchased ()
+        {
+            return false;
+        }
+
+        // from IPlatformStoreHandler
+        // can we purchase now?
+        public bool CanPurchase ()
         {
             return false;
         }

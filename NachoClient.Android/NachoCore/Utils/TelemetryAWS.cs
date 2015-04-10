@@ -95,7 +95,11 @@ namespace NachoCore.Utils
             } else {
                 // Save the current Cognito id as client id
                 Retry (() => {
-                    ClientId = credentials.GetIdentityId ();
+                    if (NcApplication.Instance.ClientId != null) {
+                        ClientId = NcApplication.Instance.ClientId;
+                    } else {
+                        ClientId = credentials.GetIdentityId ();
+                    }
                 });
                 using (var stream = new FileStream (clientIdFile, FileMode.Create, FileAccess.Write)) {
                     using (var writer = new StreamWriter (stream)) {

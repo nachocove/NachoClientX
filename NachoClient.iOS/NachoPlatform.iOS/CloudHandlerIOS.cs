@@ -10,12 +10,15 @@ namespace NachoPlatform
 {
     public class CloudHandler : IPlatformCloudHandler
     {
-        private const string KUserId = "UserId";
-        private const string KInstallDate = "InstallDate";
-        private const string KPurchaseDate = "PurchaseDate";
+        private const string KUserId = "UserId3";
+        private const string KFirstInstallDate = "FirstInstallDate3";
+        private const string KPurchaseDate = "PurchaseDate3";
+        private const string KIsAlreadyPurchased = "IsAlreadyPurchased3";
+
 
         private static volatile CloudHandler instance;
         private static object syncRoot = new Object ();
+
         private NSUbiquitousKeyValueStore Store;
 
         private bool HasiCloud = false;
@@ -54,7 +57,6 @@ namespace NachoPlatform
                 Store = NSUbiquitousKeyValueStore.DefaultStore;
                 Log.Info (Log.LOG_SYS, "CloudHandler: Connected to iCloud. Url is {0}", iCloudUrl);
             }
-            Log.Info (Log.LOG_SYS, "App install date is {0}", GetAppInstallDate ());
         }
 
         public string GetUserId ()
@@ -69,10 +71,12 @@ namespace NachoPlatform
                         NSUserDefaults.StandardUserDefaults.SetString (remoteUserId, KUserId);
                         NSUserDefaults.StandardUserDefaults.Synchronize ();
                     }
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Returning cloud UserId {0}", remoteUserId);
                     return remoteUserId;
                 }
             }
             // if no icloud or not found in iCloud
+            Log.Info (Log.LOG_SYS, "CloudHandler: UserId not stored in cloud. Getting user defaults value : {0}", NSUserDefaults.StandardUserDefaults.StringForKey (KUserId));
             return NSUserDefaults.StandardUserDefaults.StringForKey (KUserId);
         }
 
@@ -87,18 +91,18 @@ namespace NachoPlatform
             NSUserDefaults.StandardUserDefaults.Synchronize ();
         }
 
-        public bool GetPurchasedStatus (string productId)
+        public bool IsAlreadyPurchased ()
         {
-            Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase status for product {0}", productId);
+            Log.Info (Log.LOG_SYS, "CloudHandler: Getting license purchase status");
             if (HasiCloud) {
-                bool remotePurchaseStatus = Store.GetBool (productId);
+                bool remotePurchaseStatus = Store.GetBool (KIsAlreadyPurchased);
                 if (remotePurchaseStatus != false) {
-                    Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status true for product {0} in cloud", productId);
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status true for license in cloud");
                     if (remotePurchaseStatus == true) {
-                        bool localPurchaseStatus = NSUserDefaults.StandardUserDefaults.BoolForKey (productId);
+                        bool localPurchaseStatus = NSUserDefaults.StandardUserDefaults.BoolForKey (KIsAlreadyPurchased);
                         if (localPurchaseStatus != remotePurchaseStatus) {
                             // replace local cached purchase status with Cloud purchase status
-                            NSUserDefaults.StandardUserDefaults.SetBool (remotePurchaseStatus, productId);
+                            NSUserDefaults.StandardUserDefaults.SetBool (remotePurchaseStatus, KIsAlreadyPurchased);
                             NSUserDefaults.StandardUserDefaults.Synchronize ();
                         }
                         return remotePurchaseStatus;
@@ -106,14 +110,14 @@ namespace NachoPlatform
                 }
             }
             // if no icloud or not found in iCloud
-            Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status false for product {0} in cloud. User defaults value is {1}.", productId, NSUserDefaults.StandardUserDefaults.BoolForKey (productId));
-            return NSUserDefaults.StandardUserDefaults.BoolForKey (productId);
+            Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status false for license in cloud. Getting user defaults value : {0}", NSUserDefaults.StandardUserDefaults.BoolForKey (KIsAlreadyPurchased));
+            return NSUserDefaults.StandardUserDefaults.BoolForKey (KIsAlreadyPurchased);
         }
 
-        public DateTime GetPurchasedDate (string productId)
+        public DateTime GetPurchaseDate ()
         {
             string purchaseDate;
-            Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase date for product {0}", productId);
+            Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase date for product");
             if (HasiCloud) {
                 purchaseDate = Store.GetString (KPurchaseDate);
                 if (purchaseDate != null) {
@@ -128,58 +132,58 @@ namespace NachoPlatform
             }
             // if no icloud or not found in iCloud
             purchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey (KPurchaseDate);
-            Log.Info (Log.LOG_SYS, "CloudHandler: Purchase date not found for product {0} in cloud. User defaults value is {1}.", productId, purchaseDate);
+            Log.Info (Log.LOG_SYS, "CloudHandler: Purchase date not found for product in cloud. Getting user defaults value : {0}", purchaseDate);
             return purchaseDate.ToDateTime ();
         }
 
-        public void SetPurchasedStatus (string productId, DateTime purchaseDate)
+        public void RecordPurchase (DateTime purchaseDate)
         {
-            Log.Info (Log.LOG_SYS, "CloudHandler: Setting purchase status(true) for product {0} on {1}", productId, purchaseDate);
+            Log.Info (Log.LOG_SYS, "CloudHandler: Recording purchase status(true) on {0}", purchaseDate.ToAsUtcString ());
             if (HasiCloud) {
-                Store.SetBool (productId, true);  
+                Store.SetBool (KIsAlreadyPurchased, true);  
                 Store.SetString (KPurchaseDate, purchaseDate.ToAsUtcString ());
                 Store.Synchronize ();
             }
-            NSUserDefaults.StandardUserDefaults.SetBool (true, productId);
+            NSUserDefaults.StandardUserDefaults.SetBool (true, KIsAlreadyPurchased);
             NSUserDefaults.StandardUserDefaults.SetString (purchaseDate.ToAsUtcString (), KPurchaseDate);
             NSUserDefaults.StandardUserDefaults.Synchronize ();        
         }
 
-        public void SetAppInstallDate (DateTime installDate)
+        public void SetFirstInstallDate (DateTime installDate)
         {
-            Log.Info (Log.LOG_SYS, "CloudHandler: Setting App Install Date {0}", installDate);
+            Log.Info (Log.LOG_SYS, "CloudHandler: Setting first install date {0}", installDate.ToAsUtcString ());
             if (HasiCloud) {
-                Store.SetString (KInstallDate, installDate.ToAsUtcString ());
+                Store.SetString (KFirstInstallDate, installDate.ToAsUtcString ());
                 Store.Synchronize ();
             }
-            NSUserDefaults.StandardUserDefaults.SetString (installDate.ToAsUtcString (), KInstallDate);
+            NSUserDefaults.StandardUserDefaults.SetString (installDate.ToAsUtcString (), KFirstInstallDate);
             NSUserDefaults.StandardUserDefaults.Synchronize ();   
         }
 
-        public DateTime GetAppInstallDate ()
+        public DateTime GetFirstInstallDate ()
         {
             string installDate;
 
-            Log.Info (Log.LOG_SYS, "CloudHandler: Getting install date for App");
+            Log.Info (Log.LOG_SYS, "CloudHandler: Getting first install date");
             if (HasiCloud) {
-                installDate = Store.GetString (KInstallDate);
+                installDate = Store.GetString (KFirstInstallDate);
                 if (installDate != null) {
-                    string localInstallDate = NSUserDefaults.StandardUserDefaults.StringForKey (KInstallDate);
+                    string localInstallDate = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
                     if (localInstallDate != installDate) {
                         // replace local cached install date with Cloud install date
-                        NSUserDefaults.StandardUserDefaults.SetString (installDate, KInstallDate);
+                        NSUserDefaults.StandardUserDefaults.SetString (installDate, KFirstInstallDate);
                         NSUserDefaults.StandardUserDefaults.Synchronize ();
                     }
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Returning first install date {0} from cloud", installDate);
                     return installDate.ToDateTime ();
                 }
             }
             // if no icloud or not found in iCloud
-            installDate = NSUserDefaults.StandardUserDefaults.StringForKey (KInstallDate);
-            Log.Info (Log.LOG_SYS, "CloudHandler: App install date not found in cloud. User defaults value is {0}.", installDate);
+            installDate = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
+            Log.Info (Log.LOG_SYS, "CloudHandler: First install date not found in cloud. Getting user defaults value {0}.", installDate);
             return installDate.ToDateTime ();        
         }
-           
-        // MISCELLANEOUS STUFF
+
         private void TokensWatcher (object sender, EventArgs ea)
         {
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
@@ -187,17 +191,17 @@ namespace NachoPlatform
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
                 if (null == siea.Status.Value) {
                     // do nothing now
-                    Log.Info (Log.LOG_SYS, "CloudHandler: No userId yet");
+                    Log.Info (Log.LOG_SYS, "CloudHandler: No UserId created yet");
 
                 } else {
                     string newUserId = (string)siea.Status.Value;
-                    Log.Info (Log.LOG_SYS, "CloudHandler: New userId is {0}", newUserId);
+                    Log.Info (Log.LOG_SYS, "CloudHandler: NcApplication UserId is {0}", newUserId);
                     string userId = GetUserId ();
                     if (userId == null) {
-                        Log.Info (Log.LOG_SYS, "CloudHandler: Saving new userId {0} to store", newUserId);
+                        Log.Info (Log.LOG_SYS, "CloudHandler: No UserId in cloud. Saving  UserId {0} to cloud", newUserId);
                         SetUserId (newUserId);
                     } else if (newUserId != userId) {
-                        Log.Info (Log.LOG_SYS, "CloudHandler: Old userId {0} exists in store. Replacing NcApplication ClientId {1} with {0}", userId, NcApplication.Instance.ClientId, userId);
+                        Log.Info (Log.LOG_SYS, "CloudHandler: UserId exists in cloud. Replacing local UserId {0} with {1}", NcApplication.Instance.ClientId, userId);
                         NcApplication.Instance.ClientId = userId;
                     }
                 }
@@ -217,16 +221,17 @@ namespace NachoPlatform
                 NSDictionary userInfo = n.UserInfo;
                 NSNumber reasonNumber = (NSNumber)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangeReasonKey);
                 int reason = reasonNumber.Int32Value; // reason change was triggered
-                Log.Info (Log.LOG_SYS, "CloudHandler: Notification change reason {0}", reason);
 
                 NSArray changedKeys = (NSArray)userInfo.ObjectForKey (NSUbiquitousKeyValueStore.ChangedKeysKey);
                 for (uint i = 0; i < changedKeys.Count; i++) {
                     string key = Marshal.PtrToStringAuto (changedKeys.ValueAt (i));
                     if (key == KUserId) {
+                        Log.Info (Log.LOG_SYS, "CloudHandler: Notification change reason {0}", reason);
                         // ICloud override local - TODO: confirm this
                         string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
+                        Log.Info (Log.LOG_SYS, "CloudHandler: Notification from cloud. UserId changed to {0}", userId);
                         if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
-                            Log.Info (Log.LOG_SYS, "CloudHandler: Replacing Client {0} with userId {0} from Cloud", NcApplication.Instance.ClientId, userId);
+                            Log.Info (Log.LOG_SYS, "CloudHandler: Replacing localUserId {0} with {1} from Cloud", NcApplication.Instance.ClientId, userId);
                             NcApplication.Instance.ClientId = userId;
                         }
                     }

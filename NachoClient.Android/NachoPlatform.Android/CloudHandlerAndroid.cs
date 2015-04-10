@@ -36,25 +36,25 @@ namespace NachoPlatform
         {
         }
 
-        public bool GetPurchasedStatus (string productId)
+        public bool IsAlreadyPurchased ()
         {
             return false;
         }
 
-        public DateTime GetPurchasedDate (string productId)
+        public DateTime GetPurchaseDate ()
         {
             return DateTime.Now;
         }
 
-        public void SetPurchasedStatus (string productId, DateTime purchaseDate)
+        public void RecordPurchase (DateTime purchaseDate)
         {
         }
 
-        public void SetAppInstallDate (DateTime installDate)
+        public void SetFirstInstallDate (DateTime installDate)
         {
         }
 
-        public DateTime GetAppInstallDate ()
+        public DateTime GetFirstInstallDate ()
         {
             return DateTime.Now;
         }

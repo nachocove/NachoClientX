@@ -15,7 +15,6 @@ namespace NachoCore.Model
         public McLicenseInformation ()
         {
             InAppPurchaseState = (uint)St.Start;
-
         }
 
         public string UserId { get; set; }
@@ -26,7 +25,7 @@ namespace NachoCore.Model
 
         public DateTime AskByDate { get; set; }
 
-        public bool AlreadyPurchased { get; set; }
+        public bool IsAlreadyPurchased { get; set; }
 
         public DateTime PurchaseDate { get; set; }
 
@@ -40,19 +39,19 @@ namespace NachoCore.Model
             if (licenseInformation == null) {
                 // first call after install?
                 string userId = CloudHandler.Instance.GetUserId (); 
-                DateTime installDate = CloudHandler.Instance.GetAppInstallDate (); 
+                DateTime installDate = CloudHandler.Instance.GetFirstInstallDate (); 
                 if (installDate == DateTime.MinValue) {
                     // first install
-                    CloudHandler.Instance.SetAppInstallDate (DateTime.UtcNow);
+                    CloudHandler.Instance.SetFirstInstallDate (DateTime.UtcNow);
                 }
                 licenseInformation = new McLicenseInformation ();
                 licenseInformation.UserId = userId;
                 licenseInformation.FirstInstallDate = installDate;
-                licenseInformation.AlreadyPurchased = false;
+                licenseInformation.IsAlreadyPurchased = false;
                 licenseInformation.InAppPurchaseState = (uint)St.Start;
                 licenseInformation.Insert ();
             }
-            Log.Info (Log.LOG_DB, "LicenseInformation: First Install Date {0}. Purchase Date {1}", licenseInformation.FirstInstallDate.ToAsUtcString (), licenseInformation.PurchaseDate.ToAsUtcString ());
+            Log.Info (Log.LOG_DB, "LicenseInformation: UserId {0}, First Install date {1}, Purchase date {2}", licenseInformation.UserId, licenseInformation.FirstInstallDate.ToAsUtcString (), licenseInformation.PurchaseDate.ToAsUtcString ());
             return licenseInformation;
         }
     }
