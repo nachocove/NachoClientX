@@ -53,7 +53,7 @@ namespace NachoPlatform
             if (SecStatusCode.Success == res) {
                 var iData = match.ValueData;
                 if ((null == iData) || (iData.Length == 0)) {
-                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned ValueData of null/(length==0)");
+                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned ValueData of null/(length==0) for handle {0}", handle);
                     return null;
                 }
                 var bytes = iData.ToArray ();
@@ -63,7 +63,10 @@ namespace NachoPlatform
                 // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
                 // return match.ValueData.ToString ();
             } else {
-                Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
+                Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned status {0} for handle {1}", res.ToString (), handle);
+                if (match != null) {
+                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned value {0} for handle {1}", match.ValueData.ToString (), handle);
+                }
                 return null;
             }
         }
@@ -76,7 +79,7 @@ namespace NachoPlatform
                 match.ValueData = NSData.FromString (password);
                 res = SecKeyChain.Update (CreateQuery (handle), match);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Update returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Update returned {0} for handle {1}", res.ToString (), handle);
                     return false;
                 }
             } else {
@@ -85,7 +88,7 @@ namespace NachoPlatform
                 insert.Accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly;
                 res = SecKeyChain.Add (insert);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Add returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Add returned {0} for handle {1}", res.ToString (), handle);
                     return false;
                 }
             }
@@ -99,11 +102,11 @@ namespace NachoPlatform
             if (SecStatusCode.Success == res) {
                 res = SecKeyChain.Remove (CreateQuery (handle));
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Remove returned {0} for handle {1}", res.ToString (), handle);
                     return false;
                 }
             } else { 
-                Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Delete Cannot find cred {0}", res.ToString ());
+                Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Delete returned {0} for handle {1}", res.ToString (), handle);
                 return false;
             }
             return true;        
