@@ -381,6 +381,7 @@
     <Compile Include="NachoPlatform.Android\NcFileHandlerAndroid.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration15.cs" />
     <Compile Include="NachoCore\Adapters\NachoDraftMessages.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration16.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

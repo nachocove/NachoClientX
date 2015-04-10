@@ -63,6 +63,7 @@ namespace NachoClient.iOS
 
         UcNameValuePair SignatureBlock;
         UcNameValuePair DaysToSyncBlock;
+        UcNameValuePair NotificationsBlock;
 
         protected nfloat yOffset;
         protected nfloat keyboardHeight;
@@ -295,13 +296,18 @@ namespace NachoClient.iOS
 
             yOffset = settingsView.Frame.Bottom + 20;
 
-            UIView additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
+            UIView additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 2 * TEXTFIELD_HEIGHT));
             additionalSettingsView.BackgroundColor = UIColor.White;
             additionalSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             additionalSettingsView.Layer.BorderWidth = .5f;
 
             DaysToSyncBlock = new UcNameValuePair (new CGRect (0, 0, View.Frame.Width, TEXTFIELD_HEIGHT), "Days to sync", HORIZONTAL_PADDING, 15, DaysToSyncTapHandler);
             additionalSettingsView.AddSubview (DaysToSyncBlock);
+
+            Util.AddHorizontalLine (HORIZONTAL_PADDING, TEXTFIELD_HEIGHT, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
+
+            NotificationsBlock = new UcNameValuePair (new CGRect (0, TEXTFIELD_HEIGHT, View.Frame.Width, TEXTFIELD_HEIGHT), "Notifications", HORIZONTAL_PADDING, 15, NotificationsTapHandler);
+            additionalSettingsView.AddSubview (NotificationsBlock);
 
             contentView.AddSubview (additionalSettingsView);
 
@@ -461,6 +467,8 @@ namespace NachoClient.iOS
 
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (theAccount.DaysToSyncEmail));
 
+            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (theAccount.NotificationConfiguration));
+
             accountNameTextField.Enabled = textFieldsEditable;
             usernameTextField.Enabled = textFieldsEditable;
             passwordTextField.Enabled = textFieldsEditable;
@@ -478,6 +486,16 @@ namespace NachoClient.iOS
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "SettingsToNotificationChooser") {
+                var vc = (NotificationChooserViewController)segue.DestinationViewController;
+                McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                vc.Setup (this, theAccount.Id, theAccount.NotificationConfiguration);
+                return;
+            }
         }
 
         protected void ColorTextFields ()
@@ -765,11 +783,27 @@ namespace NachoClient.iOS
             );
         }
 
+        protected void NotificationsTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SettingsToNotificationChooser", this);
+            }
+        }
+
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
             var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             account.DaysToSyncEmail = code;
+            account.Update ();
+        }
+
+        public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
+        {
+            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
+            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            account.NotificationConfiguration = choice;
             account.Update ();
         }
 
