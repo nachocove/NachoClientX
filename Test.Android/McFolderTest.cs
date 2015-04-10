@@ -353,26 +353,6 @@ namespace Test.iOS
         }
 
         [Test]
-        public void TestGetOrCreateEmailDraftsFolder ()
-        {
-            int accountId = 1;
-
-            McFolder defaultDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "Default-Drafts");
-            Assert.True (McFolder.GetOrCreateEmailDraftsFolder (accountId).DisplayName == "Default-Drafts");
-            defaultDrafts.Delete ();
-
-            McFolder createdDraftsFolder = McFolder.GetOrCreateEmailDraftsFolder (accountId);
-            Assert.True (McFolder.DRAFTS_DISPLAY_NAME == createdDraftsFolder.DisplayName);
-        }
-
-        //Not sure how to write a unit test for this
-        //        [Test]
-        //        public void TestGetOrCreateArchiveFolder ()
-        //        {
-        //            Assert.True("Archive".Equals (McFolder.GetOrCreateArchiveFolder (account.Id).DisplayName));
-        //        }
-
-        [Test]
         public void TestTypesToCommaDelimitedString ()
         {
             Xml.FolderHierarchy.TypeCode[] typeArray = {

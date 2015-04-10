@@ -105,7 +105,7 @@ namespace NachoClient.iOS
             this.BringSubviewToFront (chiliHitBox);
         }
 
-        public void ConfigureView (McEmailMessageThread thread, McEmailMessage message)
+        public void ConfigureMessageView (McEmailMessageThread thread, McEmailMessage message)
         {
             // From label view
             var fromLabelView = this.ViewWithTag (FROM_TAG) as UILabel;
@@ -160,6 +160,54 @@ namespace NachoClient.iOS
             attachmentImageRect.X = receivedLabelView.Frame.Right + 10;
             attachmentImageView.Frame = attachmentImageRect;
         }
+
+        public void ConfigureDraftView (McEmailMessageThread thread, McEmailMessage message)
+        {
+            // To label view
+            var fromLabelView = this.ViewWithTag (FROM_TAG) as UILabel;
+            fromLabelView.Text = Pretty.RecipientString (message.To);
+            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
+            fromLabelView.Hidden = false;
+
+            // Chili image view
+            var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
+            chiliImageView.Hidden = true;;
+
+            // Subject label view
+            var subjectLabelView = this.ViewWithTag (SUBJECT_TAG) as UILabel;
+            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+            if (String.IsNullOrEmpty (message.Subject)) {
+                subjectLabelView.Text = Pretty.NoSubjectString ();
+                subjectLabelView.TextColor = A.Color_9B9B9B;
+                subjectLabelView.Font = A.Font_AvenirNextRegular17;
+            } else {
+                subjectLabelView.TextColor = A.Color_0F424C;
+                subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+                subjectLabelView.Font = A.Font_AvenirNextRegular17;
+            }
+            subjectLabelView.Hidden = false;
+
+            // Received label view
+            var receivedLabelView = this.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.SizeToFit ();
+            receivedLabelView.Hidden = false;
+
+            // Attachment image view
+            var attachmentImageView = this.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
+            if (message.cachedHasAttachments) {
+                attachmentImageView.Hidden = false;
+                using (var image = UIImage.FromBundle ("inbox-icn-attachment")) {
+                    attachmentImageView.Image = image;
+                }
+            } else { 
+                attachmentImageView.Hidden = true;
+            }
+            var attachmentImageRect = attachmentImageView.Frame;
+            attachmentImageRect.X = receivedLabelView.Frame.Right + 10;
+            attachmentImageView.Frame = attachmentImageRect;
+        }
+
 
         // Opaque background prevents blending penalty
         public void SetAllBackgroundColors(UIColor color)

@@ -382,6 +382,8 @@
     <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration14.cs" />
     <Compile Include="NachoPlatform.Android\NcFileHandlerAndroid.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration15.cs" />
+    <Compile Include="NachoCore\Adapters\NachoDraftMessages.cs" />
     <Compile Include="NachoCore\Model\McLicenseInformation.cs" />
   </ItemGroup>
   <ItemGroup>

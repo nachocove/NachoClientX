@@ -95,6 +95,9 @@ namespace NachoCore.Model
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
 
+        /// All Bcc addresses, comma separated (optional, for drafts)
+        public string Bcc { set; get; }
+
         /// Email address of the sender (optional)
         public string From { set; get; }
 
@@ -125,6 +128,12 @@ namespace NachoCore.Model
 
         // Due date of selected intent (optional)
         public DateTime IntentDate { set; get; }
+
+        // Type of the due date for the selected intent (optional)
+        public MessageDeferralType IntentDateType { set; get; }
+
+        // QRType of the message (optional, for drafts)
+        public NcQuickResponse.QRTypeEnum QRType { set; get; }
 
         /// Email addresses for replies, semi-colon separated (optional)
         public string ReplyTo { set; get; }
@@ -385,10 +394,12 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
 
-        public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId)
+        public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
-                "SELECT e.Id as FirstMessageId, Count(e.Id) as MessageCount FROM McEmailMessage AS e " +
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
@@ -397,7 +408,7 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? " +
-                " GROUP BY e.ConversationId " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
                 " ORDER BY e.DateReceived DESC ",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
@@ -574,7 +585,7 @@ namespace NachoCore.Model
             );
         }
 
-        public static List<McEmailMessage> QueryForSet(List<int> indexList)
+        public static List<McEmailMessage> QueryForSet (List<int> indexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
             var cmd = String.Format ("SELECT e.* FROM McEmailMessage as e WHERE e.ID IN {0}", set);
@@ -605,6 +616,15 @@ namespace NachoCore.Model
                 " e.DateReceived = ? AND " +
                 " e.[From] = ? ",
                 accountId, dateRecv, from);
+        }
+
+        public static List<McEmailMessage> QueryUnnotified (int accountId = 0)
+        {
+            var emailMessageList = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified);
+            if (0 != accountId) {
+                emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
+            }
+            return emailMessageList.ToList ();
         }
 
         public override ClassCodeEnum GetClassCode ()
@@ -985,6 +1005,7 @@ namespace NachoCore.Model
                     Score = emailAddress.Score;
                 }
             }
+            HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Insert ();
@@ -999,6 +1020,9 @@ namespace NachoCore.Model
         public override int Update ()
         {
             int returnVal = -1;  
+            if (!HasBeenNotified) {
+                HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
+            }
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Update ();

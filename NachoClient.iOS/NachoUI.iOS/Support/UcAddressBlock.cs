@@ -139,6 +139,14 @@ namespace NachoClient.iOS
             }
         }
 
+        public void SetAddressList (string addressListString, NcEmailAddress.Kind kind)
+        {
+            var addressList = NcEmailAddress.ParseAddressListString (addressListString, kind);
+            foreach (var address in addressList) {
+                Append (address);
+            }
+        }
+
         public bool IsEmpty ()
         {
             return (0 == list.Count);

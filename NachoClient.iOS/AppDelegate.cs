@@ -279,7 +279,7 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             // move data files to Documents/Data if needed
-            NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded();
+            NachoPlatform.DataFileMigration.MigrateDataFilesIfNeeded ();
             // One-time initialization that do not need to be shut down later.
             if (!FirstLaunchInitialization) {
                 FirstLaunchInitialization = true;
@@ -435,6 +435,8 @@ namespace NachoClient.iOS
             });
 
             NcApplication.Instance.ContinueOnActivation ();
+
+            NcTask.Run (NcApplication.Instance.CheckNotified, "CheckNotified");
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
         }
 

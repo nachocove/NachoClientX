@@ -210,6 +210,9 @@ namespace NachoCore
                     }
                     continue; // this key is the time when pinger pushes not an actual context
                 }
+                if ("session" == context.Key) {
+                    continue; // this is a debug key.
+                }
                 // Look up the account
                 var pa = GetPAObjectByContext (context.Key);
                 if (null == pa) {
@@ -240,6 +243,14 @@ namespace NachoCore
                     Log.Error (Log.LOG_PUSH, "Unknown action {0} for context {1}", context.Value, context.Key);
                     continue;
                 }
+            }
+        }
+
+        public static void RemovePAObjectByContext (string context)
+        {
+            WeakReference dummy;
+            if (!ContextObjectMap.TryRemove (context, out dummy)) {
+                Log.Warn (Log.LOG_PUSH, "Cannot remove unknown context {0}", context);
             }
         }
 
@@ -493,6 +504,7 @@ namespace NachoCore
         {
             if (!IsDisposed) {
                 IsDisposed = true;
+                RemovePAObjectByContext (ClientContext);
                 NcApplication.Instance.StatusIndEvent -= TokensWatcher;
                 DisposeRetryTimer ();
                 DisposeTimeoutTimer ();
