@@ -125,8 +125,8 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.BodyId = ? ",
+                    " likelihood (f.AccountId = ?, 1.0) AND " +
+                    " likelihood (f.BodyId = ?, 0.001) ",
                     typeof(T).Name), 
                 accountId, bodyId);
         }
@@ -135,9 +135,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.IsAwaitingDelete = 0 AND " +
-                " f.ClientId = ? ", 
+                    " likelihood (f.AccountId = ?, 1.0) AND " +
+                    " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (f.ClientId = ?, 0.001) ", 
                     typeof(T).Name), 
                 accountId, clientId).SingleOrDefault ();
         }
@@ -147,10 +147,10 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<T> (
                 string.Format (
                     "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
-                    " e.AccountId = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " e.IsAwaitingDelete = 0 AND " +
-                    " m.FolderId = ? ",
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.FolderId = ?, 0.05) ",
                     typeof(T).Name),
                 accountId, accountId, folderId);
         }
@@ -160,11 +160,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<T> (
                 string.Format (
                     "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
-                    " e.AccountId = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " e.IsAwaitingDelete = 0 AND " +
-                    " m.FolderId = ? AND " + 
-                    " m.AsSyncEpoch < ? " + 
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.FolderId = ?, 0.05) AND " + 
+                    " likelihood (m.AsSyncEpoch < ?, 0.5) " + 
                     " LIMIT ? ",
                     typeof(T).Name),
                 accountId, accountId, folderId, currentEpoch, limit);

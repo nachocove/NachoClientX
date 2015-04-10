@@ -48,17 +48,17 @@ namespace NachoCore.Model
         public static List<McMapFolderFolderEntry> QueryByFolderId (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
-                " mm.AccountId = ? AND " +
-                " mm.FolderId = ? ",
+                " likelihood (mm.AccountId = ?, 1.0) AND " +
+                " likelihood (mm.FolderId = ?, 0.05)",
                 accountId, folderId).ToList();
         }
 
         public static List<McMapFolderFolderEntry> QueryByFolderIdClassCode (int accountId, int folderId, McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             return NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
-                " mm.AccountId = ? AND " +
-                " mm.FolderId = ? AND " +
-                " mm.ClassCode = ?",
+                " likelihood (mm.AccountId = ?, 1.0) AND " +
+                " likelihood (mm.FolderId = ?, 0.05) AND " +
+                " likelihood (mm.ClassCode = ?, 0.2)",
                 accountId, folderId, classCode).ToList();
         }
 
@@ -66,10 +66,10 @@ namespace NachoCore.Model
                                                                                     McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
-                       " mm.AccountId = ? AND " +
-                       " mm.FolderId = ? AND " +
-                       " mm.FolderEntryId = ? AND " +
-                       " mm.ClassCode = ?",
+                " likelihood (mm.AccountId = ?, 1.0) AND " +
+                " likelihood (mm.FolderId = ?, 0.05) AND " +
+                " likelihood (mm.FolderEntryId = ?, 0.001) AND " +
+                " likelihood (mm.ClassCode = ?, 0.2)",
                            accountId, folderId, folderEntryId, classCode);
             return maps.SingleOrDefault ();
         }
@@ -78,9 +78,9 @@ namespace NachoCore.Model
             McAbstrFolderEntry.ClassCodeEnum classCode)
         {
             var maps = NcModel.Instance.Db.Query<McMapFolderFolderEntry> ("SELECT mm.* FROM McMapFolderFolderEntry AS mm WHERE " +
-                " mm.AccountId = ? AND " +
-                " mm.FolderEntryId = ? AND " +
-                " mm.ClassCode = ?",
+                " likelihood (mm.AccountId = ?, 1.0) AND " +
+                " likelihood (mm.FolderEntryId = ?, 0.001) AND " +
+                " likelihood (mm.ClassCode = ?, 0.2)",
                 accountId, folderEntryId, classCode);
             return maps.ToList ();
         }
