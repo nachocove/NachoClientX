@@ -353,7 +353,7 @@ namespace NachoCore.ActiveSync
         private void TimeoutTimerCallback (object State)
         {
             if (!((CancellationToken)State).IsCancellationRequested) {
-                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
+                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", RedactedServerUri));
             }
         }
         // This method should only be called if the response indicates that the new server is a legit AS server.
@@ -478,7 +478,7 @@ namespace NachoCore.ActiveSync
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 } catch (WebException ex) {
@@ -488,7 +488,7 @@ namespace NachoCore.ActiveSync
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                         // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
                     }
                     return;
                 } catch (NullReferenceException ex) {
@@ -496,7 +496,7 @@ namespace NachoCore.ActiveSync
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("NullReferenceException");
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 } catch (Exception ex) {
@@ -504,7 +504,7 @@ namespace NachoCore.ActiveSync
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 }
@@ -518,7 +518,7 @@ namespace NachoCore.ActiveSync
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         CancelTimeoutTimer ("Exception creating ContentData");
                         Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, RedactedServerUri, ex.Message, ex.StackTrace);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", RedactedServerUri));
                         return;
                     }
                     CancelTimeoutTimer ("Success");
