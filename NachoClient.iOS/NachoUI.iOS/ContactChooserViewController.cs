@@ -372,8 +372,9 @@ namespace NachoClient.iOS
                 if (null == cell) {
                     cell = ContactCell.CreateCell (tableView, VipButtonTouched);
                 }
-                var contact = Owner.searchResults [indexPath.Row].GetContact ();
-                ContactCell.ConfigureCell (tableView, cell, contact, null, false);
+                var contactAddress = Owner.searchResults [indexPath.Row];
+                var contact = contactAddress.GetContact ();
+                ContactCell.ConfigureCell (tableView, cell, contact, null, false, contactAddress.Value);
                 return cell;
             }
 
