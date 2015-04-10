@@ -231,7 +231,7 @@ namespace NachoPlatform
                             },
                             new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.PrdDataReqSendEvt,
-                                Act = DoSendPurchaseRequest,
+                                Act = DoSendProductDataRequest,
                                 State = (uint)InAppPurchaseState.PrdDataWait
                             },
                             new Trans {
@@ -324,7 +324,7 @@ namespace NachoPlatform
                             new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.DoPurchaseEvt,
                                 Act = DoSendPurchaseRequest,
-                                State = (uint)InAppPurchaseState.Expired
+                                State = (uint)InAppPurchaseState.PurchaseWait
                             },
                             new Trans {
                                 Event = (uint)InAppPurchaseEvent.E.StopEvt,
@@ -469,7 +469,6 @@ namespace NachoPlatform
         {           
             // TODO: handle expiry
             NcAssert.True (false, "InAppPurchase: No expiry configured yet");
-
         }
 
         // from IPlatformStoreHandler
@@ -488,11 +487,8 @@ namespace NachoPlatform
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
                 if (null == siea.Status.Value) {
                     // do nothing now
-                    Log.Info (Log.LOG_DB, "StoreHandler: No UserId created yet");
-
                 } else {
                     string userId = (string)siea.Status.Value;
-                    Log.Info (Log.LOG_SYS, "StoreHandler: Changed UserId is {0}", userId);
                     if (userId != LicenseInformation.UserId) {
                         Log.Info (Log.LOG_SYS, "StoreHandler: Replacing existing LicenseInformation UserId {0} with {1}", LicenseInformation.UserId, userId);
                         LicenseInformation.UserId = userId;

@@ -44,8 +44,6 @@ namespace NachoCore.Utils
             }
             set {
                 _ClientId = value;
-                // Currently, the telemetry client id is the application's client id.
-                NcApplication.Instance.ClientId = _ClientId;
             }
         }
 
@@ -86,11 +84,7 @@ namespace NachoCore.Utils
             var clientIdFile = Path.Combine (NcModel.Instance.GetDataDirPath (), "client_id");
             if (File.Exists (clientIdFile)) {
                 // Get the client id from the file
-                using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {
-                    using (var reader = new StreamReader (stream)) {
-                        ClientId = reader.ReadLine ();
-                    }
-                }
+                UpdateClientIdFromFile (clientIdFile);
                 FreshInstall = false;
             } else {
                 // Save the current Cognito id as client id
@@ -99,13 +93,10 @@ namespace NachoCore.Utils
                         ClientId = NcApplication.Instance.ClientId;
                     } else {
                         ClientId = credentials.GetIdentityId ();
+                        NcApplication.Instance.ClientId = _ClientId;
                     }
+                    WriteClientIdToFile (ClientId);
                 });
-                using (var stream = new FileStream (clientIdFile, FileMode.Create, FileAccess.Write)) {
-                    using (var writer = new StreamWriter (stream)) {
-                        writer.WriteLine (ClientId);
-                    }
-                }
                 FreshInstall = true;
             }
 
@@ -115,6 +106,8 @@ namespace NachoCore.Utils
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = result,
             });
+            // start listening to changes in NcApplication
+            NcApplication.Instance.StatusIndEvent += TokensWatcher;
 
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);
@@ -127,6 +120,52 @@ namespace NachoCore.Utils
                 UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
                 WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
             });
+        }
+
+        private void TokensWatcher (object sender, EventArgs ea)
+        {
+            StatusIndEventArgs siea = (StatusIndEventArgs)ea;
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_PushAssistClientToken:
+                if (null == siea.Status.Value) {
+                    // do nothing now
+                } else {
+                    // new ClientId 
+                    string userId = (string)siea.Status.Value;
+                    if (ClientId != userId) {
+                        ClientId = userId;
+                        // replace ClientId in client_id File. We can remove this file if there aren't any existing install concerns.
+                        WriteClientIdToFile (ClientId);
+                    }
+                }
+                break;
+            }
+        }
+
+        private void UpdateClientIdFromFile (string clientIdFile)
+        {
+            using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {
+                using (var reader = new StreamReader (stream)) {
+                    ClientId = reader.ReadLine ();
+                }
+            }
+            string cloudUserId = CloudHandler.Instance.GetUserId ();
+            if ((cloudUserId != null) && (cloudUserId != ClientId)) {
+                ClientId = cloudUserId;
+                // replace ClientId in client_id File.
+                WriteClientIdToFile (ClientId);
+            }
+        }
+
+        public void WriteClientIdToFile (string ClientId)
+        {
+            var clientIdFile = Path.Combine (NcModel.Instance.GetDataDirPath (), "client_id");
+            Console.WriteLine ("Writing ClientId in client_id file : {0}", ClientId);
+            using (var stream = new FileStream (clientIdFile, FileMode.Create, FileAccess.Write)) {
+                using (var writer = new StreamWriter (stream)) {
+                    writer.WriteLine (ClientId);
+                }
+            }
         }
 
         private void Retry (Action action)

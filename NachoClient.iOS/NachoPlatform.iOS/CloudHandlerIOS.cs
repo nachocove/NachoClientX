@@ -61,9 +61,9 @@ namespace NachoPlatform
 
         public string GetUserId ()
         {
-            Log.Info (Log.LOG_SYS, "CloudHandler: Getting UserId");
             if (HasiCloud) {
                 string remoteUserId = Store.GetString (KUserId);
+                Log.Info (Log.LOG_SYS, "CloudHandler: Cloud UserId {0}", remoteUserId);
                 if (remoteUserId != null) {
                     string localUserId = NSUserDefaults.StandardUserDefaults.StringForKey (KUserId);
                     if (localUserId != remoteUserId) {
@@ -71,7 +71,6 @@ namespace NachoPlatform
                         NSUserDefaults.StandardUserDefaults.SetString (remoteUserId, KUserId);
                         NSUserDefaults.StandardUserDefaults.Synchronize ();
                     }
-                    Log.Info (Log.LOG_SYS, "CloudHandler: Returning cloud UserId {0}", remoteUserId);
                     return remoteUserId;
                 }
             }
@@ -93,17 +92,23 @@ namespace NachoPlatform
 
         public bool IsAlreadyPurchased ()
         {
-            Log.Info (Log.LOG_SYS, "CloudHandler: Getting license purchase status");
             if (HasiCloud) {
                 bool remotePurchaseStatus = Store.GetBool (KIsAlreadyPurchased);
+                Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status {0} for license in cloud", remotePurchaseStatus);
                 if (remotePurchaseStatus != false) {
-                    Log.Info (Log.LOG_SYS, "CloudHandler: Purchase status true for license in cloud");
                     if (remotePurchaseStatus == true) {
                         bool localPurchaseStatus = NSUserDefaults.StandardUserDefaults.BoolForKey (KIsAlreadyPurchased);
                         if (localPurchaseStatus != remotePurchaseStatus) {
-                            // replace local cached purchase status with Cloud purchase status
-                            NSUserDefaults.StandardUserDefaults.SetBool (remotePurchaseStatus, KIsAlreadyPurchased);
-                            NSUserDefaults.StandardUserDefaults.Synchronize ();
+                            if (localPurchaseStatus) { 
+                                // locally purchased, update cloud)
+                                Store.SetBool (KIsAlreadyPurchased, true);  
+                                string purchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey (KPurchaseDate);
+                                Store.SetString (KPurchaseDate, purchaseDate);
+                            } else {
+                                // replace local cached purchase status with Cloud purchase status
+                                NSUserDefaults.StandardUserDefaults.SetBool (remotePurchaseStatus, KIsAlreadyPurchased);
+                                NSUserDefaults.StandardUserDefaults.Synchronize ();
+                            }
                         }
                         return remotePurchaseStatus;
                     }
@@ -117,9 +122,9 @@ namespace NachoPlatform
         public DateTime GetPurchaseDate ()
         {
             string purchaseDate;
-            Log.Info (Log.LOG_SYS, "CloudHandler: Getting purchase date for product");
             if (HasiCloud) {
                 purchaseDate = Store.GetString (KPurchaseDate);
+                Log.Info (Log.LOG_SYS, "CloudHandler: Purchase date {0} for license in cloud", purchaseDate);
                 if (purchaseDate != null) {
                     string localPurchaseDate = NSUserDefaults.StandardUserDefaults.StringForKey (KPurchaseDate);
                     if (localPurchaseDate != purchaseDate) {
@@ -167,6 +172,7 @@ namespace NachoPlatform
             Log.Info (Log.LOG_SYS, "CloudHandler: Getting first install date");
             if (HasiCloud) {
                 installDate = Store.GetString (KFirstInstallDate);
+                Log.Info (Log.LOG_SYS, "CloudHandler: First install date {0} from cloud", installDate);
                 if (installDate != null) {
                     string localInstallDate = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
                     if (localInstallDate != installDate) {
@@ -174,7 +180,6 @@ namespace NachoPlatform
                         NSUserDefaults.StandardUserDefaults.SetString (installDate, KFirstInstallDate);
                         NSUserDefaults.StandardUserDefaults.Synchronize ();
                     }
-                    Log.Info (Log.LOG_SYS, "CloudHandler: Returning first install date {0} from cloud", installDate);
                     return installDate.ToDateTime ();
                 }
             }
@@ -191,18 +196,17 @@ namespace NachoPlatform
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
                 if (null == siea.Status.Value) {
                     // do nothing now
-                    Log.Info (Log.LOG_SYS, "CloudHandler: No UserId created yet");
-
                 } else {
                     string newUserId = (string)siea.Status.Value;
-                    Log.Info (Log.LOG_SYS, "CloudHandler: NcApplication UserId is {0}", newUserId);
                     string userId = GetUserId ();
                     if (userId == null) {
                         Log.Info (Log.LOG_SYS, "CloudHandler: No UserId in cloud. Saving  UserId {0} to cloud", newUserId);
                         SetUserId (newUserId);
                     } else if (newUserId != userId) {
-                        Log.Info (Log.LOG_SYS, "CloudHandler: UserId exists in cloud. Replacing local UserId {0} with {1}", NcApplication.Instance.ClientId, userId);
-                        NcApplication.Instance.ClientId = userId;
+                        if (CloudInstallDateEarlierThanLocal ()) {
+                            Log.Info (Log.LOG_SYS, "CloudHandler: Earlier UserId exists in cloud. Replacing local UserId {0} with {1}", NcApplication.Instance.ClientId, userId);
+                            NcApplication.Instance.ClientId = userId;
+                        }
                     }
                 }
                 break;
@@ -231,12 +235,41 @@ namespace NachoPlatform
                         string userId = NSUbiquitousKeyValueStore.DefaultStore.GetString (KUserId);
                         Log.Info (Log.LOG_SYS, "CloudHandler: Notification from cloud. UserId changed to {0}", userId);
                         if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
-                            Log.Info (Log.LOG_SYS, "CloudHandler: Replacing localUserId {0} with {1} from Cloud", NcApplication.Instance.ClientId, userId);
-                            NcApplication.Instance.ClientId = userId;
+                            if (CloudInstallDateEarlierThanLocal ()) {
+                                Log.Info (Log.LOG_SYS, "CloudHandler: Replacing localUserId {0} with {1} from Cloud", NcApplication.Instance.ClientId, userId);
+                                NcApplication.Instance.ClientId = userId;
+                            }
                         }
                     }
                 }
             });
+        }
+
+        public bool CloudInstallDateEarlierThanLocal ()
+        {
+            if (HasiCloud) {
+                string cloudInstallDateStr = Store.GetString (KFirstInstallDate);
+                if (cloudInstallDateStr == null) {
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date is null");
+                    return false;
+                }
+                string localInstallDateStr = NSUserDefaults.StandardUserDefaults.StringForKey (KFirstInstallDate);
+                if (localInstallDateStr == null) {
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Local first install date is null");
+                    return true;
+                }
+                DateTime cloudInstallDate = cloudInstallDateStr.ToDateTime (); 
+                DateTime localInstallDate = localInstallDateStr.ToDateTime (); 
+                if (DateTime.Compare (cloudInstallDate, localInstallDate) < 0) {
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is earlier than local {1}", cloudInstallDateStr, localInstallDateStr);
+                    return true;
+                } else {
+                    Log.Info (Log.LOG_SYS, "CloudHandler: Cloud first install date {0} is not earlier than local {1}", cloudInstallDateStr, localInstallDateStr);
+                    return false;
+                }
+            }
+            Log.Info (Log.LOG_SYS, "CloudHandler: Cloud is not available");
+            return false;
         }
 
         public void Stop ()

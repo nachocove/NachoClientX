@@ -77,7 +77,7 @@
     <WarningLevel>4</WarningLevel>
     <MtouchDebug>true</MtouchDebug>
     <ConsolePause>false</ConsolePause>
-    <CodesignKey>iPhone Developer: Azim Ozakil (5AKLC3MCS9)</CodesignKey>
+    <CodesignKey>iPhone Developer: Thomas Enderwick (Z89649H7J4)</CodesignKey>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>cjk,west</MtouchI18n>
@@ -98,7 +98,6 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchProfiling>true</MtouchProfiling>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
-    <CodesignProvision>9b279acd-76ac-40fa-9397-642e45149dd3</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>

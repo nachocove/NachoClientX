@@ -10,7 +10,7 @@ namespace NachoCore.Model
 {
     public class McLicenseInformation : McAbstrObject
     {
-        public const string NachoClientLicenseProductId = "com.alternateworlds.storekit.testing.annually";
+        public const string NachoClientLicenseProductId = "com.nachcove.mail.license";
 
         public McLicenseInformation ()
         {
