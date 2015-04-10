@@ -935,6 +935,7 @@ namespace NachoCore.ActiveSync
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
+                PushAssist = null;
             }
             base.Remove ();
         }

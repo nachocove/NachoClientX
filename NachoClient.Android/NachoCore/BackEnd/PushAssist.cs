@@ -246,6 +246,14 @@ namespace NachoCore
             }
         }
 
+        public static void RemovePAObjectByContext (string context)
+        {
+            WeakReference dummy;
+            if (!ContextObjectMap.TryRemove (context, out dummy)) {
+                Log.Warn (Log.LOG_PUSH, "Cannot remove unknown context {0}", context);
+            }
+        }
+
         public PushAssist (IPushAssistOwner owner)
         {
             LockObj = new object ();
@@ -496,6 +504,7 @@ namespace NachoCore
         {
             if (!IsDisposed) {
                 IsDisposed = true;
+                RemovePAObjectByContext (ClientContext);
                 NcApplication.Instance.StatusIndEvent -= TokensWatcher;
                 DisposeRetryTimer ();
                 DisposeTimeoutTimer ();
