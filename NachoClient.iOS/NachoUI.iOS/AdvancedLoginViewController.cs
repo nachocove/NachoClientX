@@ -456,11 +456,11 @@ namespace NachoClient.iOS
                 break;
             case LoginStatus.ServerConf:
                 if (null == theAccount.Server) {
-                    errorMessage.Text = "We had a problem finding the server for '" + theAccount.Account.EmailAddr + "'.";
+                    errorMessage.Text = "We had a problem connecting to the server for '" + theAccount.Account.EmailAddr + "'.";
                 } else if (null == theAccount.Server.UserSpecifiedServerName) {
-                    errorMessage.Text = "We had a problem finding the server '" + theAccount.Server.Host + "'.";
+                    errorMessage.Text = "We had a problem connecting the server '" + theAccount.Server.Host + "'.";
                 } else {
-                    errorMessage.Text = "We had a problem finding the server '" + theAccount.Server.UserSpecifiedServerName + "'.";
+                    errorMessage.Text = "We had a problem connecting the server '" + theAccount.Server.UserSpecifiedServerName + "'.";
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
                 if (!String.IsNullOrEmpty (serverView.textField.Text)) {
