@@ -1323,6 +1323,13 @@
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
+      <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\NotificationChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\NotificationChooserViewController.designer.cs">
+      <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
