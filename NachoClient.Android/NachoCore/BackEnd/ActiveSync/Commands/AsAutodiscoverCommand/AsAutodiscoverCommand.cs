@@ -241,7 +241,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -302,7 +302,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -749,7 +749,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", "HARDFAIL");
+        }
+
+        private void DoUiGetServerTempFail ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", "TEMPFAIL");
         }
 
         private void DoUiServerCertAsk ()

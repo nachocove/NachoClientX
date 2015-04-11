@@ -559,10 +559,10 @@ namespace NachoCore
             });
         }
 
-        public void ServConfReq (ProtoControl sender)
+        public void ServConfReq (ProtoControl sender, object arg)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.ServConfReq (sender.AccountId);
+                Owner.ServConfReq (sender.AccountId, arg);
             });
         }
 

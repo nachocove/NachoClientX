@@ -795,17 +795,23 @@ namespace NachoClient.iOS
         }
 
 
-        public void ServConfReqCallback (int accountId)
+        public void ServConfReqCallback (int accountId, object arg = null)
         {
-            Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
+            Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0} with arg {1}", accountId, arg);
 
             // TODO Make use of the MX information that was gathered during auto-d.
             // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
+            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
+            if ((string)arg == "HARDFAIL") {
+                why = NcResult.WhyEnum.InvalidDest;
+            } else if ((string)arg == "TEMPFAIL") {
+                why = NcResult.WhyEnum.ServerError;
+            }
             if (hasFirstSyncCompleted == false) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
+                    Status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
