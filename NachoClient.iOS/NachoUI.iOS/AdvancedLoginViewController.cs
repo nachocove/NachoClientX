@@ -457,16 +457,16 @@ namespace NachoClient.iOS
             case LoginStatus.ServerConf:
                 string messagePrefix = null;
                 if (nuance == "ServerError") {
-                    messagePrefix = "We had a problem connecting to the server for '";
+                    messagePrefix = "We had a problem connecting to the server";
                 } else {
-                    messagePrefix = "We had a problem finding the server for '";
+                    messagePrefix = "We had a problem finding the server";
                 }
                 if (null == theAccount.Server) {
-                    errorMessage.Text = messagePrefix + theAccount.Account.EmailAddr + "'.";
+                    errorMessage.Text = messagePrefix + " for '" + theAccount.Account.EmailAddr + "'.";
                 } else if (null == theAccount.Server.UserSpecifiedServerName) {
-                    errorMessage.Text = messagePrefix + theAccount.Server.Host + "'.";
+                    errorMessage.Text = messagePrefix + "'" + theAccount.Server.Host + "'.";
                 } else {
-                    errorMessage.Text = messagePrefix + theAccount.Server.UserSpecifiedServerName + "'.";
+                    errorMessage.Text = messagePrefix + "'" + theAccount.Server.UserSpecifiedServerName + "'.";
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
                 if (!String.IsNullOrEmpty (serverView.textField.Text)) {
