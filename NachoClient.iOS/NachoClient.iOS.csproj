@@ -1336,6 +1336,7 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
       <Link>NachoCore\Model\McLicenseInformation.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
       <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
     </Compile>
