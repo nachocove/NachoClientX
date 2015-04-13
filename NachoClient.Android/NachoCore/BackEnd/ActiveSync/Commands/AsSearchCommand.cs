@@ -218,6 +218,22 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.HardFail, "SRTLYUK");
         }
 
+        private bool TryUpdateGalCache (int accountId, int galFolderId, string emailAddress, XElement xmlProperties, string token)
+        {
+            var existingItems = McContact.QueryByEmailAddressInFolder (accountId, galFolderId, emailAddress);
+            if (0 == existingItems.Count) {
+                return false;
+            }
+            if (1 != existingItems.Count) {
+                Log.Error (Log.LOG_AS, "{0} GAL-cache entries for email address {1}", existingItems.Count, emailAddress);
+            }
+            var existing = existingItems.First ();
+            existing.RefreshFromGalXml (xmlProperties);
+            existing.GalCacheToken = token;
+            existing.Update ();
+            return true;
+        }
+
         private void UpdateOrInsertGalCache (XElement xmlResult, string Token)
         {
             XNamespace galNs = Xml.Gal.Ns;
@@ -233,21 +249,18 @@ namespace NachoCore.ActiveSync
             }
             var emailAddress = xmlEmailAddress.Value;
             var galCacheFolder = McFolder.GetGalCacheFolder (BEContext.Account.Id);
-            var existingItems = McContact.QueryByEmailAddressInFolder (BEContext.Account.Id, galCacheFolder.Id, emailAddress);
-            if (0 != existingItems.Count) {
-                if (1 != existingItems.Count) {
-                    Log.Error (Log.LOG_AS, "{0} GAL-cache entries for email address {1}", existingItems.Count, emailAddress);
-                }
-                var existing = existingItems.First ();
-                existing.RefreshFromGalXml (xmlProperties);
-                existing.GalCacheToken = Token;
-                existing.Update ();
+            if (TryUpdateGalCache (BEContext.Account.Id, galCacheFolder.Id, emailAddress, xmlProperties, Token)) {
                 return;
             }
-            var contact = McContact.CreateFromGalXml (BEContext.Account.Id, xmlProperties);
-            contact.GalCacheToken = Token;
-            contact.Insert ();
-            galCacheFolder.Link (contact);
+            NcModel.Instance.RunInTransaction (() => {
+                if (TryUpdateGalCache (BEContext.Account.Id, galCacheFolder.Id, emailAddress, xmlProperties, Token)) {
+                    return;
+                }
+                var contact = McContact.CreateFromGalXml (BEContext.Account.Id, xmlProperties);
+                contact.GalCacheToken = Token;
+                contact.Insert ();
+                galCacheFolder.Link (contact);
+            });
         }
 
         private List<NcEmailMessageIndex> BuildEmailMessageIdVector (IEnumerable<XElement> xmlResults)
