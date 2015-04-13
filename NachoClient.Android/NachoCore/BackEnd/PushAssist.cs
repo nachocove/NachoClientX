@@ -201,7 +201,7 @@ namespace NachoCore
             DateTime timestamp;
             // Look for the timestamp and measure the pinger to client latency
             if ((null != pinger.meta) && (pinger.meta.HasTimestamp (out timestamp))) {
-                var elapsed = (DateTime.Now - timestamp).TotalSeconds;
+                var elapsed = (DateTime.UtcNow - timestamp).TotalSeconds;
                 if (300 <= elapsed) {
                     Log.Warn (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
                 } else {
