@@ -1010,7 +1010,7 @@ namespace NachoCore.ActiveSync
         private void DoUiServConfReq ()
         {
             // Send the request toward the UI.
-            Owner.ServConfReq (this);
+            Owner.ServConfReq (this, Sm.Arg);
         }
 
         private void DoSetServConf ()

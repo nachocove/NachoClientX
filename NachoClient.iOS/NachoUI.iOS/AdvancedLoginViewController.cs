@@ -455,12 +455,18 @@ namespace NachoClient.iOS
                 setTextToRed (new AdvancedTextField[] { serverView });
                 break;
             case LoginStatus.ServerConf:
-                if (null == theAccount.Server) {
-                    errorMessage.Text = "We had a problem finding the server for '" + theAccount.Account.EmailAddr + "'.";
-                } else if (null == theAccount.Server.UserSpecifiedServerName) {
-                    errorMessage.Text = "We had a problem finding the server '" + theAccount.Server.Host + "'.";
+                string messagePrefix = null;
+                if (nuance == "ServerError") {
+                    messagePrefix = "We had a problem connecting to the server";
                 } else {
-                    errorMessage.Text = "We had a problem finding the server '" + theAccount.Server.UserSpecifiedServerName + "'.";
+                    messagePrefix = "We had a problem finding the server";
+                }
+                if (null == theAccount.Server) {
+                    errorMessage.Text = messagePrefix + " for '" + theAccount.Account.EmailAddr + "'.";
+                } else if (null == theAccount.Server.UserSpecifiedServerName) {
+                    errorMessage.Text = messagePrefix + "'" + theAccount.Server.Host + "'.";
+                } else {
+                    errorMessage.Text = messagePrefix + "'" + theAccount.Server.UserSpecifiedServerName + "'.";
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
                 if (!String.IsNullOrEmpty (serverView.textField.Text)) {
@@ -959,7 +965,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
-                ConfigureView (LoginStatus.ServerConf);
+                ConfigureView (LoginStatus.ServerConf, nuance: s.Status.Why.ToString ());
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
             }

@@ -139,7 +139,7 @@ namespace NachoCore
         /// </summary>
         public CredReqCallbackDele CredReqCallback { set; get; }
 
-        public delegate void ServConfReqCallbackDele (int accountId);
+        public delegate void ServConfReqCallbackDele (int accountId, object arg = null);
 
         /// <summary>
         /// ServConfRequest: When called the callee must gather the server information for the 
@@ -650,10 +650,10 @@ namespace NachoCore
             }
         }
 
-        public void ServConfReq (int accountId)
+        public void ServConfReq (int accountId, object arg)
         {
             if (null != ServConfReqCallback) {
-                ServConfReqCallback (accountId);
+                ServConfReqCallback (accountId, arg);
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication ServConfReqCallback.");
             }
