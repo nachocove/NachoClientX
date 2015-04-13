@@ -118,9 +118,19 @@ namespace NachoClient.iOS
             var bodyText = ExtractBodyTextAsNSAttributedString (draftMessage);
             bodyTextView.AttributedText = bodyText;
 
-            // FIXME: Attachments
+            if (0 == draftMessage.ReferencedEmailId) {
+                action = EmailHelper.Action.Send;
+            } else {
+                action = (draftMessage.ReferencedIsForward ? EmailHelper.Action.Forward : EmailHelper.Action.ReplyAll);
+                referencedMessage = McEmailMessage.QueryById<McEmailMessage> (draftMessage.ReferencedEmailId);
+                if (null == referencedMessage) {
+                    Log.Warn (Log.LOG_EMAIL, "Restore draft could not find original message {0}", draftMessage.ReferencedEmailId);
+                    action = EmailHelper.Action.Send;
+                }
+            }
+            showQuotedTextButton.Hidden = draftMessage.ReferencedBodyIsIncluded;
 
-            // FIXME: Smart (and dumb) quoted text handling
+            // FIXME: Attachments
 
         }
 
@@ -157,7 +167,10 @@ namespace NachoClient.iOS
             message.IntentDateType = messageIntentDateType;
             message.QRType = QRType;
 
-            // Todo: action
+            message.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
+            message.ReferencedIsForward = (action == EmailHelper.Action.Forward);
+            message.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
+
             // Todo: attachments
 
             message.Update ();
@@ -282,11 +295,10 @@ namespace NachoClient.iOS
 
             if (null != draftMessage) {
                 RestoreDraft ();
-            }
-
-            if (EmailHelper.IsForwardOrReplyAction (action)) {
+            } else if (EmailHelper.IsForwardOrReplyAction (action)) {
                 InitializeMessageForAction ();
             }
+
             showQuotedTextButton.Hidden = (null == referencedMessage);
 
             suppressLayout = false;
@@ -326,7 +338,6 @@ namespace NachoClient.iOS
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
-
 
         }
 
