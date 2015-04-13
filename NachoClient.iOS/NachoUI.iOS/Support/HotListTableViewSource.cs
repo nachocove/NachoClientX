@@ -355,11 +355,11 @@ namespace NachoClient.iOS
             unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
-            messageHeaderView.ConfigureView (messageThread, message);
+            messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-                messageHeaderView.ConfigureView (messageThread, message);
+                messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
             nfloat previewViewTop;

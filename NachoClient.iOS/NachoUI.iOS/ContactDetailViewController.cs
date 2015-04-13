@@ -28,7 +28,7 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected ContactsHelper contactHelper = new ContactsHelper ();
-        protected MessageTableViewSource messageSource;
+        protected IMessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
         protected nint selectedSegment = 0;
@@ -88,7 +88,7 @@ namespace NachoClient.iOS
 
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
-            messageSource = new MessageTableViewSource ();
+            messageSource = new MessageTableViewSource (this);
             MultiSelect = new HashSet<int> ();
         }
 
@@ -133,6 +133,7 @@ namespace NachoClient.iOS
             if (null != contact) {
                 contact = McContact.QueryById<McContact> (contact.Id);
             }
+            RefreshData ();
             ConfigureAndLayout ();
         }
 
@@ -389,6 +390,7 @@ namespace NachoClient.iOS
             interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
+            interactionsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
@@ -589,8 +591,7 @@ namespace NachoClient.iOS
 
             //CONFIGURE INTERACTIONS VIEW
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
-            messageSource.owner = this;
-            interactionsTableView.Source = messageSource;
+            interactionsTableView.Source = messageSource.GetTableViewSource ();
             MultiSelectToggle (messageSource, false);
             SetEmailMessages (new UserInteractionEmailMessages (contact));
 
@@ -631,7 +632,7 @@ namespace NachoClient.iOS
                 notesView.Hidden = true;
                 break;
             case 1:
-                editContact.Enabled = true;
+                editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = true;
                 interactionsTableView.Hidden = false;
                 notesView.Hidden = true;
@@ -1051,8 +1052,7 @@ namespace NachoClient.iOS
 
         protected void ComplainAbout (string complaintTitle, string complaintMessage)
         {
-            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
-            alert.Show ();
+            NcAlertView.ShowMessage (this, complaintTitle, complaintMessage);
         }
 
         protected void VipButtonTouchUpInside (object sender, EventArgs e)
@@ -1174,17 +1174,17 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
-        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
         {
         }
 
-        public void MultiSelectChange (MessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count)
         {
         }
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
-            this.messageSource.SetEmailMessages (messageThreads);
+            this.messageSource.SetEmailMessages (messageThreads, "No interactions");
         }
 
         public void SaveNote (int accountId, string noteText)

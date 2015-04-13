@@ -240,31 +240,43 @@ namespace NachoCore.Model
 
         public void Prioritize ()
         {
-            PriorityStamp = DateTime.UtcNow;
-            DelayNotAllowed = true;
-            Update ();
+            UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.PriorityStamp = DateTime.UtcNow;
+                target.DelayNotAllowed = true;
+                return true;
+            });
         }
 
         // To be used by app/ui when dealing with McPending.
         // To be used by Commands when dealing with McPending.
-        public void MarkDispached ()
+        public McPending MarkDispached ()
         {
-            State = StateEnum.Dispatched;
-            Update ();
             Log.Info (Log.LOG_SYNC, "Pending:MarkDispached:{0}", Id);
+            return UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.State = StateEnum.Dispatched;
+                return true;
+            });
         }
 
-        public void MarkPredBlocked (int predPendingId)
+        public McPending MarkPredBlocked (int predPendingId)
         {
-            State = StateEnum.PredBlocked;
+            var retval = this;
             var dep = new McPendDep (AccountId, predPendingId, Id);
             dep.Insert ();
             if (0 == Id) {
+                State = StateEnum.PredBlocked;
                 Insert ();
             } else {
-                Update ();
+                retval = UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.PredBlocked;
+                    return true;
+                });
             }
             Log.Info (Log.LOG_SYNC, "Pending:MarkPredBlocked:{0}", Id);
+            return retval;
         }
 
         public bool IsDuplicate ()
@@ -419,7 +431,7 @@ namespace NachoCore.Model
             return false;
         }
 
-        public void ResolveAsSuccess (ProtoControl control)
+        public McPending ResolveAsSuccess (ProtoControl control)
         {
             // Pick the default SubKind based on the Operation.
             // All Sync-command Ops must be covered. Non-Sync-commands need not be covered here.
@@ -477,43 +489,59 @@ namespace NachoCore.Model
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
             var result = NcResult.Info (subKind);
-            ResolveAsSuccess (control, result);
+            return ResolveAsSuccess (control, result);
         }
 
-        public void ResolveAsSuccess (ProtoControl control, NcResult result)
+        public McPending ResolveAsSuccess (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsSuccess.
+            var retval = this;
             NcAssert.True (StateEnum.Dispatched == State);
             NcAssert.True (NcResult.KindEnum.Info == result.Kind);
-            ResultKind = result.Kind;
-            ResultSubKind = result.SubKind;
-            ResultWhy = result.Why;
+            if (Operation == Operations.EmailSend ||
+                Operation == Operations.EmailForward ||
+                Operation == Operations.EmailReply) {
+                control.Owner.SendEmailResp (control, ItemId, true);
+            }
             if (null != result) {
                 NcAssert.True (null != control);
                 control.StatusInd (result, new [] { Token });
             }
-            State = StateEnum.Deleted;
-            Update ();
+            retval = UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.ResultKind = result.Kind;
+                target.ResultSubKind = result.SubKind;
+                target.ResultWhy = result.Why;
+                target.State = StateEnum.Deleted;
+                return true;
+            });
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}:{1}", Id, Token);
             UnblockSuccessors (control, StateEnum.Eligible);
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
             // accurate.
             Delete ();
+            return retval;
         }
 
-        public void ResolveAsCancelled (bool onlyDispatched)
+        public McPending ResolveAsCancelled (bool onlyDispatched)
         {
+            var retval = this;
             NcAssert.True (StateEnum.Dispatched == State || !onlyDispatched);
-            State = StateEnum.Deleted;
+            retval = UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.State = StateEnum.Deleted;
+                return true;
+            });
             UnblockSuccessors (null, StateEnum.Eligible);
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}:{1}", Id, Token);
             Delete ();
+            return retval;
         }
 
-        public void ResolveAsCancelled ()
+        public McPending ResolveAsCancelled ()
         {
-            ResolveAsCancelled (true);
+            return ResolveAsCancelled (true);
         }
 
         private void EmailBodyError (int accountId, string serverId)
@@ -579,16 +607,26 @@ namespace NachoCore.Model
             attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
         }
 
-        public void ResolveAsHardFail (ProtoControl control, NcResult result)
+        public McPending ResolveAsHardFail (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
+            var retval = this;
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
-            ResultKind = result.Kind;
-            ResultSubKind = result.SubKind;
-            ResultWhy = result.Why;
-            State = StateEnum.Failed;
+            control.StatusInd (result, new [] { Token });
+            if (Operation == Operations.EmailSend ||
+                Operation == Operations.EmailForward ||
+                Operation == Operations.EmailReply) {
+                control.Owner.SendEmailResp (control, ItemId, false);
+            }
             NcModel.Instance.RunInTransaction (() => {
-                Update ();
+                retval = UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.ResultKind = result.Kind;
+                    target.ResultSubKind = result.SubKind;
+                    target.ResultWhy = result.Why;
+                    target.State = StateEnum.Failed;
+                    return true;
+                });
                 if (McPending.Operations.EmailBodyDownload == Operation) {
                     if (NcResult.WhyEnum.InterruptedByAppExit == ResultWhy) {
                         EmailBodyClear (AccountId, ServerId);
@@ -604,12 +642,13 @@ namespace NachoCore.Model
                 }
                 UnblockSuccessors (control, DelayNotAllowed ? StateEnum.Eligible : StateEnum.Failed);
             });
-            control.StatusInd (result, new [] { Token });
+
             if (DelayNotAllowed) {
                 Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
             } else {
                 Log.Warn (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
             }
+            return retval;
         }
 
         private NcResult.SubKindEnum DefaultErrorSubKind ()
@@ -687,15 +726,19 @@ namespace NachoCore.Model
         {
             var successors = QuerySuccessors (AccountId, Id);
             McPendDep.DeleteAllSucc (Id);
-            foreach (var succ in successors) {
+            foreach (var iter in successors) {
+                var succ = iter;
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
                 Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
                 switch (toState) {
                 case StateEnum.Eligible:
                     if (0 == remaining.Count ()) {
                         // Just enable execution.
-                        succ.State = toState;
-                        succ.Update ();
+                        succ = succ.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.State = toState;
+                            return true;
+                        });
                     }
                     break;
                 case StateEnum.Failed:
@@ -720,13 +763,16 @@ namespace NachoCore.Model
         public static bool MakeEligibleOnFSync (int accountId)
         {
             var makeEligible = QueryDeferredFSync (accountId);
-            foreach (var pending in makeEligible) {
-                if (DeferredEnum.UntilFSyncThenSync == pending.DeferredReason) {
-                    pending.DeferredReason = DeferredEnum.UntilSync;
-                } else {
-                    pending.State = StateEnum.Eligible;
-                }
-                pending.Update ();
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    if (DeferredEnum.UntilFSyncThenSync == target.DeferredReason) {
+                        target.DeferredReason = DeferredEnum.UntilSync;
+                    } else {
+                        target.State = StateEnum.Eligible;
+                    }
+                    return true;
+                });
                 Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFSync:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
@@ -735,9 +781,12 @@ namespace NachoCore.Model
         public static bool MakeEligibleOnSync (int accountId)
         {
             var makeEligible = QueryDeferredSync (accountId);
-            foreach (var pending in makeEligible) {
-                pending.State = StateEnum.Eligible;
-                pending.Update ();
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Eligible;
+                    return true;
+                });
                 Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnSync:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
@@ -746,32 +795,38 @@ namespace NachoCore.Model
         public static bool MakeEligibleOnTime (int accountId)
         {
             var makeEligible = QueryDeferredUntilNow (accountId);
-            foreach (var pending in makeEligible) {
-                pending.State = StateEnum.Eligible;
-                pending.Update ();
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Eligible;
+                    return true;
+                });
                 Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnTime:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
         }
         // register for status-ind, look for FSync and Sync success.
-        public void ResolveAsHardFail (ProtoControl control, NcResult.WhyEnum why)
+        public McPending ResolveAsHardFail (ProtoControl control, NcResult.WhyEnum why)
         {
             var result = NcResult.Error (DefaultErrorSubKind (), why);
-            ResolveAsHardFail (control, result);
+            return ResolveAsHardFail (control, result);
         }
 
-        public void ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
+        public McPending ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
         {
             NcAssert.True (StateEnum.Dispatched == State);
             // Added check in case of any bug causing underflow.
             if (DelayNotAllowed || 0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
-                ResolveAsHardFail (control, onFail);
+                return ResolveAsHardFail (control, onFail);
             } else {
-                DefersRemaining--;
-                DeferredReason = reason;
-                State = StateEnum.Deferred;
-                Update ();
                 Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferred:{0}:{1}", Id, Token);
+                return UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.DefersRemaining--;
+                    target.DeferredReason = reason;
+                    target.State = StateEnum.Deferred;
+                    return true;
+                });
             }
         }
 
@@ -794,19 +849,23 @@ namespace NachoCore.Model
             ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.NotSpecified);
         }
 
-        public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
+        public McPending ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
         {
             // This is the designated ResolveAsUserBlocked.
             NcAssert.True (StateEnum.Dispatched == State);
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
-            ResultKind = result.Kind;
-            ResultSubKind = result.SubKind;
-            ResultWhy = result.Why;
-            BlockReason = reason;
+
             control.StatusInd (result, new [] { Token });
             State = StateEnum.UserBlocked;
-            Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsUserBlocked:{0}:{1}", Id, Token);
+            return UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.ResultKind = result.Kind;
+                target.ResultSubKind = result.SubKind;
+                target.ResultWhy = result.Why;
+                target.BlockReason = reason;
+                return true;
+            });
         }
 
         public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)
@@ -877,8 +936,13 @@ namespace NachoCore.Model
                 }
                 base.Insert ();
                 ++_Version;
-                Priority = Id;
-                base.Update ();
+                // Note that because Insert & Update are in the same transaction, we don't really need UpdateWithOCApply here.
+                // But we must to avoid the assert in Update().
+                base.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.Priority = target.Id;
+                    return true;
+                });
                 foreach (var predId in predIds) {
                     var pendDep = new McPendDep (AccountId, predId, Id);
                     pendDep.Insert ();
@@ -892,14 +956,32 @@ namespace NachoCore.Model
             return 1;
         }
 
-        public override int Update ()
+        public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
-            int retval = 0;
+            T retval = null;
+            int innerCount = 0;
             NcModel.Instance.RunInLock (() => {
-                retval = base.Update ();
+                retval = base.UpdateWithOCApply<T> (mutator, out innerCount, tries);
+                ++_Version;
+            });
+            count = innerCount;
+            return retval;
+        }
+
+        public override T UpdateWithOCApply<T> (Mutator mutator, int tries = 100)
+        {
+            T retval = null;
+            NcModel.Instance.RunInLock (() => {
+                retval = base.UpdateWithOCApply<T> (mutator, tries);
                 ++_Version;
             });
             return retval;
+        }
+
+        public override int Update ()
+        {
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
         }
 
         public McAbstrItem QueryItemUsingServerId ()
@@ -1138,6 +1220,17 @@ namespace NachoCore.Model
                     rec.AccountId == accountId &&
                     rec.AttachmentId == AttachmentId
             ).FirstOrDefault ();
+        }
+
+        public static McPending QueryByEmailMessageId (int accountId, int emailMessageId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.ItemId == emailMessageId &&
+                    (rec.Operation == Operations.EmailSend ||
+                        rec.Operation == Operations.EmailForward ||
+                        rec.Operation == Operations.EmailReply)).FirstOrDefault ();
         }
 
         public static IEnumerable<McPending> QueryOlderThanByState (int accountId, DateTime olderThan, StateEnum state)

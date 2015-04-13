@@ -173,11 +173,7 @@ namespace Test.iOS
             // R/W AsProtocolVersion
             // READ InitialProvisionCompleted
             Server = server; 
-            if (Server == null) {
-                Server = new McServer () {
-                    Host = "foo.utopiasystems.net",
-                };
-            }
+
             Account = new McAccount () {
                 EmailAddr = "johnd@foo.utopiasystems.net",
             };
@@ -248,6 +244,10 @@ namespace Test.iOS
         }
 
         public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+        {
+        }
+
+        public void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend)
         {
         }
     }

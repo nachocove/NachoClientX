@@ -157,7 +157,11 @@ namespace NachoClient.iOS
             LayoutView ();
 
             if (!stayInAdvanced && IsBackEndRunning ()) {
-                waitScreen.ShowView ();
+                if (IsAutoDComplete ()) {
+                    handleStatusEnums ();
+                } else {
+                    waitScreen.ShowView ();
+                }
             } else {
                 NavigationItem.Title = "Account Setup";
                 loadingCover.Hidden = true;
@@ -349,9 +353,14 @@ namespace NachoClient.iOS
                     }
                 });
             }
-            // Segues to LaunchViewController
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            appDelegate.RemoveAccount ();
+            Action action = () => {
+                NcAccountHandler.Instance.RemoveAccount ();
+                InvokeOnMainThread (() => {
+                    // go back to main screen
+                    NcUIRedirector.Instance.GoBackToMainScreen ();                        
+                });
+            };
+            NcTask.Run (action, "RemoveAccount");
         }
 
         void onConnect (object sender, EventArgs e)
@@ -371,7 +380,7 @@ namespace NachoClient.iOS
             if (freshAccount) {
                 Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                appDelegate.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
+                NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
                 NcAssert.True (IsNcAppicationAccountSet ());
                 RefreshTheAccount ();
             } 
@@ -776,6 +785,7 @@ namespace NachoClient.iOS
             if (!theAccount.Server.IsSameServer (temp)) {
                 theAccount.Server.CopyFrom (temp);
                 theAccount.Server.UserSpecifiedServerName = serverView.textField.Text;
+                theAccount.Server.UsedBefore = false;
                 theAccount.Server.Update ();
                 Log.Info (Log.LOG_UI, "avl: update server {0}", theAccount.Server.UserSpecifiedServerName);
             }
@@ -849,6 +859,16 @@ namespace NachoClient.iOS
             if (BackEndStateEnum.Running == backEndState) {
                 return true;
             }
+            return IsAutoDComplete ();
+        }
+
+        bool IsAutoDComplete ()
+        {
+            if (null == theAccount.Account) {
+                return false;
+            }
+            NcAssert.True (IsNcAppicationAccountSet ());
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
             if (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) {
                 return true;
             }

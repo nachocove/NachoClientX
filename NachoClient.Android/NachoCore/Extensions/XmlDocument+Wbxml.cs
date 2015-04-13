@@ -39,6 +39,7 @@ namespace NachoCore.Utils
                 writer.BaseStream.Seek (0, SeekOrigin.Begin);
                 var encoded = new MemoryStream ();
                 writer.BaseStream.CopyTo (encoded);
+                Log.Info (Log.LOG_HTTP, "ToWbxmlStream: CopyTo done (#1313)");
                 writer.Close ();
                 encoded.Seek (0, SeekOrigin.Begin);
                 return encoded;

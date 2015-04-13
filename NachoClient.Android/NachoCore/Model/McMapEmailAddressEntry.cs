@@ -46,7 +46,7 @@ namespace NachoCore.Model
         {
             var addressList = NcModel.Instance.Db.Query<NcMapEmailAddressEntryEmailAddressId> (
                                   "SELECT EmailAddressId FROM McMapEmailAddressEntry AS e " +
-                                  "WHERE e.AccountId = ? AND e.ObjectId = ? AND e.AddressType = ?",
+                "WHERE likelihood (e.AccountId = ?, 1.0) AND likelihood (e.ObjectId = ?, 0.001) AND likelihood (e.AddressType = ?, 0.2) ",
                                   accountId, objectId, addressType);
             return (from address in addressList
                              select address.EmailAddressId).ToList ();
@@ -56,7 +56,7 @@ namespace NachoCore.Model
         {
             var objectList = NcModel.Instance.Db.Query<NcMapEmailAddressEntryObjectId> (
                                  "SELECT ObjectId FROM McMapEmailAddressEntry as e " +
-                                 "WHERE e.AccountId = ? AND e.EmailAddressId = ? AND e.AddressType = ?",
+                "WHERE likelihood (e.AccountId = ?, 1.0) AND likelihood (e.EmailAddressId = ?, 0.001) AND likelihood (e.AddressType = ?, 0.2) ",
                                  accountId, emailAddressId, addressType);
             return (from obj in objectList
                              select obj.ObjectId).ToList ();
@@ -98,7 +98,7 @@ namespace NachoCore.Model
         {
             var addressList = NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                                   "SELECT * FROM McMapEmailAddressEntry as e " +
-                                  "WHERE e.AccountId = ? AND e.ObjectId = ? AND " +
+                "WHERE likelihood (e.AccountId = ?, 1.0) AND likelihood (e.ObjectId = ?, 0.001) AND " +
                                   "e.AddressType IN (?, ?, ?, ?)", accountId, emailMessageId,
                                   NcEmailAddress.Kind.From, NcEmailAddress.Kind.Sender,
                                   NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc);
@@ -110,7 +110,7 @@ namespace NachoCore.Model
         {
             NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                 "DELETE FROM McMapEmailAddressEntry " +
-                "WHERE AccountId = ? AND ObjectId = ? AND " +
+                "WHERE likelihood (AccountId = ?, 1.0) AND likelihood (ObjectId = ?, 0.001) AND " +
                 "AddressType IN (?, ?, ?, ?)", accountId, emailMessageId,
                 NcEmailAddress.Kind.From, NcEmailAddress.Kind.Sender,
                 NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc);
@@ -120,7 +120,7 @@ namespace NachoCore.Model
         {
             NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                 "DELETE FROM McMapEmailAddressEntry " +
-                "WHERE AccountId = ? AND ObjectId = ? AND " +
+                "WHERE likelihood (AccountId = ?, 1.0) AND likelihood (ObjectId = ?, 0.001) AND " +
                 "AddressType IN (?, ?, ?, ?)", accountId, attendeeId,
                 NcEmailAddress.Kind.Optional, NcEmailAddress.Kind.Required,
                 NcEmailAddress.Kind.Resource, NcEmailAddress.Kind.Unknown);
@@ -130,7 +130,7 @@ namespace NachoCore.Model
         {
             NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                 "DELETE FROM McMapEmailAddressEntry " +
-                "WHERE AccountId = ? AND ObjectId = ? AND AddressType = ?",
+                "WHERE likelihood (AccountId = ?, 1.0) AND likelihood (ObjectId = ?, 0.001) AND likelihood (AddressType = ?, 0.2)",
                 accountId, objectId, addressType);
         }
 

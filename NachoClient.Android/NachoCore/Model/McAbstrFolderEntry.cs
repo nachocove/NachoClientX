@@ -46,9 +46,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " f.AccountId = ? AND " + 
-                    " f.IsAwaitingDelete = 0 AND " +
-                    " f.ServerId = ? ", 
+                    " likelihood (f.AccountId = ?, 1.0) AND " + 
+                    " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (f.ServerId = ?, 0.001) ", 
                     typeof(T).Name), 
                 accountId, serverId).SingleOrDefault ();
         }
@@ -57,9 +57,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " f.AccountId = ? AND " + 
-                    " f.IsAwaitingDelete = 0 AND " +
-                    " f.ServerId = ? ", 
+                    " likelihood (f.AccountId = ?, 1.0) AND " + 
+                    " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (f.ServerId = ?, 0.001) ", 
                     typeof(T).Name), 
                 accountId, serverId);
         }

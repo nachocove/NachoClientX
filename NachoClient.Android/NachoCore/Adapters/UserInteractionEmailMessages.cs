@@ -12,14 +12,13 @@ namespace NachoCore
 {
     public class UserInteractionEmailMessages : INachoEmailMessages
     {
-        List<McEmailMessageThread> threadList;
-        McFolder folder;
         McContact contact;
+        List<McEmailMessageThread> threadList;
 
         public UserInteractionEmailMessages (McContact contact)
         {
-            this.folder = new McFolder ();
             this.contact = contact;
+            threadList = new List<McEmailMessageThread> ();
             List<int> adds;
             List<int> deletes;
             Refresh (out adds, out deletes);
@@ -30,11 +29,6 @@ namespace NachoCore
             adds = null;
             deletes = null;
             if (null == contact) {
-                threadList = new List<McEmailMessageThread> ();
-                return true;
-            }
-            var folder = McFolder.GetDefaultInboxFolder (contact.AccountId);
-            if (null == folder) {
                 threadList = new List<McEmailMessageThread> ();
                 return true;
             }
@@ -59,29 +53,36 @@ namespace NachoCore
             return t;
         }
 
-
         // Add messages make up the thread, just the user ones
+
         public List<McEmailMessageThread> GetEmailThreadMessages (int id)
         {
-            var message = McEmailMessage.QueryById<McEmailMessage> (id);
-            if (null == message) {
-                return new List<McEmailMessageThread> ();
-            } else {
-                var thread = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, message.ConversationId);
-                return thread;
-            }
+            var thread = new List<McEmailMessageThread> ();
+            var m = new McEmailMessageThread ();
+            m.FirstMessageId = id;
+            m.MessageCount = 1;
+            thread.Add (m);
+            return thread;
         }
 
         public string DisplayName ()
         {
-            return folder.DisplayName;
+            return "Interactions";
+        }
+
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
         }
 
         public void StartSync ()
         {
-            if (null != folder) {
-                BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
-            }
+
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)

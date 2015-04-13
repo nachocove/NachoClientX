@@ -69,23 +69,23 @@ namespace NachoClient
             string value;
             string message = CheckCID (cid, out bodyId, out value);
             if (null != message) {
-                Log.Warn (Log.LOG_UTILS, "RenderContentId: {0}", message);
+                Log.Warn (Log.LOG_UTILS, "RenderContentId: {0} for cid {1}", message, cid ?? "");
                 return Draw1px ();
             }
             McBody body = McBody.QueryById<McBody> (bodyId);
             MimePart p = null;
             if (null != body) {
                 var mime = MimeHelpers.LoadMessage (body);
-                p = MimeHelpers.EntityWithContentId (mime, value);
+                p = MimeHelpers.SearchMessage (value, mime);
             }
             if (null == p) {
-                Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0} for cid {1}", value, cid);
                 return RenderStringToImage (value);
             }
 
             var image = RenderImage (p);
             if (null == image) {
-                Log.Error (Log.LOG_UTILS, "RenderContentId: image is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: image is null: {0} for {1}", value, cid);
                 return RenderStringToImage (value);
             }
             return image;
@@ -195,17 +195,18 @@ namespace NachoClient
             Preview.PresentPreview (true);
         }
 
-        public static string DownloadAttachment (McAttachment attachment)
+        public static NcResult DownloadAttachment (McAttachment attachment)
         {
             if (McAbstrFileDesc.FilePresenceEnum.Error == attachment.FilePresence) {
                 // Clear the error code so the download will be attempted again.
                 attachment.DeleteFile ();
             }
             if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
-                // TODO: Add more precise error messages based on NcResult like BodyView
-                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true).GetValue<string> ();
+                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true);
             } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+                var token = McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+                var nr = NcResult.OK (token); // null is potentially ok; callers expect it.
+                return nr;
             } 
             NcAssert.True (false, "Should not try to download an already-downloaded attachment");
             return null;

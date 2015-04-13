@@ -63,6 +63,16 @@ namespace NachoCore
             return "Thread";
         }
 
+        public bool HasOutboxSemantics ()
+        {
+            return false;
+        }
+
+        public bool HasDraftsSemantics ()
+        {
+            return false;
+        }
+
         public void StartSync ()
         {
 

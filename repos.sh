@@ -18,6 +18,7 @@ NachoPlatformBinding
 NachoUIMonitorBinding
 bc-csharp
 MimeKit
+MailKit
 DnDns
 DDay-iCal-Xamarin
 Telemetry

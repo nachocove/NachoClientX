@@ -372,8 +372,9 @@ namespace NachoClient.iOS
                 if (null == cell) {
                     cell = ContactCell.CreateCell (tableView, VipButtonTouched);
                 }
-                var contact = Owner.searchResults [indexPath.Row].GetContact ();
-                ContactCell.ConfigureCell (tableView, cell, contact, null, false);
+                var contactAddress = Owner.searchResults [indexPath.Row];
+                var contact = contactAddress.GetContact ();
+                ContactCell.ConfigureCell (tableView, cell, contact, null, false, contactAddress.Value);
                 return cell;
             }
 
@@ -422,28 +423,19 @@ namespace NachoClient.iOS
 
         }
 
-        string complaintTitle = "Email Address Missing";
-        string complaintMessage = "You've selected a contact who does not have an email address.";
-        string complaintEditMessage = "  Would you like to edit this contact?";
-
         void ComplainAboutMissingEmailAddress (McContact contact)
         {
-            var alert = new UIAlertView ();
             if (contact.CanUserEdit ()) {
-                alert.AddButton ("No");
-                alert.AddButton ("Edit Contact");
-                alert.Message = complaintMessage + complaintEditMessage;
+                NcAlertView.Show (this, "E-mail Address Missing",
+                    "You have selected a contact without an e-mail address. Would you like to edit this contact?",
+                    new NcAlertAction ("No", NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction ("Edit Contact", () => {
+                        PerformSegue ("SegueToContactEdit", new SegueHolder (contact));
+                    }));
             } else {
-                alert.AddButton ("OK");
-                alert.Message = complaintMessage;
+                NcAlertView.ShowMessage (this, "E-mail Address Missing",
+                    "You have selected a contact without an e-mail address.");
             }
-            alert.Clicked += (s, b) => {
-                if (1 == b.ButtonIndex) {
-                    PerformSegue ("SegueToContactEdit", new SegueHolder (contact));
-                }
-            };
-            alert.Title = complaintTitle;
-            alert.Show ();
         }
 
         protected void CancelSearchIfActive ()

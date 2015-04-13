@@ -7,7 +7,7 @@ using UIKit;
 
 namespace NachoClient.iOS
 {
-	public partial class DraftsViewController : UIViewController
+    public partial class DraftsViewController : MessageListViewController
 	{
 		public DraftsViewController (IntPtr handle) : base (handle)
 		{

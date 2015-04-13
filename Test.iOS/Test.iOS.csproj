@@ -282,6 +282,12 @@
     <Compile Include="..\Test.Android\CrlMonitorTest.cs">
       <Link>CrlMonitorTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\RemoveAccountTest.cs">
+      <Link>RemoveAccountTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\McTelemetryEventTest.cs">
+      <Link>McTelemetryEventTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

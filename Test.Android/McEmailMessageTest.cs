@@ -45,7 +45,7 @@ namespace Test.Common
             return address;
         }
 
-        private McEmailMessage SetupMessage (McEmailAddress from, DateTime dateReceived)
+        private McEmailMessage SetupMessage (McEmailAddress from, DateTime dateReceived, string conversationId = null)
         {
             McEmailMessage message = new McEmailMessage ();
             message.AccountId = defaultAccountId;
@@ -55,7 +55,7 @@ namespace Test.Common
             message.IsAwaitingDelete = false;
             message.FlagUtcStartDate = new DateTime ();
             message.DateReceived = dateReceived;
-            message.ConversationId = System.Guid.NewGuid ().ToString ();
+            message.ConversationId = conversationId ?? System.Guid.NewGuid ().ToString ();
 
 
             message.Insert ();
@@ -551,6 +551,61 @@ namespace Test.Common
             Assert.AreEqual (winner2, chosen.To);
             Assert.AreEqual (magicFrom1, chosen.From);
             Assert.AreEqual (magicTime2, chosen.DateReceived);
+        }
+
+        [Test]
+        public void QueryActiveMessageItems ()
+        {
+            // Create 8 email messages in the folder. 2 emails have scores over 0.5.
+            // 1 email is from VIP. 1 email is from VIP and has score over 0.5. 2
+            // emails have scores below 0.5. 1 email is delete pending. 1 email
+            // has a start date in the future.
+            McEmailAddress[] addresses = new McEmailAddress[10];
+            addresses [0] = SetupAddress ("aaron@company.net", 4, 2, false);
+            addresses [1] = SetupAddress ("bob@company.net", 5, 1, false);
+            addresses [2] = SetupAddress ("charles@compnay.net", 3, 3, false);
+            addresses [3] = SetupAddress ("david@company.net", 2, 0, false);
+            addresses [4] = SetupAddress ("ellen@company.net", 5, 3, true);
+            addresses [5] = SetupAddress ("fred@company.net", 3, 1, true);
+            addresses [6] = SetupAddress ("gary@company.net", 6, 6, false);
+            addresses [7] = SetupAddress ("harry@company.net", 7, 7, false);
+            addresses [8] = SetupAddress ("ivan@company.net", 3, 1, false);
+            addresses [9] = SetupAddress ("jolene@company.net", 5, 5, false);
+
+            McEmailMessage[] messages = new McEmailMessage[10];
+            messages [0] = SetupMessage (addresses [0], new DateTime (2014, 8, 15, 1, 23, 0), conversationId: "foo");
+            messages [1] = SetupMessage (addresses [1], new DateTime (2014, 8, 15, 2, 0, 0));
+            // Intentional set this one received date earlier to test "SORT BY DateReceived"
+            messages [2] = SetupMessage (addresses [2], new DateTime (2014, 8, 15, 1, 15, 0), conversationId: "foo");
+            messages [3] = SetupMessage (addresses [3], new DateTime (2014, 8, 15, 3, 0, 0));
+            messages [4] = SetupMessage (addresses [4], new DateTime (2014, 8, 15, 4, 0, 0));
+            messages [5] = SetupMessage (addresses [5], new DateTime (2014, 8, 15, 5, 0, 0), conversationId: "foo");
+            messages [6] = SetupMessage (addresses [6], new DateTime (2014, 8, 15, 6, 0, 0));
+            messages [6].IsAwaitingDelete = true;
+            messages [6].Update ();
+            messages [7] = SetupMessage (addresses [7], new DateTime (2014, 8, 15, 7, 0, 0));
+            messages [7].FlagUtcStartDate = DateTime.MaxValue;
+            messages [7].Update ();
+            messages [8] = SetupMessage (addresses [8], new DateTime (2014, 8, 15, 8, 0, 0));
+            messages [8].UserAction = 1;
+            messages [8].Update ();
+            messages [9] = SetupMessage (addresses [9], new DateTime (2014, 8, 15, 9, 0, 0));
+            messages [9].UserAction = -1;
+            messages [9].Update ();
+
+            for (int n = 0; n < 10; n++) {
+                Folder.Link (messages [n]);
+                SetupDependency (messages [n], addresses [n]);
+            }
+
+            List<McEmailMessageThread> messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id);
+            CheckMessages (messages, messageList, 9, 8, 5, 4, 3, 1);
+
+            messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id, groupBy:true);
+            CheckMessages (messages, messageList, 9, 8, 5, 4, 3, 1);
+
+            messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id, groupBy:false);
+            CheckMessages (messages, messageList, 9, 8, 5, 4, 3, 1, 0, 2);
         }
 
         [Test]

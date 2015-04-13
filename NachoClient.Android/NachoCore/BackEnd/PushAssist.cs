@@ -45,17 +45,29 @@ namespace NachoCore
         public static int MinDelayMsec = 5000;
         public static int MaxDelayMsec = 15000;
         public static int MaxTimeoutMsec = 10000;
+        public static int DeferPeriodMsec = 30 * 1000;
         protected static string DeviceToken;
 
         protected IPushAssistOwner Owner;
         protected NcStateMachine Sm;
         protected IHttpClient Client;
-        private int AccountId;
+
+        private int AccountId {
+            get {
+                if ((null == Owner) || (null == Owner.Account)) {
+                    return 0;
+                }
+                return Owner.Account.Id;
+            }
+        }
+
         private bool IsDisposed;
         private string ClientContext;
         protected string SessionToken;
         protected int NumRetries;
         private object LockObj;
+        // This is the first 8 bytes of SHA-256 hash of the session token;
+        protected string DebugSessionToken;
 
         private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
             new ConcurrentDictionary <string, WeakReference> ();
@@ -66,6 +78,7 @@ namespace NachoCore
 
         protected NcTimer RetryTimer;
         protected NcTimer TimeoutTimer;
+        protected NcTimer DeferTimer;
         protected CancellationTokenSource Cts;
 
         private string BaseUrl {
@@ -190,7 +203,22 @@ namespace NachoCore
 
         public static void ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
         {
+            bool ranOnce = false;
             foreach (var context in pinger) {
+                if ("timestamp" == context.Key) {
+                    // Look for the timestamp and measure the pinger to client latency
+                    var timestamp = DateTime.Parse (context.Value);
+                    var elapsed = (DateTime.Now - timestamp).TotalSeconds;
+                    if (300 <= elapsed) {
+                        Log.Warn (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
+                    } else {
+                        Log.Info (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
+                    }
+                    continue; // this key is the time when pinger pushes not an actual context
+                }
+                if ("session" == context.Key) {
+                    continue; // this is a debug key.
+                }
                 // Look up the account
                 var pa = GetPAObjectByContext (context.Key);
                 if (null == pa) {
@@ -201,6 +229,14 @@ namespace NachoCore
                     Log.Error (Log.LOG_PUSH, "Invalid account for context {0} for remote notification", context.Key);
                     continue;
                 }
+
+                // TODO - We don't have multiple account support yet. So, for now, perform fetch always
+                //        fetches the one account. In the future, we have to figure out which account
+                //        should participate in the fetch and pass them in.
+                if (ranOnce) {
+                    continue;
+                }
+                ranOnce = true;
 
                 switch (context.Value) {
                 case PingerNotification.NEW:
@@ -213,11 +249,14 @@ namespace NachoCore
                     Log.Error (Log.LOG_PUSH, "Unknown action {0} for context {1}", context.Value, context.Key);
                     continue;
                 }
+            }
+        }
 
-                // TODO - We don't have multiple account support yet. So, for now, perform fetch always
-                //        fetches the one account. In the future, we have to figure out which account
-                //        should participate in the fetch and pass them in.
-                break;
+        public static void RemovePAObjectByContext (string context)
+        {
+            WeakReference dummy;
+            if (!ContextObjectMap.TryRemove (context, out dummy)) {
+                Log.Warn (Log.LOG_PUSH, "Cannot remove unknown context {0}", context);
             }
         }
 
@@ -227,7 +266,6 @@ namespace NachoCore
             var handler = new NativeMessageHandler (false, true);
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
             Owner = owner;
-            AccountId = Owner.Account.Id;
             var account = McAccount.QueryById<McAccount> (AccountId);
             ClientContext = GetClientContext (account);
             // This entry is never freed even if the account is deleted. If the account is
@@ -340,7 +378,7 @@ namespace NachoCore
                                 Act = DoStartSession,
                                 State = (uint)Lst.SessTokW
                             },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoActive, State = (uint)Lst.Active },
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
                                 Act = DoStartSession,
@@ -367,7 +405,7 @@ namespace NachoCore
                     },
                     new Node {
                         State = (uint)Lst.Active,
-                        Invalid = new [] {
+                        Drop = new [] {
                             (uint)SmEvt.E.Success,
                         },
                         On = new [] {
@@ -420,24 +458,24 @@ namespace NachoCore
                             new Trans {
                                 Event = (uint)PAEvt.E.DevTok,
                                 Act = DoStartSession,
-                                State = (uint)Lst.SessTokW
+                                State = (uint)St.Start
                             },
                             new Trans {
                                 Event = (uint)PAEvt.E.DevTokLoss,
                                 Act = DoGetDevTok,
-                                State = (uint)Lst.DevTokW
+                                State = (uint)St.Start
                             },
                             new Trans {
                                 Event = (uint)PAEvt.E.CliTok,
                                 Act = DoStartSession,
-                                State = (uint)Lst.SessTokW
+                                State = (uint)St.Start
                             },
                             new Trans {
                                 Event = (uint)PAEvt.E.CliTokLoss,
                                 Act = DoGetCliTok,
-                                State = (uint)Lst.CliTokW
+                                State = (uint)St.Start
                             },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoActive, State = (uint)Lst.Active },
                             new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
                         }
                     }
@@ -472,9 +510,11 @@ namespace NachoCore
         {
             if (!IsDisposed) {
                 IsDisposed = true;
+                RemovePAObjectByContext (ClientContext);
                 NcApplication.Instance.StatusIndEvent -= TokensWatcher;
                 DisposeRetryTimer ();
                 DisposeTimeoutTimer ();
+                DisposeDeferTimer ();
                 DisposeCts ();
                 Client.Dispose ();
             }
@@ -502,6 +542,11 @@ namespace NachoCore
         {
             if (!IsActive () && !IsStartOrParked ()) {
                 Log.Warn (Log.LOG_PUSH, "A start session is not established before being parked. Notifications will not be pushed.");
+            }
+            // Cancel any HTTP request to pinger. Otherwise, the task that makes the HTTP request
+            // may delay the PA SM from going to Park state immediately.
+            if (null != Cts) {
+                Cts.Cancel ();
             }
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
@@ -646,6 +691,10 @@ namespace NachoCore
 
         private async void DoStartSession ()
         {
+            // TODO - maybe turn these to debug logs once ping stablizes??
+            Log.Info (Log.LOG_PUSH, "[PA] start session starts: client_id={0}, context={1}",
+                NcApplication.Instance.ClientId, ClientContext);
+            
             var clientId = NcApplication.Instance.ClientId;
             if (null == clientId) {
                 PostEvent (PAEvt.E.CliTokLoss, "START_NO_CLI");
@@ -733,17 +782,29 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_SESS_RETRY");
             } else {
                 SessionToken = response.Token;
+                DebugSessionToken = HashHelper.Sha256 (SessionToken).Substring (0, 8);
                 ClearRetry ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistArmed),
                     Account = Owner.Account,
                 });
                 PostSuccess ("START_SESSION_OK");
+                Log.Info (Log.LOG_PUSH, "[PA] start session succeeds: client_id={0}, context={1}, token={2}",
+                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
             }
+        }
+
+        private void DoActive ()
+        {
+            // Enter Active state. Start periodic defer timer.
+            ResetDefer ();
         }
 
         private async void DoDeferSession ()
         {
+            Log.Info (Log.LOG_PUSH, "[PA] defer session starts: client_id={0}, context={1}, token={2}",
+                NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
+            
             var clientId = NcApplication.Instance.ClientId;
             var parameters = Owner.PushAssistParameters ();
             if (String.IsNullOrEmpty (clientId) ||
@@ -751,7 +812,7 @@ namespace NachoCore
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
                     "DoDeferSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
+                    clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("DEFER_PARAM_ERROR");
             }
             var jsonRequest = new DeferSessionRequest () {
@@ -796,6 +857,9 @@ namespace NachoCore
             var response = ParsePingerResponse (jsonResponse);
             if (response.IsOk ()) {
                 ClearRetry ();
+                Log.Info (Log.LOG_PUSH, "[PA] defer session ends: client_id={0}, context={1}, token={2}",
+                    NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
+                ResetDefer ();
             } else if (response.IsWarn ()) {
                 NumRetries++;
                 ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_SESS_RETRY");
@@ -808,6 +872,7 @@ namespace NachoCore
 
         private async void DoStopSession ()
         {
+            DisposeDeferTimer ();
             Sm.ClearEventQueue ();
             var clientId = NcApplication.Instance.ClientId;
             if (String.IsNullOrEmpty (clientId) ||
@@ -815,7 +880,7 @@ namespace NachoCore
                 String.IsNullOrEmpty (SessionToken)) {
                 Log.Error (Log.LOG_PUSH,
                     "DoStopSession: missing required parameters (clientId={0}, clientContext={1}, token={2})",
-                    clientId, ClientContext, SessionToken);
+                    clientId, ClientContext, DebugSessionToken);
                 PostHardFail ("PARAM_ERROR");
             }
             var jsonRequest = new StopSessionRequest () {
@@ -861,12 +926,9 @@ namespace NachoCore
 
         private void DoPark ()
         {
-            // Do not stop the existing pinger session to server. But do cancel any HTTP request to pinger.
             ClearRetry ();
             DisposeTimeoutTimer ();
-            if (null != Cts) {
-                Cts.Cancel ();
-            }
+            DisposeDeferTimer ();
         }
 
         // MISCELLANEOUS STUFF
@@ -875,20 +937,24 @@ namespace NachoCore
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_PushAssistDeviceToken:
-                if (null == siea.Status.Value) {
-                    // Because we aren't interlocking the DB delete and the SM event, all code
-                    // must check device token before using it.
-                    PostEvent (PAEvt.E.DevTokLoss, "DEV_TOK_LOSS");
-                } else {
-                    PostEvent (PAEvt.E.DevTok, "DEV_TOK_SET");
-                }
+                NcTask.Run (() => {
+                    if (null == siea.Status.Value) {
+                        // Because we aren't interlocking the DB delete and the SM event, all code
+                        // must check device token before using it.
+                        PostEvent (PAEvt.E.DevTokLoss, "DEV_TOK_LOSS");
+                    } else {
+                        PostEvent (PAEvt.E.DevTok, "DEV_TOK_SET");
+                    }
+                }, "PushAssistDeviceToken");
                 break;
             case NcResult.SubKindEnum.Info_PushAssistClientToken:
-                if (null == siea.Status.Value) {
-                    PostEvent (PAEvt.E.CliTokLoss, "CLI_TOK_LOST");
-                } else {
-                    DoGetCliTok ();
-                }
+                NcTask.Run (() => {
+                    if (null == siea.Status.Value) {
+                        PostEvent (PAEvt.E.CliTokLoss, "CLI_TOK_LOST");
+                    } else {
+                        DoGetCliTok ();
+                    }
+                }, "PushAssistClientToken");
                 break;
             }
         }
@@ -1017,6 +1083,14 @@ namespace NachoCore
             }
         }
 
+        private void DisposeDeferTimer ()
+        {
+            if (null != DeferTimer) {
+                DeferTimer.Dispose ();
+                DeferTimer = null;
+            }
+        }
+
         private void DisposeCts ()
         {
             if (null != Cts) {
@@ -1033,6 +1107,14 @@ namespace NachoCore
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
                 Cts.Cancel ();
             }, null, new TimeSpan (0, 0, 0, 0, MaxTimeoutMsec), TimeSpan.Zero);
+        }
+
+        private void ResetDefer ()
+        {
+            DisposeDeferTimer ();
+            DeferTimer = new NcTimer ("PADefer", (state) => {
+                Defer ();
+            }, null, DeferPeriodMsec, Timeout.Infinite);
         }
     }
 }

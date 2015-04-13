@@ -49,7 +49,7 @@ namespace NachoClient.iOS
 
         protected nfloat parentWidth;
         protected string openTopLeftString;
-        protected string closedTopLeftString;
+        protected string alternateTopLeftString;
         protected IUcAddressBlockDelegate owner;
 
         protected int suppliedCount;
@@ -57,6 +57,7 @@ namespace NachoClient.iOS
         protected UILabel topLeftLabel;
         protected UIButton chooserButton;
         protected UcAddressField entryTextField;
+        protected bool showAlternateTopLeftLabel;
 
         protected List<UcAddressField> list;
 
@@ -79,11 +80,11 @@ namespace NachoClient.iOS
             CHOOSER_BUTTON_TAG,
         };
 
-        public UcAddressBlock (IUcAddressBlockDelegate owner, string openLabel, string closedLabel, nfloat width)
+        public UcAddressBlock (IUcAddressBlockDelegate owner, string openLabel, string alternateLabel, nfloat width)
         {
             this.owner = owner;
             this.openTopLeftString = openLabel;
-            this.closedTopLeftString = closedLabel;
+            this.alternateTopLeftString = alternateLabel;
             this.parentWidth = width;
             this.BackgroundColor = UIColor.White;
             this.list = new List<UcAddressField> ();
@@ -96,10 +97,11 @@ namespace NachoClient.iOS
             CreateView ();
         }
 
-        public void SetCompact (bool isCompact, int moreCount)
+        public void SetCompact (bool isCompact, int moreCount, bool showAlternateTopLeftLabel = false)
         {
             this.isCompact = isCompact;
             this.suppliedCount = moreCount;
+            this.showAlternateTopLeftLabel = showAlternateTopLeftLabel;
         }
 
         public void SetEditable (bool isEditable)
@@ -135,6 +137,19 @@ namespace NachoClient.iOS
                 }
                 return l;
             }
+        }
+
+        public void SetAddressList (string addressListString, NcEmailAddress.Kind kind)
+        {
+            var addressList = NcEmailAddress.ParseAddressListString (addressListString, kind);
+            foreach (var address in addressList) {
+                Append (address);
+            }
+        }
+
+        public bool IsEmpty ()
+        {
+            return (0 == list.Count);
         }
 
         protected void InsertInternal (int index, string text, NcEmailAddress address, int type)
@@ -270,8 +285,8 @@ namespace NachoClient.iOS
         public void ConfigureView ()
         {
             var topLeftLabelString = openTopLeftString;
-            if (isCompact && (null != closedTopLeftString)) {
-                topLeftLabelString = closedTopLeftString;
+            if (isCompact && showAlternateTopLeftLabel) {
+                topLeftLabelString = alternateTopLeftString;
             }
 
             topLeftLabel.Text = topLeftLabelString;
@@ -384,13 +399,8 @@ namespace NachoClient.iOS
                 xOffset += topLeftLabel.Frame.Width;
             }
 
-            if (0 == isActive) {
-                chooserButton.Hidden = true;
-            } else {
-                chooserButton.Hidden = false;
-                AdjustXY (chooserButton, chooserButton.Frame.X, yOffset);
-                xLimit = chooserButton.Frame.X;
-            }
+            chooserButton.Hidden = (0 == isActive);
+            xLimit = chooserButton.Frame.X;
 
             bool firstLine = true;
             xOffset = leftAddressIndent;

@@ -2,12 +2,10 @@
 //
 using System;
 using NachoCore.Model;
-using NachoClient;
-using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 
-namespace NachoClient.iOS
+namespace NachoCore.Utils
 {
     public class LoginHelpers
     {
@@ -39,6 +37,11 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "SetDoesBackEndHaveIssues: {0}={1}", accountId, toWhat);
             NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "doesBackEndHaveIssues", toWhat);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_UserInterventionFlagChanged),
+                Account = McAccount.QueryById<McAccount> (accountId),
+                Tokens = new string[] { DateTime.Now.ToString () },
+            });
         }
 
         static public bool DoesBackEndHaveIssues (int accountId)

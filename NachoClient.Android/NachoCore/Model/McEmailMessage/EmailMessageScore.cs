@@ -3,6 +3,7 @@
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -190,6 +191,7 @@ namespace NachoCore.Model
                 return;
             }
             SyncInfo = new McEmailMessageScoreSyncInfo ();
+            SyncInfo.AccountId = AccountId;
             SyncInfo.EmailMessageId = Id;
             SyncInfo.InsertByBrain ();
         }
@@ -291,12 +293,15 @@ namespace NachoCore.Model
 
         public static McEmailMessage QueryNeedGleaning (Int64 accountId = -1)
         {
-            var table = NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.HasBeenGleaned == false);
             if (0 <= accountId) {
-                table = table.Where (x => x.AccountId == accountId);
+                return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
+                " likelihood (AccountId = ?, 1.0) AND " +
+                " likelihood (HasBeenGleaned = ?, 0.1) ",
+                    accountId, false).FirstOrDefault ();
+            } else {
+                return NcModel.Instance.Db.Table<McEmailMessage> ()
+                    .Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
             }
-            return table.FirstOrDefault ();
         }
 
         public static int CountByVersion (int version)

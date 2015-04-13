@@ -844,7 +844,7 @@ namespace NachoCore.ActiveSync
             Sm.State = ProtocolState.ProtoControlState;
             SyncStrategy = new AsStrategy (this);
             // FIXME - Remove this when it is ready for prime time
-            if ("beta" != NachoClient.Build.BuildInfo.AwsPrefix) {
+            if (!BuildInfoHelper.IsBeta) {
                 PushAssist = new PushAssist (this);
             }
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
@@ -877,8 +877,16 @@ namespace NachoCore.ActiveSync
             McFolder freshMade;
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_Outbox, "On-Device Outbox",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetEmailDraftsFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                        McFolder.ClientOwned_EmailDrafts, "On-Device Email Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
@@ -916,7 +924,7 @@ namespace NachoCore.ActiveSync
                 }
             });
             // Create file directories.
-            NcModel.Instance.InitalizeDirs (AccountId);
+            NcModel.Instance.InitializeDirs (AccountId);
         }
 
         public override void Remove ()
@@ -927,6 +935,7 @@ namespace NachoCore.ActiveSync
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
+                PushAssist = null;
             }
             base.Remove ();
         }
@@ -1307,9 +1316,7 @@ namespace NachoCore.ActiveSync
         private void ExecuteCmd ()
         {
             if (null != PushAssist) {
-                if (PushAssist.IsActive ()) {
-                    PushAssist.Defer ();
-                } else if (PushAssist.IsStartOrParked ()) {
+                if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
                 }
             }

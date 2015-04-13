@@ -52,6 +52,17 @@
                     <xs:element ref="StartTime" minOccurs="0"/>
                     <xs:element ref="EndTime" minOccurs="0"/>
                     <xs:element ref="OofMessage" minOccurs="0" maxOccurs="3"/>
+                    <!-- EmailAdddresses is not in the original .xsd files but defined in MS-ASCMD.pdf, Section 2.2.3.54 -->
+                    <xs:element name="EmailAddresses" minOccurs="0">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="SMTPAddress" type="xs:string"
+                                      minOccurs="0" maxOccurs="unbounded"/>
+                          <xs:element name="PrimarySmtpAddress" type="xs:string"
+                                      minOccurs="0"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>

@@ -221,13 +221,15 @@ namespace NachoClient.iOS
             return rows;
         }
 
-        protected McContact ContactFromIndexPath (UITableView tableView, NSIndexPath indexPath)
+        protected McContact ContactFromIndexPath (UITableView tableView, NSIndexPath indexPath, out string alternateEmailAddress)
         {
             McContact contact;
 
+            alternateEmailAddress = null;
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 var contactEmailAttribute = searchResults [indexPath.Row];
                 contact = contactEmailAttribute.GetContact ();
+                alternateEmailAddress = contactEmailAttribute.Value;
             } else if ((null != recent) && (0 == indexPath.Section)) {
                 contact = recent [indexPath.Row].GetContact ();
             } else if (multipleSections) {
@@ -242,7 +244,8 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact = ContactFromIndexPath (tableView, indexPath);
+            string dummy;
+            McContact contact = ContactFromIndexPath (tableView, indexPath, out dummy);
             owner.ContactSelectedCallback (contact);
             DumpInfo (contact);
             tableView.DeselectRow (indexPath, true);
@@ -250,7 +253,8 @@ namespace NachoClient.iOS
 
         public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact = ContactFromIndexPath (tableView, indexPath);
+            string dummy;
+            McContact contact = ContactFromIndexPath (tableView, indexPath, out dummy);
             owner.ContactSelectedCallback (contact);
         }
 
@@ -310,7 +314,7 @@ namespace NachoClient.iOS
         {
             return ContactCell.ROW_HEIGHT;
         }
-            
+
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             UITableViewCell cell = null;
@@ -318,8 +322,9 @@ namespace NachoClient.iOS
             if (null == cell) {
                 cell = ContactCell.CreateCell (tableView, VipButtonTouched);
             }
-            var contact = ContactFromIndexPath (tableView, indexPath);
-            ContactCell.ConfigureCell (tableView, cell, contact, owner, allowSwiping);
+            string emailAddress = null;
+            var contact = ContactFromIndexPath (tableView, indexPath, out emailAddress);
+            ContactCell.ConfigureCell (tableView, cell, contact, owner, allowSwiping, emailAddress);
             return cell;
         }
 
@@ -329,7 +334,8 @@ namespace NachoClient.iOS
             UITableViewCell containingCell = Util.FindEnclosingTableViewCell (vipButton);
             UITableView containingTable = Util.FindEnclosingTableView (vipButton);
             NSIndexPath cellIndexPath = containingTable.IndexPathForCell (containingCell);
-            McContact c = ContactFromIndexPath (containingTable, cellIndexPath);
+            string dummy;
+            McContact c = ContactFromIndexPath (containingTable, cellIndexPath, out dummy);
 
             c.SetVIP (!c.IsVip);
             using (var image = UIImage.FromBundle (c.IsVip ? "contacts-vip-checked" : "contacts-vip")) {

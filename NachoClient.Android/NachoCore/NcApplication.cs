@@ -72,13 +72,18 @@ namespace NachoCore
             }
         }
 
+        public bool IsMigrating {
+            get {
+                return (ExecutionContextEnum.Migrating == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
         public string StartupLog {
             get {
-                var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-                return Path.Combine (documents, "startup.log");
+                return Path.Combine (NcModel.Instance.GetDataDirPath (), "startup.log");
             }
         }
 
@@ -155,6 +160,10 @@ namespace NachoCore
         public delegate void SearchContactsRespCallbackDele (int accountId, string prefix, string token);
 
         public SearchContactsRespCallbackDele SearchContactsRespCallback { set; get; }
+
+        public delegate void SendEmailRespCallbackDele (int accountId, int emailMessageId, bool didSend);
+
+        public SendEmailRespCallbackDele SendEmailRespCallback { set; get; }
 
         public static event EventHandler<UnobservedTaskExceptionEventArgs> UnobservedTaskException;
 
@@ -282,6 +291,16 @@ namespace NachoCore
             }
         }
 
+        public void ContinueRemoveAccountIfNeeded ()
+        {
+            // if not done removing account, finish up 
+            int AccountId = NcModel.Instance.GetRemovingAccountIdFromFile ();
+            if (AccountId > 0) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: Continuing to remove data for account {0} after restart", AccountId);
+                NcAccountHandler.Instance.RemoveAccountDBAndFilesForAccountId (AccountId);
+            }
+        }
+
         private void StartBasalServicesCompletion ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion called.");
@@ -292,10 +311,12 @@ namespace NachoCore
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
             NcContactGleaner.Start ();
+            EmailHelper.Setup ();
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
             ExecutionContext = _PlatformIndication;
+            ContinueOnActivation ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
@@ -311,11 +332,8 @@ namespace NachoCore
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
             // we need to sequence these properly.
             NcMigration.Setup ();
-
             if (ShouldEnterSafeMode ()) {
-                if (!NcMigration.WillStartService ()) {
-                    ExecutionContext = ExecutionContextEnum.Initializing;
-                }
+                ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
@@ -326,6 +344,7 @@ namespace NachoCore
                         StartBasalServicesCompletion ();
                     } else {
                         Log.Info (Log.LOG_LIFECYCLE, "Starting migration after exiting safe mode");
+                        ExecutionContext = ExecutionContextEnum.Migrating;
                         NcMigration.StartService (
                             StartBasalServicesCompletion,
                             (percentage) => {
@@ -356,6 +375,7 @@ namespace NachoCore
 
             // Start Migrations, if any.
             if (NcMigration.WillStartService ()) {
+                ExecutionContext = ExecutionContextEnum.Migrating;
                 NcMigration.StartService (
                     StartBasalServicesCompletion,
                     (percentage) => {
@@ -377,7 +397,6 @@ namespace NachoCore
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/migration).");
                 return;
             }
-
             StartBasalServicesCompletion ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/out migration).");
         }
@@ -451,6 +470,46 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services exited.");
         }
 
+        public void ContinueOnActivation ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation called");
+            if (IsMigrating) {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Migration in process. Will run ContinueOnActivation after migration is complete.");
+                return;
+            } else if (!IsForeground) {
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: App is still not in the foreground. Will run ContinueOnActivation later.");
+                return;
+            }
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation running...");
+
+            NcApplication.Instance.StartClass4Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
+
+            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+
+                int accountId = LoginHelpers.GetCurrentAccountId ();
+                switch (backEndState) {
+                case BackEndStateEnum.CertAskWait:
+                    CertAskReqCallback (accountId, null);
+                    Log.Info (Log.LOG_STATE, "NcApplication: CERTASKCALLBACK ");
+                    break;
+                case BackEndStateEnum.CredWait:
+                    CredReqCallback (accountId);
+                    Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    ServConfReqCallback (accountId);
+                    Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
+                    break;
+                default:
+                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
+                    break;
+                }
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation exited");
+            }
+        }
+
         public void MonitorStart ()
         {
             MonitorTimer = new NcTimer ("NcApplication:Monitor", (state) => {
@@ -518,7 +577,7 @@ namespace NachoCore
                 }
             });
             // Create file directories.
-            NcModel.Instance.InitalizeDirs (deviceAccount.Id);
+            NcModel.Instance.InitializeDirs (deviceAccount.Id);
 
             // Create Device contacts/calendars if not yet there.
             NcModel.Instance.RunInTransaction (() => {
@@ -624,6 +683,15 @@ namespace NachoCore
             }
         }
 
+        public void SendEmailResp (int accountId, int emailMessageId, bool didSend)
+        {
+            if (null != SendEmailRespCallback) {
+                SendEmailRespCallback (accountId, emailMessageId, didSend);
+            } else {
+                Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SendEmailRespCallback.");
+            }
+        }
+
         public void CertAskResp (int accountId, bool isOkay)
         {
             if (isOkay) {
@@ -642,6 +710,11 @@ namespace NachoCore
             #else
             throw new PlatformNotSupportedException ();
             #endif
+        }
+
+        public bool InSafeMode ()
+        {
+            return SafeMode;
         }
 
         private bool ShouldEnterSafeMode ()
@@ -771,6 +844,27 @@ namespace NachoCore
                 } catch (Exception e) {
                     Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
                 }
+            }
+        }
+
+        public void CheckNotified ()
+        {
+            var latestMigration = McMigration.QueryLatestMigration ();
+            var version = (new NcMigration15 ()).Version ();
+            if ((null == latestMigration) ||
+                (latestMigration.Version < version) ||
+                ((version == latestMigration.Version) && (!latestMigration.Finished))) {
+                // We have not run NcMigration15. Wait till it is finished.
+                return;
+            }
+            foreach (var message in McEmailMessage.QueryUnnotified ()) {
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    return;
+                }
+                Log.Warn (Log.LOG_PUSH, "Unnotified email message (id={0}, dateReceived={1}, createdAt={2})",
+                    message.Id, message.DateReceived, message.CreatedAt);
+                message.HasBeenNotified = true;
+                message.Update ();
             }
         }
     }

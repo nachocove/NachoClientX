@@ -19,6 +19,7 @@ clean:
 	make -C ../SwipeViewBinding clean
 	make -C ../UIImageEffects clean
 	make -C ../SWRevealViewControllerBinding clean
+	make -C ../ios-openssl clean
 	make -C ../NachoPlatformBinding clean
 	make -C ../NachoUIMonitorBinding clean
 	make -C ../bc-csharp -f ../NachoClientX/bc-csharp.mk clean

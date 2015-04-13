@@ -282,18 +282,15 @@ namespace NachoClient.iOS
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+            switch (((StatusIndEventArgs)e).Status.SubKind) {
+
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshPriorityInboxIfVisible ();
-            }
-            if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
-                RefreshPriorityInboxIfVisible ();
-            }
-            if (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded == s.Status.SubKind) {
-                RefreshPriorityInboxIfVisible ();
-            }
-            if (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded == s.Status.SubKind) {
-                RefreshPriorityInboxIfVisible ();
+                break;
             }
         }
 
@@ -397,12 +394,12 @@ namespace NachoClient.iOS
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        public void MultiSelectToggle (IMessageTableViewSource source, bool enabled)
         {
         }
 
         ///  IMessageTableViewSourceDelegate
-        public void MultiSelectChange (MessageTableViewSource source, int count)
+        public void MultiSelectChange (IMessageTableViewSource source, int count)
         {
         }
 

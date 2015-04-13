@@ -735,10 +735,13 @@ namespace NachoCore.ActiveSync
                     // We are already doing serial.
                     return false;
                 }
-                foreach (var pending in PendingList) {
-                    pending.DeferredSerialIssueOnly = true;
+                foreach (var iter in PendingList) {
+                    var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                        var target = (McPending)record;
+                        target.DeferredSerialIssueOnly = true;
+                        return true;
+                    });
                     if (pending == firstPending) {
-                        pending.Update ();
                         continue;
                     }
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
@@ -786,7 +789,7 @@ namespace NachoCore.ActiveSync
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
                     var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
-                    Log.Info (Log.LOG_AS, "AsSyncCommand: Command Add {0} ServerId {1}", classCode, addServerId);
+                    Log.Debug (Log.LOG_AS, "AsSyncCommand: Command Add {0} ServerId {1}", classCode, addServerId);
                     var pathElem = new McPath (BEContext.Account.Id);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;

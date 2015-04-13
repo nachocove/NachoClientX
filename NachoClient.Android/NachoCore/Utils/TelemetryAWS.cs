@@ -1,4 +1,4 @@
-//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
 //#define AWS_DEBUG
 using System;
@@ -19,6 +19,7 @@ using Amazon;
 
 using NachoPlatform;
 using NachoClient.Build;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -82,8 +83,7 @@ namespace NachoCore.Utils
             // If it does not exist, we save the current Cognito id into the file. After
             // the 1st time, we use the id in the file as the client id. Note that we 
             // still need to talk to Cognito in order to get the session token.
-            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            var clientIdFile = Path.Combine (documents, "client_id");
+            var clientIdFile = Path.Combine (NcModel.Instance.GetDataDirPath (), "client_id");
             if (File.Exists (clientIdFile)) {
                 // Get the client id from the file
                 using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {
@@ -115,13 +115,13 @@ namespace NachoCore.Utils
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);
 
-                DeviceInfoTable = Table.LoadTable (Client, TableName ("device_info"));
-                LogTable = Table.LoadTable (Client, TableName ("log"));
-                SupportTable = Table.LoadTable (Client, TableName ("support"));
-                CounterTable = Table.LoadTable (Client, TableName ("counter"));
-                CaptureTable = Table.LoadTable (Client, TableName ("capture"));
-                UiTable = Table.LoadTable (Client, TableName ("ui"));
-                WbxmlTable = Table.LoadTable (Client, TableName ("wbxml"));
+                DeviceInfoTable = Table.LoadTableAsync (Client, TableName ("device_info"), NcTask.Cts.Token);
+                LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);
+                SupportTable = Table.LoadTableAsync (Client, TableName ("support"), NcTask.Cts.Token);
+                CounterTable = Table.LoadTableAsync (Client, TableName ("counter"), NcTask.Cts.Token);
+                CaptureTable = Table.LoadTableAsync (Client, TableName ("capture"), NcTask.Cts.Token);
+                UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
+                WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
             });
         }
 
@@ -133,7 +133,7 @@ namespace NachoCore.Utils
                     action ();
                     isDone = true;
                 } catch (Exception e) {
-                    if (!HandleAWSException (e, false)) {
+                    if (!HandleAWSException (e, "AWS init", false)) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
                             if (null != Client) {
                                 Client.Dispose ();
@@ -248,11 +248,11 @@ namespace NachoCore.Utils
         /// <returns><c>true</c>, if AWS exception was handled, <c>false</c> otherwise.
         /// In that case, the caller must re-throw.</returns>
         /// <param name="e">E.</param>
-        private bool HandleAWSException (Exception e, bool doReinitialize = true)
+        private bool HandleAWSException (Exception e, string description, bool doReinitialize = true)
         {
             if (null != e) {
                 if (e is AggregateException) {
-                    return HandleAWSException (e.InnerException);
+                    return HandleAWSException (e.InnerException, description);
                 }
                 if (e is ProvisionedThroughputExceededException) {
                     return true;
@@ -262,7 +262,7 @@ namespace NachoCore.Utils
                         return false;
                     }
                     // Otherwise, most likely HTTP client timeout
-                    Console.WriteLine ("Task canceled exception caught in AWS send event\n{0}", e);
+                    Console.WriteLine ("Task canceled exception caught in {1}\n{0}", e, description);
                     return true;
                 }
                 if (e is OperationCanceledException) {
@@ -271,12 +271,12 @@ namespace NachoCore.Utils
                     return false;
                 }
                 if (e is AmazonDynamoDBException) {
-                    Console.WriteLine ("AWS DynamoDB exception caught in AWS send event\n{0}", e);
+                    Console.WriteLine ("AWS DynamoDB exception caught in AWS send event\n{0}", e.Message);
                     ReinitializeTables ();
                     return true;
                 }
                 if (e is AmazonServiceException) {
-                    Console.WriteLine ("AWS exception caught in AWS send event\n{0}", e);
+                    Console.WriteLine ("AWS exception caught in AWS send event\n{0}", e.Message);
                     return true;
                 }
             }
@@ -295,7 +295,7 @@ namespace NachoCore.Utils
             try {
                 action ();
             } catch (Exception e) {
-                if (!HandleAWSException (e)) {
+                if (!HandleAWSException (e, "AWS send event")) {
                     if (NcTask.Cts.Token.IsCancellationRequested) {
                         Client.Dispose ();
                         Client = null;

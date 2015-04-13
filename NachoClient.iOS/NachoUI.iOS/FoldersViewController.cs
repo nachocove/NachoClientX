@@ -113,6 +113,13 @@ namespace NachoClient.iOS
                 messageListViewController.SetEmailMessages (messageList);
                 return;
             }
+            if ("SegueToDrafts" == segue.Identifier) {
+                var holder = (SegueHolder)sender;
+                var draftsList = new NachoDraftMessages ((McFolder)holder.value);
+                var draftsListViewController = (DraftsViewController)segue.DestinationViewController;
+                draftsListViewController.SetEmailMessages (draftsList);
+                return;
+            }
             if ("SegueToHotList" == segue.Identifier) {
                 return;
             }
@@ -287,7 +294,7 @@ namespace NachoClient.iOS
                 var folder = McFolder.GetDefaultInboxFolder (account.Id);
                 if (null != folder) {
                     CreateTopFolderCell (folder.DisplayName, topFolderCount, true, () => {
-                        PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                        SegueToMessageList (folder);
                     });
                     topFolderCount += 1;
                 }
@@ -456,7 +463,7 @@ namespace NachoClient.iOS
                 if (modal) {
                     FolderSelected (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    SegueToMessageList (folder);
                 }
             };
                 
@@ -500,6 +507,15 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void SegueToMessageList (McFolder folder)
+        {
+            if (folder.IsEmailDraftsFolder () || folder.IsOutboxFolder ()) {
+                PerformSegue ("SegueToDrafts", new SegueHolder (folder));
+            } else {
+                PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+            }
+        }
+
         protected void CreateFolderCell (int subLevel, UIView parentView, bool subFolders, bool isHidden, FolderStruct folderStruct)
         {
             var tag = folderStruct.folderID + 10000;
@@ -516,7 +532,7 @@ namespace NachoClient.iOS
                 if (modal) {
                     FolderSelected (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    SegueToMessageList (folder);
                 }
             };
 
@@ -766,7 +782,9 @@ namespace NachoClient.iOS
                     List<FolderStruct> subFolders = new List<FolderStruct> ();
                     subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
 
-                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type || NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type) {
+                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type ||
+                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type ||
+                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.Unknown_18 == folder.Type) {
                         yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
                     } else {
                         nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));

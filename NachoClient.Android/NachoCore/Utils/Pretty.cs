@@ -33,7 +33,7 @@ namespace NachoCore.Utils
 
         /// <summary>
         /// Calendar event duration, 0h0m style.
-        /// Returns empty string for an appointment.
+        /// Returns an empty string for a zero length time span.
         /// </summary>
         static public string CompactDuration (DateTime StartTime, DateTime EndTime)
         {
@@ -263,6 +263,14 @@ namespace NachoCore.Utils
             }
         }
 
+        static public string RecipientString (string Recipient)
+        {
+            if (null == Recipient) {
+                return "";
+            }
+            return Recipient;
+        }
+
         /// <summary>
         /// Given an organizer name, return a string
         /// worthy of being displayed in the files list.
@@ -339,9 +347,9 @@ namespace NachoCore.Utils
         }
 
         // "Exchange" predates always setting the display name
-        static public string AccountName(McAccount account)
+        static public string AccountName (McAccount account)
         {
-            if(null == account.DisplayName) {
+            if (null == account.DisplayName) {
                 return "Exchange";
             } else {
                 return account.DisplayName;
@@ -641,6 +649,58 @@ namespace NachoCore.Utils
             }
             return System.IO.Path.GetExtension (path).ToUpper ();
         }
+
+        public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        {
+            switch (code) {
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
+                return "All messages";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
+                return "One day";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeDays_2:
+                return "Three days";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneWeek_3:
+                return "One week";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
+                return "Two weeks";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
+                return "One month";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
+                return "Three months";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
+                return "Six months";
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            return "";
+        }
+
+        public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
+        {
+            var list = new List<string> ();
+            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
+                list.Add ("All");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 == (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 & code)) {
+                list.Add ("Hot");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 == (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 & code)) {
+                list.Add ("VIPs");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
+                list.Add ("Invitations");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
+                list.Add ("Reminders");
+            }
+            if (0 == list.Count) {
+                return "None";
+            } else {
+                return String.Join (",", list);
+            }
+        }
+
     }
 }
 

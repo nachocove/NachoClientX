@@ -9,6 +9,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using System.Linq;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -42,7 +43,6 @@ namespace NachoClient.iOS
         protected const int EMAIL_TAG = 103;
         protected const int MAILSERVER_TAG = 104;
         protected const int CONFERENCE_TAG = 105;
-        protected const int SIGNATURE_TAG = 106;
 
         protected string originalAccountNameValue = "";
         protected string originalUsernameValue = "";
@@ -54,14 +54,16 @@ namespace NachoClient.iOS
 
         protected const int GREY_BACKGROUND_VIEW_TAG = 200;
         protected const int STATUS_VIEW_TAG = 201;
+        protected const int DELETE_ACCOUNT_BACKGROUND_VIEW_TAG = 202;
+        protected const int DELETE_ACCOUNT_SPINNER_TAG = 203;
 
         protected const int CANCEL_VALIDATION_BUTTON_TAG = 304;
-        protected const int SIGNATURE_VIEW_TAG = 305;
 
         protected bool handleStatusEnums = true;
 
-        protected UITapGestureRecognizer signatureTapGesture;
-        protected UITapGestureRecognizer.Token signatureTapGestureHandlerToken;
+        UcNameValuePair SignatureBlock;
+        UcNameValuePair DaysToSyncBlock;
+        UcNameValuePair NotificationsBlock;
 
         protected nfloat yOffset;
         protected nfloat keyboardHeight;
@@ -284,44 +286,32 @@ namespace NachoClient.iOS
             settingsView.Add (conferencecallTextField);
 
             yOffset = conferencecallTextField.Frame.Bottom;
-            nfloat topSignatureCell = yOffset;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel signatureLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
-            signatureLabel.Font = A.Font_AvenirNextRegular14;
-            signatureLabel.TextAlignment = UITextAlignment.Left;
-            signatureLabel.TextColor = LABEL_TEXT_COLOR;
-            signatureLabel.Text = "Signature";
-            settingsView.Add (signatureLabel);
+            SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, View.Frame.Width, TEXTFIELD_HEIGHT), "Signature", HORIZONTAL_PADDING, 15, SignatureTapHandler);
+            settingsView.AddSubview (SignatureBlock);
 
-            UILabel displaySignatureLabel = new UILabel (new CGRect (signatureLabel.Frame.Right + SPACER, yOffset + LABEL_VERTICAL_SPACER, accountNameTextField.Frame.Width - 15, LABEL_HEIGHT));
-            displaySignatureLabel.TextColor = TEXT_FIELD_TEXT_COLOR;
-            displaySignatureLabel.Font = TEXT_FIELD_FONT;
-            displaySignatureLabel.TextAlignment = UITextAlignment.Left;
-            displaySignatureLabel.Text = "Sent from Nacho Mail";
-            displaySignatureLabel.Tag = SIGNATURE_TAG;
-            settingsView.AddSubview (displaySignatureLabel);
-
-            UIView signatureCellView = new UIView (new CGRect (0, topSignatureCell, View.Frame.Width, settingsView.Frame.Height - topSignatureCell));
-            signatureCellView.BackgroundColor = UIColor.Clear;
-            signatureCellView.UserInteractionEnabled = true;
-            signatureCellView.Tag = SIGNATURE_VIEW_TAG;
-
-            signatureTapGesture = new UITapGestureRecognizer ();
-            signatureTapGestureHandlerToken = signatureTapGesture.AddTarget (SignatureTapHandler);
-            signatureCellView.AddGestureRecognizer (signatureTapGesture);
-            settingsView.AddSubview (signatureCellView);
-
-            UIImageView disclosureArrowImageView;
-            using (var disclosureArrowIcon = UIImage.FromBundle ("gen-more-arrow")) {
-                disclosureArrowImageView = new UIImageView (disclosureArrowIcon);
-            }
-            disclosureArrowImageView.Frame = new CGRect (displaySignatureLabel.Frame.Right + 5, yOffset + LABEL_VERTICAL_SPACER, disclosureArrowImageView.Frame.Width, disclosureArrowImageView.Frame.Height);
-            settingsView.AddSubview (disclosureArrowImageView);
             contentView.AddSubview (settingsView);
 
             yOffset = settingsView.Frame.Bottom + 20;
+
+            UIView additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 2 * TEXTFIELD_HEIGHT));
+            additionalSettingsView.BackgroundColor = UIColor.White;
+            additionalSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            additionalSettingsView.Layer.BorderWidth = .5f;
+
+            DaysToSyncBlock = new UcNameValuePair (new CGRect (0, 0, View.Frame.Width, TEXTFIELD_HEIGHT), "Days to sync", HORIZONTAL_PADDING, 15, DaysToSyncTapHandler);
+            additionalSettingsView.AddSubview (DaysToSyncBlock);
+
+            Util.AddHorizontalLine (HORIZONTAL_PADDING, TEXTFIELD_HEIGHT, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
+
+            NotificationsBlock = new UcNameValuePair (new CGRect (0, TEXTFIELD_HEIGHT, View.Frame.Width, TEXTFIELD_HEIGHT), "Notifications", HORIZONTAL_PADDING, 15, NotificationsTapHandler);
+            additionalSettingsView.AddSubview (NotificationsBlock);
+
+            contentView.AddSubview (additionalSettingsView);
+
+            yOffset = additionalSettingsView.Frame.Bottom + 20;
 
             UIView deleteAccountView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
             deleteAccountView.BackgroundColor = UIColor.White;
@@ -339,7 +329,7 @@ namespace NachoClient.iOS
             deleteAccountView.AddSubview (deleteAccountButton);
 
             // Fixme: delete account is still a test thing
-            // contentView.Add (deleteAccountView);
+            contentView.Add (deleteAccountView);
 
             yOffset = deleteAccountView.Frame.Bottom + A.Card_Vertical_Indent;
 
@@ -393,6 +383,36 @@ namespace NachoClient.iOS
 
             statusView.AddSubview (cancelValidation);
             View.AddSubview (statusView);
+
+            // Delete Account Spinner - Keeping this separate from the validate credential spinner 
+            UIView deleteAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
+            deleteAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
+            deleteAccountBackgroundView.Tag = DELETE_ACCOUNT_BACKGROUND_VIEW_TAG;
+            deleteAccountBackgroundView.Hidden = true;
+            deleteAccountBackgroundView.Alpha = 0.0f;
+            View.AddSubview (deleteAccountBackgroundView);
+
+            UIView alertMimicView = new UIView (new CGRect (deleteAccountBackgroundView.Frame.Width / 2 - 90, deleteAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
+            alertMimicView.BackgroundColor = UIColor.White;
+            alertMimicView.Layer.CornerRadius = 6.0f;
+            deleteAccountBackgroundView.AddSubview (alertMimicView);
+
+            UILabel deleteAccountStatusMessage = new UILabel (new CGRect (8, 10, alertMimicView.Frame.Width - 16, 25));
+            deleteAccountStatusMessage.BackgroundColor = UIColor.White;
+            deleteAccountStatusMessage.Alpha = 1.0f;
+            deleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
+            deleteAccountStatusMessage.TextColor = UIColor.Black;
+            deleteAccountStatusMessage.Text = "Deleting Account";
+            deleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
+            alertMimicView.AddSubview (deleteAccountStatusMessage);
+
+            UIActivityIndicatorView deleteAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
+            deleteAccountActivityIndicator.Frame = new CGRect (alertMimicView.Frame.Width / 2 - 20, deleteAccountStatusMessage.Frame.Bottom + 15, 40, 40);
+            deleteAccountActivityIndicator.Color = A.Color_SystemBlue;
+            deleteAccountActivityIndicator.Alpha = 1.0f;
+            deleteAccountActivityIndicator.StartAnimating ();
+            deleteAccountActivityIndicator.Tag = DELETE_ACCOUNT_SPINNER_TAG;
+            alertMimicView.AddSubview (deleteAccountActivityIndicator);
         }
 
         protected override void ConfigureAndLayout ()
@@ -408,7 +428,6 @@ namespace NachoClient.iOS
             var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
             var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
-            var signatureLabel = (UILabel)View.ViewWithTag (SIGNATURE_TAG);
 
             if (!String.IsNullOrEmpty (theAccount.DisplayName)) {
                 accountNameTextField.Text = theAccount.DisplayName;
@@ -444,9 +463,11 @@ namespace NachoClient.iOS
                 conferenceTextField.Text = theConference.DefaultPhoneNumber;
             }
 
-            if (!String.IsNullOrEmpty (theAccount.Signature)) {
-                signatureLabel.Text = theAccount.Signature;
-            }
+            SignatureBlock.SetValue (theAccount.Signature);
+
+            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (theAccount.DaysToSyncEmail));
+
+            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (theAccount.NotificationConfiguration));
 
             accountNameTextField.Enabled = textFieldsEditable;
             usernameTextField.Enabled = textFieldsEditable;
@@ -465,6 +486,16 @@ namespace NachoClient.iOS
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "SettingsToNotificationChooser") {
+                var vc = (NotificationChooserViewController)segue.DestinationViewController;
+                McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                vc.Setup (this, theAccount.Id, theAccount.NotificationConfiguration);
+                return;
+            }
         }
 
         protected void ColorTextFields ()
@@ -548,11 +579,8 @@ namespace NachoClient.iOS
                 cancelValidationButton = null;
             }
 
-            signatureTapGesture.RemoveTarget (signatureTapGestureHandlerToken);
-            var signatureView = (UIView)View.ViewWithTag (SIGNATURE_VIEW_TAG);
-            if (null != signatureView) {
-                signatureView.RemoveGestureRecognizer (signatureTapGesture);
-            }
+            SignatureBlock.Cleanup ();
+            DaysToSyncBlock.Cleanup ();
 
             UITextField accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
             UITextField usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
@@ -576,6 +604,8 @@ namespace NachoClient.iOS
             emailTextField = null;
             mailServerTextField = null;
             conferenceTextField = null;
+            SignatureBlock = null;
+            DaysToSyncBlock = null;
         }
 
         protected void ValidateAndDisplayWaitingView ()
@@ -599,9 +629,13 @@ namespace NachoClient.iOS
 
             // TODO: Add more precise error messages based on NcResult
             if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred).isOK ()) {
-                var badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
-                badNetworkConnection.Clicked += SaveAnywayClicked;
-                badNetworkConnection.Show ();
+                NcAlertView.Show (this, "Network Error",
+                    "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?",
+                    new NcAlertAction ("Save", () => {
+                        SaveAccountSettings ();
+                        ToggleEditing ();
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
             } else {
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
                 ShowStatusView ();
@@ -672,9 +706,11 @@ namespace NachoClient.iOS
         protected void CancelButtonClicked (object sender, EventArgs e)
         {
             if (DidUserEditAccount ()) {
-                var dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
-                dismissChanges.Clicked += DismissChangesClicked;
-                dismissChanges.Show ();
+                NcAlertView.Show (this, "Dismiss Changes", "If you leave this screen, your changes will not be saved.",
+                    new NcAlertAction ("OK", () => {
+                        ToggleEditing ();
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
             } else {
                 ToggleEditing ();
             }
@@ -687,10 +723,13 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             HideStatusView ();
 
-            var cancelledValidationAlertView = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
-            cancelledValidationAlertView.Clicked += SaveAnywayClicked;
-            cancelledValidationAlertView.Show ();
-
+            NcAlertView.Show (this, "Validation Cancelled",
+                "Your settings have not been validated. Would you like to save them anyway?",
+                new NcAlertAction ("Save", () => {
+                    SaveAccountSettings ();
+                    ToggleEditing ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
         protected void CaptureOriginalSettings ()
@@ -723,31 +762,49 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void DismissChangesClicked (object sender, UIButtonEventArgs b)
-        {
-            if (b.ButtonIndex == 0) {
-                ToggleEditing ();
-            }
-            var me = (UIAlertView)sender;
-            me.Clicked -= DismissChangesClicked;
-        }
-
-        protected void SaveAnywayClicked (object sender, UIButtonEventArgs b)
-        {
-            if (b.ButtonIndex == 0) {
-                SaveAccountSettings ();
-                ToggleEditing ();
-            }
-            var me = (UIAlertView)sender;
-            me.Clicked -= SaveAnywayClicked;
-        }
-
         protected void SignatureTapHandler (NSObject sender)
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 PerformSegue ("SegueToSignatureEdit", this);
             }
+        }
+
+        protected void DaysToSyncTapHandler (NSObject sender)
+        {
+            NcActionSheet.Show (View, this,
+                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
+                    UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
+                }),
+                new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
+                    UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+            );
+        }
+
+        protected void NotificationsTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SettingsToNotificationChooser", this);
+            }
+        }
+
+        protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        {
+            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
+            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            account.DaysToSyncEmail = code;
+            account.Update ();
+        }
+
+        public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
+        {
+            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
+            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            account.NotificationConfiguration = choice;
+            account.Update ();
         }
 
         protected void HandleAccountIssue ()
@@ -776,9 +833,13 @@ namespace NachoClient.iOS
                 break;
             }
 
-            var errorAlertView = new UIAlertView (alertViewHeader, alertViewMessage, null, "Save", "Cancel");
-            errorAlertView.Clicked += SaveAnywayClicked;
-            errorAlertView.Show ();
+            NcAlertView.Show (this, alertViewHeader, alertViewMessage,
+                new NcAlertAction ("Save", () => {
+                    SaveAccountSettings ();
+                    ToggleEditing ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+            
             handleStatusEnums = false;
 
             ColorTextFields ();
@@ -859,10 +920,39 @@ namespace NachoClient.iOS
 
         void onDeleteAccount (object sender, EventArgs e)
         {
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            appDelegate.RemoveAccount ();
+            backButton.Enabled = false;
+            editButton.Enabled = false;
+            ToggleDeleteAccountSpinnerView ();
+            Action action = () => {
+                NcAccountHandler.Instance.RemoveAccount ();
+                InvokeOnMainThread (() => {
+                    backButton.Enabled = true;
+                    editButton.Enabled = true;
+                    ToggleDeleteAccountSpinnerView ();
+                    // go back to main screen
+                    NcUIRedirector.Instance.GoBackToMainScreen ();  
+                });
+            };
+            NcTask.Run (action, "RemoveAccount");
         }
 
+        protected void ToggleDeleteAccountSpinnerView ()
+        {
+            UIView deleteAccountBackgroundView = (UIView)View.ViewWithTag (DELETE_ACCOUNT_BACKGROUND_VIEW_TAG);
+            UIActivityIndicatorView deleteAccountActivityIndicator = (UIActivityIndicatorView)View.ViewWithTag (DELETE_ACCOUNT_SPINNER_TAG);
+
+            deleteAccountBackgroundView.Hidden = !deleteAccountBackgroundView.Hidden;
+
+            if (deleteAccountBackgroundView.Hidden) {
+                deleteAccountActivityIndicator.StopAnimating ();
+                deleteAccountBackgroundView.Alpha = 0.0f;
+            } else {
+                UIView.Animate (.15, () => {
+                    deleteAccountBackgroundView.Alpha = 1.0f;
+                });
+                deleteAccountActivityIndicator.StartAnimating ();
+            }
+        }
 
         protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {

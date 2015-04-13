@@ -243,6 +243,7 @@ namespace NachoCore.ActiveSync
                                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
                                 }
                             }
+                            // TODO - remove by the Id to avoid ambiguity if we use the result of ResolveAs...
                             PendingList.Remove (pending);
                         } else if (null != xmlServerId) {
                             // This means we are processing a body download response.

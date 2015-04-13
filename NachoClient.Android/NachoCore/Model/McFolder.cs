@@ -114,7 +114,6 @@ namespace NachoCore.Model
             return folder;
         }
 
-        // TODO - is there a good way not to specify tries here?
         public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
             if (IsHidden) {
@@ -168,6 +167,11 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
         }
 
+        public static McFolder GetEmailDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_EmailDrafts);
+        }
+
         public static McFolder GetCalDraftsFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_CalDrafts);
@@ -188,14 +192,35 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
 
+        public bool IsEmailDraftsFolder ()
+        {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+                if (ClientOwned_EmailDrafts == this.ServerId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool IsOutboxFolder ()
+        {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+                if (ClientOwned_Outbox == this.ServerId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
         public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.Type = ? AND " +
-                          " f.ParentId = ? AND " +
-                          " f.DisplayName = ?",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.Type = ?, 0.2) AND " +
+                " likelihood (f.ParentId = ?, 0.05) AND " +
+                " likelihood (f.DisplayName = ?, 0.05) ",
                               accountId, (uint)typeCode, parentId, name);
             if (0 == folders.Count) {
                 return null;
@@ -206,10 +231,10 @@ namespace NachoCore.Model
         private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.IsClientOwned = 0 AND " +
-                          " f.Type = ? ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.IsClientOwned = 0, 0.1) AND " +
+                " likelihood (f.Type = ?, 0.2) ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
                 return null;
@@ -253,20 +278,6 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
-        public static McFolder GetOrCreateEmailDraftsFolder (int accountId)
-        {
-            McFolder emailDraftsFolder = McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
-            if (null == emailDraftsFolder) {
-                var deviceDraftsFolder = McFolder.Create (accountId, true, false, true, "0",
-                                             McFolder.ClientOwned_EmailDrafts, DRAFTS_DISPLAY_NAME,
-                                             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                deviceDraftsFolder.Insert ();
-                return deviceDraftsFolder;
-            } else {
-                return emailDraftsFolder;
-            }
-        }
-
         public static McFolder GetOrCreateArchiveFolder (int accountId)
         {
             List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
@@ -281,9 +292,9 @@ namespace NachoCore.Model
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.ParentId = ? ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.ParentId = ?, 0.05) ",
                               accountId, parentId);
             return folders.ToList ();
         }
@@ -311,18 +322,13 @@ namespace NachoCore.Model
         public static McFolder QueryByServerId (int accountId, string serverId)
         {
             var f = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                    " f.AccountId = ? AND " +
-                    " f.IsAwaitingDelete = 0 AND " +
-                    " f.IsHidden = 0 AND " +
-                    " f.ServerId = ? ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.IsHidden = 0, 0.9) AND " +
+                " likelihood (f.ServerId = ?, 0.5) ",
                         accountId, serverId).ToList ();
-            NcAssert.True (2 > f.Count());
-            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-            " f.AccountId = ? AND " +
-            " f.IsAwaitingDelete = 0 AND " +
-            " f.IsHidden = 0 AND " +
-            " f.ServerId = ? ",
-                accountId, serverId).SingleOrDefault ();
+            NcAssert.True (2 > f.Count ());
+            return f.SingleOrDefault ();
         }
 
         public static List<McFolder> QueryVisibleChildrenOfParentId (int accountId, string parentId)
@@ -339,9 +345,9 @@ namespace NachoCore.Model
         public static List<McFolder> ServerEndQueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingCreate = 0 AND " +
-                          " f.ParentId = ? ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
+                " likelihood (f.ParentId = ?, 0.05) ",
                               accountId, parentId);
             return folders.ToList ();
         }
@@ -350,19 +356,19 @@ namespace NachoCore.Model
         {
             var classCode = new T ().GetClassCode ();
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
-            " m.AccountId = ? AND " +
-            " m.FolderEntryId = ? AND " +
-            " f.IsAwaitingDelete = 0 AND " +
-            " m.ClassCode = ? ",
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.FolderEntryId = ?, 0.001) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) ",
                 accountId, folderEntryId, (uint)classCode).ToList ();
         }
 
         public static List<McFolder> QueryByIsClientOwned (int accountId, bool isClientOwned)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.IsClientOwned = ? ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.IsClientOwned = ?, 0.2) ",
                               accountId, isClientOwned);
             return folders.ToList ();
         }
@@ -373,9 +379,9 @@ namespace NachoCore.Model
         public static McFolder ServerEndQueryByServerId (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-            " f.AccountId = ? AND " +
-            " f.IsAwaitingCreate = 0 AND " +
-            " f.ServerId = ? ", 
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
+                " likelihood (f.ServerId = ?, 0.05) ", 
                 accountId, serverId).SingleOrDefault ();
         }
 
@@ -392,8 +398,8 @@ namespace NachoCore.Model
         public static McFolder ServerEndQueryById (int folderId)
         {
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-            " f.Id = ? AND " +
-            " f.IsAwaitingCreate = 0 ", folderId).SingleOrDefault ();
+                " likelihood (f.Id = ?, 0.05) AND " +
+                " likelihood (f.IsAwaitingCreate = 0, 1.0) ", folderId).SingleOrDefault ();
         }
 
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)

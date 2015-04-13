@@ -27,7 +27,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
@@ -41,6 +41,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignKey>iPhone Developer</CodesignKey>
+    <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -49,7 +50,7 @@
     <WarningLevel>4</WarningLevel>
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <MtouchArch>i386, x86_64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
@@ -78,7 +79,7 @@
     <CodesignKey>iPhone Developer</CodesignKey>
     <IpaPackageName>
     </IpaPackageName>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
@@ -103,7 +104,7 @@
     <WarningLevel>4</WarningLevel>
     <CodesignKey>iPhone Developer</CodesignKey>
     <ConsolePause>false</ConsolePause>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <IpaPackageName>
@@ -130,7 +131,7 @@
     <CodesignKey>iPhone Distribution</CodesignKey>
     <BuildIpa>true</BuildIpa>
     <ConsolePause>false</ConsolePause>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <IpaPackageName>
     </IpaPackageName>
@@ -163,7 +164,7 @@
     <ConsolePause>false</ConsolePause>
     <CodesignProvision>Automatic:AppStore</CodesignProvision>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <CustomCommands>
       <CustomCommands>
@@ -194,7 +195,7 @@
     </Reference>
     <Reference Include="System.Json" />
     <Reference Include="BouncyCastle">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\BouncyCastle.dll</HintPath>
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
     </Reference>
     <Reference Include="antlr.runtime.iOS">
       <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
@@ -239,6 +240,7 @@
     <Folder Include="NachoCore\Model\McEmailMessage\" />
     <Folder Include="NachoCore\Index\" />
     <Folder Include="NachoCore\Model\Migration\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -297,6 +299,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McSQLiteMaster.cs">
+      <Link>NachoCore\Model\McSQLiteMaster.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
@@ -988,7 +993,6 @@
       <Link>NachoCore\Model\McNote.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
-    <Compile Include="NachoUI.iOS\Support\LoginHelpers.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\RegexUtilities.cs">
       <Link>NachoCore\Utils\RegexUtilities.cs</Link>
     </Compile>
@@ -1186,10 +1190,6 @@
       <DependentUpon>DeadlinesViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
-    <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
-    <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
-      <DependentUpon>DraftsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
@@ -1289,6 +1289,49 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
       <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
+      <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration13.cs">
+      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
+      <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
+      <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
+      <Link>NachoCore\Utils\LoginHelpers.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration14.cs">
+      <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
+    <Compile Include="NachoPlatform.iOS\NcFileHandleriOS.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcNameValuePair.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAlertView.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
+    <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration15.cs">
+      <Link>NachoCore\Model\Migration\NcMigration15.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDraftMessages.cs">
+      <Link>NachoCore\Adapters\NachoDraftMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
+    <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
+      <DependentUpon>DraftsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
+      <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\NotificationChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\NotificationChooserViewController.designer.cs">
+      <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2158,6 +2201,11 @@
     <BundleResource Include="Resources\gen-deadlinethread%404x.png" />
     <BundleResource Include="Resources\gen-deadlinethread%406x.png" />
     <BundleResource Include="Resources\silent.wav" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%403x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%404x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -2199,6 +2247,10 @@
     <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
       <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
       <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
+      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
+      <Name>MailKit.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

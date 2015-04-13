@@ -190,6 +190,15 @@ namespace NachoCore.Wbxml
             node5 = new NcXmlFilterNode ("BodyType", RedactionType.FULL, RedactionType.FULL);
             node4.Add(node5); // OofMessage -> BodyType
             node3.Add(node4); // Set -> OofMessage
+            // EmailAddresses
+            node4 = new NcXmlFilterNode ("EmailAddresses", RedactionType.NONE, RedactionType.NONE);
+            // SMTPAddress
+            node5 = new NcXmlFilterNode ("SMTPAddress", RedactionType.FULL, RedactionType.FULL);
+            node4.Add(node5); // EmailAddresses -> SMTPAddress
+            // PrimarySmtpAddress
+            node5 = new NcXmlFilterNode ("PrimarySmtpAddress", RedactionType.FULL, RedactionType.FULL);
+            node4.Add(node5); // EmailAddresses -> PrimarySmtpAddress
+            node3.Add(node4); // Set -> EmailAddresses
             node2.Add(node3); // Oof -> Set
             node1.Add(node2); // Settings -> Oof
             // DevicePassword

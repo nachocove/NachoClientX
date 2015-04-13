@@ -361,7 +361,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Create an iCalendar from either a McCalendar object or a McMeetingRequest object.
         /// </summary>
-        private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal)
+        private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal, DateTime occurrence = default (DateTime))
         {
             var iCal = new iCalendar ();
             iCal.ProductID = "Nacho Mail";
@@ -378,6 +378,9 @@ namespace NachoCore.Utils
             vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
             vEvent.Start = new iCalDateTime (cal.StartTime.LocalT (), localTimeZone.TZID);
             vEvent.End = new iCalDateTime (cal.EndTime.LocalT (), localTimeZone.TZID);
+            if (default (DateTime) != occurrence) {
+                vEvent.RecurrenceID = new iCalDateTime (occurrence.LocalT (), localTimeZone.TZID);
+            }
             vEvent.IsAllDay = cal.AllDayEvent;
             vEvent.Priority = 5;
             if (cal.AllDayEvent) {
@@ -398,9 +401,9 @@ namespace NachoCore.Utils
         /// Create an iCalendar from a McCalendar object, setting only the fields that are common to meeting requests,
         /// meeting responses, and meeting cancelations.
         /// </summary>
-        private static IICalendar iCalendarCommonFromMcCalendar (McCalendar cal)
+        private static IICalendar iCalendarCommonFromMcCalendar (McCalendar cal, DateTime occurrence = default (DateTime))
         {
-            var iCal = iCalendarCommonFromAbstrCal (cal);
+            var iCal = iCalendarCommonFromAbstrCal (cal, occurrence);
             iCal.Events [0].UID = cal.UID;
             return iCal;
         }
@@ -441,9 +444,9 @@ namespace NachoCore.Utils
         /// <summary>
         /// Create an iCalendar meeting response from a McCalendar object.
         /// </summary>
-        private static IICalendar iCalendarResponseFromMcCalendar (McCalendar cal, NcResponseType response)
+        private static IICalendar iCalendarResponseFromMcCalendar (McCalendar cal, NcResponseType response, DateTime occurrence = default (DateTime))
         {
-            var iCal = iCalendarCommonFromMcCalendar (cal);
+            var iCal = iCalendarCommonFromMcCalendar (cal, occurrence);
             FillOutICalResponse (McAccount.QueryById<McAccount>(cal.AccountId), iCal, response, cal.Subject);
             return iCal;
         }
@@ -465,9 +468,9 @@ namespace NachoCore.Utils
         /// <summary>
         /// Create an iCalendar meeting response from a McMeetingRequest object.
         /// </summary>
-        private static IICalendar iCalendarResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject)
+        private static IICalendar iCalendarResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject, DateTime occurrence = default (DateTime))
         {
-            var iCal = iCalendarCommonFromAbstrCal (mail);
+            var iCal = iCalendarCommonFromAbstrCal (mail, occurrence);
             FillOutICalResponse (McAccount.QueryById<McAccount> (mail.AccountId), iCal, response, subject);
             iCal.Events [0].UID = mail.GetUID ();
             return iCal;
@@ -503,9 +506,9 @@ namespace NachoCore.Utils
         /// <summary>
         /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting response.
         /// </summary>
-        public static TextPart MimeResponseFromCalendar (McCalendar cal, NcResponseType response)
+        public static TextPart MimeResponseFromCalendar (McCalendar cal, NcResponseType response, DateTime occurrence = default (DateTime))
         {
-            return MimeCalFromICalendar (iCalendarResponseFromMcCalendar (cal, response));
+            return MimeCalFromICalendar (iCalendarResponseFromMcCalendar (cal, response, occurrence));
         }
 
         /// <summary>
@@ -520,9 +523,9 @@ namespace NachoCore.Utils
         /// Using a McMeetingRequest object attached to an e-mail message, create a text/calendar MIME part that
         /// holds an iCalendar meeting response.
         /// </summary>
-        public static TextPart MimeResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject)
+        public static TextPart MimeResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject, DateTime occurrence = default (DateTime))
         {
-            return MimeCalFromICalendar (iCalendarResponseFromEmail (mail, response, subject));
+            return MimeCalFromICalendar (iCalendarResponseFromEmail (mail, response, subject, occurrence));
         }
 
         public static MimeEntity CreateMime (string description, TextPart iCalPart, List<McAttachment> attachments)
@@ -962,7 +965,7 @@ namespace NachoCore.Utils
 
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
             DateTime organizersTime = ConvertTimeFromUtc (start, timeZone);
-            DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
+            DateTime dayStart = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Utc);
             double days = (end - start).TotalDays;
 
             // Use a do/while loop so we will always create at least one event, even if
@@ -974,13 +977,13 @@ namespace NachoCore.Utils
             bool needsReminder = reminderItem.HasReminder ();
             int exceptionId = null == exception ? 0 : exception.Id;
             do {
-                DateTime nextDay = localStartTime.AddDays (1.0);
-                var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
+                DateTime nextDay = dayStart.AddDays (1.0);
+                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, true, c.Id, exceptionId);
                 if (needsReminder) {
                     ev.SetReminder (reminderItem.GetReminder ());
                     needsReminder = false; // Only the first day should have a reminder.
                 }
-                localStartTime = nextDay;
+                dayStart = nextDay;
                 days -= 1.0;
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             } while (days > 0.25);
@@ -1064,7 +1067,7 @@ namespace NachoCore.Utils
             var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
-                var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
+                var e = McEvent.Create (c.AccountId, startTime, endTime, false, c.Id, 0);
                 if (c.ReminderIsSet) {
                     e.SetReminder (c.Reminder);
                 }
@@ -1079,7 +1082,7 @@ namespace NachoCore.Utils
                         if (DateTime.MinValue == exceptionEnd) {
                             exceptionEnd = endTime;
                         }
-                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.Id, exception.Id);
+                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, false, c.Id, exception.Id);
                         if (exception.HasReminder ()) {
                             e.SetReminder (exception.GetReminder ());
                         }

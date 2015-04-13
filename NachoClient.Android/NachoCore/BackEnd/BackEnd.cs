@@ -162,7 +162,7 @@ namespace NachoCore
         }
 
         // Service must be Stop()ed before calling RemoveService().
-        private void RemoveService (int accountId)
+        public void RemoveService (int accountId)
         {
             ProtoControl service = null;
             if (Services.TryGetValue (accountId, out service)) {
@@ -170,12 +170,6 @@ namespace NachoCore
                 Log.Info (Log.LOG_LIFECYCLE, "RemoveService {0}", accountId);
                 if (!Services.TryRemove (accountId, out service)) {
                     Log.Error (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not remove service.", accountId);
-                }
-                var account = McAccount.QueryById<McAccount> (accountId);
-                if (null != account) {
-                    account.Delete ();
-                } else {
-                    Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) McAccount missing.", accountId);
                 }
             } else {
                 Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not find service.", accountId);
@@ -247,20 +241,24 @@ namespace NachoCore
         }
 
         // TODO - should these take Token?
-        public void UnblockPendingCmd (int accountId, int pendingId)
+        public McPending UnblockPendingCmd (int accountId, int pendingId)
         {
+            McPending retval = null;
             ServiceFromAccountId (accountId, (service) => {
-                service.UnblockPendingCmd (pendingId);
+                retval = service.UnblockPendingCmd (pendingId);
                 return NcResult.OK ();
             });
+            return retval;
         }
 
-        public void DeletePendingCmd (int accountId, int pendingId)
+        public McPending DeletePendingCmd (int accountId, int pendingId)
         {
+            McPending retval = null;
             ServiceFromAccountId (accountId, (service) => {
-                service.DeletePendingCmd (pendingId);
+                retval = service.DeletePendingCmd (pendingId);
                 return NcResult.OK ();
             });
+            return retval;
         }
 
         private NcResult CmdInDoNotDelayContext (int accountId, Func<ProtoControl, NcResult> cmd)
@@ -308,14 +306,14 @@ namespace NachoCore
         }
 
         public NcResult ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
-                                       int folderId, bool originalEmailIsEmbedded)
+                                         int folderId, bool originalEmailIsEmbedded)
         {
             return ServiceFromAccountId (accountId, (service) => service.ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
         public NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
-                                     int folderId, bool originalEmailIsEmbedded)
+                                       int folderId, bool originalEmailIsEmbedded)
         {
             return ServiceFromAccountId (accountId, (service) => service.ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
                 folderId, originalEmailIsEmbedded));
@@ -395,7 +393,7 @@ namespace NachoCore
         }
 
         public NcResult SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
-                                       DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
+                                         DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return ServiceFromAccountId (accountId, (service) => service.SetEmailFlagCmd (emailMessageId, flagType, 
                 start, utcStart, due, utcDue));
@@ -407,7 +405,7 @@ namespace NachoCore
         }
 
         public NcResult MarkEmailFlagDone (int accountId, int emailMessageId,
-                                         DateTime completeTime, DateTime dateCompleted)
+                                           DateTime completeTime, DateTime dateCompleted)
         {
             return ServiceFromAccountId (accountId, (service) => service.MarkEmailFlagDone (emailMessageId,
                 completeTime, dateCompleted));
@@ -579,6 +577,13 @@ namespace NachoCore
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.SearchContactsResp (sender.AccountId, prefix, token);
+            });
+        }
+
+        public void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend)
+        {
+            InvokeOnUIThread.Instance.Invoke (delegate () {
+                Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend);
             });
         }
     }

@@ -33,7 +33,8 @@ namespace NachoCore.ActiveSync
                     // TODO: evaluate whether we can drop OrderBy.
                     LastQueryNonFailedNonDeleted = McPending.QueryNonFailedNonDeleted (AccountId).OrderBy (x => x.Id).ToList ();
                 }
-                foreach (var pending in LastQueryNonFailedNonDeleted) {
+                foreach (var iter in LastQueryNonFailedNonDeleted) {
+                    var pending = iter;
                     if (McPending.StateEnum.Dispatched == pending.State) {
                         // TODO: possibly apply changes to pending after the server rejects them rather
                         // than letting them possibly HardFail.
@@ -45,7 +46,11 @@ namespace NachoCore.ActiveSync
                     case McPending.DbActionEnum.DoNothing:
                         break;
                     case McPending.DbActionEnum.Update:
-                        pending.Update ();
+                        pending = pending.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.ApplyReWrites (ReWrites);
+                            return true;
+                        });
                         break;
                     case McPending.DbActionEnum.Delete:
                         pending.Delete ();
@@ -64,7 +69,12 @@ namespace NachoCore.ActiveSync
                     case McPending.DbActionEnum.DoNothing:
                         break;
                     case McPending.DbActionEnum.Update:
-                        pending.Update ();
+                        pending = pending.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            // newReWrites already captured above.
+                            ApplyCommandToPending (target, out action, out cancelDelta);
+                            return true;
+                        });
                         break;
                     case McPending.DbActionEnum.Delete:
                         pending.Delete ();

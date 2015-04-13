@@ -234,7 +234,7 @@ namespace NachoClient
                 NachoCore.Utils.Log.Error (NachoCore.Utils.Log.LOG_UI, msg);
             }
         }
-           
+
         static CultureInfo americanCulture;
 
         public static CultureInfo AmericanCulture {
@@ -330,7 +330,10 @@ namespace NachoClient
 
         public static UIColor ColorForUser (int index)
         {
-            NcAssert.True (0 < index);
+            if (0 > index) {
+                NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_UI, "ColorForUser not set");
+                index = 1;
+            }
             return colors [index];
         }
 
@@ -338,26 +341,32 @@ namespace NachoClient
         {
             if (0 == contact.CircleColor) {
                 contact.CircleColor = PickRandomColorForUser ();
-                contact.Update ();
             }
-
             return ColorForUser (contact.CircleColor);
         }
 
-        public static NachoTabBarController GetActiveTabBar ()
+
+        public static NachoTabBarController GetActiveTabBarOrNull ()
         {
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
             NachoTabBarController activeTabBar;
             if (appDelegate.Window.RootViewController is NachoTabBarController) {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController;
+            } else if (null == appDelegate.Window.RootViewController.PresentedViewController) {
+                return null;
             } else if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController.TabBarController;
             } else {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController;
             }
-            NcAssert.NotNull (activeTabBar);
+            return activeTabBar;
+        }
 
+        public static NachoTabBarController GetActiveTabBar ()
+        {
+            var activeTabBar = GetActiveTabBarOrNull ();
+            NcAssert.NotNull (activeTabBar);
             return activeTabBar;
         }
 
@@ -1127,6 +1136,29 @@ namespace NachoClient
         {
             // TODO: Why not just a cast?
             return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+        }
+
+        /// <summary>
+        /// Set the minimum and maximum dates for a date picker.  By default, the range is from ten years
+        /// in the past to 100 years in the future.  But extend that range as necessary so it includes the
+        /// year surrounding a given date.
+        /// </summary>
+        public static void ConstrainDatePicker (UIDatePicker datePicker, DateTime referenceDate)
+        {
+            DateTime pickerMin = DateTime.UtcNow.AddYears (-10);
+            DateTime pickerMax = DateTime.UtcNow.AddYears (100);
+            if (DateTime.MinValue != referenceDate) {
+                DateTime referenceMin = referenceDate.AddYears (-1);
+                if (referenceMin < pickerMin) {
+                    pickerMin = referenceMin;
+                }
+                DateTime referenceMax = referenceDate.AddYears (1);
+                if (referenceMax > pickerMax) {
+                    pickerMax = referenceMax;
+                }
+            }
+            datePicker.MinimumDate = pickerMin.ToNSDate ();
+            datePicker.MaximumDate = pickerMax.ToNSDate ();
         }
 
         public static string PrettyPointF (CGPoint p)

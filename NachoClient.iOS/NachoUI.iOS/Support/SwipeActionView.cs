@@ -115,6 +115,12 @@ namespace NachoClient.iOS
         {
             return ((Count - 1) == i);
         }
+
+        public new void Clear()
+        {
+            NcAssert.CaseError ("invalid operation; call ClearActions instead");
+        }
+
     }
 
     /// <summary>

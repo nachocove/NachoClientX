@@ -13,10 +13,28 @@ namespace NachoClient.iOS
 		{
 		}
 
+        // MaybeDismiss might be called a few
+        // times if the status inds fire quickly.
+        // It just pops the stack. PopViewController
+        // just keeps popping, not just this view but for
+        // others on top.
+        bool alreadyDismissed;
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+
+            alreadyDismissed = false;
+        }
+
         public override bool MaybeDismissView()
         {
-            // Yes, thread views disappear when empty
-            NavigationController.PopViewController (true);
+            // Thread views disappear when empty.
+            // Message list views show "no more messages".
+            if (!alreadyDismissed) {
+                alreadyDismissed = true;
+                NavigationController.PopViewController (true);
+            }
             return true;
         }
 	}

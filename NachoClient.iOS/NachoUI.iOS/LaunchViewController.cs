@@ -401,6 +401,12 @@ namespace NachoClient.iOS
                 return;
             }
 
+
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
+                return;
+            }
+
             if (EmailHelper.IsHotmailServiceAddress (emailAddress)) {
                 if (!emailServices.IsHotmailServiceSelected ()) {
                     ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
@@ -413,20 +419,13 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
-                return;
-            }
-
             StartLoginProcess ();
         }
 
         private void Complain (string title, string message)
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: Complain {0}", message);
-            var alert = new UIAlertView (title, message, null, "OK", null);
-            alert.AccessibilityLabel = message;
-            alert.Show ();        
+            NcAlertView.ShowMessage (this, title, message);
         }
 
         /// <summary>
@@ -435,20 +434,17 @@ namespace NachoClient.iOS
         private void ConfirmBeforeStarting (string title, string message)
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: Confirm {0}", message);
-            var alert = new UIAlertView (title, message, null, "OK", new string[] { "Cancel" });
-            alert.AccessibilityLabel = "Confirm";
-            alert.Clicked += (s, b) => {
-                if (0 == b.ButtonIndex) {
+            NcAlertView.Show (this, title, message,
+                new NcAlertAction ("OK", () => {
                     StartLoginProcess ();
-                }
-            };
-            alert.Show ();
+                }),
+                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
         }
 
         private void StartLoginProcess ()
         {
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            appDelegate.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
+            NcAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
             BackEnd.Instance.Start (NcApplication.Instance.Account.Id);
             PerformSegue (StartupViewController.NextSegue (), this);
         }

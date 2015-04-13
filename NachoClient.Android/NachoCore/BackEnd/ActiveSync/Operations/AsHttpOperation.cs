@@ -80,6 +80,7 @@ namespace NachoCore.ActiveSync
         private const int KDefaultRetries = 8;
         private const int KConsec401ThenReDisc = 5;
         private const string KLoadBytes = "LoadBytes";
+        private const string KToWbxmlStream = "ToWbxmlStream";
         private string CommandName;
 
         // HttpClient factory stuff.
@@ -162,6 +163,7 @@ namespace NachoCore.ActiveSync
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KLoadBytes);
+            NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
             int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", 
@@ -291,7 +293,9 @@ namespace NachoCore.ActiveSync
                     Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * TimeoutExpander));
                 }
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
-                AttemptHttp ();
+                // Remove NcTask.Run once #1313 solved.
+                // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
+                NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
@@ -349,7 +353,7 @@ namespace NachoCore.ActiveSync
         private void TimeoutTimerCallback (object State)
         {
             if (!((CancellationToken)State).IsCancellationRequested) {
-                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
+                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", RedactedServerUri));
             }
         }
         // This method should only be called if the response indicates that the new server is a legit AS server.
@@ -395,9 +399,17 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
-                    //Log.Info (Log.LOG_HTTP, "CreateHttpRequest: create stream (#1313)");
+                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
+                        (state) => {
+                            if (!cToken.IsCancellationRequested) {
+                                Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
+                            }
+                        },
+                        cToken, 10 * 1000, System.Threading.Timeout.Infinite);
+                    var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
-                    //Log.Info (Log.LOG_HTTP, "CreateHttpRequest: stream created (#1313)");
+                    capture.Stop ();
+                    diaper.Dispose ();
                     var content = new StreamContent (stream);
                     request.Content = content;
                     request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
@@ -441,21 +453,23 @@ namespace NachoCore.ActiveSync
             }
 
             HttpRequestMessage request = null;
-            if (!CreateHttpRequest (out request, cToken)) {
-                Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
-                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
-                return;
-            }
             HttpResponseMessage response = null;
-
             try {
-                ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
-                // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
-                // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
-                // change the value once you start using the client. So we use our own per-request timeout.
-                TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
-                    System.Threading.Timeout.InfiniteTimeSpan);
                 try {
+                    // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+                    // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
+                    // change the value once you start using the client. So we use our own per-request timeout.
+
+                    // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
+                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
+                        System.Threading.Timeout.InfiniteTimeSpan);
+                    if (!CreateHttpRequest (out request, cToken)) {
+                        Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
+                        CancelTimeoutTimer ("Intentional");
+                        HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                        return;
+                    }
+                    ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
@@ -464,7 +478,7 @@ namespace NachoCore.ActiveSync
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 } catch (WebException ex) {
@@ -474,7 +488,7 @@ namespace NachoCore.ActiveSync
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                         // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
                     }
                     return;
                 } catch (NullReferenceException ex) {
@@ -482,7 +496,7 @@ namespace NachoCore.ActiveSync
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("NullReferenceException");
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 } catch (Exception ex) {
@@ -490,7 +504,7 @@ namespace NachoCore.ActiveSync
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 }
@@ -504,7 +518,7 @@ namespace NachoCore.ActiveSync
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         CancelTimeoutTimer ("Exception creating ContentData");
                         Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, RedactedServerUri, ex.Message, ex.StackTrace);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", RedactedServerUri));
                         return;
                     }
                     CancelTimeoutTimer ("Success");
@@ -855,14 +869,16 @@ namespace NachoCore.ActiveSync
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsAsThrottle)) {
                     Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsAsThrottle);
+                    protocolState = BEContext.ProtocolState;
+                    protocolState.HasBeenRateLimited = true;
                     try {
-                        protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsAsThrottle).First ();
                         protocolState.SetAsThrottleReason (value);
-                        protocolState.Update ();
                     } catch {
                         Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
+                    protocolState.Update ();
+
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
                     configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
                 } else {

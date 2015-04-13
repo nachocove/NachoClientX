@@ -279,9 +279,9 @@ namespace NachoClient.iOS
             item = FileFromIndexPath (tableView, indexPath);
 
             //Swipe view
-            var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.LeftSwipeActionButtons.Clear ();
-            view.RightSwipeActionButtons.Clear ();
+            var view = (SwipeActionView) cell.ViewWithTag (SWIPE_TAG);
+            view.ClearActions (SwipeSide.LEFT);
+            view.ClearActions (SwipeSide.RIGHT);
             view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
             view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
@@ -332,8 +332,6 @@ namespace NachoClient.iOS
             //Cell icon
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
             cellIconImageView.Frame = new CGRect (18 + xOffset, 28, 24, 24);
-
-
 
             //Text label
             var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
@@ -395,9 +393,8 @@ namespace NachoClient.iOS
                     downloaded = true;
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = true;
-
-                    view.LeftSwipeActionButtons.Clear ();
-                    view.RightSwipeActionButtons.Clear ();
+                    view.ClearActions (SwipeSide.LEFT);
+                    view.ClearActions (SwipeSide.RIGHT);
                     view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
                     view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
@@ -421,8 +418,8 @@ namespace NachoClient.iOS
                     break;
                 case McAbstrFileDesc.FilePresenceEnum.Partial:
                     vc.AttachmentAction (attachment.Id, cell);
-                    view.LeftSwipeActionButtons.Clear ();
-                    view.RightSwipeActionButtons.Clear ();
+                    view.ClearActions (SwipeSide.LEFT);
+                    view.ClearActions (SwipeSide.RIGHT);
                     view.SetAction (DOWNLOAD_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (PREVIEW_BUTTON, SwipeSide.LEFT);
 
@@ -441,11 +438,11 @@ namespace NachoClient.iOS
                     };
                     break;
                 default:
-                    (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
+                    downloadImageView.Superview.BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = false;
-                    view.LeftSwipeActionButtons.Clear ();
-                    view.RightSwipeActionButtons.Clear ();
+                    view.ClearActions (SwipeSide.LEFT);
+                    view.ClearActions (SwipeSide.RIGHT);
                     view.SetAction (DOWNLOAD_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (PREVIEW_BUTTON, SwipeSide.LEFT);
 
@@ -521,8 +518,8 @@ namespace NachoClient.iOS
             dateTextLabel.Text = "";
             iconView.Image = UIImage.FromBundle ("");
             downloadImageView.Hidden = true;
-            view.LeftSwipeActionButtons.Clear ();
-            view.RightSwipeActionButtons.Clear ();
+            view.ClearActions (SwipeSide.LEFT);
+            view.ClearActions (SwipeSide.RIGHT);
         }
 
         private string DateToString (DateTime date)
@@ -651,13 +648,8 @@ namespace NachoClient.iOS
                 break;
             }
             if (McAbstrFileDesc.FilePresenceEnum.Complete != tempAttachment.FilePresence) {
-                UIAlertView alert = new UIAlertView (
-                                        "Hold on!", 
-                                        "All attachments must be downloaded before they can be attached to an email.", 
-                                        null, 
-                                        "OK"
-                                    );
-                alert.Show ();
+                NcAlertView.ShowMessage (vc, "Not Downloaded",
+                    "Attachments must be downloaded before they can be attached to an e-mail message.");
                 return;
             } else {
                 tempAttachmentList.Add (tempAttachment);
@@ -731,6 +723,7 @@ namespace NachoClient.iOS
                 subview.Layer.RemoveAllAnimations ();
                 subview.RemoveFromSuperview ();
             }
+            iv.Hidden = true;
             cell.UserInteractionEnabled = true;
         }
 
@@ -954,8 +947,10 @@ namespace NachoClient.iOS
         {
             List<NcFileIndex> results = new List<NcFileIndex> ();
             foreach (var item in Items) {
-                if ((item.DisplayName.ToLower ()).Contains (searchString.ToLower ())) {
-                    results.Add (item);
+                if (!String.IsNullOrEmpty (item.DisplayName)) {
+                    if (-1 != item.DisplayName.IndexOf (searchString, StringComparison.OrdinalIgnoreCase)) {
+                        results.Add (item);
+                    }
                 }
             }
             return results;
