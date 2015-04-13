@@ -73,7 +73,7 @@ namespace NachoCore.Model
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
         public static string[] ExemptTables = new string[] { 
-            "McAccount", "sqlite_sequence", "McMigration",
+            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation",
         };
 
         public string DbFileName { set; get; }
