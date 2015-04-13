@@ -804,10 +804,16 @@ namespace NachoClient.iOS
 
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
-            if ((string)arg == "HARDFAIL") {
+            switch ((uint)arg) {
+            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
                 why = NcResult.WhyEnum.InvalidDest;
-            } else if ((string)arg == "TEMPFAIL") {
+                break;
+            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
                 why = NcResult.WhyEnum.ServerError;
+                break;
+            default:
+                why = NcResult.WhyEnum.NotSpecified;
+                break;
             }
             if (hasFirstSyncCompleted == false) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
