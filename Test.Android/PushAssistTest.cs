@@ -554,6 +554,36 @@ namespace Test.Common
                 }
             );
         }
+
+        [Test]
+        public void NotificationPayloadTest ()
+        {
+            string payload = @"{""aps"":{""alert"":""Nacho says: Reregister!"",""content-available"":1,""sound"":""silent.wav""},""pinger"":{""ctxs"":{""d15902b3"":{""cmd"":""reg""}},""meta"":{""time"":""1428685273""}}}";
+            var json = JsonConvert.DeserializeObject<Notification> (payload);
+            // Verify the pinger section exists
+            Assert.True (json.HasPingerSection ());
+            var pinger = json.pinger;
+            Assert.NotNull (pinger);
+
+            // Verify timestamp
+            Assert.NotNull (pinger.meta);
+            var timestamp = DateTime.MaxValue;
+            Assert.True (pinger.meta.HasTimestamp (out timestamp));
+            Assert.AreEqual (2015, timestamp.Year);
+            Assert.AreEqual (4, timestamp.Month);
+            Assert.AreEqual (10, timestamp.Day);
+            Assert.AreEqual (17, timestamp.Hour);
+            Assert.AreEqual (1, timestamp.Minute);
+            Assert.AreEqual (13, timestamp.Second);
+
+            // Verify context
+            Assert.AreEqual (1, pinger.ctxs.Count);
+            var context = "d15902b3";
+            Assert.True (pinger.ctxs.ContainsKey (context));
+            var contextObj = pinger.ctxs [context];
+            Assert.AreEqual (PingerContext.REGISTER, contextObj.cmd);
+            Assert.Null (contextObj.ses);
+        }
     }
 }
 

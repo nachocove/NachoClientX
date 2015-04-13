@@ -436,11 +436,11 @@ namespace NachoCore.Model
                 "SELECT COUNT(*) FROM McEmailMessage AS e " +
                 "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 "WHERE " +
-                "e.AccountId = ?  AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
+                " likelihood (e.AccountId = ?, 1.0)  AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 "e.IsRead = 0", 
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
@@ -452,8 +452,8 @@ namespace NachoCore.Model
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 " e.UserAction > -1 AND " +
                 " (e.Score > ? OR e.UserAction = 1) AND " +
@@ -466,8 +466,8 @@ namespace NachoCore.Model
                 " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
                 " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) AND " +
                 " ((b.FilePresence != ? AND " +
                 "   b.FilePresence != ? AND " +
@@ -493,11 +493,11 @@ namespace NachoCore.Model
                 " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 " e.UserAction > -1 AND " +
                 " (e.Score >= ? OR e.UserAction = 1) " +
@@ -506,11 +506,11 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
                 " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
                 " ) " +
                 " GROUP BY ConversationId " +
@@ -526,7 +526,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagStatus <> 0 AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
@@ -540,8 +540,8 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
-                " e.ConversationId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.ConversationId = ?, 0.01) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagStatus <> 0 AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
@@ -553,7 +553,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
-                " e.IsAwaitingDelete = 0 AND" +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
                 " e.FlagStatus <> 0 AND" +
                 " e.FlagType <> ?", 
                 "Defer until");
@@ -594,10 +594,11 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (
-                x => x.AccountId == accountId &&
-                x.IsAwaitingDelete == false &&
-                x.ThreadTopic == topic).ToList ();
+            return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
+                " likelihood (AccountId = ?, 1.0) AND " +
+                " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
+                " likelihood (ThreadTopic = ?, 0.01) ",
+                accountId, false, topic);
         }
 
         public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
@@ -611,10 +612,10 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                 "SELECT e.Id as Id FROM McEmailMessage AS e WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " e.DateReceived = ? AND " +
-                " e.[From] = ? ",
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.DateReceived = ?, 0.01) AND " +
+                " likelihood (e.[From] = ?, 0.01) ",
                 accountId, dateRecv, from);
         }
 

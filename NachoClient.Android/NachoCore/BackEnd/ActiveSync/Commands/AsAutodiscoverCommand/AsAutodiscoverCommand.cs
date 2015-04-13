@@ -86,6 +86,12 @@ namespace NachoCore.ActiveSync
             };
         };
 
+        public enum AutoDFailureReason : uint
+        {
+            CannotConnectToServer,
+            CannotFindServer
+        };
+
         public const string RequestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
         public const int TestTimeoutSecs = 30;
@@ -241,7 +247,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -302,7 +308,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -749,7 +755,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", AutoDFailureReason.CannotFindServer);
+        }
+
+        private void DoUiGetServerTempFail ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", AutoDFailureReason.CannotConnectToServer);
         }
 
         private void DoUiServerCertAsk ()

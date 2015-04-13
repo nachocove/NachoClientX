@@ -263,7 +263,7 @@ namespace NachoCore.Utils
             }
         }
 
-        static public string RecipientString(string Recipient)
+        static public string RecipientString (string Recipient)
         {
             if (null == Recipient) {
                 return "";
@@ -347,9 +347,9 @@ namespace NachoCore.Utils
         }
 
         // "Exchange" predates always setting the display name
-        static public string AccountName(McAccount account)
+        static public string AccountName (McAccount account)
         {
-            if(null == account.DisplayName) {
+            if (null == account.DisplayName) {
                 return "Exchange";
             } else {
                 return account.DisplayName;
@@ -650,9 +650,9 @@ namespace NachoCore.Utils
             return System.IO.Path.GetExtension (path).ToUpper ();
         }
 
-        public static string MaxAgeFilter(ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
-            switch(code) {
+            switch (code) {
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
                 return "All messages";
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
@@ -674,6 +674,31 @@ namespace NachoCore.Utils
                 break;
             }
             return "";
+        }
+
+        public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
+        {
+            var list = new List<string> ();
+            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
+                list.Add ("All");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 == (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 & code)) {
+                list.Add ("Hot");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 == (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 & code)) {
+                list.Add ("VIPs");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
+                list.Add ("Invitations");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
+                list.Add ("Reminders");
+            }
+            if (0 == list.Count) {
+                return "None";
+            } else {
+                return String.Join (",", list);
+            }
         }
 
     }

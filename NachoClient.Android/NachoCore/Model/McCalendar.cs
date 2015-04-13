@@ -205,8 +205,10 @@ namespace NachoCore.Model
         /// </summary>
         public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
         {
-            return NcModel.Instance.Db.Table<McCalendar> ()
-                .Where (x => x.RecurrencesGeneratedUntil < generateUntil && x.IsAwaitingDelete == false).ToList ();
+            return NcModel.Instance.Db.Query<McCalendar> ("SELECT * FROM McCalendar WHERE " +
+                " likelihood (RecurrencesGeneratedUntil < ?, 0.1) AND " +
+                " likelihood (IsAwaitingDelete = ?, 1.0) ",
+                generateUntil, false);
         }
 
         public List<McException> QueryRelatedExceptions ()

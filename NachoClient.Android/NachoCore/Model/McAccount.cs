@@ -24,9 +24,28 @@ namespace NachoCore.Model
             GoogleExchange,
         };
 
+        public enum NotificationConfigurationEnum : int
+        {
+            ALLOW_ALL_1 = 1,
+            ALLOW_HOT_2 = 2,
+            ALLOW_VIP_4 = 4,
+            ALLOW_CUSTOM_8 = 8,
+            ALLOW_INVITES_16 = 16,
+            ALLOW_REMINDERS_32 = 32,
+        };
+
+        public const NotificationConfigurationEnum DefaultNotificationConfiguration =
+            NotificationConfigurationEnum.ALLOW_ALL_1 |
+            NotificationConfigurationEnum.ALLOW_HOT_2 |
+            NotificationConfigurationEnum.ALLOW_VIP_4 |
+            NotificationConfigurationEnum.ALLOW_CUSTOM_8 |
+            NotificationConfigurationEnum.ALLOW_INVITES_16 |
+            NotificationConfigurationEnum.ALLOW_REMINDERS_32;
+
         public McAccount ()
         {
             DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
+            NotificationConfiguration = DefaultNotificationConfiguration;
         }
 
         public AccountTypeEnum AccountType { get; set; }
@@ -54,6 +73,8 @@ namespace NachoCore.Model
         public int PreferredConferenceId { get; set; }
 
         public string Signature { get; set; }
+
+        public NotificationConfigurationEnum NotificationConfiguration { get; set; }
 
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {

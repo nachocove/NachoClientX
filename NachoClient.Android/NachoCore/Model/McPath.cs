@@ -52,7 +52,7 @@ namespace NachoCore.Model
         public int Insert (bool isGMail)
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
-            Log.Info (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
+            Log.Debug (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
             if (null != preExists) {
                 // In a move, expect the server to send one Add, which is not an error.
                 if (!preExists.WasMoveDest && !isGMail) {
@@ -68,7 +68,7 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
-            Log.Info (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
+            Log.Debug (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
             if (null != preExists) {
                 // In a move, expect the server to send one Add, which is not an error.
                 if (!preExists.WasMoveDest) {
@@ -118,8 +118,11 @@ namespace NachoCore.Model
 
         public static McPath QueryByServerId (int accountId, string serverId)
         {
-            var paths = NcModel.Instance.Db.Table<McPath> ().Where (pe => 
-                pe.ServerId == serverId && pe.AccountId == accountId).ToList ();
+            var paths = NcModel.Instance.Db.Query<McPath> (
+                            "SELECT * FROM McPath WHERE " +
+                            " likelihood (AccountId = ?, 1.0) AND " +
+                            " likelihood (ServerId = ?, 0.001) ", 
+                            accountId, serverId).ToList ();
             if (0 == paths.Count) {
                 return null;
             }
@@ -140,11 +143,11 @@ namespace NachoCore.Model
 
         public static void DeleteNonFolderByParentId (int accountId, string parentId)
         {
-            NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
+            NcModel.Instance.Db.Query<McPath> (
                 "DELETE FROM McPath WHERE " +
-                "AccountId = ? AND " +
-                "ParentId = ? AND " +
-                "IsFolder = 0 ", accountId, parentId);
+                " likelihood (AccountId = ?, 1.0) AND " +
+                " likelihood (ParentId = ?, 0.05) AND " +
+                " likelihood (IsFolder = 0, 0.99) ", accountId, parentId);
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Test.Common
         {
         }
 
-        public void ServConfReq (ProtoControl sender)
+        public void ServConfReq (ProtoControl sender, object arg)
         {
         }
 
