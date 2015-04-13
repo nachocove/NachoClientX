@@ -234,10 +234,8 @@ namespace NachoCore
 
                 switch (context.Value) {
                 case PingerNotification.NEW:
-                    fetch (pa.AccountId);
-                    break;
                 case PingerNotification.REGISTER:
-                    pa.DeviceTokenLost ();
+                    fetch (pa.AccountId);
                     break;
                 default:
                     Log.Error (Log.LOG_PUSH, "Unknown action {0} for context {1}", context.Value, context.Key);
