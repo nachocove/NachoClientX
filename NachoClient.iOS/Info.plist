@@ -42,7 +42,7 @@
 		<string>remote-notification</string>
 	</array>
 	<key>CFBundleIdentifier</key>
-	<string>com.nachocove.nachomail</string>
+	<string>com.nachocove.mail</string>
 	<key>CFBundleDisplayName</key>
 	<string>[dev] Nacho Mail</string>
 	<key>CFBundleDocumentTypes</key>

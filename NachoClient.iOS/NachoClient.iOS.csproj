@@ -40,8 +40,9 @@
     <MtouchArch>i386, x86_64</MtouchArch>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Developer: Thomas Enderwick (Z89649H7J4)</CodesignKey>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -76,7 +77,7 @@
     <WarningLevel>4</WarningLevel>
     <MtouchDebug>true</MtouchDebug>
     <ConsolePause>false</ConsolePause>
-    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignKey>iPhone Developer: Thomas Enderwick (Z89649H7J4)</CodesignKey>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>cjk,west</MtouchI18n>
@@ -96,6 +97,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -122,6 +124,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <Optimize>false</Optimize>
@@ -153,6 +156,7 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchDebug>true</MtouchDebug>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -181,6 +185,7 @@
     </IpaPackageName>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -247,6 +252,7 @@
     <None Include="..\NachoClient.Android\NachoCore\Model\README.md">
       <Link>NachoCore\Model\README.md</Link>
     </None>
+    <None Include="Entitlements.plist" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -1300,6 +1306,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
       <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\StoreHandleriOS.cs" />
+    <Compile Include="NachoPlatform.iOS\CloudHandlerIOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+ToDateTime.cs">
+      <Link>NachoCore\Extensions\String+ToDateTime.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
       <Link>NachoCore\Utils\LoginHelpers.cs</Link>
     </Compile>
@@ -1323,6 +1334,8 @@
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
+      <Link>NachoCore\Model\McLicenseInformation.cs</Link>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
       <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
     </Compile>

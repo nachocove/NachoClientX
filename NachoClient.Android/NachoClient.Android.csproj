@@ -376,11 +376,15 @@
     <Compile Include="NachoCore\Utils\NcAccountHandler.cs" />
     <Compile Include="NachoPlatform.Android\NcUIRedirectorAndroid.cs" />
     <Compile Include="NachoCore\Utils\BuildInfoHelper.cs" />
+    <Compile Include="NachoPlatform.Android\StoreHandlerAndroid.cs" />
+    <Compile Include="NachoPlatform.Android\CloudHandlerAndroid.cs" />
+    <Compile Include="NachoCore\Extensions\String+ToDateTime.cs" />
     <Compile Include="NachoCore\Utils\LoginHelpers.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration14.cs" />
     <Compile Include="NachoPlatform.Android\NcFileHandlerAndroid.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration15.cs" />
     <Compile Include="NachoCore\Adapters\NachoDraftMessages.cs" />
+    <Compile Include="NachoCore\Model\McLicenseInformation.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration16.cs" />
   </ItemGroup>
   <ItemGroup>
