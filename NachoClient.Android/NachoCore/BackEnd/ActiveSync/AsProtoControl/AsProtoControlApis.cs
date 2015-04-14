@@ -179,13 +179,14 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSEND");
             }, "SendEmailCmd");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning", emailMessageId);
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
             return result;
         }
 
         public override NcResult SendEmailCmd (int emailMessageId, int calId)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1})", emailMessageId, calId);
             NcModel.Instance.RunInTransaction (() => {
                 var cal = McAbstrObject.QueryById<McCalendar> (calId);
                 var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
@@ -232,6 +233,7 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
             }, "SendEmailCmd(cal)");
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
             return result;
         }
 
@@ -239,6 +241,7 @@ namespace NachoCore.ActiveSync
                                       int folderId, bool originalEmailIsEmbedded)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4})", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
             if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                 return SendEmailCmd (newEmailMessageId);
             }
@@ -267,12 +270,14 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSMF");
             }, "SmartEmailCmd");
+            Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
             return result;
         }
 
         public override NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
                                               int folderId, bool originalEmailIsEmbedded)
         {
+            Log.Info (Log.LOG_AS, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
             return SmartEmailCmd (McPending.Operations.EmailReply,
                 newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
         }
@@ -280,8 +285,10 @@ namespace NachoCore.ActiveSync
         public override NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
                                                 int folderId, bool originalEmailIsEmbedded)
         {
+            Log.Info (Log.LOG_AS, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
             if (originalEmailIsEmbedded) {
                 var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
+                Log.Info (Log.LOG_AS, "ForwardEmailCmd: attachments = {0}", attachments.Count);
                 foreach (var attach in attachments) {
                     if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
                         var token = DnldAttCmd (attach.Id);
