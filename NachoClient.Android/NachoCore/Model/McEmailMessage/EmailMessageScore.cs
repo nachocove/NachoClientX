@@ -296,7 +296,7 @@ namespace NachoCore.Model
             if (0 <= accountId) {
                 return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
                 " likelihood (AccountId = ?, 1.0) AND " +
-                " likelihood (HasBeenGleaned = ?, 0.1) ",
+                " likelihood (HasBeenGleaned = ?, 0.1) LIMIT 1",
                     accountId, false).FirstOrDefault ();
             } else {
                 return NcModel.Instance.Db.Table<McEmailMessage> ()
