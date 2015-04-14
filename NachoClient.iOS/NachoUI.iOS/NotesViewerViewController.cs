@@ -7,7 +7,7 @@ using UIKit;
 
 namespace NachoClient.iOS
 {
-    public partial class NotesViewerViewController : UIViewController
+    public partial class NotesViewerViewController : NcUIViewController
     {
         public NotesViewerViewController (IntPtr handle) : base (handle)
         {
@@ -66,6 +66,7 @@ namespace NachoClient.iOS
             cancelButton.Clicked += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
+            cancelButton.AccessibilityLabel = "Cancel";
             yOffset += navbar.Frame.Height;
             notesTextView = new UITextView (new CGRect (0, 64, View.Frame.Width, View.Frame.Height - 64));
             notesTextView.Text = owner.GetNoteText();

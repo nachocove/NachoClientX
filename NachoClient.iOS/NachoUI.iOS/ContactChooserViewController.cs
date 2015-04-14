@@ -119,6 +119,7 @@ namespace NachoClient.iOS
             cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
             cancelSearchButton.Frame = new CGRect (View.Frame.Width - 58, 6, 50, 32);
             cancelSearchButton.SetTitle ("Cancel", UIControlState.Normal);
+            cancelSearchButton.AccessibilityLabel = "Cancel";
             cancelSearchButton.Font = A.Font_AvenirNextMedium14;
             cancelSearchButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
             cancelSearchButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -389,6 +390,7 @@ namespace NachoClient.iOS
                 using (var image = UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
                     vipButton.SetImage (image, UIControlState.Normal);
                 }
+                vipButton.AccessibilityLabel = "VIP";
             }
 
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)

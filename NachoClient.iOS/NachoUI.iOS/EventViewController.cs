@@ -179,6 +179,7 @@ namespace NachoClient.iOS
             editEventButton = new UIBarButtonItem ();
             editEventButton.TintColor = A.Color_NachoBlue;
             editEventButton.Image = UIImage.FromBundle ("gen-edit");
+            editEventButton.AccessibilityLabel = "Edit";
             editEventButton.Clicked += EditButtonClicked;
 
             // Title label

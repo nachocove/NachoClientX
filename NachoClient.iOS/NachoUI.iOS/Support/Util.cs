@@ -770,6 +770,7 @@ namespace NachoClient
                 UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     nc.PopViewController (true);
                 });
+                backButton.AccessibilityLabel = "Back";
                 backButton.TintColor = tintColor;
                 ni.SetLeftBarButtonItem (backButton, true);
             }

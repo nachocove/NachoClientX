@@ -245,6 +245,7 @@ namespace NachoClient.iOS
 
             editContact = new UIBarButtonItem ();
             editContact.Image = UIImage.FromBundle ("gen-edit");
+            editContact.AccessibilityLabel = "Edit";
             editContact.Clicked += EditButtonClicked;
             NavigationItem.SetRightBarButtonItem (editContact, true); 
 

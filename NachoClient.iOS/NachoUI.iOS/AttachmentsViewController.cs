@@ -14,7 +14,7 @@ using CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentsViewController : UIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
+    public partial class AttachmentsViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
     {
         public AttachmentsViewController (IntPtr handle) : base (handle)
         {
@@ -184,29 +184,35 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsTableView.Source = AttachmentsSource;
 
             searchButton.TintColor = A.Color_NachoBlue;
+            searchButton.AccessibilityLabel = "Search";
             NavigationItem.LeftItemsSupplementBackButton = true;
             NavigationItem.LeftBarButtonItem = searchButton;
             searchButton.Clicked += searchClicked;
                 
             multiSelectButton.TintColor = A.Color_NachoBlue;
             multiSelectButton.Image = UIImage.FromBundle ("folder-edit");
+            multiSelectButton.AccessibilityLabel = "Folder edit";
             NavigationItem.RightBarButtonItem = multiSelectButton;
             multiSelectButton.Clicked += multiClicked;
 
             multiOpenInButton.TintColor = A.Color_NachoBlue;
             multiOpenInButton.Image = UIImage.FromBundle ("files-open-in-app");
+            multiOpenInButton.AccessibilityLabel = "Open in";
             multiOpenInButton.Clicked += openInClicked;
 
             multiAttachButton.TintColor = A.Color_NachoBlue;
             multiAttachButton.Image = UIImage.FromBundle ("files-email-attachment");
+            multiAttachButton.AccessibilityLabel = "Send attachment";
             multiAttachButton.Clicked += attachClicked;
 
             multiDeleteButton.TintColor = A.Color_NachoBlue;
             multiDeleteButton.Image = UIImage.FromBundle ("gen-delete-all");
+            multiDeleteButton.AccessibilityLabel = "Delete";
             multiDeleteButton.Clicked += deleteClicked;
 
             multiCancelButton.TintColor = A.Color_NachoBlue;
             multiCancelButton.Image = UIImage.FromBundle ("gen-close");
+            multiCancelButton.AccessibilityLabel = "Close";
             multiCancelButton.Clicked += cancelClicked;
 
             EmptyListLabel = new UILabel (new CGRect (0, 80, UIScreen.MainScreen.Bounds.Width, 20));

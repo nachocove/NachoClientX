@@ -16,7 +16,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class FoldersViewController : UIViewController, INachoFolderChooser, INachoMessageEditorParent
+    public partial class FoldersViewController : NcUIViewController, INachoFolderChooser, INachoMessageEditorParent
     {
         public FoldersViewController (IntPtr handle) : base (handle)
         {
@@ -158,6 +158,7 @@ namespace NachoClient.iOS
                 navItem.Title = "Move to Folder";
                 using (var image = UIImage.FromBundle ("modal-close")) {
                     var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                    dismissButton.AccessibilityLabel = "Dismiss";
                     dismissButton.Clicked += (object sender, EventArgs e) => {
                         DismissViewController (true, null);
                     };
@@ -181,6 +182,7 @@ namespace NachoClient.iOS
 
                 var composeButton = new UIBarButtonItem ();
                 Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
+                composeButton.AccessibilityLabel = "New message";
                 composeButton.Clicked += (object sender, EventArgs e) => {
                     PerformSegue ("SegueToCompose", new SegueHolder (null));
                 };

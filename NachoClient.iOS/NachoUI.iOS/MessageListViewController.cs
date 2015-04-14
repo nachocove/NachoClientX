@@ -62,42 +62,49 @@ namespace NachoClient.iOS
 
             composeMailButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (composeMailButton, "contact-newemail");
+            composeMailButton.AccessibilityLabel = "New message";
             composeMailButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToCompose", this);
             };
 
             multiSelectButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (multiSelectButton, "folder-edit");
+            multiSelectButton.AccessibilityLabel = "Folder edit";
             multiSelectButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectEnable (TableView);
             };
 
             cancelSelectedButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelSelectedButton, "gen-close");
+            cancelSelectedButton.AccessibilityLabel = "Close";
             cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
 
             archiveButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (archiveButton, "gen-archive");
+            archiveButton.AccessibilityLabel = "Archive";
             archiveButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectArchive (TableView);
             };
 
             deleteButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (deleteButton, "gen-delete-all");
+            deleteButton.AccessibilityLabel = "Delete";
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectDelete (TableView);
             };
 
             moveButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (moveButton, "folder-move");
+            moveButton.AccessibilityLabel = "Move";
             moveButton.Clicked += (object sender, EventArgs e) => {
                 var h = new SegueHolder (TableView);
                 PerformSegue ("MessageListToFolders", h);
             };
 
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.AccessibilityLabel = "Search";
             searchButton.Clicked += onClickSearchButton;
 
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
@@ -510,6 +517,7 @@ namespace NachoClient.iOS
                 var button = UIButton.FromType (UIButtonType.System);
                 button.Frame = new CGRect (0, 0, 70, 30);
                 button.SetTitle ("Mail", UIControlState.Normal);
+                button.AccessibilityLabel = "Back";
                 button.SetTitleColor (UIColor.White, UIControlState.Normal);
                 button.SetImage (image, UIControlState.Normal);
                 button.Font = UINavigationBar.Appearance.TitleTextAttributes.Font;

@@ -54,6 +54,7 @@ namespace NachoClient.iOS
             navbar.SetItems (new UINavigationItem[]{ title }, false);
             cancelButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Cancel";
 
             navbar.TopItem.LeftBarButtonItem = cancelButton;
             cancelButton.Clicked += CancelButtonClicked;
@@ -61,6 +62,7 @@ namespace NachoClient.iOS
             saveButton = new UIBarButtonItem ();
             saveButton.Style = UIBarButtonItemStyle.Done;
             saveButton.Title = "Done";
+            saveButton.AccessibilityLabel = "Done";
             saveButton.Clicked += SaveButtonClicked;
 
             navbar.TopItem.RightBarButtonItem = saveButton;

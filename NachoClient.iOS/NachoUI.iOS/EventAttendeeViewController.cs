@@ -195,26 +195,31 @@ namespace NachoClient.iOS
             multiSelectButton = new UIBarButtonItem ();
             multiSelectButton.TintColor = A.Color_NachoBlue;
             multiSelectButton.Image = UIImage.FromBundle ("folder-edit");
+            multiSelectButton.AccessibilityLabel = "Folder edit";
             multiSelectButton.Clicked += multiClicked;
 
             multiRemoveButton = new UIBarButtonItem ();
             multiRemoveButton.TintColor = A.Color_NachoBlue;
             multiRemoveButton.Image = UIImage.FromBundle ("gen-delete-all");
+            multiRemoveButton.AccessibilityLabel = "Delete";
             multiRemoveButton.Clicked += removeClicked;
 
             multiResendButton = new UIBarButtonItem ();
             multiResendButton.TintColor = A.Color_NachoBlue;
             multiResendButton.Image = UIImage.FromBundle ("beer");
+            multiResendButton.AccessibilityLabel = "Beer";
             multiResendButton.Clicked += resendClicked;
 
             multiCancelButton = new UIBarButtonItem ();
             multiCancelButton.TintColor = A.Color_NachoBlue;
             multiCancelButton.Image = UIImage.FromBundle ("gen-close");
+            multiCancelButton.AccessibilityLabel = "Close";
             multiCancelButton.Clicked += cancelClicked;
 
             addAttendeesButton = new UIBarButtonItem ();
             addAttendeesButton.TintColor = A.Color_NachoBlue;
             addAttendeesButton.Image = UIImage.FromBundle ("calendar-add-attendee");
+            addAttendeeButton.AccessibilityLabel = "Add attendee";
 
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);

@@ -63,6 +63,7 @@ namespace NachoClient.iOS
 
             cancelButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Cancel";
             NavigationItem.LeftBarButtonItem = cancelButton;
 
             cancelButton.Clicked += (sender, e) => {
@@ -71,6 +72,7 @@ namespace NachoClient.iOS
             };
 
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.AccessibilityLabel = "Search";
             searchButton.TintColor = A.Color_NachoBlue;
             NavigationItem.RightBarButtonItem = searchButton;
             searchButton.Clicked += (object sender, EventArgs e) => {

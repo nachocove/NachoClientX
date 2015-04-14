@@ -74,21 +74,25 @@ namespace NachoClient.iOS
             replyButton = new UIBarButtonItem ();
             replyButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
+            replyButton.AccessibilityLabel = "Reply";
             replyButton.Clicked += ReplyButtonClicked;
 
             replyAllButton = new UIBarButtonItem ();
             replyAllButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyAllButton, "toolbar-icn-reply-all");
+            replyAllButton.AccessibilityLabel = "Reply all";
             replyAllButton.Clicked += ReplyAllButtonClicked;
 
             forwardButton = new UIBarButtonItem ();
             forwardButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (forwardButton, "toolbar-icn-fwd");
+            forwardButton.AccessibilityLabel = "Forward";
             forwardButton.Clicked += ForwardButtonClicked;
 
             archiveButton = new UIBarButtonItem ();
             archiveButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
+            archiveButton.AccessibilityLabel = "Archive";
             archiveButton.Clicked += ArchiveButtonClicked;
 
             flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
@@ -99,6 +103,7 @@ namespace NachoClient.iOS
             deleteButton = new UIBarButtonItem ();
             deleteButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (deleteButton, "email-delete");
+            deleteButton.AccessibilityLabel = "Delete";
             deleteButton.Clicked += DeleteButtonClicked;
 
             SetItems (new UIBarButtonItem[] {

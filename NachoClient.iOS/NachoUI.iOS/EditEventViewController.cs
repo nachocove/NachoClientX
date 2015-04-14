@@ -397,8 +397,10 @@ namespace NachoClient.iOS
             cancelButton = new UIBarButtonItem ();
 
             doneButton.Title = (CalendarItemEditorAction.create == action ? "Send" : "Done");
+            doneButton.AccessibilityLabel = "Done";
 
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Close";
 
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);

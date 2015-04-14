@@ -210,11 +210,13 @@ namespace NachoClient.iOS
                     this.DismissViewController (true, null);
                 });
                 backButton.Title = "Back";
+                backButton.AccessibilityLabel = "Back";
                 backButton.TintColor = A.Color_NachoBlue;
                 navItems.SetLeftBarButtonItem (backButton, true);
             }
           
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
+            sendButton.AccessibilityLabel = "Send";
 
             sendButton.Clicked += SendButtonClicked;
 
