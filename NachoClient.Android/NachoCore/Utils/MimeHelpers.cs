@@ -194,6 +194,14 @@ namespace NachoCore.Utils
 
             var mimeMessage = LoadMessage (body);
 
+            return FindText(mimeMessage, out html, out text);
+        }
+
+        public static bool FindText(MimeMessage mimeMessage, out string html, out string text)
+        {
+            html = null;
+            text = null;
+
             if (null == mimeMessage) {
                 return false;
             }
