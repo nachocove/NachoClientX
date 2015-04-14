@@ -56,6 +56,7 @@ namespace NachoClient.iOS
             backButton = new UIBarButtonItem ();
             backButton.Clicked += BackButtonClicked;
             backButton.Image = UIImage.FromBundle ("nav-backarrow");
+            backButton.AccessibilityLabel = "Back";
             backButton.TintColor = A.Color_NachoBlue;
             NavigationItem.LeftBarButtonItem = backButton;
 

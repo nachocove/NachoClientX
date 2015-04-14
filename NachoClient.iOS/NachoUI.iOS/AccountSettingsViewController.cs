@@ -133,6 +133,11 @@ namespace NachoClient.iOS
             backButton.Image = UIImage.FromBundle ("nav-backarrow");
             saveButton.Title = "Done";
 
+            editButton.AccessibilityLabel = "Edit";
+            cancelButton.AccessibilityLabel = "Close";
+            backButton.AccessibilityLabel = "Back";
+            saveButton.AccessibilityLabel = "Save";
+
             backButton.TintColor = A.Color_NachoBlue;
 
             NavigationItem.SetLeftBarButtonItem (backButton, true);

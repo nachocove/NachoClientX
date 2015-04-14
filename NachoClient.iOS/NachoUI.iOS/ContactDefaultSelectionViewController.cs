@@ -123,6 +123,7 @@ namespace NachoClient.iOS
             navItem = new UINavigationItem ();
             using (var image = UIImage.FromBundle ("modal-close")) {
                 dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton.AccessibilityLabel = "Close";
                 dismissButton.Clicked += DismissViewTouchUpInside;
                 navItem.LeftBarButtonItem = dismissButton;
             }

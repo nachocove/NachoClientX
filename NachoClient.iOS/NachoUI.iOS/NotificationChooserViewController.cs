@@ -63,8 +63,10 @@ namespace NachoClient.iOS
             cancelButton = new UIBarButtonItem ();
 
             doneButton.Title = "Save";
+            doneButton.AccessibilityLabel = "Save";
 
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Cancel";
 
             cancelButton.Clicked += (sender, e) => {
                 NavigationController.PopViewController (true);

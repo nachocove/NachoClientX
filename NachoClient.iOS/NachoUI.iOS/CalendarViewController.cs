@@ -53,12 +53,14 @@ namespace NachoClient.iOS
                 
             var todayButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage (DateTime.Now.Day.ToString ()));
+            todayButton.AccessibilityLabel = "Today";
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
 
             var addEventButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
+            addEventButton.AccessibilityLabel = "New meeting";
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };

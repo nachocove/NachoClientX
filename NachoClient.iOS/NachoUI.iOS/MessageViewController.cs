@@ -150,10 +150,15 @@ namespace NachoClient.iOS
 
             blockMenuButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
+            blockMenuButton.AccessibilityLabel = "More";
+
             deferButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (deferButton, "email-defer");
+            deferButton.AccessibilityLabel = "Defer";
+
             moveButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (moveButton, "folder-move");
+            moveButton.AccessibilityLabel = "Move";
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 blockMenuButton,

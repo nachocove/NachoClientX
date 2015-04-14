@@ -95,6 +95,7 @@ namespace NachoClient.iOS
 
             menuButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (menuButton, "gen-more-active");
+            menuButton.AccessibilityLabel = "More";
             menuButton.Clicked += MenuButtonClicked;
 
             UIView tapCoverView = new UIView (new CGRect (0, height, ViewWidth, this.Frame.Height - height));

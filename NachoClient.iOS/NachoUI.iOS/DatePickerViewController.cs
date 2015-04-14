@@ -28,6 +28,7 @@ namespace NachoClient.iOS
             cancelButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
+            cancelButton.AccessibilityLabel = "Cancel";
         }
 
         public override void ViewWillAppear (bool animated)

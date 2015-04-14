@@ -196,6 +196,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("icn-close")) {
                 cancelButton.Image = image;
             }
+            cancelButton.AccessibilityLabel = "Cancel";
             cancelButton.Clicked += CancelButtonClicked;
             cancelButton.TintColor = A.Color_NachoBlue;
             NavigationItem.SetLeftBarButtonItem (cancelButton, true);
@@ -211,6 +212,7 @@ namespace NachoClient.iOS
 
             doneButton = new UIBarButtonItem ();
             doneButton.Title = "Save";
+            doneButton.AccessibilityLabel = "Save";
             doneButton.Clicked += DoneButtonClicked;
             NavigationItem.SetRightBarButtonItem (doneButton, true);
 

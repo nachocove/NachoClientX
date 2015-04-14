@@ -19,7 +19,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
+    public partial class MessageComposeViewController : NcUIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
     {
 
         // Strings to be used when calling SetAction()
@@ -243,8 +243,13 @@ namespace NachoClient.iOS
             quickResponseButton = new UIBarButtonItem ();
 
             Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
+            quickResponseButton.AccessibilityLabel = "Quick response";
+
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Close";
+
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
+            sendButton.AccessibilityLabel = "Send";
 
             NavigationItem.LeftBarButtonItem = cancelButton;
 

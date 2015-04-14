@@ -73,6 +73,8 @@ namespace NachoClient.iOS
                 NavigationController.PopViewController (true);
             };
 
+            doneButton.AccessibilityLabel = "Done";
+
             CreatePhoneView ();
 
 
