@@ -44,6 +44,8 @@ namespace NachoPlatform
             // Checks to see if the user of this device has iCloud enabled
             var uburl = NSFileManager.DefaultManager.GetUrlForUbiquityContainer (null);                
             // Connected to iCloud?
+            // FIXME - remove following line after telemetry is ready.
+            uburl = null;
             if (uburl == null) {
                 // No
                 HasiCloud = false;
