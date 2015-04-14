@@ -179,7 +179,7 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSEND");
             }, "SendEmailCmd");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning", emailMessageId);
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
             return result;
         }
 
@@ -233,6 +233,7 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
             }, "SendEmailCmd(cal)");
+            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
             return result;
         }
 
@@ -269,6 +270,7 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSMF");
             }, "SmartEmailCmd");
+            Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
             return result;
         }
 
