@@ -157,7 +157,7 @@ namespace NachoClient.iOS
                 var navItem = new UINavigationItem ();
                 navItem.Title = "Move to Folder";
                 using (var image = UIImage.FromBundle ("modal-close")) {
-                    var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                    var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                     dismissButton.AccessibilityLabel = "Dismiss";
                     dismissButton.Clicked += (object sender, EventArgs e) => {
                         DismissViewController (true, null);
@@ -180,7 +180,7 @@ namespace NachoClient.iOS
                 NavigationItem.Title = "Mail";
                 NavigationController.NavigationBar.Translucent = false;
 
-                var composeButton = new UIBarButtonItem ();
+                var composeButton = new NcUIBarButtonItem ();
                 Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
                 composeButton.AccessibilityLabel = "New message";
                 composeButton.Clicked += (object sender, EventArgs e) => {

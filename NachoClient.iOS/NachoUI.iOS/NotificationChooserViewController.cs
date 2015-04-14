@@ -59,8 +59,8 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            doneButton = new UIBarButtonItem ();
-            cancelButton = new UIBarButtonItem ();
+            doneButton = new NcUIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
 
             doneButton.Title = "Save";
             doneButton.AccessibilityLabel = "Save";

@@ -176,7 +176,7 @@ namespace NachoClient.iOS
 
             nfloat yOffset = 20;
 
-            editEventButton = new UIBarButtonItem ();
+            editEventButton = new NcUIBarButtonItem ();
             editEventButton.TintColor = A.Color_NachoBlue;
             editEventButton.Image = UIImage.FromBundle ("gen-edit");
             editEventButton.AccessibilityLabel = "Edit";
@@ -454,8 +454,8 @@ namespace NachoClient.iOS
             /// 3. The event's MeetingStatus is "Meeting"
             /// If any of these are true the user is the organizer of the event.
             isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) ||
-                (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
-                (NcMeetingStatus.Meeting == c.MeetingStatus);
+            (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
+            (NcMeetingStatus.Meeting == c.MeetingStatus);
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;

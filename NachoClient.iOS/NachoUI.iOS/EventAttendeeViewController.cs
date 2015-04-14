@@ -192,31 +192,31 @@ namespace NachoClient.iOS
             nfloat yOffset = 0;
             NavigationItem.Title = "Attendees";
 
-            multiSelectButton = new UIBarButtonItem ();
+            multiSelectButton = new NcUIBarButtonItem ();
             multiSelectButton.TintColor = A.Color_NachoBlue;
             multiSelectButton.Image = UIImage.FromBundle ("folder-edit");
             multiSelectButton.AccessibilityLabel = "Folder edit";
             multiSelectButton.Clicked += multiClicked;
 
-            multiRemoveButton = new UIBarButtonItem ();
+            multiRemoveButton = new NcUIBarButtonItem ();
             multiRemoveButton.TintColor = A.Color_NachoBlue;
             multiRemoveButton.Image = UIImage.FromBundle ("gen-delete-all");
             multiRemoveButton.AccessibilityLabel = "Delete";
             multiRemoveButton.Clicked += removeClicked;
 
-            multiResendButton = new UIBarButtonItem ();
+            multiResendButton = new NcUIBarButtonItem ();
             multiResendButton.TintColor = A.Color_NachoBlue;
             multiResendButton.Image = UIImage.FromBundle ("beer");
             multiResendButton.AccessibilityLabel = "Beer";
             multiResendButton.Clicked += resendClicked;
 
-            multiCancelButton = new UIBarButtonItem ();
+            multiCancelButton = new NcUIBarButtonItem ();
             multiCancelButton.TintColor = A.Color_NachoBlue;
             multiCancelButton.Image = UIImage.FromBundle ("gen-close");
             multiCancelButton.AccessibilityLabel = "Close";
             multiCancelButton.Clicked += cancelClicked;
 
-            addAttendeesButton = new UIBarButtonItem ();
+            addAttendeesButton = new NcUIBarButtonItem ();
             addAttendeesButton.TintColor = A.Color_NachoBlue;
             addAttendeesButton.Image = UIImage.FromBundle ("calendar-add-attendee");
             addAttendeeButton.AccessibilityLabel = "Add attendee";

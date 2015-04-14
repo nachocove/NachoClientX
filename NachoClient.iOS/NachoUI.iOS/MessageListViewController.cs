@@ -60,42 +60,42 @@ namespace NachoClient.iOS
             NcCapture.AddKind (ReloadCaptureName);
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
-            composeMailButton = new UIBarButtonItem ();
+            composeMailButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (composeMailButton, "contact-newemail");
             composeMailButton.AccessibilityLabel = "New message";
             composeMailButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToCompose", this);
             };
 
-            multiSelectButton = new UIBarButtonItem ();
+            multiSelectButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (multiSelectButton, "folder-edit");
             multiSelectButton.AccessibilityLabel = "Folder edit";
             multiSelectButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectEnable (TableView);
             };
 
-            cancelSelectedButton = new UIBarButtonItem ();
+            cancelSelectedButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelSelectedButton, "gen-close");
             cancelSelectedButton.AccessibilityLabel = "Close";
             cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
 
-            archiveButton = new UIBarButtonItem ();
+            archiveButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (archiveButton, "gen-archive");
             archiveButton.AccessibilityLabel = "Archive";
             archiveButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectArchive (TableView);
             };
 
-            deleteButton = new UIBarButtonItem ();
+            deleteButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (deleteButton, "gen-delete-all");
             deleteButton.AccessibilityLabel = "Delete";
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectDelete (TableView);
             };
 
-            moveButton = new UIBarButtonItem ();
+            moveButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (moveButton, "folder-move");
             moveButton.AccessibilityLabel = "Move";
             moveButton.Clicked += (object sender, EventArgs e) => {
@@ -103,7 +103,7 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageListToFolders", h);
             };
 
-            searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.AccessibilityLabel = "Search";
             searchButton.Clicked += onClickSearchButton;
 
@@ -513,7 +513,7 @@ namespace NachoClient.iOS
         protected void BackShouldSwitchToFolders ()
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-//                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
+//                backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
                 var button = UIButton.FromType (UIButtonType.System);
                 button.Frame = new CGRect (0, 0, 70, 30);
                 button.SetTitle ("Mail", UIControlState.Normal);

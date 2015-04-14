@@ -243,7 +243,7 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             NavigationItem.Title = "Contacts";
 
-            editContact = new UIBarButtonItem ();
+            editContact = new NcUIBarButtonItem ();
             editContact.Image = UIImage.FromBundle ("gen-edit");
             editContact.AccessibilityLabel = "Edit";
             editContact.Clicked += EditButtonClicked;

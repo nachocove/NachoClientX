@@ -93,7 +93,7 @@ namespace NachoClient.iOS
                 CreateBlockButton (b);
             }
 
-            menuButton = new UIBarButtonItem ();
+            menuButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (menuButton, "gen-more-active");
             menuButton.AccessibilityLabel = "More";
             menuButton.Clicked += MenuButtonClicked;
