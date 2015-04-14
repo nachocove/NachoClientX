@@ -718,7 +718,7 @@ namespace NachoClient.iOS
             // Preview label view
             var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
-            var rawPreview = message.BodyPreview;
+            var rawPreview = message.BodyPreview ?? "";
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
