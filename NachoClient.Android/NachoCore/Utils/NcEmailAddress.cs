@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -247,7 +248,7 @@ namespace NachoCore.Utils
         }
 
         public static List<NcEmailAddress> ParseAddressListString (string addressString,
-                                                                    Kind addressKind)
+                                                                   Kind addressKind)
         {
             List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
             if (null == addressString) {
@@ -300,7 +301,13 @@ namespace NachoCore.Utils
         {
             // Try to parse the display name into first / middle / last name
             string[] items = address.Name.Split (new char [] { ',', ' ' });
+            // if two delimiters are adjacent, or a delimiter is found at the beginning or end of this instance, the corresponding array element contains Empty. 
+            items = items.Where (x => !string.IsNullOrEmpty (x)).ToArray ();
             switch (items.Length) {
+            case 1:
+                // First name
+                contact.FirstName = items [0];
+                break;
             case 2:
                 if (0 < address.Name.IndexOf (',')) {
                     // Last name, First name
@@ -317,6 +324,13 @@ namespace NachoCore.Utils
                     contact.FirstName = items [0];
                     contact.MiddleName = items [1];
                     contact.LastName = items [2];
+                }
+                break;
+            default:
+                if (items.Length > 3) {
+                    contact.FirstName = items [0];
+                    contact.MiddleName = items [1];
+                    contact.LastName = string.Join (" ", items.Skip (2));
                 }
                 break;
             }
