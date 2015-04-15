@@ -48,6 +48,7 @@ namespace NachoClient.iOS
             tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
             source = new NotificationChoicesSource (this);
             tableView.Source = source;
+            tableView.AccessibilityLabel = "Notification chooser";
 
             View.Add (tableView);
 

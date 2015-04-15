@@ -285,6 +285,7 @@ namespace NachoClient.iOS
             tableView.SeparatorColor = UIColor.Clear;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
             tableView.Source = AttendeeSource;
+            tableView.AccessibilityLabel = "Event attendee";
             View.AddSubview (tableView);
 
 

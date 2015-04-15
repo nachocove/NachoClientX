@@ -392,6 +392,7 @@ namespace NachoClient.iOS
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
             interactionsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
+            interactionsTableView.AccessibilityLabel = "Contact interaction";
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
