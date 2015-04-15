@@ -81,14 +81,14 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
 
-            var composeButton = new UIBarButtonItem ();
+            var composeButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
             composeButton.AccessibilityLabel = "New message";
             composeButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToCompose", new SegueHolder (null));
             };
 
-            var newMeetingButton = new UIBarButtonItem ();
+            var newMeetingButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (newMeetingButton, "cal-add");
             newMeetingButton.AccessibilityLabel = "New meeting";
             newMeetingButton.Clicked += (object sender, EventArgs e) => {

@@ -53,7 +53,7 @@ namespace NachoClient.iOS
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
 
-            backButton = new UIBarButtonItem ();
+            backButton = new NcUIBarButtonItem ();
             backButton.Clicked += BackButtonClicked;
             backButton.Image = UIImage.FromBundle ("nav-backarrow");
             backButton.AccessibilityLabel = "Back";

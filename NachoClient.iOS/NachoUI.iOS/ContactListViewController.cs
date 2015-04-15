@@ -83,11 +83,11 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             SearchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            var searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.AccessibilityLabel = "Search";
             searchButton.TintColor = A.Color_NachoBlue;
 
-            var addContactButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            var addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
             addContactButton.AccessibilityLabel = "Add contact";
             addContactButton.TintColor = A.Color_NachoBlue;
 

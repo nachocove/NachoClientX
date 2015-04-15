@@ -55,10 +55,10 @@ namespace NachoClient.iOS
 
             var navItem = new UINavigationItem ("Message Intent");
             using (var image = UIImage.FromBundle ("modal-close")) {
-                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.AccessibilityLabel = "Dismiss";
                 dismissButton.Clicked += (object sender, EventArgs e) => {
-                    DismissViewController(true, null);
+                    DismissViewController (true, null);
                 };
                 navItem.LeftBarButtonItem = dismissButton;
             }

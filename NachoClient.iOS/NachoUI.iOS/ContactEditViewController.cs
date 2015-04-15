@@ -192,7 +192,7 @@ namespace NachoClient.iOS
         {
             nfloat internalOffset = 0;
 
-            cancelButton = new UIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
             using (var image = UIImage.FromBundle ("icn-close")) {
                 cancelButton.Image = image;
             }
@@ -210,7 +210,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            doneButton = new UIBarButtonItem ();
+            doneButton = new NcUIBarButtonItem ();
             doneButton.Title = "Save";
             doneButton.AccessibilityLabel = "Save";
             doneButton.Clicked += DoneButtonClicked;

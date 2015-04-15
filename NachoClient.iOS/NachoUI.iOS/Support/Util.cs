@@ -767,7 +767,7 @@ namespace NachoClient
         public static void SetBackButton (UINavigationController nc, UINavigationItem ni, UIColor tintColor)
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+                UIBarButtonItem backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     nc.PopViewController (true);
                 });
                 backButton.AccessibilityLabel = "Back";

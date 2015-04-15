@@ -242,9 +242,9 @@ namespace NachoClient.iOS
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
-            sendButton = new UIBarButtonItem ();
-            cancelButton = new UIBarButtonItem ();
-            quickResponseButton = new UIBarButtonItem ();
+            sendButton = new NcUIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
+            quickResponseButton = new NcUIBarButtonItem ();
 
             Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
             quickResponseButton.AccessibilityLabel = "Quick response";
@@ -1217,7 +1217,7 @@ namespace NachoClient.iOS
             var body = new BodyBuilder ();
             body.TextBody = bodyTextView.Text;
 
-             // For drafts in case message is viewed in Outbox
+            // For drafts in case message is viewed in Outbox
             var length = Math.Min (bodyTextView.Text.Length, 256);
             var preview = bodyTextView.Text.Substring (0, length);
 

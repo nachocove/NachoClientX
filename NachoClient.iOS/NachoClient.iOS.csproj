@@ -1344,6 +1344,7 @@
     <Compile Include="NachoUI.iOS\NotificationChooserViewController.designer.cs">
       <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

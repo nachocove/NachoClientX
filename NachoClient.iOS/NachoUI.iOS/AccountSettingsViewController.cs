@@ -123,10 +123,10 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
 
-            editButton = new UIBarButtonItem ();
-            cancelButton = new UIBarButtonItem ();
-            backButton = new UIBarButtonItem ();
-            saveButton = new UIBarButtonItem ();
+            editButton = new NcUIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
+            backButton = new NcUIBarButtonItem ();
+            saveButton = new NcUIBarButtonItem ();
 
             editButton.Image = UIImage.FromBundle ("gen-edit");
             cancelButton.Image = UIImage.FromBundle ("icn-close");
