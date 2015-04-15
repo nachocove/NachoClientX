@@ -105,7 +105,7 @@ namespace NachoClient.iOS
             hotListView.TableHeaderView = new UIView (new CGRect (0, 0, 0, 0));
             hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
-            hotListView.SeparatorColor = A.Color_NachoBackgroundGray;
+            hotListView.SeparatorStyle = UITableViewCellSeparatorStyle.None;
             View.AddSubview (hotListView);
 
             hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));
