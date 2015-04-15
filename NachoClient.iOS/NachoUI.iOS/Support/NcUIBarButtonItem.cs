@@ -34,8 +34,12 @@ namespace NachoClient.iOS
             Clicked += Record;
         }
 
-        public NcUIBarButtonItem (UIImage image, UIBarButtonItemStyle style, EventHandler handler) : base (image, style, handler)
+        // Xammit?  Apparent bug in overloading keeps the button disabled
+        public NcUIBarButtonItem (UIImage image, UIBarButtonItemStyle style, EventHandler handler) : base ()
         {
+            this.Image = image;
+            this.Style = style;
+            this.Clicked += handler;
             Clicked += Record;
         }
     }
