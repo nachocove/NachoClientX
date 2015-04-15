@@ -241,7 +241,7 @@ namespace SQLite
         #pragma warning restore 649
 #endif
 
-#if !USE_SQLITEPCL_RAW
+#if !USE_SQLITEPCL_RAW && !__IOS__
         public void EnableLoadExtension(int onoff)
         {
             SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
@@ -3180,8 +3180,10 @@ namespace SQLite
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr db);
 
+#if !__IOS__
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_enable_load_extension", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result EnableLoadExtension (IntPtr db, int onoff);
+#endif
 
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_close", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Close (IntPtr db);
@@ -3198,8 +3200,10 @@ namespace SQLite
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_config", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result Config (ConfigOption option, ErrorLogCallback callback, IntPtr pArg);
 
+#if !__IOS__
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_win32_set_directory", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Unicode)]
 		public static extern int SetDirectory (uint directoryType, string directoryPath);
+#endif
 
 		[DllImport(KDllPath, EntryPoint = "nc_sqlite3_busy_timeout", CallingConvention=CallingConvention.Cdecl)]
 		public static extern Result BusyTimeout (IntPtr db, int milliseconds);
