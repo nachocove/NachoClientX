@@ -16,10 +16,11 @@ namespace NachoCore.Brain
         MESSAGE_FLAGS,
         INITIAL_RIC,
         UPDATE_ADDRESS_SCORE,
-        UPDATE_MESSAGE_SCORE}
+        UPDATE_MESSAGE_SCORE,
+        UNINDEX_MESSAGE,
+    };
 
-    ;
-
+    [Serializable]
     public class NcBrainEvent : NcQueueElement
     {
         public NcBrainEventType Type { get; set; }
@@ -47,10 +48,10 @@ namespace NachoCore.Brain
 
     public enum NcBrainUIEventType
     {
-        MESSAGE_VIEW}
+        MESSAGE_VIEW,
+    };
 
-    ;
-
+    [Serializable]
     public class NcBrainUIEvent : NcBrainEvent
     {
 
@@ -72,6 +73,7 @@ namespace NachoCore.Brain
         }
     }
 
+    [Serializable]
     public class NcBrainUIMessageViewEvent : NcBrainUIEvent
     {
         public DateTime Start;
@@ -90,6 +92,7 @@ namespace NachoCore.Brain
         }
     }
 
+    [Serializable]
     public class NcBrainInitialRicEvent : NcBrainEvent
     {
         public Int64 AccountId;
@@ -107,6 +110,7 @@ namespace NachoCore.Brain
 
     /// This event is used when an UI / backend action causes the score of 
     /// an email address to be updated.
+    [Serializable]
     public class NcBrainUpdateAddressScoreEvent : NcBrainEvent
     {
         public Int64 EmailAddressId;
@@ -130,34 +134,15 @@ namespace NachoCore.Brain
         }
     }
 
-    /// This event is used when an UI / backend action causes the score of 
-    /// an email message to be updated.
-    public class NcBrainUpdateMessageScoreEvent : NcBrainEvent
-    {
-        public Int64 EmailMessageId;
-
-        public NcBrainUpdateMessageScoreEvent (Int64 emailMessageId)
-            : base (NcBrainEventType.UPDATE_MESSAGE_SCORE)
-        {
-            EmailMessageId = emailMessageId;
-        }
-
-        public override string ToString ()
-        {
-            return String.Format ("[NcBrainUpdateMessageScoreEvent: type={0}, emailMessageId={1}",
-                GetEventType (), EmailMessageId);
-        }
-    }
-
-    /// This event tells brain that user has changed either the due date or the deferred until date.
-    /// Upon receiving this, brain will re-evaluate the time variance state machine for the
-    /// email message
-    public class NcBrainMessageFlagEvent : NcBrainEvent
+    [Serializable]
+    public class NcBrainMessageEvent : NcBrainEvent
     {
         public Int64 AccountId;
+
         public Int64 EmailMessageId;
 
-        public NcBrainMessageFlagEvent (Int64 accountId, Int64 emailMessageId) : base (NcBrainEventType.MESSAGE_FLAGS)
+        public NcBrainMessageEvent (NcBrainEventType eventType, Int64 accountId, Int64 emailMessageId)
+            : base (eventType)
         {
             AccountId = accountId;
             EmailMessageId = emailMessageId;
@@ -165,11 +150,44 @@ namespace NachoCore.Brain
 
         public override string ToString ()
         {
-            return String.Format ("[NcBrainMessageFlagEvent: type={0}, accountId={1}, emailMessageId={2}]",
-                GetEventType (), AccountId, EmailMessageId);
+            return String.Format ("[{0}: type={1}, accountId={2}, emailMessageId={3}",
+                GetType ().Name, AccountId, EmailMessageId);
         }
     }
 
+    /// This event is used when an UI / backend action causes the score of 
+    /// an email message to be updated.
+    [Serializable]
+    public class NcBrainUpdateMessageScoreEvent : NcBrainMessageEvent
+    {
+        public NcBrainUpdateMessageScoreEvent (Int64 accountId, Int64 emailMessageId)
+            : base (NcBrainEventType.UPDATE_MESSAGE_SCORE, accountId, emailMessageId)
+        {
+        }
+    }
+
+    /// This event tells brain that user has changed either the due date or the deferred until date.
+    /// Upon receiving this, brain will re-evaluate the time variance state machine for the
+    /// email message
+    [Serializable]
+    public class NcBrainMessageFlagEvent : NcBrainMessageEvent
+    {
+        public NcBrainMessageFlagEvent (Int64 accountId, Int64 emailMessageId)
+            : base (NcBrainEventType.MESSAGE_FLAGS, accountId, emailMessageId)
+        {
+        }
+    }
+
+    [Serializable]
+    public class NcBrainUnindexMessageEvent : NcBrainMessageEvent
+    {
+        public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
+            : base (NcBrainEventType.UNINDEX_MESSAGE, accountId, emailMessageId)
+        {
+        }
+    }
+
+    [Serializable]
     public class NcBrainStateMachineEvent : NcBrainEvent
     {
         public Int64 AccountId;

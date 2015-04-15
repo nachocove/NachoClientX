@@ -1345,6 +1345,12 @@
       <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBrainEvent.cs">
+      <Link>NachoCore\Model\McBrainEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainApi.cs">
+      <Link>NachoCore\Brain\NcBrainApi.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

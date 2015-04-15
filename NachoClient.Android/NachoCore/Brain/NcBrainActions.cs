@@ -151,13 +151,10 @@ namespace NachoCore.Brain
             return true;
         }
 
-        public void UnindexEmailMessage (McEmailMessage emailMessage)
+        protected void UnindexEmailMessage (int accountId, int emailMessageId)
         {
-            if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
-                return;
-            }
-            var index = Index (emailMessage.AccountId);
-            index.Remove ("message", emailMessage.Id.ToString ());
+            var index = Index (accountId);
+            index.Remove ("message", emailMessageId.ToString ());
         }
     }
 }

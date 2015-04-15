@@ -33,7 +33,7 @@ namespace NachoCore.Utils
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
                 Account = ConstMcAccount.NotAccountSpecific,
             });
-            NcBrain.UpdateMessageScore (message.Id);
+            NcBrain.UpdateMessageScore (message.AccountId, message.Id);
         }
 
         public static void ToggleHotOrNot (McEmailMessageThread thread)
