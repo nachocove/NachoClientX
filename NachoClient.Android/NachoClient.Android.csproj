@@ -386,6 +386,8 @@
     <Compile Include="NachoCore\Adapters\NachoDraftMessages.cs" />
     <Compile Include="NachoCore\Model\McLicenseInformation.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration16.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainApi.cs" />
+    <Compile Include="NachoCore\Model\McBrainEvent.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -595,9 +595,9 @@ namespace NachoCore.Model
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
-                " likelihood (AccountId = ?, 1.0) AND " +
-                " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
-                " likelihood (ThreadTopic = ?, 0.01) ",
+            " likelihood (AccountId = ?, 1.0) AND " +
+            " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
+            " likelihood (ThreadTopic = ?, 0.01) ",
                 accountId, false, topic);
         }
 
@@ -1061,7 +1061,7 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             int returnVal = base.Delete ();
-            NcBrain.SharedInstance.UnindexEmailMessage (this);
+            NcBrain.UnindexEmailMessage (this);
             return returnVal;
         }
 
