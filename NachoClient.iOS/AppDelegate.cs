@@ -269,9 +269,9 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiTapGestureRecognizer (description, touches);
             });
 
-//            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
-//                Telemetry.RecordUiTableView (description, operation);
-//            });
+            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
+                Telemetry.RecordUiTableView (description, operation);
+            });
         }
 
         // This method is common to both launching into the background and into the foreground.

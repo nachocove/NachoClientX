@@ -69,6 +69,7 @@ namespace NachoClient.iOS
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.TableFooterView = new UIView (new CGRect (0, 0, TableView.Frame.Width, 100));
+            TableView.AccessibilityLabel = "Contact list";
             View.AddSubview (TableView);
 
             InitializeSearchDisplayController ();

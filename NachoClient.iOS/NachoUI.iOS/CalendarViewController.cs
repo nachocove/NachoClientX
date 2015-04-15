@@ -269,6 +269,7 @@ namespace NachoClient.iOS
             ConfigureCalendarTableSize (1);
             calendarTableView.Source = calendarSource;
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
+            calendarTableView.AccessibilityLabel = "Calendar";
 
             NavigationItem.Title = "Calendar";
 

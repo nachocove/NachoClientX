@@ -115,6 +115,7 @@ namespace NachoClient.iOS
 
             resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
             resultsTableView.Source = new ContactChooserDataSource (this);
+            resultsTableView.AccessibilityLabel = "Contact chooser results";
 
             cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
             cancelSearchButton.Frame = new CGRect (View.Frame.Width - 58, 6, 50, 32);

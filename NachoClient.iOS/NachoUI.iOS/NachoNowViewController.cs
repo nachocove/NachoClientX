@@ -106,6 +106,7 @@ namespace NachoClient.iOS
             hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
             hotListView.SeparatorStyle = UITableViewCellSeparatorStyle.None;
+            hotListView.AccessibilityLabel = "Hot list";
             View.AddSubview (hotListView);
 
             hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));
