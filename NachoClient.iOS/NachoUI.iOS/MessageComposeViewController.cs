@@ -138,6 +138,12 @@ namespace NachoClient.iOS
                 }
             }
             showQuotedTextButton.Hidden = draftMessage.ReferencedBodyIsIncluded;
+
+            foreach (var mimeAttachment in mimeMessage.Attachments) {
+                var attachment = McAttachment.InsertFile (draftMessage.AccountId, (stream) => mimeAttachment.ContentObject.DecodeTo (stream));
+                attachment.SetDisplayName (mimeAttachment.FileName);
+                attachmentView.Append (attachment);
+            }
         }
 
         public void SaveDraft ()
@@ -163,6 +169,10 @@ namespace NachoClient.iOS
                                   new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
                                   ref error);
             body.HtmlBody = htmlData.ToString ();
+
+            foreach (var attachment in attachmentView.AttachmentList) {
+                body.Attachments.Add (attachment.GetFilePath ());
+            }
 
             mimeMessage.Body = body.ToMessageBody ();
 
