@@ -123,6 +123,7 @@ namespace NachoClient.iOS
                     buttonRect.Layer.MasksToBounds = true;
                     buttonRect.TintColor = UIColor.Clear;
                     buttonRect.BackgroundColor = UIColor.White;
+                    buttonRect.AccessibilityLabel = "Date";
                     buttonRect.TouchUpInside += (sender, e) => {
                         ToggleButtons (buttonRect.Tag);
                         owner.ScrollToDate (this, buttonRect);

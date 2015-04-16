@@ -56,6 +56,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            TableView.AccessibilityLabel = "Message list";
+
             ReloadCaptureName = "MessageListViewController.Reload";
             NcCapture.AddKind (ReloadCaptureName);
             ReloadCapture = NcCapture.Create (ReloadCaptureName);

@@ -567,6 +567,7 @@ namespace NachoClient.iOS
 
             showQuotedTextButton = UIButton.FromType (UIButtonType.System);
             showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.AccessibilityLabel = "Show quoted text";
             showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             showQuotedTextButton.SizeToFit ();
 

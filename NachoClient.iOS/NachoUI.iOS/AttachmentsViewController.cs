@@ -173,6 +173,7 @@ namespace NachoClient.iOS
 
             tableView = new UITableView (new CGRect (0, 0, 0, 0), UITableViewStyle.Grouped);
             tableView.SeparatorColor = UIColor.Clear;
+            tableView.AccessibilityLabel = "Attachments";
 
             InitializeSearchDisplayController ();
             AttachmentsSource = new AttachmentsTableViewSource (this, account);

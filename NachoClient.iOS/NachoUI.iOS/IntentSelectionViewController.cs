@@ -75,6 +75,7 @@ namespace NachoClient.iOS
             tableView.Source = new MessageIntentSource (this);
             tableView.BackgroundColor = A.Color_NachoGreen;
             tableView.ScrollEnabled = false;
+            tableView.AccessibilityLabel = "Intent selection";
             contentView.AddSubview (tableView);
 
             View.AddSubview (contentView);

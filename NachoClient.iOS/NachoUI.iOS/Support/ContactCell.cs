@@ -53,6 +53,7 @@ namespace NachoClient.iOS
             cell.ContentView.AddSubview (view);
 
             UIButton toggleVipButton = new UIButton (new CGRect (tableView.Frame.Right - 30, 10, 20, 20));
+            toggleVipButton.AccessibilityLabel = "VIP";
             toggleVipButton.Tag = SET_VIP_TAG;
             toggleVipButton.TouchUpInside += e;
             view.AddSubview (toggleVipButton);

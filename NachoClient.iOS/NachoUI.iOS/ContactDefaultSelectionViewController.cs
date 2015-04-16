@@ -210,6 +210,7 @@ namespace NachoClient.iOS
             phoneBox.BackgroundColor = UIColor.White;
 
             UIButton selectLabelButton = new UIButton (new CGRect (0, 0, 90, CELL_HEIGHT));
+            selectLabelButton.AccessibilityLabel = "Phone label";
             selectLabelButton.Tag = SELECT_PHONELABEL_BUTTON_TAG;
             selectLabelButton.TouchUpInside += SelectLabelTouchUpInside;
             selectLabelButton.BackgroundColor = UIColor.White;
@@ -355,6 +356,7 @@ namespace NachoClient.iOS
             actionView.BackgroundColor = A.Color_NachoGreen;
 
             UIButton actionButton = UIButton.FromType (UIButtonType.RoundedRect);
+            actionButton.AccessibilityLabel = label;
             actionButton.TintColor = A.Color_NachoBlue;
             actionButton.Layer.CornerRadius = 64 / 2;
             actionButton.Layer.MasksToBounds = true;
@@ -383,6 +385,7 @@ namespace NachoClient.iOS
         protected UIButton AddDefaultToggleButton (nfloat frameX, nfloat frameY, nfloat width, string label, EventHandler buttonClicked, UIView parent, int tag)
         {
             UIButton toggleButton = new UIButton (new CGRect (frameX, frameY, width, CELL_HEIGHT));
+            toggleButton.AccessibilityLabel = "Toggle";
             toggleButton.Tag = tag;
             toggleButton.TouchUpInside += buttonClicked;
             toggleButton.Layer.BorderColor = A.Color_NachoBlue.CGColor;

@@ -111,6 +111,7 @@ namespace NachoClient.iOS
             myNumberButton.Frame = new CGRect (0, LINE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
             myNumberButton.Font = A.Font_AvenirNextRegular14;
             myNumberButton.SetTitle ("Use My Phone Number", UIControlState.Normal);
+            myNumberButton.AccessibilityLabel = "Use my phone number";
             myNumberButton.SetTitleColor (solidTextColor, UIControlState.Normal);
             myNumberButton.BackgroundColor = UIColor.White;
             myNumberButton.TouchUpInside += (sender, e) => {
@@ -122,6 +123,7 @@ namespace NachoClient.iOS
             myConferenceButton.Frame = new CGRect (0, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
             myConferenceButton.Font = A.Font_AvenirNextRegular14;
             myConferenceButton.SetTitle ("Use My Conference Call Number", UIControlState.Normal);
+            myConferenceButton.AccessibilityLabel = "Use my conference call number";
             myConferenceButton.SetTitleColor (solidTextColor, UIControlState.Normal);
             myConferenceButton.BackgroundColor = UIColor.White;
             myConferenceButton.TouchUpInside += (sender, e) => {

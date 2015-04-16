@@ -150,6 +150,7 @@ namespace NachoClient.iOS
             {
                 //FIXME make this button either be selected or not, don't hide image views
                 UIButton selectionButton = new UIButton (new CGRect (0, yOffset, parentView.Frame.Width, 44));
+                selectionButton.AccessibilityLabel = "Selection";
                 selectionButton.Tag = tag;
                 selectionButton.BackgroundColor = A.Color_NachoGreen;
 
