@@ -683,9 +683,9 @@ namespace NachoCore.Utils
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
         }
 
-        public static void RecordUiAlertView (string uiObject, long index)
+        public static void RecordUiAlertView (string uiObject, string action)
         {
-            RecordUiWithLong (TelemetryEvent.UIALERTVIEW, uiObject, index);
+            RecordUiWithString (TelemetryEvent.UIALERTVIEW, uiObject, action);
         }
 
         public static void RecordUiActionSheet (string uiObject, long index)
