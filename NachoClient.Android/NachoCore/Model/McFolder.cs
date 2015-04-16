@@ -233,8 +233,8 @@ namespace NachoCore.Model
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                 " likelihood (f.AccountId = ?, 1.0) AND " +
                 " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.IsClientOwned = 0, 0.1) AND " +
-                " likelihood (f.Type = ?, 0.2) ",
+                " likelihood (f.IsClientOwned = 0, 1.0) AND " +
+                " likelihood (f.Type = ?, 0.05) ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
                 return null;
@@ -388,9 +388,9 @@ namespace NachoCore.Model
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsClientOwned = 0 AND " +
-                          " f.IsAwaitingCreate = 0 ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsClientOwned = 0, 0.8) AND " +
+                " likelihood (f.IsAwaitingCreate = 0, 1.0) ",
                               accountId);
             return folders.ToList ();
         }
