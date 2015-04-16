@@ -24,6 +24,7 @@ namespace NachoClient.iOS
                 var alertController = UIAlertController.Create (title, message, UIAlertControllerStyle.Alert);
                 foreach (var action in actions) {
                     alertController.AddAction (UIAlertAction.Create (action.Title, action.UIStyle (), (UIAlertAction obj) => {
+                        Telemetry.RecordUiAlertView (title, action.Title);
                         if (null != action.Action) {
                             action.Action ();
                         }
@@ -48,6 +49,7 @@ namespace NachoClient.iOS
                     NcAssert.True (0 <= e.ButtonIndex && e.ButtonIndex < actions.Length,
                         string.Format ("The index of the alert button that was clicked ({0}) is outside of the expected range (0..{1})",
                             e.ButtonIndex, actions.Length - 1));
+                    Telemetry.RecordUiAlertView (title, actions [e.ButtonIndex].Title);
                     if (null != actions [e.ButtonIndex].Action) {
                         actions [e.ButtonIndex].Action ();
                     }

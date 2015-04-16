@@ -246,9 +246,7 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiPageControl (description, page);
             });
 
-            NachoUIMonitor.SetupUIAlertView (delegate(string description, int index) {
-                Telemetry.RecordUiAlertView (description, index);
-            });
+            // Alert views are monitored inside NcAlertView
 
             NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
                 Telemetry.RecordUiActionSheet (description, index);
