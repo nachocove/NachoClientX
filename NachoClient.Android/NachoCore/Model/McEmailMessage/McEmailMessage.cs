@@ -603,6 +603,7 @@ namespace NachoCore.Model
 
         public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
         {
+            // TODO: to speed-up, convert to SQL, add index to CreatedAt, likelihood(since < x.CreatedAt, 0.01)
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
                 false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderBy (x => x.DateReceived);
