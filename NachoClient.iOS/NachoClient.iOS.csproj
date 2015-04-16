@@ -1351,6 +1351,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainApi.cs">
       <Link>NachoCore\Brain\NcBrainApi.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration17.cs">
+      <Link>NachoCore\Model\Migration\NcMigration17.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
