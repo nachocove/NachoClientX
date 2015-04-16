@@ -23,6 +23,8 @@ namespace NachoCore.Brain
     [Serializable]
     public class NcBrainEvent : NcQueueElement
     {
+        public const int KNotSpecificAccountId = int.MaxValue;
+
         public NcBrainEventType Type { get; set; }
 
         public NcBrainEvent (NcBrainEventType type)

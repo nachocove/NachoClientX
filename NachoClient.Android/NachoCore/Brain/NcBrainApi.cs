@@ -36,6 +36,7 @@ namespace NachoCore.Brain
             }
             var brainEvent = new NcBrainUnindexMessageEvent (emailMessage.AccountId, emailMessage.Id);
             var dbEvent = new McBrainEvent (brainEvent);
+            dbEvent.AccountId = emailMessage.AccountId;
             dbEvent.Insert ();
         }
 

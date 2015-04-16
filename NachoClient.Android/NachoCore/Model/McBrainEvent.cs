@@ -9,7 +9,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public class McBrainEvent : McAbstrObject
+    public class McBrainEvent : McAbstrObjectPerAcc
     {
         public byte[] Data { set; get; }
 
