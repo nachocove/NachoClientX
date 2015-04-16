@@ -952,6 +952,7 @@ namespace NachoClient
                 attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                 attendeeButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_TAG + attendeeNum;
                 attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                attendeeButton.AccessibilityLabel = "Attendee";
                 attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId ()).CGColor;
             }
 

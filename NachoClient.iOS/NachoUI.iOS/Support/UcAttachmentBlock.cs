@@ -35,6 +35,7 @@ namespace NachoClient.iOS
             if (editable) {
                 //Remove icon
                 var removeButton = new UIButton ();
+                removeButton.AccessibilityLabel = "Remove";
                 removeButton.Tag = REMOVE_BUTTON_TAG;
                 removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
                 removeButton.Frame = new CGRect (9, (LINE_HEIGHT / 2) - 17, 34, 34);
@@ -164,6 +165,7 @@ namespace NachoClient.iOS
 
             if (editable) {
                 chooserButton = UIButton.FromType (UIButtonType.System);
+                chooserButton.AccessibilityLabel = "Add attachment";
                 Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
                 chooserButton.SizeToFit ();
                 chooserButton.Frame = new CGRect (parentWidth - 43, 0, 40, CELL_HEIGHT);

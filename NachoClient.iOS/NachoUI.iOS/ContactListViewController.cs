@@ -342,6 +342,7 @@ namespace NachoClient.iOS
                 button.SetTitle (title, UIControlState.Selected);
                 button.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
+                button.AccessibilityLabel = title;
                 button.Font = A.Font_AvenirNextDemiBold17;
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);

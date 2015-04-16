@@ -258,6 +258,7 @@ namespace NachoClient.iOS
             View.AddSubview (headerView);
 
             UIButton vipButton = new UIButton (new CGRect (headerView.Frame.Right - 48, 10, VERTICAL_PADDING, VERTICAL_PADDING));
+            vipButton.AccessibilityLabel = "VIP";
             vipButton.Tag = HEADER_VIP_BUTTON_TAG;
             vipButton.SetImage (UIImage.FromBundle ("contacts-vip"), UIControlState.Normal);
             vipButton.TouchUpInside += VipButtonTouchUpInside;

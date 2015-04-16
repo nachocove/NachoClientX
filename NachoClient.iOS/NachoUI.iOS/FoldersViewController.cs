@@ -458,6 +458,7 @@ namespace NachoClient.iOS
             UIButton cell = new UIButton (UIButtonType.RoundedRect);
             cell.Frame = new CGRect (5, 44 * index, recentView.Frame.Width - 10, 44);
             cell.BackgroundColor = cellBGColor;
+            cell.AccessibilityLabel = folder.DisplayName;
             cell.SetImage (Util.DrawButtonBackgroundImage (cellHighlightedColor, cell.Frame.Size), UIControlState.Highlighted);
             cell.TouchUpInside += (sender, e) => {
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
@@ -526,6 +527,7 @@ namespace NachoClient.iOS
             UIButton cell = new UIButton (UIButtonType.RoundedRect);
             cell.Frame = new CGRect (5 + indentation, 0, parentView.Frame.Width - 10 - indentation, 44);
             cell.BackgroundColor = cellBGColor;
+            cell.AccessibilityLabel = folderStruct.folderName;
             cell.SetImage (Util.DrawButtonBackgroundImage (cellHighlightedColor, cell.Frame.Size), UIControlState.Highlighted);
             cell.TouchUpInside += (sender, e) => {
                 var folder = GetFolder (folderStruct);
@@ -562,6 +564,7 @@ namespace NachoClient.iOS
 
                 UIButton expandButton = new UIButton (UIButtonType.RoundedRect);
                 expandButton.Frame = new CGRect (cell.Frame.Width - 40, cell.Frame.Height / 2 - 18, 36, 36);
+                expandButton.AccessibilityLabel = "Expand";
                 expandButton.TintColor = UIColor.Clear;
                 expandButton.Tag = tag + 10000;
                 expandButton.TouchUpInside += (sender, e) => {

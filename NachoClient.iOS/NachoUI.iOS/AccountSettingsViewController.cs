@@ -328,6 +328,7 @@ namespace NachoClient.iOS
             Util.AddButtonImage (deleteAccountButton, "email-delete-two", UIControlState.Normal);
             deleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
             deleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
+            deleteAccountButton.AccessibilityLabel = "Delete Account";
             deleteAccountButton.Font = A.Font_AvenirNextRegular14;
             deleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             deleteAccountButton.TouchUpInside += onDeleteAccount;
@@ -380,6 +381,7 @@ namespace NachoClient.iOS
             cancelValidation.BackgroundColor = UIColor.White;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
+            cancelValidation.AccessibilityLabel = "Cancel";
             cancelValidation.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             cancelValidation.Tag = CANCEL_VALIDATION_BUTTON_TAG;
             statusView.AddSubview (cancelValidation);
