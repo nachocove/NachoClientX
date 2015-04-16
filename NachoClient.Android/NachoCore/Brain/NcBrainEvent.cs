@@ -151,7 +151,7 @@ namespace NachoCore.Brain
         public override string ToString ()
         {
             return String.Format ("[{0}: type={1}, accountId={2}, emailMessageId={3}",
-                GetType ().Name, AccountId, EmailMessageId);
+                GetType ().Name, Type, AccountId, EmailMessageId);
         }
     }
 
