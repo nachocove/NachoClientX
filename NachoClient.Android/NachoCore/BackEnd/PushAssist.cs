@@ -305,10 +305,10 @@ namespace NachoCore
                             (uint)PAEvt.E.CliTok,
                             (uint)PAEvt.E.CliTokLoss,
                             (uint)PAEvt.E.Defer,
-                        },
-                        Invalid = new [] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                        },
+                        Invalid = new [] {
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
