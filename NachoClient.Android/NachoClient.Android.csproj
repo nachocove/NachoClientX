@@ -388,6 +388,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration16.cs" />
     <Compile Include="NachoCore\Brain\NcBrainApi.cs" />
     <Compile Include="NachoCore\Model\McBrainEvent.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration17.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
