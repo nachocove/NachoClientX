@@ -61,8 +61,9 @@ namespace NachoClient.iOS
             contactTableViewSource = new ContactsTableViewSource ();
             contactTableViewSource.SetOwner (this, account, false, SearchDisplayController);
 
-            cancelButton = new UIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Cancel";
             NavigationItem.LeftBarButtonItem = cancelButton;
 
             cancelButton.Clicked += (sender, e) => {
@@ -70,7 +71,8 @@ namespace NachoClient.iOS
                 NavigationController.PopViewController (true); 
             };
 
-            searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.AccessibilityLabel = "Search";
             searchButton.TintColor = A.Color_NachoBlue;
             NavigationItem.RightBarButtonItem = searchButton;
             searchButton.Clicked += (object sender, EventArgs e) => {

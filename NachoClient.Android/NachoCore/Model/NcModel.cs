@@ -72,6 +72,9 @@ namespace NachoCore.Model
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
+        public static string[] ExemptTables = new string[] { 
+            "McAccount", "sqlite_sequence", "McMigration", "McLicenseInformation",
+        };
 
         public string DbFileName { set; get; }
 
@@ -318,6 +321,8 @@ namespace NachoCore.Model
                 Db.CreateTable<McPortrait> ();
                 Db.CreateTable<McMapEmailAddressEntry> ();
                 Db.CreateTable<McMigration> ();
+                Db.CreateTable<McLicenseInformation> ();
+                Db.CreateTable<McBrainEvent> ();
             });
             watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));

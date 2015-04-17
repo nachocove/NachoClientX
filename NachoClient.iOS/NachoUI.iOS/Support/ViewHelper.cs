@@ -411,6 +411,11 @@ namespace NachoClient.iOS
             return MayUpdate ();
         }
 
+        public ViewFramer RightAlignX(nfloat sectionWidth)
+        {
+            return X (sectionWidth - Frame.Width);
+        }
+
         public ViewFramer Size (CGSize size)
         {
             Frame.Width = size.Width;

@@ -17,6 +17,8 @@ namespace NachoCore.Index
 {
     public class NcIndex : IDisposable
     {
+        public const int KTimeoutMsec = 5000;
+
         private StandardAnalyzer Analyzer;
         private FSDirectory IndexDirectory;
 
@@ -52,7 +54,9 @@ namespace NachoCore.Index
         // So, if you are going to use more than one item, please use the later combination.
         public long Add (NcIndexDocument doc)
         {
-            BeginAddTransaction ();
+            if (!BeginAddTransaction ()) {
+                return -1;
+            }
             var bytesIndexed = BatchAdd (doc);
             EndAddTransaction ();
             return bytesIndexed;
@@ -71,14 +75,17 @@ namespace NachoCore.Index
             return doc.BytesIndexed;
         }
 
-        public void BeginAddTransaction ()
+        public bool BeginAddTransaction ()
         {
-            Lock.WaitOne ();
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return false;
+            }
             if (null != Writer) {
                 throw new ArgumentException ("writer already exists");
             }
             Dirty = false;
             Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
+            return true;
         }
 
         public void EndAddTransaction ()
@@ -129,7 +136,9 @@ namespace NachoCore.Index
 
         public bool BeginRemoveTransaction ()
         {
-            Lock.WaitOne ();
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return false;
+            }
             if (null != Reader) {
                 throw new ArgumentException ("reader already exists");
             }

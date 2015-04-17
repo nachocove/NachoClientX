@@ -243,8 +243,9 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             NavigationItem.Title = "Contacts";
 
-            editContact = new UIBarButtonItem ();
+            editContact = new NcUIBarButtonItem ();
             editContact.Image = UIImage.FromBundle ("gen-edit");
+            editContact.AccessibilityLabel = "Edit";
             editContact.Clicked += EditButtonClicked;
             NavigationItem.SetRightBarButtonItem (editContact, true); 
 
@@ -257,6 +258,7 @@ namespace NachoClient.iOS
             View.AddSubview (headerView);
 
             UIButton vipButton = new UIButton (new CGRect (headerView.Frame.Right - 48, 10, VERTICAL_PADDING, VERTICAL_PADDING));
+            vipButton.AccessibilityLabel = "VIP";
             vipButton.Tag = HEADER_VIP_BUTTON_TAG;
             vipButton.SetImage (UIImage.FromBundle ("contacts-vip"), UIControlState.Normal);
             vipButton.TouchUpInside += VipButtonTouchUpInside;
@@ -391,6 +393,7 @@ namespace NachoClient.iOS
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
             interactionsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
+            interactionsTableView.AccessibilityLabel = "Contact interaction";
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES

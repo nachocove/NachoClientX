@@ -42,6 +42,7 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignKey>iPhone Developer</CodesignKey>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -96,6 +97,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -122,6 +124,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <Optimize>false</Optimize>
@@ -153,6 +156,7 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchDebug>true</MtouchDebug>
     <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -181,6 +185,7 @@
     </IpaPackageName>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -247,6 +252,7 @@
     <None Include="..\NachoClient.Android\NachoCore\Model\README.md">
       <Link>NachoCore\Model\README.md</Link>
     </None>
+    <None Include="Entitlements.plist" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -1303,6 +1309,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
       <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoPlatform.iOS\StoreHandleriOS.cs" />
+    <Compile Include="NachoPlatform.iOS\CloudHandlerIOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+ToDateTime.cs">
+      <Link>NachoCore\Extensions\String+ToDateTime.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
       <Link>NachoCore\Utils\LoginHelpers.cs</Link>
     </Compile>
@@ -1326,6 +1337,9 @@
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
+      <Link>NachoCore\Model\McLicenseInformation.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
       <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
     </Compile>
@@ -1333,6 +1347,20 @@
     <Compile Include="NachoUI.iOS\NotificationChooserViewController.designer.cs">
       <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBrainEvent.cs">
+      <Link>NachoCore\Model\McBrainEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainApi.cs">
+      <Link>NachoCore\Brain\NcBrainApi.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration17.cs">
+      <Link>NachoCore\Model\Migration\NcMigration17.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration18.cs">
+      <Link>NachoCore\Model\Migration\NcMigration18.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2251,6 +2279,10 @@
     <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
       <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
       <Name>MailKit.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
+      <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
+      <Name>CSharpNameParser</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

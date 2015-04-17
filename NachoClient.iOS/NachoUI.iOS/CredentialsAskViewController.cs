@@ -70,6 +70,7 @@ namespace NachoClient.iOS
             yOffset = 40;
 
             UIButton escape = new UIButton (new CGRect (20, yOffset, 20, 20));
+            escape.AccessibilityLabel = "Close";
             escape.SetImage(UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
             escape.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing(true);
@@ -150,6 +151,7 @@ namespace NachoClient.iOS
             submitButton.BackgroundColor = A.Color_NachoBlue;
             submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             submitButton.SetTitle ("Connect", UIControlState.Normal);
+            submitButton.AccessibilityLabel = "Connect";
             submitButton.TitleLabel.TextColor = UIColor.White;
             submitButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             submitButton.Tag = SUBMIT_BUTTON_TAG;

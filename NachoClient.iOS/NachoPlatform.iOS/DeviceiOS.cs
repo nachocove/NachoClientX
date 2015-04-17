@@ -201,7 +201,7 @@ namespace NachoPlatform
         [MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
         public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
         {
-            if (!zMsg.Contains ("cfurl_cache_response")) {
+            if (!zMsg.Contains ("frames from WAL file")) {
                 ReverseSQLite3ErrorCallback (iErrCode, zMsg);
             }
         }

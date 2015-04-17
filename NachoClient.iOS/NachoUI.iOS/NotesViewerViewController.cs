@@ -7,7 +7,7 @@ using UIKit;
 
 namespace NachoClient.iOS
 {
-    public partial class NotesViewerViewController : UIViewController
+    public partial class NotesViewerViewController : NcUIViewController
     {
         public NotesViewerViewController (IntPtr handle) : base (handle)
         {
@@ -60,15 +60,16 @@ namespace NachoClient.iOS
             navbar.Translucent = false;
             UINavigationItem title = new UINavigationItem ("Preview Note");
             navbar.SetItems (new UINavigationItem[]{ title }, false);
-            UIBarButtonItem cancelButton = new UIBarButtonItem ();
+            UIBarButtonItem cancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
             navbar.TopItem.LeftBarButtonItem = cancelButton;
             cancelButton.Clicked += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
+            cancelButton.AccessibilityLabel = "Cancel";
             yOffset += navbar.Frame.Height;
             notesTextView = new UITextView (new CGRect (0, 64, View.Frame.Width, View.Frame.Height - 64));
-            notesTextView.Text = owner.GetNoteText();
+            notesTextView.Text = owner.GetNoteText ();
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.TextColor = A.Color_NachoBlack;
             notesTextView.BackgroundColor = UIColor.White;

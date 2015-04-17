@@ -9,7 +9,7 @@ using CoreGraphics;
 namespace NachoClient.iOS
 {
     public partial class AboutUsViewController : NcUIViewControllerNoLeaks
-	{
+    {
         protected static readonly nfloat INDENT = 18;
         protected static readonly nfloat CELL_HEIGHT = 44;
 
@@ -34,20 +34,21 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer openSourceTapGesture;
         protected UITapGestureRecognizer.Token openSourceTapGestureHandlerToken;
 
-		public AboutUsViewController (IntPtr handle) : base (handle)
-		{
-		}
+        public AboutUsViewController (IntPtr handle) : base (handle)
+        {
+        }
 
         protected override void CreateViewHierarchy ()
         {
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "About NachoMail";
 
-            backButton = new UIBarButtonItem ();
+            backButton = new NcUIBarButtonItem ();
             backButton.Clicked += BackButtonClicked;
             using (var backIcon = UIImage.FromBundle ("nav-backarrow")) {
                 backButton.Image = backIcon;
             }
+            backButton.AccessibilityLabel = "Back";
             backButton.TintColor = A.Color_NachoBlue;
             NavigationItem.LeftBarButtonItem = backButton;
 
@@ -85,7 +86,7 @@ namespace NachoClient.iOS
             aboutUsHeaderLabel.Lines = 4;
             aboutUsHeaderLabel.LineBreakMode = UILineBreakMode.WordWrap;
             aboutUsHeaderLabel.Text = "Nacho Cove believes that productivity software is more than " +
-                "just a great email app with contacts and calendar capability.";
+            "just a great email app with contacts and calendar capability.";
             aboutUsView.AddSubview (aboutUsHeaderLabel);
 
             yOffset = aboutUsHeaderLabel.Frame.Bottom + 15;
@@ -97,9 +98,9 @@ namespace NachoClient.iOS
             aboutUsDescriptionLabel.Lines = 5;
             aboutUsDescriptionLabel.LineBreakMode = UILineBreakMode.WordWrap;
             aboutUsDescriptionLabel.Text = "In addition to being a great email " +
-                "client, your PIM software should actively help you achieve your" +
-                " goals, help you manage your time and reduce clutter that gets " +
-                "in your way.";
+            "client, your PIM software should actively help you achieve your" +
+            " goals, help you manage your time and reduce clutter that gets " +
+            "in your way.";
             aboutUsView.AddSubview (aboutUsDescriptionLabel);
 
             Util.SetViewHeight (aboutUsView, aboutUsDescriptionLabel.Frame.Bottom + 15);
@@ -108,7 +109,7 @@ namespace NachoClient.iOS
 
             yOffset = aboutUsView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            UIView buttonsView = new UIView (new CGRect(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
+            UIView buttonsView = new UIView (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
             buttonsView.Layer.CornerRadius = A.Card_Corner_Radius;
             buttonsView.Layer.BorderColor = A.Card_Border_Color;
@@ -154,7 +155,7 @@ namespace NachoClient.iOS
 
         protected void BackButtonClicked (object sender, EventArgs e)
         {
-            DismissViewController(true, null);
+            DismissViewController (true, null);
         }
 
         protected void LicenseAgreementTapHandler (NSObject sender)
@@ -173,7 +174,7 @@ namespace NachoClient.iOS
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                url = NSBundle.MainBundle.PathForResource("LegalInfo", "txt", "", "").ToString();
+                url = NSBundle.MainBundle.PathForResource ("LegalInfo", "txt", "", "").ToString ();
                 title = "Open Source Contributions";
                 loadFromWeb = false;
                 PerformSegue ("SegueToSettingsLegal", this);
@@ -182,7 +183,7 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            scrollView.Frame = new CGRect (0, 0, View.Frame.Width,View.Frame.Height);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
         }
@@ -200,7 +201,7 @@ namespace NachoClient.iOS
 
             openSourceTapGesture.RemoveTarget (openSourceTapGestureHandlerToken);
             var openSource = (UIView)View.ViewWithTag (OPEN_SOURCE_VIEW_TAG);
-            if (null != openSource){
+            if (null != openSource) {
                 openSource.RemoveGestureRecognizer (openSourceTapGesture);
             }
         }
@@ -209,10 +210,10 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("SegueToSettingsLegal")) {
                 var x = segue.DestinationViewController;
-                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers[0];
+                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers [0];
                 settingsLegal.SetProperties (url, title, key, loadFromWeb);
                 return;
             }
         }
-	}
+    }
 }

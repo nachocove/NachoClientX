@@ -19,7 +19,7 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
+    public partial class MessageComposeViewController : NcUIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
     {
 
         // Strings to be used when calling SetAction()
@@ -112,16 +112,38 @@ namespace NachoClient.iOS
             messageIntentDateTime = draftMessage.IntentDate;
             messageIntentDateType = draftMessage.IntentDateType;
 
+            var body = draftMessage.GetBody ();
+
+            // Body of draft is always MIME and always complete
+            NcAssert.NotNull (body);
+            NcAssert.True (McBody.IsNontruncatedBodyComplete (body));
+            NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
+
+            var mimeMessage = MimeHelpers.LoadMessage (body);
+
             // This code will need to get a lot more sophisticated
             // but for now let's just handle the simple case of text.
 
-            var bodyText = ExtractBodyTextAsNSAttributedString (draftMessage);
+            var bodyText = ExtractBodyTextAsNSAttributedString (mimeMessage);
             bodyTextView.AttributedText = bodyText;
 
-            // FIXME: Attachments
+            if (0 == draftMessage.ReferencedEmailId) {
+                action = EmailHelper.Action.Send;
+            } else {
+                action = (draftMessage.ReferencedIsForward ? EmailHelper.Action.Forward : EmailHelper.Action.ReplyAll);
+                referencedMessage = McEmailMessage.QueryById<McEmailMessage> (draftMessage.ReferencedEmailId);
+                if (null == referencedMessage) {
+                    Log.Warn (Log.LOG_EMAIL, "Restore draft could not find original message {0}", draftMessage.ReferencedEmailId);
+                    action = EmailHelper.Action.Send;
+                }
+            }
+            showQuotedTextButton.Hidden = draftMessage.ReferencedBodyIsIncluded;
 
-            // FIXME: Smart (and dumb) quoted text handling
-
+            foreach (var mimeAttachment in mimeMessage.Attachments) {
+                var attachment = McAttachment.InsertFile (draftMessage.AccountId, (stream) => mimeAttachment.ContentObject.DecodeTo (stream));
+                attachment.SetDisplayName (mimeAttachment.FileName);
+                attachmentView.Append (attachment);
+            }
         }
 
         public void SaveDraft ()
@@ -148,6 +170,10 @@ namespace NachoClient.iOS
                                   ref error);
             body.HtmlBody = htmlData.ToString ();
 
+            foreach (var attachment in attachmentView.AttachmentList) {
+                body.Attachments.Add (attachment.GetFilePath ());
+            }
+
             mimeMessage.Body = body.ToMessageBody ();
 
             var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
@@ -157,8 +183,9 @@ namespace NachoClient.iOS
             message.IntentDateType = messageIntentDateType;
             message.QRType = QRType;
 
-            // Todo: action
-            // Todo: attachments
+            message.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
+            message.ReferencedIsForward = (action == EmailHelper.Action.Forward);
+            message.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
 
             message.Update ();
 
@@ -225,13 +252,18 @@ namespace NachoClient.iOS
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
-            sendButton = new UIBarButtonItem ();
-            cancelButton = new UIBarButtonItem ();
-            quickResponseButton = new UIBarButtonItem ();
+            sendButton = new NcUIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
+            quickResponseButton = new NcUIBarButtonItem ();
 
             Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
+            quickResponseButton.AccessibilityLabel = "Quick response";
+
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Close";
+
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
+            sendButton.AccessibilityLabel = "Send";
 
             NavigationItem.LeftBarButtonItem = cancelButton;
 
@@ -282,11 +314,10 @@ namespace NachoClient.iOS
 
             if (null != draftMessage) {
                 RestoreDraft ();
-            }
-
-            if (EmailHelper.IsForwardOrReplyAction (action)) {
+            } else if (EmailHelper.IsForwardOrReplyAction (action)) {
                 InitializeMessageForAction ();
             }
+
             showQuotedTextButton.Hidden = (null == referencedMessage);
 
             suppressLayout = false;
@@ -326,7 +357,6 @@ namespace NachoClient.iOS
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
-
 
         }
 
@@ -537,6 +567,7 @@ namespace NachoClient.iOS
 
             showQuotedTextButton = UIButton.FromType (UIButtonType.System);
             showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.AccessibilityLabel = "Show quoted text";
             showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             showQuotedTextButton.SizeToFit ();
 
@@ -1181,7 +1212,6 @@ namespace NachoClient.iOS
             mimeMessage.Subject = EmailHelper.CreateSubjectWithIntent (subjectField.Text, messageIntent, messageIntentDateType, messageIntentDateTime);
 
             EmailHelper.SetupReferences (ref mimeMessage, referencedMessage);
-          
 
             var bodyAttributedText = bodyTextView.AttributedText;
             bool originalEmailIsEmbedded = !calendarInviteIsSet && null != initialQuotedText;
@@ -1197,6 +1227,10 @@ namespace NachoClient.iOS
 
             var body = new BodyBuilder ();
             body.TextBody = bodyTextView.Text;
+
+            // For drafts in case message is viewed in Outbox
+            var length = Math.Min (bodyTextView.Text.Length, 256);
+            var preview = bodyTextView.Text.Substring (0, length);
 
             NSError error = null;
             NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
@@ -1231,6 +1265,7 @@ namespace NachoClient.iOS
 
             mimeMessage.Body = body.ToMessageBody ();
             var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            messageToSend.BodyPreview = preview;
             messageToSend.Intent = messageIntent;
             messageToSend.IntentDate = messageIntentDateTime;
             messageToSend.IntentDateType = messageIntentDateType;
@@ -1319,13 +1354,13 @@ namespace NachoClient.iOS
             }
         }
 
-        NSAttributedString ExtractBodyTextAsNSAttributedString (McEmailMessage message)
+        NSAttributedString ExtractBodyTextAsNSAttributedString (MimeMessage mimeMessage)
         {
             string html;
             string text;
             var initialString = new NSMutableAttributedString ();
-            if (null != message) {
-                if (MimeHelpers.FindText (message, out html, out text)) {
+            if (null != mimeMessage) {
+                if (MimeHelpers.FindText (mimeMessage, out html, out text)) {
                     var attributes = new CoreText.CTStringAttributes ();
                     attributes.Font = new CoreText.CTFont (composeFont.Name, composeFont.PointSize);
                     if (null == html) {

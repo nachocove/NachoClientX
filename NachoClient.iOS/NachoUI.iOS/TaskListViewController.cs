@@ -19,7 +19,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             // Multiple buttons on the right side
-            var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            var addButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };
 
 

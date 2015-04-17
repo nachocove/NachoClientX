@@ -393,12 +393,14 @@ namespace NachoClient.iOS
         {
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
 
-            doneButton = new UIBarButtonItem ();
-            cancelButton = new UIBarButtonItem ();
+            doneButton = new NcUIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
 
             doneButton.Title = (CalendarItemEditorAction.create == action ? "Send" : "Done");
+            doneButton.AccessibilityLabel = "Done";
 
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Close";
 
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
@@ -912,7 +914,7 @@ namespace NachoClient.iOS
         protected void onDeleteTap ()
         {
             NcActionSheet.Show (View, this,
-                new NcAlertAction ("Delete Event",  NcAlertActionStyle.Destructive, () => {
+                new NcAlertAction ("Delete Event", NcAlertActionStyle.Destructive, () => {
                     DeleteEvent ();
                 }),
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));

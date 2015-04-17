@@ -91,10 +91,44 @@ namespace NachoCore
         REGISTER = 2,
     };
 
-    public class PingerNotification : Dictionary<string, string>
+    public class PingerMetadata : Dictionary<string, string>
+    {
+        protected const string TIMESTAMP = "time";
+
+        public bool HasTimestamp (out DateTime timestamp)
+        {
+            string unixTime;
+            if (!TryGetValue (TIMESTAMP, out unixTime)) {
+                timestamp = DateTime.MinValue;
+                return false;
+            }
+            try {
+                var epoch = new DateTime (1970, 1, 1, 0, 0, 0, 0);
+                var seconds = double.Parse (unixTime);
+                timestamp = epoch.AddSeconds (seconds);
+                return true;
+            } catch {
+                timestamp = DateTime.MinValue;
+                return false;
+            }
+        }
+    }
+
+    public class PingerContext
     {
         public const string NEW = "new";
-        public const string REGISTER = "register";
+        public const string REGISTER = "reg";
+
+        // Command - "new" or "reg"
+        public string cmd;
+        // Session
+        public string ses;
+    }
+
+    public class PingerNotification
+    {
+        public Dictionary<string, PingerContext> ctxs;
+        public PingerMetadata meta;
     }
 
     public class ApsNotification

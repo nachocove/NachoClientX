@@ -23,7 +23,7 @@ namespace NachoCore
         /// the account record. The BE will act based on the update event for the
         /// account record.
         ///
-        void ServConfReq (int accountId);
+        void ServConfReq (int accountId, object arg);
 
         ///
         /// CertAskReq: When called the callee must ask the user whether the passed server cert can

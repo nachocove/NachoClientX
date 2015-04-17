@@ -86,6 +86,12 @@ namespace NachoCore.ActiveSync
             };
         };
 
+        public enum AutoDFailureReason : uint
+        {
+            CannotConnectToServer,
+            CannotFindServer
+        };
+
         public const string RequestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
         public const int TestTimeoutSecs = 30;
@@ -99,6 +105,7 @@ namespace NachoCore.ActiveSync
         private string BaseDomain;
         private McServer ServerCandidate;
         private bool AutoDSucceeded;
+        private volatile bool SubdomainComplete;
         public uint ReDirsLeft;
 
         public NcStateMachine Sm { get; set; }
@@ -241,7 +248,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -302,7 +309,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -547,6 +554,7 @@ namespace NachoCore.ActiveSync
             AskingRobotQ = null;
             SuccessfulRobotQ = null;
             RobotEventsQ = null;
+            SubdomainComplete = false;
             if (null != TestCmd) {
                 TestCmd.Cancel ();
                 DisposedJunk.Add (TestCmd);
@@ -567,6 +575,7 @@ namespace NachoCore.ActiveSync
             AskingRobotQ = new Queue<StepRobot> ();
             SuccessfulRobotQ = new Queue<StepRobot> ();
             RobotEventsQ = new ConcurrentQueue<Event> ();
+            SubdomainComplete = false;
             Log.Info(Log.LOG_AS, "AUTOD::BEGIN:Starting all robots...");
             AddAndStartRobot (StepRobot.Steps.S1, Domain);
             AddAndStartRobot (StepRobot.Steps.S2, Domain);
@@ -587,7 +596,12 @@ namespace NachoCore.ActiveSync
             StepRobot robot = (StepRobot)Sm.Arg;
             // Robot can't be on either ask or success queue, or it would not be reporting failure.
             Robots.Remove (robot);
-            if (ShouldDeQueueRobotEvents ()) {
+            lock (Robots) {
+                if (ShouldDeQueueRobotEvents ()) {
+                    SubdomainComplete = true;
+                }
+            }
+            if (SubdomainComplete) {
                 DeQueueRobotEvents ();
             }
             if (0 == Robots.Count) {
@@ -631,12 +645,14 @@ namespace NachoCore.ActiveSync
         // handle event from Robot
         private void ProcessEventFromRobot (Event Event, StepRobot Robot)
         {
-            if (ShouldEnQueueRobotEvent (Event, Robot)) {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Event for base domain {1}", Robot.Step, Robot.SrDomain);
-                RobotEventsQ.Enqueue (Event); 
-            } else {
-                Sm.PostEvent (Event);
+            lock (Robots) {
+                if (ShouldEnQueueRobotEvent (Event, Robot)) {
+                    Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Event for base domain {1}", Robot.Step, Robot.SrDomain);
+                    RobotEventsQ.Enqueue (Event);
+                    return;
+                }
             }
+            Sm.PostEvent (Event);
         }
 
         private bool ShouldEnQueueRobotEvent (Event Event, StepRobot Robot)
@@ -644,7 +660,7 @@ namespace NachoCore.ActiveSync
             // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
             // enqueue base domain robot events only if subdomain robots are not done 
             // enqueue all events from base domain
-            return !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !AreSubDomainRobotsDone ();
+            return !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !SubdomainComplete;
         }
 
         private void DoQueueSuccess ()
@@ -749,7 +765,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", AutoDFailureReason.CannotFindServer);
+        }
+
+        private void DoUiGetServerTempFail ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", AutoDFailureReason.CannotConnectToServer);
         }
 
         private void DoUiServerCertAsk ()

@@ -36,6 +36,7 @@ namespace NachoClient.iOS
             tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
             source = new AlertChoicesSource (this);
             tableView.Source = source;
+            tableView.AccessibilityLabel = "Remainder";
 
             View.Add (tableView);
 
@@ -97,13 +98,13 @@ namespace NachoClient.iOS
             {
                 this.owner = owner;
                 // Add the reminder if it's not in our list
-                if(!choices.Contains(owner.reminder)) {
-                    choices.Add(owner.reminder);
-                    choices.Sort();
+                if (!choices.Contains (owner.reminder)) {
+                    choices.Add (owner.reminder);
+                    choices.Sort ();
                 }
             }
 
-            public int IndexOfSelection()
+            public int IndexOfSelection ()
             {
                 NcAssert.NotNull (owner);
 
@@ -136,7 +137,7 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (cellId);
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, cellId);
-                    if (indexPath.Row == IndexOfSelection()) {
+                    if (indexPath.Row == IndexOfSelection ()) {
                         using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
                             cell.ImageView.Image = image;
                         }

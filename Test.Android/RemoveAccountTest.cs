@@ -15,9 +15,6 @@ namespace Test.iOS
         public const string defaultServerId = "5";
         const string Email = "bob@company.net";
         const string Password = "Plassword";
-        public static string[] exemptTables = new string[] { 
-            "McAccount", "sqlite_sequence", "McMigration",
-        };
 
         [SetUp]
         public new void SetUp ()
@@ -99,7 +96,7 @@ namespace Test.iOS
                         break;
                     }
                 }
-                if (!((IList<string>)exemptTables).Contains (Table.name)) {
+                if (!((IList<string>)NcModel.ExemptTables).Contains (Table.name)) {
                     Assert.IsTrue (foundAccountId, Table.name + " table is missing the column AccountId");
                 }
             }

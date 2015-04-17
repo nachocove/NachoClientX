@@ -235,7 +235,7 @@ namespace Test.iOS
         {
         }
 
-        public void ServConfReq (ProtoControl sender)
+        public void ServConfReq (ProtoControl sender, object arg)
         {
         }
 

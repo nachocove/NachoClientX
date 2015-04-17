@@ -197,7 +197,7 @@ namespace NachoClient.iOS
                     sectionTwoTextView.TextColor = UIColor.LightGray;
                     sectionTwoTextView.Text = "Briefly describe what's going on...";
                 }
-                textView.ResignFirstResponder();
+                textView.ResignFirstResponder ();
                 return true;
             });
 
@@ -206,15 +206,17 @@ namespace NachoClient.iOS
             UINavigationItem navItems = new UINavigationItem ("Support");
 
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+                UIBarButtonItem backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     this.DismissViewController (true, null);
                 });
                 backButton.Title = "Back";
+                backButton.AccessibilityLabel = "Back";
                 backButton.TintColor = A.Color_NachoBlue;
                 navItems.SetLeftBarButtonItem (backButton, true);
             }
           
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
+            sendButton.AccessibilityLabel = "Send";
 
             sendButton.Clicked += SendButtonClicked;
 
@@ -256,10 +258,10 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            UITextField contactInfoTextField = (UITextField)View.ViewWithTag(CONTACT_TEXTFIELD_TAG);
+            UITextField contactInfoTextField = (UITextField)View.ViewWithTag (CONTACT_TEXTFIELD_TAG);
             UITextView messageInfoTextView = (UITextView)View.ViewWithTag (MESSAGEBODY_VIEW_TAG);
 
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 NcAlertView.ShowMessage (this, "Network Error",
                     "A networking issue prevents this message from being sent. Please try again when you have a network connection.");
             } else {
@@ -336,7 +338,7 @@ namespace NachoClient.iOS
             scrollView.ScrollRectToVisible (caretRect, true);
         }
 
-        public void MessageReceived(bool didSend)
+        public void MessageReceived (bool didSend)
         {
             if (!hasDisplayedStatusMessage) {
                 hasDisplayedStatusMessage = true;

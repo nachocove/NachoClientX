@@ -52,15 +52,17 @@ namespace NachoClient.iOS
             navbar.Translucent = false;
             UINavigationItem title = new UINavigationItem ("Signature");
             navbar.SetItems (new UINavigationItem[]{ title }, false);
-            cancelButton = new UIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Cancel";
 
             navbar.TopItem.LeftBarButtonItem = cancelButton;
             cancelButton.Clicked += CancelButtonClicked;
 
-            saveButton = new UIBarButtonItem ();
+            saveButton = new NcUIBarButtonItem ();
             saveButton.Style = UIBarButtonItemStyle.Done;
             saveButton.Title = "Done";
+            saveButton.AccessibilityLabel = "Done";
             saveButton.Clicked += SaveButtonClicked;
 
             navbar.TopItem.RightBarButtonItem = saveButton;

@@ -515,6 +515,7 @@ namespace NachoClient.iOS
             // Inbox 
             var inboxButton = UIButton.FromType (UIButtonType.RoundedRect);
             inboxButton.Frame = new CGRect (0, messageFrameHeight + A.Card_Vertical_Indent / 2, cardWidth, cellHeight);
+            inboxButton.AccessibilityLabel = "Inbox";
             inboxButton.BackgroundColor = UIColor.White;
             inboxButton.Tag = INBOX_BUTTON_TAG;
             inboxButton.TouchUpInside += InboxClicked;
@@ -542,6 +543,7 @@ namespace NachoClient.iOS
 
             // Deadlines
             var deadlinesButton = UIButton.FromType (UIButtonType.RoundedRect);
+            deadlinesButton.AccessibilityLabel = "Deadlines";
             deadlinesButton.Frame = new CGRect (0, inboxButton.Frame.Bottom + A.Card_Vertical_Indent / 2, cardWidth, cellHeight);
             deadlinesButton.BackgroundColor = UIColor.White;
             deadlinesButton.Tag = DEADLINES_BUTTON_TAG;
@@ -570,6 +572,7 @@ namespace NachoClient.iOS
 
             // Deferred
             var deferredButton = UIButton.FromType (UIButtonType.RoundedRect);
+            deferredButton.AccessibilityLabel = "Deferred";
             deferredButton.Frame = new CGRect (0, deadlinesButton.Frame.Bottom + A.Card_Vertical_Indent / 2, cardWidth, cellHeight);
             deferredButton.BackgroundColor = UIColor.White;
             deferredButton.Tag = DEFERRED_BUTTON_TAG;

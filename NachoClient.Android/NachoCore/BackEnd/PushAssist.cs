@@ -204,21 +204,19 @@ namespace NachoCore
         public static void ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
         {
             bool ranOnce = false;
-            foreach (var context in pinger) {
-                if ("timestamp" == context.Key) {
-                    // Look for the timestamp and measure the pinger to client latency
-                    var timestamp = DateTime.Parse (context.Value);
-                    var elapsed = (DateTime.Now - timestamp).TotalSeconds;
-                    if (300 <= elapsed) {
-                        Log.Warn (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
-                    } else {
-                        Log.Info (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
-                    }
-                    continue; // this key is the time when pinger pushes not an actual context
+            DateTime timestamp;
+            // Look for the timestamp and measure the pinger to client latency
+            if ((null != pinger.meta) && (pinger.meta.HasTimestamp (out timestamp))) {
+                var elapsed = (DateTime.UtcNow - timestamp).TotalSeconds;
+                if (300 <= elapsed) {
+                    Log.Warn (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
+                } else {
+                    Log.Info (Log.LOG_PUSH, "Push notification takes {0} seconds to propagate", elapsed);
                 }
-                if ("session" == context.Key) {
-                    continue; // this is a debug key.
-                }
+            } else {
+                Log.Error (Log.LOG_PUSH, "Push notification without metadata or timestamp");
+            }
+            foreach (var context in pinger.ctxs) {
                 // Look up the account
                 var pa = GetPAObjectByContext (context.Key);
                 if (null == pa) {
@@ -238,12 +236,10 @@ namespace NachoCore
                 }
                 ranOnce = true;
 
-                switch (context.Value) {
-                case PingerNotification.NEW:
+                switch (context.Value.cmd) {
+                case PingerContext.NEW:
+                case PingerContext.REGISTER:
                     fetch (pa.AccountId);
-                    break;
-                case PingerNotification.REGISTER:
-                    pa.DeviceTokenLost ();
                     break;
                 default:
                     Log.Error (Log.LOG_PUSH, "Unknown action {0} for context {1}", context.Value, context.Key);
@@ -315,10 +311,10 @@ namespace NachoCore
                             (uint)PAEvt.E.CliTok,
                             (uint)PAEvt.E.CliTokLoss,
                             (uint)PAEvt.E.Defer,
-                        },
-                        Invalid = new [] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                        },
+                        Invalid = new [] {
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {

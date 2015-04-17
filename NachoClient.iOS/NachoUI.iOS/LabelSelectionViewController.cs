@@ -14,12 +14,12 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
     public partial class LabelSelectionViewController : NcUIViewControllerNoLeaks, INachoLabelChooser
-	{
+    {
         protected const float X_INDENT = 30;
 
         public string selectedName;
         protected McContact contact;
-        protected ContactsHelper contactHelper = new ContactsHelper();
+        protected ContactsHelper contactHelper = new ContactsHelper ();
 
         protected const int SELECTED_BUTTON_IMAGE_TAG = 88;
         protected const int NOT_SELECTED_BUTTON_IMAGE_TAG = 99;
@@ -29,12 +29,12 @@ namespace NachoClient.iOS
         protected nint selectedButtonTag = SELECTION_BUTTON_STARTING_TAG;
 
         protected INachoLabelChooserParent owner;
-        protected List<string> labelList = new List<string>();
+        protected List<string> labelList = new List<string> ();
 
         UIBarButtonItem DismissButton;
 
         UIScrollView scrollView = new UIScrollView ();
-        UIView contentView = new UIView();
+        UIView contentView = new UIView ();
         nfloat yOffset = 0;
 
 
@@ -42,7 +42,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetLabelList(List<string> labelList)
+        public void SetLabelList (List<string> labelList)
         {
             this.labelList = labelList;
         }
@@ -76,7 +76,8 @@ namespace NachoClient.iOS
 
             var navItem = new UINavigationItem ("Choose a Label");
             using (var image = UIImage.FromBundle ("modal-close")) {
-                DismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                DismissButton.AccessibilityLabel = "Dismiss";
                 DismissButton.Clicked += DismissViewTouchUpInside;
                 navItem.LeftBarButtonItem = DismissButton;
             }
@@ -98,7 +99,7 @@ namespace NachoClient.iOS
             int i = 0;
             yOffset = 2;
             foreach (string name in labelList) {
-                ListSelectionButton selectionButton = new ListSelectionButton (contactHelper.ExchangeNameToLabel(name), SELECTION_BUTTON_STARTING_TAG + i);
+                ListSelectionButton selectionButton = new ListSelectionButton (contactHelper.ExchangeNameToLabel (name), SELECTION_BUTTON_STARTING_TAG + i);
                 UIButton button = selectionButton.GetButton (View, yOffset);
                 button.TouchUpInside += SelectionButtonClicked;
                 contentView.AddSubview (button);
@@ -128,12 +129,12 @@ namespace NachoClient.iOS
         {
             UIButton selectedButton = (UIButton)sender;
             selectedButtonTag = selectedButton.Tag;
-            selectedName = labelList [selectedButtonTag.ToArrayIndex() - 1000];
+            selectedName = labelList [selectedButtonTag.ToArrayIndex () - 1000];
 
             owner.PrepareForDismissal (selectedName);
             DismissViewController (true, null);
         }
-            
+
         public class ListSelectionButton
         {
             protected string label;
@@ -149,6 +150,7 @@ namespace NachoClient.iOS
             {
                 //FIXME make this button either be selected or not, don't hide image views
                 UIButton selectionButton = new UIButton (new CGRect (0, yOffset, parentView.Frame.Width, 44));
+                selectionButton.AccessibilityLabel = "Selection";
                 selectionButton.Tag = tag;
                 selectionButton.BackgroundColor = A.Color_NachoGreen;
 
@@ -217,5 +219,5 @@ namespace NachoClient.iOS
             DismissViewController (true, null);
         }
 
-	}
+    }
 }

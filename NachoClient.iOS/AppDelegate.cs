@@ -246,9 +246,7 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiPageControl (description, page);
             });
 
-            NachoUIMonitor.SetupUIAlertView (delegate(string description, int index) {
-                Telemetry.RecordUiAlertView (description, index);
-            });
+            // Alert views are monitored inside NcAlertView
 
             NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
                 Telemetry.RecordUiActionSheet (description, index);
@@ -269,9 +267,9 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiTapGestureRecognizer (description, touches);
             });
 
-//            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
-//                Telemetry.RecordUiTableView (description, operation);
-//            });
+            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
+                Telemetry.RecordUiTableView (description, operation);
+            });
         }
 
         // This method is common to both launching into the background and into the foreground.
@@ -795,17 +793,29 @@ namespace NachoClient.iOS
         }
 
 
-        public void ServConfReqCallback (int accountId)
+        public void ServConfReqCallback (int accountId, object arg = null)
         {
-            Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
+            Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0} with arg {1}", accountId, arg);
 
             // TODO Make use of the MX information that was gathered during auto-d.
             // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
+            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
+            switch ((uint)arg) {
+            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
+                why = NcResult.WhyEnum.InvalidDest;
+                break;
+            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
+                why = NcResult.WhyEnum.ServerError;
+                break;
+            default:
+                why = NcResult.WhyEnum.NotSpecified;
+                break;
+            }
             if (hasFirstSyncCompleted == false) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
+                    Status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
