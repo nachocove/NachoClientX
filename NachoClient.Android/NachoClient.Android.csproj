@@ -615,5 +615,9 @@
       <Project>{9BF818C3-C20E-4EFB-9426-F0A6C2EDC627}</Project>
       <Name>MailKit.Android</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
+      <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
+      <Name>CSharpNameParser</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

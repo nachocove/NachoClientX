@@ -2277,6 +2277,10 @@
       <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
       <Name>MailKit.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
+      <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
+      <Name>CSharpNameParser</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />
