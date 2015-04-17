@@ -382,14 +382,14 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McFolder AS f ON m.FolderId = f.Id " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " f.IsClientOwned != 1 AND " +
-                " m.ClassCode = ? AND " +
-                " m.AccountId = ? AND " +
-                " m.FolderId != ? AND " +
-                " e.[From] LIKE ? OR " +
-                " e.[To] Like ? " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.IsClientOwned != 1, 0.9) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.FolderId != ?, 0.5) AND " +
+                " likelihood (e.[From] LIKE ?, 0.05) OR " +
+                " likelihood (e.[To] Like ?, 0.05) " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
