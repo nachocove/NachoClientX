@@ -498,9 +498,9 @@ namespace NachoCore.Model
                 " likelihood (m.AccountId = ?, 1.0) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " e.FlagUtcStartDate < ? AND " +
-                " e.UserAction > -1 AND " +
-                " (e.Score >= ? OR e.UserAction = 1) " +
+                " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
+                " likelihood (e.UserAction > -1, 0.99) AND " +
+                " (likelihood (e.Score >= ?, 0.1) OR likelihood (e.UserAction = 1, 0.01)) " +
                 "UNION " +
                 "SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
@@ -511,7 +511,7 @@ namespace NachoCore.Model
                 " likelihood (m.AccountId = ?, 1.0) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
+                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE likelihood (a.IsVip != 0, 0.01)) " +
                 " ) " +
                 " GROUP BY ConversationId " +
                 " ORDER BY DateReceived DESC",
