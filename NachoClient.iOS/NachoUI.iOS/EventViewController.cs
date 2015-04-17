@@ -35,6 +35,7 @@ namespace NachoClient.iOS
 
         // UI elements
         protected UIView eventCardView;
+        protected UcLocationView locationView;
         protected BodyView descriptionView;
         protected UIView eventAttendeeView;
         protected UIView eventAlertsView;
@@ -286,9 +287,12 @@ namespace NachoClient.iOS
 
             // Location label, image, and detail
             Util.AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", TagType.EVENT_LOCATION_TITLE_TAG, eventCardView);
-            yOffset += 16 + 6;
-            Util.AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, eventCardView);
-            yOffset += 20 + 20;
+            locationView = new UcLocationView (yOffset, EVENT_CARD_WIDTH - 60, onLinkSelected);
+            locationView.Tag = (int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG;
+            locationView.Font = A.Font_AvenirNextRegular14;
+            locationView.TextColor = A.Color_NachoDarkText;
+            eventCardView.AddSubview (locationView);
+            yOffset += 30;
 
             // Description, for which we use a BodyView.
             Util.AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
@@ -542,19 +546,15 @@ namespace NachoClient.iOS
                 recurrenceLabel.SizeToFit ();
             }
 
-            var locationLabel = View.ViewWithTag ((int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
             if (string.IsNullOrEmpty (c.GetLocation ())) {
                 hasLocation = false;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = true;
-                locationLabel.Hidden = true;
+                locationView.Hidden = true;
             } else {
                 hasLocation = true;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
-                locationLabel.Hidden = false;
-                locationLabel.Text = c.GetLocation ();
-                locationLabel.Lines = 0;
-                locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                locationLabel.SizeToFit ();
+                locationView.Hidden = false;
+                locationView.SetText (c.GetLocation ());
             }
 
             // Phone disabled for now.
@@ -715,6 +715,7 @@ namespace NachoClient.iOS
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
             attachmentListView.Cleanup ();
+            locationView.Cleanup ();
 
             acceptButton = null;
             contentView = null;
