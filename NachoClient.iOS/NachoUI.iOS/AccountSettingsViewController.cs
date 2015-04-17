@@ -63,8 +63,8 @@ namespace NachoClient.iOS
 
         UcNameValuePair SignatureBlock;
         UcNameValuePair DaysToSyncBlock;
-        UcNameValuePair NotificationsBlock;
-        UISwitch FastNotificationSwitch;
+//        UcNameValuePair NotificationsBlock;
+//        UISwitch FastNotificationSwitch;
 
         protected nfloat yOffset;
         protected nfloat keyboardHeight;
@@ -304,7 +304,7 @@ namespace NachoClient.iOS
 
             // Additional settings
 
-            UIView additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 3 * TEXTFIELD_HEIGHT));
+            UIView additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 1 * TEXTFIELD_HEIGHT));
             additionalSettingsView.BackgroundColor = UIColor.White;
             additionalSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             additionalSettingsView.Layer.BorderWidth = .5f;
@@ -314,28 +314,28 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, TEXTFIELD_HEIGHT, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
 
-            NotificationsBlock = new UcNameValuePair (new CGRect (0, TEXTFIELD_HEIGHT, View.Frame.Width, TEXTFIELD_HEIGHT), "Notifications", HORIZONTAL_PADDING, 15, NotificationsTapHandler);
-            additionalSettingsView.AddSubview (NotificationsBlock);
+//            NotificationsBlock = new UcNameValuePair (new CGRect (0, TEXTFIELD_HEIGHT, View.Frame.Width, TEXTFIELD_HEIGHT), "Notifications", HORIZONTAL_PADDING, 15, NotificationsTapHandler);
+//            additionalSettingsView.AddSubview (NotificationsBlock);
+//
+//            var fastNotificationOffset = 2 * TEXTFIELD_HEIGHT;
+//            Util.AddHorizontalLine (HORIZONTAL_PADDING, fastNotificationOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
+//
+//            var fastNotificationLabel = new UILabel ();
+//            fastNotificationLabel.Font = A.Font_AvenirNextRegular14;
+//            fastNotificationLabel.TextAlignment = UITextAlignment.Left;
+//            fastNotificationLabel.TextColor = LABEL_TEXT_COLOR;
+//            fastNotificationLabel.Text = "Fast Notification";
+//            fastNotificationLabel.SizeToFit ();
+//            ViewFramer.Create (fastNotificationLabel).X (HORIZONTAL_PADDING).CenterY (fastNotificationOffset, TEXTFIELD_HEIGHT);
+//
+//            FastNotificationSwitch = new UISwitch ();
+//            ViewFramer.Create (FastNotificationSwitch).RightAlignX (settingsView.Frame.Width - HORIZONTAL_PADDING);
+//            ViewFramer.Create (FastNotificationSwitch).CenterY (fastNotificationOffset, TEXTFIELD_HEIGHT);
+//
+//            FastNotificationSwitch.ValueChanged += FastNotificationSwitchChangedHandler;
 
-            var fastNotificationOffset = 2 * TEXTFIELD_HEIGHT;
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, fastNotificationOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
-
-            var fastNotificationLabel = new UILabel ();
-            fastNotificationLabel.Font = A.Font_AvenirNextRegular14;
-            fastNotificationLabel.TextAlignment = UITextAlignment.Left;
-            fastNotificationLabel.TextColor = LABEL_TEXT_COLOR;
-            fastNotificationLabel.Text = "Fast Notification";
-            fastNotificationLabel.SizeToFit ();
-            ViewFramer.Create (fastNotificationLabel).X (HORIZONTAL_PADDING).CenterY (fastNotificationOffset, TEXTFIELD_HEIGHT);
-
-            FastNotificationSwitch = new UISwitch ();
-            ViewFramer.Create (FastNotificationSwitch).RightAlignX (settingsView.Frame.Width - HORIZONTAL_PADDING);
-            ViewFramer.Create (FastNotificationSwitch).CenterY (fastNotificationOffset, TEXTFIELD_HEIGHT);
-
-            FastNotificationSwitch.ValueChanged += FastNotificationSwitchChangedHandler;
-
-            additionalSettingsView.AddSubview (fastNotificationLabel);
-            additionalSettingsView.AddSubview (FastNotificationSwitch);
+//            additionalSettingsView.AddSubview (fastNotificationLabel);
+//            additionalSettingsView.AddSubview (FastNotificationSwitch);
 
             contentView.AddSubview (additionalSettingsView);
 
@@ -497,9 +497,9 @@ namespace NachoClient.iOS
 
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (theAccount.DaysToSyncEmail));
 
-            FastNotificationSwitch.SetState (theAccount.FastNotificationEnabled, false);
+//            FastNotificationSwitch.SetState (theAccount.FastNotificationEnabled, false);
 
-            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (theAccount.NotificationConfiguration));
+//            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (theAccount.NotificationConfiguration));
 
             accountNameTextField.Enabled = textFieldsEditable;
             usernameTextField.Enabled = textFieldsEditable;
@@ -599,7 +599,7 @@ namespace NachoClient.iOS
             saveButton.Clicked -= SaveButtonClicked;
             backButton.Clicked -= BackButtonClicked;
             deleteAccountButton.TouchUpInside -= onDeleteAccount;
-            FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
+//            FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
 
             cancelButton = null;
             editButton = null;
@@ -824,12 +824,12 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
-        {
-            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            account.FastNotificationEnabled = FastNotificationSwitch.On;
-            account.Update ();
-        }
+//        protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
+//        {
+//            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+//            account.FastNotificationEnabled = FastNotificationSwitch.On;
+//            account.Update ();
+//        }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
@@ -839,13 +839,13 @@ namespace NachoClient.iOS
             account.Update ();
         }
 
-        public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
-        {
-            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
-            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            account.NotificationConfiguration = choice;
-            account.Update ();
-        }
+//        public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
+//        {
+//            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
+//            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+//            account.NotificationConfiguration = choice;
+//            account.Update ();
+//        }
 
         protected void HandleAccountIssue ()
         {

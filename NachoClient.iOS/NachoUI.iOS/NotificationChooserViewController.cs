@@ -74,7 +74,7 @@ namespace NachoClient.iOS
             };
 
             doneButton.Clicked += (sender, e) => {
-                owner.UpdateNotificationConfiguration (accountId, value);
+//                owner.UpdateNotificationConfiguration (accountId, value);
                 NavigationController.PopViewController (true);
             };
 
