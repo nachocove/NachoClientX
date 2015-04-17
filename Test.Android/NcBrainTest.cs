@@ -102,7 +102,7 @@ namespace Test.Common
 
         private void TestUpdateMessageScore (ref McEmailMessage message)
         {
-            NcBrain.UpdateMessageScore (message.Id);
+            NcBrain.UpdateMessageScore (message.AccountId, message.Id);
             WaitForBrain ();
             message = McEmailMessage.QueryById<McEmailMessage> (message.Id);
         }
@@ -150,13 +150,13 @@ namespace Test.Common
             NcBrain brain = NcBrain.SharedInstance;
             long origCount = brain.McEmailAddressCounters.Update.Count;
 
-            NcBrain.UpdateMessageScore (1000000);
+            NcBrain.UpdateMessageScore (1, 1000000);
             WaitForBrain ();
 
             Assert.AreEqual (origCount, brain.McEmailAddressCounters.Update.Count);
 
             // Error case. Update a message who score does not change
-            NcBrain.UpdateMessageScore (Message.Id);
+            NcBrain.UpdateMessageScore (Message.AccountId, Message.Id);
             WaitForBrain ();
 
             Assert.AreEqual (origCount, brain.McEmailAddressCounters.Update.Count);

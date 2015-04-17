@@ -22,7 +22,6 @@ namespace NachoClient.iOS
         protected HashSet<nint> MultiSelect = null;
         protected bool multiSelectAllowed;
         protected bool multiSelectActive;
-        protected bool swipingActive;
         public IMessageTableViewSourceDelegate owner;
 
         protected NcCapture ArchiveCaptureMessage;
@@ -319,35 +318,6 @@ namespace NachoClient.iOS
             MultiSelectToggle (tableView);
         }
 
-        public void ToggleSwiping (UITableView tableView, SwipeActionView activeView, bool active)
-        {
-            swipingActive = active;
-            tableView.ScrollEnabled = !active;
-
-            if (!NoMessageThreads ()) {
-                foreach (var cell in tableView.VisibleCells) {
-                    var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-                    if (view != activeView) {
-                        cell.UserInteractionEnabled = !active;
-                    } else {
-                        cell.UserInteractionEnabled = true;
-                        if (swipingActive) {
-                            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
-                        } else {
-                            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
-                        }
-                    }
-                }
-            }
-
-        }
-
-        // Don't select row when swiper is active
-        public override NSIndexPath WillSelectRow (UITableView tableView, NSIndexPath indexPath)
-        {
-            return (swipingActive ? null : indexPath);
-        }
-
         /// <summary>
         /// Create the views, not the values, of the cell.
         /// </summary>
@@ -570,15 +540,15 @@ namespace NachoClient.iOS
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    ToggleSwiping (tableView, activeView, true);
+                    tableView.ScrollEnabled = false;
                     cell.Layer.CornerRadius = 0;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    ToggleSwiping (tableView, activeView, false);
+                    tableView.ScrollEnabled = true;
                     cell.Layer.CornerRadius = 15;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    ToggleSwiping (tableView, activeView, true);
+                    tableView.ScrollEnabled = false;
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
@@ -671,6 +641,7 @@ namespace NachoClient.iOS
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.Frame = new CGRect (0, 0, cellWidth, HeightForMessage (message));
+            view.BackgroundColor = UIColor.White;
             view.Hidden = false;
 
             view.OnClick = (int tag) => {
@@ -685,15 +656,15 @@ namespace NachoClient.iOS
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    ToggleSwiping (tableView, activeView, true);
+                    tableView.ScrollEnabled = false;
                     cell.Layer.CornerRadius = 0;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    ToggleSwiping (tableView, activeView, false);
+                    tableView.ScrollEnabled = true;
                     cell.Layer.CornerRadius = 15;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    ToggleSwiping (tableView, activeView, true);
+                    tableView.ScrollEnabled = false;
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
@@ -718,7 +689,7 @@ namespace NachoClient.iOS
             // Preview label view
             var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
-            var rawPreview = message.BodyPreview;
+            var rawPreview = message.BodyPreview ?? "";
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;

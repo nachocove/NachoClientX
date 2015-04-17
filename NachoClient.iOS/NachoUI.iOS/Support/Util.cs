@@ -767,7 +767,7 @@ namespace NachoClient
         public static void SetBackButton (UINavigationController nc, UINavigationItem ni, UIColor tintColor)
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+                UIBarButtonItem backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     nc.PopViewController (true);
                 });
                 backButton.AccessibilityLabel = "Back";
@@ -952,6 +952,7 @@ namespace NachoClient
                 attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                 attendeeButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_TAG + attendeeNum;
                 attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                attendeeButton.AccessibilityLabel = "Attendee";
                 attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId ()).CGColor;
             }
 

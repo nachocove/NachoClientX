@@ -178,6 +178,7 @@ namespace NachoClient.iOS
             emailServiceTableView.AccessibilityLabel = "Email Service Chooser";
             emailServiceTableView.AccessibilityIdentifier = "EmailServicesDropdown";
             emailServiceTableView.Alpha = 0f;
+            emailServiceTableView.AccessibilityLabel = "Email services";
             contentView.AddSubview (emailServiceTableView);
 
             emailServiceTableView.Source = emailServices;

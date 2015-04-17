@@ -35,6 +35,7 @@ namespace NachoClient.iOS
 
         // UI elements
         protected UIView eventCardView;
+        protected UcLocationView locationView;
         protected BodyView descriptionView;
         protected UIView eventAttendeeView;
         protected UIView eventAlertsView;
@@ -176,7 +177,7 @@ namespace NachoClient.iOS
 
             nfloat yOffset = 20;
 
-            editEventButton = new UIBarButtonItem ();
+            editEventButton = new NcUIBarButtonItem ();
             editEventButton.TintColor = A.Color_NachoBlue;
             editEventButton.Image = UIImage.FromBundle ("gen-edit");
             editEventButton.AccessibilityLabel = "Edit";
@@ -259,6 +260,7 @@ namespace NachoClient.iOS
 
             removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
             removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+            removeFromCalendarButton.AccessibilityLabel = "Remove from calendar";
             removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
             removeFromCalendarButton.SizeToFit ();
             removeFromCalendarButton.Frame = new CGRect (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
@@ -285,9 +287,12 @@ namespace NachoClient.iOS
 
             // Location label, image, and detail
             Util.AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", TagType.EVENT_LOCATION_TITLE_TAG, eventCardView);
-            yOffset += 16 + 6;
-            Util.AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, eventCardView);
-            yOffset += 20 + 20;
+            locationView = new UcLocationView (yOffset, EVENT_CARD_WIDTH - 60, onLinkSelected);
+            locationView.Tag = (int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG;
+            locationView.Font = A.Font_AvenirNextRegular14;
+            locationView.TextColor = A.Color_NachoDarkText;
+            eventCardView.AddSubview (locationView);
+            yOffset += 30;
 
             // Description, for which we use a BodyView.
             Util.AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
@@ -341,6 +346,7 @@ namespace NachoClient.iOS
             AddTextLabelWithImageView (45, yOffset, "Phone", "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
             yOffset += 20 + 5;
             UIButton phoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
+            phoneDetailButton.AccessibilityLabel = "Phone";
             phoneDetailButton.Font = A.Font_AvenirNextRegular14;
             phoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
             phoneDetailButton.Tag = (int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG;
@@ -454,8 +460,8 @@ namespace NachoClient.iOS
             /// 3. The event's MeetingStatus is "Meeting"
             /// If any of these are true the user is the organizer of the event.
             isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) ||
-                (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
-                (NcMeetingStatus.Meeting == c.MeetingStatus);
+            (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
+            (NcMeetingStatus.Meeting == c.MeetingStatus);
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
@@ -540,19 +546,15 @@ namespace NachoClient.iOS
                 recurrenceLabel.SizeToFit ();
             }
 
-            var locationLabel = View.ViewWithTag ((int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
             if (string.IsNullOrEmpty (c.GetLocation ())) {
                 hasLocation = false;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = true;
-                locationLabel.Hidden = true;
+                locationView.Hidden = true;
             } else {
                 hasLocation = true;
                 View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
-                locationLabel.Hidden = false;
-                locationLabel.Text = c.GetLocation ();
-                locationLabel.Lines = 0;
-                locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                locationLabel.SizeToFit ();
+                locationView.Hidden = false;
+                locationView.SetText (c.GetLocation ());
             }
 
             // Phone disabled for now.
@@ -664,6 +666,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
                     extraAttendeesButton.SetTitle (string.Format ("+{0}", c.attendees.Count - 4), UIControlState.Normal);
+                    extraAttendeesButton.AccessibilityLabel = "More";
                     extraAttendeesButton.TouchUpInside += ExtraAttendeesTouchUpInside;
                     eventAttendeeView.AddSubview (extraAttendeesButton);
                 }
@@ -712,6 +715,7 @@ namespace NachoClient.iOS
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
             attachmentListView.Cleanup ();
+            locationView.Cleanup ();
 
             acceptButton = null;
             contentView = null;

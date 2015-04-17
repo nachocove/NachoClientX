@@ -81,14 +81,14 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
 
-            var composeButton = new UIBarButtonItem ();
+            var composeButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
             composeButton.AccessibilityLabel = "New message";
             composeButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToCompose", new SegueHolder (null));
             };
 
-            var newMeetingButton = new UIBarButtonItem ();
+            var newMeetingButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (newMeetingButton, "cal-add");
             newMeetingButton.AccessibilityLabel = "New meeting";
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
@@ -105,7 +105,8 @@ namespace NachoClient.iOS
             hotListView.TableHeaderView = new UIView (new CGRect (0, 0, 0, 0));
             hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
-            hotListView.SeparatorColor = A.Color_NachoBackgroundGray;
+            hotListView.SeparatorStyle = UITableViewCellSeparatorStyle.None;
+            hotListView.AccessibilityLabel = "Hot list";
             View.AddSubview (hotListView);
 
             hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));

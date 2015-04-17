@@ -192,7 +192,7 @@ namespace NachoClient.iOS
         {
             nfloat internalOffset = 0;
 
-            cancelButton = new UIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
             using (var image = UIImage.FromBundle ("icn-close")) {
                 cancelButton.Image = image;
             }
@@ -210,7 +210,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            doneButton = new UIBarButtonItem ();
+            doneButton = new NcUIBarButtonItem ();
             doneButton.Title = "Save";
             doneButton.AccessibilityLabel = "Save";
             doneButton.Clicked += DoneButtonClicked;
@@ -478,6 +478,7 @@ namespace NachoClient.iOS
             yOffset = notesView.Frame.Bottom + CELL_HEIGHT;
 
             deleteContactButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, CELL_HEIGHT));
+            deleteContactButton.AccessibilityLabel = "Delete";
             deleteContactButton.BackgroundColor = UIColor.White;
             deleteContactButton.TouchUpInside += DeleteContactButtonTouchUpInside;
             contentView.AddSubview (deleteContactButton);
@@ -718,6 +719,7 @@ namespace NachoClient.iOS
         protected UIButton AddNewButton (string title, EventHandler action, UIView parent)
         {
             UIButton addButton = new UIButton (new CGRect (0, parent.Frame.Bottom, View.Frame.Width, CELL_HEIGHT));
+            addButton.AccessibilityLabel = "Add";
             addButton.BackgroundColor = UIColor.White;
             addButton.TouchUpInside += action;
             parent.AddSubview (addButton);
@@ -1549,6 +1551,7 @@ namespace NachoClient.iOS
                 this.AddSubview (editField);
 
                 moreButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));
+                moreButton.AccessibilityLabel = "More";
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.Tag = BUTTON_TAG + 3000;
@@ -1569,6 +1572,7 @@ namespace NachoClient.iOS
             moreView.Hidden = true;
 
             UIButton defaultButton = new UIButton (new CGRect (1, 0, moreView.Frame.Width - 2, (moreView.Frame.Height / 2) - 1));
+            defaultButton.AccessibilityLabel = "Default";
 
             defaultButton.BackgroundColor = A.Color_NachoGreen;
             defaultButton.Tag = MORE_VIEW_DEFAULT_BUTTON_TAG;
@@ -1589,6 +1593,7 @@ namespace NachoClient.iOS
             Util.AddHorizontalLine (18, defaultButton.Frame.Bottom, moreView.Frame.Width - (18 * 2), UIColor.LightGray.ColorWithAlpha (.8f), moreView);
 
             UIButton deleteButton = new UIButton (new CGRect (0, moreView.Frame.Height / 2 + 1, moreView.Frame.Width, (moreView.Frame.Height / 2) - 1));
+            deleteButton.AccessibilityLabel = "Delete";
             deleteButton.BackgroundColor = A.Color_NachoGreen;
             deleteButton.Tag = MORE_VIEW_DELETE_BUTTON_TAG;
             deleteButton.TouchUpInside += DeleteButtonClicked;
@@ -1943,6 +1948,7 @@ namespace NachoClient.iOS
                 dateView.AddSubview (datePicker);
 
                 trashButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));
+                trashButton.AccessibilityLabel = "Trash";
                 UIImage x = UIImage.FromBundle ("gen-trash");
                 trashButton.SetImage (x, UIControlState.Normal);
                 trashButton.Tag = BUTTON_TAG + 3000;
@@ -2077,6 +2083,7 @@ namespace NachoClient.iOS
                 this.AddSubview (labelButton);
 
                 moreButton = new UIButton (new CGRect (owner.moreButtonIndent, 6, 30, 30));
+                moreButton.AccessibilityLabel = "More";
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.TouchUpInside += MoreButtonClicked;

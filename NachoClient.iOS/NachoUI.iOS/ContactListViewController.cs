@@ -69,6 +69,7 @@ namespace NachoClient.iOS
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             TableView.BackgroundColor = A.Color_NachoBackgroundGray;
             TableView.TableFooterView = new UIView (new CGRect (0, 0, TableView.Frame.Width, 100));
+            TableView.AccessibilityLabel = "Contact list";
             View.AddSubview (TableView);
 
             InitializeSearchDisplayController ();
@@ -83,11 +84,11 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             SearchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            var searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.AccessibilityLabel = "Search";
             searchButton.TintColor = A.Color_NachoBlue;
 
-            var addContactButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            var addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
             addContactButton.AccessibilityLabel = "Add contact";
             addContactButton.TintColor = A.Color_NachoBlue;
 
@@ -341,6 +342,7 @@ namespace NachoClient.iOS
                 button.SetTitle (title, UIControlState.Selected);
                 button.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
+                button.AccessibilityLabel = title;
                 button.Font = A.Font_AvenirNextDemiBold17;
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);

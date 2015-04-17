@@ -595,14 +595,15 @@ namespace NachoCore.Model
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
-                " likelihood (AccountId = ?, 1.0) AND " +
-                " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
-                " likelihood (ThreadTopic = ?, 0.01) ",
+            " likelihood (AccountId = ?, 1.0) AND " +
+            " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
+            " likelihood (ThreadTopic = ?, 0.01) ",
                 accountId, false, topic);
         }
 
         public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
         {
+            // TODO: to speed-up, convert to SQL, add index to CreatedAt, likelihood(since < x.CreatedAt, 0.01)
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
                 false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderBy (x => x.DateReceived);
@@ -1061,7 +1062,7 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             int returnVal = base.Delete ();
-            NcBrain.SharedInstance.UnindexEmailMessage (this);
+            NcBrain.UnindexEmailMessage (this);
             return returnVal;
         }
 

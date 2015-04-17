@@ -58,7 +58,8 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
-        #else
+        
+#else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
         nfloat HEADER_TOP_MARGIN = 0;
@@ -148,15 +149,15 @@ namespace NachoClient.iOS
 
             // Navigation controls
 
-            blockMenuButton = new UIBarButtonItem ();
+            blockMenuButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
             blockMenuButton.AccessibilityLabel = "More";
 
-            deferButton = new UIBarButtonItem ();
+            deferButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (deferButton, "email-defer");
             deferButton.AccessibilityLabel = "Defer";
 
-            moveButton = new UIBarButtonItem ();
+            moveButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (moveButton, "folder-move");
             moveButton.AccessibilityLabel = "Move";
 

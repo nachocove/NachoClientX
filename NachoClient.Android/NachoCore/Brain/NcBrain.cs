@@ -1,6 +1,5 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
-//#define INDEXING_ENABLED
 
 using System;
 using System.Threading.Tasks;
@@ -231,7 +230,10 @@ namespace NachoCore.Brain
                 NcIndex index;
                 if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
                     index = Index (emailMessage.AccountId);
-                    index.BeginAddTransaction ();
+                    if (!index.BeginAddTransaction ()) {
+                        Log.Warn (Log.LOG_BRAIN, "fail to begin add transaction (accountId={0})", emailMessage.AccountId);
+                        break;
+                    }
                     indexes.Add (emailMessage.AccountId, index);
                 }
                 if (IndexEmailMessage (index, emailMessage, ref bytesIndexed)) {
@@ -250,6 +252,28 @@ namespace NachoCore.Brain
             }
             indexes.Clear ();
             return numIndexed;
+        }
+
+        private int ProcessPersistedRequests (int count)
+        {
+            return ProcessLoop (count, "persisted requests processed", () => {
+                var dbEvent = McBrainEvent.QueryNext ();
+                if (null == dbEvent) {
+                    return false;
+                }
+                var brainEvent = dbEvent.BrainEvent ();
+                switch (brainEvent.Type) {
+                case NcBrainEventType.UNINDEX_MESSAGE:
+                    var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
+                    UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
+                    break;
+                default:
+                    Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
+                    break;
+                }
+                dbEvent.Delete ();
+                return true;
+            });
         }
 
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
@@ -340,6 +364,7 @@ namespace NachoCore.Brain
                 }
                 EvaluateRunRate ();
                 int num_entries = WorkCredits;
+                num_entries -= ProcessPersistedRequests (num_entries);
                 num_entries -= AnalyzeEmailAddresses (num_entries);
                 num_entries -= AnalyzeEmails (num_entries);
                 num_entries -= GleanContacts (num_entries);
@@ -466,15 +491,6 @@ namespace NachoCore.Brain
             NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
         }
 
-        public static void NewEmailMessageSynced (object sender, EventArgs args)
-        {
-            StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
-            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged != eventArgs.Status.SubKind) {
-                return;
-            }
-            NcBrain.SharedInstance.Enqueue (new NcBrainStateMachineEvent (eventArgs.Account.Id));
-        }
-
         /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
         /// generate initial email address scores from RIC in this function for 2
         /// reasons. First, we do not want to hold up the status indication callback
@@ -504,18 +520,6 @@ namespace NachoCore.Brain
                 NcContactGleaner.Stop ();
                 NcContactGleaner.Start ();
             }
-        }
-
-        public static void UpdateAddressScore (Int64 emailAddressId, bool forcedUpdateDependentMessages = false)
-        {
-            NcBrainEvent e = new NcBrainUpdateAddressScoreEvent (emailAddressId, forcedUpdateDependentMessages);
-            NcBrain.SharedInstance.Enqueue (e);
-        }
-
-        public static void UpdateMessageScore (Int64 emailMessageId)
-        {
-            NcBrainEvent e = new NcBrainUpdateMessageScoreEvent (emailMessageId);
-            NcBrain.SharedInstance.Enqueue (e);
         }
     }
 }

@@ -79,7 +79,7 @@ namespace NachoClient.iOS
 
             var navItem = new UINavigationItem ("Add Attachment");
             using (var image = UIImage.FromBundle ("modal-close")) {
-                DismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 DismissButton.AccessibilityLabel = "Close";
                 DismissButton.Clicked += dismissClicked;
                 navItem.LeftBarButtonItem = DismissButton;
@@ -127,6 +127,7 @@ namespace NachoClient.iOS
                 buttonRect.Tag = BUTTON_TAG + i;
                 buttonRect.Frame = new CGRect (0, 0, BUTTON_SIZE, BUTTON_SIZE);
                 buttonRect.Center = new CGPoint (xOffset, yOffset);
+                buttonRect.AccessibilityLabel = "Add attachment";
                 using (var image = UIImage.FromBundle (buttonInfo.buttonIcon).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     buttonRect.SetImage (image, UIControlState.Normal);
                 }

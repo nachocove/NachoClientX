@@ -118,12 +118,12 @@ namespace NachoClient.iOS
         private void CreateView ()
         {
             nfloat yOffset = 0;
-            searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
-            multiSelectButton = new UIBarButtonItem ();
-            multiOpenInButton = new UIBarButtonItem ();
-            multiAttachButton = new UIBarButtonItem ();
-            multiDeleteButton = new UIBarButtonItem ();
-            multiCancelButton = new UIBarButtonItem ();
+            searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
+            multiSelectButton = new NcUIBarButtonItem ();
+            multiOpenInButton = new NcUIBarButtonItem ();
+            multiAttachButton = new NcUIBarButtonItem ();
+            multiDeleteButton = new NcUIBarButtonItem ();
+            multiCancelButton = new NcUIBarButtonItem ();
 
             if (modal) {
                 navbar.Frame = new CGRect (0, 0, View.Frame.Width, 64);
@@ -132,7 +132,7 @@ namespace NachoClient.iOS
                 navbar.Translucent = false;
                 UINavigationItem title = new UINavigationItem ("Attach file");
                 navbar.SetItems (new UINavigationItem[]{ title }, false);
-                UIBarButtonItem cancelButton = new UIBarButtonItem ();
+                UIBarButtonItem cancelButton = new NcUIBarButtonItem ();
                 Util.SetAutomaticImageForButton (cancelButton, "icn-close");
 
                 navbar.TopItem.LeftBarButtonItem = cancelButton;
@@ -173,6 +173,7 @@ namespace NachoClient.iOS
 
             tableView = new UITableView (new CGRect (0, 0, 0, 0), UITableViewStyle.Grouped);
             tableView.SeparatorColor = UIColor.Clear;
+            tableView.AccessibilityLabel = "Attachments";
 
             InitializeSearchDisplayController ();
             AttachmentsSource = new AttachmentsTableViewSource (this, account);

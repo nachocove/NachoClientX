@@ -46,6 +46,7 @@ namespace NachoCore.Model
         {
             DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
             NotificationConfiguration = DefaultNotificationConfiguration;
+            FastNotificationEnabled = true;
         }
 
         public AccountTypeEnum AccountType { get; set; }
@@ -75,6 +76,8 @@ namespace NachoCore.Model
         public string Signature { get; set; }
 
         public NotificationConfigurationEnum NotificationConfiguration { get; set; }
+
+        public bool FastNotificationEnabled { get; set; }
 
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {

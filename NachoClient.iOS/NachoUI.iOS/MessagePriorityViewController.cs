@@ -64,10 +64,10 @@ namespace NachoClient.iOS
                 navItem.Title = "Set Deadline";
             }
             using (var image = UIImage.FromBundle ("modal-close")) {
-                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.AccessibilityLabel = "Dismiss";
                 dismissButton.Clicked += (object sender, EventArgs e) => {
-                    DismissDateController(true, null);
+                    DismissDateController (true, null);
                 };
                 navItem.LeftBarButtonItem = dismissButton;
             }
@@ -87,7 +87,7 @@ namespace NachoClient.iOS
                 UILabel messageSubject = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 25));
                 var subject = thread.GetSubject ();
                 if (null != subject) {
-                    messageSubject.Text = Pretty.SubjectString(subject);
+                    messageSubject.Text = Pretty.SubjectString (subject);
                 } else {
                     messageSubject.Text = "";
                 }

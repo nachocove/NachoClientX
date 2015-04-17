@@ -271,6 +271,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_DETAIL_TAG;
                     extraAttendeesButton.SetTitle (string.Format ("+{0}", allAttendees.Count - 4), UIControlState.Normal);
+                    extraAttendeesButton.AccessibilityLabel = "More";
                     eventAttendeeView.AddSubview (extraAttendeesButton);
                 }
             }
@@ -300,6 +301,7 @@ namespace NachoClient.iOS
         private void CreateActionBarViews (UIView responseView)
         {
             acceptButton = new UIButton (UIButtonType.RoundedRect);
+            acceptButton.AccessibilityLabel = "Attend";
             Util.AddButtonImage (acceptButton, "event-attend", UIControlState.Normal);
             Util.AddButtonImage (acceptButton, "event-attend-active", UIControlState.Selected);
             acceptButton.Frame = new CGRect (responseView.Frame.X + 18, 18, 24, 24);
@@ -308,6 +310,7 @@ namespace NachoClient.iOS
             responseView.AddSubview (acceptButton);
 
             tentativeButton = new UIButton (UIButtonType.RoundedRect);
+            tentativeButton.AccessibilityLabel = "Maybe";
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
             Util.AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
             tentativeButton.Frame = new CGRect (responseView.Center.X - 37.5f, 18, 24, 24);
@@ -316,6 +319,7 @@ namespace NachoClient.iOS
             responseView.AddSubview (tentativeButton);
 
             declineButton = new UIButton (UIButtonType.RoundedRect);
+            declineButton.AccessibilityLabel = "Decline";
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
             Util.AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
             declineButton.Frame = new CGRect (responseView.Frame.Width - 96.5f, 18, 24, 24);
@@ -359,6 +363,7 @@ namespace NachoClient.iOS
 
             removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
             removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+            removeFromCalendarButton.AccessibilityLabel = "Remove from calendar";
             removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
             removeFromCalendarButton.SizeToFit ();
             removeFromCalendarButton.Frame = new CGRect (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);

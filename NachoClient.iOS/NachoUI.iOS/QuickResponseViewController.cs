@@ -52,7 +52,7 @@ namespace NachoClient.iOS
 
             var navItem = new UINavigationItem ("Quick Messages");
             using (var image = UIImage.FromBundle ("modal-close")) {
-                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.AccessibilityLabel = "Close";
                 dismissButton.Clicked += (object sender, EventArgs e) => {
                     DismissViewController (true, null);
@@ -74,6 +74,7 @@ namespace NachoClient.iOS
                 UIButton quickButton = new UIButton (new CGRect (X_INDENT, yOffset, qrView.Frame.Width - 30, 40));
                 quickButton.BackgroundColor = A.Color_NachoGreen;
                 quickButton.SetTitle (response.body, UIControlState.Normal);
+                quickButton.AccessibilityLabel = response.body;
                 quickButton.SetTitleColor (UIColor.White, UIControlState.Normal);
                 quickButton.Font = A.Font_AvenirNextDemiBold14;
                 quickButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;

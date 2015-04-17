@@ -246,9 +246,7 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiPageControl (description, page);
             });
 
-            NachoUIMonitor.SetupUIAlertView (delegate(string description, int index) {
-                Telemetry.RecordUiAlertView (description, index);
-            });
+            // Alert views are monitored inside NcAlertView
 
             NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
                 Telemetry.RecordUiActionSheet (description, index);
@@ -269,9 +267,9 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiTapGestureRecognizer (description, touches);
             });
 
-//            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
-//                Telemetry.RecordUiTableView (description, operation);
-//            });
+            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
+                Telemetry.RecordUiTableView (description, operation);
+            });
         }
 
         // This method is common to both launching into the background and into the foreground.

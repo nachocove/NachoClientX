@@ -240,6 +240,7 @@ namespace NachoClient.iOS
 
             chooserButton = UIButton.FromType (UIButtonType.System);
             Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
+            chooserButton.AccessibilityLabel = "Chooser";
             chooserButton.SizeToFit ();
             var chooserButtonX = parentWidth - chooserButton.Frame.Width - RIGHT_INDENT - CHOOSER_INSET;
             chooserButton.Frame = new CGRect (chooserButtonX, 0, chooserButton.Frame.Width + RIGHT_INDENT + CHOOSER_INSET, lineHeight);

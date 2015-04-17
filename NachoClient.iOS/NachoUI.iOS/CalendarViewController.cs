@@ -51,14 +51,14 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
                 
-            var todayButton = new UIBarButtonItem ();
+            var todayButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage (DateTime.Now.Day.ToString ()));
             todayButton.AccessibilityLabel = "Today";
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
 
-            var addEventButton = new UIBarButtonItem ();
+            var addEventButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
             addEventButton.AccessibilityLabel = "New meeting";
             addEventButton.Clicked += (object sender, EventArgs e) => {
@@ -269,6 +269,7 @@ namespace NachoClient.iOS
             ConfigureCalendarTableSize (1);
             calendarTableView.Source = calendarSource;
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
+            calendarTableView.AccessibilityLabel = "Calendar";
 
             NavigationItem.Title = "Calendar";
 

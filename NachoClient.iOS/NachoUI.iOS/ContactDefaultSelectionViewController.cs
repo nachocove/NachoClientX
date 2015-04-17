@@ -122,7 +122,7 @@ namespace NachoClient.iOS
 
             navItem = new UINavigationItem ();
             using (var image = UIImage.FromBundle ("modal-close")) {
-                dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.AccessibilityLabel = "Close";
                 dismissButton.Clicked += DismissViewTouchUpInside;
                 navItem.LeftBarButtonItem = dismissButton;
@@ -133,7 +133,7 @@ namespace NachoClient.iOS
             nfloat yOffset = 64;
             nfloat topOffset = 64;
 
-            Util.AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoBorderGray.ColorWithAlpha(.5f), View);
+            Util.AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoBorderGray.ColorWithAlpha (.5f), View);
 
 //////////////ADD EMAIL VIEW
 //////////////ADD EMAIL VIEW
@@ -210,6 +210,7 @@ namespace NachoClient.iOS
             phoneBox.BackgroundColor = UIColor.White;
 
             UIButton selectLabelButton = new UIButton (new CGRect (0, 0, 90, CELL_HEIGHT));
+            selectLabelButton.AccessibilityLabel = "Phone label";
             selectLabelButton.Tag = SELECT_PHONELABEL_BUTTON_TAG;
             selectLabelButton.TouchUpInside += SelectLabelTouchUpInside;
             selectLabelButton.BackgroundColor = UIColor.White;
@@ -256,7 +257,7 @@ namespace NachoClient.iOS
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
-            yOffset = topOffset +  1;
+            yOffset = topOffset + 1;
 
             UIView selectPhoneView = new UIView (new CGRect (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
             selectPhoneView.BackgroundColor = A.Color_NachoGreen;
@@ -273,7 +274,7 @@ namespace NachoClient.iOS
             int i = 0;
             nfloat internalYOffset = 0;
             foreach (var p in contact.PhoneNumbers) {
-                LabelSelectionViewController.ListSelectionButton selectionButton = new LabelSelectionViewController.ListSelectionButton (contactHelper.ExchangeNameToLabel(p.Name), PHONE_SELECTION_STARTING_BUTTON_TAG + i);
+                LabelSelectionViewController.ListSelectionButton selectionButton = new LabelSelectionViewController.ListSelectionButton (contactHelper.ExchangeNameToLabel (p.Name), PHONE_SELECTION_STARTING_BUTTON_TAG + i);
                 UIButton button = selectionButton.GetButton (View, internalYOffset);
                 button.TouchUpInside += SelectionButtonClicked;
                 possiblePhones.Add (new LabelSelectionViewController.ExchangeLabel (p.Name, p.Label));
@@ -342,7 +343,7 @@ namespace NachoClient.iOS
             internalYOffset += 20;
 
             UIButton toggleButton = AddDefaultToggleButton (phoneBox.Frame.Left, internalYOffset, phoneBox.Frame.Width, "Set as default email address", ToggleDefault, selectEmailView, SET_DEFAULT_EMAIL_BUTTON_TAG);
-            toggleButton.TitleEdgeInsets = new UIEdgeInsets(8, 0, 8, 34);
+            toggleButton.TitleEdgeInsets = new UIEdgeInsets (8, 0, 8, 34);
 
             UIView emailAction = CreateActionView ("Compose Email", "now-newemail", EmailSelectedAddress, selectEmailView, COMPOSE_EMAIL_BUTTON_TAG);
             selectEmailView.AddSubview (emailAction);
@@ -355,10 +356,11 @@ namespace NachoClient.iOS
             actionView.BackgroundColor = A.Color_NachoGreen;
 
             UIButton actionButton = UIButton.FromType (UIButtonType.RoundedRect);
+            actionButton.AccessibilityLabel = label;
             actionButton.TintColor = A.Color_NachoBlue;
             actionButton.Layer.CornerRadius = 64 / 2;
             actionButton.Layer.MasksToBounds = true;
-            actionButton.Layer.BorderColor = A.Color_NachoBackgroundGray.ColorWithAlpha(.5f).CGColor;
+            actionButton.Layer.BorderColor = A.Color_NachoBackgroundGray.ColorWithAlpha (.5f).CGColor;
             actionButton.Layer.BorderWidth = .5f;                 
             actionButton.Frame = new CGRect (0, 0, 64, 64);
             actionButton.Tag = buttonTag;
@@ -379,10 +381,11 @@ namespace NachoClient.iOS
             return actionView;
         }
 
-        //Set as default ... button 
+        //Set as default ... button
         protected UIButton AddDefaultToggleButton (nfloat frameX, nfloat frameY, nfloat width, string label, EventHandler buttonClicked, UIView parent, int tag)
         {
             UIButton toggleButton = new UIButton (new CGRect (frameX, frameY, width, CELL_HEIGHT));
+            toggleButton.AccessibilityLabel = "Toggle";
             toggleButton.Tag = tag;
             toggleButton.TouchUpInside += buttonClicked;
             toggleButton.Layer.BorderColor = A.Color_NachoBlue.CGColor;
@@ -406,7 +409,7 @@ namespace NachoClient.iOS
 
             return toggleButton;
         }
-       
+
         public bool TextFieldShouldReturn (UITextField whatField)
         {
             whatField.EndEditing (true);
@@ -444,7 +447,7 @@ namespace NachoClient.iOS
                 break;
             case DefaultSelectionType.DefaultEmailSelector:
                 selectedEmailButtonTag = selectedButton.Tag;
-                    selectedEmailName = contactEmailList [((int)selectedEmailButtonTag) - EMAIL_SELECTION_STARTING_BUTTON_TAG];
+                selectedEmailName = contactEmailList [((int)selectedEmailButtonTag) - EMAIL_SELECTION_STARTING_BUTTON_TAG];
                 break;
             }
         }
@@ -516,7 +519,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            LayoutView();
+            LayoutView ();
         }
 
         protected void LayoutView ()
@@ -547,7 +550,7 @@ namespace NachoClient.iOS
         private void SaveAndCall (object sender, EventArgs e)
         {
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
-            if(!string.IsNullOrEmpty(phoneTextField.Text)){
+            if (!string.IsNullOrEmpty (phoneTextField.Text)) {
                 if (isDefaultSelected) {
                     contact.AddDefaultPhoneNumberAttribute (LoginHelpers.GetCurrentAccountId (), phoneLabel.type, phoneLabel.label, phoneTextField.Text);
                 } else {
@@ -566,9 +569,9 @@ namespace NachoClient.iOS
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
             if (EmailHelper.IsValidEmail (emailTextField.Text)) {
                 if (isDefaultSelected) {
-                    contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel(Xml.Contacts.Email1Address), emailTextField.Text);
+                    contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
                 } else {
-                    contact.AddEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel(Xml.Contacts.Email1Address), emailTextField.Text);
+                    contact.AddEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
@@ -589,7 +592,7 @@ namespace NachoClient.iOS
             defaultToggleButton.Selected = !defaultToggleButton.Selected;
         }
 
-        private void SetDefaultEmail()
+        private void SetDefaultEmail ()
         {
             foreach (var em in contact.EmailAddresses) {
                 if (em.Name == selectedEmailName) {
@@ -648,8 +651,8 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToLabelSelection")) {
                 LabelSelectionViewController destinationController = (LabelSelectionViewController)segue.DestinationViewController;
                 ContactsHelper c = new ContactsHelper ();
-                destinationController.SetLabelList(c.GetAvailablePhoneNames(contact));
-                destinationController.SetSelectedName(c.GetAvailablePhoneNames (contact).First ());
+                destinationController.SetLabelList (c.GetAvailablePhoneNames (contact));
+                destinationController.SetSelectedName (c.GetAvailablePhoneNames (contact).First ());
                 destinationController.SetOwner (this);
                 return;
             }

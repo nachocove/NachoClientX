@@ -48,6 +48,7 @@ namespace NachoClient.iOS
             tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
             source = new NotificationChoicesSource (this);
             tableView.Source = source;
+            tableView.AccessibilityLabel = "Notification chooser";
 
             View.Add (tableView);
 
@@ -59,8 +60,8 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            doneButton = new UIBarButtonItem ();
-            cancelButton = new UIBarButtonItem ();
+            doneButton = new NcUIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
 
             doneButton.Title = "Save";
             doneButton.AccessibilityLabel = "Save";

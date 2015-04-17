@@ -90,6 +90,7 @@ namespace NachoClient.iOS
             aboutUsButton = UIButton.FromType (UIButtonType.System);
             aboutUsButton.Frame = new CGRect (A.Card_Horizontal_Indent, buttonY, buttonViewWidth - (2 * A.Card_Horizontal_Indent), CELL_HEIGHT);
             aboutUsButton.SetTitle ("About Us", UIControlState.Normal);
+            aboutUsButton.AccessibilityLabel = "About Us";
             aboutUsButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             aboutUsButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
             aboutUsButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
@@ -103,6 +104,7 @@ namespace NachoClient.iOS
             releaseNotesButton = UIButton.FromType (UIButtonType.System);
             releaseNotesButton.Frame = new CGRect (A.Card_Horizontal_Indent, buttonY, buttonViewWidth - (2 * A.Card_Horizontal_Indent), CELL_HEIGHT);
             releaseNotesButton.SetTitle ("Release Notes", UIControlState.Normal);
+            releaseNotesButton.AccessibilityLabel = "Release Notes";
             releaseNotesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             releaseNotesButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
             releaseNotesButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
@@ -116,6 +118,7 @@ namespace NachoClient.iOS
             privacyPolicyButton = UIButton.FromType (UIButtonType.System);
             privacyPolicyButton.Frame = new CGRect (A.Card_Horizontal_Indent, buttonY, buttonViewWidth - (2 * A.Card_Horizontal_Indent), CELL_HEIGHT);
             privacyPolicyButton.SetTitle ("Privacy Policy", UIControlState.Normal);
+            privacyPolicyButton.AccessibilityLabel = "Privacy Policy";
             privacyPolicyButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             privacyPolicyButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
             privacyPolicyButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
@@ -145,6 +148,7 @@ namespace NachoClient.iOS
             dirtyBackEndButton.BackgroundColor = A.Color_NachoRed;
             dirtyBackEndButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
             dirtyBackEndButton.SetTitle ("Fix Account", UIControlState.Normal);
+            dirtyBackEndButton.AccessibilityLabel = "Fix account";
             dirtyBackEndButton.SetTitleColor (UIColor.White, UIControlState.Normal);
             dirtyBackEndButton.TouchUpInside += FixBackEndButtonClicked; 
             dirtyBackEndButton.Hidden = true;

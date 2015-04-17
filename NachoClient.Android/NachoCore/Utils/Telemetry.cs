@@ -37,6 +37,7 @@ namespace NachoCore.Utils
     public class TelemetryEvent : NcQueueElement
     {
         // iOS UI object monitoring strings
+        public const string UIBARBUTTONITEM = "UIBarButtonItem";
         public const string UIBUTTON = "UIButton";
         public const string UISEGMENTEDCONTROL = "UISegmentedControl";
         public const string UISWITCH = "UISwitch";
@@ -642,6 +643,11 @@ namespace NachoCore.Utils
             RecordRawEvent (tEvent);
         }
 
+        public static void RecordUiBarButtonItem (string uiObject)
+        {
+            RecordUi (TelemetryEvent.UIBARBUTTONITEM, uiObject);
+        }
+
         public static void RecordUiButton (string uiObject)
         {
             RecordUi (TelemetryEvent.UIBUTTON, uiObject);
@@ -677,9 +683,9 @@ namespace NachoCore.Utils
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
         }
 
-        public static void RecordUiAlertView (string uiObject, long index)
+        public static void RecordUiAlertView (string uiObject, string action)
         {
-            RecordUiWithLong (TelemetryEvent.UIALERTVIEW, uiObject, index);
+            RecordUiWithString (TelemetryEvent.UIALERTVIEW, uiObject, action);
         }
 
         public static void RecordUiActionSheet (string uiObject, long index)

@@ -93,7 +93,7 @@ namespace NachoClient.iOS
                 CreateBlockButton (b);
             }
 
-            menuButton = new UIBarButtonItem ();
+            menuButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (menuButton, "gen-more-active");
             menuButton.AccessibilityLabel = "More";
             menuButton.Clicked += MenuButtonClicked;
@@ -228,6 +228,7 @@ namespace NachoClient.iOS
             nfloat yOffset = 20;
 
             var button = new UIButton (new CGRect (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
+            button.AccessibilityLabel = block.blockLabel;
 
             NcAssert.NotNull (UIImage.FromBundle (block.blockImage), "This image is not a resource: " + block.blockImage);
             var blockIconImageView = new UIImageView (UIImage.FromBundle (block.blockImage));
