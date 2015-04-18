@@ -382,14 +382,14 @@ namespace NachoCore.Model
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McFolder AS f ON m.FolderId = f.Id " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " f.IsClientOwned != 1 AND " +
-                " m.ClassCode = ? AND " +
-                " m.AccountId = ? AND " +
-                " m.FolderId != ? AND " +
-                " e.[From] LIKE ? OR " +
-                " e.[To] Like ? " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.IsClientOwned != 1, 0.9) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.FolderId != ?, 0.5) AND " +
+                " likelihood (e.[From] LIKE ?, 0.05) OR " +
+                " likelihood (e.[To] Like ?, 0.05) " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
@@ -498,9 +498,9 @@ namespace NachoCore.Model
                 " likelihood (m.AccountId = ?, 1.0) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " e.FlagUtcStartDate < ? AND " +
-                " e.UserAction > -1 AND " +
-                " (e.Score >= ? OR e.UserAction = 1) " +
+                " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
+                " likelihood (e.UserAction > -1, 0.99) AND " +
+                " (likelihood (e.Score >= ?, 0.1) OR likelihood (e.UserAction = 1, 0.01)) " +
                 "UNION " +
                 "SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
@@ -511,7 +511,7 @@ namespace NachoCore.Model
                 " likelihood (m.AccountId = ?, 1.0) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (m.FolderId = ?, 0.05) AND " +
-                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
+                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE likelihood (a.IsVip != 0, 0.01)) " +
                 " ) " +
                 " GROUP BY ConversationId " +
                 " ORDER BY DateReceived DESC",

@@ -1,16 +1,14 @@
 
 This release updates the current beta release with:
 
-. Better handling of complex calendar events.
+. Better handling of recurring calendar events.
 
-. Faster start up and general performance improvements.
+. Able to save and edit draft messages.
+
+. General performance improvements.
 
 . Bug fixes
 
 Known issues:
 
 . Threading support does not currently work for Google Apps users.
-
-. Recurring meetings cannot be created in Nacho Mail at this time.
-
-. Canceling a single instance of a recurring meeting is not working.
