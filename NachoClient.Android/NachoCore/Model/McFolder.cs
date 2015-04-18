@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using SQLite;
 using NachoCore.Utils;
@@ -72,6 +73,8 @@ namespace NachoCore.Model
         //Used for display name when creating the folder (if it doesn't already exist)"
         public const string DRAFTS_DISPLAY_NAME = "Drafts";
         public const string ARCHIVE_DISPLAY_NAME = "Archive";
+
+        private static ConcurrentDictionary<int, string> JunkFolderIds = new ConcurrentDictionary<int, string> ();
 
         public override string ToString ()
         {
@@ -212,15 +215,24 @@ namespace NachoCore.Model
             return false;
         }
 
+        public bool IsJunkFolder ()
+        {
+            return JunkFolderIds.ContainsKey (this.Id);
+        }
+
+        public static bool IsJunkFolder (int folderId)
+        {
+            return JunkFolderIds.ContainsKey (folderId);
+        }
 
         public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.Type = ?, 0.2) AND " +
-                " likelihood (f.ParentId = ?, 0.05) AND " +
-                " likelihood (f.DisplayName = ?, 0.05) ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.Type = ?, 0.2) AND " +
+                          " likelihood (f.ParentId = ?, 0.05) AND " +
+                          " likelihood (f.DisplayName = ?, 0.05) ",
                               accountId, (uint)typeCode, parentId, name);
             if (0 == folders.Count) {
                 return null;
@@ -231,10 +243,10 @@ namespace NachoCore.Model
         private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.IsClientOwned = 0, 1.0) AND " +
-                " likelihood (f.Type = ?, 0.05) ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.IsClientOwned = 0, 1.0) AND " +
+                          " likelihood (f.Type = ?, 0.05) ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
                 return null;
@@ -292,9 +304,9 @@ namespace NachoCore.Model
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.ParentId = ?, 0.05) ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.ParentId = ?, 0.05) ",
                               accountId, parentId);
             return folders.ToList ();
         }
@@ -322,10 +334,10 @@ namespace NachoCore.Model
         public static McFolder QueryByServerId (int accountId, string serverId)
         {
             var f = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.IsHidden = 0, 0.9) AND " +
-                " likelihood (f.ServerId = ?, 0.5) ",
+                    " likelihood (f.AccountId = ?, 1.0) AND " +
+                    " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (f.IsHidden = 0, 0.9) AND " +
+                    " likelihood (f.ServerId = ?, 0.5) ",
                         accountId, serverId).ToList ();
             NcAssert.True (2 > f.Count ());
             return f.SingleOrDefault ();
@@ -345,9 +357,9 @@ namespace NachoCore.Model
         public static List<McFolder> ServerEndQueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
-                " likelihood (f.ParentId = ?, 0.05) ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
+                          " likelihood (f.ParentId = ?, 0.05) ",
                               accountId, parentId);
             return folders.ToList ();
         }
@@ -356,19 +368,19 @@ namespace NachoCore.Model
         {
             var classCode = new T ().GetClassCode ();
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
-                " likelihood (m.FolderEntryId = ?, 0.001) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (m.ClassCode = ?, 0.2) ",
+            " likelihood (m.AccountId = ?, 1.0) AND " +
+            " likelihood (m.FolderEntryId = ?, 0.001) AND " +
+            " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+            " likelihood (m.ClassCode = ?, 0.2) ",
                 accountId, folderEntryId, (uint)classCode).ToList ();
         }
 
         public static List<McFolder> QueryByIsClientOwned (int accountId, bool isClientOwned)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.IsClientOwned = ?, 0.2) ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.IsClientOwned = ?, 0.2) ",
                               accountId, isClientOwned);
             return folders.ToList ();
         }
@@ -379,18 +391,18 @@ namespace NachoCore.Model
         public static McFolder ServerEndQueryByServerId (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
-                " likelihood (f.ServerId = ?, 0.05) ", 
+            " likelihood (f.AccountId = ?, 1.0) AND " +
+            " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
+            " likelihood (f.ServerId = ?, 0.05) ", 
                 accountId, serverId).SingleOrDefault ();
         }
 
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsClientOwned = 0, 0.8) AND " +
-                " likelihood (f.IsAwaitingCreate = 0, 1.0) ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsClientOwned = 0, 0.8) AND " +
+                          " likelihood (f.IsAwaitingCreate = 0, 1.0) ",
                               accountId);
             return folders.ToList ();
         }
@@ -398,8 +410,8 @@ namespace NachoCore.Model
         public static McFolder ServerEndQueryById (int folderId)
         {
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.Id = ?, 0.05) AND " +
-                " likelihood (f.IsAwaitingCreate = 0, 1.0) ", folderId).SingleOrDefault ();
+            " likelihood (f.Id = ?, 0.05) AND " +
+            " likelihood (f.IsAwaitingCreate = 0, 1.0) ", folderId).SingleOrDefault ();
         }
 
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
@@ -517,6 +529,15 @@ namespace NachoCore.Model
             }
         }
 
+        public override int Insert ()
+        {
+            int rows = base.Insert ();
+            if (MaybeJunkFolder (DisplayName)) {
+                JunkFolderIds.TryAdd (Id, DisplayName);
+            }
+            return rows;
+        }
+
         public override int Delete ()
         {
             // Delete anything in the folder and any sub-folders/map entries (recursively).
@@ -528,7 +549,12 @@ namespace NachoCore.Model
                 // Recusion.
                 sub.Delete ();
             }
-            return base.Delete ();
+            int rows = base.Delete ();
+
+            string dummy;
+            JunkFolderIds.TryRemove (Id, out dummy);
+
+            return rows;
         }
 
         public NcResult UpdateLink (McAbstrItem obj)
@@ -812,6 +838,38 @@ namespace NachoCore.Model
                 "f.DisplayName LIKE ? " +
                 "ORDER BY f.DisplayName DESC",
                 searchFor);
+        }
+
+        private static bool MaybeJunkFolder (string folderName)
+        {
+            // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
+            string[] tags = {
+                "Junk",
+                "junk",
+                "Spam",
+                "spam"
+            };
+            for (int n = 0; n < tags.Length; n++) {
+                if (folderName.Contains (tags [n])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void InitializeJunkFolders ()
+        {
+            ConcurrentDictionary<int, string> junkFolderIds = new ConcurrentDictionary<int, string> ();
+            foreach (var folder in NcModel.Instance.Db.Table<McFolder> ()) {
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    JunkFolderIds = junkFolderIds; // keep what we have so far
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
+                if (MaybeJunkFolder (folder.DisplayName)) {
+                    junkFolderIds.TryAdd (folder.Id, folder.DisplayName);
+                }
+            }
+            JunkFolderIds = junkFolderIds;
         }
     }
 }

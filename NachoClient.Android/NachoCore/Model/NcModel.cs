@@ -471,6 +471,10 @@ namespace NachoCore.Model
                 }
             }, null, 10000, 2000);
             CheckPointTimer.Stfu = true;
+
+            NcTask.Run (() => {
+                McFolder.InitializeJunkFolders ();
+            }, "InitializeJunkFolders");
         }
 
         public void Stop ()
