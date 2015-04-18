@@ -584,6 +584,80 @@ namespace Test.Common
             Assert.AreEqual (PingerContext.REGISTER, contextObj.cmd);
             Assert.Null (contextObj.ses);
         }
+
+        private void CheckShouldNotify (bool[] expected, McEmailMessage[] emails, McAccount account)
+        {
+            Assert.AreEqual (expected.Length, emails.Length);
+            for (int n = 0; n < expected.Length; n++) {
+                Assert.AreEqual (expected [n], NotificationHelper.ShouldNotifyEmailMessage (emails [n], account));
+            }
+        }
+
+        [Test]
+        public void NotificationConfigurationTest ()
+        {
+            // Create 4 contacts
+            var names = new string [4, 2] {
+                { "Bob", "Smith" },
+                { "Mary", "Jane" }, // hot address
+                { "John", "Doe" }, // VIP
+                { "Tom", "Jones" }, // VIP & hot address
+            };
+
+            var contacts = new McContact[names.GetLength (0)];
+            for (int n = 0; n < names.GetLength (0); n++) {
+                contacts [n] = new McContact () {
+                    AccountId = Owner.Account.Id,
+                    FirstName = names [n, 0],
+                    LastName = names [n, 1],
+                };
+                contacts [n].AddEmailAddressAttribute (Owner.Account.Id, "Email1Address", "Email",
+                    contacts [n].FirstName.ToLower () + "@company.net");
+                contacts [n].Insert ();
+            }
+            contacts [2].IsVip = true;
+            contacts [2].Update ();
+            contacts [3].IsVip = true;
+            contacts [3].Update ();
+
+            // Create 4 emails from the four contacts
+            var emails = new McEmailMessage[names.GetLength (0)];
+            for (int n = 0; n < names.GetLength (0); n++) {
+                emails [n] = new McEmailMessage () {
+                    AccountId = Owner.Account.Id,
+                    From = contacts [n].EmailAddresses [0].Value,
+                };
+                emails [n].Insert ();
+            }
+
+            emails [1].Score = 1.0;
+            emails [1].Update ();
+
+            emails [3].Score = 1.0;
+            emails [3].Update ();
+
+            // Configuration #1 - All
+            var account = Owner.Account;
+            account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_ALL_1;
+            account.Update ();
+            CheckShouldNotify (new bool[4] { true, true, true, true }, emails, account);
+
+            // Configuration #2 - Hot only
+            account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_HOT_2;
+            account.Update ();
+            CheckShouldNotify (new bool[4] { false, true, false, true }, emails, account);
+
+            // Configuration #3 - VIP only
+            account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_VIP_4;
+            account.Update ();
+            CheckShouldNotify (new bool[4] { false, false, true, true }, emails, account);
+
+            // Configuration #4 - VIP
+            account.NotificationConfiguration =
+                McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 | McAccount.NotificationConfigurationEnum.ALLOW_HOT_2;
+            account.Update ();
+            CheckShouldNotify (new bool[4] { false, true, true, true }, emails, account);
+        }
     }
 }
 
