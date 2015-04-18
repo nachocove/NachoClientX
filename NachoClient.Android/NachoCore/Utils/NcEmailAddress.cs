@@ -297,45 +297,19 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void SplitName (MailboxAddress address, ref McContact contact)
+        public static void ParseName (MailboxAddress address, ref McContact contact)
         {
-            // Try to parse the display name into first / middle / last name
-            string[] items = address.Name.Split (new char [] { ',', ' ' });
-            // if two delimiters are adjacent, or a delimiter is found at the beginning or end of this instance, the corresponding array element contains Empty. 
-            items = items.Where (x => !string.IsNullOrEmpty (x)).ToArray ();
-            switch (items.Length) {
-            case 1:
-                // First name
-                contact.FirstName = items [0];
-                break;
-            case 2:
-                if (0 < address.Name.IndexOf (',')) {
-                    // Last name, First name
-                    contact.LastName = items [0];
-                    contact.FirstName = items [1];
-                } else {
-                    // First name, Last name
-                    contact.FirstName = items [0];
-                    contact.LastName = items [1];
-                }
-                break;
-            case 3:
-                if (-1 == address.Name.IndexOf (',')) {
-                    contact.FirstName = items [0];
-                    contact.MiddleName = items [1];
-                    contact.LastName = items [2];
-                }
-                break;
-            default:
-                if (items.Length > 3) {
-                    contact.FirstName = items [0];
-                    contact.MiddleName = items [1];
-                    contact.LastName = string.Join (" ", items.Skip (2));
-                }
-                break;
-            }
+            var parser = new CSharpNameParser.NameParser ();
+            CSharpNameParser.Name parsedName = parser.Parse (address.Name);
+            if (parsedName.FirstName != "")
+                contact.FirstName = parsedName.FirstName;
+            if (parsedName.MiddleInitials != "")
+                contact.MiddleName = parsedName.MiddleInitials;
+            if (parsedName.LastName != "")
+                contact.LastName = parsedName.LastName;
+            if (parsedName.Suffix != "")
+                contact.Suffix = parsedName.Suffix;
         }
-
 
         public static InternetAddressList ToInternetAddressList (List<NcEmailAddress> addressList, Kind kind)
         {

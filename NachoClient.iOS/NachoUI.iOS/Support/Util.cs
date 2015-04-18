@@ -473,7 +473,7 @@ namespace NachoClient
             ColorIndex = emailAddress.ColorIndex;
             // Let create the initials
             McContact contact = new McContact ();
-            NcEmailAddress.SplitName (mailboxAddress, ref contact);
+            NcEmailAddress.ParseName (mailboxAddress, ref contact);
             // Using the name
             string initials = "";
             if (!String.IsNullOrEmpty (contact.FirstName)) {

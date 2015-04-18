@@ -588,7 +588,7 @@ namespace NachoCore.Utils
                 return "";
             }
             McContact contact = new McContact ();
-            NcEmailAddress.SplitName (mailboxAddress, ref contact);
+            NcEmailAddress.ParseName (mailboxAddress, ref contact);
             return ContactsHelper.GetInitials (contact);
         }
 
