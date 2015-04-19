@@ -301,10 +301,14 @@ namespace NachoCore.Utils
         {
             var parser = new CSharpNameParser.NameParser ();
             CSharpNameParser.Name parsedName = parser.Parse (address.Name);
-            if (!String.IsNullOrEmpty (parsedName.FirstName))
+            if (!String.IsNullOrEmpty (parsedName.FirstName)) {
                 contact.FirstName = parsedName.FirstName;
-            if (!String.IsNullOrEmpty (parsedName.MiddleInitials))
-                contact.MiddleName = parsedName.MiddleInitials;
+                if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) {
+                    contact.MiddleName = parsedName.MiddleInitials;
+                }
+            } else if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) { //use middle name if first name is missing
+                contact.FirstName = parsedName.MiddleInitials;
+            }
             if (!String.IsNullOrEmpty (parsedName.LastName))
                 contact.LastName = parsedName.LastName;
             if (!String.IsNullOrEmpty (parsedName.Suffix))
