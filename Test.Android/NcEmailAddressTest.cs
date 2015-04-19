@@ -85,8 +85,6 @@ namespace Test.Common
 
         protected void CheckContact (McContact contact, string firstName, string middleName, string lastName, string suffix)
         {
-            System.Console.WriteLine ("Parsed   - First:{0} Middle:{1} Last:{2} Suffix:{3}", contact.FirstName, contact.MiddleName, contact.LastName, contact.Suffix);
-            System.Console.WriteLine ("Expected - First:{0} Middle:{1} Last:{2} Suffix:{3}", firstName, middleName, lastName, suffix);
             Assert.AreEqual (firstName, contact.FirstName);
             Assert.AreEqual (lastName, contact.LastName);
             Assert.AreEqual (middleName, contact.MiddleName);
@@ -97,7 +95,6 @@ namespace Test.Common
         public void NameParseTest ()
         {
             for (int i = 0; i < names.Length; i++) {
-                System.Console.WriteLine ("Testing Name {0}", names [i] [0]);
                 var mailboxAddress = new MimeKit.MailboxAddress (names [i] [0], "");
                 McContact contact = new McContact ();
                 NcEmailAddress.ParseName (mailboxAddress, ref contact);                
