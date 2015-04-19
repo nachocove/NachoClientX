@@ -274,6 +274,11 @@ namespace NachoCore.Model
         /// </Flag> STUFF.
         ///
 
+        // Whether the email should be notified subjected to the current notification settings.
+        // Note that this boolean is only meaningful within the context of a background duration;
+        // as the settings can change during foreground.
+        public bool ShouldNotify { get; set; }
+
         /// Attachments are separate
 
         /// TODO: Support other types besides mime!
@@ -605,8 +610,9 @@ namespace NachoCore.Model
         {
             // TODO: to speed-up, convert to SQL, add index to CreatedAt, likelihood(since < x.CreatedAt, 0.01)
             var retardedSince = since.AddDays (-1.0);
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderBy (x => x.DateReceived);
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (
+                x => false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived &&
+                (false == x.HasBeenNotified || true == x.ShouldNotify)).OrderBy (x => x.DateReceived);
         }
 
         public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)

@@ -1358,6 +1358,9 @@
       <Link>NachoCore\Model\Migration\NcMigration18.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NotificationHelper.cs">
+      <Link>NachoCore\Utils\NotificationHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
