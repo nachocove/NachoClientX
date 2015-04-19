@@ -1360,6 +1360,8 @@
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NotificationHelper.cs">
       <Link>NachoCore\Utils\NotificationHelper.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration19.cs">
+      <Link>NachoCore\Model\Migration\NcMigration19.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
