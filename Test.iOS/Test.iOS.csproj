@@ -285,6 +285,9 @@
     <Compile Include="..\Test.Android\McTelemetryEventTest.cs">
       <Link>McTelemetryEventTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\ErrorHelperTest.cs">
+      <Link>ErrorHelperTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
