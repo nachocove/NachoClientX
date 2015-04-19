@@ -6,8 +6,34 @@ namespace NachoCore.Utils
 {
     public class ErrorHelper
     {
-        public ErrorHelper ()
+        public static bool ExtractErrorString (NcResult nr, out string errorString)
         {
+            string message = null;
+            switch (nr.SubKind) {
+            case NcResult.SubKindEnum.Error_NetworkUnavailable:
+                message = "The network is unavailable.";
+                break;
+            case NcResult.SubKindEnum.Error_NoSpace:
+                message = "Your device is out of space.";
+                break;
+            case NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed:
+                message = "Message download failed.";
+                break;
+            case NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed:
+                message = "Calendar body download failed.";
+                break;
+            case NcResult.SubKindEnum.Error_AttDownloadFailed:
+                message = "Attachment download failed.";
+                break;
+            case NcResult.SubKindEnum.Error_AuthFailBlocked:
+                message = "Authorization failed.";
+                break;
+            case NcResult.SubKindEnum.Error_AuthFailPasswordExpired:
+                message = "Your password has expired.";
+                break;
+            }
+            errorString = message;
+            return (null != message);
         }
     }
 }

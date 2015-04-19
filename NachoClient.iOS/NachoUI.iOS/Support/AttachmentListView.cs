@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         static readonly nfloat TOP_MARGIN = 5.0f;
         protected nfloat attachmentCellIndent = 0f;
 
+        public AttachmentView.AttachmentErrorCallback OnAttachmentError;
         public AttachmentView.AttachmentSelectedCallback OnAttachmentSelected;
 
         protected List<AttachmentView> attachmentViews;
@@ -61,6 +62,7 @@ namespace NachoClient.iOS
             var frame = new CGRect (attachmentCellIndent, ExpandedHeight + 1.0f, Frame.Width - attachmentCellIndent, AttachmentView.VIEW_HEIGHT);
             var attachmentView = new AttachmentView (frame, attachment);
             attachmentView.OnAttachmentSelected = OnAttachmentSelected;
+            attachmentView.OnAttachmentError = OnAttachmentError;
             attachmentViews.Add (attachmentView);
             AddSubview (attachmentView);
             UpdateNumber ();
