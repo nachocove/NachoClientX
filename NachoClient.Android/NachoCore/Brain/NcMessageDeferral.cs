@@ -12,18 +12,13 @@ using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
-    public class NcMessageDeferral
+    public static class NcMessageDeferral
     {
         /// User's first day of week
         /// TODO: Must be configurable
         const DayOfWeek FirstDayOfWork = DayOfWeek.Monday;
         const DayOfWeek LastDayOfWork = DayOfWeek.Friday;
         const DayOfWeek FirstDayOfWeekend = DayOfWeek.Saturday;
-
-
-        public NcMessageDeferral ()
-        {
-        }
 
         static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
         {
@@ -52,20 +47,32 @@ namespace NachoCore.Brain
             return NcResult.OK ();
         }
 
-        static public NcResult ClearMessageFlags (McEmailMessageThread thread)
+        // TODO: Just clear start time, not all of the flags.
+        static private NcResult ClearMessageFlags (McEmailMessage message)
+        {
+            BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
+            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            return NcResult.OK ();
+        }
+
+        static private NcResult ClearMessageThreadFlags (McEmailMessageThread thread)
         {
             foreach (var message in thread) {
                 if (null != message) {
-                    BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
-                    NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                    ClearMessageFlags (message);
                 }
             }
             return NcResult.OK ();
         }
 
+        static public NcResult UndeferMessage (McEmailMessage message)
+        {
+            return ClearMessageFlags (message);
+        }
+
         static public NcResult UndeferThread (McEmailMessageThread thread)
         {
-            return ClearMessageFlags (thread);
+            return ClearMessageThreadFlags (thread);
         }
 
         static public NcResult SetDueDate (McEmailMessageThread thread, DateTime dueOn)
@@ -126,7 +133,7 @@ namespace NachoCore.Brain
                 break;
             case MessageDeferralType.ThisWeek:
                 // Friday 5pm
-                while(from.ToLocalTime ().DayOfWeek != LastDayOfWork) {
+                while (from.ToLocalTime ().DayOfWeek != LastDayOfWork) {
                     from = from.AddDays (1);
                 } 
                 from = AdjustToLocalHour (from, 17);
