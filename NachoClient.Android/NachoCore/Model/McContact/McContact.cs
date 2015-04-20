@@ -428,6 +428,9 @@ namespace NachoCore.Model
             McEmailAddress emailAddress;
             if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
                 f.EmailAddress = emailAddress.Id;
+                if (0 == this.CircleColor) {
+                    this.CircleColor = emailAddress.ColorIndex;
+                }
             }
             EmailAddresses.Add (f);
             return f;
@@ -664,7 +667,9 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+            if (0 == CircleColor) {
+                CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+            }
             EvaluateSelfEclipsing ();
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
