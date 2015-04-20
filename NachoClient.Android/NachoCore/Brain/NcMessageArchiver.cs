@@ -7,16 +7,23 @@ using System.Linq;
 
 namespace NachoCore
 {
-    public class NcEmailArchiver
+    public static class NcEmailArchiver
     {
-        protected const string ArchiveFolderName = "Archive";
+        private const string ArchiveFolderName = "Archive";
 
-        public NcEmailArchiver ()
+        // By our rule, if a user moves or deletes a deferred
+        // message, the deferral is removed. A deferral won't
+        // be removed when a message is re-sent (e.g. reply).
+        private static void RemoveDeferral (McEmailMessage message)
         {
+            if (message.IsDeferred ()) {
+                Brain.NcMessageDeferral.UndeferMessage (message);
+            }
         }
 
         public static void Move (McEmailMessage message, McFolder folder)
         {
+            RemoveDeferral (message);
             var src = McFolder.QueryByFolderEntryId<McEmailMessage> (message.AccountId, message.Id).FirstOrDefault ();
             if (src.Id == folder.Id) {
                 return;
@@ -46,6 +53,7 @@ namespace NachoCore
 
         public static void Delete (McEmailMessage message)
         {
+            RemoveDeferral (message);
             BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
         }
 
