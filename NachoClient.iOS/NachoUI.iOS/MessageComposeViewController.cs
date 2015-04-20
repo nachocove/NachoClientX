@@ -1335,14 +1335,17 @@ namespace NachoClient.iOS
                 initialString.Append (new NSAttributedString ("\n\n", attributes));
                 initialString.Append (new NSAttributedString (EmailHelper.FormatBasicHeaders (referencedMessage), attributes));
                 var whereQuotedTextBegins = initialString.Length;
-                if (null != html) {
+                // First try text, quoted, then html, not quoted
+                if (null != text) {
+                    NcAssert.NotNull (text);
+                    var quotedText = EmailHelper.QuoteForReply (text);
+                    initialString.Append (new NSAttributedString (quotedText, attributes));
+                } else {
+                    NcAssert.NotNull (html);
                     NSError error = null;
                     var d = NSData.FromString (html);
                     var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
                     initialString.Append (convertedString);
-                } else {
-                    NcAssert.NotNull (text);
-                    initialString.Append (new NSAttributedString (text, attributes));
                 }
                 bodyTextView.AttributedText = initialString;
                 if (whereQuotedTextBegins < bodyTextView.AttributedText.Length) {

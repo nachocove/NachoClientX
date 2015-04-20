@@ -126,11 +126,9 @@ namespace NachoClient.iOS
 
             List<McAccount.NotificationConfigurationEnum> choices = new List<McAccount.NotificationConfigurationEnum> () {
                 0,
-                McAccount.NotificationConfigurationEnum.ALLOW_ALL_1,
                 McAccount.NotificationConfigurationEnum.ALLOW_HOT_2,
                 McAccount.NotificationConfigurationEnum.ALLOW_VIP_4,
-                McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16,
-                McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32
+                McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64,
             };
 
             public NotificationChoicesSource (NotificationChooserViewController owner)

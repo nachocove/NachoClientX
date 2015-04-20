@@ -133,9 +133,11 @@
     <Compile Include="McEventTest.cs" />
     <Compile Include="PushAssistTest.cs" />
     <Compile Include="HashHelperTest.cs" />
+    <Compile Include="CrlMonitorTest.cs" />
     <Compile Include="RemoveAccountTest.cs" />
     <Compile Include="McTelemetryEventTest.cs" />
     <Compile Include="NcEmailAddressTest.cs" />
+    <Compile Include="ErrorHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -150,6 +152,10 @@
     <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
       <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
       <Name>NachoClient.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.Android\NachoPlatformBinding.Android.csproj">
+      <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
+      <Name>NachoPlatformBinding.Android</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

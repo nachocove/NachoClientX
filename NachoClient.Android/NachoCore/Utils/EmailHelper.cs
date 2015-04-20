@@ -580,6 +580,39 @@ namespace NachoCore.Utils
             return result.ToString ();
         }
 
+        public static string QuoteForReply (string s)
+        {
+            if (String.IsNullOrEmpty (s)) {
+                return s;
+            }
+            string[] lines = s.Split (new Char[] { '\n' });
+            StringBuilder builder = new StringBuilder ();
+
+            // If the split pattern matches the tail of s,
+            // an extra empty string is added to the array.
+            int count = lines.Length;
+            if (0 == count) {
+                return s;  // unexpected
+            }
+            if (String.IsNullOrEmpty (lines [count - 1])) {
+                count -= 1; // skip the last entry
+            }
+            for (int i = 0; i < count; i++) {
+                var line = lines [i];
+                if (String.IsNullOrEmpty (line)) {
+                    builder.Append (">");
+                } else if ('>' == line [0]) {
+                    builder.Append ('>');
+                    builder.Append (line);
+                } else {
+                    builder.Append ("> ");
+                    builder.Append (line);
+                }
+                builder.Append ('\n');
+            }
+            return builder.ToString ();
+        }
+
         public static string Initials (string fromAddressString)
         {
             // Parse the from address

@@ -676,28 +676,32 @@ namespace NachoCore.Utils
             return "";
         }
 
+        // Some of these are hidden on purpose, see notification code
         public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
         {
             var list = new List<string> ();
-            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
-                list.Add ("All");
-            }
+//            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
+//                list.Add ("All");
+//            }
             if (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 == (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 & code)) {
                 list.Add ("Hot");
             }
             if (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 == (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 & code)) {
                 list.Add ("VIPs");
             }
-            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
-                list.Add ("Invitations");
+            if (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 == (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 & code)) {
+                list.Add ("Inbox");
             }
-            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
-                list.Add ("Reminders");
-            }
+//            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
+//                list.Add ("Invitations");
+//            }
+//            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
+//                list.Add ("Reminders");
+//            }
             if (0 == list.Count) {
                 return "None";
             } else {
-                return String.Join (",", list);
+                return String.Join (", ", list);
             }
         }
 
