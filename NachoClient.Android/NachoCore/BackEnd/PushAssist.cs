@@ -156,11 +156,7 @@ namespace NachoCore
             var pem = System.Text.ASCIIEncoding.ASCII.GetBytes (BuildInfo.PingerCertPem);
             var rootCert = new X509Certificate2 (pem);
             var crlUrls = CertificateHelper.CrlDistributionPoint (rootCert);
-            if (null != crlUrls) {
-                foreach (var crlUrl in crlUrls) {
-                    CrlMonitor.Register (crlUrl);
-                }
-            }
+            CrlMonitor.Register (crlUrls);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
                 Validator = ValidatorHack,

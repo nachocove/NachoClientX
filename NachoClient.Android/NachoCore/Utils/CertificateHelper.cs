@@ -161,6 +161,11 @@ namespace NachoCore.Utils
                 }
             }
         }
+
+        public static bool IsHttp (string dp)
+        {
+            return dp.StartsWith ("URI:http:");
+        }
     }
 }
 
