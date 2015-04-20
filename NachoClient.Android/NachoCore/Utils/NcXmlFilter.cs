@@ -316,9 +316,13 @@ namespace NachoCore.Wbxml
 
                     // Look for the filter node for this element
                     if (null != current.ParentNode) {
-                        current.ParentNode = current.ParentNode.FindChildNode (element);
-                        if (null == current.ParentNode) {
-                            Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}", element.Name);
+                        if (RedactionType.FULL != current.ParentNode.ElementRedaction) {
+                            current.ParentNode = current.ParentNode.FindChildNode (element);
+                            if (null == current.ParentNode) {
+                                Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}", element.Name);
+                            }
+                        } else {
+                            current.ParentNode = null;
                         }
                     }
                 }
