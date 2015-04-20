@@ -91,6 +91,7 @@ namespace NachoClient.iOS
         protected bool isRecurring = false;
         protected bool attachmentsInitialized = false;
         protected bool timesAreSet = true;
+        protected bool descriptionWasEdited = false;
 
         protected UIView line1;
         protected UIView line2;
@@ -457,7 +458,7 @@ namespace NachoClient.iOS
             descriptionPlaceHolder.Font = labelFont;
             descriptionPlaceHolder.TextColor = new UIColor (.8f, .8f, .8f, 1f);
 
-            descriptionTextView = new UITextView (new CGRect (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+            descriptionTextView = new NcTextView (new CGRect (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
             descriptionTextView.Font = labelFont;
             descriptionTextView.TextColor = solidTextColor;
             descriptionTextView.BackgroundColor = UIColor.Clear;
@@ -467,6 +468,7 @@ namespace NachoClient.iOS
             descriptionTextView.Tag = EVENT_DESCRIPTION_LABEL_TAG;
 
             descriptionTextView.Changed += (object sender, EventArgs e) => {
+                descriptionWasEdited = true;
                 eventEditStarted = true;
                 descriptionPlaceHolder.Hidden = true;
                 SelectionChanged (descriptionTextView);
@@ -934,14 +936,34 @@ namespace NachoClient.iOS
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
 
-            //description
-            var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
-            descriptionTextView.Text = c.Description;
-            if (descriptionTextView.HasText) {
-                descriptionPlaceHolder.Hidden = true;
-                descriptionTextView.SizeToFit ();
-                descriptionTextView.Frame = new CGRect (15, 12.438f, SCREEN_WIDTH - 30, descriptionTextView.Frame.Height);
+            // Description
+            switch (c.DescriptionType) {
+            case McAbstrFileDesc.BodyTypeEnum.None:
+                // The event doesn't have a body
+                descriptionTextView.Text = "";
+                descriptionPlaceHolder.Hidden = false;
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                descriptionTextView.Text = c.Description;
+                descriptionPlaceHolder.Hidden = !string.IsNullOrEmpty (c.Description);
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                descriptionTextView.Text = ConvertToPlainText (c.Description, NSDocumentType.HTML);
+                descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                descriptionTextView.Text = ConvertToPlainText (c.Description, NSDocumentType.RTF);
+                descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
+                break;
+            default:
+                Log.Error (Log.LOG_CALENDAR, "Unexpected description type, {0}, for calendar item {1}", c.DescriptionType, c.Id);
+                // Act as if it didn't have a body.
+                descriptionTextView.Text = "";
+                descriptionPlaceHolder.Hidden = false;
+                break;
             }
+            descriptionTextView.SizeToFit ();
+            descriptionTextView.Frame = new CGRect (15, 12.438f, SCREEN_WIDTH - 30, descriptionTextView.Frame.Height);
             DESCRIPTION_OFFSET = descriptionTextView.Frame.Height;
 
             //all day event
@@ -1043,6 +1065,16 @@ namespace NachoClient.iOS
             calendarDetailLabelView.Text = calendars.GetFolder (calendarIndex).DisplayName;
             calendarDetailLabelView.SizeToFit ();
             calendarDetailLabelView.Frame = new CGRect (SCREEN_WIDTH - calendarDetailLabelView.Frame.Width - 34, 12.438f, calendarDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+        }
+
+        protected string ConvertToPlainText (string formattedText, NSDocumentType type)
+        {
+            NSError error = null;
+            var descriptionData = NSData.FromString (formattedText);
+            var descriptionAttributed = new NSAttributedString (descriptionData, new NSAttributedStringDocumentAttributes {
+                DocumentType = type
+            }, ref error);
+            return descriptionAttributed.Value;
         }
 
         protected McFolder GetCalendarFolder ()
@@ -1295,7 +1327,12 @@ namespace NachoClient.iOS
         {
             c.AccountId = account.Id;
             c.Subject = titleField.Text;
-            c.Description = descriptionTextView.Text;
+            if (descriptionWasEdited) {
+                // Non-break space characters can work their way into the description, especially if it originated
+                // as HTML.  But some clients don't like those characters when they are part of plain text.
+                // So convert non-break spaces to ordinary spaces.
+                c.SetDescription (descriptionTextView.Text.Replace('\x00A0', ' '), McAbstrFileDesc.BodyTypeEnum.PlainText_1);
+            }
             var allDayEvent = ((UISwitch)contentView.ViewWithTag (ALL_DAY_SWITCH_TAG)).On;
             c.AllDayEvent = allDayEvent;
             if (allDayEvent) {
@@ -1309,7 +1346,6 @@ namespace NachoClient.iOS
             //c.attendees is already set via PullAttendees
             //c.Phone = phoneDetailLabel.Text;
             c.Location = locationField.Text;
-            c.attachments.Clear ();
             c.attachments = attachmentView.AttachmentList;
                 
             // Extras
@@ -1347,7 +1383,6 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-
             if (0 == c.Id) {
                 c.Insert (); // new entry
                 folder = calendars.GetFolder (calendarIndex);
@@ -1363,7 +1398,7 @@ namespace NachoClient.iOS
                     oldFolder.Unlink (c);
                     newFolder.Link (c);
                 }
-                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, descriptionWasEdited);
             }
             c = McCalendar.QueryById<McCalendar> (c.Id);
         }

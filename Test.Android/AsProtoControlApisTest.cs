@@ -66,7 +66,7 @@ namespace Test.iOS
             public void TestUpdateItemCmds ()
             {
                 TestUpdatingItem<McCalendar> ((protoControl, itemId) => {
-                    return protoControl.UpdateCalCmd (itemId);
+                    return protoControl.UpdateCalCmd (itemId, false);
                 });
                 SetUp ();
                 TestUpdatingItem<McContact> ((protoControl, itemId) => {

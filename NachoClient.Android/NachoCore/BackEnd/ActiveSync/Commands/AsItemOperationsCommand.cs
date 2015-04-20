@@ -78,6 +78,7 @@ namespace NachoCore.ActiveSync
                     fetch = new XElement (m_ns + Xml.ItemOperations.Fetch,
                         new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
                         new XElement (AirSyncNs + Xml.AirSync.ServerId, pending.ServerId),
+                        new XElement (AirSyncNs + Xml.AirSync.CollectionId, pending.ParentId),
                         new XElement (AirSyncNs + Xml.AirSync.Options,
                             new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
                             new XElement (m_baseNs + Xml.AirSync.BodyPreference,

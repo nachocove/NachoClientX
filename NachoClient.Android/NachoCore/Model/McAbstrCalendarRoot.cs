@@ -83,7 +83,7 @@ namespace NachoCore.Model
         /// The URL for the online meeting
         public string OnlineMeetingExternalLink { get; set; }
 
-        // Specifies the original format type of the item
+        /// Specifies the original format type of the item
         public int NativeBodyType { get; set; }
 
         public virtual string GetSubject ()
@@ -208,53 +208,78 @@ namespace NachoCore.Model
             });
         }
 
-        /// <summary>
-        /// The plain text version of the description of the event.
-        /// </summary>
-        /// The description is stored in the item's body, along with other information,
-        /// such as attachments.  It is not stored in the database directly.
         [Ignore]
         public string Description {
             get {
-                if (null == cachedDescription) {
-                    if (0 == BodyId) {
-                        return "";
-                    }
-                    McBody body = McBody.QueryById<McBody> (BodyId);
-                    if (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType) {
-                        cachedDescription = MimeHelpers.ExtractTextPart (body);
-                        if (null == cachedDescription) {
-                            cachedDescription = "";
-                        }
-                    } else {
-                        cachedDescription = body.GetContentsString ();
-                    }
-                }
+                GetDescription ();
                 return cachedDescription;
             }
-            set {
-                if (!string.Equals (value, cachedDescription)) {
-                    cachedDescription = value;
-                    descriptionWasChanged = true;
-                }
+        }
+
+        [Ignore]
+        public McAbstrFileDesc.BodyTypeEnum DescriptionType {
+            get {
+                GetDescription ();
+                return cachedDescriptionType;
+            }
+        }
+
+        public void SetDescription (string description, McAbstrFileDesc.BodyTypeEnum type)
+        {
+            if (description != cachedDescription || type != cachedDescriptionType) {
+                cachedDescription = description;
+                cachedDescriptionType = type;
+                descriptionWasChanged = true;
             }
         }
 
         private string cachedDescription = null;
+        private McAbstrFileDesc.BodyTypeEnum cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
         private bool descriptionWasChanged = false;
 
-        // Commit any changes to the item's description to the database.  This should be called within a transaction.
+        private void GetDescription ()
+        {
+            if (null == cachedDescription) {
+                if (0 == BodyId) {
+                    cachedDescription = "";
+                    cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
+                } else {
+                    McBody body = McBody.QueryById<McBody> (BodyId);
+                    switch (body.BodyType) {
+                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                        cachedDescription = body.GetContentsString ();
+                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                        break;
+                    case McAbstrFileDesc.BodyTypeEnum.MIME_4:
+                        if (!MimeHelpers.FindTextWithType (
+                            MimeHelpers.LoadMessage (body), out cachedDescription, out cachedDescriptionType,
+                            McAbstrFileDesc.BodyTypeEnum.PlainText_1, McAbstrFileDesc.BodyTypeEnum.HTML_2,
+                            McAbstrFileDesc.BodyTypeEnum.RTF_3))
+                        {
+                            // Couldn't find anything in the message.  Set the description to empty plain text.
+                            cachedDescription = "";
+                            cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                        }
+                        break;
+                    default:
+                        // TODO Handle RTF correctly.
+                        cachedDescription = body.GetContentsString ();
+                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                        break;
+                    }
+                }
+            }
+            NcAssert.NotNull (cachedDescription, "McAbstrCalendarRoot.GetDescription() completed without setting cachedDescription.");
+        }
+
         private void UpdateDescription ()
         {
-            // This should happen within a transaction.  But it doesn't yet.
-            // NcAssert.True (NcModel.Instance.IsInTransaction ());
-
             if (!descriptionWasChanged || null == cachedDescription) {
                 return;
             }
             if (0 == BodyId) {
                 // No existing body.  Create one.
-                McBody body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, cachedDescription);
+                var body = McBody.InsertFile(AccountId, cachedDescriptionType, cachedDescription);
                 BodyId = body.Id;
             } else {
                 // Existing body.  We can't replace just the description, leaving
@@ -262,173 +287,124 @@ namespace NachoCore.Model
                 // unfortunately destroy the attachments.
                 var body = McBody.QueryById<McBody> (BodyId);
                 body.UpdateData (cachedDescription);
-                body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                body.BodyType = cachedDescriptionType;
                 body.Update ();
             }
             descriptionWasChanged = false;
             cachedDescription = null;
         }
 
+        private List<McAttachment> dbAttachments = null;
+        private IList<McAttachment> appAttachments = null;
+        private List<McAttachment> cachedServerAttachments = null;
+
         [Ignore]
-        public List<McAttachment> attachments {
+        public virtual IList<McAttachment> attachments {
             get {
-                if (null == cachedAttachments) {
-                    // Retrieve all the attachments that are stored in the database.
-                    // This includes both attachments that were created locally (with ContentId == null)
-                    // and ones that came from the server in a previous synch (with ContentId != null)
-                    var dbAttachments = McAttachment.QueryByItemId (this);
-                    // Retrieve all the attachments that are in the body of event.
-                    var body = McBody.QueryById<McBody> (BodyId);
-                    var bodyAttachments = MimeHelpers.AllAttachments (MimeHelpers.LoadMessage (body));
-                    // The majority of the time, there will be no attachments. Optimize this case.
-                    if (0 == dbAttachments.Count && 0 == bodyAttachments.Count) {
-                        cachedAttachments = new List<McAttachment> ();
-                    } else {
-                        // Synchronize the two lists.  Local attachments are left alone.
-                        // Server attachments are paired up, with attachments from the event body
-                        // taking precedence.
-                        // The matching algorithm is O(n^2), but the number of attachments is normally
-                        // small enough that this shouldn't be a problem.
-                        var synchedAttachments = new List<McAttachment> (bodyAttachments.Count);
-                        foreach (var bodyAttachment in bodyAttachments) {
-                            NcAssert.True (bodyAttachment is MimePart && null != bodyAttachment.ContentDisposition,
-                                "MimeHelpers.AllAttachments() returned something that doesn't look like an attachment.");
-                            bool foundMatch = false;
-                            for (int i = 0; !foundMatch && i < dbAttachments.Count; ++i) {
-                                // If the attachment from the MIME body has a ContentId, match on that, since it is
-                                // supposed to be a unique identifier.  If the ContentId field is missing, match on
-                                // the file name and hope there aren't any duplicates.
-                                if (null != bodyAttachment.ContentId ?
-                                        string.Equals (bodyAttachment.ContentId, dbAttachments [i].ContentId) :
-                                        string.Equals (bodyAttachment.ContentDisposition.FileName, dbAttachments [i].DisplayName)) {
-                                    synchedAttachments.Add (dbAttachments [i]);
-                                    dbAttachments.RemoveAt (i);
-                                    foundMatch = true;
-                                }
-                            }
-                            if (!foundMatch) {
-                                var newAttachment = new McAttachment () {
-                                    AccountId = this.AccountId,
-                                    ItemId = this.Id,
-                                    ClassCode = this.GetClassCode (),
-                                    ContentId = bodyAttachment.ContentId ?? "faked@content.id",
-                                    ContentType = bodyAttachment.ContentType.ToString (),
-                                    IsInline = !bodyAttachment.ContentDisposition.IsAttachment,
-                                };
-                                newAttachment.Insert ();
-                                newAttachment.SetDisplayName (bodyAttachment.ContentDisposition.FileName);
-                                var bodyAttachmentPart = (MimePart)bodyAttachment;
-                                if (null == bodyAttachmentPart.ContentObject) {
-                                    // I don't know what causes this to happen, but a customer encountered this situation.
-                                    Log.Warn (Log.LOG_CALENDAR, "Event attachment {0} does not have any content.",
-                                        bodyAttachment.ContentDisposition.FileName);
-                                    newAttachment.UpdateData ("");
-                                } else {
-                                    newAttachment.UpdateData ((FileStream stream) => {
-                                        bodyAttachmentPart.ContentObject.DecodeTo (stream);
-                                    });
-                                }
-                                synchedAttachments.Add (newAttachment);
-                            }
-                        }
-                        // Anything left in dbAttachments that has a ContentId originally came from
-                        // the server, but is no longer part of the event.  Delete it.
-                        foreach (var unmatchedAttachment in dbAttachments) {
-                            if (null == unmatchedAttachment.ContentId) {
-                                synchedAttachments.Add (unmatchedAttachment);
-                            } else {
-                                unmatchedAttachment.Delete ();
-                            }
-                        }
-                        cachedAttachments = synchedAttachments;
-                    }
-                }
-                return cachedAttachments;
+                return GetAncillaryCollection (appAttachments, ref dbAttachments, ReadDbAttachments);
             }
             set {
-                NcAssert.True (null != value);
-                attachmentsMightHaveChanged = true;
-                cachedAttachments = value;
+                NcAssert.NotNull (value);
+                appAttachments = value;
             }
         }
 
-        private List<McAttachment> cachedAttachments = null;
-        private bool attachmentsMightHaveChanged = false;
-
-        private void UpdateAttachments ()
+        private List<McAttachment> ReadDbAttachments ()
         {
-            if (!attachmentsMightHaveChanged) {
+            return McAttachment.QueryByItemId (this);
+        }
+
+        private void DeleteDbAttachments ()
+        {
+            DeleteAncillaryCollection (ref dbAttachments, ReadDbAttachments);
+        }
+
+        private void SaveAttachments ()
+        {
+            if (null == appAttachments && null == cachedServerAttachments) {
+                // Nothing to save.
                 return;
             }
-            // Make sure all the attachments are owned by this event. Identify the ones that were
-            // created locally rather than coming from the server.
-            var localAttachments = new List<McAttachment> (cachedAttachments.Count);
-            foreach (var attachment in cachedAttachments) {
-                if (attachment.AccountId != this.AccountId ||
-                    (0 != attachment.ItemId && attachment.ItemId != this.Id) ||
-                    (0 != (int)attachment.ClassCode && attachment.ClassCode != this.GetClassCode ())) {
-                    // The attachment is owed by something else.  Make a copy.
+            if (null != cachedServerAttachments) {
+                foreach (var attachment in this.attachments) {
+                    if (null == attachment.ContentId) {
+                        cachedServerAttachments.Add (attachment);
+                    }
+                }
+                appAttachments = cachedServerAttachments;
+                cachedServerAttachments = null;
+            }
+            // Take ownership of any attachments that are unowned or owned by a different item.
+            var cleanAttachments = new List<McAttachment>(appAttachments.Count);
+            foreach (var attachment in appAttachments) {
+                McAttachment cleanAttachment;
+                if (0 == attachment.ItemId) {
+                    // The attachment isn't owned by an item yet.  Claim it.
+                    attachment.AccountId = this.AccountId;
+                    attachment.ItemId = this.Id;
+                    attachment.ClassCode = this.GetClassCode ();
+                    attachment.Update ();
+                    cleanAttachment = attachment;
+                } else if (attachment.AccountId != this.AccountId || attachment.ItemId != this.Id || attachment.ClassCode != this.GetClassCode()) {
+                    // The attachment is already owned by another item.  Make a copy.
                     var copy = new McAttachment () {
                         AccountId = this.AccountId,
                         ItemId = this.Id,
                         ClassCode = this.GetClassCode (),
-                        ContentId = null, // This is a local copy, so it shouldn't have a ContentId
+                        ContentId = attachment.ContentId,
                         ContentType = attachment.ContentType,
                     };
-                    copy.SetDisplayName (attachment.DisplayName);
                     copy.Insert ();
+                    copy.SetDisplayName (attachment.DisplayName);
                     copy.UpdateFileCopy (attachment.GetFilePath ());
-                    localAttachments.Add (copy);
-                } else if (0 == attachment.ItemId) {
-                    // The attachment is not owned by anything yet.
-                    attachment.ItemId = this.Id;
-                    attachment.ClassCode = this.GetClassCode ();
-                    attachment.Update ();
-                    localAttachments.Add (attachment);
+                    copy.Update ();
+                    cleanAttachment = copy;
                 } else {
-                    NcAssert.True (attachment.ItemId == this.Id && attachment.ClassCode == this.GetClassCode ());
-                    if (null == attachment.ContentId) {
-                        localAttachments.Add (attachment);
-                    }
+                    // Already owned by this item.  Nothing to do.
+                    cleanAttachment = attachment;
                 }
+                cleanAttachments.Add (cleanAttachment);
             }
-
-            // Retrieve all the attachments in the database that are owned by this event.
-            // Separate out the ones that came from the server.  Delete from the database
-            // any locally created ones that the user removed from the event.
-            var serverAttachments = new List<McAttachment> ();
-            var dbAttachments = McAttachment.QueryByItemId (this);
-            foreach (var dbAttachment in dbAttachments) {
-                if (null == dbAttachment.ContentId) {
-                    // Locally created.  See if it is still needed.
-                    bool foundMatch = false;
-                    foreach (var attachment in localAttachments) {
-                        if (dbAttachment.Id == attachment.Id) {
-                            foundMatch = true;
-                            break;
-                        }
-                    }
-                    if (!foundMatch) {
-                        dbAttachment.Delete ();
-                    }
-                } else {
-                    serverAttachments.Add (dbAttachment);
-                }
-            }
-            // Merge the local and server attachments together.
-            localAttachments.AddRange (serverAttachments);
-            cachedAttachments = localAttachments;
-            attachmentsMightHaveChanged = false;
+            appAttachments = cleanAttachments;
+            SaveAncillaryCollection (ref appAttachments, ref dbAttachments, ReadDbAttachments, (McAttachment attachment) => {
+                NcAssert.True (false);
+            }, (McAttachment attachment) => {
+                return attachment.ItemId == this.Id && attachment.ClassCode == this.GetClassCode ();
+            });
         }
 
-        /// Delete from the database any attachments owned by this event.
-        private void DeleteAttachments ()
+        private void InsertAttachments ()
         {
-            if (0 != this.Id) {
-                var attachments = McAttachment.QueryByItemId (this);
-                foreach (var attachment in attachments) {
-                    attachment.Delete ();
+            SaveAttachments ();
+        }
+
+        public void SetServerAttachments (MimeMessage message)
+        {
+            var attachmentEntities = MimeHelpers.AllAttachments (message);
+            cachedServerAttachments = new List<McAttachment> (attachmentEntities.Count);
+            foreach (var attachmentEntity in attachmentEntities) {
+                var serverAttachment = new McAttachment () {
+                    AccountId = this.AccountId,
+                    ItemId = 0, // Will be set later
+                    ContentId = attachmentEntity.ContentId ?? "fake@content.id",
+                    ContentType = attachmentEntity.ContentType.ToString (),
+                    IsInline = !attachmentEntity.ContentDisposition.IsAttachment,
+                };
+                // McAttachments need to be in the database before the content can be set.
+                serverAttachment.Insert();
+                serverAttachment.SetDisplayName (attachmentEntity.ContentDisposition.FileName);
+                var mimePart = (MimePart)attachmentEntity;
+                if (null == mimePart.ContentObject) {
+                    // I don't know what causes this to happen, but a customer encountered this situation.
+                    Log.Warn (Log.LOG_CALENDAR, "Event attachment {0} does not have any content.",
+                        attachmentEntity.ContentDisposition.FileName);
+                    serverAttachment.UpdateData ("");
+                } else {
+                    serverAttachment.UpdateData ((FileStream stream) => {
+                        mimePart.ContentObject.DecodeTo (stream);
+                    });
                 }
+                cachedServerAttachments.Add (serverAttachment);
             }
         }
 
@@ -440,7 +416,7 @@ namespace NachoCore.Model
                 retval = base.Insert ();
                 InsertAttendees ();
                 InsertCategories ();
-                UpdateAttachments ();
+                InsertAttachments ();
             });
             return retval;
         }
@@ -453,7 +429,7 @@ namespace NachoCore.Model
                 retval = base.Update ();
                 SaveAttendees ();
                 SaveCategories ();
-                UpdateAttachments ();
+                SaveAttachments ();
             });
             return retval;
         }
@@ -463,7 +439,7 @@ namespace NachoCore.Model
             base.DeleteAncillary ();
             DeleteDbAttendees ();
             DeleteDbCategories ();
-            DeleteAttachments ();
+            DeleteDbAttachments ();
         }
     }
 

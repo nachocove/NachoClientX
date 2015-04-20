@@ -699,7 +699,7 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        public override NcResult UpdateCalCmd (int calId)
+        public override NcResult UpdateCalCmd (int calId, bool sendBody)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
@@ -723,6 +723,7 @@ namespace NachoCore.ActiveSync
                     Operation = McPending.Operations.CalUpdate,
                     ParentId = primeFolder.ServerId,
                     ServerId = cal.ServerId,
+                    CalUpdate_SendBody = sendBody,
                 };   
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
@@ -784,6 +785,12 @@ namespace NachoCore.ActiveSync
 
         public override NcResult DnldCalBodyCmd (int calId)
         {
+            // I can't get this command to work.  The server always responds with "Bad or malformed request."
+            // Return an error immediately.  The code to run the command is left here, commented out, in case
+            // we want to try again.
+            Log.Error (Log.LOG_AS, "DnldCalBody command is not supported.");
+            return NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            #if false
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcResult.SubKindEnum subKind;
             McCalendar cal;
@@ -793,14 +800,10 @@ namespace NachoCore.ActiveSync
                     result = NcResult.Error (subKind);
                     return;
                 }
-                var body = cal.GetBody ();
-                if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsNontruncatedBodyComplete);
-                    return;
-                }
                 var pending = new McPending (Account.Id) {
                     Operation = McPending.Operations.CalBodyDownload,
                     ServerId = cal.ServerId,
+                    ParentId = folder.ServerId,
                 };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
@@ -809,6 +812,7 @@ namespace NachoCore.ActiveSync
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCALBOD");
             }, "DnldCalBodyCmd");
             return result;
+            #endif
         }
 
         public override NcResult ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
@@ -1172,6 +1176,7 @@ namespace NachoCore.ActiveSync
                         Operation = McPending.Operations.CalUpdate,
                         ParentId = folder.ServerId,
                         ServerId = cal.ServerId,
+                        CalUpdate_SendBody = false,
                     }; 
                 } else {
                     Xml.MeetingResp.UserResponseCode apiResponse;

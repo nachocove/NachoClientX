@@ -332,8 +332,7 @@ namespace Test.Common
             // but they should be findable though the event.
             attachments = McAttachment.QueryByItemId (cal);
             Assert.AreEqual (0, attachments.Count, "attachments are assigned to the event before they should be");
-            attachments = cal.attachments;
-            Assert.AreEqual (2, attachments.Count, "The event is not reporting the correct number of attachments.");
+            Assert.AreEqual (2, cal.attachments.Count, "The event is not reporting the correct number of attachments.");
 
             // Update the event, which should update the attachments to be owned by event.
             cal.Update ();

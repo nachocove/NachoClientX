@@ -95,6 +95,24 @@ namespace NachoCore.Model
             }
         }
 
+        [Ignore]
+        public override IList<McAttachment> attachments {
+            get {
+                // Attachments are stored in the body.  If the exception doesn't have its own body,
+                // get the attachments from the parent calendar item.
+                if (0 == BodyId) {
+                    var calendarItem = CalendarItem ();
+                    if (null != calendarItem) {
+                        return calendarItem.attachments;
+                    }
+                }
+                return base.attachments;
+            }
+            set {
+                base.attachments = value;
+            }
+        }
+
         private McCalendar cachedCal = null;
 
         private McCalendar CalendarItem ()
