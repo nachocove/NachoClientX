@@ -578,8 +578,17 @@ namespace NachoCore.Model
                         lockWatch.Start ();
                         lock (WriteNTransLockObj) {
                             lockWatch.Stop ();
+                            Db.CommandRecord = new List<string> ();
                             workWatch.Start ();
                             Db.RunInTransaction (action);
+                            workWatch.Stop ();
+                            if (1000 < workWatch.ElapsedMilliseconds) {
+                                Log.Error (Log.LOG_DB, "RunInTransaction: {0} Commands", Db.CommandRecord.Count);
+                                foreach (var command in Db.CommandRecord) {
+                                    Log.Error (Log.LOG_DB, "RunInTransaction: {0}", command);
+                                }
+                            }
+                            Db.CommandRecord = null;
                         }
                         workWatch.Stop ();
                         var lockSpan = lockWatch.ElapsedMilliseconds;
