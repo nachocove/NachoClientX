@@ -337,10 +337,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 
-            var userImage = Util.PortraitOfSender (message);
-            if (null == userImage) {
-                userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
-            }
+            var userImage = Util.MessageToPortraitImage (message);
 
             if (null != userImage) {
                 userImageView.Hidden = false;

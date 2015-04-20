@@ -179,7 +179,7 @@ namespace NachoClient.iOS
                 ConfigureLabelView (labelView, contact, contactColor);
                 labelView.Hidden = false;
             } else {
-                portraitView.Image = Util.ImageOfContact (contact);
+                portraitView.Image = Util.ContactToPortraitImage (contact);
                 portraitView.Hidden = false;
             }
 

@@ -1352,7 +1352,7 @@ namespace NachoClient.iOS
                 headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contactCopy);
                 headerInitialsLabel.Hidden = false;
             } else {
-                headerPortraitImageView.Image = Util.ImageOfContact (contactCopy);
+                headerPortraitImageView.Image = Util.ContactToPortraitImage (contactCopy);
                 headerPortraitImageView.Hidden = false;
             }
 
