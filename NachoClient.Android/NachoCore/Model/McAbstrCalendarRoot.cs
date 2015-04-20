@@ -269,7 +269,11 @@ namespace NachoCore.Model
                     }
                 }
             }
-            NcAssert.NotNull (cachedDescription, "McAbstrCalendarRoot.GetDescription() completed without setting cachedDescription.");
+            if (null == cachedDescription) {
+                Log.Error (Log.LOG_CALENDAR, "McAbstrCalendarRoot.GetDescription() completed without setting cachedDescription.");
+                cachedDescription = "";
+                cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.None;
+            }
         }
 
         private void UpdateDescription ()
