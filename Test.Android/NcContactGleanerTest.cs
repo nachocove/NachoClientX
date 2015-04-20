@@ -65,7 +65,7 @@ namespace Test.Common
             CheckHasContact ("jane@abc.org", "Jane", "Doe");
             CheckHasContact ("mike@xyz.org", "Mike", "Jordan");
             CheckHasContact ("terry@xyz.org", "Terry", "Johnson");
-            CheckHasContact ("support@company.net", null, null);
+            CheckHasContact ("support@company.net", "Support", null);
 
             // bob@company.net should have two contacts with different names
             var contactList = McContact.QueryGleanedContactsByEmailAddress (AccountId, "bob@company.net");

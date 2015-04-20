@@ -288,6 +288,8 @@
     <Compile Include="..\Test.Android\McTelemetryEventTest.cs">
       <Link>McTelemetryEventTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\NcEmailAddressTest.cs">
+      <Link>NcEmailAddressTest.cs</Link>
     <Compile Include="..\Test.Android\ErrorHelperTest.cs">
       <Link>ErrorHelperTest.cs</Link>
     </Compile>

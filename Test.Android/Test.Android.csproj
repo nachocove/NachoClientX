@@ -136,6 +136,7 @@
     <Compile Include="CrlMonitorTest.cs" />
     <Compile Include="RemoveAccountTest.cs" />
     <Compile Include="McTelemetryEventTest.cs" />
+    <Compile Include="NcEmailAddressTest.cs" />
     <Compile Include="ErrorHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>

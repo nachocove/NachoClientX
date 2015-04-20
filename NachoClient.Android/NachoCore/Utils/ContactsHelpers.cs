@@ -131,7 +131,13 @@ namespace NachoCore.Utils
                 initials += Char.ToUpper (contact.FirstName [0]);
             }
             if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
+                if (Char.IsLetter (contact.LastName [0])) {
+                    initials += Char.ToUpper (contact.LastName [0]);
+                } else if (!String.IsNullOrEmpty (contact.MiddleName)) {
+                    if (Char.IsLetter (contact.MiddleName [0])) {
+                        initials += Char.ToUpper (contact.MiddleName [0]);
+                    }
+                }
             }
             // Or, failing that, the first char
             if (String.IsNullOrEmpty (initials)) {

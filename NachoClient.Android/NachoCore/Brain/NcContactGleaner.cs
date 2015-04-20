@@ -102,7 +102,7 @@ namespace NachoCore.Brain
             };
 
             gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
-            NcEmailAddress.SplitName (mbAddr, ref gleanedContact);
+            NcEmailAddress.ParseName (mbAddr, ref gleanedContact);
 
             NcModel.Instance.RunInTransaction (() => {
                 // Check if the contact is a duplicate

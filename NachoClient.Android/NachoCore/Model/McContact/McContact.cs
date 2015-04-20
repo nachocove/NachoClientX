@@ -1361,6 +1361,9 @@ namespace NachoCore.Model
             if (!String.IsNullOrEmpty (LastName)) {
                 value.Add (LastName);
             }
+            if (!String.IsNullOrEmpty (Suffix)) {
+                value.Add (Suffix);
+            }
             var name = String.Join (" ", value);
             if (String.IsNullOrEmpty (name)) {
                 name = CompanyName;
