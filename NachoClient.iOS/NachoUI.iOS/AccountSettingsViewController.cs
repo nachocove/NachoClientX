@@ -829,6 +829,7 @@ namespace NachoClient.iOS
             var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             account.FastNotificationEnabled = FastNotificationSwitch.On;
             account.Update ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
         }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)

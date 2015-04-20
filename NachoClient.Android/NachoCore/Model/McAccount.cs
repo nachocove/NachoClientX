@@ -24,6 +24,7 @@ namespace NachoCore.Model
             GoogleExchange,
         };
 
+        // This type is stored in the db; add to the end
         public enum NotificationConfigurationEnum : int
         {
             ALLOW_ALL_1 = 1,
@@ -32,15 +33,16 @@ namespace NachoCore.Model
             ALLOW_CUSTOM_8 = 8,
             ALLOW_INVITES_16 = 16,
             ALLOW_REMINDERS_32 = 32,
+            ALLOW_INBOX_64 = 64,
         };
 
         public const NotificationConfigurationEnum DefaultNotificationConfiguration =
-            NotificationConfigurationEnum.ALLOW_ALL_1 |
             NotificationConfigurationEnum.ALLOW_HOT_2 |
             NotificationConfigurationEnum.ALLOW_VIP_4 |
             NotificationConfigurationEnum.ALLOW_CUSTOM_8 |
             NotificationConfigurationEnum.ALLOW_INVITES_16 |
-            NotificationConfigurationEnum.ALLOW_REMINDERS_32;
+            NotificationConfigurationEnum.ALLOW_REMINDERS_32 |
+            NotificationConfigurationEnum.ALLOW_INBOX_64;
 
         public McAccount ()
         {

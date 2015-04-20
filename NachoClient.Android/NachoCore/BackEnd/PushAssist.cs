@@ -478,7 +478,7 @@ namespace NachoCore
                 }
             };
             Sm.Validate ();
-            NcApplication.Instance.StatusIndEvent += TokensWatcher;
+            NcApplication.Instance.StatusIndEvent += StatusIndWatcher;
         }
 
         protected string GetClientContext (McAccount account)
@@ -507,7 +507,7 @@ namespace NachoCore
             if (!IsDisposed) {
                 IsDisposed = true;
                 RemovePAObjectByContext (ClientContext);
-                NcApplication.Instance.StatusIndEvent -= TokensWatcher;
+                NcApplication.Instance.StatusIndEvent -= StatusIndWatcher;
                 DisposeRetryTimer ();
                 DisposeTimeoutTimer ();
                 DisposeDeferTimer ();
@@ -526,7 +526,12 @@ namespace NachoCore
         // 4. Stop - Like Park, but the outstanding pinger session (to server) is canceled as well.
         public void Execute ()
         {
-            PostEvent (SmEvt.E.Launch, "PAEXE");
+            var account = Owner.Account;
+            if (account.FastNotificationEnabled) {
+                PostEvent (SmEvt.E.Launch, "PAEXE");
+            } else {
+                Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
+            }
         }
 
         public void Defer ()
@@ -928,7 +933,7 @@ namespace NachoCore
         }
 
         // MISCELLANEOUS STUFF
-        private void TokensWatcher (object sender, EventArgs ea)
+        private void StatusIndWatcher (object sender, EventArgs ea)
         {
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
             switch (siea.Status.SubKind) {
@@ -951,6 +956,21 @@ namespace NachoCore
                         DoGetCliTok ();
                     }
                 }, "PushAssistClientToken");
+                break;
+            case NcResult.SubKindEnum.Info_FastNotificationChanged:
+                if (Owner.Account.Id == siea.Account.Id) {
+                    NcTask.Run (() => {
+                        if (siea.Account.FastNotificationEnabled) {
+                            if (IsStartOrParked ()) {
+                                PostEvent (SmEvt.E.Launch, "FAST_NOTIF_ENABLED");
+                            } else {
+                                Log.Warn (Log.LOG_PUSH, "Got a fast notification enabled status when PA is already running");
+                            }
+                        } else {
+                            PostEvent (PAEvt.E.Stop, "FAST_NOTIF_DISABLED");
+                        }
+                    }, "PushAssistConfigurationChanged");
+                }
                 break;
             }
         }

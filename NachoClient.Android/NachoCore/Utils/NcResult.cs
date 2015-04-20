@@ -15,6 +15,7 @@ namespace NachoCore.Utils
             Error,
         };
 
+        // NOTE: Always append to the end some of these values may be persisted in db
         public enum SubKindEnum
         {
             NotSpecified = 0,
@@ -170,6 +171,7 @@ namespace NachoCore.Utils
             Info_PushAssistArmed,
             Info_UserInterventionFlagChanged,
             Info_SystemTimeZoneChanged,
+            Info_FastNotificationChanged,
         };
 
         public enum WhyEnum

@@ -652,6 +652,16 @@ namespace NachoCore
                 });
             }
         }
+
+        public void InvokeStatusIndEventInfo (McAccount account, NcResult.SubKindEnum subKind)
+        {
+            var siea = new StatusIndEventArgs () {
+                Account = (null != account ? account : ConstMcAccount.NotAccountSpecific),
+                Status = NcResult.Info (subKind)
+            };
+            InvokeStatusIndEvent (siea);
+        }
+
         // IBackEndOwner methods below.
         public void CredReq (int accountId)
         {

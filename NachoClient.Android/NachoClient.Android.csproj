@@ -391,6 +391,9 @@
     <Compile Include="NachoCore\Model\McBrainEvent.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration17.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration18.cs" />
+    <Compile Include="NachoCore\Utils\NotificationHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration19.cs" />
+    <Compile Include="NachoCore\Utils\ErrorHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
