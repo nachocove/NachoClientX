@@ -472,7 +472,7 @@ namespace NachoClient.iOS
                 headerInitialsLabel.Hidden = false;
 
             } else {
-                headerPortraitImageView.Image = Util.ImageOfContact (contact);
+                headerPortraitImageView.Image = Util.ContactToPortraitImage (contact);
                 headerPortraitImageView.Hidden = false;
             }
 

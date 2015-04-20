@@ -497,7 +497,7 @@ namespace NachoClient
             Initials = initials;
         }
 
-        public static UIImage ImageOfContact (McContact contact)
+        public static UIImage ContactToPortraitImage (McContact contact)
         {
             if (null == contact) {
                 return null;
@@ -505,11 +505,14 @@ namespace NachoClient
             if (0 == contact.PortraitId) {
                 return null;
             }
-            return ImageOfPortrait (contact.PortraitId);
+            return PortraitToImage (contact.PortraitId);
         }
 
-        public static UIImage ImageOfPortrait (int portraitId)
+        public static UIImage PortraitToImage (int portraitId)
         {
+            if (0 == portraitId) {
+                return null;
+            }
             var data = McPortrait.GetContentsByteArray (portraitId);
             if (null == data) {
                 return null;
@@ -519,33 +522,28 @@ namespace NachoClient
 
         public static UIImage ImageOfSender (int accountId, string emailAddress)
         {
-            // FIXME: Should push the images
-//            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
-//            if ((null == contacts) || (0 == contacts.Count)) {
-//                return null;
-//            }
-//            // There may be more than one contact that matches an email address.
-//            // Search thru all of them and look for the first one that has a portrait.
-//            foreach (var contact in contacts) {
-//                UIImage image = ImageOfContact (contact);
-//                if (null != image) {
-//                    return image;
-//                }
-//            }
+            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            if ((null == contacts) || (0 == contacts.Count)) {
+                return null;
+            }
+            // There may be more than one contact that matches an email address.
+            // Search thru all of them and look for the first one that has a portrait.
+            foreach (var contact in contacts) {
+                UIImage image = ContactToPortraitImage (contact);
+                if (null != image) {
+                    return image;
+                }
+            }
             return null;
         }
 
-        public static UIImage PortraitOfSender (McEmailMessage message)
+        public static UIImage MessageToPortraitImage (McEmailMessage message)
         {
             if (0 == message.cachedPortraitId) {
-                return null;
+                return ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+            } else {
+                return PortraitToImage (message.cachedPortraitId);
             }
-            var image = ImageOfPortrait (message.cachedPortraitId);
-            if (null == image) {
-                message.cachedPortraitId = 0;
-                message.Update ();
-            }
-            return image;
         }
 
         public static void PerformAction (string action, string number)
