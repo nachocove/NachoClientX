@@ -439,33 +439,9 @@ namespace NachoClient.iOS
             spinner.StopAnimating ();
             string preview = item.GetBodyPreviewOrEmpty ();
             bool hasPreview = !string.IsNullOrEmpty (preview);
-            // TODO: Refactor
-            string message = "Download failed.";
-            switch (nr.SubKind) {
-            case NcResult.SubKindEnum.Error_NetworkUnavailable:
-                message += " The network is unavailable.";
-                break;
-            case NcResult.SubKindEnum.Error_NoSpace:
-                message += " Your device is out of space.";
-                break;
-            case NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed:
-                message += " Message download failed.";
-                break;
-            case NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed:
-                message += " Calendar body download failed.";
-                break;
-            case NcResult.SubKindEnum.Error_AttDownloadFailed:
-                message += " Attachment download failed.";
-                break;
-            case NcResult.SubKindEnum.Error_AuthFailBlocked:
-                message += " Authorization failed.";
-                break;
-            case NcResult.SubKindEnum.Error_AuthFailPasswordExpired:
-                message += " Your password has expired.";
-                break;
-            default:
-                message += " Download failed.";
-                break;
+            string message;
+            if (!ErrorHelper.ExtractErrorString (nr, out message)) {
+                message = "Download failed.";
             }
             if (UserInteractionEnabled) {
                 message += " Tap here to retry.";

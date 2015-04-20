@@ -318,6 +318,7 @@ namespace NachoClient.iOS
                 headerView.Frame.Width - ATTACHMENTVIEW_INSET, 50));
             attachmentListView.SetHeader ("Attachments", A.Font_AvenirNextRegular17, A.Color_NachoTextGray, null, A.Font_AvenirNextDemiBold14, UIColor.White, A.Color_909090, 10f);
             attachmentListView.OnAttachmentSelected = AttachmentsOnSelected;
+            attachmentListView.OnAttachmentError = AttachmentOnError;
             attachmentListView.OnStateChanged = AttachmentsOnStateChange;
             attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
             headerView.AddSubview (attachmentListView);
@@ -852,6 +853,15 @@ namespace NachoClient.iOS
             if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                 PlatformHelpers.DisplayAttachment (this, attachment);
             }
+        }
+
+        private void AttachmentOnError(McAttachment attachment, NcResult result)
+        {
+            string message;
+            if(!ErrorHelper.ExtractErrorString(result, out message)) {
+                message = "Download failed.";
+            }
+            NcAlertView.ShowMessage (this, "Attachment error", message);
         }
 
         private void AttachmentsOnStateChange (bool isExpanded)
