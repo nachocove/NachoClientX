@@ -219,6 +219,38 @@ namespace NachoCore.Utils
             return false;
         }
 
+        static public bool FindTextWithType (MimeMessage message, out string text, out McAbstrFileDesc.BodyTypeEnum type, params McAbstrFileDesc.BodyTypeEnum[] preferredTypes)
+        {
+            NcAssert.True (0 < preferredTypes.Length);
+            foreach (var preferredType in preferredTypes) {
+                string mimeSubType;
+                switch (preferredType) {
+                case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                    mimeSubType = "plain";
+                    break;
+                case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                    mimeSubType = "html";
+                    break;
+                case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                    mimeSubType = "rtf";
+                    break;
+                default:
+                    NcAssert.CaseError ();
+                    mimeSubType = "";
+                    break;
+                }
+                var textPart = FindTextPartWithSubtype (message.Body, mimeSubType);
+                if (null != textPart) {
+                    text = textPart.Text;
+                    type = preferredType;
+                    return true;
+                }
+            }
+            text = null;
+            type = McAbstrFileDesc.BodyTypeEnum.None;
+            return false;
+        }
+
         /// <summary>
         /// Returns the plain text part of a message body, an error message if the body is in
         /// a format other than plain text, or <code>null</code> if no body can be found.

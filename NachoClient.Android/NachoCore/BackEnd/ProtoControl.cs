@@ -209,7 +209,7 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult UpdateCalCmd (int calId)
+        public virtual NcResult UpdateCalCmd (int calId, bool sendBody)
         {
             return null;
         }

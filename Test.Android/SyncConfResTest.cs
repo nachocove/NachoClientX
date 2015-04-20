@@ -591,7 +591,7 @@ namespace Test.iOS
             public void TestSyncDeleteForUpdateCalCmd ()
             {
                 TestSyncDelete<McCalendar> (ClassCode.Calendar, (itemId) => {
-                    return Context.ProtoControl.UpdateCalCmd (itemId).GetValue<string> ();
+                    return Context.ProtoControl.UpdateCalCmd (itemId, false).GetValue<string> ();
                 });
             }
 

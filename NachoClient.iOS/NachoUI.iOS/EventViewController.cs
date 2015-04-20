@@ -1214,7 +1214,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (0 != c.Id);
             c.Update ();
-            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, false);
             c = McCalendar.QueryById<McCalendar> (c.Id);
         }
 

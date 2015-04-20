@@ -624,7 +624,7 @@ namespace NachoClient.iOS
                 NcAssert.CaseError ();
             } else {
                 c.Update ();
-                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, false);
                 c = McCalendar.QueryById<McCalendar> (c.Id);
             }
         }

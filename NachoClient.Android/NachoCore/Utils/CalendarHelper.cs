@@ -528,7 +528,7 @@ namespace NachoCore.Utils
             return MimeCalFromICalendar (iCalendarResponseFromEmail (mail, response, subject, occurrence));
         }
 
-        public static MimeEntity CreateMime (string description, TextPart iCalPart, List<McAttachment> attachments)
+        public static MimeEntity CreateMime (string description, TextPart iCalPart, IList<McAttachment> attachments)
         {
             // attachments
             var attachmentCollection = new MimeKit.AttachmentCollection ();
@@ -600,10 +600,12 @@ namespace NachoCore.Utils
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
 //            c.BodyId = dupBody.Id;
 
-            //Instead of grabbing the whole body from the email message, only the
-            //text part (if there exists one) is added to the event description.
-            if (null != MimeHelpers.ExtractTextPart (message.GetBody ())) {
-                c.Description = MimeHelpers.ExtractTextPart (message.GetBody ());
+            // Instead of grabbing the whole body from the email message, only the
+            // text part (if there exists one) is added to the event description.
+            // TODO Extract formatted text instead of just plain text.
+            var textPart = MimeHelpers.ExtractTextPart (message.GetBody ());
+            if (null != textPart) {
+                c.SetDescription (textPart, McAbstrFileDesc.BodyTypeEnum.PlainText_1);
             }
             var attendees = new List<McAttendee> ();
             attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));

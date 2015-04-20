@@ -105,7 +105,7 @@ namespace NachoCore.Utils
             var item = new McCalendar ();
             item.AccountId = account.Id;
             item.Subject = string.Format ("Test {0}", ++itemNumber);
-            item.Description = "This event was created by a tool that fills up a user's calendar with useless events.  Therefore, this event description has no useful information, and exists just to take up space.";
+            item.SetDescription ("This event was created by a tool that fills up a user's calendar with useless events.  Therefore, this event description has no useful information, and exists just to take up space.", McAbstrFileDesc.BodyTypeEnum.PlainText_1);
             item.Location = "Nowhere";
             item.AllDayEvent = false;
             item.OrganizerName = "Calendar Bot";
@@ -217,7 +217,7 @@ namespace NachoCore.Utils
             // The boilerplate stuff.  Nothing interesting here.
             item.AccountId = account.Id;
             item.Subject = string.Format ("Test Mega Meeting");
-            item.Description = "This is a recurring meeting with lots of attendees and lots of exceptions, each with a long list of attendees.  The purpose is to maximize the number of database operations necessary to save the calendar item.";
+            item.SetDescription ("This is a recurring meeting with lots of attendees and lots of exceptions, each with a long list of attendees.  The purpose is to maximize the number of database operations necessary to save the calendar item.", McAbstrFileDesc.BodyTypeEnum.PlainText_1);
             item.Location = "Nowhere";
             item.AllDayEvent = false;
             item.OrganizerName = "Calendar Bot";

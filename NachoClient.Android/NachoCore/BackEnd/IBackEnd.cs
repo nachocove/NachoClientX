@@ -93,7 +93,7 @@ namespace NachoCore
         // download an attachment. returns token that can be used to possibly cancel.
         NcResult DnldAttCmd (int accountId, int attId, bool doNotDelay = false);
         NcResult CreateCalCmd (int accountId, int calId, int folderId);
-        NcResult UpdateCalCmd (int accountId, int calId);
+        NcResult UpdateCalCmd (int accountId, int calId, bool sendBody);
         NcResult DeleteCalCmd (int accountId, int calId);
         NcResult MoveCalCmd (int accountId, int calId, int destFolderId);
         NcResult RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response);

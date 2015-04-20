@@ -222,6 +222,8 @@ namespace NachoCore.Model
 
         public DateTime EmailMarkFlagDone_DateCompleted { get; set; }
 
+        public bool CalUpdate_SendBody { get; set; }
+
         [Indexed]
         public string DisplayName { set; get; }
 

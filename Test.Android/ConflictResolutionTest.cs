@@ -621,7 +621,7 @@ namespace Test.iOS
             public void TestSyncUpdateMatchAllItems ()
             {
                 TestSyncMatch <McCalendar> (TypeCode.DefaultCal_8,
-                    (itemId, parentId) => Context.ProtoControl.UpdateCalCmd (itemId).GetValue<string> ()
+                    (itemId, parentId) => Context.ProtoControl.UpdateCalCmd (itemId, false).GetValue<string> ()
                 );
 
                 TestSyncMatch <McContact> (TypeCode.DefaultContacts_9,
@@ -704,7 +704,7 @@ namespace Test.iOS
             {
                 TestSyncDom<McCalendar> (TypeCode.DefaultCal_8,
                     () => CreateSubCalFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.UpdateCalCmd (itemId).GetValue<string> ()
+                    (itemId, folderId) => Context.ProtoControl.UpdateCalCmd (itemId, false).GetValue<string> ()
                 );
 
                 TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
