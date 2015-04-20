@@ -11,7 +11,7 @@ namespace NachoCore.Utils
         {
             NcAssert.True (emailMessage.AccountId == account.Id);
             var config = account.NotificationConfiguration;
-            if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1)) {
+            if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64)) {
                 return true;
             }
             if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2) && emailMessage.isHot ()) {

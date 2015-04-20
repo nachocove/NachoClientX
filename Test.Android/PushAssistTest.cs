@@ -638,7 +638,7 @@ namespace Test.Common
 
             // Configuration #1 - All
             var account = Owner.Account;
-            account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_ALL_1;
+            account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64;
             account.Update ();
             CheckShouldNotify (new bool[4] { true, true, true, true }, emails, account);
 
