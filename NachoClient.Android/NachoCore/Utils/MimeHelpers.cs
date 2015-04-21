@@ -473,28 +473,43 @@ namespace NachoCore.Utils
             return msg;
         }
 
-        public static void MimeDisplayList (MimeMessage message, ref List<MimeEntity> list)
+        public static string MimeTypeFromNativeBodyType (int nativeBodyType)
         {
-            if (null == list) {
-                list = new List<MimeEntity> ();
+            switch (nativeBodyType) {
+            case 0:
+                // NativeBodyType is not known.
+                return null;
+            case 1:
+                return "text/plain";
+            case 2:
+                return "text/html";
+            case 3:
+                return "text/rtf";
+            default:
+                Log.Error (Log.LOG_EMAIL, "Unexpected value for NativeBodyType: {0}", nativeBodyType);
+                return null;
             }
-            MimeEntityDisplayList (message.Body, ref list);
         }
 
-        protected static void MimeEntityDisplayList (MimeEntity entity, ref List<MimeEntity> list)
+        public static void MimeDisplayList (MimeMessage message, List<MimeEntity> list, string preferredType)
+        {
+            MimeEntityDisplayList (message.Body, list, preferredType);
+        }
+
+        protected static void MimeEntityDisplayList (MimeEntity entity, List<MimeEntity> list, string preferredType)
         {
             if (entity is MessagePart) {
                 // This entity is an attached message/rfc822 mime part.
                 var messagePart = (MessagePart)entity;
                 // If you'd like to render this inline instead of treating
                 // it as an attachment, you would just continue to recurse:
-                MimeDisplayList (messagePart.Message, ref list);
+                MimeDisplayList (messagePart.Message, list, preferredType);
                 return;
             }
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
                 if (multipart.ContentType.Matches ("multipart", "alternative")) {
-                    MimeBestAlternativeDisplayList (multipart, ref list);
+                    MimeBestAlternativeDisplayList (multipart, list, preferredType);
                     return;
                 }
                 if (multipart.ContentType.Matches ("multipart", "related") && 0 < multipart.Count) {
@@ -504,11 +519,11 @@ namespace NachoCore.Utils
                     // But it is hard to write code to handle that without having a real life
                     // message to test with.  All the examples that I have seen list the root
                     // entity first.
-                    MimeEntityDisplayList (multipart [0], ref list);
+                    MimeEntityDisplayList (multipart [0], list, preferredType);
                     return;
                 }
                 foreach (var subpart in multipart) {
-                    MimeEntityDisplayList (subpart, ref list);
+                    MimeEntityDisplayList (subpart, list, preferredType);
                 }
                 return;
             }
@@ -538,7 +553,7 @@ namespace NachoCore.Utils
                 // Convert the TNEF stuff into a MIME message, and look through that.
                 MimeMessage tnef = ConvertTnefToMessage (part as MimeKit.Tnef.TnefPart);
                 if (null != tnef.Body) {
-                    MimeDisplayList (tnef, ref list);
+                    MimeDisplayList (tnef, list, preferredType);
                 }
                 return;
             }
@@ -552,20 +567,37 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Pick the best alternative to be displayed, which is always supposed to be
-        /// the last one in the list.  But we want to ignore calendar entries (which are
-        /// handled a different way).
+        /// Pick the best matching entity from a set of alternatives.  If one of the entities matches the
+        /// given preferred type.  Otherwise, look for HTML, RTF, or plain text, in that order.  If still
+        /// no match, return the last one in the list that is not a calendar entry.
         /// </summary>
-        protected static void MimeBestAlternativeDisplayList (Multipart multipart, ref List<MimeEntity> list)
+        protected static void MimeBestAlternativeDisplayList (Multipart multipart, List<MimeEntity> list, string preferredType)
         {
-            var last = multipart.Last ();
-            if (last.ContentType.Matches ("text", "calendar")) {
-                if (1 < multipart.Count) {
-                    var nextToLast = multipart [multipart.Count - 2];
-                    MimeEntityDisplayList (nextToLast, ref list);
+            MimeEntity preferred = null;
+            MimeEntity html = null;
+            MimeEntity rtf = null;
+            MimeEntity plain = null;
+            MimeEntity lastNonCalendar = null;
+            foreach (var entity in multipart) {
+                if (null != preferredType && entity.ContentType.MimeType == preferredType) {
+                    preferred = entity;
                 }
-            } else {
-                MimeEntityDisplayList (last, ref list);
+                if (entity.ContentType.Matches("text", "html")) {
+                    html = entity;
+                }
+                if (entity.ContentType.Matches("text", "rtf")) {
+                    rtf = entity;
+                }
+                if (entity.ContentType.Matches("text", "plain")) {
+                    plain = entity;
+                }
+                if (!entity.ContentType.Matches("text", "calendar")) {
+                    lastNonCalendar = entity;
+                }
+            }
+            MimeEntity bestMatch = preferred ?? html ?? rtf ?? plain ?? lastNonCalendar;
+            if (null != bestMatch) {
+                MimeEntityDisplayList (bestMatch, list, preferredType);
             }
         }
 
