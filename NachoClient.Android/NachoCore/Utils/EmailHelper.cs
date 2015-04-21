@@ -28,7 +28,7 @@ namespace NachoCore.Utils
         // Message is saved into Outbox
         public static void SendTheMessage (Action action, McEmailMessage messageToSend, bool originalEmailIsEmbedded, McEmailMessage referencedMessage, bool calendarInviteIsSet, McAbstrCalendarRoot calendarInviteItem)
         {
-            var outbox = McFolder.GetOutboxFolder (messageToSend.AccountId);
+            var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
                 outbox.Link (messageToSend);
             } else {
@@ -115,8 +115,8 @@ namespace NachoCore.Utils
                 BackEnd.Instance.Cancel (message.AccountId, pending.Token);
             }
             // Move files in client-owned folders manually
-            var draftsFolder = McFolder.GetEmailDraftsFolder (message.AccountId);
-            var outboxFolder = McFolder.GetOutboxFolder (message.AccountId);
+            var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
+            var outboxFolder = McFolder.GetClientOwnedOutboxFolder (message.AccountId);
             outboxFolder.Unlink (message);
             draftsFolder.Link (message);
             // Send status ind after the message is moved
@@ -158,7 +158,7 @@ namespace NachoCore.Utils
 
         public static void SaveEmailMessageInDrafts (McEmailMessage message)
         {
-            var draftsFolder = McFolder.GetEmailDraftsFolder (message.AccountId);
+            var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
             if (null != draftsFolder) {
                 draftsFolder.Link (message);
             } else {

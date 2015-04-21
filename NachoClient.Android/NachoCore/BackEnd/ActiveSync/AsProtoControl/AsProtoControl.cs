@@ -876,7 +876,7 @@ namespace NachoCore.ActiveSync
             // Make the application-defined folders.
             McFolder freshMade;
             NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetOutboxFolder (AccountId)) {
+                if (null == McFolder.GetClientOwnedOutboxFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_Outbox, "On-Device Outbox",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
@@ -884,9 +884,9 @@ namespace NachoCore.ActiveSync
                 }
             });
             NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetEmailDraftsFolder (AccountId)) {
+                if (null == McFolder.GetClientOwnedDraftsFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_EmailDrafts, "On-Device Email Drafts",
+                        McFolder.ClientOwned_EmailDrafts, "On-Device Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
