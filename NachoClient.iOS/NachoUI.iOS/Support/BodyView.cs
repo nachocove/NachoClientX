@@ -202,7 +202,8 @@ namespace NachoClient.iOS
             } else if (item is McException) {
                 refreshedItem = McException.QueryById<McException> (item.Id);
             } else {
-                throw new NcAssert.NachoDefaultCaseFailure (string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
+                throw new NcAssert.NachoDefaultCaseFailure (
+                    string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
             }
             return refreshedItem;
         }
@@ -269,14 +270,17 @@ namespace NachoClient.iOS
                         // It was a race condition. We're good.
                         Reconfigure ();
                     } else {
-                        Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}", item.Id, item.AccountId);
+                        Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}",
+                            item.Id, item.AccountId);
                         ShowErrorMessage (nr);
                     }
                 } else {
                     // The item seems to have been deleted from the database.  The best we
                     // can do is to show an error message, even though tapping to retry the
                     // download won't do any good.
-                    Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}, and it looks like the message has been deleted.", item.Id, item.AccountId);
+                    Log.Warn (Log.LOG_UI,
+                        "Failed to start body download for message {0} in account {1}, and it looks like the message has been deleted.",
+                        item.Id, item.AccountId);
                     ShowErrorMessage (nr);
                 }
             } else {
@@ -544,15 +548,17 @@ namespace NachoClient.iOS
             if (string.IsNullOrEmpty (rtf)) {
                 return;
             }
-            var nsError = new NSError ();
-            var attributes = new NSAttributedStringDocumentAttributes ();
-            attributes.DocumentType = NSDocumentType.RTF;
-            RenderAttributedString (new NSAttributedString (rtf, attributes, ref nsError));
+            var webView = new BodyRtfWebView (
+                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
+                              rtf, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
+            AddSubview (webView);
+            childViews.Add (webView);
+            yOffset += webView.ContentSize.Height;
         }
 
         private void RenderHtmlString (string html)
         {
-            var webView = new BodyWebView (
+            var webView = new BodyHtmlWebView (
                               yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
                               html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
             AddSubview (webView);
@@ -602,7 +608,13 @@ namespace NachoClient.iOS
         {
             var message = MimeHelpers.LoadMessage (body);
             var list = new List<MimeEntity> ();
-            MimeHelpers.MimeDisplayList (message, ref list);
+            int nativeBodyType = 0;
+            if (item is McEmailMessage) {
+                nativeBodyType = ((McEmailMessage)item).NativeBodyType;
+            } else if (item is McAbstrCalendarRoot) {
+                nativeBodyType = ((McAbstrCalendarRoot)item).NativeBodyType;
+            }
+            MimeHelpers.MimeDisplayList (message, list, MimeHelpers.MimeTypeFromNativeBodyType (nativeBodyType));
 
             foreach (var entity in list) {
                 var part = (MimePart)entity;
@@ -728,4 +740,3 @@ namespace NachoClient.iOS
         }
     }
 }
-
