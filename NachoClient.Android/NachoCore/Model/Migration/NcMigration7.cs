@@ -18,7 +18,7 @@ namespace NachoCore.Model
         public override void Run (System.Threading.CancellationToken token)
         {
             foreach (var account in Db.Table<McAccount>()) {
-                var outbox = McFolder.GetOutboxFolder (account.Id);
+                var outbox = McFolder.GetClientOwnedOutboxFolder (account.Id);
                 if (null != outbox) {
                     if (outbox.IsClientOwned) {
                         MakeThisHidden (outbox);

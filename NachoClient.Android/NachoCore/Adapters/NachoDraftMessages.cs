@@ -58,10 +58,10 @@ namespace NachoCore
 
         public string DisplayName ()
         {
-            if (folder.IsOutboxFolder ()) {
+            if (folder.IsClientOwnedOutboxFolder ()) {
                 return "Outbox";
             }
-            if (folder.IsEmailDraftsFolder ()) {
+            if (folder.IsClientOwnedDraftsFolder ()) {
                 return "Drafts";
             }
             NachoCore.Utils.NcAssert.CaseError (folder.DisplayName);
@@ -71,12 +71,12 @@ namespace NachoCore
 
         public bool HasOutboxSemantics ()
         {
-            return folder.IsOutboxFolder ();
+            return folder.IsClientOwnedOutboxFolder ();
         }
 
         public bool HasDraftsSemantics ()
         {
-            return folder.IsEmailDraftsFolder ();
+            return folder.IsClientOwnedDraftsFolder ();
         }
 
         public void StartSync ()

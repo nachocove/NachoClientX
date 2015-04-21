@@ -323,7 +323,7 @@ namespace NachoClient.iOS
                 index++;
             }
                 
-            foreach (var f in nestedFolderList) {
+            foreach (var f in defaultFoldersList) {
                 CreateFolderCell (0, defaultsView, HasSubFolders (f), false, f);
             }
                 
@@ -345,9 +345,9 @@ namespace NachoClient.iOS
             var selectedYourFoldersButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersYourFoldersSelectedButtons", "YourFoldersSelectedButtons", null);
             if (null != selectedDefaultButtons) {
                 List<string> selectedButtons = selectedDefaultButtons.Split (':').ToList ();
-                UpdateVisibleCells (defaultsView, nestedFolderList, selectedButtons);
+                UpdateVisibleCells (defaultsView, defaultFoldersList, selectedButtons);
             } else { 
-                UpdateVisibleCells (defaultsView, nestedFolderList, null);
+                UpdateVisibleCells (defaultsView, defaultFoldersList, null);
             }
             if (null != selectedYourFoldersButtons) {
                 List<string> selectedButtons = selectedYourFoldersButtons.Split (':').ToList ();
@@ -369,7 +369,7 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (defaultsLabel).Y (yOffset);
             yOffset += 35;
-            LayoutCells (defaultsView, nestedFolderList);
+            LayoutCells (defaultsView, defaultFoldersList);
 
             var folderListHeight = defaultCellsOffset * 44;
             ViewFramer.Create (defaultsView).Y (yOffset).Height (folderListHeight);
@@ -512,7 +512,7 @@ namespace NachoClient.iOS
 
         protected void SegueToMessageList (McFolder folder)
         {
-            if (folder.IsEmailDraftsFolder () || folder.IsOutboxFolder ()) {
+            if (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ()) {
                 PerformSegue ("SegueToDrafts", new SegueHolder (folder));
             } else {
                 PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
@@ -628,10 +628,10 @@ namespace NachoClient.iOS
         {
             FolderStruct lastFolder;
             if (parentView == defaultsView) {
-                if ((null == nestedFolderList) || (0 == nestedFolderList.Count)) {
+                if ((null == defaultFoldersList) || (0 == defaultFoldersList.Count)) {
                     return;
                 }
-                lastFolder = nestedFolderList.Last ();
+                lastFolder = defaultFoldersList.Last ();
             } else {
                 if ((null == yourFolderList) || (0 == yourFolderList.Count)) {
                     return;
@@ -752,14 +752,14 @@ namespace NachoClient.iOS
 
         NachoFolders Folders;
         public List<McFolder> foldersToMcFolders = new List<McFolder> ();
-        public List<FolderStruct> nestedFolderList = new List<FolderStruct> ();
+        public List<FolderStruct> defaultFoldersList = new List<FolderStruct> ();
         public List<FolderStruct> yourFolderList = new List<FolderStruct> ();
         public List<McFolder> recentFolderList = new List<McFolder> ();
 
         public void ClearLists ()
         {
             foldersToMcFolders.Clear ();
-            nestedFolderList.Clear ();
+            defaultFoldersList.Clear ();
             yourFolderList.Clear ();
         }
 
@@ -787,21 +787,36 @@ namespace NachoClient.iOS
                     List<FolderStruct> subFolders = new List<FolderStruct> ();
                     subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
 
-                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type ||
-                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type ||
-                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.Unknown_18 == folder.Type) {
-                        yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                    if (ShowInDefaults (folder)) {
+                        defaultFoldersList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
                     } else {
-                        nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                        yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
                     }
                 }
             }
             SortDetaultsFoldersList ();
         }
 
+        private bool ShowInDefaults (McFolder folder)
+        {
+            switch (folder.Type) {
+            case Xml.FolderHierarchy.TypeCode.DefaultInbox_2: 
+                return true;
+            case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
+                return false; // This is not our on-device drafts folder
+            case Xml.FolderHierarchy.TypeCode.DefaultDeleted_4:
+                return true;
+            case Xml.FolderHierarchy.TypeCode.DefaultSent_5:
+                return true;
+            case Xml.FolderHierarchy.TypeCode.DefaultOutbox_6:
+                return false; // This is not our on-device outbox folder
+            }
+            return (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ());
+        }
+
         public void SortDetaultsFoldersList ()
         {
-            foreach (var folder in nestedFolderList) {
+            foreach (var folder in defaultFoldersList) {
                 switch (folder.type) {
                 case Xml.FolderHierarchy.TypeCode.DefaultInbox_2: 
                     folder.orderNumber = 1;
@@ -822,7 +837,7 @@ namespace NachoClient.iOS
                     break;
                 }
             }
-            nestedFolderList = nestedFolderList.OrderBy (x => x.orderNumber).ToList ();
+            defaultFoldersList = defaultFoldersList.OrderBy (x => x.orderNumber).ToList ();
         }
 
         public List<FolderStruct> GetSubFolders (int fID, int accountID, string serverID, int indentLevel)
