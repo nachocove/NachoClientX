@@ -160,6 +160,8 @@ namespace SQLite
 
 		public bool StoreDateTimeAsTicks { get; private set; }
 
+		public List<string> CommandRecord { get; set; }
+
 		/// <summary>
 		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
@@ -2317,6 +2319,9 @@ namespace SQLite
 		{
 			var stmt = SQLite3.Prepare2 (_conn.Handle, CommandText);
 			BindAll (stmt);
+			if (null != _conn.CommandRecord) {
+				_conn.CommandRecord.Add (CommandText);
+			}
 			return stmt;
 		}
 
@@ -2514,6 +2519,9 @@ namespace SQLite
 		protected virtual Sqlite3Statement Prepare ()
 		{
 			var stmt = SQLite3.Prepare2 (Connection.Handle, CommandText);
+			if (null != Connection.CommandRecord) {
+				Connection.CommandRecord.Add (CommandText);
+			}
 			return stmt;
 		}
 
