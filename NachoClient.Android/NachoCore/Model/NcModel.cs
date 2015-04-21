@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -583,14 +584,18 @@ namespace NachoCore.Model
                             Db.RunInTransaction (action);
                             workWatch.Stop ();
                             if (1000 < workWatch.ElapsedMilliseconds || 100 > Db.CommandRecord.Count) {
-                                int dumpRemaining = 50;
+                                int dumpRemaining = 100;
                                 Log.Error (Log.LOG_DB, "RunInTransaction: {0} Commands", Db.CommandRecord.Count);
+                                var sb = new StringBuilder ();
+                                sb.AppendLine ();
                                 foreach (var command in Db.CommandRecord) {
                                     if (0 > --dumpRemaining) {
                                         break;
                                     }
-                                    Log.Info (Log.LOG_DB, "RunInTransaction: {0}", command);
+                                    sb.Append (command);
+                                    sb.AppendLine ();
                                 }
+                                Log.Info (Log.LOG_DB, "RunInTransaction: {0}", sb);
                             }
                             Db.CommandRecord = null;
                         }
