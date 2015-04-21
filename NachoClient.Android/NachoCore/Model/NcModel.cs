@@ -582,10 +582,14 @@ namespace NachoCore.Model
                             workWatch.Start ();
                             Db.RunInTransaction (action);
                             workWatch.Stop ();
-                            if (1000 < workWatch.ElapsedMilliseconds) {
+                            if (1000 < workWatch.ElapsedMilliseconds || 100 > Db.CommandRecord.Count) {
+                                int dumpRemaining = 50;
                                 Log.Error (Log.LOG_DB, "RunInTransaction: {0} Commands", Db.CommandRecord.Count);
                                 foreach (var command in Db.CommandRecord) {
-                                    Log.Error (Log.LOG_DB, "RunInTransaction: {0}", command);
+                                    if (0 > --dumpRemaining) {
+                                        break;
+                                    }
+                                    Log.Info (Log.LOG_DB, "RunInTransaction: {0}", command);
                                 }
                             }
                             Db.CommandRecord = null;
