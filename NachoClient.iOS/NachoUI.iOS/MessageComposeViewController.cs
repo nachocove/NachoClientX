@@ -285,6 +285,7 @@ namespace NachoClient.iOS
             };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
+                View.EndEditing (true);
                 if (OkToSend ()) {
                     SendMessage ();
                     owner = null;
