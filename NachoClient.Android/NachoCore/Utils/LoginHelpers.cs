@@ -16,8 +16,12 @@ namespace NachoCore.Utils
         }
 
         //Sets the status of the sync bit for given accountId
+        //Implies that auto-d is complete too.
         static public void SetFirstSyncCompleted (int accountId, bool toWhat)
         {
+            if (toWhat) {
+                LoginHelpers.SetAutoDCompleted (accountId, true);
+            }
             Log.Info (Log.LOG_UI, "SetFirstSyncCompleted: {0}={1}", accountId, toWhat);
             NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "hasSyncedFolders", toWhat);
