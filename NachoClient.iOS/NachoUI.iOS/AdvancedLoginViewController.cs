@@ -524,9 +524,14 @@ namespace NachoClient.iOS
         {
             showAdvanced = true;
             stayInAdvanced = true;
-            stopBeIfRunning ();
             handleStatusEnums ();
             waitScreen.DismissView ();
+        }
+
+        public void SegueToSupport()
+        {
+            waitScreen.DismissView ();
+            PerformSegue ("SegueToSupport", this);
         }
 
         void LayoutView ()

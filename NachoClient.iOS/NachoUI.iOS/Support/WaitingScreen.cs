@@ -25,13 +25,12 @@ namespace NachoClient.iOS
         protected UIImageView secondTriangleImage;
         protected UILabel welcomeToLabel;
         protected UILabel nachoMailLabel;
-        protected UIImageView swipeUpTriangle;
-        protected UILabel swipeUpLabel;
         protected UIImageView topHalfSpinner;
         protected UIImageView bottomHalfSpinner;
         protected UIImageView circleMask;
         protected UIView spinnerView;
         protected UIView animationBlocker;
+        protected UIButton supportButton;
         protected UIButton dismissButton;
         protected const int SPINNER_WIDTH = 150;
         protected const int SPINNER_HEIGHT = 338;
@@ -140,21 +139,21 @@ namespace NachoClient.iOS
             nachoMailLabel.TextAlignment = UITextAlignment.Center;
             this.AddSubview (nachoMailLabel);
 
-            swipeUpTriangle = new UIImageView (UIImage.FromBundle ("Bootscreen-4@2x"));
-            swipeUpTriangle.Frame = new CGRect (this.Frame.Width / 2 - 11, LOWER_SECTION_Y_VAL + 289, 22, 9);
-            swipeUpTriangle.Alpha = 0.0f;
-            this.AddSubview (swipeUpTriangle);
-
-            swipeUpLabel = new UILabel (new CGRect (70, LOWER_SECTION_Y_VAL + 255, 180, 20));
-            swipeUpLabel.Font = A.Font_AvenirNextRegular14;
-            swipeUpLabel.TextColor = A.Color_NachoYellow;
-            swipeUpLabel.Text = "Get Started Now";
-            swipeUpLabel.Alpha = 0.0f;
-            swipeUpLabel.TextAlignment = UITextAlignment.Center;
-            this.AddSubview (swipeUpLabel);
+            supportButton = new UIButton (UIButtonType.System);
+            supportButton.SetTitle ("Customer Support", UIControlState.Normal);
+            supportButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+            supportButton.Font = A.Font_AvenirNextRegular12;
+            supportButton.ContentMode = UIViewContentMode.Center;
+            supportButton.BackgroundColor = UIColor.Clear;
+            supportButton.AccessibilityLabel = "Dismiss";
+            supportButton.TouchUpInside += (object sender, EventArgs e) => {
+                owner.SegueToSupport ();
+            };
+            supportButton.SizeToFit ();
+            ViewFramer.Create (supportButton).Center (this.Frame.Width / 2, this.Frame.Bottom - 70);
+            this.AddSubview (supportButton);
 
             dismissButton = new UIButton (UIButtonType.System);
-            dismissButton.Frame = new CGRect (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30, 150, 15);
             dismissButton.SetTitle ("Return to Account Setup", UIControlState.Normal);
             dismissButton.SetTitleColor (UIColor.White, UIControlState.Normal);
             dismissButton.Font = A.Font_AvenirNextRegular12;
@@ -164,7 +163,10 @@ namespace NachoClient.iOS
             dismissButton.TouchUpInside += (object sender, EventArgs e) => {
                 owner.ReturnToAdvanceView ();
             };
+            dismissButton.SizeToFit ();
+            ViewFramer.Create (dismissButton).Center (this.Frame.Width / 2, this.Frame.Bottom - 40);
             this.AddSubview (dismissButton);
+
 
             this.Hidden = true;
         }
@@ -290,6 +292,7 @@ namespace NachoClient.iOS
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .075, () => {
                     dismissButton.Alpha = 0.0f;
+                    supportButton.Alpha = 0.0f;
                     syncStatusLabel.Alpha = 0.0f;
                 });
 
@@ -317,11 +320,6 @@ namespace NachoClient.iOS
                     welcomeToLabel.Alpha = 1.0f;
                     nachoMailLabel.Alpha = 1.0f;
                 });
-
-//                UIView.AddKeyframeWithRelativeStartTime (.375, .075, () => {
-//                    swipeUpLabel.Alpha = 1.0f;
-//                    swipeUpLabel.Frame = new RectangleF (swipeUpLabel.Frame.X, swipeUpLabel.Frame.Y - 2f, swipeUpLabel.Frame.Width, swipeUpLabel.Frame.Height);
-//                });
 
             }, ((bool finished) => {
                 owner.PerformSegue (StartupViewController.NextSegue (), this);
