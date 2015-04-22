@@ -45,7 +45,7 @@ namespace NachoCore.ActiveSync
             McEmailAddress fromEmailAddress;
             if (McEmailAddress.Get (folder.AccountId, emailMessage.From, out fromEmailAddress)) {
                 emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                emailMessage.cachedFromLetters = EmailHelper.Initials(emailMessage.From);
+                emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
                 emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
             } else {
                 emailMessage.FromEmailAddressId = 0;
@@ -59,7 +59,9 @@ namespace NachoCore.ActiveSync
 
             NcModel.Instance.RunInTransaction (() => {
                 if ((0 != emailMessage.FromEmailAddressId) || (0 < emailMessage.ToEmailAddressId.Count)) {
-                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                    if (!folder.IsJunkFolder ()) {
+                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                    }
                 }
 
                 bool justCreated = false;

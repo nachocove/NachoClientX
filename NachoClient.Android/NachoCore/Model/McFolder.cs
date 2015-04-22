@@ -871,6 +871,14 @@ namespace NachoCore.Model
             }
             JunkFolderIds = junkFolderIds;
         }
+
+        public static string JunkFolderListSqlString ()
+        {
+            if (0 == JunkFolderIds.Count) {
+                return null;
+            }
+            return "[" + string.Join (",", JunkFolderIds.Keys) + "]";
+        }
     }
 }
 

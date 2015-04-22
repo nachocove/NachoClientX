@@ -63,12 +63,6 @@ namespace NachoCore.Brain
         {
         }
 
-        protected static void MarkAsGleaned (McEmailMessage emailMessage)
-        {
-            emailMessage.HasBeenGleaned = true;
-            emailMessage.Update ();
-        }
-
         /// TODO: I wanna be table driven!
         protected static bool DoNotGlean (string address)
         {
@@ -149,21 +143,31 @@ namespace NachoCore.Brain
 
         public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage)
         {
-            return InterruptibleGleaning ((obeyAbatement) => {
+            // Caller is responsible for making sure that this is not in a junk folder.
+            // We do not check here in order to avoid a lot of db queries just for
+            // gleaning.
+            bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
                 GleanContacts (emailMessage.To, emailMessage.AccountId, obeyAbatement);
                 GleanContacts (emailMessage.From, emailMessage.AccountId, obeyAbatement);
             }, false);
+            if (gleaned) {
+                emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
+            }
+            return gleaned;
         }
 
         public static bool GleanContactsHeaderPart2 (McEmailMessage emailMessage)
         {
+            // McEmailMessage.QueryNeedGleaning() should filter out all ungleaned emails
+            // in any of the junk folders. So, we don't do the junk folder check again
+            // because it costs an additional query (on McMapFolderFolderEntry) per email.
             bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
                 GleanContacts (emailMessage.Cc, emailMessage.AccountId, obeyAbatement);
                 GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId, obeyAbatement);
                 GleanContacts (emailMessage.Sender, emailMessage.AccountId, obeyAbatement);
             }, true);
             if (gleaned) {
-                MarkAsGleaned (emailMessage);
+                emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
             }
             return gleaned;
         }

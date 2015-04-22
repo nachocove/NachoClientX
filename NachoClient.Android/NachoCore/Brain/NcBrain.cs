@@ -148,10 +148,11 @@ namespace NachoCore.Brain
                     quickGlean = true;
                 }
             }
+            var emailMessages = McEmailMessage.QueryNeedGleaning (accountId, count);
+            count = emailMessages.Count;
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
                    !EventQueue.Token.IsCancellationRequested) {
-                McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning (accountId);
-                if (!GleanEmailMessage (emailMessage, accountAddress, quickGlean)) {
+                if (!GleanEmailMessage (emailMessages [numGleaned], accountAddress, quickGlean)) {
                     break;
                 }
                 numGleaned++;

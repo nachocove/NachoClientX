@@ -12,6 +12,13 @@ namespace NachoCore.Model
 {
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
+        public enum GleanPhaseEnum
+        {
+            NOT_GLEANED = 0,
+            GLEAN_PHASE1 = 1,
+            GLEAN_PHASE2 = 2,
+        };
+
         [Indexed]
         public int ScoreVersion { get; set; }
 
@@ -287,20 +294,22 @@ namespace NachoCore.Model
         public static McEmailMessage QueryNeedAnalysis ()
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == true)
+                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == 0)
                 .FirstOrDefault ();
         }
 
-        public static McEmailMessage QueryNeedGleaning (Int64 accountId = -1)
+        public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
         {
+            var query = String.Format ("SELECT e.* FROM McEmailMessage AS e " +
+                        " JOIN McMapFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                        " WHERE " +
+                        " likelihood (HasBeenGleaned < ?, 0.1) " +
+                        " likelihood (m.FolderId NOT IN {0}) ", McFolder.JunkFolderListSqlString ());
             if (0 <= accountId) {
-                return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
-                " likelihood (AccountId = ?, 1.0) AND " +
-                " likelihood (HasBeenGleaned = ?, 0.1) LIMIT 1",
-                    accountId, false).FirstOrDefault ();
+                query += " likelihood (AccountId = ?, 1.0) ";
+                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId);
             } else {
-                return NcModel.Instance.Db.Table<McEmailMessage> ()
-                    .Where (x => x.HasBeenGleaned == false).FirstOrDefault ();
+                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2);
             }
         }
 
@@ -464,6 +473,12 @@ namespace NachoCore.Model
                 brain.McEmailMessageCounters.Update.Click ();
                 brain.NotifyEmailMessageUpdates ();
             }
+        }
+
+        public void MarkAsGleaned (GleanPhaseEnum phase)
+        {
+            HasBeenGleaned = (int)phase;
+            Update ();
         }
 
         private static void TimeVarianceCallBack (int state, Int64 objId)

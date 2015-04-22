@@ -47,11 +47,11 @@ namespace Test.Common
 
             emailMessage.Insert ();
 
-            Assert.False (emailMessage.HasBeenGleaned);
+            Assert.AreEqual ((int)McEmailMessage.GleanPhaseEnum.NOT_GLEANED, emailMessage.HasBeenGleaned);
             bool gleaned = NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
             Assert.True (gleaned);
 
-            Assert.False (emailMessage.HasBeenGleaned);
+            Assert.AreEqual ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1, emailMessage.HasBeenGleaned);
             CheckHasContact ("bob@company.net", null, null);
             CheckHasContact ("john@abc.org", "John", "Brown");
             CheckHasContact ("jane@abc.org", "Jane", "Doe");
@@ -60,7 +60,7 @@ namespace Test.Common
             gleaned = NcContactGleaner.GleanContactsHeaderPart2 (emailMessage);
             Assert.True (gleaned);
 
-            Assert.True (emailMessage.HasBeenGleaned);
+            Assert.AreEqual ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2, emailMessage.HasBeenGleaned);
             CheckHasContact ("john@abc.org", "John", "Brown");
             CheckHasContact ("jane@abc.org", "Jane", "Doe");
             CheckHasContact ("mike@xyz.org", "Mike", "Jordan");

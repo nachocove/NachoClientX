@@ -21,7 +21,7 @@ namespace NachoCore.Model
         public int OwnerEpoch { get; set; }
 
         [Indexed]
-        public bool HasBeenGleaned { get; set; }
+        public int HasBeenGleaned { get; set; }
 
         /// Index of Body container
         public int BodyId { get; set; }
@@ -125,8 +125,8 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " likelihood (f.AccountId = ?, 1.0) AND " +
-                    " likelihood (f.BodyId = ?, 0.001) ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.BodyId = ?, 0.001) ",
                     typeof(T).Name), 
                 accountId, bodyId);
         }
@@ -135,9 +135,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " likelihood (f.AccountId = ?, 1.0) AND " +
-                    " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                    " likelihood (f.ClientId = ?, 0.001) ", 
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.ClientId = ?, 0.001) ", 
                     typeof(T).Name), 
                 accountId, clientId).SingleOrDefault ();
         }
@@ -163,8 +163,8 @@ namespace NachoCore.Model
                     " likelihood (e.AccountId = ?, 1.0) AND " +
                     " likelihood (m.AccountId = ?, 1.0) AND " +
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                    " likelihood (m.FolderId = ?, 0.05) AND " + 
-                    " likelihood (m.AsSyncEpoch < ?, 0.5) " + 
+                    " likelihood (m.FolderId = ?, 0.05) AND " +
+                    " likelihood (m.AsSyncEpoch < ?, 0.5) " +
                     " LIMIT ? ",
                     typeof(T).Name),
                 accountId, accountId, folderId, currentEpoch, limit);
@@ -237,6 +237,7 @@ namespace NachoCore.Model
         }
 
         protected delegate void InitializeItemDelegate<T> (T item);
+
         protected delegate bool CheckItemDelegate<T> (T item);
 
         protected void SaveAncillaryCollection<T> (
