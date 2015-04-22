@@ -41,6 +41,7 @@ namespace NachoClient.iOS
             }
 
             this.View.BackgroundColor = A.Color_NachoGreen;
+            Util.ConfigureNavBar (false, NavigationController);
         }
 
         public static string NextSegue ()
@@ -140,7 +141,7 @@ namespace NachoClient.iOS
             this.Add (MigrationSpinner);
         }
 
-        void BlankScreen()
+        void BlankScreen ()
         {
             this.NavigationItem.Title = "";
             MigrationMessageTextView.Text = "";
@@ -175,7 +176,7 @@ namespace NachoClient.iOS
                 break;
             default:
                 // Rare and will be quick
-                BlankScreen();
+                BlankScreen ();
 
                 break;
             }
