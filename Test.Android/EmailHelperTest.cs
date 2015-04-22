@@ -299,6 +299,22 @@ namespace Test.Android
             quoted = EmailHelper.QuoteForReply ("goodbye\n> hello\n");
             Assert.AreEqual ("> goodbye\n>> hello\n", quoted);
         }
+
+        [Test]
+        public void InitialsTest()
+        {
+            string initials;
+            string emailAddress;
+
+            emailAddress = "\"Bank of America\" <BankofAmerica@loyaltycard.bankofamerica.com>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("BA", initials);
+
+            emailAddress = "\"Bob Jones (ECMA)\" <BobJones@ecma.org>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("BJ", initials);
+
+        }
     }
 }
 
