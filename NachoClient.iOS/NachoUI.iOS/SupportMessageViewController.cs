@@ -272,6 +272,8 @@ namespace NachoClient.iOS
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();
                 supportInfo.Add ("ContactInfo", contactInfoTextField.Text);
                 supportInfo.Add ("Message", messageInfoTextView.Text);
+                supportInfo.Add ("BuildVersion", Build.BuildInfo.Version);
+                supportInfo.Add ("BuildNumber", Build.BuildInfo.BuildNumber);
 
                 Telemetry.StartService ();
                 Telemetry.RecordSupport (supportInfo, () => {
