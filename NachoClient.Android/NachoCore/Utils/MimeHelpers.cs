@@ -501,9 +501,8 @@ namespace NachoCore.Utils
             if (entity is MessagePart) {
                 // This entity is an attached message/rfc822 mime part.
                 var messagePart = (MessagePart)entity;
-                // If you'd like to render this inline instead of treating
-                // it as an attachment, you would just continue to recurse:
-                MimeDisplayList (messagePart.Message, list, preferredType);
+                // The preferredType should only apply to the outermost message, not any nested messages.
+                MimeDisplayList (messagePart.Message, list, null);
                 return;
             }
             if (entity is Multipart) {
@@ -579,19 +578,36 @@ namespace NachoCore.Utils
             MimeEntity plain = null;
             MimeEntity lastNonCalendar = null;
             foreach (var entity in multipart) {
-                if (null != preferredType && entity.ContentType.MimeType == preferredType) {
+
+                // When an e-mail message has HTML with embedded images, then many mailers will send out
+                // a message with the following structure:
+                //    multipart/alternative
+                //        text/plain
+                //        multipart/related
+                //            text/html
+                //            image/jpeg
+                // When deciding which of the multipart/alternative subparts to choose, we are interested
+                // in the type of the first child of the multipart/related rather than the multipart/related
+                // itself, because we ultimately want to show the HTML part instead of the plain text part.
+                var effectiveEntity = entity;
+                while (effectiveEntity.ContentType.Matches ("multipart", "related") && effectiveEntity is Multipart && 0 < ((Multipart)effectiveEntity).Count) {
+                    effectiveEntity = ((Multipart)effectiveEntity) [0];
+                }
+                var effectiveType = effectiveEntity.ContentType;
+
+                if (null != preferredType && effectiveType.MimeType == preferredType) {
                     preferred = entity;
                 }
-                if (entity.ContentType.Matches("text", "html")) {
+                if (effectiveType.Matches("text", "html")) {
                     html = entity;
                 }
-                if (entity.ContentType.Matches("text", "rtf")) {
+                if (effectiveType.Matches("text", "rtf")) {
                     rtf = entity;
                 }
-                if (entity.ContentType.Matches("text", "plain")) {
+                if (effectiveType.Matches("text", "plain")) {
                     plain = entity;
                 }
-                if (!entity.ContentType.Matches("text", "calendar")) {
+                if (!effectiveType.Matches("text", "calendar")) {
                     lastNonCalendar = entity;
                 }
             }
