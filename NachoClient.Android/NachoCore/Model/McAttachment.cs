@@ -98,9 +98,9 @@ namespace NachoCore.Model
                 // TODO We think that exceptions can own attachments, but that hasn't been confirmed.
                 return NcModel.Instance.Db.Query<McAttachment> (
                     "SELECT a.* FROM McAttachment AS a WHERE " +
-                    " a.AccountId = ? AND " +
-                    " a.ItemId = ? AND " +
-                    " a.ClassCode = ?",
+                    " likelihood (a.AccountId = ?, 1.0) AND " +
+                    " likelihood (a.ItemId = ?, 0.01) AND " +
+                    " likelihood (a.ClassCode = ?, 0.5) ",
                     accountId, itemId, (int)classCode);
             } else {
                 // For other kinds of items, don't even bother looking in the database.
