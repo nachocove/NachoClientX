@@ -583,9 +583,9 @@ namespace NachoCore.Model
                             workWatch.Start ();
                             Db.RunInTransaction (action);
                             workWatch.Stop ();
-                            if (1000 < workWatch.ElapsedMilliseconds || 100 > Db.CommandRecord.Count) {
+                            if (1000 < workWatch.ElapsedMilliseconds || 1000 < Db.CommandRecord.Count) {
                                 int dumpRemaining = 100;
-                                Log.Error (Log.LOG_DB, "RunInTransaction: {0} Commands", Db.CommandRecord.Count);
+                                Log.Error (Log.LOG_DB, "RunInTransaction: Commands/ms: {0}/{1}", Db.CommandRecord.Count, workWatch.ElapsedMilliseconds);
                                 var sb = new StringBuilder ();
                                 sb.AppendLine ();
                                 foreach (var command in Db.CommandRecord) {
@@ -593,13 +593,12 @@ namespace NachoCore.Model
                                         break;
                                     }
                                     sb.Append (command);
-                                    sb.AppendLine ();
+                                    sb.Append ('\n');
                                 }
                                 Log.Info (Log.LOG_DB, "RunInTransaction: {0}", sb);
                             }
                             Db.CommandRecord = null;
                         }
-                        workWatch.Stop ();
                         var lockSpan = lockWatch.ElapsedMilliseconds;
                         var workSpan = workWatch.ElapsedMilliseconds;
                         // Use different threshholds for reporting long transactions based on whether or not

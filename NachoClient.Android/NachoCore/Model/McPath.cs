@@ -110,10 +110,14 @@ namespace NachoCore.Model
             return retval;
         }
 
-        public static IEnumerable<McPath> QueryByParentId (int accountId, string parentId, bool isFolder)
+        public static List<McPath> QueryByParentId (int accountId, string parentId, bool isFolder)
         {
-            return NcModel.Instance.Db.Table<McPath> ().Where (pe =>
-                pe.ParentId == parentId && pe.AccountId == accountId && pe.IsFolder == isFolder);
+            return NcModel.Instance.Db.Query<McPath> (
+                "SELECT * FROM McPath WHERE " +
+                " likelihood (AccountId = ?, 1.0) AND " +
+                " likelihood (IsFolder = ?, 0.5) AND " +
+                " likelihood (ParentId = ?, 0.05) ", 
+                accountId, isFolder, parentId);
         }
 
         public static McPath QueryByServerId (int accountId, string serverId)
@@ -122,7 +126,7 @@ namespace NachoCore.Model
                             "SELECT * FROM McPath WHERE " +
                             " likelihood (AccountId = ?, 1.0) AND " +
                             " likelihood (ServerId = ?, 0.001) ", 
-                            accountId, serverId).ToList ();
+                            accountId, serverId);
             if (0 == paths.Count) {
                 return null;
             }
