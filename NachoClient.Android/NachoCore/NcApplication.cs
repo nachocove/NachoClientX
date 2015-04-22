@@ -78,6 +78,12 @@ namespace NachoCore
             }
         }
 
+        public bool IsInitializing {
+            get {
+                return (ExecutionContextEnum.Initializing == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
@@ -342,6 +348,7 @@ namespace NachoCore
             if (ShouldEnterSafeMode ()) {
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
+                Telemetry.SharedInstance.Throttling = false;
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");

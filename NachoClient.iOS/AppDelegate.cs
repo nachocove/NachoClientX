@@ -447,11 +447,14 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
+            bool isInitializing = NcApplication.Instance.IsInitializing;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
-            NcApplication.Instance.StopClass4Services ();
+            if (!isInitializing) {
+                NcApplication.Instance.StopClass4Services ();
+            }
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: StopClass4Services complete");
 
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Exit");
