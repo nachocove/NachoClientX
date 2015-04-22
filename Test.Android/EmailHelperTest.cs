@@ -279,6 +279,42 @@ namespace Test.Android
             Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
         }
 
+        [Test]
+        public void QuoteForReplyTest()
+        {
+            string quoted;
+
+            quoted = EmailHelper.QuoteForReply (null);
+            Assert.IsNull (quoted);
+            quoted = EmailHelper.QuoteForReply ("");
+            Assert.AreEqual ("", quoted);
+            quoted = EmailHelper.QuoteForReply ("\n");
+            Assert.AreEqual (">\n", quoted);
+            quoted = EmailHelper.QuoteForReply (" \n");
+            Assert.AreEqual (">  \n", quoted);
+            quoted = EmailHelper.QuoteForReply (">  \n");
+            Assert.AreEqual (">>  \n", quoted);
+            quoted = EmailHelper.QuoteForReply ("hello\n");
+            Assert.AreEqual ("> hello\n", quoted);
+            quoted = EmailHelper.QuoteForReply ("goodbye\n> hello\n");
+            Assert.AreEqual ("> goodbye\n>> hello\n", quoted);
+        }
+
+        [Test]
+        public void InitialsTest()
+        {
+            string initials;
+            string emailAddress;
+
+            emailAddress = "\"Bank of America\" <BankofAmerica@loyaltycard.bankofamerica.com>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("BA", initials);
+
+            emailAddress = "\"Bob Jones (ECMA)\" <BobJones@ecma.org>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("BJ", initials);
+
+        }
     }
 }
 

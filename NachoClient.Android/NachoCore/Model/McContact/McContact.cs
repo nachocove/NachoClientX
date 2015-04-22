@@ -35,6 +35,13 @@ namespace NachoCore.Model
         }
     }
 
+    public class NcContactPortraitIndex
+    {
+        public int PortraitId { set; get; }
+
+        public int EmailAddress { set; get; }
+    }
+
     public class McContactComparer : IEqualityComparer<McContact>
     {
         public bool Equals (McContact a, McContact b)
@@ -428,6 +435,9 @@ namespace NachoCore.Model
             McEmailAddress emailAddress;
             if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
                 f.EmailAddress = emailAddress.Id;
+                if (0 == this.CircleColor) {
+                    this.CircleColor = emailAddress.ColorIndex;
+                }
             }
             EmailAddresses.Add (f);
             return f;
@@ -664,7 +674,9 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+            if (0 == CircleColor) {
+                CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+            }
             EvaluateSelfEclipsing ();
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
@@ -1069,14 +1081,27 @@ namespace NachoCore.Model
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                "SELECT c.* FROM McContact AS c " +
-                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
-                " WHERE " +
-                " s.Value = ? AND " +
-                " likelihood (c.AccountId = ?, 1.0) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
-                emailAddress, accountId);
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              " WHERE " +
+                                              " s.Value = ? AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                                              emailAddress, accountId);
             return contactList;
+        }
+
+        public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)
+        {
+            var set = String.Format ("( {0} )", String.Join (",", emailAddressIndexList.ToArray<int> ()));
+            var cmd = String.Format (
+                          "Select s.EmailAddress, c.PortraitId From McContact AS c" +
+                          " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                          " WHERE " +
+                          " s.EmailAddress IN {0} AND " +
+                          " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (c.PortraitId <> 0, 0.1)", set);
+            return NcModel.Instance.Db.Query<NcContactPortraitIndex> (cmd);
         }
 
         public static List<McContact> QueryGleanedContactsByEmailAddress (int accountId, string emailAddress)
@@ -1085,14 +1110,14 @@ namespace NachoCore.Model
             //        query to use McMapFolderFolderEntry to look for only internal contacts in the 
             //        gleaned folder
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                "SELECT c.* FROM McContact AS c " +
-                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
-                "WHERE " +
-                " s.Value = ? AND " +
-                " c.Source = ? AND " +
-                " likelihood (c.AccountId = ?, 1.0) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
-                emailAddress, (int)McAbstrItem.ItemSource.Internal, accountId);
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              "WHERE " +
+                                              " s.Value = ? AND " +
+                                              " c.Source = ? AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                                              emailAddress, (int)McAbstrItem.ItemSource.Internal, accountId);
             return contactList;
         }
 
@@ -1113,49 +1138,49 @@ namespace NachoCore.Model
         {
             var emailWildcard = "%" + emailAddress + "%";
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                "SELECT c.* FROM McContact AS c " +
-                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
-                " WHERE " +
-                " s.Value LIKE ? AND " +
-                " likelihood (c.AccountId = ?, 1.0) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
-                emailWildcard, accountId);
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              " WHERE " +
+                                              " s.Value LIKE ? AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                                              emailWildcard, accountId);
             return contactList;
         }
 
         public static List<McContact> QueryByEmailAddressInFolder (int accountId, int folderId, string emailAddress)
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                "SELECT c.* FROM McContact AS c " +
-                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
-                " likelihood (c.AccountId = ?, 1.0) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
-                " s.Value = ? AND " +
-                " likelihood (m.ClassCode = ?, 0.2) AND " +
-                " likelihood (m.FolderId = ?, 0.05) ",
-                accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                              " WHERE " +
+                                              " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                                              " s.Value = ? AND " +
+                                              " likelihood (m.ClassCode = ?, 0.2) AND " +
+                                              " likelihood (m.FolderId = ?, 0.05) ",
+                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
             return contactList;
         }
 
         public static List<McContact> QueryByEmailAddressInSyncedFolder (int accountId, string emailAddress)
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
-                "SELECT c.* FROM McContact AS c " +
-                " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " JOIN McFolder AS f ON f.Id = m.FolderId " +
-                " WHERE " +
-                " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
-                " likelihood (c.AccountId = f.AccountId, 1.0) AND " +
-                " likelihood (c.AccountId = ?, 1.0) AND " +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
-                " s.Value = ? AND " +
-                " likelihood (m.ClassCode = ?, 0.2) AND " +
-                " f.IsClientOwned = false ",
-                accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                                              " JOIN McFolder AS f ON f.Id = m.FolderId " +
+                                              " WHERE " +
+                                              " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = f.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                                              " s.Value = ? AND " +
+                                              " likelihood (m.ClassCode = ?, 0.2) AND " +
+                                              " f.IsClientOwned = false ",
+                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
             return contactList;
         }
 
@@ -1336,8 +1361,8 @@ namespace NachoCore.Model
         {
             var account = McAccount.GetDeviceAccount ();
             return NcModel.Instance.Db.Query<McContact> ("SELECT * FROM McContact WHERE " +
-                " likelihood (AccountId = ?, 1.0) AND " +
-                " likelihood (DeviceUniqueId = ?, 0.001) ",
+            " likelihood (AccountId = ?, 1.0) AND " +
+            " likelihood (DeviceUniqueId = ?, 0.001) ",
                 account.Id, deviceUniqueId).SingleOrDefault ();
         }
 
@@ -1355,6 +1380,9 @@ namespace NachoCore.Model
             }           
             if (!String.IsNullOrEmpty (LastName)) {
                 value.Add (LastName);
+            }
+            if (!String.IsNullOrEmpty (Suffix)) {
+                value.Add (Suffix);
             }
             var name = String.Join (" ", value);
             if (String.IsNullOrEmpty (name)) {

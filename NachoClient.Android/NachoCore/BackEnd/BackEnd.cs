@@ -352,9 +352,9 @@ namespace NachoCore
             return ServiceFromAccountId (accountId, (service) => service.CreateCalCmd (calId, folderId));
         }
 
-        public NcResult UpdateCalCmd (int accountId, int calId)
+        public NcResult UpdateCalCmd (int accountId, int calId, bool sendBody)
         {
-            return ServiceFromAccountId (accountId, (service) => service.UpdateCalCmd (calId));
+            return ServiceFromAccountId (accountId, (service) => service.UpdateCalCmd (calId, sendBody));
         }
 
         public NcResult DeleteCalCmd (int accountId, int calId)

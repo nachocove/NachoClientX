@@ -279,11 +279,20 @@
     <Compile Include="..\Test.Android\HashHelperTest.cs">
       <Link>HashHelperTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\CrlMonitorTest.cs">
+      <Link>CrlMonitorTest.cs</Link>
+    </Compile>
     <Compile Include="..\Test.Android\RemoveAccountTest.cs">
       <Link>RemoveAccountTest.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\McTelemetryEventTest.cs">
       <Link>McTelemetryEventTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\NcEmailAddressTest.cs">
+      <Link>NcEmailAddressTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\ErrorHelperTest.cs">
+      <Link>ErrorHelperTest.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -354,6 +363,10 @@
     <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS64.csproj">
       <Project>{6941F069-AC02-40EE-BBF3-9FE3331030EF}</Project>
       <Name>ModernHttpClient.iOS64</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
+      <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
+      <Name>NachoPlatformBinding</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

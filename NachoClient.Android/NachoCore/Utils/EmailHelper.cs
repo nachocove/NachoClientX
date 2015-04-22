@@ -28,7 +28,7 @@ namespace NachoCore.Utils
         // Message is saved into Outbox
         public static void SendTheMessage (Action action, McEmailMessage messageToSend, bool originalEmailIsEmbedded, McEmailMessage referencedMessage, bool calendarInviteIsSet, McAbstrCalendarRoot calendarInviteItem)
         {
-            var outbox = McFolder.GetOutboxFolder (messageToSend.AccountId);
+            var outbox = McFolder.GetClientOwnedOutboxFolder (messageToSend.AccountId);
             if (null != outbox) {
                 outbox.Link (messageToSend);
             } else {
@@ -115,8 +115,8 @@ namespace NachoCore.Utils
                 BackEnd.Instance.Cancel (message.AccountId, pending.Token);
             }
             // Move files in client-owned folders manually
-            var draftsFolder = McFolder.GetEmailDraftsFolder (message.AccountId);
-            var outboxFolder = McFolder.GetOutboxFolder (message.AccountId);
+            var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
+            var outboxFolder = McFolder.GetClientOwnedOutboxFolder (message.AccountId);
             outboxFolder.Unlink (message);
             draftsFolder.Link (message);
             // Send status ind after the message is moved
@@ -158,7 +158,7 @@ namespace NachoCore.Utils
 
         public static void SaveEmailMessageInDrafts (McEmailMessage message)
         {
-            var draftsFolder = McFolder.GetEmailDraftsFolder (message.AccountId);
+            var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
             if (null != draftsFolder) {
                 draftsFolder.Link (message);
             } else {
@@ -580,6 +580,39 @@ namespace NachoCore.Utils
             return result.ToString ();
         }
 
+        public static string QuoteForReply (string s)
+        {
+            if (String.IsNullOrEmpty (s)) {
+                return s;
+            }
+            string[] lines = s.Split (new Char[] { '\n' });
+            StringBuilder builder = new StringBuilder ();
+
+            // If the split pattern matches the tail of s,
+            // an extra empty string is added to the array.
+            int count = lines.Length;
+            if (0 == count) {
+                return s;  // unexpected
+            }
+            if (String.IsNullOrEmpty (lines [count - 1])) {
+                count -= 1; // skip the last entry
+            }
+            for (int i = 0; i < count; i++) {
+                var line = lines [i];
+                if (String.IsNullOrEmpty (line)) {
+                    builder.Append (">");
+                } else if ('>' == line [0]) {
+                    builder.Append ('>');
+                    builder.Append (line);
+                } else {
+                    builder.Append ("> ");
+                    builder.Append (line);
+                }
+                builder.Append ('\n');
+            }
+            return builder.ToString ();
+        }
+
         public static string Initials (string fromAddressString)
         {
             // Parse the from address
@@ -588,27 +621,8 @@ namespace NachoCore.Utils
                 return "";
             }
             McContact contact = new McContact ();
-            NcEmailAddress.SplitName (mailboxAddress, ref contact);
-            // Using the name
-            string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
-            if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
-            }
-            // Or, failing that, the first char
-            if (String.IsNullOrEmpty (initials)) {
-                if (!String.IsNullOrEmpty (fromAddressString)) {
-                    foreach (char c in fromAddressString) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
-            }
-            return initials;
+            NcEmailAddress.ParseName (mailboxAddress, ref contact);
+            return ContactsHelper.GetInitials (contact);
         }
 
         public static MimeMessage CreateMessage (McAccount account, List<NcEmailAddress> toList, List<NcEmailAddress> ccList, List<NcEmailAddress> bccList)

@@ -369,6 +369,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration9.cs" />
     <Compile Include="NachoCore\Utils\ManageItems.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration10.cs" />
+    <Compile Include="NachoCore\Utils\CrlMonitor.cs" />
     <Compile Include="NachoCore\Model\McSQLiteMaster.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration11.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration12.cs" />
@@ -390,6 +391,10 @@
     <Compile Include="NachoCore\Model\McBrainEvent.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration17.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration18.cs" />
+    <Compile Include="NachoCore\Utils\NotificationHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration19.cs" />
+    <Compile Include="NachoCore\Utils\ErrorHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration20.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

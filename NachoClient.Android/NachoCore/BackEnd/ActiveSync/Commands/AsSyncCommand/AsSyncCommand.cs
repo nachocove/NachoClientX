@@ -120,7 +120,7 @@ namespace NachoCore.ActiveSync
             var cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                AsHelpers.ToXmlApplicationData (cal, BEContext));
+                AsHelpers.ToXmlApplicationData (cal, BEContext, pending.CalUpdate_SendBody));
         }
 
         private XElement ToCalDelete (McPending pending, McFolder folder)
@@ -183,6 +183,18 @@ namespace NachoCore.ActiveSync
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
         }
 
+        private XElement MimeSupportElement (Xml.AirSync.MimeSupportCode mimeSupport)
+        {
+            return new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)mimeSupport);
+        }
+
+        private XElement BodyPreferenceElement (Xml.AirSync.TypeCode bodyType)
+        {
+            return new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)bodyType),
+                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"));
+        }
+
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
@@ -207,12 +219,12 @@ namespace NachoCore.ActiveSync
                         // If the server supports previews, then ask for 0-sized MIME with a preview.
                         // Otherwise, ask for 255 bytes of plain text.
                         if (BEContext.Server.HostIsGMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
+                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
                             options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                                 new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "255")));
                         } else {
-                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
+                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.AllMime_2));
                             options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
                                 new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "0"),
@@ -222,29 +234,25 @@ namespace NachoCore.ActiveSync
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        uint mimeSupport;
-                        uint preferredType;
                         if (BEContext.Server.HostIsGMail () || BEContext.Server.HostIsHotMail ()) {
                             // GFE will only give us plain text, no matter what we ask for.
                             // Hotmail will give us anything except MIME, but the HTML and RTF
                             // will be unformatted.  So we may as well just ask for plain text.
-                            mimeSupport = (uint)Xml.AirSync.MimeSupportCode.NoMime_0;
-                            preferredType = (uint)Xml.AirSync.TypeCode.PlainText_1;
+                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
+                            options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.PlainText_1));
                         } else if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                             // Exchange 2007 will fail if we ask for MIME.  But it can handle
-                            // any other format.  So ask for HTML, which is the non-MIME format
-                            // that we handle best.
-                            mimeSupport = (uint)Xml.AirSync.MimeSupportCode.NoMime_0;
-                            preferredType = (uint)Xml.AirSync.TypeCode.Html_2;
+                            // any other format.  So ask for either HTML or plain text, with a
+                            // preference for HTML
+                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
+                            options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.Html_2));
+                            options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.PlainText_1));
                         } else {
                             // The others, Exchange 2010 and Office365, will give us MIME.
-                            mimeSupport = (uint)Xml.AirSync.MimeSupportCode.AllMime_2;
-                            preferredType = (uint)Xml.AirSync.TypeCode.Mime_4;
+                            // MIME is not our preferred format, but it is the only way to get attachments.
+                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.AllMime_2));
+                            options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.Mime_4));
                         }
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, mimeSupport));
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, preferredType),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
@@ -254,16 +262,12 @@ namespace NachoCore.ActiveSync
                                 options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
                             }
                         } else {
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                            options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.PlainText_1));
                         }
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Tasks:
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                        options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.PlainText_1));
                         break;
                     }
                     if (options.HasElements) {

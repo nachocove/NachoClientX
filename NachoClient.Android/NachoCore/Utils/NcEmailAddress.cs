@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -247,7 +248,7 @@ namespace NachoCore.Utils
         }
 
         public static List<NcEmailAddress> ParseAddressListString (string addressString,
-                                                                    Kind addressKind)
+                                                                   Kind addressKind)
         {
             List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
             if (null == addressString) {
@@ -296,32 +297,23 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void SplitName (MailboxAddress address, ref McContact contact)
+        public static void ParseName (MailboxAddress address, ref McContact contact)
         {
-            // Try to parse the display name into first / middle / last name
-            string[] items = address.Name.Split (new char [] { ',', ' ' });
-            switch (items.Length) {
-            case 2:
-                if (0 < address.Name.IndexOf (',')) {
-                    // Last name, First name
-                    contact.LastName = items [0];
-                    contact.FirstName = items [1];
-                } else {
-                    // First name, Last name
-                    contact.FirstName = items [0];
-                    contact.LastName = items [1];
+            var parser = new CSharpNameParser.NameParser ();
+            CSharpNameParser.Name parsedName = parser.Parse (address.Name);
+            if (!String.IsNullOrEmpty (parsedName.FirstName)) {
+                contact.FirstName = parsedName.FirstName;
+                if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) {
+                    contact.MiddleName = parsedName.MiddleInitials;
                 }
-                break;
-            case 3:
-                if (-1 == address.Name.IndexOf (',')) {
-                    contact.FirstName = items [0];
-                    contact.MiddleName = items [1];
-                    contact.LastName = items [2];
-                }
-                break;
+            } else if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) { //use middle name if first name is missing
+                contact.FirstName = parsedName.MiddleInitials;
             }
+            if (!String.IsNullOrEmpty (parsedName.LastName))
+                contact.LastName = parsedName.LastName;
+            if (!String.IsNullOrEmpty (parsedName.Suffix))
+                contact.Suffix = parsedName.Suffix;
         }
-
 
         public static InternetAddressList ToInternetAddressList (List<NcEmailAddress> addressList, Kind kind)
         {

@@ -447,11 +447,14 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
+            bool isInitializing = NcApplication.Instance.IsInitializing;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
-            NcApplication.Instance.StopClass4Services ();
+            if (!isInitializing) {
+                NcApplication.Instance.StopClass4Services ();
+            }
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: StopClass4Services complete");
 
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Exit");
@@ -938,7 +941,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
         }
 
-        private bool NotifyEmailMessage (McEmailMessage message, bool withSound)
+        private bool NotifyEmailMessage (McEmailMessage message, McAccount account, bool withSound)
         {
             if (null == message) {
                 return false;
@@ -1004,12 +1007,31 @@ namespace NachoClient.iOS
             var badgeCount = unreadAndHot.Count ();
             var soundExpressed = false;
             int remainingVisibleSlots = 10;
+            var accountTable = new Dictionary<int, McAccount> ();
 
             foreach (var message in unreadAndHot) {
                 if (message.HasBeenNotified) {
                     continue;
                 }
-                if (!NotifyEmailMessage (message, !soundExpressed)) {
+                McAccount account = null;
+                if (!accountTable.TryGetValue (message.AccountId, out account)) {
+                    var newAccount = McAccount.QueryById<McAccount> (message.AccountId);
+                    if (null == newAccount) {
+                        Log.Warn (Log.LOG_PUSH,
+                            "Will not notify email message from an unknown account (accoundId={0}, emailMessageId={1})",
+                            message.AccountId, message.Id);
+                    }
+                    accountTable.Add (message.AccountId, newAccount);
+                    account = newAccount;
+                }
+                if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
+                    --badgeCount;
+                    message.HasBeenNotified = true;
+                    message.ShouldNotify = false;
+                    message.Update ();
+                    continue;
+                }
+                if (!NotifyEmailMessage (message, account, !soundExpressed)) {
                     --badgeCount;
                     continue;
                 } else {
@@ -1017,6 +1039,7 @@ namespace NachoClient.iOS
                 }
 
                 message.HasBeenNotified = true;
+                message.ShouldNotify = true;
                 message.Update ();
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
                 --remainingVisibleSlots;
@@ -1024,6 +1047,7 @@ namespace NachoClient.iOS
                     break;
                 }
             }
+            accountTable.Clear ();
 
             if (NotificationCanBadge) {
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: badge count = {0}", badgeCount);

@@ -53,7 +53,7 @@ namespace Test.iOS
                 // Lost and Found
                 McFolder expectedLostFound = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_LostAndFound, isClientOwned: true);
 
-                McFolder actualFolder1 = McFolder.GetOutboxFolder (accountId);
+                McFolder actualFolder1 = McFolder.GetClientOwnedOutboxFolder (accountId);
                 FoldersAreEqual (expectedOutbox, actualFolder1, "Should be able to query for distinguished folder (Outbox)");
 
                 McFolder actualFolder2 = McFolder.GetCalDraftsFolder (accountId);

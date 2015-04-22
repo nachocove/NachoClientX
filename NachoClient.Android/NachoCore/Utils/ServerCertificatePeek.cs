@@ -139,6 +139,11 @@ namespace NachoCore.Utils
             if (Instance.Policies.TryGetValue (ident, out policy)) {
                 bool hasPinning = (null != policy.PinnedCert);
                 if (hasPinning) {
+                    // Extract all CRL DP in intermediary certs
+                    foreach (var cert in chain.ChainPolicy.ExtraStore) {
+                        var crlUrls = CertificateHelper.CrlDistributionPoint (cert);
+                        CrlMonitor.Register (crlUrls);
+                    }
                     // Pinned cert - Remove all self-signed certs in ExtraStore and inject the pinned cert
                     var selfSignedCerts = new X509Certificate2Collection ();
                     foreach (var cert in chain.ChainPolicy.ExtraStore) {
@@ -148,6 +153,18 @@ namespace NachoCore.Utils
                     }
                     chain.ChainPolicy.ExtraStore.RemoveRange (selfSignedCerts);
                     chain.ChainPolicy.ExtraStore.Add (policy.PinnedCert);
+                }
+
+                // Remove all revoked certs
+                var revokedCerts = new X509Certificate2Collection ();
+                foreach (var cert in chain.ChainPolicy.ExtraStore) {
+                    if (CrlMonitor.IsRevoked (cert.SerialNumber)) {
+                        revokedCerts.Add (cert);
+                    }
+                }
+                chain.ChainPolicy.ExtraStore.RemoveRange (revokedCerts);
+                if (CrlMonitor.IsRevoked (certificate2.SerialNumber)) {
+                    certificate2 = null;
                 }
 
                 var ok = (null == certificate2 ? false : chain.Build (certificate2));

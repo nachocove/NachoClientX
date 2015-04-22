@@ -78,6 +78,12 @@ namespace NachoCore
             }
         }
 
+        public bool IsInitializing {
+            get {
+                return (ExecutionContextEnum.Initializing == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
@@ -342,6 +348,7 @@ namespace NachoCore
             if (ShouldEnterSafeMode ()) {
                 ExecutionContext = ExecutionContextEnum.Initializing;
                 SafeMode = true;
+                Telemetry.SharedInstance.Throttling = false;
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
@@ -435,6 +442,7 @@ namespace NachoCore
             LocalNotificationManager.ScheduleNotifications ();
 
             MonitorStart (); // Has a deferred timer start inside.
+            CrlMonitor.StartService ();
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
@@ -466,6 +474,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
             MonitorStop ();
+            CrlMonitor.StopService ();
             if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
             }

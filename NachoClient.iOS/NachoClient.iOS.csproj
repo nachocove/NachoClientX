@@ -1205,9 +1205,6 @@
       <Link>NachoCore\Utils\SetHelper.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\DraftsHelper.cs">
-      <Link>NachoCore\Utils\DraftsHelper.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration.cs">
       <Link>NachoCore\Model\Migration\NcMigration.cs</Link>
     </Compile>
@@ -1290,6 +1287,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration10.cs">
       <Link>NachoCore\Model\Migration\NcMigration10.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CrlMonitor.cs">
+      <Link>NachoCore\Utils\CrlMonitor.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
       <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
     </Compile>
@@ -1358,6 +1358,18 @@
       <Link>NachoCore\Model\Migration\NcMigration18.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NotificationHelper.cs">
+      <Link>NachoCore\Utils\NotificationHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration19.cs">
+      <Link>NachoCore\Model\Migration\NcMigration19.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ErrorHelper.cs">
+      <Link>NachoCore\Utils\ErrorHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration20.cs">
+      <Link>NachoCore\Model\Migration\NcMigration20.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

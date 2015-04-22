@@ -152,7 +152,7 @@ namespace NachoCore.ActiveSync
             return (value) ? "1" : "0";
         }
 
-        public static XElement ToXmlApplicationData (McCalendar cal, IBEContext beContext)
+        public static XElement ToXmlApplicationData (McCalendar cal, IBEContext beContext, bool includeBody = true)
         {
             XNamespace AirSyncNs = Xml.AirSync.Ns;
             XNamespace CalendarNs = Xml.Calendar.Ns;
@@ -206,7 +206,7 @@ namespace NachoCore.ActiveSync
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingExternalLink, cal.OnlineMeetingExternalLink));
             }
 
-            if (0 != cal.BodyId) {
+            if (includeBody && 0 != cal.BodyId) {
                 var body = McBody.QueryById<McBody> (cal.BodyId);
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
@@ -633,6 +633,12 @@ namespace NachoCore.ActiveSync
                         break;
                     case Xml.AirSyncBase.Body:
                         e.ApplyAsXmlBody (child);
+                        if (0 != e.BodyId) {
+                            McBody body = McBody.QueryById<McBody> (e.BodyId);
+                            if (McBody.FilePresenceEnum.Complete == body.FilePresence && McBody.BodyTypeEnum.MIME_4 == body.BodyType) {
+                                e.SetServerAttachments (MimeHelpers.LoadMessage (body));
+                            }
+                        }
                         break;
                     case Xml.AirSyncBase.NativeBodyType:
                         NcAssert.CaseError (); // Docs claim this doesn't exist
@@ -706,6 +712,12 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.AirSyncBase.Body:
                     c.ApplyAsXmlBody (child);
+                    if (0 != c.BodyId) {
+                        McBody body = McBody.QueryById<McBody> (c.BodyId);
+                        if (McBody.FilePresenceEnum.Complete == body.FilePresence && McBody.BodyTypeEnum.MIME_4 == body.BodyType) {
+                            c.SetServerAttachments (MimeHelpers.LoadMessage (body));
+                        }
+                    }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
                     c.NativeBodyType = child.Value.ToInt ();

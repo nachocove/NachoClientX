@@ -119,6 +119,7 @@ namespace NachoClient.iOS
         {
             nfloat yOffset = 0;
             searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.AccessibilityLabel = "Search";
             multiSelectButton = new NcUIBarButtonItem ();
             multiOpenInButton = new NcUIBarButtonItem ();
             multiAttachButton = new NcUIBarButtonItem ();
@@ -133,6 +134,7 @@ namespace NachoClient.iOS
                 UINavigationItem title = new UINavigationItem ("Attach file");
                 navbar.SetItems (new UINavigationItem[]{ title }, false);
                 UIBarButtonItem cancelButton = new NcUIBarButtonItem ();
+                cancelButton.AccessibilityLabel = "Cancel";
                 Util.SetAutomaticImageForButton (cancelButton, "icn-close");
 
                 navbar.TopItem.LeftBarButtonItem = cancelButton;

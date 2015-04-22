@@ -112,6 +112,22 @@ namespace NachoClient.iOS
                 cache [cacheIndex].Add (result);
             }
             first [cacheIndex] = block;
+            // Get portraits
+            var fromAddressIdList = new List<int> ();
+            foreach (var message in cache[cacheIndex]) {
+                if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
+                    fromAddressIdList.Add (message.FromEmailAddressId);
+                }
+            }
+            // Assign matching portrait ids to email messages
+            var portraitIndexList = McContact.QueryForPortraits (fromAddressIdList);
+            foreach (var portraitIndex in portraitIndexList) {
+                foreach (var message in cache[cacheIndex]) {
+                    if (portraitIndex.EmailAddress == message.FromEmailAddressId) {
+                        message.cachedPortraitId = portraitIndex.PortraitId;
+                    }
+                }
+            }
         }
 
         public MessageTableViewSource (IMessageTableViewSourceDelegate owner)
@@ -561,11 +577,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 
-            var userImage = Util.PortraitOfSender (message);
-
-            if (null == userImage) {
-                userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
-            }
+            var userImage = Util.PortraitToImage (message.cachedPortraitId);
 
             if (null != userImage) {
                 userImageView.Hidden = false;

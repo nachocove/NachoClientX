@@ -18,6 +18,7 @@ namespace NachoClient.iOS
     public class AttachmentView : UIView
     {
         public delegate void AttachmentSelectedCallback (McAttachment attachment);
+        public delegate void AttachmentErrorCallback (McAttachment attachment, NcResult nr);
 
         protected McAttachment attachment;
         protected UIImageView imageView;
@@ -32,6 +33,7 @@ namespace NachoClient.iOS
         private bool statusIndicatorIsRegistered = false;
         private string downloadToken = null;
 
+        public AttachmentErrorCallback OnAttachmentError;
         public AttachmentSelectedCallback OnAttachmentSelected;
 
         const float ICON_SIZE = 24.0f;
@@ -218,6 +220,9 @@ namespace NachoClient.iOS
             var nr = PlatformHelpers.DownloadAttachment (attachment);
             downloadToken = nr.GetValue<String> ();
             if (null == downloadToken) {
+                if (null != OnAttachmentError) {
+                    OnAttachmentError (attachment, nr);
+                }
                 RefreshStatus ();
                 return;
             }
@@ -243,6 +248,9 @@ namespace NachoClient.iOS
                             }
                         }
                     }, "DelFailedMcPendingAttachmentDnld");
+                    if (null != OnAttachmentError) {
+                        OnAttachmentError (attachment, statusEvent.Status);
+                    }
                 }
                 RefreshStatus ();
                 downloadToken = null;

@@ -606,6 +606,9 @@ namespace NachoCore.Utils
                 tEvent.UiType = uiType;
             }
             tEvent.UiObject = uiObject;
+            if (null == tEvent.UiObject) {
+                Log.Warn (Log.LOG_UI, "UI {0} object without accessibility label", uiType);
+            }
             return tEvent;
         }
 
@@ -901,7 +904,7 @@ namespace NachoCore.Utils
                             }
                         }
 
-                        if (MAX_QUERY_ITEMS > dbEvents.Count) {
+                        if ((MAX_QUERY_ITEMS > dbEvents.Count) && !(dbEvents [0] is McTelemetrySupportEvent)) {
                             // We have completely caught up. Don't want to continue
                             // to the next message immediately because we want to
                             // send multiple messages at a time. This leads to a more

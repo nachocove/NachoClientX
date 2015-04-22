@@ -493,6 +493,67 @@ namespace Test.Common
             ricContact.UpdatePhoneNumbersEclipsing ();
             CheckPhoneNumberNotEclipsed (ricContact);
         }
+
+        [Test]
+        public void QueryForPortraitsTest ()
+        {
+            List<NcContactPortraitIndex> list;
+
+            list = McContact.QueryForPortraits (new List<int> ());
+            Assert.AreEqual (0, list.Count);
+
+            int bobIndex = McEmailAddress.Get (1, "bob@foo.com");
+            Assert.AreNotEqual (0, bobIndex);
+
+            int harryIndex = McEmailAddress.Get (1, "harry@foo.com");
+            Assert.AreNotEqual (0, harryIndex);
+
+            var bob1 = new McContact ();
+            bob1.AccountId = 1;
+            bob1.AddEmailAddressAttribute (1, "bob", "home", "bob@foo.com");
+            bob1.Insert ();
+
+            list = McContact.QueryForPortraits (new List<int> ());
+            Assert.AreEqual (0, list.Count);
+
+            list = McContact.QueryForPortraits (new List<int> { bobIndex });
+            Assert.AreEqual (0, list.Count);
+
+            var harry1 = new McContact ();
+            harry1.AccountId = 1;
+            harry1.AddEmailAddressAttribute (1, "harry", "home", "harry@foo.com");
+            harry1.Insert ();
+
+            list = McContact.QueryForPortraits (new List<int> ());
+            Assert.AreEqual (0, list.Count);
+
+            list = McContact.QueryForPortraits (new List<int> { bobIndex, harryIndex });
+            Assert.AreEqual (0, list.Count);
+
+            harry1.PortraitId = 33;
+            harry1.Update ();
+
+            list = McContact.QueryForPortraits (new List<int> { bobIndex, harryIndex });
+            Assert.AreEqual (1, list.Count);
+            Assert.AreEqual (harryIndex, list [0].EmailAddress);
+            Assert.AreEqual (33, list [0].PortraitId);
+
+            var harry2 = new McContact ();
+            harry2.AccountId = 1;
+            harry2.AddEmailAddressAttribute (1, "harry", "home", "harry@foo.com");
+            harry2.Insert ();
+
+            list = McContact.QueryForPortraits (new List<int> { bobIndex, harryIndex });
+            Assert.AreEqual (1, list.Count);
+            Assert.AreEqual (harryIndex, list [0].EmailAddress);
+            Assert.AreEqual (33, list [0].PortraitId);
+
+            harry2.PortraitId = 44;
+            harry2.Update ();
+
+            list = McContact.QueryForPortraits (new List<int> { bobIndex, harryIndex });
+            Assert.AreEqual (2, list.Count);
+        }
     }
 }
 

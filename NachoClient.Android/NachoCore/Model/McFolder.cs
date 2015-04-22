@@ -165,12 +165,12 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (McAccount.GetDeviceAccount ().Id, ClientOwned_DeviceCalendars);
         }
 
-        public static McFolder GetOutboxFolder (int accountId)
+        public static McFolder GetClientOwnedOutboxFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
         }
 
-        public static McFolder GetEmailDraftsFolder (int accountId)
+        public static McFolder GetClientOwnedDraftsFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_EmailDrafts);
         }
@@ -195,7 +195,7 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
 
-        public bool IsEmailDraftsFolder ()
+        public bool IsClientOwnedDraftsFolder ()
         {
             if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
                 if (ClientOwned_EmailDrafts == this.ServerId) {
@@ -205,7 +205,7 @@ namespace NachoCore.Model
             return false;
         }
 
-        public bool IsOutboxFolder ()
+        public bool IsClientOwnedOutboxFolder ()
         {
             if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
                 if (ClientOwned_Outbox == this.ServerId) {

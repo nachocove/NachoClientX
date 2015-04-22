@@ -2,6 +2,9 @@
 # and push_tag.sh. NachoClientX is not included because fetch.sh
 # does not pull NachoClient.git.
 
+# NOTE: ios-openssl must be in front NachoPlatformBinding as it needs to installs
+#       its C headers after build before NachoPlatformBinding can compile.
+
 repos="
 Reachability
 registered-domain-libs

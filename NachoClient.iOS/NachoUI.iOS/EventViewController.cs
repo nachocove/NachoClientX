@@ -335,6 +335,7 @@ namespace NachoClient.iOS
             attachmentListView.SetHeader ("ATTACHMENTS", A.Font_AvenirNextMedium12, A.Color_NachoLightText, imageView, A.Font_AvenirNextMedium12, A.Color_NachoLightText, UIColor.White, 0f);
             attachmentListView.SetAttachmentCellIndent (42f);
             attachmentListView.OnAttachmentSelected = AttachmentsOnSelected;
+            attachmentListView.OnAttachmentError = AttachmentOnError;
             attachmentListView.OnStateChanged = AttachmentsOnStateChange;
             eventCardView.AddSubview (attachmentListView);
 
@@ -1213,7 +1214,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (0 != c.Id);
             c.Update ();
-            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, false);
             c = McCalendar.QueryById<McCalendar> (c.Id);
         }
 
@@ -1399,6 +1400,15 @@ namespace NachoClient.iOS
             if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                 PlatformHelpers.DisplayAttachment (this, attachment);
             }
+        }
+
+        private void AttachmentOnError(McAttachment attachment, NcResult result)
+        {
+            string message;
+            if(!ErrorHelper.ExtractErrorString(result, out message)) {
+                message = "Download failed.";
+            }
+            NcAlertView.ShowMessage (this, "Attachment error", message);
         }
 
         private void AttachmentsOnStateChange (bool isExpanded)
