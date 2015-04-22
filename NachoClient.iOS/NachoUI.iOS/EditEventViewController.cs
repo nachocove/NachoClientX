@@ -433,6 +433,7 @@ namespace NachoClient.iOS
             titleView.BackgroundColor = UIColor.White;
 
             titleField = new UITextField (new CGRect (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+            titleField.AccessibilityLabel = "Title";
             titleField.Font = labelFont;
             titleField.TextColor = solidTextColor;
             titleField.Placeholder = "Title";
@@ -492,6 +493,7 @@ namespace NachoClient.iOS
             allDayView.AddSubview (allDayLabel);
 
             UISwitch allDaySwitch = new UISwitch ();
+            allDaySwitch.AccessibilityLabel = "All day";
             allDaySwitch.Tag = ALL_DAY_SWITCH_TAG;
             allDaySwitch.SizeToFit ();
             allDaySwitch.OnTintColor = A.Color_NachoTeal;
@@ -687,6 +689,7 @@ namespace NachoClient.iOS
             locationView.BackgroundColor = UIColor.White;
 
             locationField = new UITextField (new CGRect (15, 12.438f, SCREEN_WIDTH - 24, TEXT_LINE_HEIGHT));
+            locationField.AccessibilityLabel = "Location";
             locationField.Font = labelFont;
             locationField.TextColor = solidTextColor;
             locationField.Tag = EVENT_LOCATION_DETAIL_LABEL_TAG;
@@ -1331,7 +1334,7 @@ namespace NachoClient.iOS
                 // Non-break space characters can work their way into the description, especially if it originated
                 // as HTML.  But some clients don't like those characters when they are part of plain text.
                 // So convert non-break spaces to ordinary spaces.
-                c.SetDescription (descriptionTextView.Text.Replace('\x00A0', ' '), McAbstrFileDesc.BodyTypeEnum.PlainText_1);
+                c.SetDescription (descriptionTextView.Text.Replace ('\x00A0', ' '), McAbstrFileDesc.BodyTypeEnum.PlainText_1);
             }
             var allDayEvent = ((UISwitch)contentView.ViewWithTag (ALL_DAY_SWITCH_TAG)).On;
             c.AllDayEvent = allDayEvent;

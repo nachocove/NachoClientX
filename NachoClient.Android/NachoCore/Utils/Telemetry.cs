@@ -606,6 +606,9 @@ namespace NachoCore.Utils
                 tEvent.UiType = uiType;
             }
             tEvent.UiObject = uiObject;
+            if (null == tEvent.UiObject) {
+                Log.Warn (Log.LOG_UI, "UI {0} object without accessibility label", uiType);
+            }
             return tEvent;
         }
 

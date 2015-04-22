@@ -473,6 +473,7 @@ namespace NachoClient.iOS
             ViewFramer.Create (subjectLabel).X (LEFT_INDENT).Height (LINE_HEIGHT);
 
             subjectField = new UITextField ();
+            subjectField.AccessibilityLabel = "Subject";
             subjectField.Font = labelFont;
             subjectField.TextColor = labelColor;
             subjectField.Placeholder = "";
