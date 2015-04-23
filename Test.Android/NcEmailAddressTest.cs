@@ -11,6 +11,7 @@ namespace Test.Common
     public class NcEmailAddressTest
     {
         string[][] names = { 
+            new string [] { "John Smith (via Google Docs)", null, "John", null, "Smith", null },
             new string [] {
                 "Mr O'Malley y Muñoz, C. Björn Roger III",
                 "Mr.",
