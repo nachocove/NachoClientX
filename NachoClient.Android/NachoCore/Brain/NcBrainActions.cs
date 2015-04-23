@@ -18,12 +18,12 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 < emailMessage.HasBeenGleaned) {
+            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 > emailMessage.HasBeenGleaned) {
                 if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage)) {
                     return false;
                 }
             }
-            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2 < emailMessage.HasBeenGleaned) {
+            if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2 > emailMessage.HasBeenGleaned) {
                 if (!NcContactGleaner.GleanContactsHeaderPart2 (emailMessage)) {
                     return false;
                 }
