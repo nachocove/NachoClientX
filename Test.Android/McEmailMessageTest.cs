@@ -766,6 +766,15 @@ namespace Test.Common
             var emailMessageList8 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
             Assert.AreEqual (1, emailMessageList8.Count);
             Assert.AreEqual (junkEmail.Id, emailMessageList8 [0].Id);
+
+            junkEmail.Delete ();
+            spamEmail.Delete ();
+            email1.Delete ();
+            email2.Delete ();
+
+            junkFolder.Delete ();
+            spamFolder.Delete ();
+            inboxFolder.Delete ();
         }
     }
 }

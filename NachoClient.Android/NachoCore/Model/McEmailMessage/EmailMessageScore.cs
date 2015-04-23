@@ -478,7 +478,9 @@ namespace NachoCore.Model
         public void MarkAsGleaned (GleanPhaseEnum phase)
         {
             HasBeenGleaned = (int)phase;
-            Update ();
+            if (0 < Id) {
+                Update ();
+            }
         }
 
         private static void TimeVarianceCallBack (int state, Int64 objId)
