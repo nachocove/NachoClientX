@@ -63,6 +63,19 @@ namespace NachoCore.Model
         /// </summary>
         /// 
 
+        public enum McContactAncillaryDataEnum
+        {
+            READ_NONE = 0,
+            READ_DATES = 1,
+            READ_ADDRESSES = 2,
+            READ_EMAILADDRESSES = 4,
+            READ_RELATIONSHIPS = 8,
+            READ_PHONENUMBERS = 16,
+            READ_IMADDRESSES = 32,
+            READ_CATEGORIES = 64,
+            READ_ALL = 127,
+        }
+
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
 
@@ -189,7 +202,7 @@ namespace NachoCore.Model
         /// </summary>
         public McContact ()
         {
-            HasReadAncillaryData = false;
+            HasReadAncillaryData = McContactAncillaryDataEnum.READ_NONE;
             DbDates = new List<McContactDateAttribute> ();
             DbAddresses = new List<McContactAddressAttribute> ();
             DbPhoneNumbers = new List<McContactStringAttribute> ();
@@ -207,11 +220,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactDateAttribute> Dates {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_DATES);
                 return DbDates;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_DATES);
                 DbDates = value;
             }
         }
@@ -219,11 +232,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactAddressAttribute> Addresses {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_ADDRESSES);
                 return DbAddresses;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_ADDRESSES);
                 DbAddresses = value;
             }
         }
@@ -231,11 +244,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> PhoneNumbers {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
                 return DbPhoneNumbers;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
                 DbPhoneNumbers = value;
             }
         }
@@ -243,11 +256,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactEmailAddressAttribute> EmailAddresses {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_EMAILADDRESSES);
                 return DbEmailAddresses;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_EMAILADDRESSES);
                 DbEmailAddresses = value;
             }
         }
@@ -255,11 +268,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> IMAddresses {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_IMADDRESSES);
                 return DbIMAddresses;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_IMADDRESSES);
                 DbIMAddresses = value;
             }
         }
@@ -267,11 +280,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> Relationships {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
                 return DbRelationships;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
                 DbRelationships = value;
             }
         }
@@ -279,11 +292,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> Categories {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_CATEGORIES);
                 return DbCategories;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_CATEGORIES);
                 DbCategories = value;
             }
         }
@@ -472,49 +485,49 @@ namespace NachoCore.Model
 
         public McContactStringAttribute AddPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public McContactStringAttribute AddDefaultPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public McContactStringAttribute AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public McContactStringAttribute AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value, bool isDefault)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value, isDefault);
         }
 
         public McContactStringAttribute AddIMAddressAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_IMADDRESSES);
             return AddOrUpdateStringAttribute (ref DbIMAddresses, accountId, McContactStringType.IMAddress, name, label, value);
         }
 
         public McContactStringAttribute AddRelationshipAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
             return AddOrUpdateStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
         public McContactStringAttribute AddChildAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
             return AddStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
         public McContactStringAttribute AddCategoryAttribute (int accountId, string name)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_CATEGORIES);
             return AddOrUpdateStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
         }
 
@@ -561,7 +574,7 @@ namespace NachoCore.Model
 
         public McContactEmailAddressAttribute AddOrUpdateEmailAddressAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_EMAILADDRESSES);
             var f = EmailAddresses.Where (attr => attr.Name.Equals (name)).SingleOrDefault ();
             if (null != f) {
                 f.Label = label;
@@ -591,30 +604,45 @@ namespace NachoCore.Model
         /// </summary>
         /// 
       
-        protected bool HasReadAncillaryData;
+        protected McContactAncillaryDataEnum HasReadAncillaryData;
 
-        private NcResult ReadAncillaryData ()
+        private NcResult ReadAncillaryData (McContactAncillaryDataEnum flags)
         {
             if (0 == Id) {
                 return NcResult.OK ();
             }
-            if (HasReadAncillaryData) {
+            if (HasReadAncillaryData.HasFlag (flags)) {
                 return NcResult.OK ();
             }
-            HasReadAncillaryData = true;
-            return ForceReadAncillaryData ();
+            var missingFlags = flags & (~HasReadAncillaryData);
+            HasReadAncillaryData = flags;
+            return ForceReadAncillaryData (missingFlags);
         }
 
-        public NcResult ForceReadAncillaryData ()
+        public NcResult ForceReadAncillaryData (McContactAncillaryDataEnum flags)
         {
             NcAssert.True (0 < Id);
-            DbDates = NcModel.Instance.Db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbAddresses = NcModel.Instance.Db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbEmailAddresses = NcModel.Instance.Db.Table<McContactEmailAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbRelationships = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
-            DbPhoneNumbers = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
-            DbIMAddresses = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
-            DbCategories = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                DbDates = NcModel.Instance.Db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                DbAddresses = NcModel.Instance.Db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                DbEmailAddresses = NcModel.Instance.Db.Table<McContactEmailAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
+                DbRelationships = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_PHONENUMBERS)) {
+                DbPhoneNumbers = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_IMADDRESSES)) {
+                DbIMAddresses = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
+                DbCategories = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
+            }
 
             // FIXME: Error handling
             return NcResult.OK ();
@@ -624,48 +652,59 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 < Id);
 
-            // Don't read what will be deleted
-            HasReadAncillaryData = true;
-
             // FIXME: Fix this hammer?
             // FIXME: For update, Id may not be zero. Insert() asserts that Id is zero, so zero it.
             // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
             DeleteAncillaryData ();
 
-            foreach (var o in Dates) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                foreach (var o in Dates) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in Addresses) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                foreach (var o in Addresses) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in Relationships) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
+                foreach (var o in Relationships) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in EmailAddresses) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                foreach (var o in EmailAddresses) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in PhoneNumbers) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_PHONENUMBERS)) {
+                foreach (var o in PhoneNumbers) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in IMAddresses) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_IMADDRESSES)) {
+                foreach (var o in IMAddresses) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in Categories) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
+                foreach (var o in Categories) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
     
             // FIXME: Error handling
@@ -681,6 +720,7 @@ namespace NachoCore.Model
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
                 retval = base.Insert ();
+                HasReadAncillaryData = McContactAncillaryDataEnum.READ_ALL;
                 InsertAncillaryData ();
                 EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
             });
@@ -693,7 +733,7 @@ namespace NachoCore.Model
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
                 retval = base.Update ();
-                if (HasReadAncillaryData) {
+                if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
                     InsertAncillaryData ();
                 }
                 EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
@@ -779,13 +819,36 @@ namespace NachoCore.Model
             DeleteAncillaryData ();
         }
 
+        private void DeleteStringAttribute (McContactStringType stringType)
+        {
+            NcModel.Instance.Db.Query<McContactStringAttribute> (
+                "DELETE FROM McContactStringAttribute WHERE ContactId = ? AND Type = ?", Id, (int)stringType);
+        }
+
         private NcResult DeleteAncillaryData ()
         {
             NcModel.Instance.RunInTransaction (() => {
-                NcModel.Instance.Db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
-                NcModel.Instance.Db.Query<McContactStringAttribute> ("DELETE FROM McContactStringAttribute WHERE ContactId=?", Id);
-                NcModel.Instance.Db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
-                NcModel.Instance.Db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                    NcModel.Instance.Db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
+                    DeleteStringAttribute (McContactStringType.Relationship);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                    DeleteStringAttribute (McContactStringType.Date);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_IMADDRESSES)) {
+                    DeleteStringAttribute (McContactStringType.IMAddress);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
+                    DeleteStringAttribute (McContactStringType.Category);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                    NcModel.Instance.Db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                    NcModel.Instance.Db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
+                }
             });
             return NcResult.OK ();
         }
