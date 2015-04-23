@@ -301,15 +301,15 @@ namespace NachoCore.Model
         public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
         {
             var query = String.Format ("SELECT e.* FROM McEmailMessage AS e " +
-                        " JOIN McMapFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                        " WHERE " +
-                        " likelihood (HasBeenGleaned < ?, 0.1) " +
-                        " likelihood (m.FolderId NOT IN {0}) ", McFolder.JunkFolderListSqlString ());
+                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                        " WHERE likelihood (HasBeenGleaned < ?, 0.1) " +
+                        "  AND likelihood (m.FolderId NOT IN {0}, 0.9) ", McFolder.JunkFolderListSqlString ());
             if (0 <= accountId) {
-                query += " likelihood (AccountId = ?, 1.0) ";
-                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId);
+                query += " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?";
+                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
             } else {
-                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2);
+                query += " LIMIT ?";
+                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, count);
             }
         }
 

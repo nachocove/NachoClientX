@@ -877,7 +877,7 @@ namespace NachoCore.Model
             if (0 == JunkFolderIds.Count) {
                 return null;
             }
-            return "[" + string.Join (",", JunkFolderIds.Keys) + "]";
+            return "(" + string.Join (",", JunkFolderIds.Keys) + ")";
         }
     }
 }

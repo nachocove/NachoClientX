@@ -27,8 +27,9 @@ namespace Test.Common
         }
 
         [SetUp]
-        protected void SetUp ()
+        protected new void SetUp ()
         {
+            base.SetUp ();
             Telemetry.ENABLED = false;
             // Drain the telemetry event tables
             var dbEventList = McTelemetryEvent.QueryMultiple (1);
