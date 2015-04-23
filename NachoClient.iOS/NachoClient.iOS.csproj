@@ -1131,7 +1131,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
     <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyTextView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
     <Compile Include="WebCache.cs" />
