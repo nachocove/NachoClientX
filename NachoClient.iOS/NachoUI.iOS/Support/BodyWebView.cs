@@ -211,4 +211,41 @@ namespace NachoClient.iOS
             // No adjustment is necessary.
         }
     }
+
+    /// <summary>
+    /// Display plain text within a UIWebView, using our own custom font instead of the default fixed-space font.
+    /// </summary>
+    public class BodyPlainWebView : BodyWebView
+    {
+        private string text;
+
+        // JavaScript that will change the font within <pre> tags.  This has to be done through CSS;
+        // changing the <pre> tag directly doesn't work.
+        private const string setFont = @"
+            var css = document.createElement(""style"");
+            css.type = ""text/css"";
+            css.innerHTML = ""pre { font-family: AvenirNext-Regular,Helvetia,sans-serif; font-size: 17px; }"";
+            document.getElementsByTagName('head')[0].appendChild(css);";
+
+        public BodyPlainWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string text, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
+        {
+            this.text = text;
+
+            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                LoadContent ();
+            }
+        }
+
+        protected override void LoadContent ()
+        {
+            LoadData (NSData.FromString (text, NSStringEncoding.UTF8), "text/plain", "utf-8", baseUrl);
+        }
+
+        protected override void PostLoadAdjustment ()
+        {
+            // Change the font.
+            EvaluateJavascript (setFont);
+        }
+    }
 }

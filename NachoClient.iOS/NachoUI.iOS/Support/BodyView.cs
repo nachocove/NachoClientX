@@ -524,23 +524,17 @@ namespace NachoClient.iOS
             }
         }
 
-        private void RenderAttributedString (NSAttributedString text)
-        {
-            var textView = new BodyTextView (yOffset, Frame.Width, text, onLinkSelected);
-            AddSubview (textView);
-            childViews.Add (textView);
-            yOffset += textView.ContentSize.Height;
-        }
-
         private void RenderTextString (string text)
         {
             if (string.IsNullOrWhiteSpace (text)) {
                 return;
             }
-            UIFont uiFont = A.Font_AvenirNextRegular17;
-            var attributes = new CoreText.CTStringAttributes ();
-            attributes.Font = new CoreText.CTFont (uiFont.Name, uiFont.PointSize);
-            RenderAttributedString (new NSAttributedString (text, attributes));
+            var webView = new BodyPlainWebView (
+                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
+                              text, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
+            AddSubview (webView);
+            childViews.Add (webView);
+            yOffset += webView.ContentSize.Height;
         }
 
         private void RenderRtfString (string rtf)
