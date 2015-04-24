@@ -7,6 +7,7 @@ using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
+using Test.iOS;
 
 namespace Test.Common
 {
@@ -601,10 +602,10 @@ namespace Test.Common
             List<McEmailMessageThread> messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id);
             CheckMessages (messages, messageList, 9, 8, 5, 4, 3, 1);
 
-            messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id, groupBy:true);
+            messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id, groupBy: true);
             CheckMessages (messages, messageList, 9, 8, 5, 4, 3, 1);
 
-            messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id, groupBy:false);
+            messageList = McEmailMessage.QueryActiveMessageItems (defaultAccountId, Folder.Id, groupBy: false);
             CheckMessages (messages, messageList, 9, 8, 5, 4, 3, 1, 0, 2);
         }
 
@@ -674,6 +675,106 @@ namespace Test.Common
                     Assert.AreEqual (expected [i].Id, cleanList [i].Id);
                 }
             }
+        }
+
+        [Test]
+        public void TestQueryNeedGleaning ()
+        {
+            // Set up a junk, a spam and an inbox folders.
+            var junkFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Junk");
+            Assert.True (0 != junkFolder.Id);
+            var spamFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "spam");
+            Assert.True (0 != spamFolder.Id);
+            var inboxFolder = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Inbox");
+            Assert.True (0 != inboxFolder.Id);
+
+            // Set up emails in each to be gleaned
+            var junkEmail = new McEmailMessage () {
+                AccountId = defaultAccountId,
+                From = "junk@company.net",
+                Subject = "Junk email",
+            };
+            junkEmail.Insert ();
+            Assert.True (0 != junkEmail.Id);
+            junkFolder.Link (junkEmail);
+
+            var spamEmail = new McEmailMessage () {
+                AccountId = defaultAccountId,
+                From = "spam@company.net",
+                Subject = "Spam email",
+            };
+            spamEmail.Insert ();
+            Assert.True (0 != spamEmail.Id);
+            spamFolder.Link (spamEmail);
+
+            var email1 = new McEmailMessage () {
+                AccountId = defaultAccountId,
+                From = "bob@company.net",
+                Subject = "Hello",
+            };
+            email1.Insert ();
+            Assert.True (0 != email1.Id);
+            inboxFolder.Link (email1);
+              
+            var email2 = new McEmailMessage () {
+                AccountId = defaultAccountId,
+                From = "john@company.net",
+                Subject = "Hello again",
+            };
+            email2.Insert ();
+            Assert.True (0 != email2.Id);
+            inboxFolder.Link (email2);
+
+            // Query for up to 1 email that need gleaning. Should return email1 or email2
+            var emailMessageList1 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 1);
+            Assert.AreEqual (1, emailMessageList1.Count);
+            Assert.True ((email1.Id == emailMessageList1 [0].Id) || (email2.Id == emailMessageList1 [1].Id));
+
+            var emailMessageList2 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 10);
+            Assert.AreEqual (2, emailMessageList2.Count);
+            Assert.True (
+                ((email1.Id == emailMessageList2 [0].Id) && (email2.Id == emailMessageList2 [1].Id)) ||
+                ((email2.Id == emailMessageList2 [1].Id) && (email1.Id == emailMessageList2 [0].Id))
+            );
+
+            // Mark one of the email gleaned. The gleaning functions are unit tested in NcContactGleanerTest
+            email1.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
+            var emailMessageList3 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
+            Assert.AreEqual (1, emailMessageList3.Count);
+            Assert.AreEqual (email2.Id, emailMessageList3 [0].Id);
+
+            // Query a different account id and all accounts
+            var emailMessageList4 = McEmailMessage.QueryNeedGleaning (-1, 2);
+            Assert.AreEqual (1, emailMessageList3.Count);
+            Assert.AreEqual (email2.Id, emailMessageList3 [0].Id);
+
+            var emailMessageList5 = McEmailMessage.QueryNeedGleaning (defaultAccountId + 1, 2);
+            Assert.AreEqual (0, emailMessageList5.Count);
+
+            // Mark the other email in inbox as phase1 gleaned.
+            email2.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
+            var emailMessageList6 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
+            Assert.AreEqual (1, emailMessageList6.Count);
+            Assert.AreEqual (email2.Id, emailMessageList6 [0].Id);
+            email2.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
+            var emailMessageList7 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
+            Assert.AreEqual (0, emailMessageList7.Count);
+
+            // Move the junk email back to inbox
+            inboxFolder.Link (junkEmail);
+            junkFolder.Unlink (junkEmail);
+            var emailMessageList8 = McEmailMessage.QueryNeedGleaning (defaultAccountId, 2);
+            Assert.AreEqual (1, emailMessageList8.Count);
+            Assert.AreEqual (junkEmail.Id, emailMessageList8 [0].Id);
+
+            junkEmail.Delete ();
+            spamEmail.Delete ();
+            email1.Delete ();
+            email2.Delete ();
+
+            junkFolder.Delete ();
+            spamFolder.Delete ();
+            inboxFolder.Delete ();
         }
     }
 }

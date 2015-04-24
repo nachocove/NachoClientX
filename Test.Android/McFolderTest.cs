@@ -1305,4 +1305,38 @@ namespace Test.iOS
             Assert.IsTrue (email1.Id == arr [0].Id || email2.Id == arr [0].Id);
         }
     }
+
+    [TestFixture]
+    public class JunkFoldersTest : BaseMcFolderTest
+    {
+        [Test]
+        public void TestJunkFolder ()
+        {
+            Assert.IsNull (McFolder.JunkFolderListSqlString ());
+
+            var junk = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Junk emails");
+            Assert.AreNotEqual (0, junk.Id);
+            Assert.True (junk.IsJunkFolder ());
+
+            Assert.AreEqual (String.Format ("({0})", junk.Id), McFolder.JunkFolderListSqlString ());
+
+            var spam = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Spam");
+            Assert.AreNotEqual (0, spam.Id);
+            Assert.True (spam.IsJunkFolder ());
+
+            var stuff = FolderOps.CreateFolder (accountId: defaultAccountId, name: "Stuff");
+            Assert.AreNotEqual (0, stuff.Id);
+            Assert.False (stuff.IsJunkFolder ());
+
+            Assert.True (
+                (String.Format ("({0},{1})", junk.Id, spam.Id) == McFolder.JunkFolderListSqlString ()) ||
+                (String.Format ("({0},{1})", spam.Id, junk.Id) == McFolder.JunkFolderListSqlString ()));
+
+            spam.Delete ();
+            Assert.AreEqual (String.Format ("({0})", junk.Id), McFolder.JunkFolderListSqlString ());
+
+            junk.Delete ();
+            Assert.IsNull (McFolder.JunkFolderListSqlString ()); 
+        }
+    }
 }
