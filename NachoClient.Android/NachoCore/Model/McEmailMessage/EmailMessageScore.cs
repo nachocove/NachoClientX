@@ -300,10 +300,12 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
         {
-            var query = String.Format ("SELECT e.* FROM McEmailMessage AS e " +
+            var query = "SELECT e.* FROM McEmailMessage AS e " +
                         " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                        " WHERE likelihood (HasBeenGleaned < ?, 0.1) " +
-                        "  AND likelihood (m.FolderId NOT IN {0}, 0.9) ", McFolder.JunkFolderListSqlString ());
+                        " WHERE likelihood (HasBeenGleaned < ?, 0.1) ";
+            if (null != McFolder.JunkFolderListSqlString ()) {
+                query += String.Format (" AND likelihood (m.FolderId NOT IN {0}, 0.9) ", McFolder.JunkFolderListSqlString ());
+            }
             if (0 <= accountId) {
                 query += " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?";
                 return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
