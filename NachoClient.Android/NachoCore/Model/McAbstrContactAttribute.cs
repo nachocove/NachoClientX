@@ -32,6 +32,15 @@ namespace NachoCore.Model
         {
             return McContact.QueryById<McContact> ((int)ContactId);
         }
+
+        public static List<T> QueryByContactId<T> (int contactId) where T : McAbstrContactAttribute, new()
+        {
+            return NcModel.Instance.Db.Table<T> ().Where (x => contactId == x.ContactId).ToList ();
+        }
+
+        public McAbstrContactAttribute ()
+        {
+        }
     }
 }
 

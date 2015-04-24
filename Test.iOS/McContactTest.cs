@@ -554,6 +554,230 @@ namespace Test.Common
             list = McContact.QueryForPortraits (new List<int> { bobIndex, harryIndex });
             Assert.AreEqual (2, list.Count);
         }
+
+        protected void CheckContactAttributeId (McAbstrContactAttribute newAttribute, McAbstrContactAttribute oldAttribute, bool changed)
+        {
+            var oldId = oldAttribute.Id;
+            var newId = newAttribute.Id;
+            if (changed) {
+                Assert.AreNotEqual (oldId, newId);
+            } else {
+                Assert.AreEqual (oldId, newId);
+            }
+        }
+
+        protected List<McContactAddressAttribute> CheckContactAddress (int id, McContactAddressAttribute oldAddressAttribute, bool changed)
+        {
+            var newAddressAttributes = McContactAddressAttribute.QueryByContactId<McContactAddressAttribute> (id);
+            Assert.AreEqual (1, newAddressAttributes.Count);
+            CheckContactAttributeId (newAddressAttributes [0], oldAddressAttribute, changed);
+            return newAddressAttributes;
+        }
+
+        protected List<McContactStringAttribute> CheckContactCategory (int id, McContactStringAttribute oldCategoryAttribute, bool changed)
+        {
+            var newCategoryAttributes = McContactStringAttribute.QueryByContactIdAndType (id, McContactStringType.Category);
+            Assert.AreEqual (1, newCategoryAttributes.Count);
+            CheckContactAttributeId (newCategoryAttributes [0], oldCategoryAttribute, changed);
+            return newCategoryAttributes;
+        }
+
+        protected List<McContactDateAttribute> CheckContactDate (int id, McContactDateAttribute oldDateAttribute, bool changed)
+        {
+            var newDateAttributes = McContactDateAttribute.QueryByContactId<McContactDateAttribute> (id);
+            Assert.AreEqual (1, newDateAttributes.Count);
+            CheckContactAttributeId (newDateAttributes [0], oldDateAttribute, changed);
+            return newDateAttributes;
+        }
+
+        protected List<McContactEmailAddressAttribute> CheckContactEmailAddress (int id, McContactEmailAddressAttribute oldEmailAddressAttribute, bool changed)
+        {
+            var newEmailAddressAttributes = McContactEmailAddressAttribute.QueryByContactId<McContactEmailAddressAttribute> (id);
+            Assert.AreEqual (1, newEmailAddressAttributes.Count);
+            CheckContactAttributeId (newEmailAddressAttributes [0], oldEmailAddressAttribute, changed);
+            return newEmailAddressAttributes;
+        }
+
+        protected List<McContactStringAttribute> CheckContactIMAddress (int id, McContactStringAttribute oldIMAddressAttribute, bool changed)
+        {
+            var newIMAddressAttributes = McContactStringAttribute.QueryByContactIdAndType (id, McContactStringType.IMAddress);
+            Assert.AreEqual (1, newIMAddressAttributes.Count);
+            CheckContactAttributeId (newIMAddressAttributes [0], oldIMAddressAttribute, changed);
+            return newIMAddressAttributes;
+        }
+
+        protected List<McContactStringAttribute> CheckContactPhoneNumber (int id, McContactStringAttribute oldPhoneNumberAttribute, bool changed)
+        {
+            var newPhoneNumberAttributes = McContactStringAttribute.QueryByContactIdAndType (id, McContactStringType.PhoneNumber);
+            Assert.AreEqual (1, newPhoneNumberAttributes.Count);
+            CheckContactAttributeId (newPhoneNumberAttributes [0], oldPhoneNumberAttribute, changed);
+            return newPhoneNumberAttributes;
+        }
+
+        protected List<McContactStringAttribute> CheckContactRelationship (int id, McContactStringAttribute oldRelationshipAttribute, bool changed)
+        {
+            var newRelationshipAttributes = McContactStringAttribute.QueryByContactIdAndType (id, McContactStringType.Relationship);
+            Assert.AreEqual (1, newRelationshipAttributes.Count);
+            CheckContactAttributeId (newRelationshipAttributes [0], oldRelationshipAttribute, changed);
+            return newRelationshipAttributes;
+        }
+
+        [Test]
+        public void AncillaryData ()
+        {
+            int accountId = 1;
+            McContact contact = new McContact () {
+                AccountId = accountId,
+                FirstName = "Bob",
+                LastName = "Smith",
+            };
+            contact.AddAddressAttribute (accountId, "Address", "Work",
+                new McContactAddressAttribute () {
+                    Street = "1 Main St.",
+                    City = "Frmeont",
+                    PostalCode = "94539",
+                    Country = "U.S.A.",
+                }
+            );
+            contact.AddCategoryAttribute (accountId, "Important");
+            contact.AddDateAttribute (accountId, "Birthday", "Birthday", new DateTime (1970, 1, 1));
+            contact.AddEmailAddressAttribute (accountId, "Email1Address", "Email", "bob@company.net");
+            contact.AddIMAddressAttribute (accountId, "IMAddress", "Skype", "bob_company");
+            contact.AddPhoneNumberAttribute (accountId, "PhoneNumber", "Work", "1-234-555-6789");
+            contact.AddRelationshipAttribute (accountId, "Relationship", "Relationship", "Colleague");
+            contact.Insert ();
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_ALL, contact.TestHasReadAncillaryData);
+            Assert.True (0 != contact.Id);
+
+            // Query all ancillary data individual. These will be used for determine if they
+            // are updated individually
+            var addressAttribute = McContactAddressAttribute.QueryByContactId<McContactAddressAttribute> (contact.Id);
+            Assert.AreEqual (1, addressAttribute.Count);
+            var dateAttribute = McContactDateAttribute.QueryByContactId<McContactDateAttribute> (contact.Id);
+            Assert.AreEqual (1, dateAttribute.Count);
+            var emailAddressAttribute = McContactEmailAddressAttribute.QueryByContactId<McContactEmailAddressAttribute> (contact.Id);
+            Assert.AreEqual (1, emailAddressAttribute.Count);
+            var imaddressAttribute = McContactStringAttribute.QueryByContactIdAndType (contact.Id, McContactStringType.IMAddress);
+            Assert.AreEqual (1, imaddressAttribute.Count);
+            var phoneNumberAttribute = McContactStringAttribute.QueryByContactIdAndType (contact.Id, McContactStringType.PhoneNumber);
+            Assert.AreEqual (1, phoneNumberAttribute.Count);
+            var relationshpiAttribute = McContactStringAttribute.QueryByContactIdAndType (contact.Id, McContactStringType.Relationship);
+            Assert.AreEqual (1, relationshpiAttribute.Count);
+            var categoryAttribute = McContactStringAttribute.QueryByContactIdAndType (contact.Id, McContactStringType.Category);
+            Assert.AreEqual (1, categoryAttribute.Count);
+
+            // Read address
+            var newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.Addresses.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_ADDRESSES, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            addressAttribute = CheckContactAddress (contact.Id, addressAttribute [0], true);
+            CheckContactCategory (contact.Id, categoryAttribute [0], false);
+            CheckContactDate (contact.Id, dateAttribute [0], false);
+            CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], false);
+            CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
+            CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
+            CheckContactRelationship (contact.Id, relationshpiAttribute [0], false);
+
+            // Read category
+            newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.Categories.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_CATEGORIES, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            CheckContactAddress (contact.Id, addressAttribute [0], false);
+            categoryAttribute = CheckContactCategory (contact.Id, categoryAttribute [0], true);
+            CheckContactDate (contact.Id, dateAttribute [0], false);
+            CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], false);
+            CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
+            CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
+            CheckContactRelationship (contact.Id, relationshpiAttribute [0], false);
+
+            // Read date
+            newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.Dates.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_DATES, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            CheckContactAddress (contact.Id, addressAttribute [0], false);
+            CheckContactCategory (contact.Id, categoryAttribute [0], false);
+            dateAttribute = CheckContactDate (contact.Id, dateAttribute [0], true);
+            CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], false);
+            CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
+            CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
+            CheckContactRelationship (contact.Id, relationshpiAttribute [0], false);
+
+            // Read email address
+            newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.EmailAddresses.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_EMAILADDRESSES, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            CheckContactAddress (contact.Id, addressAttribute [0], false);
+            CheckContactCategory (contact.Id, categoryAttribute [0], false);
+            CheckContactDate (contact.Id, dateAttribute [0], false);
+            emailAddressAttribute = CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], true);
+            CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
+            CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
+            CheckContactRelationship (contact.Id, relationshpiAttribute [0], false);
+
+            // Read IM address
+            newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.IMAddresses.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_IMADDRESSES, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            CheckContactAddress (contact.Id, addressAttribute [0], false);
+            CheckContactCategory (contact.Id, categoryAttribute [0], false);
+            CheckContactDate (contact.Id, dateAttribute [0], false);
+            CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], false);
+            imaddressAttribute = CheckContactIMAddress (contact.Id, imaddressAttribute [0], true);
+            CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
+            CheckContactRelationship (contact.Id, relationshpiAttribute [0], false);
+
+            // Read phone number
+            newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.PhoneNumbers.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_PHONENUMBERS, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            CheckContactAddress (contact.Id, addressAttribute [0], false);
+            CheckContactCategory (contact.Id, categoryAttribute [0], false);
+            CheckContactDate (contact.Id, dateAttribute [0], false);
+            CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], false);
+            CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
+            phoneNumberAttribute = CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], true);
+            CheckContactRelationship (contact.Id, relationshpiAttribute [0], false);
+
+            // Read relationship
+            newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_NONE, newContact.TestHasReadAncillaryData);
+
+            Assert.AreEqual (1, newContact.Relationships.Count);
+            Assert.AreEqual (McContact.McContactAncillaryDataEnum.READ_RELATIONSHIPS, newContact.TestHasReadAncillaryData);
+            newContact.Update ();
+
+            CheckContactAddress (contact.Id, addressAttribute [0], false);
+            CheckContactCategory (contact.Id, categoryAttribute [0], false);
+            CheckContactDate (contact.Id, dateAttribute [0], false);
+            CheckContactEmailAddress (contact.Id, emailAddressAttribute [0], false);
+            CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
+            CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
+            relationshpiAttribute = CheckContactRelationship (contact.Id, relationshpiAttribute [0], true);
+        }
     }
 }
 

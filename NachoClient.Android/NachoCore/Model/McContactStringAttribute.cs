@@ -58,6 +58,11 @@ namespace NachoCore.Model
         {
             return SetHelper<McContactStringAttribute>.IsSuperSet (list1, list2);
         }
+
+        public static List<McContactStringAttribute> QueryByContactIdAndType (int contactId, McContactStringType stringType)
+        {
+            return NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => (contactId == x.ContactId) && (stringType == x.Type)).ToList ();
+        }
     }
 }
 
