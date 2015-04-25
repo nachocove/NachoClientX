@@ -71,18 +71,19 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void Register (HashSet<string> urls)
+        public static void Register (HashSet<string> distributionPoints)
         {
-            if (null == urls) {
+            if (null == distributionPoints) {
                 return;
             }
-            foreach (var url in urls) {
-                if (!CrlDistributionPoint.IsHttp (url)) {
+            foreach (var dp in distributionPoints) {
+                string url;
+                if (!CrlDistributionPoint.IsHttp (dp, out url)) {
                     Log.Error (Log.LOG_PUSH, "Non-HTTP CRL distribution point - {0}", url);
                     continue;
                 }
                 Log.Info (Log.LOG_PUSH, "CRL Monitor: register {0}", url);
-                CrlMonitor.Register (url.Substring (4));
+                CrlMonitor.Register (url);
             }
         }
 
