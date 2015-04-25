@@ -162,9 +162,14 @@ namespace NachoCore.Utils
             }
         }
 
-        public static bool IsHttp (string dp)
+        public static bool IsHttp (string dp, out string url)
         {
-            return dp.StartsWith ("URI:http:");
+            if (dp.StartsWith ("URI:")) {
+                url = dp.Substring (4);
+            } else {
+                url = dp;
+            }
+            return url.StartsWith ("http:");
         }
     }
 }
