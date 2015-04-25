@@ -175,16 +175,9 @@ namespace NachoCore.Model
 
         public void MarkDependentEmailMessages ()
         {
-            // TODO - It seems that SQLite cannot do an INNER JOIN in UPDATE. Do it the sledge hammer
-            // now and figure out how to do it efficiently later
-            List<McEmailMessage> emailMesageList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailAddressId (Id);
-            if (null != emailMesageList) {
-                foreach (McEmailMessage m in emailMesageList) {
-                    NcAssert.True (!m.NeedUpdate);
-                    m.NeedUpdate = true;
-                    m.UpdateScoreAndNeedUpdate ();
-                }
-            }
+            NcModel.Instance.Db.Execute (
+                "UPDATE McEmailMessage SET NeedUpdate = 1 WHERE " +
+                " Id IN (SELECT EmailMessageId FROM McEmailMessageDependency AS d WHERE d.EmailAddressId = ?)", Id);
         }
 
         public void InsertByBrain ()
