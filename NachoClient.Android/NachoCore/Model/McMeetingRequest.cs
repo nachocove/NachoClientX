@@ -121,7 +121,7 @@ namespace NachoCore.Model
         /// https://msdn.microsoft.com/en-us/library/hh338153(v=exchg.80).aspx for the conversion
         /// algorithm.
         /// </remarks>
-        public string GetUID ()
+        public override string GetUID ()
         {
             if (string.IsNullOrEmpty (GlobalObjId)) {
                 return "";

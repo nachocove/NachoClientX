@@ -64,10 +64,7 @@ namespace NachoCore.Utils
 
         public static bool IsOrganizer (string organizerEmail, string userEmail)
         {
-            if (organizerEmail == userEmail) {
-                return true;
-            }
-            return false;
+            return organizerEmail == userEmail;
         }
 
         public static DateTime ReturnAllDayEventEndTime (DateTime date)
@@ -88,11 +85,44 @@ namespace NachoCore.Utils
             return c;
         }
 
-        private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McCalendar c)
+        public static void CancelOccurrence (McEvent evt, McCalendar cal)
+        {
+            NcAssert.True (evt.CalendarId == cal.Id);
+            if (0 != evt.ExceptionId) {
+                var exceptions = cal.exceptions;
+                foreach (var exception in exceptions) {
+                    if (exception.Id == evt.ExceptionId) {
+                        exception.Deleted = 1;
+                        exception.Update ();
+                        break;
+                    }
+                }
+                cal.exceptions = exceptions;
+            } else {
+                // The collection returned by cal.exceptions is read-only, so we need to make a copy.
+                var exceptions = new List<McException> (cal.exceptions);
+                var exception = new McException () {
+                    AccountId = evt.AccountId,
+                    CalendarId = cal.Id,
+                    ExceptionStartTime = evt.StartTime,
+                    Deleted = 1,
+                };
+                exceptions.Add (exception);
+                cal.exceptions = exceptions;
+            }
+            cal.RecurrencesGeneratedUntil = DateTime.MinValue;
+            cal.Update ();
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
+
+        private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McCalendar c, IList<McAttendee> attendees)
         {
             evt.Organizer = new Organizer (c.OrganizerEmail);
             evt.Organizer.CommonName = c.OrganizerName;
-            foreach (var mcAttendee in c.attendees) {
+            foreach (var mcAttendee in attendees) {
                 var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
                 NcAssert.True (null != mcAttendee.Name);
                 iAttendee.CommonName = mcAttendee.Name;
@@ -358,29 +388,14 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
-        /// <summary>
-        /// Create an iCalendar from either a McCalendar object or a McMeetingRequest object.
-        /// </summary>
-        private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal, DateTime occurrence = default (DateTime))
+        private static iCalendar iCalendarCommon (McAbstrCalendarRoot cal)
         {
             var iCal = new iCalendar ();
             iCal.ProductID = "Nacho Mail";
 
-            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
-            var timezone = FromSystemTimeZone (tzi, cal.StartTime.AddYears (-1), false);
-            var localTimeZone = iCal.AddTimeZone (timezone);
-            if (null != tzi.StandardName) {
-                timezone.TZID = tzi.StandardName;
-                localTimeZone.TZID = tzi.StandardName;
-            }
-
             var vEvent = iCal.Create<DDay.iCal.Event> ();
+            vEvent.UID = cal.GetUID ();
             vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
-            vEvent.Start = new iCalDateTime (cal.StartTime.LocalT (), localTimeZone.TZID);
-            vEvent.End = new iCalDateTime (cal.EndTime.LocalT (), localTimeZone.TZID);
-            if (default (DateTime) != occurrence) {
-                vEvent.RecurrenceID = new iCalDateTime (occurrence.LocalT (), localTimeZone.TZID);
-            }
             vEvent.IsAllDay = cal.AllDayEvent;
             vEvent.Priority = 5;
             if (cal.AllDayEvent) {
@@ -397,15 +412,50 @@ namespace NachoCore.Utils
             return iCal;
         }
 
-        /// <summary>
-        /// Create an iCalendar from a McCalendar object, setting only the fields that are common to meeting requests,
-        /// meeting responses, and meeting cancelations.
-        /// </summary>
-        private static IICalendar iCalendarCommonFromMcCalendar (McCalendar cal, DateTime occurrence = default (DateTime))
+        private static IICalendar iCalendarAddStartEndTimes (iCalendar iCal, McAbstrCalendarRoot cal, DateTime occurrence = default (DateTime))
         {
-            var iCal = iCalendarCommonFromAbstrCal (cal, occurrence);
-            iCal.Events [0].UID = cal.UID;
+            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
+            var timezone = FromSystemTimeZone (tzi, cal.StartTime.AddYears (-1), false);
+            var localTimeZone = iCal.AddTimeZone (timezone);
+            if (null != tzi.StandardName) {
+                timezone.TZID = tzi.StandardName;
+                localTimeZone.TZID = tzi.StandardName;
+            }
+
+            var vEvent = iCal.Events [0];
+            vEvent.Start = new iCalDateTime (cal.StartTime.LocalT (), localTimeZone.TZID);
+            vEvent.End = new iCalDateTime (cal.EndTime.LocalT (), localTimeZone.TZID);
+            if (default (DateTime) != occurrence) {
+                vEvent.RecurrenceID = new iCalDateTime (occurrence.LocalT (), localTimeZone.TZID);
+            }
             return iCal;
+        }
+
+        private static IICalendar iCalendarAddStartEndTimes (iCalendar iCal, McEvent mcEvent, DateTime occurrence)
+        {
+            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
+            var timezone = FromSystemTimeZone (tzi, mcEvent.StartTime.AddYears (-1), false);
+            var localTimeZone = iCal.AddTimeZone (timezone);
+            if (null != tzi.StandardName) {
+                timezone.TZID = tzi.StandardName;
+                localTimeZone.TZID = tzi.StandardName;
+            }
+
+            var vEvent = iCal.Events [0];
+            vEvent.Start = new iCalDateTime (mcEvent.StartTime.LocalT (), localTimeZone.TZID);
+            vEvent.End = new iCalDateTime (mcEvent.EndTime.LocalT (), localTimeZone.TZID);
+            if (default (DateTime) != occurrence) {
+                vEvent.RecurrenceID = new iCalDateTime (occurrence.LocalT (), localTimeZone.TZID);
+            }
+            return iCal;
+        }
+
+        /// <summary>
+        /// Create an iCalendar from either a McCalendar object or a McMeetingRequest object.
+        /// </summary>
+        private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal, DateTime occurrence = default (DateTime))
+        {
+            return iCalendarAddStartEndTimes (iCalendarCommon (cal), cal, occurrence);
         }
 
         /// <summary>
@@ -415,12 +465,12 @@ namespace NachoCore.Utils
         /// <param name="cal">Cal.</param>
         private static IICalendar iCalendarRequestFromMcCalendar (McCalendar cal)
         {
-            var iCal = iCalendarCommonFromMcCalendar (cal);
+            var iCal = iCalendarCommonFromAbstrCal (cal);
             iCal.Method = DDay.iCal.CalendarMethods.Request;
             var evt = iCal.Events [0];
             evt.Status = EventStatus.Confirmed;
             evt.Summary = cal.Subject;
-            AddAttendeesAndOrganizerToiCalEvent (evt, cal);
+            AddAttendeesAndOrganizerToiCalEvent (evt, cal, cal.attendees);
             return iCal;
         }
 
@@ -446,8 +496,8 @@ namespace NachoCore.Utils
         /// </summary>
         private static IICalendar iCalendarResponseFromMcCalendar (McCalendar cal, NcResponseType response, DateTime occurrence = default (DateTime))
         {
-            var iCal = iCalendarCommonFromMcCalendar (cal, occurrence);
-            FillOutICalResponse (McAccount.QueryById<McAccount>(cal.AccountId), iCal, response, cal.Subject);
+            var iCal = iCalendarCommonFromAbstrCal (cal, occurrence);
+            FillOutICalResponse (McAccount.QueryById<McAccount> (cal.AccountId), iCal, response, cal.Subject);
             return iCal;
         }
 
@@ -456,12 +506,26 @@ namespace NachoCore.Utils
         /// </summary>
         private static IICalendar iCalendarCancelFromMcCalendar (McCalendar cal)
         {
-            var iCal = iCalendarCommonFromMcCalendar (cal);
+            var iCal = iCalendarCommonFromAbstrCal (cal);
             iCal.Method = DDay.iCal.CalendarMethods.Cancel;
             var evt = iCal.Events [0];
             evt.Status = EventStatus.Cancelled;
             evt.Summary = "Canceled: " + cal.Subject;
-            AddAttendeesAndOrganizerToiCalEvent (evt, cal);
+            AddAttendeesAndOrganizerToiCalEvent (evt, cal, cal.attendees);
+            return iCal;
+        }
+
+        /// <summary>
+        /// Create an iCalendar meeting cancelation notice for an occurrence of an event.
+        /// </summary>
+        private static IICalendar iCalendarCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent mcEvent, DateTime occurrence)
+        {
+            var iCal = iCalendarAddStartEndTimes (iCalendarCommon (cal), mcEvent, occurrence);
+            iCal.Method = DDay.iCal.CalendarMethods.Cancel;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Cancelled;
+            evt.Summary = "Canceled: " + cal.GetSubject ();
+            AddAttendeesAndOrganizerToiCalEvent (evt, root, cal.attendees);
             return iCal;
         }
 
@@ -472,7 +536,6 @@ namespace NachoCore.Utils
         {
             var iCal = iCalendarCommonFromAbstrCal (mail, occurrence);
             FillOutICalResponse (McAccount.QueryById<McAccount> (mail.AccountId), iCal, response, subject);
-            iCal.Events [0].UID = mail.GetUID ();
             return iCal;
         }
 
@@ -517,6 +580,11 @@ namespace NachoCore.Utils
         public static TextPart MimeCancelFromCalendar (McCalendar cal)
         {
             return MimeCalFromICalendar (iCalendarCancelFromMcCalendar (cal));
+        }
+
+        public static TextPart MimeCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent evt, DateTime Occurrence)
+        {
+            return MimeCalFromICalendar (iCalendarCancelFromOccurrence (root, cal, evt, Occurrence));
         }
 
         /// <summary>
