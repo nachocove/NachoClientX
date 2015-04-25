@@ -570,6 +570,10 @@ namespace NachoCore.Model
 
             string dummy;
             JunkFolderIds.TryRemove (Id, out dummy);
+            if (Xml.FolderHierarchy.TypeCode.Ric_19 == Type) {
+                int folderId;
+                RicFolderIds.TryRemove (AccountId, out folderId);
+            }
 
             return rows;
         }
