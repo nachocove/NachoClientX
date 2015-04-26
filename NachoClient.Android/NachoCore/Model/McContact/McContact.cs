@@ -1649,16 +1649,11 @@ namespace NachoCore.Model
                     ricFolderId,
                     Id,
                     ClassCodeEnum.Contact);
-            if (null == map) {
-                if (null != ricCache) {
-                    ricCache.Add (Id, false);
-                }
-                return false;
-            }
+            bool result = (null != map);
             if (null != ricCache) {
-                ricCache.Add (Id, true);
+                ricCache.Add (Id, result);
             }
-            return true;
+            return result;
         }
 
         private int GetContactTypeIndex ()
@@ -1767,16 +1762,14 @@ namespace NachoCore.Model
 
         private void SetupRicCache ()
         {
-            ResetRicCache ();
+            NcAssert.True (NcModel.Instance.Db.IsInTransaction);
             ricCache = new McContactRicCache ();
         }
 
         private void ResetRicCache ()
         {
-            if (null != ricCache) {
-                ricCache.Clear ();
-                ricCache = null;
-            }
+            NcAssert.True (NcModel.Instance.Db.IsInTransaction);
+            ricCache = null;
         }
     }
 }
