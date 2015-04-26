@@ -46,6 +46,11 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Calendar;
         }
 
+        public override string GetUID ()
+        {
+            return UID;
+        }
+
         private List<McException> dbExceptions = null;
         private IList<McException> appExceptions = null;
 

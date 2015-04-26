@@ -51,6 +51,9 @@ namespace NachoClient.iOS
         protected UIView rsvpSeparatorLine;
         protected UIButton extraAttendeesButton;
         protected UIBarButtonItem editEventButton;
+        protected UIButton cancelMeetingButton;
+        protected UILabel cancelMeetingLabel;
+        protected UIView cancelMeetingSeparatorLine;
 
         // UI colors
         protected UIColor textLabelColor = A.Color_NachoDarkText;
@@ -414,15 +417,28 @@ namespace NachoClient.iOS
             Util.AddTextLabelWithImageView (0, "NOTES", "event-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
             Util.AddDetailTextLabel (42, 22, SCREEN_WIDTH - 90, 20, TagType.EVENT_NOTES_DETAIL_TAG, eventNotesView);
 
-            // Leaving in case we want to go back to inline notes
-            //            eventNotesTextView = new UITextView (new RectangleF (42, yOffset, EVENT_CARD_WIDTH - 60, 30));
-            //            eventNotesTextView.Font = A.Font_AvenirNextRegular14;
-            //            eventNotesTextView.TextColor = textColor;
-            //            eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
-            //
-            //            eventNotesTextView.Started += NotesEditingStarted;
-            //            eventNotesTextView.Changed += NotesChanged;
-            //eventCardView.AddSubview (eventNotesTextView);
+            yOffset += CELL_HEIGHT;
+
+            cancelMeetingSeparatorLine = Util.AddHorizontalLine (0, yOffset, EVENT_CARD_WIDTH, A.Color_NachoBorderGray);
+            eventCardView.AddSubview (cancelMeetingSeparatorLine);
+
+            cancelMeetingButton = new UIButton ();
+            cancelMeetingButton.Frame = new CGRect (18, yOffset, 24, 24);
+            Util.AddButtonImage (cancelMeetingButton, "event-decline", UIControlState.Normal);
+            Util.AddButtonImage (cancelMeetingButton, "event-decline-active", UIControlState.Selected);
+            cancelMeetingButton.TintColor = UIColor.Clear;
+            cancelMeetingButton.TouchUpInside += CancelMeetingButtonClicked;
+            cancelMeetingButton.Hidden = true;
+            eventCardView.AddSubview (cancelMeetingButton);
+
+            cancelMeetingLabel = new UILabel ();
+            nfloat xPos = cancelMeetingButton.Frame.Right + 6;
+            cancelMeetingLabel.Frame = new CGRect (xPos, yOffset, EVENT_CARD_WIDTH - xPos, 24);
+            cancelMeetingLabel.Text = "Cancel this meeting";
+            cancelMeetingLabel.Font = A.Font_AvenirNextRegular14;
+            cancelMeetingLabel.Hidden = true;
+            eventCardView.AddSubview (cancelMeetingLabel);
+
             eventCardView.Frame = new CGRect (A.Card_Horizontal_Indent, 60, contentView.Frame.Width - 30, yOffset + A.Card_Vertical_Indent);
 
             yOffset += 20;
@@ -681,6 +697,17 @@ namespace NachoClient.iOS
             eventNotes.Frame = new CGRect (42, 22, EVENT_CARD_WIDTH - 60, 0);
             eventNotes.SizeToFit ();
 
+            // Cancel meeting button.  Only visible for recurring meetings owned by the user.
+            if (isOrganizer && isRecurring && hasAttendees) {
+                cancelMeetingSeparatorLine.Hidden = false;
+                cancelMeetingButton.Hidden = false;
+                cancelMeetingLabel.Hidden = false;
+            } else {
+                cancelMeetingSeparatorLine.Hidden = true;
+                cancelMeetingButton.Hidden = true;
+                cancelMeetingLabel.Hidden = true;
+            }
+
             LayoutView ();
         }
 
@@ -710,6 +737,7 @@ namespace NachoClient.iOS
             declineButton.TouchUpInside -= RemoveFromCalendarClicked;
             editEventButton.Clicked -= EditButtonClicked;
             removeFromCalendarButton.TouchUpInside -= RemoveFromCalendarClicked;
+            cancelMeetingButton.TouchUpInside -= CancelMeetingButtonClicked;
             //eventNotesTextView.Changed -= NotesChanged;
             //eventNotesTextView.Started -= NotesEditingStarted;
             if (null != extraAttendeesButton) {
@@ -730,6 +758,9 @@ namespace NachoClient.iOS
             eventOrganizerView = null;
             attachmentListView = null;
             eventNotesView = null;
+            cancelMeetingSeparatorLine = null;
+            cancelMeetingButton = null;
+            cancelMeetingLabel = null;
             acceptLabel = null;
             tentativeLabel = null;
             declineLabel = null;
@@ -965,6 +996,12 @@ namespace NachoClient.iOS
             }
             View.ViewWithTag ((int)TagType.EVENT_NOTES_TEXT_VIEW_TAG).Frame = new CGRect (0, internalYOffset, EVENT_CARD_WIDTH, eventNotesViewHeight);
             internalYOffset += eventNotesViewHeight;
+
+            if (isOrganizer && isRecurring && hasAttendees) {
+                AdjustViewLayout (cancelMeetingSeparatorLine, 0, ref internalYOffset, 0);
+                AdjustViewLayout (cancelMeetingButton, 18, ref internalYOffset, 18);
+                ViewFramer.Create (cancelMeetingLabel).Y (cancelMeetingButton.Frame.Y);
+            }
 
             nfloat logicalWidth = NMath.Max (SCREEN_WIDTH, descriptionView.Frame.Right);
             scrollView.Frame = new CGRect (0, 0, SCREEN_WIDTH, View.Frame.Height - keyboardHeight);
@@ -1388,6 +1425,30 @@ namespace NachoClient.iOS
         {
             hasBeenEdited = true;
             PerformSegue ("EventToEditEvent", this);
+        }
+
+        private void CancelMeetingButtonClicked (object sender, EventArgs args)
+        {
+            NcActionSheet.Show (View, this, null,
+                "Cancel this occurrence of the meeting, and send a cancellation notice to all of the attendees.",
+                new NcAlertAction ("Cancel this occurrence", NcAlertActionStyle.Destructive, () => {
+                    CalendarHelper.CancelOccurrence (e, root);
+                    BackEnd.Instance.UpdateCalCmd (root.AccountId, root.Id, false);
+
+                    DateTime occurrenceStartTime;
+                    if (c is McException) {
+                        occurrenceStartTime = ((McException)c).ExceptionStartTime;
+                    } else {
+                        occurrenceStartTime = e.StartTime;
+                    }
+                    var iCalCancelPart = CalendarHelper.MimeCancelFromOccurrence(root, c, e, occurrenceStartTime);
+                    var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
+
+                    CalendarHelper.SendMeetingCancelations (account, root, mimeBody);
+
+                    NavigationController.PopViewController (true);
+                }),
+                new NcAlertAction ("Don't cancel the meeting", NcAlertActionStyle.Cancel, null));
         }
 
         private void ExtraAttendeesTouchUpInside (object sender, EventArgs e)

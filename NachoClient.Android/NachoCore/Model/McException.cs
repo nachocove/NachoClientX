@@ -61,6 +61,15 @@ namespace NachoCore.Model
             return this.ResponseTypeIsSet ? this.ResponseType : CalendarItemOrSelf ().ResponseType;
         }
 
+        public override string GetUID ()
+        {
+            var cal = CalendarItem ();
+            if (null == cal) {
+                return "";
+            }
+            return cal.GetUID ();
+        }
+
         [Ignore]
         public override IList<McAttendee> attendees {
             get {

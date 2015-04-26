@@ -116,6 +116,14 @@ namespace NachoCore.Model
             return HasResponseType () ? ResponseType : NcResponseType.None;
         }
 
+        /// <summary>
+        /// Return the UID for this event.  This method must be overridden by derived classes.
+        /// </summary>
+        public virtual string GetUID ()
+        {
+            return "";
+        }
+
         // Attendees that are stored in the database.
         private List<McAttendee> dbAttendees = null;
         // Attendees that were set by the app, either UI or sync.  They don't get saved to the database
