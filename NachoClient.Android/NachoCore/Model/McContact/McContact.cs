@@ -55,6 +55,17 @@ namespace NachoCore.Model
         }
     }
 
+    public class McContactRicCache : Dictionary<int, bool>
+    {
+        public bool Get (int contactId, out bool isRic)
+        {
+            if (TryGetValue (contactId, out isRic)) {
+                return true;
+            }
+            return false;
+        }
+    }
+
     public partial class McContact : McAbstrItem
     {
         /// <summary>
@@ -74,6 +85,13 @@ namespace NachoCore.Model
             READ_IMADDRESSES = 32,
             READ_CATEGORIES = 64,
             READ_ALL = 127,
+        }
+
+        public enum McContactOpEnum
+        {
+            Insert,
+            Update,
+            Delete,
         }
 
         /// ActiveSync or Device
@@ -622,7 +640,7 @@ namespace NachoCore.Model
                 return NcResult.OK ();
             }
             var missingFlags = flags & (~HasReadAncillaryData);
-            HasReadAncillaryData = flags;
+            HasReadAncillaryData |= flags;
             return ForceReadAncillaryData (missingFlags);
         }
 
@@ -729,7 +747,7 @@ namespace NachoCore.Model
                 retval = base.Insert ();
                 HasReadAncillaryData = McContactAncillaryDataEnum.READ_ALL;
                 InsertAncillaryData ();
-                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
+                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Insert);
             });
             return retval;
         }
@@ -743,7 +761,7 @@ namespace NachoCore.Model
                 if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
                     InsertAncillaryData ();
                 }
-                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
+                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
             });
             return retval;
         }
@@ -772,16 +790,22 @@ namespace NachoCore.Model
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
                 retval = base.Delete ();
-                EvaluateOthersEclipsing (addressList, phoneList);
+                EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
             });
             return retval;
         }
 
-        private void EvaluateEmailAddressEclipsing (List<McContactEmailAddressAttribute> addressList)
+        private void EvaluateEmailAddressEclipsing (List<McContactEmailAddressAttribute> addressList, McContactOpEnum op)
         {
             foreach (var address in addressList) {
                 var contactList = QueryByEmailAddress (AccountId, address.Value).Where (x => x.Id != Id);
                 foreach (var contact in contactList) {
+                    if (contact.EmailAddressesEclipsed && (McContactOpEnum.Insert == op)) {
+                        continue; // insertion can never cause an eclipsed contact to become uneclipsed
+                    }
+                    if (!contact.EmailAddressesEclipsed && (McContactOpEnum.Delete == op)) {
+                        continue; // deletion can never cuase an uneclipsed contact to become eclipsed
+                    }
                     var newEclipsed = contact.ShouldEmailAddressesBeEclipsed ();
                     if (newEclipsed != contact.EmailAddressesEclipsed) {
                         contact.EmailAddressesEclipsed = newEclipsed;
@@ -791,7 +815,7 @@ namespace NachoCore.Model
             }
         }
 
-        private void EvaluatePhoneNumberEclipsing (List<McContactStringAttribute> phoneList)
+        private void EvaluatePhoneNumberEclipsing (List<McContactStringAttribute> phoneList, McContactOpEnum op)
         {
             foreach (var phone in phoneList) {
                 if (McContactStringType.PhoneNumber != phone.Type) {
@@ -799,6 +823,12 @@ namespace NachoCore.Model
                 }
                 var contactList = QueryByPhoneNumber (AccountId, phone.Value).Where (x => x.Id != Id);
                 foreach (var contact in contactList) {
+                    if (contact.PhoneNumbersEclipsed && (McContactOpEnum.Insert == op)) {
+                        continue; // insertion can never cause an eclipsed contact to become uneclipsed
+                    }
+                    if (!contact.PhoneNumbersEclipsed && (McContactOpEnum.Delete == op)) {
+                        continue; // deletion can never cuase an uneclipsed contact to become eclipsed
+                    }
                     var newEclipsed = contact.ShouldPhoneNumbersBeEclipsed ();
                     if (newEclipsed != contact.PhoneNumbersEclipsed) {
                         contact.PhoneNumbersEclipsed = newEclipsed;
@@ -809,10 +839,13 @@ namespace NachoCore.Model
         }
 
         private void EvaluateOthersEclipsing (List<McContactEmailAddressAttribute> addressList,
-                                              List<McContactStringAttribute> phoneList)
+                                              List<McContactStringAttribute> phoneList,
+                                              McContactOpEnum op)
         {
-            EvaluateEmailAddressEclipsing (addressList);
-            EvaluatePhoneNumberEclipsing (phoneList);
+            SetupRicCache ();
+            EvaluateEmailAddressEclipsing (addressList, op);
+            EvaluatePhoneNumberEclipsing (phoneList, op);
+            ResetRicCache ();
         }
 
         private void EvaluateSelfEclipsing ()
@@ -1589,22 +1622,38 @@ namespace NachoCore.Model
             return ((ItemSource.ActiveSync == Source) && (!String.IsNullOrEmpty (GalCacheToken)));
         }
 
+        // IsRic() requires a db query and is called quite a bit during contact eclipsing evaluation.
+        // In orer to speed this up, we create a "Is RIC" cache. You must use this inside a transaction
+        // (RunInTransaction) in order to guarantee thread safety.
+        private McContactRicCache ricCache = null;
+
         public bool IsRic ()
         {
-            McFolder ricFolder = McFolder.GetRicContactFolder (AccountId);
-            if (null == ricFolder) {
+            if (null != ricCache) {
+                bool isRic;
+                if (ricCache.Get (Id, out isRic)) {
+                    return isRic;
+                }
+            }
+
+            int ricFolderId = McFolder.GetRicFolderId (AccountId);
+            if (-1 == ricFolderId) {
+                if (null != ricCache) {
+                    ricCache.Add (Id, false);
+                }
                 return false;
             }
             var map =
                 McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (
                     AccountId,
-                    ricFolder.Id,
+                    ricFolderId,
                     Id,
                     ClassCodeEnum.Contact);
-            if (null == map) {
-                return false;
+            bool result = (null != map);
+            if (null != ricCache) {
+                ricCache.Add (Id, result);
             }
-            return true;
+            return result;
         }
 
         private int GetContactTypeIndex ()
@@ -1669,7 +1718,7 @@ namespace NachoCore.Model
                 if (isAnonymous && !c.IsAnonymous ()) {
                     return true;
                 }
-                return ShouldBeSupercededBy (c) && HasSameName (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
+                return HasSameName (c) && ShouldBeSupercededBy (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
             });
         }
 
@@ -1689,7 +1738,7 @@ namespace NachoCore.Model
             }
 
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return ShouldBeSupercededBy (c) && HasSameName (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
+                return HasSameName (c) && ShouldBeSupercededBy (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
             });
         }
 
@@ -1709,6 +1758,18 @@ namespace NachoCore.Model
                 String.IsNullOrEmpty (MiddleName) &&
                 String.IsNullOrEmpty (LastName)
             );
+        }
+
+        private void SetupRicCache ()
+        {
+            NcAssert.True (NcModel.Instance.Db.IsInTransaction);
+            ricCache = new McContactRicCache ();
+        }
+
+        private void ResetRicCache ()
+        {
+            NcAssert.True (NcModel.Instance.Db.IsInTransaction);
+            ricCache = null;
         }
     }
 }

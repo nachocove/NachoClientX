@@ -76,6 +76,9 @@ namespace NachoCore.Model
 
         private static ConcurrentDictionary<int, string> JunkFolderIds = new ConcurrentDictionary<int, string> ();
 
+        // A dictionary mapping account id to the RIC folder id of the account. (-1 if there is none locally)
+        private static ConcurrentDictionary<int, int> RicFolderIds = new ConcurrentDictionary<int, int> ();
+
         public override string ToString ()
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
@@ -299,6 +302,20 @@ namespace NachoCore.Model
             }
             NcAssert.NotNull (archiveFolders);
             return archiveFolders.First ();
+        }
+
+        public static int GetRicFolderId (int accountId)
+        {
+            int folderId;
+            if (!RicFolderIds.TryGetValue (accountId, out folderId)) {
+                var ricFolder = GetRicContactFolder (accountId);
+                if (null == ricFolder) {
+                    return -1;
+                }
+                folderId = ricFolder.Id;
+                RicFolderIds.TryAdd (accountId, folderId);
+            }
+            return folderId;
         }
 
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
@@ -553,6 +570,10 @@ namespace NachoCore.Model
 
             string dummy;
             JunkFolderIds.TryRemove (Id, out dummy);
+            if (Xml.FolderHierarchy.TypeCode.Ric_19 == Type) {
+                int folderId;
+                RicFolderIds.TryRemove (AccountId, out folderId);
+            }
 
             return rows;
         }
