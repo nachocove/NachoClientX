@@ -139,6 +139,13 @@ namespace NachoCore.Model
             return 0;
         }
 
+        public static List<McFolder> GetClientOwnedFolders (string serverId)
+        {
+            return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
+                serverId == x.ServerId &&
+            true == x.IsClientOwned).ToList ();
+        }
+
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
@@ -146,6 +153,7 @@ namespace NachoCore.Model
             serverId == x.ServerId &&
             true == x.IsClientOwned).SingleOrDefault ();
         }
+
         /*
          * SYNCED FOLDERS:
          * Folder Get...Folder functions for distinguished folders that aren't going to 
@@ -173,6 +181,11 @@ namespace NachoCore.Model
         public static McFolder GetClientOwnedDraftsFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_EmailDrafts);
+        }
+
+        public static List<McFolder> GetClientOwnedDraftsFolders ()
+        {
+            return McFolder.GetClientOwnedFolders (ClientOwned_EmailDrafts);
         }
 
         public static McFolder GetCalDraftsFolder (int accountId)
@@ -878,6 +891,22 @@ namespace NachoCore.Model
                 return null;
             }
             return "(" + string.Join (",", JunkFolderIds.Keys) + ")";
+        }
+
+        public static string GleaningExemptedFolderListSqlString ()
+        {
+            var folderList = new List<int> ();
+            if (0 < JunkFolderIds.Count) {
+                folderList.AddRange (JunkFolderIds.Keys);
+            }
+            var draftFolders = GetClientOwnedDraftsFolders ();
+            if (0 < draftFolders.Count) {
+                folderList.AddRange (draftFolders.Select (x => x.Id));
+            }
+            if (0 == folderList.Count) {
+                return null;
+            }
+            return "(" + string.Join (",", folderList) + ")";
         }
     }
 }

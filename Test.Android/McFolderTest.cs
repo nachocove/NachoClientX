@@ -27,10 +27,21 @@ namespace Test.iOS
                 int accountId = 1;
                 string serverId = "TestServer";
                 McFolder expectedFolder = FolderOps.CreateFolder (accountId, serverId: serverId, isClientOwned: true);
+                McFolder expectedFolder2 = FolderOps.CreateFolder (accountId + 1, serverId: serverId, isClientOwned: true);
 
                 var actualFolder = McFolder.GetClientOwnedFolder (accountId, serverId);
 
                 FoldersAreEqual (expectedFolder, actualFolder, "Should be able to do basic query of client-owned folder");
+
+                var actualFolders = McFolder.GetClientOwnedFolders (serverId);
+                Assert.AreEqual (2, actualFolders.Count);
+                if (actualFolders [0].Id == expectedFolder.Id) {
+                    FoldersAreEqual (expectedFolder, actualFolders [0], "1st folder should be equal to expected folder");
+                    FoldersAreEqual (expectedFolder2, actualFolders [1], "2nd folder should be equal to expected folder #2");
+                } else {
+                    FoldersAreEqual (expectedFolder, actualFolders [1], "2nd folder should be equal to expected folder");
+                    FoldersAreEqual (expectedFolder2, actualFolders [0], "1st folder should be equal to expected folder #2");
+                }
             }
 
             [Test]
@@ -53,6 +64,10 @@ namespace Test.iOS
                 // Lost and Found
                 McFolder expectedLostFound = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_LostAndFound, isClientOwned: true);
 
+                // EmailDrafts
+                McFolder expectedEmailDrafts = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_EmailDrafts, isClientOwned: true);
+                McFolder expectedEmailDrafts2 = FolderOps.CreateFolder (accountId + 1, serverId: McFolder.ClientOwned_EmailDrafts, isClientOwned: true);
+
                 McFolder actualFolder1 = McFolder.GetClientOwnedOutboxFolder (accountId);
                 FoldersAreEqual (expectedOutbox, actualFolder1, "Should be able to query for distinguished folder (Outbox)");
 
@@ -67,6 +82,19 @@ namespace Test.iOS
 
                 McFolder lostAndFound = McFolder.GetLostAndFoundFolder (accountId);
                 FoldersAreEqual (expectedLostFound, lostAndFound, "Should be able to query for distinguished folder (Lost And Found)");
+
+                McFolder emailDrafts = McFolder.GetClientOwnedDraftsFolder (accountId);
+                FoldersAreEqual (expectedEmailDrafts, emailDrafts, "Should be able to query for distinguished folder (Email Drafts)");
+
+                var emailDraftsFolders = McFolder.GetClientOwnedDraftsFolders ();
+                Assert.AreEqual (2, emailDraftsFolders.Count);
+                if (emailDraftsFolders [0].Id == expectedEmailDrafts.Id) {
+                    FoldersAreEqual (expectedEmailDrafts, emailDraftsFolders [0], "1st folder should be equal to expected folder");
+                    FoldersAreEqual (expectedEmailDrafts2, emailDraftsFolders [1], "2nd fodler should be equal to expected folder #2");
+                } else {
+                    FoldersAreEqual (expectedEmailDrafts, emailDraftsFolders [1], "2nd folder should be equal to expected folder");
+                    FoldersAreEqual (expectedEmailDrafts2, emailDraftsFolders [0], "1st fodler should be equal to expected folder #2");
+                }
             }
         }
 
