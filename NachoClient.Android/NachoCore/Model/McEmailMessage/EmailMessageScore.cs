@@ -303,8 +303,9 @@ namespace NachoCore.Model
             var query = "SELECT e.* FROM McEmailMessage AS e " +
                         " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                         " WHERE likelihood (HasBeenGleaned < ?, 0.1) ";
-            if (null != McFolder.JunkFolderListSqlString ()) {
-                query += String.Format (" AND likelihood (m.FolderId NOT IN {0}, 0.9) ", McFolder.JunkFolderListSqlString ());
+            var sqlSet = McFolder.GleaningExemptedFolderListSqlString (); 
+            if (null != sqlSet) {
+                query += String.Format (" AND likelihood (m.FolderId NOT IN {0}, 0.9) ", sqlSet);
             }
             if (0 <= accountId) {
                 query += " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?";
