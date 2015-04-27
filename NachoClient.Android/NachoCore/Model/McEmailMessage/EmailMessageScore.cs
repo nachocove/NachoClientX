@@ -528,6 +528,9 @@ namespace NachoCore.Model
             int numStarted = 0;
             Log.Info (Log.LOG_BRAIN, "Starting all time variances");
             foreach (var emailMessageId in emailMessageIdList) {
+                if (token.IsCancellationRequested) {
+                    return;
+                }
                 var emailMessage = McEmailMessage.QueryById<McEmailMessage> (emailMessageId.Id);
                 if (null == emailMessage) {
                     continue;
