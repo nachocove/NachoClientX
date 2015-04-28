@@ -47,7 +47,7 @@ projects = {
         },
         'pinger': {
             'hostname': 'alphapinger.officetaco.com',
-            'root_cert': 'pinger.pem'
+            'root_cert': 'beta-pinger.pem'
         }
     },
     'beta': {

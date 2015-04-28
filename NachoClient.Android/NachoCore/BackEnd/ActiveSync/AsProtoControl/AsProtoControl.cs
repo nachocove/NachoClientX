@@ -843,6 +843,7 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
             SyncStrategy = new AsStrategy (this);
+            PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
