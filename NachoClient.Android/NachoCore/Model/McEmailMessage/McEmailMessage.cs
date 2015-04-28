@@ -1007,10 +1007,19 @@ namespace NachoCore.Model
             int returnVal = -1; 
 
             if (0 == ScoreVersion) {
-                // Try to use the contact score for initial email message score
+                // Try to use the address score for initial email message score
+                // TODO - Should refactor IScorable to include a quick score function in Brain 2.0
                 McEmailAddress emailAddress = GetFromAddress ();
                 if (null != emailAddress) {
-                    Score = emailAddress.Score;
+                    if (emailAddress.IsVip || (0 < UserAction)) {
+                        Score = minHotScore;
+                    } else if (0 > UserAction) {
+                        Score = minHotScore - 0.1;
+                    } else if (0 < emailAddress.ScoreVersion) {
+                        Score = emailAddress.Score;
+                    } else {
+                        Score = 0.0;
+                    }
                 }
             }
             HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
