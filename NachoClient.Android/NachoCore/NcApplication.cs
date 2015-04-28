@@ -84,6 +84,12 @@ namespace NachoCore
             }
         }
 
+        public bool IsQuickSync {
+            get {
+                return (ExecutionContextEnum.QuickSync == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 

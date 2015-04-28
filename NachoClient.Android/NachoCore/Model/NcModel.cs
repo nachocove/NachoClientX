@@ -464,6 +464,9 @@ namespace NachoCore.Model
 //                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
 
                     lock (WriteNTransLockObj) {
+                        if (NcApplication.Instance.IsQuickSync) {
+                            return;
+                        }
                         List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
                         if ((0 < results.Count) && (0 != results [0].busy)) {
                             Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", db.DatabasePath);
