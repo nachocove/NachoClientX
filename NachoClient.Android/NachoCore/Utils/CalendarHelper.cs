@@ -93,7 +93,6 @@ namespace NachoCore.Utils
                 foreach (var exception in exceptions) {
                     if (exception.Id == evt.ExceptionId) {
                         exception.Deleted = 1;
-                        exception.Update ();
                         break;
                     }
                 }
@@ -109,6 +108,63 @@ namespace NachoCore.Utils
                 };
                 exceptions.Add (exception);
                 cal.exceptions = exceptions;
+            }
+            cal.RecurrencesGeneratedUntil = DateTime.MinValue;
+            cal.Update ();
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
+
+        public static void MarkEventAsCancelled (McMeetingRequest eventInfo)
+        {
+            var cal = McCalendar.QueryByUID (eventInfo.AccountId, eventInfo.GetUID ());
+            if (null == cal) {
+                // Google servers delete the event as soon at is sees the cancellation notice.
+                // So this is a normal case for some users and should not result in an error message.
+                return;
+            }
+            if (DateTime.MinValue == eventInfo.RecurrenceId) {
+                // Cancel the entire meeting, not just one occurrence.  This is the easy case.
+                if (cal.MeetingStatusIsSet && (NcMeetingStatus.MeetingCancelled == cal.MeetingStatus || NcMeetingStatus.ForwardedMeetingCancelled == cal.MeetingStatus)) {
+                    // Someone, most likely the server, has already marked the meeting as cancelled.
+                    // No need to update the item again.
+                    return;
+                }
+                cal.MeetingStatusIsSet = true;
+                cal.MeetingStatus = NcMeetingStatus.MeetingCancelled;
+                cal.Subject = "Canceled: " + cal.Subject;
+            } else {
+                // Only one occurrence of a recurring meeting has been cancelled.
+                var allExceptions = new List<McException> (cal.exceptions);
+                var exceptions = allExceptions.Where (x => x.ExceptionStartTime == eventInfo.RecurrenceId).ToList ();
+                if (0 == exceptions.Count) {
+                    var exception = new McException () {
+                        AccountId = cal.AccountId,
+                        ExceptionStartTime = eventInfo.RecurrenceId,
+                        StartTime = eventInfo.StartTime,
+                        EndTime = eventInfo.EndTime,
+                        Subject = "Canceled: " + cal.Subject,
+                        MeetingStatusIsSet = true,
+                        MeetingStatus = NcMeetingStatus.MeetingCancelled,
+                    };
+                    allExceptions.Add (exception);
+                } else {
+                    if (1 < exceptions.Count) {
+                        Log.Error (Log.LOG_CALENDAR,
+                            "{0} exceptions were found for calendar item {1} ({2}) with recurrence ID {3}. There should be at most one exception.",
+                            exceptions.Count, cal.Id, cal.ServerId, eventInfo.RecurrenceId);
+                    }
+                    foreach (var exception in exceptions) {
+                        if (!exception.MeetingStatusIsSet || (NcMeetingStatus.MeetingCancelled != exception.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != exception.MeetingStatus)) {
+                            exception.MeetingStatusIsSet = true;
+                            exception.MeetingStatus = NcMeetingStatus.MeetingCancelled;
+                            exception.Subject = "Canceled: " + exception.GetSubject ();
+                        }
+                    }
+                }
+                cal.exceptions = allExceptions;
             }
             cal.RecurrencesGeneratedUntil = DateTime.MinValue;
             cal.Update ();

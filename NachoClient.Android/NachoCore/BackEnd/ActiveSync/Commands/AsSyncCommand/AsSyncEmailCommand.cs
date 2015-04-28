@@ -80,6 +80,18 @@ namespace NachoCore.ActiveSync
                     emailMessage.Update ();
                 }
             });
+
+            if (!emailMessage.IsIncomplete) {
+
+                // Extra work that needs to be done, but doesn't need to be in the same database transaction.
+
+                // If this message is a cancellation notice, mark the event as cancelled.  (The server may
+                // have already done this, but some servers don't.)
+                if ("IPM.Schedule.Meeting.Canceled" == emailMessage.MessageClass && null != emailMessage.MeetingRequest) {
+                    CalendarHelper.MarkEventAsCancelled (emailMessage.MeetingRequest);
+                }
+            }
+
             return emailMessage;
         }
     }
