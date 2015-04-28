@@ -68,8 +68,8 @@ projects = {
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
         },
         'pinger': {
-            'hostname': 'pinger.officetaco.com',
-            'root_cert': 'pinger.pem'
+            'hostname': 'dk65t.pxs001.com',
+            'root_cert': 'beta-pinger.pem'
         }
     },
 }
