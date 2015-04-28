@@ -80,7 +80,7 @@ namespace NachoCore.ActiveSync
                             McPending.Operations.EmailSearch == pending.Operation) {
                             McPending.ResolvePendingSearchReqs (Account.Id, token, false);
                         } else {
-                            pending.ResolveAsCancelled ();
+                            pending.ResolveAsCancelled (false);
                         }
                         retval = true;
                         break;
