@@ -21,6 +21,18 @@ namespace NachoCore.ActiveSync
             var xmlTruncated = xmlBody.ElementAnyNs (Xml.AirSyncBase.Truncated);
             var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
 
+            // An Exchange 2007 server might send a <Body> element without any <Data> element for calendar events
+            // that have an empty description.  This should be treated as if it were an empty <Data> element.
+            // The <Data> element can also be missing if a preview was requested.  We have to be careful to not
+            // confuse the two cases.
+            if (null == xmlData && null == xmlPreview &&
+                null != xmlEstimatedDataSize && 0 == xmlEstimatedDataSize.Value.ToInt() &&
+                (null == xmlTruncated || !ToBoolean(xmlTruncated.Value)))
+            {
+                // The easiest thing is to create an empty <Data> element, then let the normal processing happen.
+                xmlData = new XElement (Xml.AirSyncBase.Data, "");
+            }
+
             if (null != xmlPreview) {
                 item.BodyPreview = xmlPreview.Value;
             }
