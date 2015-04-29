@@ -1,14 +1,16 @@
-
 This release updates the current beta release with:
 
-. Better handling of recurring calendar events.
+. Support for fast notifications for new email messages.
 
-. Able to save and edit draft messages.
+. Better manage instances of recurring meetings.
 
 . General performance improvements.
+
+. Faster 'hot' analysis.
 
 . Bug fixes
 
 Known issues:
 
 . Threading support does not currently work for Google Apps users.
+
