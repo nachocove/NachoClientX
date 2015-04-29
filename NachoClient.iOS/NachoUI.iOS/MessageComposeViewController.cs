@@ -1296,7 +1296,9 @@ namespace NachoClient.iOS
         void InitializeMessageForAction ()
         {
             if (EmailHelper.IsReplyAction (action)) {
-                toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.From));
+                if (null != referencedMessage.From) {
+                    toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.From));
+                }
             }
             if (EmailHelper.Action.ReplyAll == action) {
                 // Add the To & Cc list to the CC list, not included this user
