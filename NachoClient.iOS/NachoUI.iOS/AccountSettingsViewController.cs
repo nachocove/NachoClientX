@@ -805,7 +805,7 @@ namespace NachoClient.iOS
 
         protected void DaysToSyncTapHandler (NSObject sender)
         {
-            NcActionSheet.Show (View, this,
+            NcActionSheet.Show (DaysToSyncBlock, this,
                 new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
                     UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
                 }),
