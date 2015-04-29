@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using ModernHttpClient;
 
 namespace NachoCore.Utils
@@ -151,7 +152,22 @@ namespace NachoCore.Utils
                     .SendAsync (request, HttpCompletionOption.ResponseContentRead, cToken)
                     .ConfigureAwait (false);
                 if (HttpStatusCode.OK == response.StatusCode) {
-                    Crl = await response.Content.ReadAsStringAsync ().ConfigureAwait (false);
+                    var crlBytes = await response.Content.ReadAsByteArrayAsync ().ConfigureAwait (false);
+                    try {
+                        Crl = Encoding.ASCII.GetString (crlBytes);
+                        // This looks like an ASCII string. Does it look like a PEM object? (Is this simple way sufficient?)
+                        if (!Crl.StartsWith ("-----BEGIN")) {
+                            Crl = null;
+                        }
+                    } catch (ArgumentException) {
+                        // Will end up here if the CRL is in DER format and has non-ASCII characters
+                        Crl = null;
+                    }
+                    if (null == Crl) {
+                        // Looks like we get DER CRL. Convert it to PEM as our OpenSSL binding requires PEM objects.
+                        Crl = "-----BEGIN X509 CRL-----\n" + Convert.ToBase64String (crlBytes, Base64FormattingOptions.InsertLineBreaks) + "\n-----END X509 CRL-----\n";
+                    }
+
                     LastUpdated = DateTime.UtcNow;
                     var revoked = new HashSet<string> ();
                     // FIXME - Need a different signing scheme so we can present the signing cert to verify the CRL.
