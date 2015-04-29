@@ -295,6 +295,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ()
                 .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == 0)
+                .OrderByDescending (x => x.DateReceived)
                 .FirstOrDefault ();
         }
 
