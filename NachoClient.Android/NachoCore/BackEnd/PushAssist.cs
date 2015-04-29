@@ -159,7 +159,6 @@ namespace NachoCore
             CrlMonitor.Register (crlUrls);
             var policy = new ServerValidationPolicy () {
                 PinnedCert = rootCert,
-                Validator = ValidatorHack,
             };
             ServerCertificatePeek.Instance.AddPolicy (identity, policy);
         }
