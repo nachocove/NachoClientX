@@ -151,6 +151,16 @@ namespace NachoClient.iOS
             }
         }
 
+        public void ReplaceAttachment(McAttachment original, McAttachment replacement)
+        {
+            foreach(var a in list) {
+                if (original == a.attachment) {
+                    a.attachment = replacement;
+                    original.Delete ();
+                }
+            }
+        }
+
         public void CreateView ()
         {
             contentView = new UIView ();

@@ -418,16 +418,16 @@ namespace NachoCore.Utils
         {
             NcAssert.True (0 <= fileSize);
             if (1000 > fileSize) {
-                return String.Format ("{0}B", fileSize);
+                return String.Format ("{0} B", fileSize);
             }
             if (1000000 > fileSize) {
-                return String.Format ("{0:F1}KB", (double)fileSize / 1.0e3);
+                return String.Format ("{0:F1} KB", (double)fileSize / 1.0e3);
             }
             if ((1000 * 1000 * 1000) > fileSize) {
-                return String.Format ("{0:F1}MB", (double)fileSize / 1.0e6);
+                return String.Format ("{0:F1} MB", (double)fileSize / 1.0e6);
             }
             if ((1000L * 1000L * 1000L * 1000L) > fileSize) {
-                return String.Format ("{0:F1}GB", (double)fileSize / 1.0e9);
+                return String.Format ("{0:F1} GB", (double)fileSize / 1.0e9);
             }
             return String.Format ("{0:F1}TB", (double)fileSize / 1.0e12);
         }
