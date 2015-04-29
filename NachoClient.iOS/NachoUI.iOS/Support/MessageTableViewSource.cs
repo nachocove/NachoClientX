@@ -115,16 +115,20 @@ namespace NachoClient.iOS
             // Get portraits
             var fromAddressIdList = new List<int> ();
             foreach (var message in cache[cacheIndex]) {
-                if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
-                    fromAddressIdList.Add (message.FromEmailAddressId);
+                if (null != message) {
+                    if ((0 != message.FromEmailAddressId) && !fromAddressIdList.Contains (message.FromEmailAddressId)) {
+                        fromAddressIdList.Add (message.FromEmailAddressId);
+                    }
                 }
             }
             // Assign matching portrait ids to email messages
             var portraitIndexList = McContact.QueryForPortraits (fromAddressIdList);
             foreach (var portraitIndex in portraitIndexList) {
                 foreach (var message in cache[cacheIndex]) {
-                    if (portraitIndex.EmailAddress == message.FromEmailAddressId) {
-                        message.cachedPortraitId = portraitIndex.PortraitId;
+                    if (null != message) {
+                        if (portraitIndex.EmailAddress == message.FromEmailAddressId) {
+                            message.cachedPortraitId = portraitIndex.PortraitId;
+                        }
                     }
                 }
             }
