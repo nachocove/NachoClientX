@@ -552,6 +552,14 @@ namespace NachoCore.ActiveSync
             return (HttpStatusCode.OK <= statusCode && HttpStatusCode.MultipleChoices > statusCode);
         }
 
+        private bool HasBody (HttpResponseMessage response)
+        {
+            return 0 < ContentData.Length ||
+                (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength) ||
+                (response.Headers.TransferEncodingChunked.HasValue && 
+                    (bool)response.Headers.TransferEncodingChunked);
+        }
+
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
             if (!Is2xx (response.StatusCode) && ContentTypeHtml == ContentType) {
@@ -602,10 +610,11 @@ namespace NachoCore.ActiveSync
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
                 }
-                if ((0 < ContentData.Length ||
-                    (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength)) ||
-                    (response.Headers.TransferEncodingChunked.HasValue && 
-                        (bool)response.Headers.TransferEncodingChunked)) {
+                if (Owner.IgnoreBody (this)) {
+                    if (HasBody (response)) {
+                        Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: ContentType: {0}, Length: {1}", ContentType, ContentData.Length);
+                    }
+                } else if (HasBody (response)) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);

@@ -40,6 +40,11 @@ namespace NachoCore.ActiveSync
             return "";
         }
 
+        public override bool IgnoreBody (AsHttpOperation Sender)
+        {
+            return true;
+        }
+
         internal static void SetOldestProtoVers (IBEContext beContext)
         {
             McProtocolState update = beContext.ProtocolState;
