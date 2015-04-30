@@ -2,7 +2,7 @@ include build_env.mk
 
 TOP:=..
 
-mk_bin_obj_dirs=$1/bin $1/obj 
+mk_bin_obj_dirs=$1/bin $1/obj
 
 PROJECTS:= \
 	NachoClient.Andrioid \
@@ -39,3 +39,7 @@ endif
 release:
 	./scripts/configure_ios.py ./NachoClient.iOS/Info.plist
 	$(MDTOOL) build --target:Build --configuration:"Ad-Hoc|iPhone" NachoClient.sln
+
+appstore:
+	./scripts/configure_ios.py ./NachoClient.iOS/Info.plist
+	$(MDTOOL) build --target:Build --configuration:"AppStore|iPhone" NachoClient.sln
