@@ -294,7 +294,8 @@ namespace NachoCore.Model
         public static McEmailMessage QueryNeedAnalysis ()
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == 0)
+                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned > 0)
+                .OrderByDescending (x => x.Id)
                 .FirstOrDefault ();
         }
 

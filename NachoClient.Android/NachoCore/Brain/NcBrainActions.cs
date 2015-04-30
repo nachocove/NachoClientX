@@ -29,7 +29,7 @@ namespace NachoCore.Brain
                 }
             }
 
-            if (quickScore) {
+            if (quickScore && (0 == emailMessage.ScoreVersion) && (0.0 == emailMessage.Score)) {
                 // Assign a version 0 score by checking if our address is in the to list
                 InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
                 foreach (var address in addressList) {

@@ -482,6 +482,9 @@ namespace NachoClient.iOS
             descriptionView.AddSubview (descriptionTextView);
             descriptionView.AddSubview (descriptionPlaceHolder);
 
+            // If a new event is being created, mark the description as having been edited so that the
+            // new event will always have a body, even if the user leaves the description field blank.
+            descriptionWasEdited = CalendarItemEditorAction.create == action;
 
             //All Day Event
             allDayView = new UIView (new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
