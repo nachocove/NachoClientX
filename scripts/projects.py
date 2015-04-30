@@ -74,7 +74,7 @@ projects = {
     },
     'appstore': {
         'ios': {
-            'bundle_id': '',
+            'bundle_id': 'com.nachocove.mail',
             'display_name': 'Nacho Mail'
         },
         'hockeyapp': {
@@ -85,7 +85,7 @@ projects = {
             'prefix': 'prod',
             'account_id': '610813048224',
             'identity_pool_id': 'us-east-1:2e5f8d44-3f75-4f94-9539-696849b9bca5',
-            'unauth_role_arn': '',
+            'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_prod_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
         },
         'pinger': {
