@@ -62,9 +62,9 @@ namespace NachoCore.Brain
         private DateTime LastPeriodicGlean;
         private DateTime LastPeriodicGleanRestart;
 
-        private ConcurrentDictionary<NcResult.SubKindEnum, DateTime> LastNotified;
-
         private object LockObj;
+
+        private NcBrainNotification NotificationRateLimiter;
 
         public NcBrain ()
         {
@@ -72,7 +72,7 @@ namespace NachoCore.Brain
 
             LastPeriodicGlean = new DateTime ();
             LastPeriodicGleanRestart = new DateTime ();
-            LastNotified = new ConcurrentDictionary<NcResult.SubKindEnum, DateTime> ();
+            NotificationRateLimiter = new NcBrainNotification ();
 
             RootCounter = new NcCounter ("Brain", true);
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
@@ -159,7 +159,7 @@ namespace NachoCore.Brain
             }
             if (0 != numGleaned) {
                 Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
-                NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
+                NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
             }
             return numGleaned;
         }
@@ -365,6 +365,7 @@ namespace NachoCore.Brain
                 }
                 EvaluateRunRate ();
                 int num_entries = WorkCredits;
+                NotificationRateLimiter.Enabled = false;
                 num_entries -= ProcessPersistedRequests (num_entries);
                 num_entries -= AnalyzeEmailAddresses (num_entries);
                 num_entries -= AnalyzeEmails (num_entries);
@@ -378,6 +379,7 @@ namespace NachoCore.Brain
                 num_entries -= IndexEmailMessages (Math.Max (1, num_entries / 2));
                 // This must be the last action. See comment above.
                 num_entries -= UpdateEmailMessageScores (num_entries);
+                NotificationRateLimiter.Enabled = true;
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
@@ -462,34 +464,16 @@ namespace NachoCore.Brain
             }
         }
 
-        private void NotifyUpdates (NcResult.SubKindEnum type)
-        {
-            if (!LastNotified.ContainsKey (type)) {
-                LastNotified.TryAdd (type, new DateTime ());
-            }
-            DateTime last;
-            bool got = LastNotified.TryGetValue (type, out last);
-            NcAssert.True (got);
 
-            // Rate limit to one notification per 2 seconds.
-            DateTime now = DateTime.Now;
-            if (2000 < (long)(now - last).TotalMilliseconds) {
-                LastNotified.TryUpdate (type, now, last);
-                StatusIndEventArgs e = new StatusIndEventArgs ();
-                e.Account = ConstMcAccount.NotAccountSpecific;
-                e.Status = NcResult.Info (type);
-                NcApplication.Instance.InvokeStatusIndEvent (e);
-            }
-        }
 
         public void NotifyEmailAddressUpdates ()
         {
-            NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
+            NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
         }
 
         public void NotifyEmailMessageUpdates ()
         {
-            NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
+            NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
         }
 
         /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
@@ -520,6 +504,88 @@ namespace NachoCore.Brain
                 LastPeriodicGleanRestart = now;
                 NcContactGleaner.Stop ();
                 NcContactGleaner.Start ();
+            }
+        }
+    }
+
+    public delegate void NcBrainNotificationAction (NcResult.SubKindEnum type);
+
+    // This class provides a simple rate limiting
+    public class NcBrainNotification
+    {
+        private bool _Enabled = true;
+        private object LockObj = new object ();
+        private Dictionary<NcResult.SubKindEnum, DateTime> LastNotified;
+
+        // The minimum duration between successive status indications in units of milliseconds
+        public const int KMinDurationMsec = 2000;
+
+        // The delegate interface is created for unit testing
+        public NcBrainNotificationAction Action = SendStatusIndication;
+
+        public bool Enabled {
+            get {
+                return _Enabled;
+            }
+            set {
+                lock (LockObj) {
+                    if (!value) {
+                        _Enabled = false;
+                        LastNotified.Clear ();
+                    } else {
+                        _Enabled = true;
+                        // Send notifications
+                        DateTime now = DateTime.Now;
+                        var types = new List<NcResult.SubKindEnum> (LastNotified.Keys);
+                        foreach (var type in types) {
+                            SendAndUpdate (now, type);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void SendStatusIndication (NcResult.SubKindEnum type)
+        {
+            NcApplication.Instance.InvokeStatusIndEventInfo (null, type);
+        }
+
+        public NcBrainNotification ()
+        {
+            LastNotified = new Dictionary<NcResult.SubKindEnum, DateTime> ();
+        }
+
+        private void SendAndUpdate (DateTime now, NcResult.SubKindEnum type)
+        {
+            LastNotified [type] = now;
+            if (null != Action) {
+                Action (type);
+            }
+        }
+
+        public void NotifyUpdates (NcResult.SubKindEnum type)
+        {
+            lock (LockObj) {
+                if (!Enabled) {
+                    // Save the notification and send it when it is re-enabled.
+                    if (!LastNotified.ContainsKey (type)) {
+                        LastNotified.Add (type, new DateTime ());
+                    }
+                    return;
+                }
+
+                if (!LastNotified.ContainsKey (type)) {
+                    LastNotified.Add (type, new DateTime ());
+                }
+                DateTime last;
+                bool got = LastNotified.TryGetValue (type, out last);
+                NcAssert.True (got);
+
+                // Rate limit to one notification per 2 seconds.
+                DateTime now = DateTime.Now;
+                if (KMinDurationMsec < (long)(now - last).TotalMilliseconds) {
+                    SendAndUpdate (now, type);
+                }
             }
         }
     }
