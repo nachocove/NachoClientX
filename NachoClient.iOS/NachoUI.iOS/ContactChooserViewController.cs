@@ -421,7 +421,7 @@ namespace NachoClient.iOS
                     }
                 }
 
-                Owner.UpdateEmailAddress (contact, contact.GetEmailAddress ());
+                Owner.UpdateEmailAddress (contact, Owner.searchResults [indexPath.Row].Value);
             }
 
         }
