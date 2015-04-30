@@ -51,7 +51,7 @@ namespace NachoCore.Brain
             if (null == emailAddress) {
                 return false;
             }
-            Log.Info (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
+            Log.Debug (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
             emailAddress.ScoreObject ();
             return true;
         }
