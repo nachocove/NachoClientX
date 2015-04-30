@@ -122,7 +122,19 @@ namespace NachoCore.Utils
             var cal = McCalendar.QueryByUID (eventInfo.AccountId, eventInfo.GetUID ());
             if (null == cal) {
                 // Google servers delete the event as soon at is sees the cancellation notice.
-                // So this is a normal case for some users and should not result in an error message.
+                // Or this could be the cancelation notice for a meeting that the user has declined.
+                // So this is a normal case and should not result in an error message.
+                return;
+            }
+            var account = McAccount.QueryById<McAccount> (eventInfo.AccountId);
+            if (null == account || account.EmailAddr == cal.OrganizerEmail) {
+                // The user owns the meeting being processed.  Most likely, this is the outgoing cancelation
+                // notice showing up in the Sent folder.  Processing this would normally have no effect, since
+                // the meeting has already been deleted locally.  But there is a bug on some of the servers
+                // that causes a bad effect.  When canceling a single occurrence of a recurring meeting, the
+                // server leaves out the RecurrenceId from the MeetingRequest element.  This results in the
+                // entire meeting being canceled rather than the one occurrence.  To work around this bug,
+                // ignore messages where the user is the organizer.
                 return;
             }
             if (DateTime.MinValue == eventInfo.RecurrenceId) {
@@ -157,7 +169,10 @@ namespace NachoCore.Utils
                             exceptions.Count, cal.Id, cal.ServerId, eventInfo.RecurrenceId);
                     }
                     foreach (var exception in exceptions) {
-                        if (!exception.MeetingStatusIsSet || (NcMeetingStatus.MeetingCancelled != exception.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != exception.MeetingStatus)) {
+                        if (0 == exception.Deleted &&
+                            (!exception.MeetingStatusIsSet ||
+                                (NcMeetingStatus.MeetingCancelled != exception.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != exception.MeetingStatus)))
+                        {
                             exception.MeetingStatusIsSet = true;
                             exception.MeetingStatus = NcMeetingStatus.MeetingCancelled;
                             exception.Subject = "Canceled: " + exception.GetSubject ();
@@ -428,14 +443,14 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
-        public static void SendMeetingCancelations (McAccount account, McCalendar c, MimeEntity mimeBody)
+        public static void SendMeetingCancelations (McAccount account, McCalendar c, string subjectOverride, MimeEntity mimeBody)
         {
             var mimeMessage = new MimeMessage ();
             mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), account.EmailAddr));
             foreach (var a in c.attendees) {
                 mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
             }
-            mimeMessage.Subject = Pretty.SubjectString ("Canceled : " + c.Subject);
+            mimeMessage.Subject = Pretty.SubjectString (subjectOverride ?? "Canceled: " + c.GetSubject ());
             mimeMessage.Date = DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
@@ -638,9 +653,9 @@ namespace NachoCore.Utils
             return MimeCalFromICalendar (iCalendarCancelFromMcCalendar (cal));
         }
 
-        public static TextPart MimeCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent evt, DateTime Occurrence)
+        public static TextPart MimeCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent evt, DateTime occurrence)
         {
-            return MimeCalFromICalendar (iCalendarCancelFromOccurrence (root, cal, evt, Occurrence));
+            return MimeCalFromICalendar (iCalendarCancelFromOccurrence (root, cal, evt, occurrence));
         }
 
         /// <summary>
