@@ -139,6 +139,7 @@ namespace NachoCore.Model
         public string ReplyTo { set; get; }
 
         /// When the message was received by the current recipient (optional)
+        [Indexed]
         public DateTime DateReceived { set; get; }
 
         /// List of display names, semi-colon separated (optional)
@@ -606,13 +607,16 @@ namespace NachoCore.Model
                 accountId, false, topic);
         }
 
-        public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
+        public static List<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
         {
-            // TODO: to speed-up, convert to SQL, add index to CreatedAt, likelihood(since < x.CreatedAt, 0.01)
             var retardedSince = since.AddDays (-1.0);
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (
-                x => false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived &&
-                (false == x.HasBeenNotified || true == x.ShouldNotify)).OrderBy (x => x.DateReceived);
+            return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
+                " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
+                " IsRead = 0 AND " +
+                " CreatedAt > ? AND " +
+                " likelihood (DateReceived > ?, 0.01) " +
+                " ORDER BY DateReceived ASC ",
+                since, retardedSince);
         }
 
         public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
