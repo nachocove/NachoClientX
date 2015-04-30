@@ -198,7 +198,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public MailboxAddress ToMailboxAddress ()
+        public MailboxAddress ToMailboxAddress (bool mustUseAddress = false)
         {
             // Must have a contact or an address
             NcAssert.True ((null != this.contact) || (null != this.address));
@@ -206,10 +206,10 @@ namespace NachoCore.Utils
             string candidate;
             MailboxAddress mailbox;
 
-            if (null != this.contact) {
-                candidate = this.contact.GetEmailAddress ();
-            } else {
+            if (mustUseAddress || (null == this.contact)) {
                 candidate = this.address;
+            } else {
+                candidate = this.contact.GetEmailAddress ();
             }
 
             if (!MailboxAddress.TryParse (candidate, out mailbox)) {
