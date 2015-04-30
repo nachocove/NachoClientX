@@ -72,4 +72,26 @@ projects = {
             'root_cert': 'beta-pinger.pem'
         }
     },
+    'appstore': {
+        'ios': {
+            'bundle_id': '',
+            'display_name': 'Nacho Mail'
+        },
+        'hockeyapp': {
+            'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa',
+            'api_token': '0344908b24aa498288268a726d028332'
+        },
+        'aws': {
+            'prefix': 'prod',
+            'account_id': '610813048224',
+            'identity_pool_id': 'us-east-1:2e5f8d44-3f75-4f94-9539-696849b9bca5',
+            'unauth_role_arn': '',
+            'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
+        },
+        'pinger': {
+            'hostname': 'p745x.pxs001.com',
+            'root_cert': 'beta-pinger.pem'
+        }
+    },
+
 }
