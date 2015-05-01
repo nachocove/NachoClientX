@@ -91,8 +91,8 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <BuildIpa>true</BuildIpa>
-    <CodesignProvision>7ed5936a-a594-4a8f-aebf-6aba9546cfc4</CodesignProvision>
-    <CodesignKey>iPhone Developer: Henry Kwok (E5VR34U847)</CodesignKey>
+    <CodesignProvision>Automatic:AppStore</CodesignProvision>
+    <CodesignKey>iPhone Distribution</CodesignKey>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
