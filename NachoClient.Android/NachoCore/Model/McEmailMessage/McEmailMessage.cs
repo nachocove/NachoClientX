@@ -408,11 +408,11 @@ namespace NachoCore.Model
                 " as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.5) AND " +
                 " e.FlagUtcStartDate < ? " +
                 (groupBy ? " GROUP BY e.ConversationId " : "") +
                 " ORDER BY e.DateReceived DESC ",
@@ -612,7 +612,7 @@ namespace NachoCore.Model
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
                 " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
-                " IsRead = 0 AND " +
+                " likelihood (IsRead = 0, 0.5) AND " +
                 " CreatedAt > ? AND " +
                 " likelihood (DateReceived > ?, 0.01) " +
                 " ORDER BY DateReceived ASC ",
