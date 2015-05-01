@@ -172,6 +172,7 @@ namespace NachoCore.Utils
             Info_UserInterventionFlagChanged,
             Info_SystemTimeZoneChanged,
             Info_FastNotificationChanged,
+            Info_McCredPasswordChanged,
         };
 
         public enum WhyEnum

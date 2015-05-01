@@ -235,7 +235,7 @@ namespace Test.iOS
         {
             bool isExpiryNotified = false;
             Tuple<int,Uri> value = null;
-            const string match = "http://nacho.com";
+            const string match = "http://nacho.com/";
 
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
@@ -257,11 +257,13 @@ namespace Test.iOS
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
                 Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
             });
-
+            Context.Cred = McCred.QueryById<McCred> (Context.Cred.Id);
             Assert.True (isExpiryNotified);
             Assert.NotNull (value);
             Assert.AreEqual (new Uri(match), value.Item2);
             Assert.AreEqual (-1, value.Item1);
+            Assert.IsNotNull (Context.Cred.RectificationUrl);
+            Assert.AreEqual (match, Context.Cred.RectificationUrl);
             DoReportCommResultWithNonGeneralFailure ();
         }
 
@@ -292,10 +294,12 @@ namespace Test.iOS
                 Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
             });
             
+            Context.Cred = McCred.QueryById<McCred> (Context.Cred.Id);
             Assert.True (isExpiryNotified);
             Assert.NotNull (value);
             Assert.IsNull (value.Item2);
             Assert.AreEqual (2, value.Item1);
+            Assert.AreNotEqual (DateTime.MaxValue, Context.Cred.Expiry);
             DoReportCommResultWithNonGeneralFailure ();
         }
 

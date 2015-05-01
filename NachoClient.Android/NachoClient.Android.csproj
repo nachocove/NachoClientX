@@ -396,6 +396,7 @@
     <Compile Include="NachoCore\Utils\ErrorHelper.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration20.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration21.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration22.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -20,6 +20,15 @@ namespace NachoCore.Model
         /// <value>The password.</value>
         private string Password { get; set; }
 
+        public DateTime Expiry { get; set; }
+
+        public string RectificationUrl { get; set; }
+
+        public McCred ()
+        {
+            Expiry = DateTime.MaxValue;
+        }
+
         /// <summary>
         /// The semantics are that the storage is written, whether in device keychain or DB.
         /// The Id must be valid (Insert()ed) before this API is called.
@@ -28,6 +37,8 @@ namespace NachoCore.Model
         public void UpdatePassword (string password)
         {
             NcAssert.True (0 != Id);
+            Expiry = DateTime.MaxValue;
+            RectificationUrl = null;
             if (Keychain.Instance.HasKeychain ()) {
                 Keychain.Instance.SetPassword (Id, password);
                 Password = null;
@@ -36,6 +47,8 @@ namespace NachoCore.Model
                 Password = password;
                 Update ();
             }
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
         }
 
         static public string Join(string domain, string username)
