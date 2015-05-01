@@ -385,8 +385,12 @@ namespace NachoClient.iOS
 
             string serviceName;
             if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                Complain ("Nacho Mail", nuance);
+                if (emailServices.IsHotmailServiceSelected ()) {
+                    Complain ("Nacho Mail", "Please use your Hotmail or Outlook email address instead.");
+                } else {
+                    var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
+                    Complain ("Nacho Mail", nuance);
+                }
                 return;
             }
 
@@ -415,7 +419,7 @@ namespace NachoClient.iOS
                 }
             } else {
                 if (emailServices.IsHotmailServiceSelected ()) {
-                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
+                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse your Hotmail or Outlook email address?");
                     return;
                 }
             }
