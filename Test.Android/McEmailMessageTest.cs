@@ -85,6 +85,86 @@ namespace Test.Common
         }
 
         [Test]
+        public void QueryUnreadAndHotAfter ()
+        {
+            var since = new DateTime (2014, 8, 15, 1, 23, 0);
+            var retardedSince = since.AddDays (-1.0);
+
+            // excluded because of IsRead == true.
+            var ex1 = new McEmailMessage ();
+            ex1.AccountId = 1;
+            ex1.IsRead = true;
+            ex1.DateReceived = retardedSince.AddMinutes (1.0);
+            ex1.ShouldNotify = true;
+            ex1.Insert ();
+            ex1.CreatedAt = since.AddMinutes (1.0);
+            ex1.HasBeenNotified = false;
+            ex1.Update ();
+            // excluded because of CreatedAt too long ago.
+            var ex2 = new McEmailMessage ();
+            ex2.AccountId = 1;
+            ex2.IsRead = false;
+            ex2.DateReceived = retardedSince.AddMinutes (1.0);
+            ex2.ShouldNotify = true;
+            ex2.ConversationId = "ex2";
+            ex2.Insert ();
+            ex2.CreatedAt = since.AddYears (-1);
+            ex2.HasBeenNotified = false;
+            ex2.Update ();
+            // excluded because of DateReceived too long ago.
+            var ex3 = new McEmailMessage ();//!!!
+            ex3.AccountId = 1;
+            ex3.IsRead = false;
+            ex3.DateReceived = retardedSince.AddYears (-1);
+            ex3.ShouldNotify = true;
+            ex3.ConversationId = "ex3";
+            ex3.Insert ();
+            ex3.CreatedAt = since.AddMinutes (1.0);
+            ex3.HasBeenNotified = false;
+            ex3.Update ();
+            // excluded because of HasBeenNotified == true && ShouldNotify == false.
+            var ex4 = new McEmailMessage ();
+            ex4.AccountId = 1;
+            ex4.IsRead = false;
+            ex4.DateReceived = retardedSince.AddMinutes (1.0);
+            ex4.ShouldNotify = false;
+            ex4.ConversationId = "ex4";
+            ex4.Insert ();
+            ex4.CreatedAt = since.AddMinutes (1.0);
+            ex4.HasBeenNotified = true;
+            ex4.Update ();
+
+            // included with early DateReceived. HasBeenNotified == false && ShouldNotify == false.
+            var early = new McEmailMessage ();
+            early.AccountId = 1;
+            early.IsRead = false;
+            early.DateReceived = retardedSince.AddMinutes (1.0);
+            early.ShouldNotify = false;
+            early.ConversationId = "early";
+            early.Insert ();
+            early.CreatedAt = since.AddMinutes (1.0);
+            early.HasBeenNotified = false;
+            early.Update ();
+
+            // included with late DateRecieved. HasBeenNotified == true && ShouldNotify == true.
+            var late = new McEmailMessage ();
+            late.AccountId = 1;
+            late.IsRead = false;
+            late.DateReceived = retardedSince.AddMinutes (2.0);
+            late.ShouldNotify = true;
+            late.ConversationId = "late";
+            late.Insert ();
+            late.CreatedAt = since.AddMinutes (1.0);
+            late.HasBeenNotified = true;
+            late.Update ();
+
+            var unha = McEmailMessage.QueryUnreadAndHotAfter (since);
+            Assert.AreEqual (2, unha.Count);
+            Assert.AreEqual (early.ConversationId, unha.First ().ConversationId);
+            Assert.AreEqual (late.ConversationId, unha.Last ().ConversationId);
+        }
+
+        [Test]
         public void QueryActiveMessageItemsByScore ()
         {
             // Create 8 email messages in the folder. 2 emails have scores over 0.5.

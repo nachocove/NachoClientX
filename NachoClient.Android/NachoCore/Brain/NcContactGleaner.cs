@@ -23,7 +23,7 @@ namespace NachoCore.Brain
 
     public class NcContactGleaner
     {
-        public const int GLEAN_PERIOD = 10;
+        public const int GLEAN_PERIOD = 4;
         private const uint MaxSaneAddressLength = 40;
 
         #pragma warning disable 414

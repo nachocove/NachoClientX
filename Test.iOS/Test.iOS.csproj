@@ -105,15 +105,6 @@
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
-    <Reference Include="antlr.runtime.iOS">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
-    </Reference>
-    <Reference Include="DDay.Collections.iOS">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.Collections.iOS.dll</HintPath>
-    </Reference>
-    <Reference Include="DDay.iCal.iOS">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.iCal.iOS.dll</HintPath>
-    </Reference>
     <Reference Include="Xamarin.iOS" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
@@ -367,6 +358,18 @@
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
       <Name>NachoPlatformBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.iOS\antlr.runtime.iOS.csproj">
+      <Project>{3043ADD2-B6EF-4392-B5E4-983B63260039}</Project>
+      <Name>antlr.runtime.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.Collections.iOS\DDay.Collections.iOS.csproj">
+      <Project>{B7EE901B-1302-42C7-98D1-18666CB7D6DC}</Project>
+      <Name>DDay.Collections.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
+      <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
+      <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

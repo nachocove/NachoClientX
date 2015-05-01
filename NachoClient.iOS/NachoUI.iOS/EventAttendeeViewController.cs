@@ -524,7 +524,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (null != address);
 
-            var mailboxAddress = address.ToMailboxAddress ();
+            var mailboxAddress = address.ToMailboxAddress (mustUseAddress: true);
 
             // FIXME: Deal with bad email address
             if (null == mailboxAddress) {

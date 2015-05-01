@@ -1441,10 +1441,10 @@ namespace NachoClient.iOS
                     } else {
                         occurrenceStartTime = e.StartTime;
                     }
-                    var iCalCancelPart = CalendarHelper.MimeCancelFromOccurrence(root, c, e, occurrenceStartTime);
+                    var iCalCancelPart = CalendarHelper.MimeCancelFromOccurrence (root, c, e, occurrenceStartTime);
                     var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
 
-                    CalendarHelper.SendMeetingCancelations (account, root, mimeBody);
+                    CalendarHelper.SendMeetingCancelations (account, root, "Canceled: " + c.GetSubject (), mimeBody);
 
                     NavigationController.PopViewController (true);
                 }),

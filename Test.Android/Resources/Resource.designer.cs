@@ -53,6 +53,7 @@ namespace Test.Android
 			global::DDay.Collections.Android.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
 			global::DDay.iCal.Android.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
 			global::antlr.runtime.Android.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
+			global::NachoPlatformBinding.Android.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
 		}
 		
 		public partial class Animation
