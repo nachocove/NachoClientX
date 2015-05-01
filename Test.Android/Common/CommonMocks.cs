@@ -195,6 +195,7 @@ namespace Test.iOS
                 AccountId = Account.Id,
                 Username = "dummy",
             };
+            Cred.Insert ();
         }
     }
 

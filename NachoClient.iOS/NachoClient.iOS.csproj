@@ -1365,6 +1365,9 @@
       <Link>NachoCore\Model\Migration\NcMigration21.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AttachmentHelper.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration22.cs">
+      <Link>NachoCore\Model\Migration\NcMigration22.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

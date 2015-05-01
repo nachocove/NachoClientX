@@ -606,6 +606,12 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 if (0 <= credDaysLeft || null != credUri) {
+                    var cred = BEContext.Cred;
+                    cred.Expiry = DateTime.UtcNow.AddDays (credDaysLeft);
+                    if (null != credUri) {
+                        cred.RectificationUrl = credUri.ToString ();
+                    }
+                    cred.Update ();
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_PasswordWillExpire);
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
