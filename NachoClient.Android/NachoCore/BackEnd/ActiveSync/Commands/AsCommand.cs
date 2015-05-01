@@ -127,6 +127,16 @@ namespace NachoCore.ActiveSync
             return true;
         }
 
+        /// <summary>
+        /// Makes AsHttpOperation pretend like there is no body in the response.
+        /// </summary>
+        /// <returns><c>true</c>, if body should be ignored, <c>false</c> otherwise.</returns>
+        /// <param name="Sender">Sender.</param>
+        public virtual bool IgnoreBody (AsHttpOperation Sender)
+        {
+            return false;
+        }
+
         public virtual bool IsContentLarge (AsHttpOperation Sender)
         {
             return false;

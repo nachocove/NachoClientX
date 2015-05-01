@@ -114,6 +114,11 @@ namespace Test.iOS
             return true;
         }
 
+        public virtual bool IgnoreBody (AsHttpOperation Sender)
+        {
+            return false;
+        }
+
         public virtual bool IsContentLarge (AsHttpOperation Sender)
         {
             return false;
