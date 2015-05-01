@@ -18,7 +18,7 @@ source repos.sh
 
 # Tag all repos
 tag="v$1_$2"
-sh checkout_tag.sh "$tag"
+######sh checkout_tag.sh "$tag"
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
@@ -31,7 +31,7 @@ then
 fi
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="appstore" make release 2>&1 | tee -a $logfile
+VERSION="$1" BUILD="$2" RELEASE="appstore" make appstore 2>&1 | tee -a $logfile
 if [ $? -eq 0 ]
 then
     echo "appstore build $tag is made."
