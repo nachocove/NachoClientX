@@ -175,9 +175,11 @@ namespace NachoCore.Model
 
         public void MarkDependentEmailMessages ()
         {
-            NcModel.Instance.Db.Execute (
-                "UPDATE McEmailMessage SET NeedUpdate = 1 WHERE " +
-                " Id IN (SELECT EmailMessageId FROM McEmailMessageDependency AS d WHERE d.EmailAddressId = ?)", Id);
+            NcModel.Instance.RunInLock (() => {
+                NcModel.Instance.Db.Execute (
+                    "UPDATE McEmailMessage SET NeedUpdate = 1 WHERE " +
+                    " Id IN (SELECT EmailMessageId FROM McEmailMessageDependency AS d WHERE d.EmailAddressId = ?)", Id);
+            });
         }
 
         public void InsertByBrain ()
