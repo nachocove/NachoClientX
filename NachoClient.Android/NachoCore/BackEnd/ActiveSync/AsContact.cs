@@ -261,7 +261,9 @@ namespace NachoCore.ActiveSync
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Body:
-                    McAbstrItem tmp = new McAbstrItem ();
+                    McAbstrItem tmp = new McAbstrItem () {
+                        AccountId = accountId,
+                    };
                     tmp.ApplyAsXmlBody (child);
                     c.BodyId = tmp.BodyId;
                     break;
