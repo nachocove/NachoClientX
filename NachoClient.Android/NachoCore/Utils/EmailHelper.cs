@@ -622,7 +622,16 @@ namespace NachoCore.Utils
             }
             McContact contact = new McContact ();
             NcEmailAddress.ParseName (mailboxAddress, ref contact);
-            return ContactsHelper.GetInitials (contact);
+            var initials = ContactsHelper.GetInitials (contact);
+            if (String.IsNullOrEmpty (initials)) {
+                foreach (char c in fromAddressString) {
+                    if (Char.IsLetterOrDigit (c)) {
+                        initials += Char.ToUpper (c);
+                        break;
+                    }
+                }
+            }
+            return initials;
         }
 
         public static MimeMessage CreateMessage (McAccount account, List<NcEmailAddress> toList, List<NcEmailAddress> ccList, List<NcEmailAddress> bccList)
