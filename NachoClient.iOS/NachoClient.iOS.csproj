@@ -203,15 +203,6 @@
     <Reference Include="BouncyCastle">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
     </Reference>
-    <Reference Include="antlr.runtime.iOS">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
-    </Reference>
-    <Reference Include="DDay.iCal.iOS">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.iCal.iOS.dll</HintPath>
-    </Reference>
-    <Reference Include="DDay.Collections.iOS">
-      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.Collections.iOS.dll</HintPath>
-    </Reference>
     <Reference Include="HockeyApp.iOS">
       <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
@@ -2296,6 +2287,18 @@
     <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
       <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
       <Name>CSharpNameParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.iOS\antlr.runtime.iOS.csproj">
+      <Project>{3043ADD2-B6EF-4392-B5E4-983B63260039}</Project>
+      <Name>antlr.runtime.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.Collections.iOS\DDay.Collections.iOS.csproj">
+      <Project>{B7EE901B-1302-42C7-98D1-18666CB7D6DC}</Project>
+      <Name>DDay.Collections.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
+      <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
+      <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
