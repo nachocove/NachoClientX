@@ -18,7 +18,7 @@ source repos.sh
 
 # Tag all repos
 tag="v$1_$2"
-######sh checkout_tag.sh "$tag"
+sh checkout_tag.sh "$tag"
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
