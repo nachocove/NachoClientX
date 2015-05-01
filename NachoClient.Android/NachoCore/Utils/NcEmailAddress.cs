@@ -309,10 +309,12 @@ namespace NachoCore.Utils
             } else if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) { //use middle name if first name is missing
                 contact.FirstName = parsedName.MiddleInitials;
             }
-            if (!String.IsNullOrEmpty (parsedName.LastName))
+            if (!String.IsNullOrEmpty (parsedName.LastName)) {
                 contact.LastName = parsedName.LastName;
-            if (!String.IsNullOrEmpty (parsedName.Suffix))
+            }
+            if (!String.IsNullOrEmpty (parsedName.Suffix)) {
                 contact.Suffix = parsedName.Suffix;
+            }
         }
 
         public static InternetAddressList ToInternetAddressList (List<NcEmailAddress> addressList, Kind kind)

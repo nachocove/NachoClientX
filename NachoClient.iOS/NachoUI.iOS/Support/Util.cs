@@ -471,30 +471,7 @@ namespace NachoClient
             }
             // Cache the color
             ColorIndex = emailAddress.ColorIndex;
-            // Let create the initials
-            McContact contact = new McContact ();
-            NcEmailAddress.ParseName (mailboxAddress, ref contact);
-            // Using the name
-            string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
-            if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
-            }
-            // Or, failing that, the first char
-            if (String.IsNullOrEmpty (initials)) {
-                if (!String.IsNullOrEmpty (from)) {
-                    foreach (char c in from) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
-            }
-            // Save it to the db
-            Initials = initials;
+            Initials = EmailHelper.Initials (from);
         }
 
         public static UIImage ContactToPortraitImage (McContact contact)

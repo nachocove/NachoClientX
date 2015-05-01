@@ -314,6 +314,9 @@ namespace Test.Android
             initials = EmailHelper.Initials (emailAddress);
             Assert.AreEqual ("BJ", initials);
 
+            emailAddress = "wmonline@wm.com";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("W", initials);
         }
     }
 }
