@@ -93,6 +93,8 @@ namespace NachoClient.iOS
         protected bool timesAreSet = true;
         protected bool descriptionWasEdited = false;
 
+        protected bool calendarItemIsMissing = false;
+
         protected UIView line1;
         protected UIView line2;
         protected UIView line3;
@@ -164,6 +166,7 @@ namespace NachoClient.iOS
             calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
 
             switch (action) {
+
             case CalendarItemEditorAction.create:
                 if (null == item) {
                     if (0001 != startingDate.Year) {
@@ -174,22 +177,31 @@ namespace NachoClient.iOS
                 } else {
                     c = item;
                 }
-                CreateEditEventView ();
                 break;
+
             case CalendarItemEditorAction.edit:
-                c = item;
+                if (null == item) {
+                    calendarItemIsMissing = true;
+                    // Create a dummy item so the UI elements can be created and the view can finish
+                    // loading before we can throw up the dialog to tell the user about the problem.
+                    c = CalendarHelper.DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
+                } else {
+                    c = item;
+                }
                 if (0 != c.recurrences.Count) {
                     isRecurring = true;
                 }
                 if (c.AllDayEvent) {
                     timesAreSet = false;
                 }
-                CreateEditEventView ();
                 break;
+
             default:
                 NcAssert.CaseError ();
                 break;
             }
+
+            CreateEditEventView ();
         }
 
         public void SetCalendarEvent (McEvent e, CalendarItemEditorAction action)
@@ -252,6 +264,13 @@ namespace NachoClient.iOS
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
+
+            if (calendarItemIsMissing) {
+                NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it was deleted.",
+                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                        NavigationController.PopViewController (true);
+                    }));
             }
         }
 
