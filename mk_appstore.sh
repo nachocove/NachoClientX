@@ -31,7 +31,7 @@ then
 fi
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="appstore" make appstore 2>&1 | tee -a $logfile
+VERSION="$1" BUILD="$2" RELEASE="appstore" /Applications/Xamarin\ Studio.app/Contents/MacOS/XamarinStudio ./NachoClient.sln
 if [ $? -eq 0 ]
 then
     echo "appstore build $tag is made."
