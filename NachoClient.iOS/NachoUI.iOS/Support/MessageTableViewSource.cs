@@ -267,6 +267,7 @@ namespace NachoClient.iOS
         protected const int REMINDER_TEXT_TAG = 99106;
         protected const int MESSAGE_HEADER_TAG = 99107;
         protected const int UNREAD_IMAGE_TAG = 99108;
+        protected const int MESSAGE_ERROR_TAG = 99109;
 
         [Foundation.Export ("ImageViewTapSelector:")]
         public void ImageViewTapSelector (UIGestureRecognizer sender)
@@ -434,7 +435,14 @@ namespace NachoClient.iOS
                 if (identifier.Equals (EmailMessageReuseIdentifier)) {
                     messageHeaderView = new MessageHeaderView (new CGRect (65, 0, cellWidth - 65, 75));
                 } else {
-                    messageHeaderView = new MessageHeaderView (new CGRect (15, 0, cellWidth - 15, 75));
+                    messageHeaderView = new MessageHeaderView (new CGRect (45, 0, cellWidth - 45, 75));
+                    using (var image = UIImage.FromBundle ("Slide1-5")) {
+                        var errorImageView = new UIImageView (image);
+                        errorImageView.Frame = new CGRect (15, 0, 24, 24);
+                        errorImageView.Image = image;
+                        errorImageView.Tag = MESSAGE_ERROR_TAG;
+                        view.AddSubview (errorImageView);
+                    }
                 }
                 messageHeaderView.CreateView ();
                 messageHeaderView.Tag = MESSAGE_HEADER_TAG;
@@ -614,7 +622,7 @@ namespace NachoClient.iOS
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
             }
-            previewLabelView.Frame = new CGRect (65, 80, cellWidth - 15 - 65, 60);
+            previewLabelView.Frame = new CGRect (45, 80, cellWidth - 15 - 45, 60);
             previewLabelView.SizeToFit ();
 
             // Reminder image view and label
@@ -699,6 +707,11 @@ namespace NachoClient.iOS
             var messageHeaderView = (MessageHeaderView)cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG);
             messageHeaderView.ConfigureDraftView (messageThread, message);
 
+            var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+            var errorImageView = (UIImageView)cell.ContentView.ViewWithTag (MESSAGE_ERROR_TAG);
+            errorImageView.Hidden = (null == pending) || (NcResult.KindEnum.Error != pending.ResultKind);
+            ViewFramer.Create(errorImageView).CenterY(0, HeightForMessage(message));
+
             // User checkmark view
             ConfigureMultiSelectCell (cell);
 
@@ -710,7 +723,7 @@ namespace NachoClient.iOS
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
             }
-            previewLabelView.Frame = new CGRect (15, 80, cellWidth - 15 - 65, 60);
+            previewLabelView.Frame = new CGRect (45, 80, cellWidth - 15 - 45, 60);
             previewLabelView.SizeToFit ();
         }
 

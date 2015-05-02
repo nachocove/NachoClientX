@@ -425,14 +425,42 @@ namespace NachoClient.iOS
             if (msg.HasDraftsSemantics ()) {
                 PerformSegue ("DraftsToCompose", new SegueHolder (messageThread.SingleMessageSpecialCase ()));
             } else if (msg.HasOutboxSemantics ()) {
-                var message = EmailHelper.MoveFromOutboxToDrafts (messageThread.SingleMessageSpecialCase ());
-                PerformSegue ("DraftsToCompose", new SegueHolder (message));
+                DealWithThreadInOutbox (messageThread);
             } else if (messageThread.HasMultipleMessages ()) {
                 PerformSegue ("SegueToMessageThreadView", new SegueHolder (messageThread));
             } else {
                 PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
             }
         }
+
+        public void DealWithThreadInOutbox (McEmailMessageThread messageThread)
+        {
+            var message = messageThread.SingleMessageSpecialCase ();
+            if (null == message) {
+                return;
+            }
+
+            var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
+            if ((null == pending) || (NcResult.KindEnum.Error != pending.ResultKind)) {
+                var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+                PerformSegue ("DraftsToCompose", new SegueHolder (copy));
+                return;
+            }
+
+            string errorString;
+            if (!ErrorHelper.ErrorStringForSubkind (pending.ResultSubKind, out errorString)) {
+                errorString = String.Format ("(ErrorCode={0}", pending.ResultSubKind);
+            }
+            var messageString = "There was a problem sending this message.  You can resend this message or open it in the drafts folder.";
+            var alertString = String.Format ("{0}\n{1}", messageString, errorString);
+            NcAlertView.Show (this, "Edit Message", alertString,
+                new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                    var copy = EmailHelper.MoveFromOutboxToDrafts (message);
+                    PerformSegue ("DraftsToCompose", new SegueHolder (copy));
+                    return;
+                }));
+        }
+
 
         /// <summary>
         /// INachoMessageControl delegate
