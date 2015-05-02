@@ -183,15 +183,22 @@ def main():
 
     repo_group = RepoGroup(top)
 
+    def check_build_params(opt):
+        if not opt.version or not opt.build:
+            print 'ERROR: must have both --version and --build specified'
+            sys.exit(1)
+
     def get_branch(opt):
         if opt.branch:
             return opt.branch
+        check_build_params(opt)
         return Build(version=opt.version, build=opt.build).branch()
 
     def get_tag(opt):
         if opt.tag:
             return opt.tag
-        return Build(version=opt.verison, build=opt.build).tag()
+        check_build_params(opt)
+        return Build(version=opt.version, build=opt.build).tag()
 
     options = parser.parse_args()
     if options.command == 'branch':
