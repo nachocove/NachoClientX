@@ -8,8 +8,13 @@ namespace NachoCore.Utils
     {
         public static bool ExtractErrorString (NcResult nr, out string errorString)
         {
+            return ErrorStringForSubkind (nr.SubKind, out errorString);
+        }
+
+        public static bool ErrorStringForSubkind (NcResult.SubKindEnum SubKind, out string errorString)
+        {
             string message = null;
-            switch (nr.SubKind) {
+            switch (SubKind) {
             case NcResult.SubKindEnum.Error_NetworkUnavailable:
                 message = "The network is unavailable.";
                 break;
