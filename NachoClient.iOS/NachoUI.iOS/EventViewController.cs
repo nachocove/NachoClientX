@@ -48,6 +48,7 @@ namespace NachoClient.iOS
         protected UILabel declineLabel;
         protected UILabel messageLabel;
         protected UIButton removeFromCalendarButton;
+        protected UILabel removeFromCalendarLabel;
         protected UIView rsvpSeparatorLine;
         protected UIButton extraAttendeesButton;
         protected UIBarButtonItem editEventButton;
@@ -261,15 +262,22 @@ namespace NachoClient.iOS
             messageLabel.Hidden = true;
             eventCardView.Add (messageLabel);
 
-            removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
-            removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
-            removeFromCalendarButton.AccessibilityLabel = "Remove from calendar";
-            removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
-            removeFromCalendarButton.SizeToFit ();
-            removeFromCalendarButton.Frame = new CGRect (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
-            removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            removeFromCalendarButton = new UIButton ();
+            Util.AddButtonImage (removeFromCalendarButton, "event-decline", UIControlState.Normal);
+            Util.AddButtonImage (removeFromCalendarButton, "event-decline-active", UIControlState.Selected);
+            removeFromCalendarButton.Frame = new CGRect (18, 18, 24, 24);
+            removeFromCalendarButton.TintColor = UIColor.Clear;
+            removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
             removeFromCalendarButton.Hidden = true;
-            eventCardView.Add (removeFromCalendarButton);
+            eventCardView.AddSubview (removeFromCalendarButton);
+
+            removeFromCalendarLabel = new UILabel (new CGRect (18 + 24 + 10, 20, 100, 20));
+            removeFromCalendarLabel.TextColor = textColor;
+            removeFromCalendarLabel.Font = A.Font_AvenirNextMedium14;
+            removeFromCalendarLabel.Text = "Remove from calendar";
+            removeFromCalendarLabel.SizeToFit ();
+            removeFromCalendarLabel.Hidden = true;
+            eventCardView.Add (removeFromCalendarLabel);
 
             yOffset = 60;
 
@@ -734,7 +742,6 @@ namespace NachoClient.iOS
             acceptButton.TouchUpInside -= AcceptButtonTouchUpInside;
             tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
-            declineButton.TouchUpInside -= RemoveFromCalendarClicked;
             editEventButton.Clicked -= EditButtonClicked;
             removeFromCalendarButton.TouchUpInside -= RemoveFromCalendarClicked;
             cancelMeetingButton.TouchUpInside -= CancelMeetingButtonClicked;
@@ -766,6 +773,7 @@ namespace NachoClient.iOS
             declineLabel = null;
             messageLabel = null;
             removeFromCalendarButton = null;
+            removeFromCalendarLabel = null;
             rsvpSeparatorLine = null;
             extraAttendeesButton = null;
             attendeeTapGestureRecognizer = null;
@@ -1131,9 +1139,6 @@ namespace NachoClient.iOS
         public void ConfigureRsvpBar (bool isOrganizer)
         {
             if (c.MeetingStatus == NcMeetingStatus.ForwardedMeetingCancelled) {
-                declineButton.Hidden = false;
-                declineButton.Selected = false;
-                declineButton.Frame = new CGRect (18, 18, 24, 24);
                 messageLabel.Hidden = true;
                 acceptButton.Hidden = true;
                 organizerIcon.Hidden = true;
@@ -1141,27 +1146,26 @@ namespace NachoClient.iOS
                 acceptLabel.Hidden = true;
                 tentativeButton.Hidden = true;
                 tentativeLabel.Hidden = true;
+                declineButton.Hidden = true;
                 declineLabel.Hidden = true;
-                declineButton.TouchUpInside += RemoveFromCalendarClicked;
                 removeFromCalendarButton.Hidden = false;
+                removeFromCalendarLabel.Hidden = false;
                 rsvpSeparatorLine.Hidden = false;
-                removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
                 return;
             }
             if (isOrganizer) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new CGRect (18 + 24 + 12, 18, 150, 24);
-                acceptButton.Hidden = true;
                 organizerIcon.Hidden = false;
-                acceptButton.Selected = true;
-                acceptButton.Frame = new CGRect (18, 18, 24, 24);
+                acceptButton.Hidden = true;
                 acceptLabel.Hidden = true;
                 tentativeButton.Hidden = true;
                 tentativeLabel.Hidden = true;
                 declineButton.Hidden = true;
                 declineLabel.Hidden = true;
                 removeFromCalendarButton.Hidden = true;
+                removeFromCalendarLabel.Hidden = true;
                 rsvpSeparatorLine.Hidden = false;
                 return;
             } 
@@ -1177,6 +1181,7 @@ namespace NachoClient.iOS
                 declineButton.Hidden = true;
                 declineLabel.Hidden = true;
                 removeFromCalendarButton.Hidden = true;
+                removeFromCalendarLabel.Hidden = true;
                 rsvpSeparatorLine.Hidden = true;
                 return;
 
@@ -1395,12 +1400,19 @@ namespace NachoClient.iOS
         /// The "Remove from calendar" button has been touched. Adjust the UI, and remove
         /// the calendar entry.
         /// </summary>
-        private void RemoveFromCalendarClicked (object sender, EventArgs e)
+        private void RemoveFromCalendarClicked (object sender, EventArgs args)
         {
             NavigationController.PopViewController (true);
 
             // Remove the item from the calendar.
-            BackEnd.Instance.DeleteCalCmd (c.AccountId, c.Id);
+            if (c is McException && NcMeetingStatus.ForwardedMeetingCancelled != root.MeetingStatus) {
+                // The user is viewing an occurrence of a recurring meeting, and it appears that the
+                // entire series has not been canceled.  So delete just this one occurrence.
+                CalendarHelper.CancelOccurrence (root, ((McException)c).ExceptionStartTime);
+                BackEnd.Instance.UpdateCalCmd (root.AccountId, root.Id, sendBody: false);
+            } else {
+                BackEnd.Instance.DeleteCalCmd (root.AccountId, root.Id);
+            }
         }
 
         private void AcceptButtonTouchUpInside (object sender, EventArgs e)
@@ -1430,17 +1442,18 @@ namespace NachoClient.iOS
         private void CancelMeetingButtonClicked (object sender, EventArgs args)
         {
             NcActionSheet.Show (View, this, null,
-                "Cancel this occurrence of the meeting, and send a cancellation notice to all of the attendees.",
+                "Cancel this occurrence of the meeting and send a cancellation notice to all of the attendees.",
                 new NcAlertAction ("Cancel this occurrence", NcAlertActionStyle.Destructive, () => {
-                    CalendarHelper.CancelOccurrence (e, root);
-                    BackEnd.Instance.UpdateCalCmd (root.AccountId, root.Id, false);
-
                     DateTime occurrenceStartTime;
                     if (c is McException) {
                         occurrenceStartTime = ((McException)c).ExceptionStartTime;
                     } else {
                         occurrenceStartTime = e.StartTime;
                     }
+
+                    CalendarHelper.CancelOccurrence (root, occurrenceStartTime);
+                    BackEnd.Instance.UpdateCalCmd (root.AccountId, root.Id, false);
+
                     var iCalCancelPart = CalendarHelper.MimeCancelFromOccurrence (root, c, e, occurrenceStartTime);
                     var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
 

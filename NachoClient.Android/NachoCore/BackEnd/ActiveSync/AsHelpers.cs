@@ -207,10 +207,6 @@ namespace NachoCore.ActiveSync
             if (cal.MeetingStatusIsSet) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.MeetingStatus, (uint)cal.MeetingStatus));
             }
-            if (DateTime.MinValue != cal.AppointmentReplyTime) {
-                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.AppointmentReplyTime,
-                    cal.AppointmentReplyTime.ToString (DateTimeFmt1)));
-            }
             if (null != cal.OnlineMeetingConfLink) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingConfLink, cal.OnlineMeetingConfLink));
             }
@@ -256,6 +252,9 @@ namespace NachoCore.ActiveSync
                     if (recurrence.OccurrencesIsSet) {
                         xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Occurrences, recurrence.Occurrences));
                     }
+                    if (DateTime.MinValue != recurrence.Until) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Until, recurrence.Until.ToString (CompactDateTimeFmt1)));
+                    }
                     if (NcRecurrenceType.Monthly == recurrence.Type || NcRecurrenceType.Yearly == recurrence.Type) {
                         xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.DayOfMonth, recurrence.DayOfMonth));
                     }
@@ -278,67 +277,73 @@ namespace NachoCore.ActiveSync
                 var xmlExceptions = new XElement (CalendarNs + Xml.Calendar.Calendar_Exceptions);
                 foreach (var exception in cal.exceptions) {
                     var xmlException = new XElement (CalendarNs + Xml.Calendar.Exceptions.Exception);
-                    if (0 != exception.attendees.Count) {
-                        var xmlAttendees = new XElement (CalendarNs + Xml.Calendar.Exception.Attendees);
-                        foreach (var attendee in exception.attendees) {
-                            var xmlAttendee = new XElement (CalendarNs + Xml.Calendar.Attendees.Attendee);
-                            xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Email, attendee.Email));
-                            xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
-                            if (attendee.AttendeeTypeIsSet) {
-                                xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeType, (uint)attendee.AttendeeType));
-                            }
-                            xmlAttendees.Add (xmlAttendee);
-                        }
-                        xmlException.Add (xmlAttendees);
-                    }
-                    if (0 != exception.categories.Count) {
-                        var xmlCategories = new XElement (CalendarNs + Xml.Calendar.Exception.Categories);
-                        foreach (var category in exception.categories) {
-                            xmlCategories.Add (new XElement (CalendarNs + Xml.Calendar.Category, category.Name));
-                        }
-                        xmlException.Add (xmlCategories);
-                    }
-                    if (exception.AllDayEventIsSet) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.AllDayEvent, exception.AllDayEvent ? "1" : "0"));
-                    }
-                    if (exception.BusyStatusIsSet) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.BusyStatus, (int)exception.BusyStatus));
-                    }
                     if (0 != exception.Deleted) {
+                        // The exception for a deleted occurrence must contain only the Deleted and
+                        // ExceptionStartTime elements.
                         xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Deleted, "1"));
+                        if (DateTime.MinValue != exception.ExceptionStartTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.ExceptionStartTime, exception.ExceptionStartTime.ToString (CompactDateTimeFmt1)));
+                        }
+                    } else {
+                        if (0 != exception.attendees.Count) {
+                            var xmlAttendees = new XElement (CalendarNs + Xml.Calendar.Exception.Attendees);
+                            foreach (var attendee in exception.attendees) {
+                                var xmlAttendee = new XElement (CalendarNs + Xml.Calendar.Attendees.Attendee);
+                                xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Email, attendee.Email));
+                                xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
+                                if (attendee.AttendeeTypeIsSet) {
+                                    xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeType, (uint)attendee.AttendeeType));
+                                }
+                                xmlAttendees.Add (xmlAttendee);
+                            }
+                            xmlException.Add (xmlAttendees);
+                        }
+                        if (0 != exception.categories.Count) {
+                            var xmlCategories = new XElement (CalendarNs + Xml.Calendar.Exception.Categories);
+                            foreach (var category in exception.categories) {
+                                xmlCategories.Add (new XElement (CalendarNs + Xml.Calendar.Category, category.Name));
+                            }
+                            xmlException.Add (xmlCategories);
+                        }
+                        if (exception.AllDayEventIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.AllDayEvent, exception.AllDayEvent ? "1" : "0"));
+                        }
+                        if (exception.BusyStatusIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.BusyStatus, (int)exception.BusyStatus));
+                        }
+                        if (0 != exception.Deleted) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Deleted, "1"));
+                        }
+                        if (exception.MeetingStatusIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.MeetingStatus, (int)exception.MeetingStatus));
+                        }
+                        if (exception.ReminderIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Reminder, exception.Reminder));
+                        }
+                        if (exception.SensitivityIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Sensitivity, (int)exception.Sensitivity));
+                        }
+                        if (DateTime.MinValue != exception.DtStamp) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.DtStamp, exception.DtStamp.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (DateTime.MinValue != exception.StartTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.StartTime, exception.StartTime.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (DateTime.MinValue != exception.EndTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.EndTime, exception.EndTime.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (DateTime.MinValue != exception.ExceptionStartTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.ExceptionStartTime, exception.ExceptionStartTime.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (null != exception.Subject) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Subject, exception.Subject));
+                        }
+                        if (null != exception.Location) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Location, exception.Location));
+                        }
+                        // TODO Body.  Sending a body for an exception is complicated.  Just leave the body out for now,
+                        // which means the exception will inherit its body from the main calendar event.
                     }
-                    if (exception.MeetingStatusIsSet) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.MeetingStatus, (int)exception.MeetingStatus));
-                    }
-                    if (exception.ReminderIsSet) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Reminder, exception.Reminder));
-                    }
-                    if (exception.SensitivityIsSet) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Sensitivity, (int)exception.Sensitivity));
-                    }
-                    if (DateTime.MinValue != exception.AppointmentReplyTime) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.AppointmentReplyTime, exception.AppointmentReplyTime.ToString (CompactDateTimeFmt1)));
-                    }
-                    if (DateTime.MinValue != exception.DtStamp) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.DtStamp, exception.DtStamp.ToString (CompactDateTimeFmt1)));
-                    }
-                    if (DateTime.MinValue != exception.StartTime) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.StartTime, exception.StartTime.ToString (CompactDateTimeFmt1)));
-                    }
-                    if (DateTime.MinValue != exception.EndTime) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.EndTime, exception.EndTime.ToString (CompactDateTimeFmt1)));
-                    }
-                    if (DateTime.MinValue != exception.ExceptionStartTime) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.ExceptionStartTime, exception.ExceptionStartTime.ToString (CompactDateTimeFmt1)));
-                    }
-                    if (null != exception.Subject) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Subject, exception.Subject));
-                    }
-                    if (null != exception.Location) {
-                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Location, exception.Location));
-                    }
-                    // TODO Body.  Sending a body for an exception is complicated.  Just leave the body out for now,
-                    // which means the exception will inherit its body from the main calendar event.
                     xmlExceptions.Add (xmlException);
                 }
                 xmlAppData.Add (xmlExceptions);
