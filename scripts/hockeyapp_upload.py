@@ -122,7 +122,7 @@ def main():
             # there is no need to upload .ipa because the .ipa is submitted to the
             # official app store.
             if release in ['alpha', 'beta']:
-                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
+                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['VERSION']
         else:
             release = 'dev'
         if release not in projects:
