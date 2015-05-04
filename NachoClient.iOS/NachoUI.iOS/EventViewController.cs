@@ -43,8 +43,11 @@ namespace NachoClient.iOS
         protected AttachmentListView attachmentListView;
         protected UIView eventNotesView;
         protected UIImageView organizerIcon;
+        protected UIButton acceptButton;
         protected UILabel acceptLabel;
+        protected UIButton tentativeButton;
         protected UILabel tentativeLabel;
+        protected UIButton declineButton;
         protected UILabel declineLabel;
         protected UILabel messageLabel;
         protected UIButton removeFromCalendarButton;
@@ -210,6 +213,7 @@ namespace NachoClient.iOS
             organizerIcon.Hidden = true;
             eventCardView.AddSubview (organizerIcon);
 
+            acceptButton = new UIButton ();
             Util.AddButtonImage (acceptButton, "event-attend", UIControlState.Normal);
             Util.AddButtonImage (acceptButton, "event-attend-active", UIControlState.Selected);
             acceptButton.Frame = new CGRect (18, 18, 24, 24);
@@ -218,6 +222,7 @@ namespace NachoClient.iOS
             acceptButton.Hidden = true;
             eventCardView.AddSubview (acceptButton);
 
+            tentativeButton = new UIButton ();
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
             Util.AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
             tentativeButton.Frame = new CGRect (eventCardView.Frame.Width / 2 - 37.5f, 18, 24, 24);
@@ -226,6 +231,7 @@ namespace NachoClient.iOS
             tentativeButton.Hidden = true;
             eventCardView.AddSubview (tentativeButton);
 
+            declineButton = new UIButton ();
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
             Util.AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
             declineButton.Frame = new CGRect (eventCardView.Frame.Width - 96.5f, 18, 24, 24);
