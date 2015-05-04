@@ -85,30 +85,28 @@ namespace NachoCore.Utils
             return c;
         }
 
-        public static void CancelOccurrence (McEvent evt, McCalendar cal)
+        public static void CancelOccurrence (McCalendar cal, DateTime occurrence)
         {
-            NcAssert.True (evt.CalendarId == cal.Id);
-            if (0 != evt.ExceptionId) {
-                var exceptions = cal.exceptions;
-                foreach (var exception in exceptions) {
-                    if (exception.Id == evt.ExceptionId) {
-                        exception.Deleted = 1;
-                        break;
-                    }
+            var exceptions = new List<McException> (cal.exceptions);
+            McException exception = null;
+            foreach (var e in exceptions) {
+                if (e.ExceptionStartTime == occurrence) {
+                    exception = e;
+                    break;
                 }
-                cal.exceptions = exceptions;
-            } else {
-                // The collection returned by cal.exceptions is read-only, so we need to make a copy.
-                var exceptions = new List<McException> (cal.exceptions);
-                var exception = new McException () {
-                    AccountId = evt.AccountId,
+            }
+            if (null == exception) {
+                exception = new McException () {
+                    AccountId = cal.AccountId,
                     CalendarId = cal.Id,
-                    ExceptionStartTime = evt.StartTime,
+                    ExceptionStartTime = occurrence,
                     Deleted = 1,
                 };
                 exceptions.Add (exception);
-                cal.exceptions = exceptions;
+            } else {
+                exception.Deleted = 1;
             }
+            cal.exceptions = exceptions;
             cal.RecurrencesGeneratedUntil = DateTime.MinValue;
             cal.Update ();
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
@@ -145,7 +143,7 @@ namespace NachoCore.Utils
                     return;
                 }
                 cal.MeetingStatusIsSet = true;
-                cal.MeetingStatus = NcMeetingStatus.MeetingCancelled;
+                cal.MeetingStatus = NcMeetingStatus.ForwardedMeetingCancelled;
                 cal.Subject = "Canceled: " + cal.Subject;
             } else {
                 // Only one occurrence of a recurring meeting has been cancelled.
@@ -159,7 +157,7 @@ namespace NachoCore.Utils
                         EndTime = eventInfo.EndTime,
                         Subject = "Canceled: " + cal.Subject,
                         MeetingStatusIsSet = true,
-                        MeetingStatus = NcMeetingStatus.MeetingCancelled,
+                        MeetingStatus = NcMeetingStatus.ForwardedMeetingCancelled,
                     };
                     allExceptions.Add (exception);
                 } else {
@@ -174,7 +172,7 @@ namespace NachoCore.Utils
                                 (NcMeetingStatus.MeetingCancelled != exception.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != exception.MeetingStatus)))
                         {
                             exception.MeetingStatusIsSet = true;
-                            exception.MeetingStatus = NcMeetingStatus.MeetingCancelled;
+                            exception.MeetingStatus = NcMeetingStatus.ForwardedMeetingCancelled;
                             exception.Subject = "Canceled: " + exception.GetSubject ();
                         }
                     }
