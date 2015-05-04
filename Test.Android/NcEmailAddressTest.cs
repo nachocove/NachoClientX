@@ -11,8 +11,17 @@ namespace Test.Common
     public class NcEmailAddressTest
     {
         string[][] names = { 
+            new string [] { "J.", null, "J.", null, null, null },
+            new string [] { "Mr. Jones", "Mr", "Jones", null,  null, null }, // we don't want this one, do we?
             new string [] { "John (The Guy) Smith (via Google Docs)", null, "John", null, "Smith", null },
-            new string [] { "John (The Guy) Larry (Cable) Smith (via Google Docs)", null, "John", "Larry", "Smith", null },
+            new string [] {
+                "John (The Guy) Larry (Cable) Smith (via Google Docs)",
+                null,
+                "John",
+                "Larry",
+                "Smith",
+                null
+            },
             new string [] { "John Smith (via Google Docs)", null, "John", null, "Smith", null },
             new string [] {
                 "Mr O'Malley y Muñoz, C. Björn Roger III",
@@ -43,6 +52,7 @@ namespace Test.Common
             new string [] { "O'Malley, Björn", null, "Björn", null, "O'Malley", null },
             new string [] { "Björn O'Malley", null, "Björn", null, "O'Malley", null },
             new string [] { "Bin Lin", null, "Bin", null, "Lin", null },
+            new string [] { "Linda", null, "Linda", null, null, null },
             new string [] { "Linda Jones", null, "Linda", null, "Jones", null },
             new string [] { "Jason H. Priem", null, "Jason", "H.", "Priem", null },
             new string [] { "Björn O'Malley-Muñoz", null, "Björn", null, "O'Malley-Muñoz", null },
