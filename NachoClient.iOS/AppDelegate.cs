@@ -420,6 +420,9 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
             BadgeNotifClear ();
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
+            }
 
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
@@ -530,9 +533,6 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
             DidEnterBackgroundCalled = false;
-            if (doingPerformFetch) {
-                CompletePerformFetchWithoutShutdown ();
-            }
             Interlocked.Increment (ref ShutdownCounter);
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
