@@ -622,7 +622,7 @@ namespace NachoClient.iOS
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
             }
-            previewLabelView.Frame = new CGRect (45, 80, cellWidth - 15 - 45, 60);
+            previewLabelView.Frame = new CGRect (65, 80, cellWidth - 15 - 65, 60);
             previewLabelView.SizeToFit ();
 
             // Reminder image view and label
