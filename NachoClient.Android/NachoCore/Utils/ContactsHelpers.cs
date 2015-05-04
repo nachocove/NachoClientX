@@ -124,37 +124,39 @@ namespace NachoCore.Utils
             { Xml.Contacts.YomiLastName, "Yomi Last Name" },
         };
 
+        private static string GetFirstLetterOrDigit (string src)
+        {
+            string initial = "";
+            if (!String.IsNullOrEmpty (src)) {
+                foreach (char c in src) {
+                    if (Char.IsLetterOrDigit (c)) {
+                        initial += Char.ToUpper (c);
+                        break;
+                    }
+                }
+            }
+            return initial;
+        }
+
         public static string GetInitials (McContact contact)
         {
             string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
+            // First try the user's name
+            initials += GetFirstLetterOrDigit (contact.FirstName);
             if (!String.IsNullOrEmpty (contact.LastName)) {
                 if (Char.IsLetter (contact.LastName [0])) {
                     initials += Char.ToUpper (contact.LastName [0]);
                 } else if (!String.IsNullOrEmpty (contact.MiddleName)) {
-                    if (Char.IsLetter (contact.MiddleName [0])) {
-                        initials += Char.ToUpper (contact.MiddleName [0]);
-                    }
+                    initials += GetFirstLetterOrDigit (contact.MiddleName);
                 }
             }
-            // Or, failing that, the first char
+            // Or, failing that, email address
             if (String.IsNullOrEmpty (initials)) {
-                if (!string.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
-                    foreach (char c in contact.GetPrimaryCanonicalEmailAddress()) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
+                initials = GetFirstLetterOrDigit (contact.GetPrimaryCanonicalEmailAddress ());
             }
+            // Or, finally, anything we've got
             if (String.IsNullOrEmpty (initials)) {
-                var displayName = contact.GetDisplayName ();
-                if (!String.IsNullOrEmpty (displayName)) {
-                    initials += Char.ToUpper (displayName [0]);
-                }
+                initials = GetFirstLetterOrDigit (contact.GetDisplayName ());
             }
             return initials;
         }

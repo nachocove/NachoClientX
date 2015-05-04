@@ -1391,7 +1391,8 @@ namespace NachoCore.Model
                 "         ifnull(c.LastName,'') || ' ' || " +
                 "         ifnull(ltrim(s.Value,'\"'),'') || ' ' || " +
                 "         ifnull(c.CompanyName,'') " +
-                "     ) as FullIndex " +
+                "         , ' '''" +
+                "      ) as FullIndex " +
                 " FROM McContact AS c   " +
                 " LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId   " +
                 " WHERE  " +
@@ -1419,24 +1420,6 @@ namespace NachoCore.Model
         public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
-        }
-
-        public static List<NcContactIndex> AllContactsWithEmailAddresses (bool withEclipsing = false)
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
-                "SELECT c.Id, trim(trim(coalesce(c.FirstName,'') || ' ' || coalesce(c.LastName, '')) || ' ' || coalesce(ltrim(s.Value,'\"'), '')) AS SORT_ORDER  " +
-                "FROM McContactEmailAddressAttribute AS s " +
-                "JOIN McContact AS c ON s.ContactId = c.Id " +
-                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                "WHERE " +
-                " likelihood (m.ClassCode = ?, 0.2) AND " +
-                (withEclipsing ? "(c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
-                " likelihood (c.IsAwaitingDelete = 0, 1.0) " +
-                "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
-                ")",
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact
-            );
         }
 
         public static List<NcContactIndex> RicContactsSortedByRank (int accountId, int limit)
