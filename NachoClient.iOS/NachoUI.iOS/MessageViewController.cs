@@ -59,6 +59,7 @@ namespace NachoClient.iOS
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
         
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -103,7 +104,11 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            ViewFramer.Create (scrollView).Height (View.Frame.Height - 44 - 64);
+            scrollView.Frame = View.Frame;
+            ViewFramer.Create (scrollView).AdjustHeight (- 64);
+
+            View.BackgroundColor = UIColor.Blue;
+            scrollView.BackgroundColor = UIColor.Yellow;
 
             // Turn on zooming
             scrollView.MinimumZoomScale = 0.2f;
@@ -121,7 +126,7 @@ namespace NachoClient.iOS
 
             // Toolbar controls
 
-            messageToolbar = new MessageToolbar (new CGRect (0, scrollView.Frame.Bottom, View.Frame.Width, 44));
+            messageToolbar = new MessageToolbar (new CGRect (0, View.Frame.Height - 44, View.Frame.Width, 44));
             messageToolbar.OnClick = (object sender, EventArgs e) => {
                 var toolbarEventArgs = (MessageToolbarEventArgs)e;
                 switch (toolbarEventArgs.Action) {
@@ -539,6 +544,10 @@ namespace NachoClient.iOS
                 // Make sure that newly visible part is showing the right contents.
                 LayoutBody ();
             }
+
+            messageToolbar.Frame = new CGRect (0, View.Frame.Height - 44, View.Frame.Width, 44);
+
+            ViewFramer.Create (scrollView).Height (View.Frame.Height - 44);
             scrollView.ContentSize = new CGSize (NMath.Max (headerView.Frame.Width, bodyView.Frame.Width) + 2 * VIEW_INSET, bodyView.Frame.Bottom);
 
             // MarkAsRead() will change the message from unread to read only if the body has been
@@ -556,14 +565,6 @@ namespace NachoClient.iOS
         {
             // Force the BodyView to redo its layout.
             ScrollViewScrolled (null, null);
-        }
-
-        public override void ViewWillLayoutSubviews ()
-        {
-            base.ViewWillLayoutSubviews ();
-            if (null != TabBarController) {
-                ViewFramer.Create (View).AdjustHeight (TabBarController.TabBar.Frame.Height);
-            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -855,10 +856,10 @@ namespace NachoClient.iOS
             }
         }
 
-        private void AttachmentOnError(McAttachment attachment, NcResult result)
+        private void AttachmentOnError (McAttachment attachment, NcResult result)
         {
             string message;
-            if(!ErrorHelper.ExtractErrorString(result, out message)) {
+            if (!ErrorHelper.ExtractErrorString (result, out message)) {
                 message = "Download failed.";
             }
             NcAlertView.ShowMessage (this, "Attachment error", message);
