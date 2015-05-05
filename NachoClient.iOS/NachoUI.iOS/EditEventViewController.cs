@@ -544,6 +544,7 @@ namespace NachoClient.iOS
 
             startDatePicker.Frame = new CGRect (0, 44, SCREEN_WIDTH, START_PICKER_HEIGHT);
             startDatePicker.Hidden = true;
+            startDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
             startView.AddSubview (startDatePicker);
 
             startDatePicker.ValueChanged += (object sender, EventArgs e) => {
@@ -616,6 +617,7 @@ namespace NachoClient.iOS
 
             endDatePicker.Frame = new CGRect (0, CELL_HEIGHT, SCREEN_WIDTH, END_PICKER_HEIGHT);
             endDatePicker.Hidden = true;
+            endDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
             endView.AddSubview (endDatePicker);
 
             endDatePicker.ValueChanged += (object sender, EventArgs e) => {
