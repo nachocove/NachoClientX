@@ -4,13 +4,37 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 
-// TODO: this file should not reference ActiveSync.
-using NachoCore.ActiveSync;
-
 namespace NachoCore
 {
     public class ProtoControl
     {
+        public class FolderHierarchy
+        {
+            public enum TypeCode
+            {
+                UserCreatedGeneric_1 = 1,
+                DefaultInbox_2 = 2,
+                DefaultDrafts_3 = 3,
+                DefaultDeleted_4 = 4,
+                DefaultSent_5 = 5,
+                DefaultOutbox_6 = 6,
+                DefaultTasks_7 = 7,
+                DefaultCal_8 = 8,
+                DefaultContacts_9 = 9,
+                DefaultNotes_10 = 10,
+                DefaultJournal_11 = 11,
+                UserCreatedMail_12 = 12,
+                UserCreatedCal_13 = 13,
+                UserCreatedContacts_14 = 14,
+                UserCreatedTasks_15 = 15,
+                UserCreatedJournal_16 = 16,
+                UserCreatedNotes_17 = 17,
+                Unknown_18 = 18,
+                Ric_19 = 19,
+            };
+
+        }
+
         public int AccountId;
 
         public IProtoControlOwner Owner { get; set; }
@@ -301,12 +325,12 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public virtual NcResult CreateFolderCmd (int destFolderId, string displayName, FolderHierarchy.TypeCode folderType)
         {
             return null;
         }
 
-        public virtual NcResult CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
+        public virtual NcResult CreateFolderCmd (string DisplayName, FolderHierarchy.TypeCode folderType)
         {
             return null;
         }

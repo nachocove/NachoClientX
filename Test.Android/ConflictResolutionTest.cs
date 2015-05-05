@@ -5,7 +5,7 @@ using NUnit.Framework;
 using NachoCore.ActiveSync;
 using System.Linq;
 using Operations = NachoCore.Model.McPending.Operations;
-using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using TypeCode = NachoCore.ProtoControl.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.ActiveSync.Xml.AirSync.ClassCode;
 using NachoCore.Model;
 using System.Text;

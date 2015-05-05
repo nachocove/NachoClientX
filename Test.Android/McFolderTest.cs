@@ -7,7 +7,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using TypeCode = NachoCore.ProtoControl.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McAbstrFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
 using NachoCore;
@@ -339,16 +339,16 @@ namespace Test.iOS
             {
                 int accountId = 1;
 
-                McFolder differentAccountId = FolderOps.CreateFolder (2, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "apple");
-                McFolder waitingToDelete = FolderOps.CreateFolder (accountId, isAwaitingDelete: true, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "banana");
-                McFolder defaultEmailDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "carrot");
-                McFolder deviceCalendarDrafts = FolderOps.CreateFolder (accountId, isClientOwned: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "date");
-                McFolder defaultInbox = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultInbox_2, name: "elderberry");
-                McFolder hiddenDraftFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, isHidden: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "fennel");
+                McFolder differentAccountId = FolderOps.CreateFolder (2, typeCode: ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "apple");
+                McFolder waitingToDelete = FolderOps.CreateFolder (accountId, isAwaitingDelete: true, typeCode: ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "banana");
+                McFolder defaultEmailDrafts = FolderOps.CreateFolder (accountId, typeCode: ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "carrot");
+                McFolder deviceCalendarDrafts = FolderOps.CreateFolder (accountId, isClientOwned: true, typeCode: ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "date");
+                McFolder defaultInbox = FolderOps.CreateFolder (accountId, typeCode: ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2, name: "elderberry");
+                McFolder hiddenDraftFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, isHidden: true, typeCode: ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "fennel");
 
-                Xml.FolderHierarchy.TypeCode[] draftTypes = {
-                    Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
-                    Xml.FolderHierarchy.TypeCode.UserCreatedCal_13,
+                ProtoControl.FolderHierarchy.TypeCode[] draftTypes = {
+                    ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3,
+                    ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13,
                 };
 
                 List<McFolder> nonHiddenDraftFolders = McFolder.QueryNonHiddenFoldersOfType (accountId, draftTypes);
@@ -364,11 +364,11 @@ namespace Test.iOS
                 Assert.True (nonHiddenDraftFoldersIds.Contains (defaultEmailDrafts.Id)); //match
                 Assert.True (nonHiddenDraftFoldersIds.Contains (deviceCalendarDrafts.Id)); //match
 
-                List<McFolder> emptyFoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, new Xml.FolderHierarchy.TypeCode[0]); //empty list
+                List<McFolder> emptyFoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, new ProtoControl.FolderHierarchy.TypeCode[0]); //empty list
                 Assert.True (0 == emptyFoldersList.Count);
                 #pragma warning disable 0219
-                McFolder defaultEmailDraftsTwo = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "honeydew-melon"); //flip-flop alphabetical order of insertions
-                McFolder defaultEmailDraftsThree = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "guava");
+                McFolder defaultEmailDraftsTwo = FolderOps.CreateFolder (accountId, typeCode: ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "honeydew-melon"); //flip-flop alphabetical order of insertions
+                McFolder defaultEmailDraftsThree = FolderOps.CreateFolder (accountId, typeCode: ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "guava");
                 #pragma warning restore 0219
                 nonHiddenDraftFolders = McFolder.QueryNonHiddenFoldersOfType (accountId, draftTypes);
 
@@ -383,16 +383,16 @@ namespace Test.iOS
         [Test]
         public void TestTypesToCommaDelimitedString ()
         {
-            Xml.FolderHierarchy.TypeCode[] typeArray = {
-                Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
-                Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
-                Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
+            ProtoControl.FolderHierarchy.TypeCode[] typeArray = {
+                ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+                ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2,
+                ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3,
             };
 
             string typesArrayAsString = Folder_Helpers.TypesToCommaDelimitedString (typeArray);
             Assert.True (typesArrayAsString.Equals ("(1,2,3)"));
 
-            Xml.FolderHierarchy.TypeCode[] emptyTypeArray = new TypeCode[0];
+            ProtoControl.FolderHierarchy.TypeCode[] emptyTypeArray = new TypeCode[0];
             typesArrayAsString = Folder_Helpers.TypesToCommaDelimitedString (emptyTypeArray);
             Assert.True (typesArrayAsString.Equals ("()"));
         }

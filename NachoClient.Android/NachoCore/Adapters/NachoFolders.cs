@@ -12,51 +12,51 @@ namespace NachoCore
 {
     public class NachoFolders : INachoFolders
     {
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric,
-        //        Xml.FolderHierarchy.TypeCode.DefaultInbox,
-        //        Xml.FolderHierarchy.TypeCode.DefaultDrafts,
-        //        Xml.FolderHierarchy.TypeCode.DefaultDeleted,
-        //        Xml.FolderHierarchy.TypeCode.DefaultSent,
-        //        Xml.FolderHierarchy.TypeCode.DefaultOutbox,
-        //        Xml.FolderHierarchy.TypeCode.DefaultTasks,
-        //        Xml.FolderHierarchy.TypeCode.DefaultCal,
-        //        Xml.FolderHierarchy.TypeCode.DefaultContacts,
-        //        Xml.FolderHierarchy.TypeCode.DefaultNotes,
-        //        Xml.FolderHierarchy.TypeCode.DefaultJournal,
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedMail,
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedCal,
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedContacts,
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedTasks,
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedJournal,
-        //        Xml.FolderHierarchy.TypeCode.UserCreatedNotes,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultInbox,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultDeleted,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultSent,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultOutbox,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultTasks,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultCal,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultContacts,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultNotes,
+        //        ProtoControl.FolderHierarchy.TypeCode.DefaultJournal,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedTasks,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedJournal,
+        //        ProtoControl.FolderHierarchy.TypeCode.UserCreatedNotes,
 
-        public static readonly Xml.FolderHierarchy.TypeCode[] FilterForEmail = {
-            Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
-            Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
-            Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
-            Xml.FolderHierarchy.TypeCode.DefaultDeleted_4,
-            Xml.FolderHierarchy.TypeCode.DefaultSent_5,
-            Xml.FolderHierarchy.TypeCode.DefaultOutbox_6,
-            Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
-            Xml.FolderHierarchy.TypeCode.Unknown_18,
+        public static readonly ProtoControl.FolderHierarchy.TypeCode[] FilterForEmail = {
+            ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+            ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2,
+            ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3,
+            ProtoControl.FolderHierarchy.TypeCode.DefaultDeleted_4,
+            ProtoControl.FolderHierarchy.TypeCode.DefaultSent_5,
+            ProtoControl.FolderHierarchy.TypeCode.DefaultOutbox_6,
+            ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12,
+            ProtoControl.FolderHierarchy.TypeCode.Unknown_18,
         };
 
-        public static readonly Xml.FolderHierarchy.TypeCode[] FilterForCalendars = {
-            Xml.FolderHierarchy.TypeCode.DefaultCal_8,
-            Xml.FolderHierarchy.TypeCode.UserCreatedCal_13,
+        public static readonly ProtoControl.FolderHierarchy.TypeCode[] FilterForCalendars = {
+            ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8,
+            ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13,
         };
 
-        public static readonly Xml.FolderHierarchy.TypeCode[] FilterForContacts = {
-            Xml.FolderHierarchy.TypeCode.DefaultContacts_9,
-            Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14,
+        public static readonly ProtoControl.FolderHierarchy.TypeCode[] FilterForContacts = {
+            ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9,
+            ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14,
         };
 
         int accountId;
         List<McFolder> FoldersList;
-        Xml.FolderHierarchy.TypeCode[] types;
+        ProtoControl.FolderHierarchy.TypeCode[] types;
 
         // TODO: Should use Nacho type
-        public NachoFolders (int accountId, Xml.FolderHierarchy.TypeCode[] types)
+        public NachoFolders (int accountId, ProtoControl.FolderHierarchy.TypeCode[] types)
         {
             this.accountId = accountId;
             this.types = types;

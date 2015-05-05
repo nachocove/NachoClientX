@@ -775,12 +775,12 @@ namespace NachoCore.ActiveSync
             }
             // If we have too many folders, then whittle down the list, but keep default inbox & cal.
             List<McFolder> fewer = new List<McFolder> ();
-            var defInbox = folders.FirstOrDefault (x => x.Type == Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var defInbox = folders.FirstOrDefault (x => x.Type == ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             if (null != defInbox) {
                 fewer.Add (defInbox);
                 folders.Remove (defInbox);
             }
-            var defCal = folders.FirstOrDefault (x => x.Type == Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var defCal = folders.FirstOrDefault (x => x.Type == ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             if (null != defCal) {
                 fewer.Add (defCal);
                 folders.Remove (defCal);

@@ -680,68 +680,45 @@ namespace NachoCore.ActiveSync
                 Unknown_11 = 11,
             };
 
-            public enum TypeCode
-            {
-                UserCreatedGeneric_1 = 1,
-                DefaultInbox_2 = 2,
-                DefaultDrafts_3 = 3,
-                DefaultDeleted_4 = 4,
-                DefaultSent_5 = 5,
-                DefaultOutbox_6 = 6,
-                DefaultTasks_7 = 7,
-                DefaultCal_8 = 8,
-                DefaultContacts_9 = 9,
-                DefaultNotes_10 = 10,
-                DefaultJournal_11 = 11,
-                UserCreatedMail_12 = 12,
-                UserCreatedCal_13 = 13,
-                UserCreatedContacts_14 = 14,
-                UserCreatedTasks_15 = 15,
-                UserCreatedJournal_16 = 16,
-                UserCreatedNotes_17 = 17,
-                Unknown_18 = 18,
-                Ric_19 = 19,
-            };
-
-            public static McAbstrFolderEntry.ClassCodeEnum TypeCodeToAirSyncClassCodeEnum (TypeCode code)
+            public static McAbstrFolderEntry.ClassCodeEnum TypeCodeToAirSyncClassCodeEnum (ProtoControl.FolderHierarchy.TypeCode code)
             {
                 switch (code) {
-                case TypeCode.DefaultJournal_11:
-                case TypeCode.UserCreatedJournal_16:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultJournal_11:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedJournal_16:
                     return McAbstrFolderEntry.ClassCodeEnum.Journal;
 
-                case TypeCode.DefaultInbox_2:
-                case TypeCode.DefaultDrafts_3:
-                case TypeCode.DefaultDeleted_4:
-                case TypeCode.DefaultSent_5:
-                case TypeCode.DefaultOutbox_6:
-                case TypeCode.UserCreatedMail_12:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultDeleted_4:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultSent_5:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultOutbox_6:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12:
                     // Treat Unknown/Generic as Email until proven otherwise.
-                case TypeCode.Unknown_18:
-                case TypeCode.UserCreatedGeneric_1:
+                case ProtoControl.FolderHierarchy.TypeCode.Unknown_18:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1:
                     return McAbstrFolderEntry.ClassCodeEnum.Email;
 
-                case TypeCode.DefaultTasks_7:
-                case TypeCode.UserCreatedTasks_15:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultTasks_7:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedTasks_15:
                     return McAbstrFolderEntry.ClassCodeEnum.Tasks;
 
-                case TypeCode.DefaultCal_8:
-                case TypeCode.UserCreatedCal_13:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13:
                     return McAbstrFolderEntry.ClassCodeEnum.Calendar;
 
-                case TypeCode.DefaultContacts_9:
-                case TypeCode.UserCreatedContacts_14:
-                case TypeCode.Ric_19:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14:
+                case ProtoControl.FolderHierarchy.TypeCode.Ric_19:
                     return McAbstrFolderEntry.ClassCodeEnum.Contact;
 
-                case TypeCode.DefaultNotes_10:
-                case TypeCode.UserCreatedNotes_17:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultNotes_10:
+                case ProtoControl.FolderHierarchy.TypeCode.UserCreatedNotes_17:
                     return McAbstrFolderEntry.ClassCodeEnum.Notes;
                 }
                 throw new Exception ();
             }
 
-            public static string TypeCodeToAirSyncClassCode (TypeCode code)
+            public static string TypeCodeToAirSyncClassCode (ProtoControl.FolderHierarchy.TypeCode code)
             {
                 var enumVal = TypeCodeToAirSyncClassCodeEnum (code);
                 switch (enumVal) {

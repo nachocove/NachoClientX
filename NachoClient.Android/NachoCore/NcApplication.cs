@@ -607,7 +607,7 @@ namespace NachoCore
                 if (null == McFolder.GetDeviceContactsFolder ()) {
                     var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
                                         McFolder.ClientOwned_DeviceContacts, "Device Contacts",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
                 }
             });
@@ -615,7 +615,7 @@ namespace NachoCore
                 if (null == McFolder.GetDeviceCalendarsFolder ()) {
                     var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
                                         McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
-                                        NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
                 }
             });

@@ -18,7 +18,7 @@ namespace NachoCore.ActiveSync
 
             public string DisplayName { set; get; }
 
-            public Xml.FolderHierarchy.TypeCode FolderType { set; get; }
+            public ProtoControl.FolderHierarchy.TypeCode FolderType { set; get; }
 
             public ApplyFolderAdd (int accountId)
                 : base (accountId)

@@ -256,7 +256,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
-                        if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
+                        if (ProtoControl.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
                             // Expressing BodyPreference for RIC gets Protocol Error.
                             if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                                 options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
@@ -516,7 +516,7 @@ namespace NachoCore.ActiveSync
                         }
                     }
                     if (!HasBeenCancelled) {
-                        if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                        if (ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
                             var protocolState = BEContext.ProtocolState;
                             if (!protocolState.HasSyncedInbox) {
                                 protocolState.HasSyncedInbox = true;
@@ -811,7 +811,7 @@ namespace NachoCore.ActiveSync
                     switch (classCode) {
                     case Xml.AirSync.ClassCode.Email:
                         HadEmailMessageSetChanges = true;
-                        if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
+                        if (ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type &&
                             null != xmlApplicationData) {
                             var xmlRead = xmlApplicationData.ElementAnyNs ("Read");
                             if (null != xmlRead && "0" == xmlRead.Value) {

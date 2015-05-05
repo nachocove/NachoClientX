@@ -68,7 +68,7 @@ namespace NachoCore.ActiveSync
                                 ServerId = serverId, 
                                 ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
-                                FolderType = (Xml.FolderHierarchy.TypeCode)uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
+                                FolderType = (ProtoControl.FolderHierarchy.TypeCode)uint.Parse (change.Element (m_ns + Xml.FolderHierarchy.Type).Value),
                             };
                             applyAdd.ProcessServerCommand ();
                             break;

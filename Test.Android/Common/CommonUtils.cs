@@ -7,7 +7,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NUnit.Framework;
 using System.Collections.Generic;
-using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using TypeCode = NachoCore.ProtoControl.FolderHierarchy.TypeCode;
 using System.Threading;
 using System.Net.Http;
 using System.Text;
@@ -221,7 +221,7 @@ namespace Test.iOS
         }
 
         public static McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, bool isDistinguished = false, string parentId = "0", 
-            string serverId = defaultServerId, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+            string serverId = defaultServerId, string name = "Default name", NachoCore.ProtoControl.FolderHierarchy.TypeCode typeCode = NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
             bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "-1", 
             bool syncMetaToClient = false)
         {

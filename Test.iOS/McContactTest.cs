@@ -7,7 +7,7 @@ using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Linq;
-using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using TypeCode = NachoCore.ProtoControl.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McAbstrFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
 using Test.iOS;

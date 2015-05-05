@@ -1148,7 +1148,7 @@ namespace NachoCore.ActiveSync
                 // 
                 // In this (these?) scenarios, update the Cal item in the DB, and Sync the change to the server.
                 //
-                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 != folder.Type &&
+                if (NachoCore.ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 != folder.Type &&
                 14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                     var cal = item as McCalendar;
                     if (null == cal) {
@@ -1218,7 +1218,7 @@ namespace NachoCore.ActiveSync
         }
 
         public override NcResult CreateFolderCmd (int destFolderId, string displayName, 
-                                                Xml.FolderHierarchy.TypeCode folderType)
+                                                ProtoControl.FolderHierarchy.TypeCode folderType)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             var serverId = DateTime.UtcNow.Ticks.ToString ();
@@ -1270,7 +1270,7 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        public override NcResult CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public override NcResult CreateFolderCmd (string displayName, ProtoControl.FolderHierarchy.TypeCode folderType)
         {
             return CreateFolderCmd (-1, displayName, folderType);
         }

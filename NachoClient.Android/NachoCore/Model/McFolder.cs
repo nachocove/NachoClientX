@@ -57,7 +57,7 @@ namespace NachoCore.Model
 
         public bool IsDistinguished { get; set; }
 
-        public Xml.FolderHierarchy.TypeCode Type { get; set; }
+        public ProtoControl.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
         public const string ClientOwned_EmailDrafts = "EmailDrafts2";
@@ -91,7 +91,7 @@ namespace NachoCore.Model
                                        string parentId,
                                        string serverId,
                                        string displayName,
-                                       Xml.FolderHierarchy.TypeCode folderType)
+                                       ProtoControl.FolderHierarchy.TypeCode folderType)
         {
             // client-owned folder can't be created inside synced folder
             if (parentId != "0") {
@@ -213,7 +213,7 @@ namespace NachoCore.Model
 
         public bool IsClientOwnedDraftsFolder ()
         {
-            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+            if (ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
                 if (ClientOwned_EmailDrafts == this.ServerId) {
                     return true;
                 }
@@ -223,7 +223,7 @@ namespace NachoCore.Model
 
         public bool IsClientOwnedOutboxFolder ()
         {
-            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+            if (NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
                 if (ClientOwned_Outbox == this.ServerId) {
                     return true;
                 }
@@ -241,7 +241,7 @@ namespace NachoCore.Model
             return JunkFolderIds.ContainsKey (folderId);
         }
 
-        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
+        public static List<McFolder> GetUserFolders (int accountId, ProtoControl.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " likelihood (f.AccountId = ?, 1.0) AND " +
@@ -256,7 +256,7 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
+        private static McFolder GetDistinguishedFolder (int accountId, ProtoControl.FolderHierarchy.TypeCode typeCode)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " likelihood (f.AccountId = ?, 1.0) AND " +
@@ -273,45 +273,45 @@ namespace NachoCore.Model
 
         public static McFolder GetDefaultDeletedFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.DefaultDeleted_4);
         }
 
         public static McFolder GetRicContactFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.Ric_19);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.Ric_19);
         }
 
         public static McFolder GetDefaultInboxFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
         }
 
         public static McFolder GetDefaultCalendarFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
         }
 
         public static McFolder GetDefaultContactFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
         }
 
         public static McFolder GetDefaultTaskFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultTasks_7);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.DefaultTasks_7);
         }
 
         public static McFolder GetDefaultSentFolder (int accountId)
         {
-            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
+            return GetDistinguishedFolder (accountId, ProtoControl.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
         public static McFolder GetOrCreateArchiveFolder (int accountId)
         {
-            List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
+            List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
             if (null == archiveFolders) {
-                BackEnd.Instance.CreateFolderCmd (accountId, ARCHIVE_DISPLAY_NAME, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
+                BackEnd.Instance.CreateFolderCmd (accountId, ARCHIVE_DISPLAY_NAME, ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                archiveFolders = McFolder.GetUserFolders (accountId, ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
             }
             NcAssert.NotNull (archiveFolders);
             return archiveFolders.First ();
@@ -349,7 +349,7 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
+        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, ProtoControl.FolderHierarchy.TypeCode[] types)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
                           " WHERE f.AccountId = ? AND " +
@@ -583,7 +583,7 @@ namespace NachoCore.Model
 
             string dummy;
             JunkFolderIds.TryRemove (Id, out dummy);
-            if (Xml.FolderHierarchy.TypeCode.Ric_19 == Type) {
+            if (ProtoControl.FolderHierarchy.TypeCode.Ric_19 == Type) {
                 int folderId;
                 RicFolderIds.TryRemove (AccountId, out folderId);
             }

@@ -24,7 +24,7 @@ namespace Test.Common
         {
             base.SetUp ();
             Folder = McFolder.Create (defaultAccountId, false, false, false, "0", "test", "Test Folder",
-                NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
             Folder.Insert ();
             NcAssert.True (0 < Folder.Id);
         }

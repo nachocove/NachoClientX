@@ -106,27 +106,27 @@ namespace Test.iOS
             result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, false);
             Assert.AreEqual (0, result.Count);
             // Normal conditions testing.
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.Insert ();
             result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.None, true);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
             result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.None, false);
             Assert.AreEqual (0, result.Count);
             result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.Def1w, false);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
             result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, true);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
             result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, false);
             Assert.AreEqual (2, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
         }
 
         [Test]
@@ -148,27 +148,27 @@ namespace Test.iOS
             result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.AllInf, false);
             Assert.AreEqual (0, result.Count);
             // Normal conditions testing.
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.Insert ();
             result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.None, true);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
             result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.None, false);
             Assert.AreEqual (0, result.Count);
             result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.Def2w, false);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
             result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.All3m, true);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
             result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.All3m, false);
             Assert.AreEqual (2, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedCal_13 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13 == x.Type));
         }
 
         [Test]
@@ -182,13 +182,13 @@ namespace Test.iOS
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, false);
             Assert.AreEqual (0, result.Count);
             // Normal conditions testing.
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             folder.Insert ();
-            folder = McFolder.Create (Account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             folder.Insert ();
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.None, true);
             Assert.AreEqual (0, result.Count);
@@ -198,37 +198,37 @@ namespace Test.iOS
             Assert.AreEqual (0, result.Count);
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.RicInf, false);
             Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.Ric_19, result [0].Type);
+            Assert.AreEqual (ProtoControl.FolderHierarchy.TypeCode.Ric_19, result [0].Type);
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, true);
             Assert.AreEqual (0, result.Count);
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, false);
             Assert.AreEqual (2, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.Ric_19 == x.Type));
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.AllInf, true);
             Assert.AreEqual (0, result.Count);
             result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.AllInf, false);
             Assert.AreEqual (3, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.Ric_19 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14 == x.Type));
         }
 
         [Test]
         public void TestCanAdvance ()
         {
             bool result;
-            var emailFolder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var emailFolder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
-            var calFolder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var calFolder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             calFolder.AsSyncMetaToClientExpected = true;
             calFolder.Insert ();
             // Create folders.
-            var conFolder = McFolder.Create (Account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var conFolder = McFolder.Create (Account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             conFolder.AsSyncMetaToClientExpected = false;
             conFolder.Insert ();
-            var ricFolder = McFolder.Create (Account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            var ricFolder = McFolder.Create (Account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             ricFolder.AsSyncMetaToClientExpected = false;
             ricFolder.Insert ();
             result = Strategy.CanAdvance (Account.Id, 5);
@@ -292,17 +292,17 @@ namespace Test.iOS
             context.ProtocolState.Update ();
             int result;
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
-            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
-            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             calFolder.AsSyncMetaToClientExpected = true;
             calFolder.Insert ();
             // Create folders.
-            var conFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var conFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             conFolder.AsSyncMetaToClientExpected = false;
             conFolder.Insert ();
-            var ricFolder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            var ricFolder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             ricFolder.AsSyncMetaToClientExpected = false;
             ricFolder.Insert ();
             result = strat.AdvanceIfPossible (account.Id, context.ProtocolState.StrategyRung);
@@ -333,33 +333,33 @@ namespace Test.iOS
             result = strat.FolderListProvider (account.Id, 6, true);
             Assert.AreEqual (0, result.Count);
             // Normal conditions testing.
-            folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "usercal", "UserCal", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "usercal", "UserCal", ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "usercontacts", "UserContacts", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "usercontacts", "UserContacts", ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             folder.Insert ();
             result = strat.FolderListProvider (account.Id, 6, true);
             Assert.AreEqual (2, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
             result = strat.FolderListProvider (account.Id, 6, false);
             Assert.AreEqual (7, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedCal_13 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.Ric_19 == x.Type));
         }
 
         [Test]
@@ -371,7 +371,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             var result = strat.EmailParametersProvider (folder, AsStrategy.Scope.EmailEnum.None, true, 50);
             var code = result.Item1;
@@ -394,7 +394,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.Insert ();
             var result = strat.CalParametersProvider (folder, AsStrategy.Scope.CalEnum.None, true, 50);
             var code = result.Item1;
@@ -418,7 +418,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             folder.Insert ();
             var result = strat.ContactParametersProvider (folder, AsStrategy.Scope.ContactEnum.None, true, 50);
             var code = result.Item1;
@@ -441,11 +441,11 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.Insert ();
-            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             calFolder.Insert ();
-            var contactFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var contactFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             contactFolder.Insert ();
             var result = strat.ParametersProvider (emailFolder, 0, true);
             var code = result.Item1;
@@ -488,28 +488,28 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = true;
             emailFolder.Insert ();
-            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             calFolder.AsSyncMetaToClientExpected = false;
             calFolder.Insert ();
             // Create folders.
-            var conFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var conFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             conFolder.AsSyncMetaToClientExpected = false;
             conFolder.Insert ();
-            var ricFolder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            var ricFolder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             ricFolder.AsSyncMetaToClientExpected = false;
             ricFolder.Insert ();
-            var jFolder = McFolder.Create (account.Id, false, false, true, "0", "journal", "J", Xml.FolderHierarchy.TypeCode.DefaultJournal_11);
+            var jFolder = McFolder.Create (account.Id, false, false, true, "0", "journal", "J", ProtoControl.FolderHierarchy.TypeCode.DefaultJournal_11);
             jFolder.Insert ();
             var result = strat.AllSyncedFolders (account.Id);
             Assert.AreEqual (4, result.Count);
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
-            Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
-            Assert.False (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultJournal_11 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
+            Assert.True (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.Ric_19 == x.Type));
+            Assert.False (result.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultJournal_11 == x.Type));
         }
 
         [Test]
@@ -525,27 +525,27 @@ namespace Test.iOS
             var result = strat.GenNarrowSyncKit (new List<McFolder> (), 0, 50);
             Assert.IsNull (result);
             // Normal conditions testing.
-            var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "usercal", "UserCal", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "usercal", "UserCal", ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "usercontacts", "UserContacts", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "usercontacts", "UserContacts", ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             folder.Insert ();
             result = strat.GenNarrowSyncKit (strat.FolderListProvider (account.Id, 0, true), 0, 50);
             Assert.AreEqual (50, result.OverallWindowSize);
             Assert.AreEqual (2, result.PerFolders.Count);
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
-            var inboxParms = result.PerFolders.Single (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type);
-            var calParms = result.PerFolders.Single (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type);
+            Assert.True (result.PerFolders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
+            var inboxParms = result.PerFolders.Single (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type);
+            var calParms = result.PerFolders.Single (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type);
             // TODO: insert pending to prove that they are ignored.
             Assert.AreEqual (0, inboxParms.Commands.Count);
             Assert.AreEqual (0, calParms.Commands.Count);
@@ -572,11 +572,11 @@ namespace Test.iOS
             account.Insert ();
             var result = strat.ANarrowFolderHasToClientExpected (account.Id);
             Assert.IsFalse (result);
-            var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             result = strat.ANarrowFolderHasToClientExpected (account.Id);
             Assert.IsFalse (result);
-            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.AsSyncMetaToClientExpected = true;
             folder.Insert ();
             result = strat.ANarrowFolderHasToClientExpected (account.Id);
@@ -603,25 +603,25 @@ namespace Test.iOS
             Assert.IsNull (result);
             result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.IsNull (result);
-            var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncLastPing = DateTime.UtcNow;
             inbox.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-7);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "usercal", "UserCal", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "usercal", "UserCal", ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-3);
             folder.Insert ();
-            var cal = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var cal = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             cal.AsSyncLastPing = DateTime.UtcNow;
             cal.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "usercontacts", "UserContacts", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+            folder = McFolder.Create (account.Id, false, false, false, "0", "usercontacts", "UserContacts", ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-3);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-3);
             folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-3);
             folder.Insert ();
             context.ProtocolState.StrategyRung = 6;
@@ -629,8 +629,8 @@ namespace Test.iOS
             context.ProtocolState.Update ();
             result = strat.GenPingKit (account.Id, context.ProtocolState, true, false, false);
             Assert.AreEqual (2, result.Folders.Count);
-            Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
-            Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Folders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
+            Assert.True (result.Folders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
             inbox.UpdateSet_AsSyncMetaToClientExpected (true);
             result = strat.GenPingKit (account.Id, context.ProtocolState, true, false, false);
             Assert.IsNull (result);
@@ -643,9 +643,9 @@ namespace Test.iOS
             context.ProtocolState.Update ();
             result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.AreEqual (3, result.Folders.Count);
-            Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
-            Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
-            Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
+            Assert.True (result.Folders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
+            Assert.True (result.Folders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
+            Assert.True (result.Folders.Any (x => ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
         }
 
         private List<McEmailMessage> Fetch_Emails;
@@ -654,7 +654,7 @@ namespace Test.iOS
 
         private void Fetch_InjectEmails (int accountId, int count)
         {
-            Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             Fetch_Folder.Insert ();
             Fetch_Emails = new List<McEmailMessage> ();
             for (int i = 0; i < count; i++) {
@@ -691,7 +691,7 @@ namespace Test.iOS
         private void Fetch_InjectAtts (int accountId, int count)
         {
             if (null == Fetch_Folder) {
-                Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+                Fetch_Folder = McFolder.Create (accountId, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
                 Fetch_Folder.Insert ();
             }
             if (null == Fetch_Emails) {
@@ -803,23 +803,23 @@ namespace Test.iOS
             Assert.IsNull (result);
             result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             Assert.IsNull (result);
-            var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncKey = "1";
             inbox.Insert ();
             folders.Add (inbox);
-            var cal = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var cal = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8);
             cal.AsSyncKey = "1";
             cal.Insert ();
             folders.Add (cal);
-            var useremail = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            var useremail = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
             useremail.AsSyncKey = "1";
             useremail.Insert ();
             folders.Add (useremail);
-            var contact = McFolder.Create (account.Id, false, false, true, "0", "contact", "Contact", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var contact = McFolder.Create (account.Id, false, false, true, "0", "contact", "Contact", ProtoControl.FolderHierarchy.TypeCode.DefaultContacts_9);
             contact.AsSyncKey = "1";
             contact.Insert ();
             folders.Add (contact);
-            var folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            var folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", ProtoControl.FolderHierarchy.TypeCode.Ric_19);
             folder.AsSyncKey = "1";
             folder.Insert ();
             folders.Add (folder);
@@ -831,8 +831,8 @@ namespace Test.iOS
             // Test of narrow.
             result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Narrow);
             Assert.AreEqual (2, result.PerFolders.Count);
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
             foreach (var rst in folders) {
                 rst.UpdateSet_AsSyncMetaToClientExpected (false);
             }
@@ -841,7 +841,7 @@ namespace Test.iOS
             folder.UpdateSet_AsSyncMetaToClientExpected (true);
             result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             Assert.AreEqual (1, result.PerFolders.Count);
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => ProtoControl.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
 
             // Broad test.
             foreach (var rst in folders) {
@@ -1013,7 +1013,7 @@ namespace Test.iOS
             context.ProtocolState.StrategyRung = 3;
             context.ProtocolState.Update ();
             var folders = new List<McFolder> ();
-            var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncKey = "1";
             inbox.Insert ();
             folders.Add (inbox);

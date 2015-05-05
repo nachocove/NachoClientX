@@ -50,7 +50,7 @@ namespace NachoCore.Utils
 
     public static class Folder_Helpers
     {
-        public static string TypesToCommaDelimitedString (Xml.FolderHierarchy.TypeCode[] types)
+        public static string TypesToCommaDelimitedString (ProtoControl.FolderHierarchy.TypeCode[] types)
         {
             string typesAsString = "(";
             string[] typesToStringArray = new string[types.Length];

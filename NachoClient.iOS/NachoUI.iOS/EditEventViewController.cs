@@ -1070,7 +1070,7 @@ namespace NachoClient.iOS
                     calFolder = calendars.GetFolder (0);
                     for (int i = 1; i < calendars.Count (); ++i) {
                         var cal = calendars.GetFolder (i);
-                        if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == cal.Type) {
+                        if (ProtoControl.FolderHierarchy.TypeCode.DefaultCal_8 == cal.Type) {
                             calFolder = cal;
                             break;
                         }

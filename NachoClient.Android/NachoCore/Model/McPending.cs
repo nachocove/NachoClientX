@@ -236,7 +236,7 @@ namespace NachoCore.Model
 
         public bool Smart_OriginalEmailIsEmbedded { set; get; }
 
-        public Xml.FolderHierarchy.TypeCode Folder_Type { set; get; }
+        public ProtoControl.FolderHierarchy.TypeCode Folder_Type { set; get; }
 
         public const string KSynchronouslyCompleted	= "synchronously completed";
 

@@ -783,7 +783,7 @@ namespace NachoClient.iOS
                 if (McFolder.AsRootServerId == folder.ParentId) {
                     int folderID = folder.Id;
                     string fname = folder.DisplayName;
-                    Xml.FolderHierarchy.TypeCode ftype = folder.Type;
+                    ProtoControl.FolderHierarchy.TypeCode ftype = folder.Type;
                     List<FolderStruct> subFolders = new List<FolderStruct> ();
                     subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
 
@@ -800,15 +800,15 @@ namespace NachoClient.iOS
         private bool ShowInDefaults (McFolder folder)
         {
             switch (folder.Type) {
-            case Xml.FolderHierarchy.TypeCode.DefaultInbox_2: 
+            case ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2: 
                 return true;
-            case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
+            case ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3:
                 return false; // This is not our on-device drafts folder
-            case Xml.FolderHierarchy.TypeCode.DefaultDeleted_4:
+            case ProtoControl.FolderHierarchy.TypeCode.DefaultDeleted_4:
                 return true;
-            case Xml.FolderHierarchy.TypeCode.DefaultSent_5:
+            case ProtoControl.FolderHierarchy.TypeCode.DefaultSent_5:
                 return true;
-            case Xml.FolderHierarchy.TypeCode.DefaultOutbox_6:
+            case ProtoControl.FolderHierarchy.TypeCode.DefaultOutbox_6:
                 return false; // This is not our on-device outbox folder
             }
             return (folder.IsClientOwnedDraftsFolder () || folder.IsClientOwnedOutboxFolder ());
@@ -818,19 +818,19 @@ namespace NachoClient.iOS
         {
             foreach (var folder in defaultFoldersList) {
                 switch (folder.type) {
-                case Xml.FolderHierarchy.TypeCode.DefaultInbox_2: 
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2: 
                     folder.orderNumber = 1;
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultDrafts_3:
                     folder.orderNumber = 2;
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultDeleted_4:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultDeleted_4:
                     folder.orderNumber = 3;
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultSent_5:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultSent_5:
                     folder.orderNumber = 4;
                     break;
-                case Xml.FolderHierarchy.TypeCode.DefaultOutbox_6:
+                case ProtoControl.FolderHierarchy.TypeCode.DefaultOutbox_6:
                     folder.orderNumber = 5;
                     break;
                 default:
@@ -869,7 +869,7 @@ namespace NachoClient.iOS
 
             public List <FolderStruct> subFolders { get; set; }
 
-            public Xml.FolderHierarchy.TypeCode type { get; set; }
+            public ProtoControl.FolderHierarchy.TypeCode type { get; set; }
 
             public int orderNumber { get; set; }
 
@@ -878,7 +878,7 @@ namespace NachoClient.iOS
 
             }
 
-            public FolderStruct (int fid, List<FolderStruct> sf, string fn, Xml.FolderHierarchy.TypeCode t, int on)
+            public FolderStruct (int fid, List<FolderStruct> sf, string fn, ProtoControl.FolderHierarchy.TypeCode t, int on)
             {
                 folderID = fid;
                 subFolders = sf;

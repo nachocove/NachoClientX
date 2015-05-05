@@ -81,7 +81,7 @@ namespace Test.Common
             this.ParentId = "mock folder parent";
             this.AsSyncKey = "mock folder sync key";
             this.DisplayName = "mock folder";
-            this.Type = Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1;
+            this.Type = ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1;
         }
     }
 

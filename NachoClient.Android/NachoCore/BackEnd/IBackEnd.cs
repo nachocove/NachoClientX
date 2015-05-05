@@ -121,9 +121,9 @@ namespace NachoCore
         NcResult MoveTaskCmd (int accountId, int taskId, int destFolderId);
         NcResult DnldTaskBodyCmd (int accountId, int taskId);
         // create a subordinate folder.
-        NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
+        NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, ProtoControl.FolderHierarchy.TypeCode folderType);
         // create a root folder.
-        NcResult CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType);
+        NcResult CreateFolderCmd (int accountId, string DisplayName, ProtoControl.FolderHierarchy.TypeCode folderType);
         // delete a folder.
         NcResult DeleteFolderCmd (int accountId, int folderId);
         // move a folder.

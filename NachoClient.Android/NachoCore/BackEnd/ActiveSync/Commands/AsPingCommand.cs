@@ -34,7 +34,7 @@ namespace NachoCore.ActiveSync
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
 
             foreach (var folder in FoldersInRequest) {
-                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                if (ProtoControl.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
                 }
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,

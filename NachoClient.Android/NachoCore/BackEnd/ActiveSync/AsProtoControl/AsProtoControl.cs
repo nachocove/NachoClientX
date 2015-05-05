@@ -876,7 +876,7 @@ namespace NachoCore.ActiveSync
                 if (null == McFolder.GetClientOwnedOutboxFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_Outbox, "On-Device Outbox",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
             });
@@ -884,7 +884,7 @@ namespace NachoCore.ActiveSync
                 if (null == McFolder.GetClientOwnedDraftsFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_EmailDrafts, "On-Device Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
                 }
             });
@@ -892,7 +892,7 @@ namespace NachoCore.ActiveSync
                 if (null == McFolder.GetCalDraftsFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
                 }
             });
@@ -900,7 +900,7 @@ namespace NachoCore.ActiveSync
                 if (null == McFolder.GetGalCacheFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_GalCache, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
                 }
             });
@@ -908,7 +908,7 @@ namespace NachoCore.ActiveSync
                 if (null == McFolder.GetGleanedFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_Gleaned, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
                 }
             });
@@ -916,7 +916,7 @@ namespace NachoCore.ActiveSync
                 if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_LostAndFound, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                        NachoCore.ProtoControl.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
                     freshMade.Insert ();
                 }
             });

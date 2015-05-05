@@ -5,7 +5,7 @@ using NUnit.Framework;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
-using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
+using TypeCode = NachoCore.ProtoControl.FolderHierarchy.TypeCode;
 
 
 namespace Test.iOS

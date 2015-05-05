@@ -461,12 +461,12 @@ namespace NachoCore
             return ServiceFromAccountId (accountId, (service) => service.DnldTaskBodyCmd (taskId));
         }
 
-        public NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, ProtoControl.FolderHierarchy.TypeCode folderType)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateFolderCmd (destFolderId, displayName, folderType));
         }
 
-        public NcResult CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
+        public NcResult CreateFolderCmd (int accountId, string DisplayName, ProtoControl.FolderHierarchy.TypeCode folderType)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateFolderCmd (DisplayName, folderType));
         }
