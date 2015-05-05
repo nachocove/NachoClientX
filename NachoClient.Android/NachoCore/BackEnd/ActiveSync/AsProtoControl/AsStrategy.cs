@@ -938,6 +938,7 @@ namespace NachoCore.ActiveSync
             if (null != userDemand) {
                 return userDemand;
             }
+            // TODO move user-directed Sync up to this priority level in FG.
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
