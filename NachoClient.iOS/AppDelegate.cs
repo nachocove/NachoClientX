@@ -420,6 +420,9 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
             BadgeNotifClear ();
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
+            }
 
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
@@ -446,7 +449,7 @@ namespace NachoClient.iOS
         //
         public override void OnResignActivation (UIApplication application)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
+            Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Called");
             bool isInitializing = NcApplication.Instance.IsInitializing;
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             BadgeNotifGoInactive ();
@@ -499,17 +502,31 @@ namespace NachoClient.iOS
             DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
-            // XAMMIT: sometimes BackgroundTimeRemaining reads as MAXFLOAT.
-            if (25.0 > timeRemaining || 60 * 10 < timeRemaining) {
+            if (25.0 > timeRemaining) {
                 FinalShutdown (null);
             } else {
-                var secs = timeRemaining - 20.0;
+                var didShutdown = false;
                 ShutdownTimer = new Timer ((opaque) => {
                     InvokeOnUIThread.Instance.Invoke (delegate {
-                        FinalShutdown (opaque);
+                        // check remaining background time. If too little, shut us down.
+                        // iOS caveat: BackgroundTimeRemaining can be MAX_DOUBLE early on.
+                        // It also seems to return to MAX_DOUBLE value after we call EndBackgroundTask().
+                        var remaining = application.BackgroundTimeRemaining;
+                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0}", remaining);
+                        if (!didShutdown && 25.0 > remaining) {
+                            didShutdown = true;
+                            FinalShutdown (opaque);
+                            try {
+                                // This seems to work, but we do get some extra callbacks after Change().
+                                ShutdownTimer.Change (Timeout.Infinite, Timeout.Infinite);
+                            } catch (Exception ex) {
+                                // Wrapper to protect against unknown C# timer stupidity.
+                                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer exception: {0}", ex);
+                            }
+                        }
                     });
-                }, ShutdownCounter, (int)(secs * 1000), Timeout.Infinite);
-                Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: ShutdownTimer for {0}s", secs);
+                }, ShutdownCounter, 1000, 1000);
+                Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: ShutdownTimer");
             }
             var imageView = new UIImageView (Window.Frame);
             imageView.Tag = 653;    // Give some decent tagvalue or keep a reference of imageView in self
@@ -530,9 +547,6 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
             DidEnterBackgroundCalled = false;
-            if (doingPerformFetch) {
-                CompletePerformFetchWithoutShutdown ();
-            }
             Interlocked.Increment (ref ShutdownCounter);
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();

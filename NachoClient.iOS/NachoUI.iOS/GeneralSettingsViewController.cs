@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         protected UIButton aboutUsButton;
         protected UIButton releaseNotesButton;
         protected UIButton privacyPolicyButton;
+        protected UILabel passwordExpiryLabel;
         protected UIButton dirtyBackEndButton;
         protected UILabel dirtyBackEndLabel;
 
@@ -130,6 +131,19 @@ namespace NachoClient.iOS
 
             yOffset = buttonsView.Frame.Bottom + 30f;
 
+            passwordExpiryLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
+
+            passwordExpiryLabel.Font = A.Font_AvenirNextRegular12;
+            passwordExpiryLabel.TextAlignment = UITextAlignment.Left;
+            passwordExpiryLabel.BackgroundColor = UIColor.Clear;
+            passwordExpiryLabel.TextColor = A.Color_NachoGreen;
+            passwordExpiryLabel.Lines = 0;
+            passwordExpiryLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            passwordExpiryLabel.Hidden = true;
+            contentView.AddSubview (passwordExpiryLabel);
+
+            yOffset = buttonsView.Frame.Bottom + 30f;
+
             dirtyBackEndLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
             dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
             dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
@@ -202,13 +216,31 @@ namespace NachoClient.iOS
             var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
             accountInfoView.Configure (userAccount);
 
-            dirtyBackEndLabel.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
-            dirtyBackEndButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
+            yOffset = buttonsView.Frame.Bottom + 30;
 
-            if (dirtyBackEndButton.Hidden) {
-                yOffset = buttonsView.Frame.Bottom + 30;
+            DateTime expiry;
+            string rectificationUrl;
+            if (LoginHelpers.PasswordWillExpire (LoginHelpers.GetCurrentAccountId (), out expiry, out rectificationUrl)) {
+                passwordExpiryLabel.Hidden = false;
+                passwordExpiryLabel.Text = String.Format ("Password will expire on {0}.\n{1}", Pretty.ReminderDate (expiry), rectificationUrl ?? "");
+                passwordExpiryLabel.SizeToFit ();
+                ViewFramer.Create (passwordExpiryLabel).Y (yOffset);
+                yOffset += passwordExpiryLabel.Frame.Height + 10;
             } else {
-                yOffset = dirtyBackEndLabel.Frame.Bottom + 5;
+                passwordExpiryLabel.Hidden = true;
+            }
+
+            if(LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())) {
+                dirtyBackEndLabel.Hidden = false;
+                dirtyBackEndButton.Hidden = false;
+                dirtyBackEndLabel.SizeToFit ();
+                ViewFramer.Create (dirtyBackEndLabel).Y (yOffset);
+                yOffset += dirtyBackEndLabel.Frame.Height + 10;
+                ViewFramer.Create (dirtyBackEndButton).Y (yOffset);
+                yOffset = yOffset + dirtyBackEndButton.Frame.Height + 10;
+            } else {
+                dirtyBackEndLabel.Hidden = true;
+                dirtyBackEndButton.Hidden = true;
             }
                 
             var versionY = NMath.Max (View.Frame.Height - 30, yOffset);

@@ -317,6 +317,20 @@ namespace Test.Android
             emailAddress = "wmonline@wm.com";
             initials = EmailHelper.Initials (emailAddress);
             Assert.AreEqual ("W", initials);
+
+            emailAddress = "\"rascal2210@hotmail.com\" <rascal2210@hotmail.com>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual("R", initials);
+
+            // Fixme: Look for '' strings?
+            emailAddress = "'Real Use Case' <user@company.org>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("RC", initials);
+
+            // Fixme: Look for '' strings?
+            emailAddress = "'Amy Davis' Via Team Unify <notifications+azgsc@teamunify.com>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("AU", initials);
         }
     }
 }

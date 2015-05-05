@@ -664,6 +664,10 @@ namespace NachoClient.iOS
 
         protected bool MayRemoveSwipingView ()
         {
+            if (null == swipingView) {
+                // Disabled before view created
+                return false;
+            }
             if (SnapAllShownThreshold > NMath.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsHidden (() => {
                     RemoveSwipingView ();

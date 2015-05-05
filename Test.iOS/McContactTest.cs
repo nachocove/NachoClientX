@@ -157,13 +157,6 @@ namespace Test.Common
             Assert.AreEqual ("Ingrid", l [9].GetContact ().GetDisplayNameOrEmailAddress ());
             Assert.AreEqual ("Joe's Coffee", l [10].GetContact ().GetDisplayNameOrEmailAddress ());
 
-            var e = McContact.AllContactsWithEmailAddresses ();
-            Assert.AreEqual (4, e.Count);
-            Assert.AreEqual ("Adleman", e [0].GetContact ().GetDisplayNameOrEmailAddress ());
-            Assert.AreEqual ("Bob Smith", e [1].GetContact ().GetDisplayNameOrEmailAddress ());
-            Assert.AreEqual ("Charlie Clark", e [2].GetContact ().GetDisplayNameOrEmailAddress ());
-            Assert.AreEqual ("eddie@foo.com", e [3].GetContact ().GetDisplayNameOrEmailAddress ());
-
             var contacts = McContact.QueryGleanedContactsByEmailAddress (1, "eddie@foo.com");
             Assert.AreEqual (1, contacts.Count);
             Assert.AreEqual ("eddie@foo.com", contacts [0].GetDisplayNameOrEmailAddress ());

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7702" systemVersion="14D136" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7531" systemVersion="14D136" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7520"/>
     </dependencies>
     <scenes>
         <!--Advanced Login View Controller-->
@@ -604,16 +604,8 @@
                     </view>
                     <navigationItem key="navigationItem" title="Add Event" id="9H9-AD-hMB" userLabel="Navigation Item - Add Event"/>
                     <connections>
-                        <outlet property="acceptButton" destination="gN5-XG-Mfd" id="Jz6-6h-KQY"/>
-                        <outlet property="cancelButton" destination="oR4-zY-1Lz" id="YEu-fr-5X7"/>
                         <outlet property="contentView" destination="TgG-lg-u6k" id="NK7-Bc-Mlx"/>
-                        <outlet property="declineButton" destination="A0y-N6-6Oe" id="HO9-MF-3VT"/>
-                        <outlet property="doneButton" destination="Tyn-US-6Na" id="8ef-XS-Ujk"/>
-                        <outlet property="editButton" destination="3zq-FM-sEG" id="pfe-gn-Dln"/>
-                        <outlet property="endDatePicker" destination="q3F-d5-e0A" id="eVH-So-RPY"/>
                         <outlet property="scrollView" destination="9Cj-t4-I4R" id="o2J-Z7-Dyw"/>
-                        <outlet property="startDatePicker" destination="AyJ-GR-EP6" id="Aoa-Pn-SYG"/>
-                        <outlet property="tentativeButton" destination="37n-Uz-Q3f" id="hcV-w3-2uZ"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="EventToNachoNow" id="s9j-Ih-SWz"/>
                         <segue destination="h6r-hi-wYu" kind="push" identifier="EventToPhone" id="Qo9-HW-pyp"/>
                         <segue destination="p7r-P8-BKK" kind="push" identifier="EventToAlert" id="tdu-G2-PEp"/>
@@ -626,53 +618,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jJS-cc-DzZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="gN5-XG-Mfd" userLabel="Button - acceptButton">
-                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
-                    <accessibility key="accessibilityConfiguration" label="Accept"/>
-                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                    <state key="normal" title="Button">
-                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                    </state>
-                </button>
-                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="37n-Uz-Q3f" userLabel="Button - tentativeButton">
-                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
-                    <accessibility key="accessibilityConfiguration" label="Tentative"/>
-                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                    <state key="normal" title="Button">
-                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                    </state>
-                </button>
-                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="A0y-N6-6Oe" userLabel="Button - declineButton">
-                    <rect key="frame" x="0.0" y="0.0" width="73" height="44"/>
-                    <accessibility key="accessibilityConfiguration" label="Decline"/>
-                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                    <state key="normal" title="Button">
-                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                    </state>
-                </button>
-                <barButtonItem style="done" systemItem="done" id="Tyn-US-6Na" userLabel="Bar Button Item - doneButton">
-                    <color key="tintColor" red="0.20784313730000001" green="0.81568627449999997" blue="0.74509803919999995" alpha="1" colorSpace="deviceRGB"/>
-                </barButtonItem>
-                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="5" id="AyJ-GR-EP6" userLabel="startDatePicker">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
-                    <date key="date" timeIntervalSinceReferenceDate="427225341.11892498">
-                        <!--2014-07-16 17:42:21 +0000-->
-                    </date>
-                    <date key="minimumDate" timeIntervalSinceReferenceDate="-31582800">
-                        <!--2000-01-01 11:00:00 +0000-->
-                    </date>
-                </datePicker>
-                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="5" id="q3F-d5-e0A" userLabel="endDatePicker">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
-                    <date key="date" timeIntervalSinceReferenceDate="427225337.83408397">
-                        <!--2014-07-16 17:42:17 +0000-->
-                    </date>
-                    <date key="minimumDate" timeIntervalSinceReferenceDate="-31582800">
-                        <!--2000-01-01 11:00:00 +0000-->
-                    </date>
-                </datePicker>
-                <barButtonItem image="navbar-icn-close.png" id="oR4-zY-1Lz" userLabel="Bar Button Item - cancelButton"/>
-                <barButtonItem systemItem="edit" id="3zq-FM-sEG" userLabel="Bar Button Item - editButton"/>
             </objects>
             <point key="canvasLocation" x="541" y="-1730"/>
         </scene>
@@ -1454,43 +1399,40 @@
             <point key="canvasLocation" x="-5529" y="-1339"/>
         </scene>
     </scenes>
-    <resources>
-        <image name="navbar-icn-close.png" width="17" height="17"/>
-    </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="b2R-9j-Kqr"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="zDw-Tx-fTt"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="lbY-YF-b2b"/>
-        <segue reference="v9F-jf-qe1"/>
         <segue reference="wZy-ga-YEb"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="vUs-ft-xdy"/>
+        <segue reference="yNo-Ue-PAG"/>
         <segue reference="tQS-oL-XNh"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="z10-H9-HYt"/>
-        <segue reference="w5M-2I-OPz"/>
-        <segue reference="j2D-VY-BIq"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="yNo-Ue-PAG"/>
-        <segue reference="ywO-BF-h0n"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="z8t-Er-kGd"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="s9j-Ih-SWz"/>
         <segue reference="udF-bU-cV6"/>
-        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="kEo-Rl-rFG"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="qB9-ce-7gT"/>
         <segue reference="mLY-u0-R5O"/>
         <segue reference="DcC-EH-FAx"/>
-        <segue reference="od0-Sz-R9p"/>
+        <segue reference="j2D-VY-BIq"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="z8t-Er-kGd"/>
         <segue reference="tzJ-j2-YOi"/>
+        <segue reference="od0-Sz-R9p"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
