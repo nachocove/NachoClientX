@@ -107,9 +107,6 @@ namespace NachoClient.iOS
             scrollView.Frame = View.Frame;
             ViewFramer.Create (scrollView).AdjustHeight (- 64);
 
-            View.BackgroundColor = UIColor.Blue;
-            scrollView.BackgroundColor = UIColor.Yellow;
-
             // Turn on zooming
             scrollView.MinimumZoomScale = 0.2f;
             scrollView.MaximumZoomScale = 5.0f;
