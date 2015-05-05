@@ -78,7 +78,7 @@ namespace NachoClient.iOS
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
-                UpdateNotificationBadge();
+                UpdateNotificationBadge (NcApplication.Instance.Account.Id);
             };
 
             ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
@@ -93,7 +93,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            UpdateNotificationBadge ();
+            UpdateNotificationBadge (NcApplication.Instance.Account.Id);
 
             var accountId = NcApplication.Instance.Account.Id;
 
@@ -138,7 +138,13 @@ namespace NachoClient.iOS
                 LayoutMoreTable ();
             }
             if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
-                UpdateNotificationBadge ();
+                UpdateNotificationBadge (s.Account.Id);
+            }
+            if (NcResult.SubKindEnum.Error_PasswordWillExpire == s.Status.SubKind) {
+                UpdateNotificationBadge (s.Account.Id);
+            }
+            if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
+                UpdateNotificationBadge (s.Account.Id);
             }
         }
 
@@ -244,9 +250,12 @@ namespace NachoClient.iOS
             return false;
         }
 
-        protected void UpdateNotificationBadge ()
+        protected void UpdateNotificationBadge (int accountId)
         {
-            var showNotificationBadge = LoginHelpers.DoesBackEndHaveIssues (NcApplication.Instance.Account.Id);
+            DateTime expiry;
+            string rectificationUrl;
+            var showNotificationBadge = LoginHelpers.PasswordWillExpire (accountId, out expiry, out rectificationUrl);
+            showNotificationBadge |= LoginHelpers.DoesBackEndHaveIssues (accountId);
 
             settingsItem.BadgeValue = (showNotificationBadge ? @"!" : null);
 

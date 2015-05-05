@@ -76,8 +76,8 @@ namespace NachoCore.ActiveSync
         private const int KDefaultThrottleDelaySeconds = 60;
         private const int KMaxDelaySeconds = 30;
         private const int KMaxTimeoutSeconds = 999;
-        private const string KDefaultTimeoutExpander = "1.2";
-        private const int KDefaultRetries = 8;
+        private const double KDefaultTimeoutExpander = 1.5;
+        private const int KDefaultRetries = 2;
         private const int KConsec401ThenReDisc = 5;
         private const string KLoadBytes = "LoadBytes";
         private const string KToWbxmlStream = "ToWbxmlStream";
@@ -166,12 +166,10 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", 
-                                     BEContext.ProtoControl.SyncStrategy.DefaultTimeoutSecs);
+            int timeoutSeconds = BEContext.ProtoControl.SyncStrategy.DefaultTimeoutSecs;
             Timeout = new TimeSpan (0, 0, timeoutSeconds);
-            var timeoutExpander = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutExpander", KDefaultTimeoutExpander);
-            TimeoutExpander = double.Parse (timeoutExpander);
-            MaxRetries = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "Retries", KDefaultRetries);
+            TimeoutExpander = KDefaultTimeoutExpander;
+            MaxRetries = KDefaultRetries;
             TriesLeft = MaxRetries + 1;
             Allow451Follow = true;
             CommandName = commandName;

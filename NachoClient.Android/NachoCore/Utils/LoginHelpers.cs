@@ -118,5 +118,26 @@ namespace NachoCore.Utils
         {
             return (null != NcApplication.Instance.Account);
         }
+
+        // Return true if a password associated with the account id will expire
+        // soon and return information about the password that expires soonest.
+        static public bool PasswordWillExpire(int accountId, out DateTime expiry, out string rectificationUrl)
+        {
+            expiry = DateTime.MaxValue;
+            rectificationUrl = String.Empty;
+            var creds = McCred.QueryByAccountId<McCred> (accountId);
+            if (null == creds) {
+                return false;
+            }
+            var gonnaExpireOn = DateTime.MaxValue;
+            foreach (var cred in creds) {
+                if (cred.Expiry < gonnaExpireOn) {
+                    expiry = cred.Expiry;
+                    gonnaExpireOn = cred.Expiry;
+                    rectificationUrl = cred.RectificationUrl;
+                }
+            }
+            return (DateTime.MaxValue != gonnaExpireOn);
+        }
     }
 }

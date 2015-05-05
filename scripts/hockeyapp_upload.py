@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 import plistlib
 import argparse
 import subprocess
@@ -122,7 +123,13 @@ def main():
             # there is no need to upload .ipa because the .ipa is submitted to the
             # official app store.
             if release in ['alpha', 'beta']:
-                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['VERSION']
+                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
+                if not os.path.exists(os.path.join(options.target_dir, ipa_file)):
+                    # The new format of .ipa file is not found. Try the old format.
+                    ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['VERSION']
+                    if not os.path.exists(os.path.join(options.target_dir, ipa_file)):
+                        print 'ERROR: Cannot find .ipa file in %s' % options.target_dir
+                        sys.exit(1)
         else:
             release = 'dev'
         if release not in projects:

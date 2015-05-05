@@ -9,6 +9,7 @@ namespace NachoCore.Model
     {
         public const string AsSyncKey_Initial = "0";
         public const string AsPolicyKey_Initial = "0";
+        public const uint KDefaultSyncLimit = 10;
 
         public enum AsThrottleReasons {
             Unknown,
@@ -21,7 +22,7 @@ namespace NachoCore.Model
             AsProtocolVersion = "12.0";
             AsPolicyKey = AsPolicyKey_Initial;
             AsSyncKey = AsSyncKey_Initial;
-            AsSyncLimit = uint.MaxValue;
+            AsSyncLimit = KDefaultSyncLimit;
             AsFolderSyncEpoch = 1; // So that just-created McFolders aren't presumed from current epoch.
             HeartbeatInterval = 600;
             MaxFolders = 200;

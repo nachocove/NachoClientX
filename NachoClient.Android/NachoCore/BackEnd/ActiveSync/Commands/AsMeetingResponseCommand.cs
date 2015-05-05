@@ -67,7 +67,7 @@ namespace NachoCore.ActiveSync
 
             default:
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
                         NcResult.WhyEnum.Unknown));
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL2");

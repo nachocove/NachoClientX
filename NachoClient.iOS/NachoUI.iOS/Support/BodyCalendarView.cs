@@ -390,7 +390,7 @@ namespace NachoClient.iOS
 
                 string message = "You have not responded to this invitation.";
                 UIButton displayedButton = null;
-                if (null != calendarItem && calendarItem.ResponseTypeIsSet) {
+                if (DateTime.MinValue == meetingInfo.RecurrenceId && null != calendarItem && calendarItem.ResponseTypeIsSet) {
                     switch (calendarItem.ResponseType) {
                     case NcResponseType.Accepted:
                         message = "You accepted the meeting.";
@@ -435,7 +435,10 @@ namespace NachoClient.iOS
                 tentativeButton.TouchUpInside += TentativeButtonClicked;
                 declineButton.TouchUpInside += DeclineButtonClicked;
 
-                if (null != calendarItem && calendarItem.ResponseTypeIsSet) {
+                // If this is a meeting request for a particular occurrence of a recurring meeting,
+                // don't even try to figure whether or not the user has responded.  It's not worth
+                // the effort.
+                if (DateTime.MinValue == meetingInfo.RecurrenceId && null != calendarItem && calendarItem.ResponseTypeIsSet) {
                     MarkSelectedButton (calendarItem.ResponseType);
                 }
             }
@@ -547,7 +550,14 @@ namespace NachoClient.iOS
 
             CreateActionBarViews (responseView);
 
-            if (isOnHot || null == calendarItem) {
+            bool eventExists = (null != calendarItem);
+            if (eventExists && DateTime.MinValue != meetingInfo.RecurrenceId) {
+                // This is the cancelation notice for a particular occurrence.  See if that occurrence exists.
+                var exceptions = McException.QueryForExceptionId (calendarItem.Id, meetingInfo.RecurrenceId);
+                eventExists = (0 == exceptions.Count || 0 == exceptions [0].Deleted);
+            }
+
+            if (isOnHot || !eventExists) {
 
                 messageLabel.Text = "The meeting has been canceled.";
                 messageLabel.Frame = MessageFrameWithDot ();
@@ -631,7 +641,12 @@ namespace NachoClient.iOS
                 });
 
             // Remove the item from the calendar.
-            BackEnd.Instance.DeleteCalCmd (calendarItem.AccountId, calendarItem.Id);
+            if (DateTime.MinValue == meetingInfo.RecurrenceId) {
+                BackEnd.Instance.DeleteCalCmd (calendarItem.AccountId, calendarItem.Id);
+            } else {
+                CalendarHelper.CancelOccurrence (calendarItem, meetingInfo.RecurrenceId);
+                BackEnd.Instance.UpdateCalCmd (calendarItem.AccountId, calendarItem.Id, sendBody: false);
+            }
         }
 
         protected override void Dispose (bool disposing)
