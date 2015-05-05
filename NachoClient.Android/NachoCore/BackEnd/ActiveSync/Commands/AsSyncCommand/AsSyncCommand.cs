@@ -37,7 +37,6 @@ namespace NachoCore.ActiveSync
         public AsSyncCommand (IBEContext beContext, SyncKit syncKit)
             : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
         {
-            Timeout = new TimeSpan (0, 0, 20);
             EmailNs = Xml.Email.Ns;
             TasksNs = Xml.Tasks.Ns;
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);

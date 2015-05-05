@@ -1185,7 +1185,7 @@ namespace NachoCore.ActiveSync
         public readonly double[] KUploadBiSec = { 2.7e6 / 8, 3.0e6 / 8, 1.3e6 / 8 };
         public readonly double[] KDownloadBiSec = { 3.3e6 / 8, 6.0e6 / 8, 2.0e6 / 8 };
         public const double KRateDiscount = 0.75;
-        public const int KMinTimeout = 30;
+        public const int KMinTimeout = 45;
 
         public int UploadTimeoutSecs (long length)
         {
