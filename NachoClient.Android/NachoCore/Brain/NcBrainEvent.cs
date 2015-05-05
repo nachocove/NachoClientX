@@ -2,6 +2,7 @@
 //
 using System;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
@@ -18,6 +19,7 @@ namespace NachoCore.Brain
         UPDATE_ADDRESS_SCORE,
         UPDATE_MESSAGE_SCORE,
         UNINDEX_MESSAGE,
+        UPDATE_ECLIPSING,
     };
 
     [Serializable]
@@ -186,6 +188,39 @@ namespace NachoCore.Brain
         public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
             : base (NcBrainEventType.UNINDEX_MESSAGE, accountId, emailMessageId)
         {
+        }
+    }
+
+    [Serializable]
+    public class NcBrainContactEvent : NcBrainEvent
+    {
+        public Int64 AccountId;
+
+        public Int64 ContactId;
+
+        public NcBrainContactEvent (NcBrainEventType eventType, Int64 accountId, Int64 contactId)
+            : base (eventType)
+        {
+            AccountId = accountId;
+            ContactId = contactId;
+        }
+
+        public override string ToString ()
+        {
+            return String.Format ("[{0}: type={1}, accountId={2}, contactId={3}",
+                GetType ().Name, Type, AccountId, ContactId);
+        }
+    }
+
+    [Serializable]
+    public class NcBrainUpdateEclipsingEvent : NcBrainContactEvent
+    {
+        public McContact.McContactOpEnum Op;
+
+        public NcBrainUpdateEclipsingEvent (Int64 accountId, Int64 contactId, McContact.McContactOpEnum op)
+            : base (NcBrainEventType.UPDATE_ECLIPSING, accountId, contactId)
+        {
+            Op = op;
         }
     }
 

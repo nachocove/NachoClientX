@@ -163,6 +163,23 @@ namespace NachoCore.Brain
             var index = Index (accountId);
             index.Remove ("message", emailMessageId.ToString ());
         }
+
+        protected void UpdateEclipsing (int accountId, int contactId, McContact.McContactOpEnum op)
+        {
+            var contact = McContact.QueryById<McContact> (contactId);
+            if (null == contact) {
+                return; // the contact is already deleted
+            }
+            switch (op) {
+            case McContact.McContactOpEnum.Insert:
+            case McContact.McContactOpEnum.Update:
+                contact.EvaluateEclipsing (op);
+                break;
+            default:
+                Log.Warn (Log.LOG_BRAIN, "Unexpected op {0} for contact {1}", op, contactId);
+                break;
+            }
+        }
     }
 }
 

@@ -40,6 +40,16 @@ namespace NachoCore.Brain
             dbEvent.Insert ();
         }
 
+        public static void UpdateEclipsing (McContact contact, McContact.McContactOpEnum op)
+        {
+            if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateEclipsingEvent (contact.AccountId, contact.Id, op);
+            var dbEvent = new McBrainEvent (brainEvent);
+            dbEvent.AccountId = contact.AccountId;
+            dbEvent.Insert ();
+        }
     }
 }
 

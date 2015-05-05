@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
@@ -747,7 +748,7 @@ namespace NachoCore.Model
                 retval = base.Insert ();
                 HasReadAncillaryData = McContactAncillaryDataEnum.READ_ALL;
                 InsertAncillaryData ();
-                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Insert);
+                NcBrain.UpdateEclipsing (this, McContactOpEnum.Insert);
             });
             return retval;
         }
@@ -761,7 +762,7 @@ namespace NachoCore.Model
                 if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
                     InsertAncillaryData ();
                 }
-                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
+                NcBrain.UpdateEclipsing (this, McContactOpEnum.Update);
             });
             return retval;
         }
@@ -790,6 +791,9 @@ namespace NachoCore.Model
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
                 retval = base.Delete ();
+                // Do not ask brain to update the eclipsing for deletion. Handling
+                // eclipsing update due to deletion asynchronously requires saving
+                // a lot of information in McContact.
                 EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
             });
             return retval;
@@ -852,6 +856,22 @@ namespace NachoCore.Model
         {
             EmailAddressesEclipsed = ShouldEmailAddressesBeEclipsed ();
             PhoneNumbersEclipsed = ShouldPhoneNumbersBeEclipsed ();
+        }
+
+        public void EvaluateEclipsing (McContactOpEnum op)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var origEmailAddressesEclipsed = EmailAddressesEclipsed;
+                var origPhoneNumbersEclipsed = PhoneNumbersEclipsed;
+                EvaluateSelfEclipsing ();
+                if (origEmailAddressesEclipsed != EmailAddressesEclipsed) {
+                    UpdateEmailAddressesEclipsing ();
+                }
+                if (origPhoneNumbersEclipsed != PhoneNumbersEclipsed) {
+                    UpdatePhoneNumbersEclipsing ();
+                }
+                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, op);
+            });
         }
 
         public override void DeleteAncillary ()

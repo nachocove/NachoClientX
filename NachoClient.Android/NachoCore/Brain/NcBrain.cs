@@ -268,6 +268,10 @@ namespace NachoCore.Brain
                     var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
                     UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
                     break;
+                case NcBrainEventType.UPDATE_ECLIPSING:
+                    var updateEvent = brainEvent as NcBrainUpdateEclipsingEvent;
+                    UpdateEclipsing ((int)updateEvent.AccountId, (int)updateEvent.ContactId, updateEvent.Op);
+                    break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
                     break;
