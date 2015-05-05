@@ -798,8 +798,15 @@ namespace NachoCore.Model
         private void EvaluateEmailAddressEclipsing (List<McContactEmailAddressAttribute> addressList, McContactOpEnum op)
         {
             foreach (var address in addressList) {
-                var contactList = QueryByEmailAddress (AccountId, address.Value).Where (x => x.Id != Id);
+                var contactList =
+                    QueryByEmailAddress (AccountId, address.Value)
+                        .Where (x => (x.Id != Id) && (HasSameName (x) || x.IsAnonymous ()));
+                var count = contactList.Count ();
+                if (6 < count) {
+                    Log.Warn (Log.LOG_DB, "EvaluateEmailAddressEclipsing: {0} contacts", count);
+                }
                 foreach (var contact in contactList) {
+                    count++;
                     if (contact.EmailAddressesEclipsed && (McContactOpEnum.Insert == op)) {
                         continue; // insertion can never cause an eclipsed contact to become uneclipsed
                     }
@@ -821,7 +828,13 @@ namespace NachoCore.Model
                 if (McContactStringType.PhoneNumber != phone.Type) {
                     continue;
                 }
-                var contactList = QueryByPhoneNumber (AccountId, phone.Value).Where (x => x.Id != Id);
+                var contactList =
+                    QueryByPhoneNumber (AccountId, phone.Value)
+                        .Where (x => (x.Id != Id) && (HasSameName (x) || x.IsAnonymous ()));
+                var count = contactList.Count ();
+                if (6 < count) {
+                    Log.Warn (Log.LOG_DB, "EvaluatePhoneNumberEclipsing: {0} contacts", count);
+                }
                 foreach (var contact in contactList) {
                     if (contact.PhoneNumbersEclipsed && (McContactOpEnum.Insert == op)) {
                         continue; // insertion can never cause an eclipsed contact to become uneclipsed
