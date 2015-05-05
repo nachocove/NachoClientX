@@ -1114,8 +1114,9 @@ namespace NachoCore.ActiveSync
         private void DoExDone ()
         {
             Interlocked.Decrement (ref ConcurrentExtraRequests);
-            // TODO it would be ideal to send a PendQHot to the main SM if there were now room for another
-            // concurrent access.
+            // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
+            // to run in parallel.
+            Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "DOEXDONE1MORE");
         }
 
         private void DoExtraOrDont ()
@@ -1129,9 +1130,9 @@ namespace NachoCore.ActiveSync
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
                 2 > ConcurrentExtraRequests) {
                 Interlocked.Increment (ref ConcurrentExtraRequests);
-                Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");
                 var pack = SyncStrategy.PickUserDemand ();
                 if (null != pack) {
+                    Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");
                     var dummySm = new NcStateMachine ("ASPC:EXTRA") { 
                         Name = string.Format ("ASPC:EXTRA({0})", AccountId),
                         LocalEventType = typeof(AsEvt),
