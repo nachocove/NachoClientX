@@ -61,9 +61,9 @@ namespace NachoClient.iOS
             var title = "Nacho Mail would like to send you push notifications.";
             var body = "This allows Nacho Mail to tell you when you have new mail or an upcoming meeting.";
 
-            var alert = new UIAlertView (title, body, null, "OK", new string[] { "No" });
+            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
             alert.Clicked += (s, b) => {
-                if (0 == b.ButtonIndex) {
+                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
                     McMutables.SetBool (accountId, module, Key_AskedUserForPermission, true);
                     Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, Key_AskedUserForPermission, "yes");
                     var application = UIApplication.SharedApplication;
@@ -103,9 +103,9 @@ namespace NachoClient.iOS
 //            var title = "Nacho Mail would like to access your Calendar";
 //            var body = "This allows Nacho Mail to show events from your calendar in the Nacho Mail calendar.";
 //
-//            var alert = new UIAlertView (title, body, null, "OK", new string[] { "No" });
+//            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
 //            alert.Clicked += (s, b) => {
-//                if (0 == b.ButtonIndex) {
+//                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
 //                    NachoPlatform.Calendars.Instance.AskForPermission ((bool granted) => {
 //                        McMutables.SetBool (accountId, module, Key_AskedUserForPermission, true);
 //                        McMutables.SetBool (accountId, module, Key_UserGrantedUsPermission, granted);
@@ -144,9 +144,9 @@ namespace NachoClient.iOS
             var title = "Nacho Mail would like to access your Address Book";
             var body = "This allows you to choose contacts from your address book in addition to your connected email accounts.";
 
-            var alert = new UIAlertView (title, body, null, "OK", new string[] { "Cancel" });
+            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
             alert.Clicked += (s, b) => {
-                if (0 == b.ButtonIndex) {
+                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
                     NachoPlatform.Contacts.Instance.AskForPermission ((bool granted) => {
                         McMutables.SetBool (accountId, module, Key_AskedUserForPermission, true);
                         McMutables.SetBool (accountId, module, Key_UserGrantedUsPermission, granted);
