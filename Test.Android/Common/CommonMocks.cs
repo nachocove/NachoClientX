@@ -342,6 +342,16 @@ namespace Test.iOS
             Folder = folder;
         }
 
+        public MoveKit GenMoveKit (int accountId)
+        {
+            return null;
+        }
+
+        public FetchKit GenFetchKit (int accountId)
+        {
+            return null;
+        }
+
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState)
         {
             return new NachoCore.ActiveSync.SyncKit () {
