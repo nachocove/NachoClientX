@@ -331,6 +331,10 @@ namespace Test.Android
             emailAddress = "'Amy Davis' Via Team Unify <notifications+azgsc@teamunify.com>";
             initials = EmailHelper.Initials (emailAddress);
             Assert.AreEqual ("AU", initials);
+
+            emailAddress = "Microsoft Outlook"; // This was an actual From address from Outlook
+            initials = EmailHelper.Initials(emailAddress);
+            Assert.AreEqual ("M", initials);
         }
     }
 }
