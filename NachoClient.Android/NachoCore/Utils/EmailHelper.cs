@@ -616,13 +616,13 @@ namespace NachoCore.Utils
         public static string Initials (string fromAddressString)
         {
             // Parse the from address
+            var initials = "";
             var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (fromAddressString);
-            if (null == mailboxAddress) {
-                return "";
+            if (null != mailboxAddress) {
+                McContact contact = new McContact ();
+                NcEmailAddress.ParseName (mailboxAddress, ref contact);
+                initials = ContactsHelper.GetInitials (contact);
             }
-            McContact contact = new McContact ();
-            NcEmailAddress.ParseName (mailboxAddress, ref contact);
-            var initials = ContactsHelper.GetInitials (contact);
             if (String.IsNullOrEmpty (initials)) {
                 foreach (char c in fromAddressString) {
                     if (Char.IsLetterOrDigit (c)) {
