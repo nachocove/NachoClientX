@@ -662,6 +662,7 @@ namespace NachoClient.iOS
             CleanupPerformFetchStates ();
             FinalShutdown (null);
             FinalizePerformFetch (fetchResult);
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
