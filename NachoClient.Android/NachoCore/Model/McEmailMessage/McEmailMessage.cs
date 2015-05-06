@@ -799,13 +799,6 @@ namespace NachoCore.Model
 
     public partial class McEmailMessage
     {
-        private bool emailAddressesChanged = false;
-
-        /// Indexes of To in McEmailAddress table
-        private List<int> dbToEmailAddressId = null;
-
-        /// Indexes of Cc in McEmailAddress table
-        private List<int> dbCcEmailAddressId = null;
 
         private List<McEmailMessageCategory> dbCategories = null;
         private IList<McEmailMessageCategory> appCategories = null;
@@ -927,85 +920,7 @@ namespace NachoCore.Model
             appMeetingRequest = null;
             appMeetingRequestSet = false;
         }
-
-        [Ignore]
-        public List<int> ToEmailAddressId {
-            get {
-                ReadAddressMaps ();
-                return dbToEmailAddressId;
-            }
-            set {
-                emailAddressesChanged = true;
-                dbToEmailAddressId = value;
-            }
-        }
-
-        [Ignore]
-        public List<int> CcEmailAddressId {
-            get {
-                ReadAddressMaps ();
-                return dbCcEmailAddressId;
-            }
-            set {
-                emailAddressesChanged = true;
-                dbCcEmailAddressId = value;
-            }
-        }
-
-        protected void ReadAddressMaps ()
-        {
-            if (null == dbToEmailAddressId) {
-                if (0 == this.Id) {
-                    dbToEmailAddressId = new List<int> ();
-                } else {
-                    dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
-                }
-            }
-            if (null == dbCcEmailAddressId) {
-                if (0 == this.Id) {
-                    dbCcEmailAddressId = new List<int> ();
-                } else {
-                    dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
-                }
-            }
-        }
-
-        private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
-        {
-            if (null != addressIdList) {
-                foreach (var addressId in addressIdList) {
-                    var map = CreateAddressMap ();
-                    map.EmailAddressId = addressId;
-                    map.AddressType = kind;
-                    map.Insert ();
-                }
-            }
-        }
-
-        private void InsertAddressMaps ()
-        {
-            if (0 < FromEmailAddressId) {
-                var map = CreateAddressMap ();
-                map.EmailAddressId = FromEmailAddressId;
-                map.AddressType = NcEmailAddress.Kind.From;
-                map.Insert ();
-            }
-            if (0 < SenderEmailAddressId) {
-                var map = CreateAddressMap ();
-                map.EmailAddressId = SenderEmailAddressId;
-                map.AddressType = NcEmailAddress.Kind.Sender;
-                map.Insert ();
-            }
-            InsertAddressList (dbToEmailAddressId, NcEmailAddress.Kind.To);
-            InsertAddressList (dbCcEmailAddressId, NcEmailAddress.Kind.Cc);
-            emailAddressesChanged = false;
-        }
-
-        private void DeleteAddressMaps ()
-        {
-            McMapEmailAddressEntry.DeleteMessageMapEntries (AccountId, Id);
-        }
-
+            
         public override int Insert ()
         {
             int returnVal = -1; 
@@ -1030,7 +945,6 @@ namespace NachoCore.Model
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Insert ();
-                InsertAddressMaps ();
                 InsertMeetingRequest ();
                 InsertCategories ();
             });
@@ -1049,10 +963,6 @@ namespace NachoCore.Model
                 returnVal = base.Update ();
                 SaveMeetingRequest ();
                 SaveCategories ();
-                if (emailAddressesChanged) {
-                    DeleteAddressMaps ();
-                    InsertAddressMaps ();
-                }
             });
 
             return returnVal;
@@ -1075,7 +985,6 @@ namespace NachoCore.Model
             DeleteDbMeetingRequest ();
             DeleteDbCategories ();
             DeleteAttachments ();
-            DeleteAddressMaps ();
         }
 
         public override int Delete ()

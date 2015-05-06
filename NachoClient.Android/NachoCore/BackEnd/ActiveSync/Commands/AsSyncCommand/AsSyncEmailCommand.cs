@@ -54,11 +54,9 @@ namespace NachoCore.ActiveSync
             }
 
             emailMessage.SenderEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.Sender);
-            emailMessage.ToEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.To);
-            emailMessage.CcEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.Cc);
 
             NcModel.Instance.RunInTransaction (() => {
-                if ((0 != emailMessage.FromEmailAddressId) || (0 < emailMessage.ToEmailAddressId.Count)) {
+                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty(emailMessage.To))) {
                     if (!folder.IsJunkFolder ()) {
                         NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
                     }
