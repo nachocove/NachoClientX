@@ -928,29 +928,29 @@ namespace NachoCore.Model
             appMeetingRequestSet = false;
         }
 
-        [Ignore]
-        public List<int> ToEmailAddressId {
-            get {
-                ReadAddressMaps ();
-                return dbToEmailAddressId;
-            }
-            set {
-                emailAddressesChanged = true;
-                dbToEmailAddressId = value;
-            }
-        }
+//        [Ignore]
+//        public List<int> ToEmailAddressId {
+//            get {
+//                ReadAddressMaps ();
+//                return dbToEmailAddressId;
+//            }
+//            set {
+//                emailAddressesChanged = true;
+//                dbToEmailAddressId = value;
+//            }
+//        }
 
-        [Ignore]
-        public List<int> CcEmailAddressId {
-            get {
-                ReadAddressMaps ();
-                return dbCcEmailAddressId;
-            }
-            set {
-                emailAddressesChanged = true;
-                dbCcEmailAddressId = value;
-            }
-        }
+//        [Ignore]
+//        public List<int> CcEmailAddressId {
+//            get {
+//                ReadAddressMaps ();
+//                return dbCcEmailAddressId;
+//            }
+//            set {
+//                emailAddressesChanged = true;
+//                dbCcEmailAddressId = value;
+//            }
+//        }
 
         protected void ReadAddressMaps ()
         {
