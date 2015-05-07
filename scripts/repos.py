@@ -13,7 +13,7 @@ class Build:
         self.build = build
 
     def tag(self):
-        return 'v%s_%d' % (self.version, self.build)
+        return 'v%s_%s' % (self.version, self.build)
 
     def branch(self):
         return 'branch_' + self.tag()
@@ -27,6 +27,7 @@ class RepoGroup:
         return os.path.join(self.top, repo)
 
     def checkout_branch(self, branch):
+        ok = True
         for repo in repos_cfg.repos:
             try:
                 os.chdir(self.repo_dir(repo))
@@ -44,10 +45,14 @@ class RepoGroup:
                 else:
                     print '%s -> ERROR!' % repo
                     print checkout_cmd.stderr
+                    ok = False
             except OSError:
                 print '%s -> FAILED!' % repo
+                ok = False
+        return ok
 
     def create_tag(self, tag, message=None):
+        ok = True
         for repo in repos_cfg.repos:
             try:
                 os.chdir(self.repo_dir(repo))
@@ -62,10 +67,14 @@ class RepoGroup:
                 else:
                     print '%s -> tag failed!' % repo
                     print tag_cmd.stderr
+                    ok = False
             except OSError:
                 print '%s -> FAILED!' % repo
+                ok = False
+        return ok
 
     def create_branch(self, branch):
+        ok = True
         for repo in repos_cfg.repos:
             try:
                 os.chdir(self.repo_dir(repo))
@@ -80,10 +89,14 @@ class RepoGroup:
                 else:
                     print '%s -> create branch failed!' % repo
                     print branch_cmd.stderr
+                    ok = False
             except OSError:
                 print '%s -> FAILED!' % repo
+                ok = False
+        return ok
 
     def get_current_branch(self):
+        ok = True
         fmt = '%%-%ds %%s' % (max([len(x) for x in repos_cfg.repos])+3)
         for repo in repos_cfg.repos:
             try:
@@ -94,10 +107,14 @@ class RepoGroup:
                 else:
                     print fmt % (repo, 'ERROR!')
                     print cmd.stderr
+                    ok = False
             except OSError:
                 print fmt % (repo, 'FAILED!')
+                ok = False
+        return ok
 
     def get_status(self, is_brief=False):
+        ok = True
         repo_status = dict()
         for repo in repos_cfg.repos:
             repo_status[repo] = {'branch': '', 'status': ''}
@@ -108,6 +125,7 @@ class RepoGroup:
                     repo_status[repo]['branch'] = branch_cmd.current_branch
                 else:
                     repo_status[repo]['branch'] = 'ERROR!'
+                    ok = False
                     continue
                 status_cmd = git.Status()
                 if status_cmd.ran_ok():
@@ -119,12 +137,14 @@ class RepoGroup:
                     else:
                         repo_status[repo]['status'] = status_cmd.stdout
                 else:
+                    ok = False
                     if is_brief:
                         repo_status[repo]['status'] = 'ERROR!'
                     else:
                         repo_status[repo]['status'] = status_cmd.stderr
             except OSError:
                 repo_status[repo]['branch'] = 'FAILED!'
+                ok = False
 
         # Now format everything
         for repo in repos_cfg.repos:
@@ -136,6 +156,8 @@ class RepoGroup:
                 print '[' + repo + '] ' + ('-' * (70 - len(repo)))
                 print repo_status[repo]['status']
 
+        return ok
+
 
 def main():
     parser = ArgumentParser()
@@ -145,8 +167,8 @@ def main():
 
     def add_label_or_build(parent, label, desc):
         parent.add_argument(label, type=str, help=desc)
-        parent.add_argument('--build', type=int, help='Build number')
-        parent.add_argument('--version', type=str, help='Build version')
+        parent.add_argument('--build', type=str, default=None, help='Build number')
+        parent.add_argument('--version', type=str, default=None, help='Build version')
 
     checkout_branch_parser = subparser.add_parser('checkout-branch')
     add_label_or_build(checkout_branch_parser, '--branch', 'Branch name')
@@ -156,6 +178,7 @@ def main():
 
     create_branch_parser = subparser.add_parser('create-branch')
     add_label_or_build(create_branch_parser, '--branch', 'Branch name')
+    create_branch_parser.add_argument('--tag', type=str, default=None, help='Tag name')
 
     create_tag_parser = subparser.add_parser('create-tag')
     add_label_or_build(create_tag_parser, '--tag', 'Tag name')
@@ -208,7 +231,24 @@ def main():
     elif options.command == 'checkout-tag':
         repo_group.checkout_branch(get_tag(options))
     elif options.command == 'create-branch':
-        repo_group.create_branch(get_branch(options))
+        branch = options.branch
+        tag = None
+        if options.tag:
+            tag = options.tag
+        elif options.build and options.version:
+            build = Build(version=options.version, build=options.build)
+            branch = build.branch()
+            tag = build.tag()
+        if tag is not None:
+            # Need to make a branch out of a tag
+            if not repo_group.checkout_branch(tag):
+                print 'ERROR: fail to check out the required tag for branch creation (%s)' % tag
+                sys.exit(1)
+        if branch is None:
+            print 'ERROR: no branch name specified'
+            create_branch_parser.print_usage()
+            sys.exit(1)
+        repo_group.create_branch(branch)
     elif options.command == 'create-tag':
         repo_group.create_tag(get_tag(options))
     elif options.command == 'status':

@@ -24,6 +24,7 @@ repos = (
 
 branch_exceptions = {
     'bc-csharp': {
+        # bc-csharp is fixed to this branch no matter what
         'fixed-branch': 'visual-studio-2010'
     }
 }
