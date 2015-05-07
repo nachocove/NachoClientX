@@ -163,11 +163,14 @@ namespace NachoCore.Utils
                     }
                 }
                 chain.ChainPolicy.ExtraStore.RemoveRange (revokedCerts);
-                if (CrlMonitor.IsRevoked (certificate2.SerialNumber)) {
-                    certificate2 = null;
+                bool ok;
+                if (null == certificate2) {
+                    ok = false;
+                } else if (CrlMonitor.IsRevoked (certificate2.SerialNumber)) {
+                    ok = false;
+                } else {
+                    ok = chain.Build (certificate2);
                 }
-
-                var ok = (null == certificate2 ? false : chain.Build (certificate2));
                 if (ok && hasPinning) {
                     // We use our own cert for pinning so there should be at most one status of untrusted cert
                     if ((1 < chain.ChainStatus.Length) ||
