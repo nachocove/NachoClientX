@@ -2,6 +2,7 @@
 //
 using System;
 using System.Linq;
+using System.Xml.Linq;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -896,12 +897,36 @@ namespace Test.iOS
             [Test]
             public void TestQueryFirstEligibleByOperation ()
             {
-                var firstPend = CreatePending (operation: Operations.CalUpdate);
-                CreatePending (operation: Operations.CalUpdate); // second pending object
-                CreatePending (operation: Operations.CalUpdate); // pending object in another account
+                var firstPend = CreatePending (operation: Operations.CalUpdate, serverId:"a");
+                CreatePending (operation: Operations.CalUpdate, serverId:"b"); // second pending object
+                CreatePending (accountId:3, operation: Operations.CalUpdate, serverId:"c"); // pending object in another account
 
                 var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, Operations.CalUpdate);
                 PendingsAreEqual (firstPend, retrieved);
+            }
+
+            [Test]
+            public void TestQueryFirstEligibleByOperation2 ()
+            {
+                var found = new List<McPending> ();
+                found.Add (CreatePending (operation: Operations.EmailDelete, serverId:"a"));
+                found.Add (CreatePending (operation: Operations.CalDelete, serverId:"b"));
+                found.Add (CreatePending (operation: Operations.ContactDelete, serverId:"c")); 
+                found.Add (CreatePending (operation: Operations.TaskDelete, serverId:"d")); 
+                CreatePending (accountId:3, operation: Operations.CalDelete, serverId:"e"); // pending object in another account
+                CreatePending (operation: Operations.TaskDelete, serverId:"f"); // excluded by limit.
+                CreatePending (operation: Operations.CalUpdate, serverId:"g"); // excluded by op.
+
+                var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, 
+                                    Operations.EmailDelete, Operations.CalDelete, Operations.ContactDelete, Operations.TaskDelete,
+                                    4);
+                Assert.AreEqual (4, retrieved.Count);
+                foreach (var pending in retrieved) {
+                    var match = found.Where (x => x.Operation == pending.Operation).FirstOrDefault ();
+                    Assert.IsNotNull (match);
+                    found.Remove (match);
+                }
+                Assert.AreEqual (0, found.Count);
             }
 
             [Test]

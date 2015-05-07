@@ -319,9 +319,58 @@ namespace NachoCore
                 folderId, originalEmailIsEmbedded));
         }
 
+       
+        private List<NcResult> DeleteMultiCmd (int accountId, List<int> Ids,
+            Func<ProtoControl, int, bool, NcResult> deleter)
+        {
+            var outer = ServiceFromAccountId (accountId, (service) => {
+                var retval = new List<NcResult> ();
+                for (var iter = 0; iter < Ids.Count; ++iter) {
+                    if (Ids.Count - 1 == iter) {
+                        retval.Add (deleter (service, Ids[iter], true));
+                        } else {
+                        retval.Add (deleter (service, Ids[iter], false));
+                    }
+                }
+                return NcResult.OK (retval);
+            });
+            return (List<NcResult>)outer.Value;
+        }
+
+        private List<NcResult> MoveMultiCmd (int accountId, List<int> Ids, int destFolderId,
+            Func<ProtoControl, int, int, bool, NcResult> mover)
+        {
+            var outer = ServiceFromAccountId (accountId, (service) => {
+                var retval = new List<NcResult> ();
+                for (var iter = 0; iter < Ids.Count; ++iter) {
+                    if (Ids.Count - 1 == iter) {
+                        retval.Add (mover (service, Ids[iter], destFolderId, true));
+                    } else {
+                        retval.Add (mover (service, Ids[iter], destFolderId, false));
+                    }
+                }
+                return NcResult.OK (retval);
+            });
+            return (List<NcResult>)outer.Value;
+        }
+
+        public List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds)
+        {
+            return DeleteMultiCmd (accountId, emailMessageIds, (service, id, lastInSeq) => {
+                return service.DeleteEmailCmd (id, lastInSeq);
+            });
+        }
+
         public NcResult DeleteEmailCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteEmailCmd (emailMessageId));
+        }
+
+        public List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId)
+        {
+            return MoveMultiCmd (accountId, emailMessageIds, destFolderId, (service, id, folderId, lastInSeq) => {
+                return service.MoveEmailCmd (id, folderId, lastInSeq);
+            });
         }
 
         public NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId)
@@ -357,6 +406,13 @@ namespace NachoCore
             return ServiceFromAccountId (accountId, (service) => service.UpdateCalCmd (calId, sendBody));
         }
 
+        public List<NcResult> DeleteCalsCmd (int accountId, List<int> calIds)
+        {
+            return DeleteMultiCmd (accountId, calIds, (service, id, lastInSeq) => {
+                return service.DeleteCalCmd (id, lastInSeq);
+            });
+        }
+
         public NcResult DeleteCalCmd (int accountId, int calId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteCalCmd (calId));
@@ -365,6 +421,13 @@ namespace NachoCore
         public NcResult MoveCalCmd (int accountId, int calId, int destFolderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MoveCalCmd (calId, destFolderId));
+        }
+
+        public List<NcResult> MoveCalsCmd (int accountId, List<int> calIds, int destFolderId)
+        {
+            return MoveMultiCmd (accountId, calIds, destFolderId, (service, id, folderId, lastInSeq) => {
+                return service.MoveCalCmd (id, folderId, lastInSeq);
+            });
         }
 
         public NcResult RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response)
@@ -421,9 +484,23 @@ namespace NachoCore
             return ServiceFromAccountId (accountId, (service) => service.UpdateContactCmd (contactId));
         }
 
+        public List<NcResult> DeleteContactsCmd (int accountId, List<int> contactIds)
+        {
+            return DeleteMultiCmd (accountId, contactIds, (service, id, lastInSeq) => {
+                return service.DeleteContactCmd (id, lastInSeq);
+            });
+        }
+
         public NcResult DeleteContactCmd (int accountId, int contactId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteContactCmd (contactId));
+        }
+
+        public List<NcResult> MoveContactsCmd (int accountId, List<int> contactIds, int destFolderId)
+        {
+            return MoveMultiCmd (accountId, contactIds, destFolderId, (service, id, folderId, lastInSeq) => {
+                return service.MoveContactCmd (id, folderId, lastInSeq);
+            });
         }
 
         public NcResult MoveContactCmd (int accountId, int contactId, int destFolderId)
@@ -446,9 +523,23 @@ namespace NachoCore
             return ServiceFromAccountId (accountId, (service) => service.UpdateTaskCmd (taskId));
         }
 
+        public List<NcResult> DeleteTasksCmd (int accountId, List<int> taskIds)
+        {
+            return DeleteMultiCmd (accountId, taskIds, (service, id, lastInSeq) => {
+                return service.DeleteTaskCmd (id, lastInSeq);
+            });
+        }
+
         public NcResult DeleteTaskCmd (int accountId, int taskId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteTaskCmd (taskId));
+        }
+
+        public List<NcResult> MoveTasksCmd (int accountId, List<int> taskIds, int destFolderId)
+        {
+            return MoveMultiCmd (accountId, taskIds, destFolderId, (service, id, folderId, lastInSeq) => {
+                return service.MoveTaskCmd (id, folderId, lastInSeq);
+            });
         }
 
         public NcResult MoveTaskCmd (int accountId, int taskId, int destFolderId)

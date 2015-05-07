@@ -1,6 +1,7 @@
 // # Copyright (C) 2013, 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -77,8 +78,10 @@ namespace NachoCore
                         int folderId, bool originalEmailIsEmbedded);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
         NcResult DeleteEmailCmd (int accountId, int emailMessageId);
+        List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
         NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
+        List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
         NcResult MarkEmailReadCmd (int accountId, int emailMessageId);
         // set the flag value on the email.
@@ -95,7 +98,9 @@ namespace NachoCore
         NcResult CreateCalCmd (int accountId, int calId, int folderId);
         NcResult UpdateCalCmd (int accountId, int calId, bool sendBody);
         NcResult DeleteCalCmd (int accountId, int calId);
+        List<NcResult> DeleteCalsCmd (int accountId, List<int> calIds);
         NcResult MoveCalCmd (int accountId, int calId, int destFolderId);
+        List<NcResult> MoveCalsCmd (int accountId, List<int> calIds, int destFolderId);
         NcResult RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response);
         NcResult RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null);
         NcResult DnldCalBodyCmd (int accountId, int calId);
@@ -113,12 +118,16 @@ namespace NachoCore
         NcResult CreateContactCmd (int accountId, int contactId, int folderId);
         NcResult UpdateContactCmd (int accountId, int contactId);
         NcResult DeleteContactCmd (int accountId, int contactId);
+        List<NcResult> DeleteContactsCmd (int accountId, List<int> contactIds);
         NcResult MoveContactCmd (int accountId, int contactId, int destFolderId);
+        List<NcResult> MoveContactsCmd (int accountId, List<int> contactIds, int destFolderId);
         NcResult DnldContactBodyCmd (int accountId, int contactId);
         NcResult CreateTaskCmd (int accountId, int taskId, int folderId);
         NcResult UpdateTaskCmd (int accountId, int taskId);
         NcResult DeleteTaskCmd (int accountId, int taskId);
+        List<NcResult> DeleteTasksCmd (int accountId, List<int> taskIds);
         NcResult MoveTaskCmd (int accountId, int taskId, int destFolderId);
+        List<NcResult> MoveTasksCmd (int accountId, List<int> taskIds, int destFolderId);
         NcResult DnldTaskBodyCmd (int accountId, int taskId);
         // create a subordinate folder.
         NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
