@@ -162,6 +162,7 @@ namespace NachoPlatform
         public IEnumerable<PlatformContactRecord> GetContacts ()
         {
             if (ABAddressBook.GetAuthorizationStatus () != ABAuthorizationStatus.Authorized) {
+                Log.Warn (Log.LOG_SYS, "GetContacts: not Authorized: {0}", ABAddressBook.GetAuthorizationStatus ());
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedContactsPermission),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -175,14 +176,15 @@ namespace NachoPlatform
             var sources = ab.GetAllSources ();
 
             var retval = new List<PlatformContactRecordiOS> ();
+            Log.Info (Log.LOG_SYS, "GetContacts: Processing {0} sources", sources.Length);
             foreach (var source in sources) {
                 switch (source.SourceType) {
                 case ABSourceType.Exchange:
                 case ABSourceType.ExchangeGAL:
                     continue;
                 default:
-                    Log.Info (Log.LOG_SYS, "Processing source {0}", source.SourceType);
                     var peeps = ab.GetPeople (source);
+                    Log.Info (Log.LOG_SYS, "GetContacts: Processing source {0} with {1} contacts", source.SourceType, peeps.Length);
                     foreach (var peep in peeps) {
                         retval.Add (new PlatformContactRecordiOS () {
                             Person = peep,

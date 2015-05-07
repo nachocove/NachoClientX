@@ -56,6 +56,7 @@ namespace NachoCore
             };
             List<McMapFolderFolderEntry> present = McMapFolderFolderEntry.QueryByFolderIdClassCode (folder.AccountId, folder.Id, 
                                                        McAbstrFolderEntry.ClassCodeEnum.Contact);
+            int insertCount = 0, updateCount = 0;
             foreach (var deviceContact in deviceContacts) {
                 // Use the TPL like iOS GCD here. Schedule chunks.
                 var task = NcTask.Run (() => {
@@ -81,13 +82,17 @@ namespace NachoCore
                     var contact = result.GetValue<McContact> ();
                     if (null == existing) {
                         inserter.Invoke (contact);
+                        ++ insertCount;
                     } else {
                         updater.Invoke (contact);
+                        ++ updateCount;
                     }
                 }, "NcDeviceContacts:Process", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }
+            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, cleaning up {2} dead links.", 
+                insertCount, updateCount, present.Count);
             // If it isn't in the list of device contacts, it needs to be removed.
             foreach (var map in present) {
                 // Use the TPL like iOS GCD here. Schedule chunks.
