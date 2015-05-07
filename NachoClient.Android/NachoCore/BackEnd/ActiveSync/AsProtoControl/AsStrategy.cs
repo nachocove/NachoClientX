@@ -15,6 +15,7 @@ namespace NachoCore.ActiveSync
         public const int KBaseOverallWindowSize = 25;
         public const int KBasePerFolderWindowSize = 20;
         public const int KBaseFetchSize = 5;
+        public const int KBaseMoveSize = 20;
 
         public enum LadderChoiceEnum
         {
@@ -791,6 +792,51 @@ namespace NachoCore.ActiveSync
             return new PingKit () { Folders = fewer, MaxHeartbeatInterval = maxHeartbeatInterval };
         }
 
+        public MoveKit GenMoveKit (int accountId)
+        {
+            var pendings = McPending.QueryFirstEligibleByOperation (accountId,
+                               McPending.Operations.EmailMove,
+                               McPending.Operations.CalMove,
+                               McPending.Operations.ContactMove,
+                               McPending.Operations.TaskMove, KBaseMoveSize);
+            if (0 == pendings.Count) {
+                return null;
+            }
+            var moveKit = new MoveKit ();
+            moveKit.Pendings = new List<McPending> ();
+            moveKit.ClassCodes = new List<McAbstrFolderEntry.ClassCodeEnum> ();
+
+            foreach (var pending in pendings) {
+                Action<McAbstrFolderEntry.ClassCodeEnum> maybeKeepIt = (classCode) => {
+                    if (moveKit.Pendings.Any (kept => kept.ServerId == pending.ServerId)) {
+                        // Should be covered by dependency analysis, but check anyaway.
+                        Log.Error (Log.LOG_AS, "GenMoveKit: ServerId seen twice: {0}", pending.ServerId);
+                        return;
+                    }
+                    moveKit.Pendings.Add (pending);
+                    moveKit.ClassCodes.Add (classCode);
+                };
+                switch (pending.Operation) {
+                case McPending.Operations.EmailMove:
+                    maybeKeepIt (McAbstrFolderEntry.ClassCodeEnum.Email);
+                    break;
+                case McPending.Operations.CalMove:
+                    maybeKeepIt (McAbstrFolderEntry.ClassCodeEnum.Calendar);
+                    break;
+                case McPending.Operations.ContactMove:
+                    maybeKeepIt (McAbstrFolderEntry.ClassCodeEnum.Contact);
+                    break;
+                case McPending.Operations.TaskMove:
+                    maybeKeepIt (McAbstrFolderEntry.ClassCodeEnum.Tasks);
+                    break;
+                default:
+                    Log.Error (Log.LOG_AS, "GenMoveKit: found by QueryFirstEligibleByOperation: {0}", pending.Operation);
+                    break;
+                }
+            }
+            return moveKit;
+        }
+
         // Returns null if nothing to do.
         public FetchKit GenFetchKit (int accountId)
         {
@@ -1012,18 +1058,11 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.FolderDelete:
                         cmd = new AsFolderDeleteCommand (BEContext.ProtoControl, next);
                         break;
-                    // TODO: make move op n-ary.
                     case McPending.Operations.EmailMove:
-                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Email);
-                        break;
                     case McPending.Operations.CalMove:
-                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Calendar);
-                        break;
                     case McPending.Operations.ContactMove:
-                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Contact);
-                        break;
                     case McPending.Operations.TaskMove:
-                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Tasks);
+                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, GenMoveKit (accountId));
                         break;
                     // ... however one of these below, which would have been handled above, could have been
                     // inserted into the Q while Pick() is in the middle of running.

@@ -41,8 +41,17 @@ namespace NachoCore.ActiveSync
         public List<McPending> Pendings { get; set; }
     }
 
+    public class MoveKit
+    {
+        public List<McAbstrFolderEntry.ClassCodeEnum> ClassCodes { get; set; }
+        public List<McPending> Pendings { get; set; }
+    }
+
+    // This interface is here for mocking, unlikely to be useful beyond that.
     public interface IAsStrategy
     {
+        MoveKit GenMoveKit (int accountId);
+        FetchKit GenFetchKit (int accountId);
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState);
         PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
         Tuple<PickActionEnum, AsCommand> Pick ();
