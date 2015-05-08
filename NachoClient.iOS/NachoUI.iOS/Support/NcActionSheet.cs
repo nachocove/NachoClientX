@@ -32,7 +32,6 @@ namespace NachoClient.iOS
                 var ppc = alertController.PopoverPresentationController;
                 if (null != ppc) {
                     ppc.SourceView = parentView;
-                    ppc.SourceRect = parentView.Bounds;
                     ppc.PermittedArrowDirections = UIPopoverArrowDirection.Any;
                 }
                 parentViewController.PresentViewController (alertController, true, null);
