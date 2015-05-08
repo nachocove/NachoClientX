@@ -398,6 +398,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration21.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration22.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration23.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapExample.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
