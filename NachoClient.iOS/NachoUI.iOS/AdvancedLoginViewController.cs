@@ -16,7 +16,6 @@ namespace NachoClient.iOS
     public partial class AdvancedLoginViewController : NcUIViewController, INachoCertificateResponderParent
     {
         protected nfloat CELL_HEIGHT = 44;
-        protected nfloat keyboardHeight;
 
         List<AdvancedTextField> inputViews = new List<AdvancedTextField> ();
 
@@ -132,20 +131,10 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
-            }
         }
 
         public override void ViewDidAppear (bool animated)
         {
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
-
             if (null != theAccount.Credentials) {
                 showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
             }
@@ -528,7 +517,7 @@ namespace NachoClient.iOS
             waitScreen.DismissView ();
         }
 
-        public void SegueToSupport()
+        public void SegueToSupport ()
         {
             waitScreen.DismissView ();
             PerformSegue ("SegueToSupport", this);
@@ -900,43 +889,8 @@ namespace NachoClient.iOS
             return NcApplication.Instance.Account.Id;
         }
 
-        protected virtual bool HandlesKeyboardNotifications {
-            get { return true; }
-        }
-
-        private void OnKeyboardNotification (NSNotification notification)
+        protected override void OnKeyboardChanged ()
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
-
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-
-            keyboardHeight = newHeight;
             LayoutView ();
             scrollView.SetContentOffset (new CGPoint (0, -scrollView.ContentInset.Top), false);
         }

@@ -66,8 +66,7 @@ namespace NachoClient.iOS
         UcNameValuePair NotificationsBlock;
         UISwitch FastNotificationSwitch;
 
-        protected nfloat yOffset;
-        protected nfloat keyboardHeight;
+        nfloat yOffset;
 
         protected enum AccountIssue
         {
@@ -92,10 +91,6 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             CaptureOriginalSettings ();
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
             if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
@@ -105,10 +100,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
-            }
             View.EndEditing (true);
             base.ViewWillDisappear (animated);
         }
@@ -930,7 +921,6 @@ namespace NachoClient.iOS
                 theCred.Update ();
                 theConference.Update ();
 
-                NachoTabBarController.ReconfigureMoreTab ();
             }
         }
 
@@ -995,44 +985,10 @@ namespace NachoClient.iOS
             }
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
+        protected override void OnKeyboardChanged ()
         {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             LayoutView ();
         }
 
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
-        }
-
-        private void OnKeyboardNotification (NSNotification notification)
-        {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
     }
 }
