@@ -1034,10 +1034,11 @@ namespace NachoCore
                         DisposeRetryTimer ();
                         result.Exception = e;
                         Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
-                    }
-                    if (Cts.Token.IsCancellationRequested) {
+                    } else if (Cts.Token.IsCancellationRequested) {
                         result.Exception = new TimeoutException ("HTTP operation timed out");
                         Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
+                    } else {
+                        result.Exception = e;
                     }
                 } catch (WebException e) {
                     result.Exception = e;
