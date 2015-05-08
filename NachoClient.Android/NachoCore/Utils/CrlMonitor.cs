@@ -187,7 +187,9 @@ namespace NachoCore.Utils
                 }
             } catch (OperationCanceledException) {
                 Log.Warn (Log.LOG_PUSH, "CRL pull: canceled");
-                throw;
+                if (cToken.IsCancellationRequested) {
+                    throw;
+                }
             } catch (WebException e) {
                 Log.Warn (Log.LOG_PUSH, "CRL pull: Caught network exception - {0}", e);
             } catch (Exception e) {
