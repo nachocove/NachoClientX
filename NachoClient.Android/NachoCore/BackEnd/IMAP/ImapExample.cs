@@ -28,6 +28,7 @@ namespace NachoCore.Imap
             m_useSsl = useSsl;
             m_username = username;
             m_password = password;
+            DoImap();
         }
 
         public class NcProtocolLogger : MailKit.IProtocolLogger
