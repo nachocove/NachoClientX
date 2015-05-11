@@ -33,8 +33,6 @@ namespace NachoClient.iOS
         protected const int INTERIOR_VIEW_TAG = 101;
         protected const int TEXT_VIEW_TAG = 102;
 
-        protected UIBarButtonItem backButton;
-
         public SettingsLegalViewController (IntPtr handle) : base (handle)
         {
         }
@@ -52,13 +50,6 @@ namespace NachoClient.iOS
         {
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
-
-            backButton = new NcUIBarButtonItem ();
-            backButton.Clicked += BackButtonClicked;
-            backButton.Image = UIImage.FromBundle ("nav-backarrow");
-            backButton.AccessibilityLabel = "Back";
-            backButton.TintColor = A.Color_NachoBlue;
-            NavigationItem.LeftBarButtonItem = backButton;
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -164,19 +155,13 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            backButton.Clicked -= BackButtonClicked;
-            backButton = null;
-
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            webView.StopLoading ();
-            webView.LoadError -= HandleLoadError;
-            webView.LoadFinished -= CacheUrlHtml;
-            webView = null;
-        }
-
-        protected void BackButtonClicked (object sender, EventArgs e)
-        {
-            DismissViewController (true, null);
+            if (null != webView) {
+                webView.StopLoading ();
+                webView.LoadError -= HandleLoadError;
+                webView.LoadFinished -= CacheUrlHtml;
+                webView = null;
+            }
         }
     }
 }

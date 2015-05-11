@@ -2242,6 +2242,14 @@
     <BundleResource Include="Resources\Slide02MessageDown-Meetings%403x.png" />
     <BundleResource Include="Resources\Slide02MessageDown-Meetings%404x.png" />
     <BundleResource Include="Resources\Slide02MessageDown-Meetings%406x.png" />
+    <BundleResource Include="Resources\more-policy-active%402x.png" />
+    <BundleResource Include="Resources\more-policy-active%403x.png" />
+    <BundleResource Include="Resources\more-policy-active%404x.png" />
+    <BundleResource Include="Resources\more-policy-active%406x.png" />
+    <BundleResource Include="Resources\more-policy%402x.png" />
+    <BundleResource Include="Resources\more-policy%403x.png" />
+    <BundleResource Include="Resources\more-policy%404x.png" />
+    <BundleResource Include="Resources\more-policy%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
