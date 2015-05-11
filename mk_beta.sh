@@ -42,7 +42,7 @@ then
 fi
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="beta" make release 2>&1 | tee -a $logfile
+VERSION="$version" BUILD="$build" RELEASE="beta" make release 2>&1 | tee -a $logfile
 if [ $? -eq 0 ]
 then
     echo "Beta build $tag is made."
