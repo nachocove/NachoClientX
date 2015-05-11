@@ -163,27 +163,50 @@ def main():
     parser = ArgumentParser()
     subparser = parser.add_subparsers(dest='command', help='commands')
 
-    subparser.add_parser('branch')
+    subparser.add_parser('branch',
+                         help='List the current branch of all repositories',
+                         description='List the current branch of all repositories.')
 
     def add_label_or_build(parent, label, desc):
         parent.add_argument(label, type=str, help=desc)
         parent.add_argument('--build', type=str, default=None, help='Build number')
         parent.add_argument('--version', type=str, default=None, help='Build version')
 
-    checkout_branch_parser = subparser.add_parser('checkout-branch')
+    checkout_branch_parser = subparser.add_parser('checkout-branch',
+                                                  help='Switch to an existing branch',
+                                                  description='Switch to an existing branch')
     add_label_or_build(checkout_branch_parser, '--branch', 'Branch name')
 
-    checkout_tag_parser = subparser.add_parser('checkout-tag')
+    checkout_tag_parser = subparser.add_parser('checkout-tag',
+                                               help='Switch to a tagged snapshot',
+                                               description='Switch to a tagged snapshot. Note that all local'
+                                                           ' repos will be in a detached state.')
     add_label_or_build(checkout_tag_parser, '--tag', 'Tag name')
 
-    create_branch_parser = subparser.add_parser('create-branch')
+    create_branch_parser = subparser.add_parser('create-branch',
+                                                help='Create a branch from a given name, tag, or build',
+                                                description='Create a branch from a given name, tag, or build. '
+                                                            'To create a branch with an arbitrary name, use --branch. '
+                                                            'To create a branch from a tag, use --branch. The branch '
+                                                            'name will be the tag name prefixed by "branch_". To '
+                                                            'create a branch from a build, use --version and --build. '
+                                                            'The branch name is "branch_v<VERSION>_<BUILD>".')
     add_label_or_build(create_branch_parser, '--branch', 'Branch name')
     create_branch_parser.add_argument('--tag', type=str, default=None, help='Tag name')
 
-    create_tag_parser = subparser.add_parser('create-tag')
+    create_tag_parser = subparser.add_parser('create-tag',
+                                             help='Create a tag from a given name, or build',
+                                             description='Create a tag from a given name, or build. To create '
+                                                         'a tag with an arbitrary name, use --tag. To create '
+                                                         'a tag from a build, use --version and --build. The tag '
+                                                         'name is "v<VERSION>_<BUILD>".')
     add_label_or_build(create_tag_parser, '--tag', 'Tag name')
 
-    status_parser = subparser.add_parser('status')
+    status_parser = subparser.add_parser('status',
+                                         help='Return git status for all repositories',
+                                         description='Return git status for all repositories. Use --brief to get '
+                                                     'a summary table. Without it, it returns the git status '
+                                                     'output for all repositories.')
     status_parser.add_argument('--brief', action='store_true', help='One line per repo format')
 
     # Determine the top directory
@@ -235,6 +258,7 @@ def main():
         tag = None
         if options.tag:
             tag = options.tag
+            branch = 'branch_' + tag
         elif options.build and options.version:
             build = Build(version=options.version, build=options.build)
             branch = build.branch()
