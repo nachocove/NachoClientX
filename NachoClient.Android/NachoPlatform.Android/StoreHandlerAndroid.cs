@@ -1,6 +1,7 @@
 //  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -8,6 +9,16 @@ namespace NachoPlatform
     {
         private static volatile StoreHandler instance;
         private static object syncRoot = new Object ();
+
+        public enum InAppPurchaseState : uint
+        {
+            NotPurchased = (St.Last + 1),
+            PrdDataWait,
+            PurchaseWait,
+            Purchased,
+            Expired,
+            Last = Expired,
+        };
 
         public static StoreHandler Instance {
             get {
@@ -26,7 +37,7 @@ namespace NachoPlatform
         }
 
         // from IPlatformStoreHandler
-        // call this when starting up 
+        // call this when starting up
         public void Start ()
         {
         }
