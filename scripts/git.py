@@ -42,6 +42,11 @@ class CreateBranch(BranchCommand):
         super(CreateBranch, self).__init__([branch_name])
 
 
+class DeleteBranch(BranchCommand):
+    def __init__(self, branch_name):
+        super(DeleteBranch, self).__init__(['-D', branch_name])
+
+
 class Status(GitCommand):
     def __init__(self):
         super(Status, self).__init__(['status', '--porcelain'])
@@ -86,6 +91,11 @@ class CreateTag(TagCommand):
         if message is None:
             message = 'Created at %s' % str(datetime.datetime.now())
         super(CreateTag, self).__init__(['-a', tag, '-m', message])
+
+
+class DeleteTag(TagCommand):
+    def __init__(self, tag):
+        super(DeleteTag, self).__init__(['-d', tag])
 
 
 class Push(GitCommand):
