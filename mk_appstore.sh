@@ -16,7 +16,7 @@ fi
 branch=$1
 version=$2
 build=$3
-tag="v$version_$build"
+tag="v$version""_$build"
 
 die () {
   echo "ERROR: $1"

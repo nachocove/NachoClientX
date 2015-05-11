@@ -282,12 +282,13 @@ def main():
         return Build(version=opt.version, build=opt.build).tag()
 
     options = parser.parse_args()
+    ok = False
     if options.command == 'branch':
-        repo_group.get_current_branch()
+        ok = repo_group.get_current_branch()
     elif options.command == 'checkout-branch':
-        repo_group.checkout_branch(get_branch(options))
+        ok = repo_group.checkout_branch(get_branch(options))
     elif options.command == 'checkout-tag':
-        repo_group.checkout_branch(get_tag(options))
+        ok = repo_group.checkout_branch(get_tag(options))
     elif options.command == 'create-branch':
         branch = options.branch
         tag = None
@@ -307,15 +308,17 @@ def main():
             print 'ERROR: no branch name specified'
             create_branch_parser.print_usage()
             sys.exit(1)
-        repo_group.create_branch(branch)
+        ok = repo_group.create_branch(branch)
     elif options.command == 'create-tag':
-        repo_group.create_tag(get_tag(options))
+        ok = repo_group.create_tag(get_tag(options))
     elif options.command == 'delete-branch':
-        repo_group.delete_branch(get_branch(options))
+        ok = repo_group.delete_branch(get_branch(options))
     elif options.command == 'delete-tag':
-        repo_group.delete_tag(get_tag(options))
+        ok = repo_group.delete_tag(get_tag(options))
     elif options.command == 'status':
-        repo_group.get_status(options.brief)
+        ok = repo_group.get_status(options.brief)
+    if not ok:
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
