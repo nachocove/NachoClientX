@@ -28,3 +28,14 @@ branch_exceptions = {
         'fixed-branch': 'visual-studio-2010'
     }
 }
+
+# You can run this script:
+#
+# python repos_cfg.py
+#
+# in order to verify the repo list.
+if __name__ == '__main__':
+    n = 0
+    for r in repos:
+        n += 1
+        print '%d: %s' % (n, r)

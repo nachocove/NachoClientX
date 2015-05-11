@@ -26,135 +26,156 @@ class RepoGroup:
     def repo_dir(self, repo):
         return os.path.join(self.top, repo)
 
-    def checkout_branch(self, branch):
+    def for_all_repos(self, action, exception_handler=None, *args):
         ok = True
         for repo in repos_cfg.repos:
             try:
                 os.chdir(self.repo_dir(repo))
 
-                # Check for exception
-                real_branch = branch
-                if repo in repos_cfg.branch_exceptions:
-                    fixed_branch = repos_cfg.branch_exceptions[repo].get('fixed-branch', None)
-                    if fixed_branch is not None:
-                        real_branch = fixed_branch
-
-                checkout_cmd = git.Checkout(real_branch)
-                if checkout_cmd.ran_ok():
-                    print '%s -> %s' % (repo, real_branch)
-                else:
-                    print '%s -> ERROR!' % repo
-                    print checkout_cmd.stderr
+                if not action(repo, *args):
                     ok = False
             except OSError:
-                print '%s -> FAILED!' % repo
+                if callable(exception_handler):
+                    exception_handler(repo)
+                else:
+                    print '%s -> FAILED!' % repo
                 ok = False
         return ok
+
+    @staticmethod
+    def may_push(cmd, repo, ref, err_msg):
+        """
+        If the given command successfully runs, issue a push command.
+
+        :param cmd: a GitCommand that is already executed.
+        :param repo: repository name
+        :param ref: a branch or tag name
+        :param err_msg: An error message if the command fails to run
+        :return: True if pushed; False otherwise.
+        """
+        if cmd.ran_ok():
+            push_cmd = git.Push(ref)
+            if push_cmd.ran_ok():
+                print '%s -> OK' % repo
+                return True
+            else:
+                print '%s -> push failed!' % repo
+                print push_cmd.stderr
+                return False
+        else:
+            print err_msg % repo
+            print cmd.stderr
+            return False
+
+    def checkout_branch(self, branch):
+        def action(repo):
+            # Check for exception
+            real_branch = branch
+            if repo in repos_cfg.branch_exceptions:
+                fixed_branch = repos_cfg.branch_exceptions[repo].get('fixed-branch', None)
+                if fixed_branch is not None:
+                    real_branch = fixed_branch
+
+            checkout_cmd = git.Checkout(real_branch)
+            if checkout_cmd.ran_ok():
+                print '%s -> %s' % (repo, real_branch)
+            else:
+                print '%s -> ERROR!' % repo
+                print checkout_cmd.stderr
+                return False
+            return True
+
+        return self.for_all_repos(action=action, exception_handler=None)
 
     def create_tag(self, tag, message=None):
-        ok = True
-        for repo in repos_cfg.repos:
-            try:
-                os.chdir(self.repo_dir(repo))
-                tag_cmd = git.CreateTag(tag, message)
-                if tag_cmd.ran_ok():
-                    push_cmd = git.Push(tag)
-                    if push_cmd.ran_ok():
-                        print '%s -> OK' % repo
-                    else:
-                        print '%s -> push failed!' % repo
-                        print push_cmd.stderr
-                else:
-                    print '%s -> tag failed!' % repo
-                    print tag_cmd.stderr
-                    ok = False
-            except OSError:
-                print '%s -> FAILED!' % repo
-                ok = False
-        return ok
+        def action(repo):
+            tag_cmd = git.CreateTag(tag, message)
+            return RepoGroup.may_push(tag_cmd, repo, tag, '%s -> create tag failed!')
+
+        return self.for_all_repos(action=action, exception_handler=None)
 
     def create_branch(self, branch):
-        ok = True
-        for repo in repos_cfg.repos:
-            try:
-                os.chdir(self.repo_dir(repo))
-                branch_cmd = git.CreateBranch(branch)
-                if branch_cmd.ran_ok():
-                    push_cmd = git.Push(branch)
-                    if push_cmd.ran_ok():
-                        print '%s -> OK' % repo
-                    else:
-                        print '%s -> push failed!' % repo
-                        print push_cmd.stderr
-                else:
-                    print '%s -> create branch failed!' % repo
-                    print branch_cmd.stderr
-                    ok = False
-            except OSError:
-                print '%s -> FAILED!' % repo
-                ok = False
-        return ok
+        def action(repo):
+            branch_cmd = git.CreateBranch(branch)
+            return RepoGroup.may_push(branch_cmd, repo, branch, '%s -> create branch failed!')
+
+        return self.for_all_repos(action=action, exception_handler=None)
+
+    def delete_branch(self, branch):
+        def action(repo):
+            branch_cmd = git.DeleteBranch(branch)
+            return RepoGroup.may_push(branch_cmd, repo, ':' + branch, '%s -> delete branch failed!')
+
+        return self.for_all_repos(action=action, exception_handler=None)
+
+    def delete_tag(self, tag):
+        def action(repo):
+            tag_cmd = git.DeleteTag(tag)
+            return RepoGroup.may_push(tag_cmd, repo, ':refs/tags/' + tag, '%s -> delete tag failed!')
+
+        return self.for_all_repos(action=action, exception_handler=None)
 
     def get_current_branch(self):
-        ok = True
         fmt = '%%-%ds %%s' % (max([len(x) for x in repos_cfg.repos])+3)
-        for repo in repos_cfg.repos:
-            try:
-                os.chdir(self.repo_dir(repo))
-                cmd = git.ListBranches()
-                if cmd.ran_ok():
-                    print fmt % (repo, cmd.current_branch)
-                else:
-                    print fmt % (repo, 'ERROR!')
-                    print cmd.stderr
-                    ok = False
-            except OSError:
-                print fmt % (repo, 'FAILED!')
-                ok = False
-        return ok
+
+        def action(repo):
+            cmd = git.ListBranches()
+            if cmd.ran_ok():
+                print fmt % (repo, cmd.current_branch)
+            else:
+                print fmt % (repo, 'ERROR!')
+                print cmd.stderr
+                return False
+            return True
+
+        def exception_handler(repo):
+            print fmt % (repo, 'FAILED!')
+
+        return self.for_all_repos(action=action, exception_handler=exception_handler)
 
     def get_status(self, is_brief=False):
-        ok = True
         repo_status = dict()
-        for repo in repos_cfg.repos:
+
+        def action(repo):
             repo_status[repo] = {'branch': '', 'status': ''}
-            try:
-                os.chdir(self.repo_dir(repo))
-                branch_cmd = git.ListBranches()
-                if branch_cmd.ran_ok():
-                    repo_status[repo]['branch'] = branch_cmd.current_branch
+            branch_cmd = git.ListBranches()
+            if branch_cmd.ran_ok():
+                repo_status[repo]['branch'] = branch_cmd.current_branch
+            else:
+                repo_status[repo]['branch'] = 'ERROR!'
+                return False
+            status_cmd = git.Status()
+            if status_cmd.ran_ok():
+                if is_brief:
+                    repo_status[repo]['status'] = 'unindexed=%d, indexed=%d, untracked=%d' % \
+                                                  (len(status_cmd.files),
+                                                   len(status_cmd.index_files),
+                                                   len(status_cmd.untracked_files))
                 else:
-                    repo_status[repo]['branch'] = 'ERROR!'
-                    ok = False
-                    continue
-                status_cmd = git.Status()
-                if status_cmd.ran_ok():
-                    if is_brief:
-                        repo_status[repo]['status'] = 'unindexed=%d, indexed=%d, untracked=%d' % \
-                                                      (len(status_cmd.files),
-                                                       len(status_cmd.index_files),
-                                                       len(status_cmd.untracked_files))
-                    else:
-                        repo_status[repo]['status'] = status_cmd.stdout
+                    repo_status[repo]['status'] = status_cmd.stdout
+            else:
+                if is_brief:
+                    repo_status[repo]['status'] = 'ERROR!'
                 else:
-                    ok = False
-                    if is_brief:
-                        repo_status[repo]['status'] = 'ERROR!'
-                    else:
-                        repo_status[repo]['status'] = status_cmd.stderr
-            except OSError:
-                repo_status[repo]['branch'] = 'FAILED!'
-                ok = False
+                    repo_status[repo]['status'] = status_cmd.stderr
+                return False
+            return True
+
+        def exception_handler(repo):
+            repo_status[repo] = {'branch': '', 'status': ''}
+            repo_status[repo]['branch'] = 'FAILED!'
+
+        ok = self.for_all_repos(action=action, exception_handler=exception_handler)
 
         # Now format everything
-        for repo in repos_cfg.repos:
+        for rep in repos_cfg.repos:
             if is_brief:
                 fmt = '%%-%ds  %%-%ds %%s' % (max([len(r) for r in repos_cfg.repos])+3,
                                               max([len(s['branch']) for s in repo_status.values()])+3)
-                print fmt % (repo, repo_status[repo]['branch'], repo_status[repo]['status'])
+                print fmt % (rep, repo_status[rep]['branch'], repo_status[rep]['status'])
             else:
-                print '[' + repo + '] ' + ('-' * (70 - len(repo)))
-                print repo_status[repo]['status']
+                print '[' + rep + '] ' + ('-' * (70 - len(rep)))
+                print repo_status[rep]['status']
 
         return ok
 
@@ -187,7 +208,7 @@ def main():
                                                 help='Create a branch from a given name, tag, or build',
                                                 description='Create a branch from a given name, tag, or build. '
                                                             'To create a branch with an arbitrary name, use --branch. '
-                                                            'To create a branch from a tag, use --branch. The branch '
+                                                            'To create a branch from a tag, use --tag. The branch '
                                                             'name will be the tag name prefixed by "branch_". To '
                                                             'create a branch from a build, use --version and --build. '
                                                             'The branch name is "branch_v<VERSION>_<BUILD>".')
@@ -201,6 +222,20 @@ def main():
                                                          'a tag from a build, use --version and --build. The tag '
                                                          'name is "v<VERSION>_<BUILD>".')
     add_label_or_build(create_tag_parser, '--tag', 'Tag name')
+
+    delete_branch_parser = subparser.add_parser('delete-branch',
+                                                help='Delete an existing branch from a given name, tag, or build',
+                                                description='Delete a branch from a given name, tag, or build. '
+                                                            'To delete a branch with an arbitrary name, use --branch. '
+                                                            'To delete a branch from a tag, use --')
+    add_label_or_build(delete_branch_parser, '--branch', 'Branch name')
+
+    delete_tag_parser = subparser.add_parser('delete-tag',
+                                             help='Delete a tag from a given name, or build. To delete '
+                                                  'a tag with an arbitrary name, use --tag. To delete '
+                                                  'a tag from a build, use --version and --build. The tag '
+                                                  'name is "v<VERSION>_<BUILD>".')
+    add_label_or_build(delete_tag_parser, '--tag', 'Tag name')
 
     status_parser = subparser.add_parser('status',
                                          help='Return git status for all repositories',
@@ -275,6 +310,10 @@ def main():
         repo_group.create_branch(branch)
     elif options.command == 'create-tag':
         repo_group.create_tag(get_tag(options))
+    elif options.command == 'delete-branch':
+        repo_group.delete_branch(get_branch(options))
+    elif options.command == 'delete-tag':
+        repo_group.delete_tag(get_tag(options))
     elif options.command == 'status':
         repo_group.get_status(options.brief)
 
