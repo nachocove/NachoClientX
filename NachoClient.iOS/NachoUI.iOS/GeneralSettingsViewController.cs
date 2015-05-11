@@ -23,11 +23,7 @@ namespace NachoClient.iOS
 
         protected const int ACCOUNT_INFO_VIEW_TAG = 105;
 
-        protected UIView buttonsView;
         protected UILabel versionLabel;
-        protected UIButton aboutUsButton;
-        protected UIButton releaseNotesButton;
-        protected UIButton privacyPolicyButton;
         protected UILabel passwordExpiryLabel;
         protected UIButton dirtyBackEndButton;
         protected UILabel dirtyBackEndLabel;
@@ -71,65 +67,12 @@ namespace NachoClient.iOS
 
             yOffset = A.Card_Vertical_Indent;
 
-            var accountSettingsView = new AccountInfoView (new CGRect (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), 80));
-            accountSettingsView.OnAccountSelected = AccountSettingsTapHandler;
-            accountSettingsView.Tag = ACCOUNT_INFO_VIEW_TAG;
-            contentView.AddSubview (accountSettingsView);
+            var accountInfoView = new AccountInfoView (new CGRect (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), 80));
+            accountInfoView.OnAccountSelected = AccountSettingsTapHandler;
+            accountInfoView.Tag = ACCOUNT_INFO_VIEW_TAG;
+            contentView.AddSubview (accountInfoView);
 
-            yOffset = accountSettingsView.Frame.Bottom + 30;
-
-            var buttonViewWidth = View.Frame.Width - (A.Card_Horizontal_Indent * 2);
-
-            buttonsView = new UIView (new CGRect (A.Card_Horizontal_Indent, yOffset, buttonViewWidth, (CELL_HEIGHT * 3) + 2));
-            buttonsView.BackgroundColor = UIColor.White;
-            buttonsView.Layer.CornerRadius = A.Card_Corner_Radius;
-            buttonsView.Layer.BorderColor = A.Card_Border_Color;
-            buttonsView.Layer.BorderWidth = A.Card_Border_Width;
-
-            nfloat buttonY = 0;
-
-            aboutUsButton = UIButton.FromType (UIButtonType.System);
-            aboutUsButton.Frame = new CGRect (A.Card_Horizontal_Indent, buttonY, buttonViewWidth - (2 * A.Card_Horizontal_Indent), CELL_HEIGHT);
-            aboutUsButton.SetTitle ("About Us", UIControlState.Normal);
-            aboutUsButton.AccessibilityLabel = "About Us";
-            aboutUsButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            aboutUsButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            aboutUsButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            aboutUsButton.TouchUpInside += AboutUsTapHandler;
-            buttonsView.AddSubview (aboutUsButton);
-            buttonY += CELL_HEIGHT;
-
-            Util.AddHorizontalLine (0, buttonY, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
-            buttonY += 1;
-
-            releaseNotesButton = UIButton.FromType (UIButtonType.System);
-            releaseNotesButton.Frame = new CGRect (A.Card_Horizontal_Indent, buttonY, buttonViewWidth - (2 * A.Card_Horizontal_Indent), CELL_HEIGHT);
-            releaseNotesButton.SetTitle ("Release Notes", UIControlState.Normal);
-            releaseNotesButton.AccessibilityLabel = "Release Notes";
-            releaseNotesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            releaseNotesButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            releaseNotesButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            releaseNotesButton.TouchUpInside += ReleaseNotesTapHandler;
-            buttonsView.AddSubview (releaseNotesButton);
-            buttonY += CELL_HEIGHT;
-
-            Util.AddHorizontalLine (0, buttonY, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
-            buttonY += 1;
-
-            privacyPolicyButton = UIButton.FromType (UIButtonType.System);
-            privacyPolicyButton.Frame = new CGRect (A.Card_Horizontal_Indent, buttonY, buttonViewWidth - (2 * A.Card_Horizontal_Indent), CELL_HEIGHT);
-            privacyPolicyButton.SetTitle ("Privacy Policy", UIControlState.Normal);
-            privacyPolicyButton.AccessibilityLabel = "Privacy Policy";
-            privacyPolicyButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            privacyPolicyButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            privacyPolicyButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            privacyPolicyButton.TouchUpInside += PrivacyPolicyTapHandler;
-            buttonsView.AddSubview (privacyPolicyButton);
-            buttonY += CELL_HEIGHT;
-
-            contentView.AddSubview (buttonsView);
-
-            yOffset = buttonsView.Frame.Bottom + 30f;
+            yOffset = accountInfoView.Frame.Bottom + 30;
 
             passwordExpiryLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
 
@@ -142,7 +85,7 @@ namespace NachoClient.iOS
             passwordExpiryLabel.Hidden = true;
             contentView.AddSubview (passwordExpiryLabel);
 
-            yOffset = buttonsView.Frame.Bottom + 30f;
+            yOffset = passwordExpiryLabel.Frame.Bottom + 10f;
 
             dirtyBackEndLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
             dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
@@ -216,7 +159,7 @@ namespace NachoClient.iOS
             var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
             accountInfoView.Configure (userAccount);
 
-            yOffset = buttonsView.Frame.Bottom + 30;
+            yOffset = accountInfoView.Frame.Bottom + 30;
 
             DateTime expiry;
             string rectificationUrl;
@@ -230,7 +173,7 @@ namespace NachoClient.iOS
                 passwordExpiryLabel.Hidden = true;
             }
 
-            if(LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())) {
+            if (LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())) {
                 dirtyBackEndLabel.Hidden = false;
                 dirtyBackEndButton.Hidden = false;
                 dirtyBackEndLabel.SizeToFit ();
@@ -261,39 +204,12 @@ namespace NachoClient.iOS
             var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
             accountInfoView.OnAccountSelected = null;
             accountInfoView.Cleanup ();
-
-            aboutUsButton.TouchUpInside -= AboutUsTapHandler;
-            aboutUsButton = null;
-
-            privacyPolicyButton.TouchUpInside -= PrivacyPolicyTapHandler;
-            privacyPolicyButton = null;
-
-            releaseNotesButton.TouchUpInside -= ReleaseNotesTapHandler;
-            releaseNotesButton = null;
         }
 
         protected void AccountSettingsTapHandler (McAccount account)
         {
             View.EndEditing (true);
             PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
-        }
-
-        protected void PrivacyPolicyTapHandler (object sender, EventArgs e)
-        {
-            PerformSegue ("GeneralSettingsToSettingsLegal", this);
-            View.EndEditing (true);
-        }
-
-        protected void AboutUsTapHandler (object sender, EventArgs e)
-        {
-            PerformSegue ("SegueToAboutUs", this);
-            View.EndEditing (true);
-        }
-
-        protected void ReleaseNotesTapHandler (object sender, EventArgs e)
-        {
-            PerformSegue ("SegueToReleaseNotes", this);
-            View.EndEditing (true);
         }
 
         protected void FixBackEndButtonClicked (object sender, EventArgs e)
@@ -329,28 +245,13 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier.Equals ("GeneralSettingsToSettingsLegal")) {
-                var x = segue.DestinationViewController;
-                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers [0];
-                settingsLegal.SetProperties ("https://nachocove.com/privacy-policy-text/", "Privacy Policy", PRIVACY_POLICY_KEY, true);
-                return;
-            }
+
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToAboutUs")) {
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToReleaseNotes")) {
-                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers [0];
-                var url = NSBundle.MainBundle.PathForResource ("ReleaseNotes", "txt", "", "").ToString ();
-                settingsLegal.SetProperties (url, "Release Notes", null, false);
                 return;
             }
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 return;
             }
-                
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }

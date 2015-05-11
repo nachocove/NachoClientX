@@ -126,11 +126,8 @@
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
                         <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
-                        <segue destination="0HP-De-GcZ" kind="modal" identifier="GeneralSettingsToSettingsLegal" id="K8c-x2-hEf"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
-                        <segue destination="KWh-cK-EXH" kind="modal" identifier="SegueToAboutUs" id="PD1-1A-eiQ"/>
                         <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="z0K-Fc-ato"/>
-                        <segue destination="0HP-De-GcZ" kind="modal" identifier="SegueToReleaseNotes" id="WB8-Zh-IK8"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -142,7 +139,7 @@
             <objects>
                 <viewController storyboardIdentifier="SettingsLegalViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="dqi-Cj-nDi" customClass="SettingsLegalViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="b2I-01-BAZ">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="568"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="iF3-5l-bGz"/>
@@ -822,6 +819,7 @@
                         <segue destination="Ond-cj-T9D" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
                         <segue destination="BOY-39-YAe" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
                         <segue destination="aHn-x6-ar8" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
+                        <segue destination="KWh-cK-EXH" kind="relationship" relationship="viewControllers" id="wDR-Yl-thJ"/>
                     </connections>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="o80-D6-q8C" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1001,7 +999,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="kfk-r0-3P9"/>
                     <connections>
-                        <segue destination="0HP-De-GcZ" kind="modal" identifier="SegueToSettingsLegal" id="wZy-ga-YEb"/>
+                        <segue destination="dqi-Cj-nDi" kind="push" identifier="SegueToSettingsLegal" id="Dua-nO-BSs"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cr8-O2-f2u" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1138,10 +1136,11 @@
             </objects>
             <point key="canvasLocation" x="-1301" y="-3171"/>
         </scene>
-        <!--Navigation Controller-->
+        <!--About Us Navigation Controller-->
         <scene sceneID="nZ5-g1-nam">
             <objects>
-                <navigationController id="KWh-cK-EXH" sceneMemberID="viewController">
+                <navigationController id="KWh-cK-EXH" userLabel="About Us Navigation Controller" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="About Nacho Mail" image="more-nachomail-active.png" selectedImage="more-nachomail.png" id="mVn-aL-k15" userLabel="About Us"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="Gte-el-tiT">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                     </navigationBar>
@@ -1152,22 +1151,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Yla-Ro-y5K" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-1301" y="-5352"/>
-        </scene>
-        <!--Navigation Controller for Setting Legal View-->
-        <scene sceneID="Oxc-a2-QY4">
-            <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="0HP-De-GcZ" userLabel="Navigation Controller for Setting Legal View" sceneMemberID="viewController">
-                    <toolbarItems/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="nYM-UB-hPS">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                    </navigationBar>
-                    <connections>
-                        <segue destination="dqi-Cj-nDi" kind="relationship" relationship="rootViewController" id="JKn-Rf-rhg"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="1tg-6m-CST" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-1301" y="-3981"/>
         </scene>
         <!--Now-->
         <scene sceneID="qLp-hn-IDj">
@@ -1399,40 +1382,43 @@
             <point key="canvasLocation" x="-5529" y="-1339"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="more-nachomail-active.png" width="24" height="24"/>
+        <image name="more-nachomail.png" width="24" height="24"/>
+    </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="lbY-YF-b2b"/>
-        <segue reference="wZy-ga-YEb"/>
-        <segue reference="yNo-Ue-PAG"/>
-        <segue reference="22b-Az-fdF"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="Kfq-r2-VA6"/>
-        <segue reference="xrp-ey-B0j"/>
         <segue reference="zby-Sy-Y3J"/>
-        <segue reference="z8t-Er-kGd"/>
+        <segue reference="RKu-FY-1IX"/>
+        <segue reference="lbY-YF-b2b"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="tQS-oL-XNh"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="z10-H9-HYt"/>
-        <segue reference="udF-bU-cV6"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="s9j-Ih-SWz"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="k2t-Pj-AhS"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="DcC-EH-FAx"/>
+        <segue reference="v9F-jf-qe1"/>
         <segue reference="ja3-Zu-g6R"/>
         <segue reference="vUs-ft-xdy"/>
         <segue reference="qB9-ce-7gT"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="tzJ-j2-YOi"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="yNo-Ue-PAG"/>
+        <segue reference="22b-Az-fdF"/>
+        <segue reference="Kfq-r2-VA6"/>
+        <segue reference="Aba-pv-mzB"/>
+        <segue reference="VR8-PG-xAi"/>
+        <segue reference="TEI-cG-N0R"/>
+        <segue reference="DcC-EH-FAx"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="z8t-Er-kGd"/>
         <segue reference="od0-Sz-R9p"/>
+        <segue reference="tzJ-j2-YOi"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

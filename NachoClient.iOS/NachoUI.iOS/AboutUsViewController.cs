@@ -10,11 +10,8 @@ namespace NachoClient.iOS
 {
     public partial class AboutUsViewController : NcUIViewControllerNoLeaks
     {
-        protected static readonly nfloat INDENT = 18;
-        protected static readonly nfloat CELL_HEIGHT = 44;
-
-        protected const int LICENSE_AGREEMENT_VIEW_TAG = 100;
-        protected const int OPEN_SOURCE_VIEW_TAG = 101;
+        protected static readonly int INDENT = 18;
+        protected static readonly int CELL_HEIGHT = 44;
 
         protected nfloat yOffset;
 
@@ -26,13 +23,10 @@ namespace NachoClient.iOS
         protected string key;
         protected bool loadFromWeb;
 
-        protected UIBarButtonItem backButton;
-
-        protected UITapGestureRecognizer licenseAgreementTapGesture;
-        protected UITapGestureRecognizer.Token licenseAgreementTapGestureHandlerToken;
-
-        protected UITapGestureRecognizer openSourceTapGesture;
-        protected UITapGestureRecognizer.Token openSourceTapGestureHandlerToken;
+        UIButton showLicenseButton;
+        UIButton showOpenSourceButton;
+        UIButton showReleaseNotesButton;
+        UIButton showPrivacyPolicyButton;
 
         public AboutUsViewController (IntPtr handle) : base (handle)
         {
@@ -41,16 +35,7 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             NavigationController.NavigationBar.Translucent = false;
-            NavigationItem.Title = "About NachoMail";
-
-            backButton = new NcUIBarButtonItem ();
-            backButton.Clicked += BackButtonClicked;
-            using (var backIcon = UIImage.FromBundle ("nav-backarrow")) {
-                backButton.Image = backIcon;
-            }
-            backButton.AccessibilityLabel = "Back";
-            backButton.TintColor = A.Color_NachoBlue;
-            NavigationItem.LeftBarButtonItem = backButton;
+            NavigationItem.Title = "About Nacho Mail";
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -68,7 +53,7 @@ namespace NachoClient.iOS
             aboutUsView.Layer.BorderColor = A.Card_Border_Color;
             aboutUsView.Layer.BorderWidth = A.Card_Border_Width;
 
-            yOffset = INDENT;
+            yOffset = A.Card_Vertical_Indent;
 
             UIImageView nachoLogoImageView;
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
@@ -115,70 +100,100 @@ namespace NachoClient.iOS
             buttonsView.Layer.BorderColor = A.Card_Border_Color;
             buttonsView.Layer.BorderWidth = A.Card_Border_Width;
 
-            UILabel licenseAgreementLabel = new UILabel (new CGRect (INDENT, 12, 200, 20));
-            licenseAgreementLabel.Font = A.Font_AvenirNextMedium14;
-            licenseAgreementLabel.TextColor = A.Color_NachoGreen;
-            licenseAgreementLabel.Text = "Read License Agreement";
-            buttonsView.AddSubview (licenseAgreementLabel);
+            var bOffset = 0;
 
-            UIView licenseAgreementView = new UIView (new CGRect (0, 0, buttonsView.Frame.Width, CELL_HEIGHT));
-            licenseAgreementView.BackgroundColor = UIColor.Clear;
-            licenseAgreementView.UserInteractionEnabled = true;
-            licenseAgreementView.Tag = LICENSE_AGREEMENT_VIEW_TAG;
+            showReleaseNotesButton = UIButton.FromType (UIButtonType.System);
+            showReleaseNotesButton.Font = A.Font_AvenirNextMedium14;
+            showReleaseNotesButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            showReleaseNotesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            showReleaseNotesButton.SetTitle ("Release Notes", UIControlState.Normal);
+            showReleaseNotesButton.SizeToFit ();
+            ViewFramer.Create (showReleaseNotesButton).X (INDENT).CenterY (bOffset, CELL_HEIGHT);
+            showReleaseNotesButton.TouchUpInside += ShowReleaseNotesButton_TouchUpInside;
+            buttonsView.AddSubview (showReleaseNotesButton);
+            bOffset += CELL_HEIGHT;
 
-            licenseAgreementTapGesture = new UITapGestureRecognizer ();
-            licenseAgreementTapGestureHandlerToken = licenseAgreementTapGesture.AddTarget (LicenseAgreementTapHandler);
-            licenseAgreementView.AddGestureRecognizer (licenseAgreementTapGesture);
-            buttonsView.AddSubview (licenseAgreementView);
+            Util.AddHorizontalLine (0, bOffset, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
+            bOffset += 1;
 
-            Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
+            showPrivacyPolicyButton = UIButton.FromType (UIButtonType.System);
+            showPrivacyPolicyButton.Font = A.Font_AvenirNextMedium14;
+            showPrivacyPolicyButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            showPrivacyPolicyButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            showPrivacyPolicyButton.SetTitle ("Privacy Policy", UIControlState.Normal);
+            showPrivacyPolicyButton.SizeToFit ();
+            ViewFramer.Create (showPrivacyPolicyButton).X (INDENT).CenterY (bOffset, CELL_HEIGHT);
+            showPrivacyPolicyButton.TouchUpInside += ShowPrivacyPolicyButton_TouchUpInside;
+            buttonsView.AddSubview (showPrivacyPolicyButton);
+            bOffset += CELL_HEIGHT;
 
-            UILabel openSourceLabel = new UILabel (new CGRect (INDENT, CELL_HEIGHT + 11, 230, 20));
-            openSourceLabel.Font = A.Font_AvenirNextMedium14;
-            openSourceLabel.TextColor = A.Color_NachoGreen;
-            openSourceLabel.Text = "View Open Source Contributions";
-            buttonsView.AddSubview (openSourceLabel);
+            Util.AddHorizontalLine (0, bOffset, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
+            bOffset += 1;
 
-            UIView openSourceView = new UIView (new CGRect (0, CELL_HEIGHT, buttonsView.Frame.Width, CELL_HEIGHT));
-            openSourceView.BackgroundColor = UIColor.Clear;
-            openSourceView.UserInteractionEnabled = true;
-            openSourceView.Tag = OPEN_SOURCE_VIEW_TAG;
+            showLicenseButton = UIButton.FromType (UIButtonType.System);
+            showLicenseButton.Font = A.Font_AvenirNextMedium14;
+            showLicenseButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            showLicenseButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            showLicenseButton.SetTitle ("Read License Agreement", UIControlState.Normal);
+            showLicenseButton.SizeToFit ();
+            ViewFramer.Create (showLicenseButton).X (INDENT).CenterY (bOffset, CELL_HEIGHT);
+            showLicenseButton.TouchUpInside += ShowLicenseButton_TouchUpInside;
+            buttonsView.AddSubview (showLicenseButton);
+            bOffset += CELL_HEIGHT;
 
-            var openSourceTap = new UITapGestureRecognizer ();
-            openSourceTapGestureHandlerToken = openSourceTap.AddTarget (OpenSourceTapHandler);
-            openSourceView.AddGestureRecognizer (openSourceTap);
-            buttonsView.AddSubview (openSourceView);
+            Util.AddHorizontalLine (0, bOffset, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
+            bOffset += 1;
+
+            showOpenSourceButton = UIButton.FromType (UIButtonType.System);
+            showOpenSourceButton.Font = A.Font_AvenirNextMedium14;
+            showOpenSourceButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            showOpenSourceButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            showOpenSourceButton.SetTitle ("View Open Source Contributions", UIControlState.Normal);
+            showOpenSourceButton.SizeToFit ();
+            ViewFramer.Create (showOpenSourceButton).X (INDENT).CenterY (bOffset, CELL_HEIGHT);
+            showOpenSourceButton.TouchUpInside += ShowOpenSourceButton_TouchUpInside;
+            buttonsView.AddSubview (showOpenSourceButton); 
+            bOffset += CELL_HEIGHT;
+
+            ViewFramer.Create (buttonsView).Height (bOffset);
+
             contentView.AddSubview (buttonsView);
 
             yOffset = buttonsView.Frame.Bottom + A.Card_Vertical_Indent;
         }
 
-        protected void BackButtonClicked (object sender, EventArgs e)
+        void ShowPrivacyPolicyButton_TouchUpInside (object sender, EventArgs e)
         {
-            DismissViewController (true, null);
+            url = "https://nachocove.com/privacy-policy-text/";
+            title = "Privacy Policy";
+            key = GeneralSettingsViewController.PRIVACY_POLICY_KEY;
+            loadFromWeb = true;
+            PerformSegue ("SegueToSettingsLegal", this);
         }
 
-        protected void LicenseAgreementTapHandler (NSObject sender)
+        void ShowReleaseNotesButton_TouchUpInside (object sender, EventArgs e)
         {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                url = "https://nachocove.com/legal-text/";
-                title = "License Agreement";
-                key = GeneralSettingsViewController.LICENSE_AGREEMENT_KEY;
-                loadFromWeb = true;
-                PerformSegue ("SegueToSettingsLegal", this);
-            }
+            url = NSBundle.MainBundle.PathForResource ("ReleaseNotes", "txt", "", "").ToString ();
+            title = "Release Notes";
+            loadFromWeb = false;
+            PerformSegue ("SegueToSettingsLegal", this);
         }
 
-        protected void OpenSourceTapHandler (NSObject sender)
+        void ShowOpenSourceButton_TouchUpInside (object sender, EventArgs e)
         {
-            var gesture = sender as UIGestureRecognizer;
-            if (null != gesture) {
-                url = NSBundle.MainBundle.PathForResource ("LegalInfo", "txt", "", "").ToString ();
-                title = "Open Source Contributions";
-                loadFromWeb = false;
-                PerformSegue ("SegueToSettingsLegal", this);
-            }
+            url = NSBundle.MainBundle.PathForResource ("LegalInfo", "txt", "", "").ToString ();
+            title = "Open Source Contributions";
+            loadFromWeb = false;
+            PerformSegue ("SegueToSettingsLegal", this);
+        }
+
+        void ShowLicenseButton_TouchUpInside (object sender, EventArgs e)
+        {
+            url = "https://nachocove.com/legal-text/";
+            title = "License Agreement";
+            key = GeneralSettingsViewController.LICENSE_AGREEMENT_KEY;
+            loadFromWeb = true;
+            PerformSegue ("SegueToSettingsLegal", this);
         }
 
         protected override void ConfigureAndLayout ()
@@ -190,28 +205,22 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            backButton.Clicked -= BackButtonClicked;
-            backButton = null;
+            showLicenseButton.TouchUpInside -= ShowLicenseButton_TouchUpInside;
+            showOpenSourceButton.TouchUpInside -= ShowOpenSourceButton_TouchUpInside;
+            showReleaseNotesButton.TouchUpInside -= ShowReleaseNotesButton_TouchUpInside;
+            showPrivacyPolicyButton.TouchUpInside -= ShowPrivacyPolicyButton_TouchUpInside;
 
-            licenseAgreementTapGesture.RemoveTarget (licenseAgreementTapGestureHandlerToken);
-            var licenseView = (UIView)View.ViewWithTag (LICENSE_AGREEMENT_VIEW_TAG);
-            if (null != licenseView) {
-                licenseView.RemoveGestureRecognizer (licenseAgreementTapGesture);
-            }
-
-            openSourceTapGesture.RemoveTarget (openSourceTapGestureHandlerToken);
-            var openSource = (UIView)View.ViewWithTag (OPEN_SOURCE_VIEW_TAG);
-            if (null != openSource) {
-                openSource.RemoveGestureRecognizer (openSourceTapGesture);
-            }
+            showLicenseButton = null;
+            showOpenSourceButton = null;
+            showReleaseNotesButton = null;
+            showPrivacyPolicyButton = null;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToSettingsLegal")) {
-                var x = segue.DestinationViewController;
-                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers [0];
-                settingsLegal.SetProperties (url, title, key, loadFromWeb);
+                var vc = (SettingsLegalViewController)segue.DestinationViewController;
+                vc.SetProperties (url, title, key, loadFromWeb);
                 return;
             }
         }
