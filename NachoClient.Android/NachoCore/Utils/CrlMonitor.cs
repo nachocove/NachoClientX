@@ -151,7 +151,9 @@ namespace NachoCore.Utils
                 var response = await Client
                     .SendAsync (request, HttpCompletionOption.ResponseContentRead, cToken)
                     .ConfigureAwait (false);
+                NcAssert.True (null != response, "response should not be null");
                 if (HttpStatusCode.OK == response.StatusCode) {
+                    NcAssert.True (null != response.Content, "content should not be null");
                     var crlBytes = await response.Content.ReadAsByteArrayAsync ().ConfigureAwait (false);
                     try {
                         Crl = Encoding.ASCII.GetString (crlBytes);
@@ -195,8 +197,12 @@ namespace NachoCore.Utils
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "CRL pull: Caught unexpected http exception - {0}", e);
             }
-            // Something went wrong and we cannot get a new CRL. Poll again at a shorter interval.
-            Timer.Change (RetryInterval, PollingPeriod);
+
+            // Check that the timer has not been disposed because the client goes to background.
+            if (null != Timer) {
+                // Something went wrong and we cannot get a new CRL. Poll again at a shorter interval.
+                Timer.Change (RetryInterval, PollingPeriod);
+            }
         }
     }
 }
