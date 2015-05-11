@@ -373,6 +373,10 @@ namespace NachoCore.ActiveSync
                 return NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
             }
 
+            if (srcFolder.Id == destFolderId) {
+                return NcResult.OK ();
+            }
+
             NcModel.Instance.RunInTransaction (() => {
                 var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
                 if (null == destFolder) {
