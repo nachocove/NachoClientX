@@ -14,15 +14,15 @@ using CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentsViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
+    public partial class FileListViewController : NcUIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
     {
-        public AttachmentsViewController (IntPtr handle) : base (handle)
+        public FileListViewController (IntPtr handle) : base (handle)
         {
         }
 
         INachoFileChooserParent Owner;
         protected McAccount account;
-        AttachmentsTableViewSource AttachmentsSource;
+        FilesTableViewSource AttachmentsSource;
          
         string Token;
 
@@ -99,7 +99,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             // In case we exit during scrolling
-            NachoCore.Utils.NcAbate.RegularPriority ("AttachmentsViewController ViewWillDisappear");
+            NachoCore.Utils.NcAbate.RegularPriority ("FileListViewController ViewWillDisappear");
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -178,7 +178,7 @@ namespace NachoClient.iOS
             tableView.AccessibilityLabel = "Attachments";
 
             InitializeSearchDisplayController ();
-            AttachmentsSource = new AttachmentsTableViewSource (this, account);
+            AttachmentsSource = new FilesTableViewSource (this, account);
             AttachmentsSource.SetOwner (this, SearchDisplayController);
 
             View.AddSubview (tableView);
@@ -444,7 +444,7 @@ namespace NachoClient.iOS
 
             // Start, or re-state, the downloading animation
             if (McAbstrFileDesc.FilePresenceEnum.Partial == a.FilePresence) {
-                AttachmentsTableViewSource.StopAnimationsOnCell (cell);
+                FilesTableViewSource.StopAnimationsOnCell (cell);
                 AttachmentsSource.StartArrowAnimation (cell);
             } else {
                 AttachmentsSource.StartDownloadingAnimation (cell);
@@ -464,7 +464,7 @@ namespace NachoClient.iOS
                 // Bail out on errors
                 if (NcResult.SubKindEnum.Error_AttDownloadFailed == s.Status.SubKind) {
                     NcApplication.Instance.StatusIndEvent -= fileAction;
-                    AttachmentsTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
+                    FilesTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
                     });
                     return;
                 }
@@ -473,7 +473,7 @@ namespace NachoClient.iOS
                     a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
                     if (McAbstrFileDesc.FilePresenceEnum.Complete == a.FilePresence) {
                         NcApplication.Instance.StatusIndEvent -= fileAction;
-                        AttachmentsTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
+                        FilesTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
                             if (Token == token) {
                                 attachmentAction (a);
                             }

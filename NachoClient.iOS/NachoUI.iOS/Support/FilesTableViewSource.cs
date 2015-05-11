@@ -14,7 +14,7 @@ using CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public class AttachmentsTableViewSource : UITableViewSource
+    public class FilesTableViewSource : UITableViewSource
     {
         // cell Id's
         const string FileCell = "FileCell";
@@ -32,7 +32,7 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer multiSelectTapGestureRecognizer;
         protected UIGestureRecognizer.Token multiSelectTapGestureRecognizerTapToken;
 
-        AttachmentsViewController vc;
+        FileListViewController vc;
         UISearchDisplayController SearchDisplayController;
         public IAttachmentTableViewSourceDelegate owner;
         protected McAccount account;
@@ -103,7 +103,7 @@ namespace NachoClient.iOS
             set { searchResults = value; }
         }
 
-        public AttachmentsTableViewSource (AttachmentsViewController vc, McAccount account)
+        public FilesTableViewSource (FileListViewController vc, McAccount account)
         {
             this.vc = vc;
             this.account = account;
@@ -959,13 +959,13 @@ namespace NachoClient.iOS
 
     public class SearchDisplayDelegate : UISearchDisplayDelegate
     {
-        AttachmentsTableViewSource owner;
+        FilesTableViewSource owner;
 
         private SearchDisplayDelegate ()
         {
         }
 
-        public SearchDisplayDelegate (AttachmentsTableViewSource owner)
+        public SearchDisplayDelegate (FilesTableViewSource owner)
         {
             this.owner = owner;
         }

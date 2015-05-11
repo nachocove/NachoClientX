@@ -53,7 +53,7 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("AddAttachmentToAttachments")) {
-                var dc = (AttachmentsViewController)segue.DestinationViewController;
+                var dc = (FileListViewController)segue.DestinationViewController;
                 dc.SetOwner (owner);
                 dc.SetModal (true);
                 return;

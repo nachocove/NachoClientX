@@ -9,8 +9,8 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AttachmentsViewController")]
-	partial class AttachmentsViewController
+	[Register ("FileListViewController")]
+	partial class FileListViewController
 	{
 		
 		void ReleaseDesignerOutlets ()

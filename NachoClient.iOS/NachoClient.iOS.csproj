@@ -1094,10 +1094,6 @@
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
-    <Compile Include="NachoUI.iOS\AttachmentsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AttachmentsViewController.designer.cs">
-      <DependentUpon>AttachmentsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.designer.cs">
       <DependentUpon>IntentSelectionViewController.cs</DependentUpon>
@@ -1136,7 +1132,6 @@
     <Compile Include="NachoUI.iOS\AboutUsViewController.designer.cs">
       <DependentUpon>AboutUsViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\AttachmentsTableViewSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
       <Link>NachoCore\Utils\CertificateHelper.cs</Link>
     </Compile>
@@ -1369,6 +1364,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration23.cs">
       <Link>NachoCore\Model\Migration\NcMigration23.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\FileListViewController.cs" />
+    <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
+      <DependentUpon>FileListViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
