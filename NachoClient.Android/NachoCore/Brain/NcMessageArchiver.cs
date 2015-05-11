@@ -25,10 +25,6 @@ namespace NachoCore
         public static void Move (McEmailMessage message, McFolder folder)
         {
             RemoveDeferral (message);
-            var src = McFolder.QueryByFolderEntryId<McEmailMessage> (message.AccountId, message.Id).FirstOrDefault ();
-            if (src.Id == folder.Id) {
-                return;
-            }
             BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
         }
 
