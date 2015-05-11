@@ -17,6 +17,7 @@ fi
 branch=$1
 version=$2
 build=$3
+tag="v$version""_$build"
 
 die () {
   echo "ERROR: $1"
@@ -29,7 +30,6 @@ source repos.sh
 ./scripts/repos.py checkout-branch --branch $branch || die "fail to switch to branch $branch"
 
 # Build everything else
-tag="v$version_$build"
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile="alpha_build.$tag.$timestamp.log"
 make -f build.mk 2>&1 | tee $logfile
