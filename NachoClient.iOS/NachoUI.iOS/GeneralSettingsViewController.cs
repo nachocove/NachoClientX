@@ -14,12 +14,10 @@ namespace NachoClient.iOS
 {
     public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks
     {
-
-        protected static readonly nfloat CELL_HEIGHT = 44f;
-
         protected nfloat yOffset;
 
-        protected const int ACCOUNT_INFO_VIEW_TAG = 105;
+        UITableView accountsTableView;
+        AccountsTableViewSource accountsTableViewSource;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
@@ -54,22 +52,33 @@ namespace NachoClient.iOS
 
             yOffset = A.Card_Vertical_Indent;
 
-            var accountInfoView = new AccountInfoView (new CGRect (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), 80));
-            accountInfoView.OnAccountSelected = AccountSettingsTapHandler;
-            accountInfoView.Tag = ACCOUNT_INFO_VIEW_TAG;
-            contentView.AddSubview (accountInfoView);
+            accountsTableViewSource = new AccountsTableViewSource ();
+            accountsTableViewSource.owner = this;
 
-            yOffset = accountInfoView.Frame.Bottom + 30;
+            accountsTableView = new UITableView ();
+            accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            accountsTableView.Source = accountsTableViewSource;
+
+            var n = accountsTableViewSource.RowsInSection (accountsTableView, 0);
+            var h = n * 80;
+
+            accountsTableView.Frame = new CGRect (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), h);
+            accountsTableView.Bounces = false;
+
+            contentView.AddSubview (accountsTableView);
+
+            yOffset = accountsTableView.Frame.Bottom + 30;
+
+        }
+
+        void NewAccountButton_TouchUpInside (object sender, EventArgs e)
+        {
+            NachoPlatform.NcUIRedirector.Instance.GoBackToMainScreen ();                        
         }
 
         protected override void ConfigureAndLayout ()
         {
-            McAccount userAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
-            accountInfoView.Configure (userAccount);
-
-            yOffset = accountInfoView.Frame.Bottom + 30;
-
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
@@ -78,33 +87,18 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
-            accountInfoView.OnAccountSelected = null;
-            accountInfoView.Cleanup ();
+
         }
 
-        protected void AccountSettingsTapHandler (McAccount account)
+        public void ShowAccount (McAccount account)
         {
             View.EndEditing (true);
             PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
         }
 
-        protected string GetEmailAddress ()
-        {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                return Account.EmailAddr;
-            } else {
-                return "";
-            }
-        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

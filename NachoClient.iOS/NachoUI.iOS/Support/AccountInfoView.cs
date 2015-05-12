@@ -14,11 +14,6 @@ namespace NachoClient.iOS
     {
         public delegate void AccountSelectedCallback (McAccount account);
 
-        public AccountSelectedCallback OnAccountSelected;
-
-        protected UITapGestureRecognizer accountSettingsTapGesture;
-        protected UITapGestureRecognizer.Token accountSettingsTapGestureHandlerToken;
-
         protected const float LINE_HEIGHT = 20;
 
         protected const int NAME_LABEL_TAG = 100;
@@ -36,9 +31,6 @@ namespace NachoClient.iOS
             accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
             accountInfoView.Layer.BorderColor = A.Card_Border_Color;
             accountInfoView.Layer.BorderWidth = A.Card_Border_Width;
-            accountSettingsTapGesture = new UITapGestureRecognizer ();
-            accountSettingsTapGestureHandlerToken = accountSettingsTapGesture.AddTarget (AccountSettingsTapHandler);
-            accountInfoView.AddGestureRecognizer (accountSettingsTapGesture);
 
             var userImageView = new UIImageView (new CGRect (12, 15, 50, 50));
             userImageView.Center = new CGPoint (userImageView.Center.X, accountInfoView.Frame.Height / 2);
@@ -120,18 +112,8 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void AccountSettingsTapHandler (NSObject sender)
-        {
-            this.EndEditing (true);
-            if (null != OnAccountSelected) {
-                OnAccountSelected (this.account);
-            }
-        }
-
         public void Cleanup ()
         {
-            accountSettingsTapGesture.RemoveTarget (accountSettingsTapGestureHandlerToken);
-            RemoveGestureRecognizer (accountSettingsTapGesture);
         }
     }
 }

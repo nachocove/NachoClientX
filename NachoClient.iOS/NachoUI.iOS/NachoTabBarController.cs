@@ -19,7 +19,6 @@ namespace NachoClient.iOS
 
         // UI elements needed to customize the "More" tab.
         protected UITableView existingTableView;
-        protected AccountInfoView accountInfoView;
         protected static NachoTabBarController instance;
 
         public NachoTabBarController (IntPtr handle) : base (handle)
@@ -285,15 +284,10 @@ namespace NachoClient.iOS
 
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            accountInfoView = new AccountInfoView (new CGRect (
-                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 80));
-            accountInfoView.OnAccountSelected = AccountTapHandler;
-
             var tableHeight = (((existingTableView.NumberOfRowsInSection (0)) + 2) * cellHeight + 25);
 
             existingTableView.Frame = new CGRect (
-                A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
+                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
                 newView.Frame.Width - 2 * A.Card_Horizontal_Indent, tableHeight);
             existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
             existingTableView.Layer.MasksToBounds = true;
@@ -303,11 +297,9 @@ namespace NachoClient.iOS
 
             newView.ContentSize = new CGSize (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
 
-            newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
             moreTabController.View = newView;
 
-            ConfigureAccountInfo ();
             LayoutMoreTable ();
         }
 
@@ -320,21 +312,12 @@ namespace NachoClient.iOS
             }
         }
 
-        private void AccountTapHandler (McAccount account)
-        {
-            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = (AccountSettingsViewController)x.InstantiateViewController ("AccountSettingsViewController");
-            MoreNavigationController.PushViewController (vc, true);
-        }
-
-        public void ConfigureAccountInfo ()
-        {
-            accountInfoView.Configure (NcApplication.Instance.Account);
-        }
-
         public static void ReconfigureMoreTab ()
         {
-            instance.ConfigureAccountInfo ();
+        }
+
+        public static void UpdateMoreTab ()
+        {
         }
 
         protected void ViewControllerSelectedHandler (object sender, UITabBarSelectionEventArgs e)
@@ -342,7 +325,7 @@ namespace NachoClient.iOS
             if (e.ViewController == MoreNavigationController) {
                 // The user has tapped on the "More" tab in the tab bar. Do what we can to
                 // make sure the "More" view is up to date.
-                ConfigureAccountInfo ();
+                UpdateMoreTab ();
                 // Tweak the table cells to be closer to what we want.  We would like to
                 // make other changes, but this event is triggered at the wrong time, so
                 // those other changes won't stick.  The one change that does seem to stick
