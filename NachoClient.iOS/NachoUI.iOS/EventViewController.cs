@@ -98,7 +98,6 @@ namespace NachoClient.iOS
         protected const float TEXT_LINE_HEIGHT = 19.124f;
         protected static nfloat EVENT_CARD_WIDTH = SCREEN_WIDTH - 30;
         protected nfloat NOTE_OFFSET = 0f;
-        protected nfloat keyboardHeight;
         protected nfloat notesInitialHeight = 0f;
 
         public enum TagType
@@ -799,10 +798,6 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             //SaveNote (account.Id, eventNotesTextView.Text);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
-            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -814,10 +809,6 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
             PermissionManager.DealWithCalendarPermission ();
         }
 
@@ -1024,43 +1015,8 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentView.Frame.Size;
         }
 
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
-        }
-
-        private void OnKeyboardNotification (NSNotification notification)
+        protected override void OnKeyboardChanged ()
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
-
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             LayoutView ();
         }
 
@@ -1482,10 +1438,10 @@ namespace NachoClient.iOS
             }
         }
 
-        private void AttachmentOnError(McAttachment attachment, NcResult result)
+        private void AttachmentOnError (McAttachment attachment, NcResult result)
         {
             string message;
-            if(!ErrorHelper.ExtractErrorString(result, out message)) {
+            if (!ErrorHelper.ExtractErrorString (result, out message)) {
                 message = "Download failed.";
             }
             NcAlertView.ShowMessage (this, "Attachment error", message);

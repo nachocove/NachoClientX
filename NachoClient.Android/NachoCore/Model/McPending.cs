@@ -1172,7 +1172,18 @@ namespace NachoCore.Model
             rec.Operation == operation).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static McPending QueryFirstEligibleByOperation (int accountId, McPending.Operations operation)
+        public static List<McPending> QueryFirstEligibleByOperation (int accountId, 
+            Operations operation1, Operations operation2, Operations operation3, Operations operation4,
+            int limit)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    (rec.Operation == operation1 || rec.Operation == operation2 || rec.Operation == operation3 || rec.Operation == operation4) &&
+                    rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).Take (limit).ToList ();
+        }
+
+        public static McPending QueryFirstEligibleByOperation (int accountId, Operations operation)
         {
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>

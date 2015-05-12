@@ -303,7 +303,7 @@ namespace NachoCore.ActiveSync
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
-        public override NcResult DeleteEmailCmd (int emailMessageId)
+        public override NcResult DeleteEmailCmd (int emailMessageId, bool lastInSeq = true)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McEmailMessage emailMessage = null;
@@ -351,18 +351,19 @@ namespace NachoCore.ActiveSync
             if (null != emailMessage && result.isOK ()) {
                 Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
                     emailMessage.Id, emailMessage.ServerId, result.GetValue<string> ());
-
-                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
-                NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
-                }, "DeleteEmailCmd");
+                if (lastInSeq) {
+                    StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                    Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
+                    NcTask.Run (delegate {
+                        Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
+                    }, "DeleteEmailCmd");
+                }
             }
             return result;
         }
 
         private NcResult MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
-                                    McAbstrItem item, McFolder srcFolder, int destFolderId)
+            McAbstrItem item, McFolder srcFolder, int destFolderId, bool lastInSeq)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             if (null == srcFolder) {
@@ -370,6 +371,10 @@ namespace NachoCore.ActiveSync
             }
             if (srcFolder.IsClientOwned) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+            }
+
+            if (srcFolder.Id == destFolderId) {
+                return NcResult.OK ();
             }
 
             NcModel.Instance.RunInTransaction (() => {
@@ -412,14 +417,16 @@ namespace NachoCore.ActiveSync
                 destFolder.Link (item);
                 srcFolder.Unlink (item);
             });
-            StatusInd (NcResult.Info (subKind));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
-            }, "MoveItemCmd");
+            if (lastInSeq) {
+                StatusInd (NcResult.Info (subKind));
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
+                }, "MoveItemCmd");
+            }
             return result;
         }
 
-        public override NcResult MoveEmailCmd (int emailMessageId, int destFolderId)
+        public override NcResult MoveEmailCmd (int emailMessageId, int destFolderId, bool lastInSeq = true)
         {
             var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
@@ -428,7 +435,7 @@ namespace NachoCore.ActiveSync
             var srcFolder = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.EmailMove, NcResult.SubKindEnum.Info_EmailMessageSetChanged,
-                emailMessage, srcFolder, destFolderId);
+                emailMessage, srcFolder, destFolderId, lastInSeq);
         }
 
         private bool GetItemAndFolder<T> (int itemId, 
@@ -735,7 +742,7 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        public override NcResult DeleteCalCmd (int calId)
+        public override NcResult DeleteCalCmd (int calId, bool lastInSeq = true)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
@@ -764,14 +771,16 @@ namespace NachoCore.ActiveSync
                 result = NcResult.OK (pending.Token);
                 cal.Delete ();
             });
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCAL");
-            }, "DeleteCalCmd");
+            if (lastInSeq) {
+                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCAL");
+                }, "DeleteCalCmd");
+            }
             return result;
         }
 
-        public override NcResult MoveCalCmd (int calId, int destFolderId)
+        public override NcResult MoveCalCmd (int calId, int destFolderId, bool lastInSeq = true)
         {
             var cal = McAbstrObject.QueryById<McCalendar> (calId);
             if (null == cal) {
@@ -780,7 +789,7 @@ namespace NachoCore.ActiveSync
             var srcFolder = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.CalMove, NcResult.SubKindEnum.Info_CalendarSetChanged,
-                cal, srcFolder, destFolderId);
+                cal, srcFolder, destFolderId, lastInSeq);
         }
 
         public override NcResult DnldCalBodyCmd (int calId)
@@ -905,7 +914,7 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        public override NcResult DeleteContactCmd (int contactId)
+        public override NcResult DeleteContactCmd (int contactId, bool lastInSeq = true)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
@@ -933,14 +942,16 @@ namespace NachoCore.ActiveSync
                 result = NcResult.OK (pending.Token);
                 contact.Delete ();
             });
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCTC");
-            }, "DeleteContactCmd");
+            if (lastInSeq) {
+                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCTC");
+                }, "DeleteContactCmd");
+            }
             return result;
         }
 
-        public override NcResult MoveContactCmd (int contactId, int destFolderId)
+        public override NcResult MoveContactCmd (int contactId, int destFolderId, bool lastInSeq = true)
         {
             var contact = McAbstrObject.QueryById<McContact> (contactId);
             if (null == contact) {
@@ -949,7 +960,7 @@ namespace NachoCore.ActiveSync
             var srcFolder = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.ContactMove, NcResult.SubKindEnum.Info_ContactSetChanged,
-                contact, srcFolder, destFolderId);
+                contact, srcFolder, destFolderId, lastInSeq);
         }
 
         public override NcResult DnldContactBodyCmd (int contactId)
@@ -1041,7 +1052,7 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        public override NcResult DeleteTaskCmd (int taskId)
+        public override NcResult DeleteTaskCmd (int taskId, bool lastInSeq = true)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
@@ -1070,14 +1081,16 @@ namespace NachoCore.ActiveSync
                 result = NcResult.OK (pending.Token);
                 task.Delete ();
             });
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
-            }, "DeleteTaskCmd");
+            if (lastInSeq) {
+                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
+                }, "DeleteTaskCmd");
+            }
             return result;
         }
 
-        public override NcResult MoveTaskCmd (int taskId, int destFolderId)
+        public override NcResult MoveTaskCmd (int taskId, int destFolderId, bool lastInSeq = true)
         {
             var task = McAbstrObject.QueryById<McTask> (taskId);
             if (null == task) {
@@ -1086,7 +1099,7 @@ namespace NachoCore.ActiveSync
             var srcFolder = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId).FirstOrDefault ();
 
             return MoveItemCmd (McPending.Operations.TaskMove, NcResult.SubKindEnum.Info_TaskSetChanged,
-                task, srcFolder, destFolderId);
+                task, srcFolder, destFolderId, lastInSeq);
         }
 
         public override NcResult DnldTaskBodyCmd (int taskId)

@@ -12,21 +12,12 @@ namespace NachoClient.iOS
 {
     public class AccountInfoView : UIView
     {
-        public delegate void AccountSelectedCallback (McAccount account);
-
-        public AccountSelectedCallback OnAccountSelected;
-
-        protected UITapGestureRecognizer accountSettingsTapGesture;
-        protected UITapGestureRecognizer.Token accountSettingsTapGestureHandlerToken;
-
         protected const float LINE_HEIGHT = 20;
 
         protected const int NAME_LABEL_TAG = 100;
         protected const int EMAIL_ADDRESS_LABEL_TAG = 101;
         protected const int USER_IMAGE_VIEW_TAG = 102;
         protected const int USER_LABEL_VIEW_TAG = 103;
-
-        McAccount account;
 
         public AccountInfoView (CGRect frame) : base (frame)
         {
@@ -36,9 +27,6 @@ namespace NachoClient.iOS
             accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
             accountInfoView.Layer.BorderColor = A.Card_Border_Color;
             accountInfoView.Layer.BorderWidth = A.Card_Border_Width;
-            accountSettingsTapGesture = new UITapGestureRecognizer ();
-            accountSettingsTapGestureHandlerToken = accountSettingsTapGesture.AddTarget (AccountSettingsTapHandler);
-            accountInfoView.AddGestureRecognizer (accountSettingsTapGesture);
 
             var userImageView = new UIImageView (new CGRect (12, 15, 50, 50));
             userImageView.Center = new CGPoint (userImageView.Center.X, accountInfoView.Frame.Height / 2);
@@ -82,8 +70,6 @@ namespace NachoClient.iOS
 
         public void Configure (McAccount account)
         {
-            this.account = account;
-
             var userImageView = (UIImageView)this.ViewWithTag (USER_IMAGE_VIEW_TAG);
             var userLabelView = (UILabel)this.ViewWithTag (USER_LABEL_VIEW_TAG);
             var nameLabel = (UILabel)this.ViewWithTag (NAME_LABEL_TAG);
@@ -120,18 +106,8 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void AccountSettingsTapHandler (NSObject sender)
-        {
-            this.EndEditing (true);
-            if (null != OnAccountSelected) {
-                OnAccountSelected (this.account);
-            }
-        }
-
         public void Cleanup ()
         {
-            accountSettingsTapGesture.RemoveTarget (accountSettingsTapGestureHandlerToken);
-            RemoveGestureRecognizer (accountSettingsTapGesture);
         }
     }
 }

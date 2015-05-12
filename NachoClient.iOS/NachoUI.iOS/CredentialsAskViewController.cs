@@ -14,20 +14,19 @@ using NachoCore;
 namespace NachoClient.iOS
 {
     public partial class CredentialsAskViewController : NcUIViewController, INachoCertificateResponderParent
-	{
+    {
         protected nfloat yOffset = 0;
-        protected nfloat keyboardHeight;
         protected const int EMAIL_FIELD_TAG = 100;
         protected const int PASSWORD_FIELD_TAG = 101;
         protected const int SUBMIT_BUTTON_TAG = 102;
         CertificateView certificateView;
         protected NachoTabBarController sendersTabBar;
 
-		public CredentialsAskViewController (IntPtr handle) : base (handle)
-		{
-		}
+        public CredentialsAskViewController (IntPtr handle) : base (handle)
+        {
+        }
 
-        public override void ViewDidLoad()
+        public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
             CreateView ();
@@ -40,7 +39,7 @@ namespace NachoClient.iOS
             View.Add (certificateView);
         }
 
-        public void SetTabBarController(NachoTabBarController tabBar)
+        public void SetTabBarController (NachoTabBarController tabBar)
         {
             this.sendersTabBar = tabBar;
         }
@@ -48,11 +47,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
-            }
+            NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
 
             BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
             if (BackEndStateEnum.CertAskWait == backEndState) {
@@ -60,8 +55,8 @@ namespace NachoClient.iOS
                 certificateView.ShowView ();
             }
         }
-            
-        protected void CreateView()
+
+        protected void CreateView ()
         {
             scrollView.BackgroundColor = A.Color_NachoGreen;
             View.Add (scrollView);
@@ -71,10 +66,10 @@ namespace NachoClient.iOS
 
             UIButton escape = new UIButton (new CGRect (20, yOffset, 20, 20));
             escape.AccessibilityLabel = "Close";
-            escape.SetImage(UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
+            escape.SetImage (UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
             escape.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing(true);
-                DismissViewController(true, null);
+                View.EndEditing (true);
+                DismissViewController (true, null);
             };
             contentView.Add (escape);
 
@@ -131,7 +126,7 @@ namespace NachoClient.iOS
             passwordField.AutocorrectionType = UITextAutocorrectionType.No;
             passwordField.Tag = PASSWORD_FIELD_TAG;
             passwordField.ShouldReturn += ((textField) => {
-                textField.ResignFirstResponder();
+                textField.ResignFirstResponder ();
                 return true;
             });
             passwordBox.AddSubview (passwordField);
@@ -158,23 +153,23 @@ namespace NachoClient.iOS
             contentView.AddSubview (submitButton);
 
             submitButton.TouchUpInside += delegate {
-                if(EmailHelper.IsValidEmail(emailField.Text)){
-                    McAccount UsersAccount = McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId());
-                    McCred UsersCredentials = McCred.QueryByAccountId<McCred>(UsersAccount.Id).SingleOrDefault ();
+                if (EmailHelper.IsValidEmail (emailField.Text)) {
+                    McAccount UsersAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+                    McCred UsersCredentials = McCred.QueryByAccountId<McCred> (UsersAccount.Id).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
                     UsersCredentials.UpdatePassword (passwordField.Text);
                     UsersCredentials.Update ();
-                    BackEnd.Instance.CredResp(UsersAccount.Id);
-                    View.EndEditing(true);
-                    DismissViewController(true, null);
+                    BackEnd.Instance.CredResp (UsersAccount.Id);
+                    View.EndEditing (true);
+                    DismissViewController (true, null);
                     LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-                }else{
+                } else {
                     errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
                 }
             };
 
             emailField.ShouldReturn += ((textField) => {
-                passwordField.BecomeFirstResponder();
+                passwordField.BecomeFirstResponder ();
                 return true;
             });
             yOffset = submitButton.Frame.Bottom + 20f;
@@ -189,7 +184,7 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        public void ConfigureView()
+        public void ConfigureView ()
         {
             UITextField emailField = (UITextField)View.ViewWithTag (EMAIL_FIELD_TAG);
             emailField.Text = GetUsername ();
@@ -222,10 +217,6 @@ namespace NachoClient.iOS
             }
         }
 
-        protected virtual bool HandlesKeyboardNotifications {
-            get { return true; }
-        }
-
         private void OnTextFieldChanged (NSNotification notification)
         {
             maybeEnableConnect ();
@@ -246,62 +237,25 @@ namespace NachoClient.iOS
             submitButton.Alpha = (shouldWe ? 1.0f : 0.5f);
         }
 
-        private void OnKeyboardNotification (NSNotification notification)
+        public void DontAcceptCertificate ()
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
-
-        protected void OnKeyboardChangeCompleted ()
-        {
-
-        }
-
-        public void DontAcceptCertificate()
-        {
-            View.EndEditing(true);
-            DismissViewController(true, null);
+            View.EndEditing (true);
+            DismissViewController (true, null);
         }
 
         public void AcceptCertificate ()
         {
             NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
             LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-            View.EndEditing(true);
-            DismissViewController(true, null);
+            View.EndEditing (true);
+            DismissViewController (true, null);
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
+        protected override void OnKeyboardChanged ()
         {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             LayoutView ();
-
             var connectbutton = contentView.ViewWithTag (SUBMIT_BUTTON_TAG);
             scrollView.ScrollRectToVisible (connectbutton.Frame, false);
         }
-	}
+    }
 }

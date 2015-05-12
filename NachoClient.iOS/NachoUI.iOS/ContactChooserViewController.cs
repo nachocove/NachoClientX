@@ -29,7 +29,6 @@ namespace NachoClient.iOS
         List<McContactEmailAddressAttribute> searchResults;
         // ContactTableViewSource is used solely to create & config a cell
         string contactSearchToken;
-        nfloat keyboardHeight;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
@@ -76,10 +75,6 @@ namespace NachoClient.iOS
             NachoCore.Utils.NcAbate.HighPriority ("ContactChooser ViewWillAppear");
             resultsTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser ViewWillAppear");
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
             autoCompleteTextField.BecomeFirstResponder ();
         }
 
@@ -88,19 +83,12 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+        }
+
+        public override bool ShouldEndEditing {
+            get {
+                return false;
             }
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-        }
-
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
         }
 
         public void CreateView ()
@@ -295,48 +283,8 @@ namespace NachoClient.iOS
             owner.DismissINachoContactChooser (this);
         }
 
-        private void OnKeyboardNotification (NSNotification notification)
+        protected override void OnKeyboardChanged ()
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
-
-        /// <summary>
-        /// Override this method to apply custom logic when the keyboard is shown/hidden
-        /// </summary>
-        /// <param name='visible'>
-        /// If the keyboard is visible
-        /// </param>
-        /// <param name='height'>
-        /// Calculated height of the keyboard (width not generally needed here)
-        /// </param>
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 

@@ -14,7 +14,7 @@ namespace NachoClient.iOS
     public partial class LaunchViewController : NcUIViewControllerNoLeaks
     {
         nfloat yOffset;
-        nfloat keyboardHeight;
+
         bool shortScreen;
         bool largeScreen;
 
@@ -60,11 +60,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
-            }
+            NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
 
             if (!hasCompletedInitialAnimation) {
                 UIView.AnimateKeyframes (1.6, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
@@ -98,15 +94,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.SetNavigationBarHidden (false, false);
             }
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
-            }
-        }
-
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
+            NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
         }
 
         public void OnEmailServiceSelected (McAccount.AccountServiceEnum service, bool willExpand)
@@ -468,48 +456,8 @@ namespace NachoClient.iOS
             maybeEnableConnect ();
         }
 
-        private void OnKeyboardNotification (NSNotification notification)
+        protected override void OnKeyboardChanged ()
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-
-                UIView.CommitAnimations ();
-            }
-        }
-
-        /// <summary>
-        /// Override this method to apply custom logic when the keyboard is shown/hidden
-        /// </summary>
-        /// <param name='visible'>
-        /// If the keyboard is visible
-        /// </param>
-        /// <param name='height'>
-        /// Calculated height of the keyboard (width not generally needed here)
-        /// </param>
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             ConfigureAndLayoutInternal ();
 
             if (!shortScreen) {

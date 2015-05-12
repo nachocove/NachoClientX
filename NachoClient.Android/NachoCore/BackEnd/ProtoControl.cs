@@ -162,7 +162,7 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult DeleteEmailCmd (int emailMessageId)
+        public virtual NcResult DeleteEmailCmd (int emailMessageId, bool lastInSeq = true)
         {
             return null;
         }
@@ -172,7 +172,7 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult MoveEmailCmd (int emailMessageId, int destFolderId)
+        public virtual NcResult MoveEmailCmd (int emailMessageId, int destFolderId, bool lastInSeq = true)
         {
             return null;
         }
@@ -214,12 +214,12 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult DeleteCalCmd (int calId)
+        public virtual NcResult DeleteCalCmd (int calId, bool lastInSeq = true)
         {
             return null;
         }
        
-        public virtual NcResult MoveCalCmd (int calId, int destFolderId)
+        public virtual NcResult MoveCalCmd (int calId, int destFolderId, bool lastInSeq = true)
         {
             return null;
         }
@@ -261,12 +261,12 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult DeleteContactCmd (int contactId)
+        public virtual NcResult DeleteContactCmd (int contactId, bool lastInSeq = true)
         {
             return null;
         }
 
-        public virtual NcResult MoveContactCmd (int contactId, int destFolderId)
+        public virtual NcResult MoveContactCmd (int contactId, int destFolderId, bool lastInSeq = true)
         {
             return null;
         }
@@ -286,12 +286,12 @@ namespace NachoCore
             return null;
         }
 
-        public virtual NcResult DeleteTaskCmd (int taskId)
+        public virtual NcResult DeleteTaskCmd (int taskId, bool lastInSeq = true)
         {
             return null;
         }
 
-        public virtual NcResult MoveTaskCmd (int taskId, int destFolderId)
+        public virtual NcResult MoveTaskCmd (int taskId, int destFolderId, bool lastInSeq = true)
         {
             return null;
         }

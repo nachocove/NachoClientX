@@ -21,11 +21,22 @@ namespace NachoClient.iOS
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
         protected const int REMOVE_BUTTON_TAG = 1100;
 
+        public delegate void UcAttachmentCellAction (UcAttachmentCell cell);
+
+        protected UcAttachmentCellAction tapAction;
+        protected UcAttachmentCellAction removeAction;
+
+        protected UITapGestureRecognizer viewTapped;
+        protected UITapGestureRecognizer.Token viewTappedToken;
+
         public McAttachment attachment;
 
-        public UcAttachmentCell (McAttachment attachment, nfloat parentWidth, bool editable) : base (new CGRect (0, 0, parentWidth, LINE_HEIGHT))
+        public UcAttachmentCell (McAttachment attachment, nfloat parentWidth, bool editable, UcAttachmentCellAction tapAction, UcAttachmentCellAction removeAction)
+            : base (new CGRect (0, 0, parentWidth, LINE_HEIGHT))
         {
             this.attachment = attachment;
+            this.tapAction = tapAction;
+            this.removeAction = editable ? removeAction : null;
             CreateView (parentWidth, editable);
         }
 
@@ -39,6 +50,9 @@ namespace NachoClient.iOS
                 removeButton.Tag = REMOVE_BUTTON_TAG;
                 removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
                 removeButton.Frame = new CGRect (9, (LINE_HEIGHT / 2) - 17, 34, 34);
+                if (null != removeAction) {
+                    removeButton.TouchUpInside += RemoveClicked;
+                }
                 this.AddSubview (removeButton);
                 xOffset += 34;
             }
@@ -68,6 +82,10 @@ namespace NachoClient.iOS
             //Separator line
             var separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, parentWidth - 60, A.Color_NachoBorderGray);
             this.AddSubview (separatorLine);
+
+            viewTapped = new UITapGestureRecognizer ();
+            viewTappedToken = viewTapped.AddTarget (ViewTapped);
+            this.AddGestureRecognizer (viewTapped);
 
             ConfigureView (attachment, cellIconImageView, textLabel, detailTextlabel);
         }
@@ -99,6 +117,28 @@ namespace NachoClient.iOS
                 textLabel.Text = "File no longer exists"; 
             }
         }
+
+        private void RemoveClicked (object sender, EventArgs e)
+        {
+            removeAction (this);
+        }
+
+        private void ViewTapped ()
+        {
+            if (null != tapAction) {
+                tapAction (this);
+            }
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            if (null != removeAction) {
+                ((UIButton)this.ViewWithTag (REMOVE_BUTTON_TAG)).TouchUpInside -= RemoveClicked;
+            }
+            viewTapped.RemoveTarget (viewTappedToken);
+            this.RemoveGestureRecognizer (viewTapped);
+            base.Dispose (disposing);
+        }
     }
 
     public class UcAttachmentBlock : UIView
@@ -120,6 +160,9 @@ namespace NachoClient.iOS
         UIView contentView;
         UILabel mainLabel;
         UIButton chooserButton;
+
+        protected UITapGestureRecognizer toggleCompactTapped;
+        protected UITapGestureRecognizer.Token toggleCompactTappedToken;
 
         public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, nfloat parentWidth, int cellHeight, bool editable)
         {
@@ -179,43 +222,27 @@ namespace NachoClient.iOS
                 Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
                 chooserButton.SizeToFit ();
                 chooserButton.Frame = new CGRect (parentWidth - 43, 0, 40, CELL_HEIGHT);
-                chooserButton.TouchUpInside += (object sender, EventArgs e) => {
-                    if (null != owner) {
-                        owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
-                    }
-                };
+                chooserButton.TouchUpInside += ChooserButtonClicked;
                 contentView.AddSubview (chooserButton);
             }
 
-            // Enabled & disable 'compact view' with a tap
-            var tap = new UITapGestureRecognizer ();
-            tap.AddTarget (() => {
-                isCompact = !isCompact;
-                ConfigureView ();
-            });
-            contentView.AddGestureRecognizer (tap);
+            // Tapping on the view toggles between compact and regular size
+            toggleCompactTapped = new UITapGestureRecognizer ();
+            toggleCompactTappedToken = toggleCompactTapped.AddTarget (ToggleCompactness);
+            contentView.AddGestureRecognizer (toggleCompactTapped);
         }
 
         public void Append (McAttachment attachment)
         {
-            var c = new UcAttachmentCell (attachment, parentWidth, editable);
+            var c = new UcAttachmentCell (attachment, parentWidth, editable, (UcAttachmentCell cell) => {
+                if (null != owner) {
+                    owner.DisplayAttachmentForAttachmentBlock (cell.attachment);
+                }
+            }, (UcAttachmentCell cell) => {
+                Remove (cell);
+            });
             contentView.AddSubview (c);
             list.Add (c);
-
-            var tap = new UITapGestureRecognizer ();
-            tap.AddTarget (() => {
-                if (null != owner) {
-                    owner.DisplayAttachmentForAttachmentBlock (c.attachment);
-                }
-            });
-            c.AddGestureRecognizer (tap);
-
-            if (editable) {
-                var RemoveButton = c.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
-                RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
-                    Remove (c);
-                };
-            }
 
             Layout ();
             ConfigureView ();
@@ -225,6 +252,7 @@ namespace NachoClient.iOS
         {
             list.Remove (c);
             c.RemoveFromSuperview ();
+            c.Dispose ();
 
             Layout ();
             ConfigureView ();
@@ -272,6 +300,30 @@ namespace NachoClient.iOS
 
             contentView.Frame = new CGRect (0, 0, parentWidth, yOffset);
             this.Frame = new CGRect (this.Frame.Location, contentView.Frame.Size);
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            if (null != chooserButton) {
+                chooserButton.TouchUpInside -= ChooserButtonClicked;
+            }
+            toggleCompactTapped.RemoveTarget (toggleCompactTappedToken);
+            contentView.RemoveGestureRecognizer (toggleCompactTapped);
+            owner = null;
+            base.Dispose (disposing);
+        }
+
+        private void ChooserButtonClicked (object sender, EventArgs e)
+        {
+            if (null != owner) {
+                owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
+            }
+        }
+
+        private void ToggleCompactness ()
+        {
+            isCompact = !isCompact;
+            ConfigureView ();
         }
     }
 }

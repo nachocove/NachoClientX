@@ -31,7 +31,6 @@ namespace NachoClient.iOS
         protected static nfloat NOTES_TEXT_VIEW_HEIGHT = UIScreen.MainScreen.Bounds.Height - KEYBOARD_HEIGHT - LINE_OFFSET - 10;
         protected static nfloat TEXT_LINE_HEIGHT = 19.124f;
         protected nfloat NOTES_OFFSET = 0f;
-        protected nfloat keyboardHeight;
 
         protected string originalNote;
         protected string embeddedDateString;

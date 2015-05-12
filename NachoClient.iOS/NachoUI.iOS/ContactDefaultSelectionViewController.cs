@@ -70,7 +70,6 @@ namespace NachoClient.iOS
         protected string newPhoneString;
 
         UIScrollView scrollView;
-        protected nfloat keyboardHeight;
 
         public enum DefaultSelectionType
         {
@@ -84,26 +83,6 @@ namespace NachoClient.iOS
 
         public ContactDefaultSelectionViewController (IntPtr handle) : base (handle)
         {
-
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
-            base.ViewDidAppear (animated);
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
-            }
-            View.EndEditing (true);
-            base.ViewWillDisappear (animated);
         }
 
         protected override void CreateViewHierarchy ()
@@ -667,44 +646,10 @@ namespace NachoClient.iOS
             phoneTextField.Text = newPhoneString; 
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
+        protected override void OnKeyboardChanged ()
         {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             LayoutView ();
         }
 
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
-        }
-
-        private void OnKeyboardNotification (NSNotification notification)
-        {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
     }
 }

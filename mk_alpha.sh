@@ -1,24 +1,33 @@
 #!/bin/sh
 
-# USAGE: mk_alpha.sh [VERSION] [BUILD]
+# USAGE: mk_alpha.sh [BRANCH] [VERSION] [BUILD]
 #
-# For example, mk_alpha.sh 0.8 123 or mk_alpha.sh 1.0.alpha 321
+# For example, mk_alpha.sh master 0.8 123 or mk_alpha.sh throttle_v1.0 1.0.alpha 321
 #
-# VERSION and BUILD are both strings. They preferably have no space. But if they
+# BRANCH, VERSION, and BUILD are all strings. They preferably have no space. But if they
 # do contain spaces, please use ".
 
-if [ $# -ne 2 ]; then
-   echo "USAGE: mk_alpha.sh [VERSION] [BUILD]"
+if [ $# -ne 3 ]; then
+   echo "USAGE: mk_alpha.sh [BRANCH] [VERSION] [BUILD]"
+   echo "\nFor example,"
+   echo "mk_alpha.sh master 0.9 123 - build 0.9(123) off master"
+   echo "mk_alpha.sh throttle_v1.0 1.0.alpha 321 - build 1.0.alpha(321) off throttle_v1.0\n"
    exit 1
 fi
+branch=$1
+version=$2
+build=$3
+tag="v$version""_$build"
 
-# Fetch all git repos
+die () {
+  echo "ERROR: $1"
+  exit 1
+}
+
+# Fetch all git repos and switch to the specific branch
 source repos.sh
-./fetch.py $repos
-
-# Tag all repos
-tag="v$1_$2"
-sh tag.sh "$tag" "$tag"
+./fetch.py $repos || die "fail to fetch all repos!"
+./scripts/repos.py checkout-branch --branch $branch || die "fail to switch to branch $branch"
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
@@ -31,12 +40,12 @@ then
 fi
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="alpha" make release 2>&1 | tee -a $logfile
+VERSION="$version" BUILD="$build" RELEASE="alpha" make release 2>&1 | tee -a $logfile
 if [ $? -eq 0 ]
 then
-    sh push_tag.sh "$tag"
+    # Tag & push tags for all repos
+    ./scripts/repos.py create-tag --version "$version" --build "$build" || die "fail to tag all repos!"
     echo "Build $tag is made."
 else
     echo "Build fails!"
 fi
-

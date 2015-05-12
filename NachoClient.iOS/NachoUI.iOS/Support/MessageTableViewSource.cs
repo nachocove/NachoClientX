@@ -830,27 +830,21 @@ namespace NachoClient.iOS
         public void MultiSelectDelete (UITableView tableView)
         {
             var messageList = GetSelectedMessages ();
-            foreach (var message in messageList) {
-                NcEmailArchiver.Delete (message);
-            }
+            NcEmailArchiver.Delete (messageList);
             MultiSelectCancel (tableView);
         }
 
         public void MultiSelectMove (UITableView tableView, McFolder folder)
         {
             var messageList = GetSelectedMessages ();
-            foreach (var message in messageList) {
-                NcEmailArchiver.Move (message, folder);
-            }
+            NcEmailArchiver.Move (messageList, folder);
             MultiSelectCancel (tableView);
         }
 
         public void MultiSelectArchive (UITableView tableView)
         {
             var messageList = GetSelectedMessages ();
-            foreach (var message in messageList) {
-                NcEmailArchiver.Archive (message);
-            }
+            NcEmailArchiver.Archive (messageList);
             MultiSelectCancel (tableView);
         }
 

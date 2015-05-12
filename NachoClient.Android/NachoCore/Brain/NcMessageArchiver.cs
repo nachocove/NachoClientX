@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
 using System.Linq;
@@ -24,18 +25,25 @@ namespace NachoCore
         public static void Move (McEmailMessage message, McFolder folder)
         {
             RemoveDeferral (message);
-            var src = McFolder.QueryByFolderEntryId<McEmailMessage> (message.AccountId, message.Id).FirstOrDefault ();
-            if (src.Id == folder.Id) {
+            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
+        }
+
+        public static void Move (List<McEmailMessage> messages, McFolder folder)
+        {
+            if (0 == messages.Count) {
                 return;
             }
-            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
+            var Ids = messages.Select (x => x.Id).ToList ();
+            BackEnd.Instance.MoveEmailsCmd (folder.AccountId, Ids, folder.Id);
         }
 
         public static void Move (McEmailMessageThread thread, McFolder folder)
         {
+            var messages = new List<McEmailMessage> ();
             foreach (var message in thread) {
-                Move (message, folder);
+                messages.Add (message);
             }
+            Move (messages, folder);
         }
 
         public static void Archive (McEmailMessage message)
@@ -44,11 +52,24 @@ namespace NachoCore
             Move (message, archiveFolder); // Do not archive messages in Archive folder
         }
 
+        public static void Archive (List<McEmailMessage> messages)
+        {
+            if (0 == messages.Count) {
+                return;
+            }
+            var Ids = messages.Select (x => x.Id).ToList ();
+            int accountId = messages [0].AccountId;
+            McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
+            BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
+        }
+
         public static void Archive (McEmailMessageThread thread)
         {
+            var messages = new List<McEmailMessage> ();
             foreach (var message in thread) {
-                Archive (message);
+                messages.Add (message);
             }
+            Archive (messages);
         }
 
         public static void Delete (McEmailMessage message)
@@ -57,11 +78,23 @@ namespace NachoCore
             BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
         }
 
+        public static void Delete (List<McEmailMessage> messages)
+        {
+            if (0 == messages.Count) {
+                return;
+            }
+            var Ids = messages.Select (x => x.Id).ToList ();
+            int accountId = messages [0].AccountId;
+            BackEnd.Instance.DeleteEmailsCmd (accountId, Ids);
+        }
+
         public static void Delete (McEmailMessageThread thread)
         {
+            var messages = new List<McEmailMessage> ();
             foreach (var message in thread) {
-                Delete (message);
+                messages.Add (message);
             }
+            Delete (messages);
         }
     }
 }
