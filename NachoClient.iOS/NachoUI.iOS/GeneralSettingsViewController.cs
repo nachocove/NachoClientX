@@ -14,19 +14,12 @@ namespace NachoClient.iOS
 {
     public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks
     {
-        public static string PRIVACY_POLICY_KEY = "PRIVACY_POLICY";
-        public static string LICENSE_AGREEMENT_KEY = "LICENSE_AGREEMENT";
 
         protected static readonly nfloat CELL_HEIGHT = 44f;
 
         protected nfloat yOffset;
 
         protected const int ACCOUNT_INFO_VIEW_TAG = 105;
-
-        protected UILabel versionLabel;
-        protected UILabel passwordExpiryLabel;
-        protected UIButton dirtyBackEndButton;
-        protected UILabel dirtyBackEndLabel;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
@@ -35,7 +28,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
             NavigationItem.Title = "Settings";
         }
 
@@ -46,7 +38,6 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
-
         }
 
         public override void ViewDidAppear (bool animated)
@@ -59,10 +50,6 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            // Uncomment to hide <More
-            // if (null != NavigationItem) {
-            //     NavigationItem.SetHidesBackButton (true, false);
-            // }
             Util.ConfigureNavBar (false, this.NavigationController);
 
             yOffset = A.Card_Vertical_Indent;
@@ -73,84 +60,6 @@ namespace NachoClient.iOS
             contentView.AddSubview (accountInfoView);
 
             yOffset = accountInfoView.Frame.Bottom + 30;
-
-            passwordExpiryLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
-
-            passwordExpiryLabel.Font = A.Font_AvenirNextRegular12;
-            passwordExpiryLabel.TextAlignment = UITextAlignment.Left;
-            passwordExpiryLabel.BackgroundColor = UIColor.Clear;
-            passwordExpiryLabel.TextColor = A.Color_NachoGreen;
-            passwordExpiryLabel.Lines = 0;
-            passwordExpiryLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            passwordExpiryLabel.Hidden = true;
-            contentView.AddSubview (passwordExpiryLabel);
-
-            yOffset = passwordExpiryLabel.Frame.Bottom + 10f;
-
-            dirtyBackEndLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
-            dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
-            dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
-            dirtyBackEndLabel.TextAlignment = UITextAlignment.Center;
-            dirtyBackEndLabel.BackgroundColor = UIColor.Clear;
-            dirtyBackEndLabel.TextColor = A.Color_NachoGreen;
-            dirtyBackEndLabel.Lines = 2;
-            dirtyBackEndLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            dirtyBackEndLabel.Hidden = true;
-            contentView.AddSubview (dirtyBackEndLabel);
-
-            yOffset = dirtyBackEndLabel.Frame.Bottom + 5;
-
-            dirtyBackEndButton = new UIButton (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
-            dirtyBackEndButton.Layer.CornerRadius = 4.0f;
-            dirtyBackEndButton.BackgroundColor = A.Color_NachoRed;
-            dirtyBackEndButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            dirtyBackEndButton.SetTitle ("Fix Account", UIControlState.Normal);
-            dirtyBackEndButton.AccessibilityLabel = "Fix account";
-            dirtyBackEndButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-            dirtyBackEndButton.TouchUpInside += FixBackEndButtonClicked; 
-            dirtyBackEndButton.Hidden = true;
-            contentView.AddSubview (dirtyBackEndButton);
-
-            yOffset = dirtyBackEndButton.Frame.Bottom + 5;
-
-            versionLabel = new UILabel (new CGRect (0, View.Frame.Height - 44, View.Frame.Width, 20));
-            versionLabel.Font = A.Font_AvenirNextRegular10;
-            versionLabel.TextColor = A.Color_NachoBlack;
-            versionLabel.TextAlignment = UITextAlignment.Center;
-            versionLabel.Text = "Nacho Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
-            contentView.AddSubview (versionLabel);
-
-//            // Test sending events
-//            var testEmailNotificationButton = new UIButton (UIButtonType.RoundedRect);
-//            testEmailNotificationButton.SetTitle ("Test local email notification", UIControlState.Normal);
-//            testEmailNotificationButton.BackgroundColor = UIColor.Red;
-//            testEmailNotificationButton.Frame = new RectangleF (33, yOffset + 12, 284, 30);
-//            contentView.AddSubview (testEmailNotificationButton);
-//            testEmailNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
-//                AppDelegate.TestScheduleEmailNotification ();
-//            };
-//            yOffset = testEmailNotificationButton.Frame.Bottom;
-//
-//            var testCalendarNotificationButton = new UIButton (UIButtonType.RoundedRect);
-//            testCalendarNotificationButton.SetTitle ("Test local event notification", UIControlState.Normal);
-//            testCalendarNotificationButton.BackgroundColor = UIColor.Red;
-//            testCalendarNotificationButton.Frame = new RectangleF (33, yOffset + 12, 284, 30);
-//            contentView.AddSubview (testCalendarNotificationButton);
-//            testCalendarNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
-//                AppDelegate.TestScheduleCalendarNotification ();
-//            };
-//            yOffset = testCalendarNotificationButton.Frame.Bottom;
-//
-//            var testUserNotificationButton = new UIButton (UIButtonType.RoundedRect);
-//            testUserNotificationButton.SetTitle ("Test user error notification", UIControlState.Normal);
-//            testUserNotificationButton.BackgroundColor = UIColor.Red;
-//            testUserNotificationButton.Frame = new CGRect (33, yOffset + 12, 284, 30);
-//            contentView.AddSubview (testUserNotificationButton);
-//            testUserNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
-//                var flip = !LoginHelpers.DoesBackEndHaveIssues (NcApplication.Instance.Account.Id);
-//                LoginHelpers.SetDoesBackEndHaveIssues (NcApplication.Instance.Account.Id, flip);
-//            };
-//            yOffset = testUserNotificationButton.Frame.Bottom;
         }
 
         protected override void ConfigureAndLayout ()
@@ -161,46 +70,14 @@ namespace NachoClient.iOS
 
             yOffset = accountInfoView.Frame.Bottom + 30;
 
-            DateTime expiry;
-            string rectificationUrl;
-            if (LoginHelpers.PasswordWillExpire (LoginHelpers.GetCurrentAccountId (), out expiry, out rectificationUrl)) {
-                passwordExpiryLabel.Hidden = false;
-                passwordExpiryLabel.Text = String.Format ("Password will expire on {0}.\n{1}", Pretty.ReminderDate (expiry), rectificationUrl ?? "");
-                passwordExpiryLabel.SizeToFit ();
-                ViewFramer.Create (passwordExpiryLabel).Y (yOffset);
-                yOffset += passwordExpiryLabel.Frame.Height + 10;
-            } else {
-                passwordExpiryLabel.Hidden = true;
-            }
-
-            if (LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())) {
-                dirtyBackEndLabel.Hidden = false;
-                dirtyBackEndButton.Hidden = false;
-                dirtyBackEndLabel.SizeToFit ();
-                ViewFramer.Create (dirtyBackEndLabel).Y (yOffset);
-                yOffset += dirtyBackEndLabel.Frame.Height + 10;
-                ViewFramer.Create (dirtyBackEndButton).Y (yOffset);
-                yOffset = yOffset + dirtyBackEndButton.Frame.Height + 10;
-            } else {
-                dirtyBackEndLabel.Hidden = true;
-                dirtyBackEndButton.Hidden = true;
-            }
-                
-            var versionY = NMath.Max (View.Frame.Height - 30, yOffset);
-            ViewFramer.Create (versionLabel).Y (versionY);
-            versionY = versionLabel.Frame.Bottom + 20;
-
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
-            var contentFrame = new CGRect (0, 0, View.Frame.Width, versionY);
+            var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
         }
 
         protected override void Cleanup ()
         {
-            dirtyBackEndButton.TouchUpInside -= FixBackEndButtonClicked;
-            dirtyBackEndButton = null;
-
             var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
             accountInfoView.OnAccountSelected = null;
             accountInfoView.Cleanup ();
@@ -210,27 +87,6 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
-        }
-
-        protected void FixBackEndButtonClicked (object sender, EventArgs e)
-        {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
-
-                if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
-                    UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                    CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                    cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
-                    this.PresentViewController (cvc, true, null);
-                }
-
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                if (BackEndStateEnum.ServerConfWait == backEndState) {
-                    var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                    x.ServConfReqCallback (accountId);
-                }
-            }
         }
 
         protected string GetEmailAddress ()
@@ -245,7 +101,6 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
                 return;
             }
