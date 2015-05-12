@@ -144,6 +144,20 @@ namespace NachoCore.Imap
             return client;
         }
 
+        private IMailFolder CreateFolderInPersonalNamespace(ImapClient client, string name)
+        {
+            IMailFolder folder = null;
+            if (client.PersonalNamespaces != null) {
+                // TODO Not sure if this is the right thing to do. Do we loop over all of them? How do we pick?
+                var personalRoot = client.GetFolder (client.PersonalNamespaces[0].Path);
+                folder = personalRoot.Create (name, true);
+            }
+            if (folder == null) {
+                throw new Exception ("FOO");
+            }
+            return folder;
+        }
+
         private void DoImap ()
         {
             var client = getClient ();
@@ -151,11 +165,14 @@ namespace NachoCore.Imap
                 Log.Error (Log.LOG_EMAIL, "Could not connect to imap");
                 return;
             }
+
+            var folder = CreateFolderInPersonalNamespace (client, "Nacho");
+            folder.Delete ();
             // The Inbox folder is always available on all IMAP servers...
             handleFolder (client.Inbox, FolderAccess.ReadOnly);
 
             foreach (SpecialFolder special in Enum.GetValues(typeof(SpecialFolder)).Cast<SpecialFolder>()) {
-                var folder = client.GetFolder (special);
+                folder = client.GetFolder (special);
                 if (folder == null) {
                     Log.Error (Log.LOG_EMAIL, "Could not get folder {0}", special);
                 } else {
