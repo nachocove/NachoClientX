@@ -152,9 +152,9 @@ namespace NachoClient.iOS
             case CalendarItemEditorAction.create:
                 if (null == item) {
                     if (0001 != startingDate.Year) {
-                        c = CalendarHelper.DefaultMeeting (startingDate, startingDate);
+                        c = CalendarHelper.DefaultMeeting (startingDate);
                     } else {
-                        c = CalendarHelper.DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
+                        c = CalendarHelper.DefaultMeeting ();
                     }
                 } else {
                     c = item;
@@ -166,7 +166,7 @@ namespace NachoClient.iOS
                     calendarItemIsMissing = true;
                     // Create a dummy item so the UI elements can be created and the view can finish
                     // loading before we can throw up the dialog to tell the user about the problem.
-                    c = CalendarHelper.DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
+                    c = CalendarHelper.DefaultMeeting ();
                 } else {
                     c = item;
                 }
