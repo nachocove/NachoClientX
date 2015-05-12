@@ -20,40 +20,42 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        // Create a new McCalendar item.
-        //
-        // The start time and end time parameters are used solely for
-        // the start and end dates, not the meeting time. The meeting
-        // start time is set for Now rounded up to the next 30-minute
-        // boundary.  The meeting end time is 60 minutes later but on
-        // the date given by the end time parameter.
-        //
-        // This behavior is specifically designed to help toggling an
-        // all-day meeting on and off present reasonable results.
+        /// Create a new McCalendar item.  The only fields that are initialized are the start time and end time.
+        /// If no start or end dates are specified, then the events starts on the next half hour and runs for an
+        /// hour.  If start and end dates are specified, then the event starts on the next half hour on that date
+        /// and ends an hour later on the given end date.
         /// </summary>
-        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd)
+        /// <param name="startDate">Start date. Only the date is significant; the time portion is ignored.</param>
+        /// <param name="endDate">End date. Only the date is significant; the time portion is ignored.</param>
+        public static McCalendar DefaultMeeting (DateTime startDate = default (DateTime), DateTime endDate = default (DateTime))
         {
-            var c = new McCalendar ();
+            var cal = new McCalendar ();
 
-            var start = DateTime.Now.AddMinutes (30.0);
-            var localTime = new DateTime (presetStart.Year, presetStart.Month, presetStart.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
-            var utcTime = localTime.ToUniversalTime ();
-            if (start.Minute >= 30.0) {
-                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
+            DateTime localNow = DateTime.Now;
+            DateTime halfHour = new DateTime (localNow.Year, localNow.Month, localNow.Day, localNow.Hour, localNow.Minute >= 30 ? 30 : 0, 0, DateTimeKind.Local);
+            DateTime localStart = halfHour.AddMinutes (30);
+
+            if (default (DateTime) == startDate) {
+                cal.StartTime = localStart.ToUniversalTime ();
             } else {
-                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
+                cal.StartTime = new DateTime (startDate.Year, startDate.Month, startDate.Day, localStart.Hour, localStart.Minute, 0, DateTimeKind.Local).ToUniversalTime ();
             }
 
-            var end = DateTime.Now.AddMinutes (90.0);
-            var endLocalTime = new DateTime (presetEnd.Year, presetEnd.Month, presetEnd.Day, end.Hour, end.Minute, 0, DateTimeKind.Local);
-            var endUtcTime = endLocalTime.ToUniversalTime ();
-            if (end.Minute >= 30.0) {
-                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 30, 0, DateTimeKind.Utc);
+            if (default (DateTime) == endDate) {
+                cal.EndTime = cal.StartTime.AddHours (1);
             } else {
-                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 0, 0, DateTimeKind.Utc);
+                DateTime localEnd = localStart.AddHours (1);
+                DateTime utcEnd = new DateTime (endDate.Year, endDate.Month, endDate.Day, localEnd.Hour, localEnd.Minute, 0, DateTimeKind.Local).ToUniversalTime ();
+                if (utcEnd < cal.StartTime) {
+                    // This can happen if the arguments startDate and endDate are on the same day
+                    // and the local time is between 22:30 and 23:30.  In this case, behave as if
+                    // the endDate had not been specified.
+                    utcEnd = cal.StartTime.AddHours (1);
+                }
+                cal.EndTime = utcEnd;
             }
 
-            return c;
+            return cal;
         }
 
         public static McTask DefaultTask ()
@@ -731,7 +733,7 @@ namespace NachoCore.Utils
 
         public static McCalendar CreateMeeting (McEmailMessage message)
         {
-            var c = DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
+            var c = DefaultMeeting ();
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
