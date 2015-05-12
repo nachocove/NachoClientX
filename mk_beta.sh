@@ -1,24 +1,35 @@
 #!/bin/sh
 
-# USAGE: mk_beta.sh [VERSION] [BUILD]
+# USAGE: mk_beta.sh [BRANCH] [VERSION] [BUILD]
 #
 # For example, mk_beta.sh 0.9 123 or mk_beta.sh 1.0.beta 321
 #
-# VERSION and BUILD are both strings. They preferably have no space. But if they
+# BRANCH, VERSION, and BUILD are all strings. They preferably have no space. But if they
 # do contain spaces, please use ".
 
-if [ $# -ne 2 ]; then
-   echo "USAGE: mk_beta.sh [VERSION] [BUILD]"
+if [ $# -ne 3 ]; then
+   echo "USAGE: mk_beta.sh [BRANCH] [VERSION] [BUILD]"
+   echo "\nFor example,"
+   echo "mk_beta.sh master 0.9 123 - build 0.9(123) off master"
+   echo "mk_beta.sh throttle_v1.0 1.0.beta 321 - build 1.0.beta(321) off throttle_v1.0\n"
    exit 1
 fi
+branch=$1
+version=$2
+build=$3
+tag="v$version""_$build"
 
-# Fetch all git repos
+die () {
+  echo "ERROR: $1"
+  exit 1
+}
+
+# Fetch all git repos and check out the tag.
 source repos.sh
-./fetch.py $repos
+./fetch.py $repos || die "fail to fetch all repos!"
+./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
 
-# Tag all repos
-tag="v$1_$2"
-sh checkout_tag.sh "$tag"
+# Check if the branch matches the given one
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
@@ -31,7 +42,7 @@ then
 fi
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="beta" make release 2>&1 | tee -a $logfile
+VERSION="$version" BUILD="$build" RELEASE="beta" make release 2>&1 | tee -a $logfile
 if [ $? -eq 0 ]
 then
     echo "Beta build $tag is made."
