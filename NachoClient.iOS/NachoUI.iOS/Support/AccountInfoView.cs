@@ -12,16 +12,12 @@ namespace NachoClient.iOS
 {
     public class AccountInfoView : UIView
     {
-        public delegate void AccountSelectedCallback (McAccount account);
-
         protected const float LINE_HEIGHT = 20;
 
         protected const int NAME_LABEL_TAG = 100;
         protected const int EMAIL_ADDRESS_LABEL_TAG = 101;
         protected const int USER_IMAGE_VIEW_TAG = 102;
         protected const int USER_LABEL_VIEW_TAG = 103;
-
-        McAccount account;
 
         public AccountInfoView (CGRect frame) : base (frame)
         {
@@ -74,8 +70,6 @@ namespace NachoClient.iOS
 
         public void Configure (McAccount account)
         {
-            this.account = account;
-
             var userImageView = (UIImageView)this.ViewWithTag (USER_IMAGE_VIEW_TAG);
             var userLabelView = (UILabel)this.ViewWithTag (USER_LABEL_VIEW_TAG);
             var nameLabel = (UILabel)this.ViewWithTag (NAME_LABEL_TAG);
