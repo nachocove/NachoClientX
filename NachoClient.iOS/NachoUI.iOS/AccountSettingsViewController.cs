@@ -24,6 +24,10 @@ namespace NachoClient.iOS
         protected UIBarButtonItem backButton;
         protected UIButton deleteAccountButton;
 
+        protected UILabel passwordExpiryLabel;
+        protected UIButton dirtyBackEndButton;
+        protected UILabel dirtyBackEndLabel;
+
         protected bool textFieldsEditable = false;
 
         protected static readonly nfloat HORIZONTAL_PADDING = 25f;
@@ -332,6 +336,45 @@ namespace NachoClient.iOS
 
             yOffset = additionalSettingsView.Frame.Bottom + 20;
 
+            passwordExpiryLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), TEXTFIELD_HEIGHT));
+
+            passwordExpiryLabel.Font = A.Font_AvenirNextRegular12;
+            passwordExpiryLabel.TextAlignment = UITextAlignment.Left;
+            passwordExpiryLabel.BackgroundColor = UIColor.Clear;
+            passwordExpiryLabel.TextColor = A.Color_NachoGreen;
+            passwordExpiryLabel.Lines = 0;
+            passwordExpiryLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            passwordExpiryLabel.Hidden = true;
+            contentView.AddSubview (passwordExpiryLabel);
+
+            yOffset = passwordExpiryLabel.Frame.Bottom + 10f;
+
+            dirtyBackEndLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), TEXTFIELD_HEIGHT));
+            dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
+            dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
+            dirtyBackEndLabel.TextAlignment = UITextAlignment.Center;
+            dirtyBackEndLabel.BackgroundColor = UIColor.Clear;
+            dirtyBackEndLabel.TextColor = A.Color_NachoGreen;
+            dirtyBackEndLabel.Lines = 2;
+            dirtyBackEndLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            dirtyBackEndLabel.Hidden = true;
+            contentView.AddSubview (dirtyBackEndLabel);
+
+            yOffset = dirtyBackEndLabel.Frame.Bottom + 5;
+
+            dirtyBackEndButton = new UIButton (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), TEXTFIELD_HEIGHT));
+            dirtyBackEndButton.Layer.CornerRadius = 4.0f;
+            dirtyBackEndButton.BackgroundColor = A.Color_NachoRed;
+            dirtyBackEndButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
+            dirtyBackEndButton.SetTitle ("Fix Account", UIControlState.Normal);
+            dirtyBackEndButton.AccessibilityLabel = "Fix account";
+            dirtyBackEndButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+            dirtyBackEndButton.TouchUpInside += FixBackEndButtonClicked; 
+            dirtyBackEndButton.Hidden = true;
+            contentView.AddSubview (dirtyBackEndButton);
+
+            yOffset = dirtyBackEndButton.Frame.Bottom + 5;
+
             UIView deleteAccountView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
             deleteAccountView.BackgroundColor = UIColor.White;
             deleteAccountView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
@@ -499,6 +542,31 @@ namespace NachoClient.iOS
             mailserverTextField.Enabled = textFieldsEditable;
             conferenceTextField.Enabled = textFieldsEditable;
 
+            DateTime expiry;
+            string rectificationUrl;
+            if (LoginHelpers.PasswordWillExpire (LoginHelpers.GetCurrentAccountId (), out expiry, out rectificationUrl)) {
+                passwordExpiryLabel.Hidden = false;
+                passwordExpiryLabel.Text = String.Format ("Password will expire on {0}.\n{1}", Pretty.ReminderDate (expiry), rectificationUrl ?? "");
+                passwordExpiryLabel.SizeToFit ();
+                ViewFramer.Create (passwordExpiryLabel).Y (yOffset);
+                yOffset += passwordExpiryLabel.Frame.Height + 10;
+            } else {
+                passwordExpiryLabel.Hidden = true;
+            }
+
+            if (LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())) {
+                dirtyBackEndLabel.Hidden = false;
+                dirtyBackEndButton.Hidden = false;
+                dirtyBackEndLabel.SizeToFit ();
+                ViewFramer.Create (dirtyBackEndLabel).Y (yOffset);
+                yOffset += dirtyBackEndLabel.Frame.Height + 10;
+                ViewFramer.Create (dirtyBackEndButton).Y (yOffset);
+                yOffset = yOffset + dirtyBackEndButton.Frame.Height + 10;
+            } else {
+                dirtyBackEndLabel.Hidden = true;
+                dirtyBackEndButton.Hidden = true;
+            }
+
             ColorTextFields ();
 
             LayoutView ();
@@ -591,6 +659,9 @@ namespace NachoClient.iOS
             backButton.Clicked -= BackButtonClicked;
             deleteAccountButton.TouchUpInside -= onDeleteAccount;
             FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
+
+            dirtyBackEndButton.TouchUpInside -= FixBackEndButtonClicked;
+            dirtyBackEndButton = null;
 
             cancelButton = null;
             editButton = null;
@@ -988,6 +1059,27 @@ namespace NachoClient.iOS
         protected override void OnKeyboardChanged ()
         {
             LayoutView ();
+        }
+
+        protected void FixBackEndButtonClicked (object sender, EventArgs e)
+        {
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+
+                if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
+                    UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                    CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                    cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
+                    this.PresentViewController (cvc, true, null);
+                }
+
+                int accountId = LoginHelpers.GetCurrentAccountId ();
+                if (BackEndStateEnum.ServerConfWait == backEndState) {
+                    var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                    x.ServConfReqCallback (accountId);
+                }
+            }
         }
 
     }

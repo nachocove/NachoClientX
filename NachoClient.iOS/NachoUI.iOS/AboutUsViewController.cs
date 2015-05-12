@@ -10,6 +10,9 @@ namespace NachoClient.iOS
 {
     public partial class AboutUsViewController : NcUIViewControllerNoLeaks
     {
+        public static string PRIVACY_POLICY_KEY = "PRIVACY_POLICY";
+        public static string LICENSE_AGREEMENT_KEY = "LICENSE_AGREEMENT";
+
         protected static readonly int INDENT = 18;
         protected static readonly int CELL_HEIGHT = 44;
 
@@ -23,6 +26,7 @@ namespace NachoClient.iOS
         protected string key;
         protected bool loadFromWeb;
 
+        UILabel versionLabel;
         UIButton showLicenseButton;
         UIButton showOpenSourceButton;
         UIButton showReleaseNotesButton;
@@ -93,6 +97,15 @@ namespace NachoClient.iOS
             contentView.AddSubview (aboutUsView);
 
             yOffset = aboutUsView.Frame.Bottom + A.Card_Vertical_Indent;
+
+            versionLabel = new UILabel (new CGRect (0, yOffset, View.Frame.Width, 20));
+            versionLabel.Font = A.Font_AvenirNextMedium14;
+            versionLabel.TextColor = A.Color_NachoGreen;
+            versionLabel.TextAlignment = UITextAlignment.Center;
+            versionLabel.Text = "Nacho Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
+            contentView.AddSubview (versionLabel);
+
+            yOffset += versionLabel.Frame.Height + A.Card_Vertical_Indent;
 
             UIView buttonsView = new UIView (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
@@ -166,7 +179,7 @@ namespace NachoClient.iOS
         {
             url = "https://nachocove.com/privacy-policy-text/";
             title = "Privacy Policy";
-            key = GeneralSettingsViewController.PRIVACY_POLICY_KEY;
+            key = PRIVACY_POLICY_KEY;
             loadFromWeb = true;
             PerformSegue ("SegueToSettingsLegal", this);
         }
@@ -191,7 +204,7 @@ namespace NachoClient.iOS
         {
             url = "https://nachocove.com/legal-text/";
             title = "License Agreement";
-            key = GeneralSettingsViewController.LICENSE_AGREEMENT_KEY;
+            key = LICENSE_AGREEMENT_KEY;
             loadFromWeb = true;
             PerformSegue ("SegueToSettingsLegal", this);
         }
@@ -214,6 +227,8 @@ namespace NachoClient.iOS
             showOpenSourceButton = null;
             showReleaseNotesButton = null;
             showPrivacyPolicyButton = null;
+
+            versionLabel = null;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
