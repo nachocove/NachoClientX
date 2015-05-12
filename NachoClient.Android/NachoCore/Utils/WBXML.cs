@@ -547,9 +547,13 @@ namespace NachoCore.Wbxml
         {
             List<byte> byteList = new List<byte> ();
 
-            byte[] valueBytes = System.Text.UTF8Encoding.UTF8.GetBytes (value);
-            byteList.AddRange (EncodeMultiByteInteger (valueBytes.Length));
-            byteList.AddRange (valueBytes);
+            char[] charArray = value.ToCharArray ();
+
+            byteList.AddRange (EncodeMultiByteInteger (charArray.Length));
+
+            for (int i = 0; i < charArray.Length; i++) {
+                byteList.Add ((byte)charArray [i]);
+            }
 
             return byteList.ToArray ();
         }
