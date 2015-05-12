@@ -529,12 +529,7 @@ namespace NachoCore.Wbxml
         {
             List<byte> byteList = new List<byte> ();
 
-            char[] charArray = value.ToCharArray ();
-
-            for (int i = 0; i < charArray.Length; i++) {
-                byteList.Add ((byte)charArray [i]);
-            }
-
+            byteList.AddRange (System.Text.UTF8Encoding.UTF8.GetBytes (value));
             byteList.Add (0x00);
 
             return byteList.ToArray ();
@@ -552,13 +547,9 @@ namespace NachoCore.Wbxml
         {
             List<byte> byteList = new List<byte> ();
 
-            char[] charArray = value.ToCharArray ();
-
-            byteList.AddRange (EncodeMultiByteInteger (charArray.Length));
-
-            for (int i = 0; i < charArray.Length; i++) {
-                byteList.Add ((byte)charArray [i]);
-            }
+            byte[] valueBytes = System.Text.UTF8Encoding.UTF8.GetBytes (value);
+            byteList.AddRange (EncodeMultiByteInteger (valueBytes.Length));
+            byteList.AddRange (valueBytes);
 
             return byteList.ToArray ();
         }
