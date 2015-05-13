@@ -670,9 +670,8 @@ namespace NachoCore
             NcModel.Instance.RunInTransaction (() => {
                 deviceAccount = McAccount.GetDeviceAccount ();
                 if (null == deviceAccount) {
-                    deviceAccount = new McAccount () {
-                        AccountType = McAccount.AccountTypeEnum.Device,
-                    };
+                    deviceAccount = new McAccount ();
+                    deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
                     deviceAccount.Insert ();
                 }
             });
