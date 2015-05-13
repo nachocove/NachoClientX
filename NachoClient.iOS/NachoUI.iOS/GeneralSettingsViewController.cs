@@ -99,6 +99,10 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
+                var h = (SegueHolder)sender;
+                var account = (McAccount)h.value;
+                var vc = (AccountSettingsViewController)segue.DestinationViewController;
+                vc.SetAccount (account);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

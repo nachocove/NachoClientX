@@ -91,7 +91,7 @@ namespace NachoClient.iOS
             var emailAddress = account.EmailAddr;
             emailLabel.Text = emailAddress;
 
-            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), emailAddress);
+            var userImage = Util.ImageOfSender (account.Id, emailAddress);
 
             if (null != userImage) {
                 userImageView.Image = userImage;
@@ -99,7 +99,7 @@ namespace NachoClient.iOS
             } else {
                 int ColorIndex;
                 string Initials;
-                Util.UserMessageField (emailAddress, LoginHelpers.GetCurrentAccountId (), out ColorIndex, out Initials);
+                Util.UserMessageField (emailAddress, account.Id, out ColorIndex, out Initials);
                 userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
                 userLabelView.Text = Initials;
                 userLabelView.Hidden = false;

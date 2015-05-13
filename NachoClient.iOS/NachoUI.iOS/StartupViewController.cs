@@ -29,57 +29,43 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            CreateView ();
-
             if (NcApplication.Instance.IsUp ()) {
-                var segueIdentifer = NextSegue ();
-                Log.Info (Log.LOG_UI, "svc: PerformSegue({0})", segueIdentifer);
-                PerformSegue (NextSegue (), this);
-            } else {
-                StatusIndCallbackIsSet = true;
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+                GetThisPartyStarted ();
+                return;
             }
 
+            if (!NcMigration.IsCompatible ()) {
+                // Display an alert view and wait to get out
+                NcAlertView.ShowMessage (this,
+                    "Incompatible Version",
+                    "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.");
+                return;
+            }
+
+            // We're not up yet.  Wait until we are and then move forward
+            CreateView ();
             this.View.BackgroundColor = A.Color_NachoGreen;
             Util.ConfigureNavBar (false, NavigationController);
         }
 
-        public static string NextSegue ()
+        void GetThisPartyStarted ()
         {
-            bool hasSynced;
-            bool hasCreds;
-            bool hasViewedTutorial;
-            bool hasAutoDCompleted; 
-            string hasOpenedFromEvent;
-            int accountId;
-
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                accountId = LoginHelpers.GetCurrentAccountId ();
-                hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId);
-                hasCreds = LoginHelpers.HasProvidedCreds (accountId);
-                hasAutoDCompleted = LoginHelpers.HasAutoDCompleted (accountId);
-                hasViewedTutorial = LoginHelpers.HasViewedTutorial (accountId);
-                hasOpenedFromEvent = McMutables.Get (McAccount.GetDeviceAccount ().Id, "EventNotif", accountId.ToString ());
-            } else {
-                hasSynced = false;
-                hasCreds = false;
-                hasViewedTutorial = false;
-                hasAutoDCompleted = false;
-                hasOpenedFromEvent = null;
+            if (null == NcApplication.Instance.Account) {
+                // Nothing yet, let's create the first account
+                PerformSegue ("SegueToLaunch", this);
+                return;
             }
 
-            if (!hasCreds) {
-                return "SegueToLaunch";
-            } else if (!hasAutoDCompleted) {
-                return "SegueToAdvancedLogin";
-            } else if (!hasViewedTutorial) {
-                return "SegueToHome";
-            } else if (!hasSynced) {
-                return "SegueToAdvancedLogin";
-            } else if (null != hasOpenedFromEvent) {
-                return "SegueToEventView";
+            if (!LoginHelpers.ReadyToStart ()) {
+                PerformSegue ("SegueToAdvancedLogin", this);
+                return;
+            }
+
+            var eventId = McMutables.Get (McAccount.GetDeviceAccount ().Id, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
+            if (null == eventId) {
+                PerformSegue ("SegueToTabController", this);
             } else {
-                return "SegueToTabController";
+                PerformSegue ("SegueToEventView", this);
             }
         }
 
@@ -111,13 +97,6 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
-            if (!NcMigration.IsCompatible ()) {
-                // Display an alert view and wait to get out
-                NcAlertView.ShowMessage (this, "Incompatible Version",
-                    "Running this older version results in an incompatible downgrade from the previously installed version. Please install a newer version of the app.");
-                return;
-            }
-
             var frame = this.View.Frame;
             var halfHeight = frame.Height / 2.0f;
 
@@ -197,7 +176,7 @@ namespace NachoClient.iOS
                         if (null != MigrationProgressBar) {
                             MigrationProgressBar.Hidden = true;
                         }
-                        PerformSegue (NextSegue (), this);
+                        GetThisPartyStarted ();
                     });
                 } else {
                     ConfigureView ();
@@ -225,7 +204,15 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-
+            if (segue.Identifier == "SegueToLaunch") {
+                return;
+            }
+            if (segue.Identifier == "SegueToAdvancedLogin") {
+                return;
+            }
+            if (segue.Identifier == "SegueToTabController") {
+                return;
+            }
             if (segue.Identifier == "SegueToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var devAccountId = McAccount.GetDeviceAccount ().Id;
@@ -235,25 +222,8 @@ namespace NachoClient.iOS
                 McMutables.Delete (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
                 return;
             }
-            if (segue.Identifier == "SegueToNachoNow") {
-                return;
-            }
-            if (segue.Identifier == "SegueToAdvancedLogin") {
-                return;
-            }
-            if (segue.Identifier == "SegueToHome") {
-                return;
-            }
-            if (segue.Identifier == "SegueToLaunch") {
-                return;
-            }
-            if (segue.Identifier == "SegueToTabController") {
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
-
-
     }
 }

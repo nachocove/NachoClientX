@@ -398,6 +398,8 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration22.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration23.cs" />
     <Compile Include="NachoCore\BackEnd\NcProtoControl.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration24.cs" />
+    <Compile Include="NachoCore\Utils\PermissionManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

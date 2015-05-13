@@ -34,13 +34,14 @@ namespace NachoCore.Model
         {
         }
 
-        public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
+        public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
         {
+            var account = new McAccount () { EmailAddr = emailAddress };
+
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
-                var account = new McAccount () { EmailAddr = emailAddress };
                 account.Signature = "Sent from Nacho Mail";
                 account.AccountService = service;
                 account.DisplayName = McAccount.AccountServiceName (service);
@@ -54,10 +55,9 @@ namespace NachoCore.Model
                     cred.UpdatePassword (password);
                 }
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
-                NcApplication.Instance.Account = account;
-                Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
-                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
+                Telemetry.RecordAccountEmailAddress (account);
             });
+            return account;
         }
 
         // delete the file
@@ -142,31 +142,29 @@ namespace NachoCore.Model
         }
 
         // TODO - this need to handle multiple accounts
-        public void RemoveAccount (bool stopStartServices = true)
+        public void RemoveAccount (int AccountId, bool stopStartServices = true)
         {
-            if (null != NcApplication.Instance.Account) {
-                // mark account is being removed so that we don't do anything else other than the remove till it is completed.
-                NcModel.Instance.WriteRemovingAccountIdToFile (NcApplication.Instance.Account.Id);
+            // mark account is being removed so that we don't do anything else other than the remove till it is completed.
+            NcModel.Instance.WriteRemovingAccountIdToFile (AccountId);
 
-                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
-                BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
+            Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", AccountId);
+            BackEnd.Instance.Stop (AccountId);
 
-                if (stopStartServices) {
-                    NcApplication.Instance.StopClass4Services ();
-                    Log.Info (Log.LOG_UI, "RemoveAccount: StopClass4Services complete");
-                    NcApplication.Instance.StopBasalServices ();
-                    Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
-                }
+            if (stopStartServices) {
+                NcApplication.Instance.StopClass4Services ();
+                Log.Info (Log.LOG_UI, "RemoveAccount: StopClass4Services complete");
+                NcApplication.Instance.StopBasalServices ();
+                Log.Info (Log.LOG_UI, "RemoveAccount: StopBasalServices complete");
+            }
 
-                BackEnd.Instance.RemoveService (NcApplication.Instance.Account.Id);
-                RemoveAccountDBAndFilesForAccountId (NcApplication.Instance.Account.Id);
+            BackEnd.Instance.RemoveService (AccountId);
+            RemoveAccountDBAndFilesForAccountId (AccountId);
 
-                if (stopStartServices) {
-                    NcApplication.Instance.StartBasalServices ();
-                    Log.Info (Log.LOG_UI, "RemoveAccount:  StartBasalServices complete");
-                    NcApplication.Instance.StartClass4Services ();
-                    Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
-                }
+            if (stopStartServices) {
+                NcApplication.Instance.StartBasalServices ();
+                Log.Info (Log.LOG_UI, "RemoveAccount:  StartBasalServices complete");
+                NcApplication.Instance.StartClass4Services ();
+                Log.Info (Log.LOG_UI, "RemoveAccount: StartClass4Services complete");
             }
         }
     }

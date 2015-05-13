@@ -83,6 +83,13 @@ namespace NachoClient.iOS
 
         protected AccountIssue accountIssue = AccountIssue.None;
 
+        McAccount theAccount;
+
+        public void SetAccount (McAccount account)
+        {
+            this.theAccount = account;
+        }
+
         public AccountSettingsViewController (IntPtr handle) : base (handle)
         {
         }
@@ -481,10 +488,9 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            McServer theServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-            McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-            McConference theConference = McConference.QueryByAccountId <McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
+            var theServer = McServer.QueryByAccountId<McServer> (theAccount.Id).FirstOrDefault ();
+            var theCred = McCred.QueryByAccountId<McCred> (theAccount.Id).FirstOrDefault ();
+            var theConference = McConference.QueryByAccountId <McConference> (theAccount.Id).FirstOrDefault ();
 
             var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
             var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
@@ -518,7 +524,7 @@ namespace NachoClient.iOS
 
             if (null == theConference) {
                 theConference = new McConference ();
-                theConference.AccountId = LoginHelpers.GetCurrentAccountId ();
+                theConference.AccountId = theAccount.Id;
                 theConference.DefaultPhoneNumber = "";
                 theConference.Insert ();
             }
@@ -544,7 +550,7 @@ namespace NachoClient.iOS
 
             DateTime expiry;
             string rectificationUrl;
-            if (LoginHelpers.PasswordWillExpire (LoginHelpers.GetCurrentAccountId (), out expiry, out rectificationUrl)) {
+            if (LoginHelpers.PasswordWillExpire (theAccount.Id, out expiry, out rectificationUrl)) {
                 passwordExpiryLabel.Hidden = false;
                 passwordExpiryLabel.Text = String.Format ("Password will expire on {0}.\n{1}", Pretty.ReminderDate (expiry), rectificationUrl ?? "");
                 passwordExpiryLabel.SizeToFit ();
@@ -554,7 +560,7 @@ namespace NachoClient.iOS
                 passwordExpiryLabel.Hidden = true;
             }
 
-            if (LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())) {
+            if (LoginHelpers.DoesBackEndHaveIssues (theAccount.Id)) {
                 dirtyBackEndLabel.Hidden = false;
                 dirtyBackEndButton.Hidden = false;
                 dirtyBackEndLabel.SizeToFit ();
@@ -583,10 +589,16 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "SettingsToNotificationChooser") {
                 var vc = (NotificationChooserViewController)segue.DestinationViewController;
-                McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
                 vc.Setup (this, theAccount.Id, theAccount.NotificationConfiguration);
                 return;
             }
+            if (segue.Identifier == "SegueToSignatureEdit") {
+                var vc = (SignatureEditViewController)segue.DestinationViewController;
+                vc.SetAccountId (theAccount.Id);
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         protected void ColorTextFields ()
@@ -723,7 +735,7 @@ namespace NachoClient.iOS
             testCred.Username = (usernameTextField.Text);
 
             // TODO: Add more precise error messages based on NcResult
-            if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred).isOK ()) {
+            if (!BackEnd.Instance.ValidateConfig (theAccount.Id, testServer, testCred).isOK ()) {
                 NcAlertView.Show (this, "Network Error",
                     "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?",
                     new NcAlertAction ("Save", () => {
@@ -813,7 +825,7 @@ namespace NachoClient.iOS
 
         protected void CancelValidationButtonClicked (object sender, EventArgs e)
         {
-            BackEnd.Instance.CancelValidateConfig (LoginHelpers.GetCurrentAccountId ());
+            BackEnd.Instance.CancelValidateConfig (theAccount.Id);
 
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             HideStatusView ();
@@ -829,10 +841,9 @@ namespace NachoClient.iOS
 
         protected void CaptureOriginalSettings ()
         {
-            McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            McServer theServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-            McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-            McConference theConference = McConference.QueryByAccountId<McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
+            McServer theServer = McServer.QueryByAccountId<McServer> (theAccount.Id).FirstOrDefault ();
+            McCred theCred = McCred.QueryByAccountId<McCred> (theAccount.Id).FirstOrDefault ();
+            McConference theConference = McConference.QueryByAccountId<McConference> (theAccount.Id).FirstOrDefault ();
 
             if (null != theAccount.DisplayName) {
                 originalAccountNameValue = theAccount.DisplayName;
@@ -869,10 +880,10 @@ namespace NachoClient.iOS
         {
             NcActionSheet.Show (DaysToSyncBlock, this,
                 new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
-                    UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
+                    UpdateDaysToSync (theAccount.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
                 }),
                 new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
-                    UpdateDaysToSync (LoginHelpers.GetCurrentAccountId (), NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
+                    UpdateDaysToSync (theAccount.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
                 }),
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
             );
@@ -888,26 +899,23 @@ namespace NachoClient.iOS
 
         protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
         {
-            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            account.FastNotificationEnabled = FastNotificationSwitch.On;
-            account.Update ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
+            theAccount.FastNotificationEnabled = FastNotificationSwitch.On;
+            theAccount.Update ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (theAccount, NcResult.SubKindEnum.Info_FastNotificationChanged);
         }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
-            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            account.DaysToSyncEmail = code;
-            account.Update ();
+            theAccount.DaysToSyncEmail = code;
+            theAccount.Update ();
         }
 
         public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
         {
             NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
-            var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            account.NotificationConfiguration = choice;
-            account.Update ();
+            theAccount.NotificationConfiguration = choice;
+            theAccount.Update ();
         }
 
         protected void HandleAccountIssue ()
@@ -975,10 +983,9 @@ namespace NachoClient.iOS
                 var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
                 var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
 
-                McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                McServer theServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-                McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-                McConference theConference = McConference.QueryByAccountId <McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
+                var theServer = McServer.QueryByAccountId<McServer> (theAccount.Id).FirstOrDefault ();
+                var theCred = McCred.QueryByAccountId<McCred> (theAccount.Id).FirstOrDefault ();
+                var theConference = McConference.QueryByAccountId <McConference> (theAccount.Id).FirstOrDefault ();
 
                 theAccount.DisplayName = accountNameTextField.Text;
                 theAccount.EmailAddr = emailTextField.Text;
@@ -1026,7 +1033,7 @@ namespace NachoClient.iOS
             editButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
             Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount ();
+                NcAccountHandler.Instance.RemoveAccount (theAccount.Id);
                 InvokeOnMainThread (() => {
                     backButton.Enabled = true;
                     editButton.Enabled = true;
@@ -1063,22 +1070,19 @@ namespace NachoClient.iOS
 
         protected void FixBackEndButtonClicked (object sender, EventArgs e)
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Id);
 
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+            if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
+                UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                cvc.SetAccountId (theAccount.Id);
+                cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
+                this.PresentViewController (cvc, true, null);
+            }
 
-                if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
-                    UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                    CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                    cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
-                    this.PresentViewController (cvc, true, null);
-                }
-
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                if (BackEndStateEnum.ServerConfWait == backEndState) {
-                    var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                    x.ServConfReqCallback (accountId);
-                }
+            if (BackEndStateEnum.ServerConfWait == backEndState) {
+                var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                x.ServConfReqCallback (theAccount.Id);
             }
         }
 
