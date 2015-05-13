@@ -11,8 +11,10 @@ namespace NachoCore.Model
     {
         public enum AccountTypeEnum
         {
+            // Exchange ActiveSync.
             Exchange,
             Device,
+            IMAP_SMTP,
         };
 
         public enum AccountServiceEnum
@@ -22,6 +24,17 @@ namespace NachoCore.Model
             HotmailExchange,
             OutlookExchange,
             GoogleExchange,
+            GoogleDefault,
+        };
+
+        public enum AccountCapabilityEnum
+        {
+            EmailReader = (1 << 0),
+            EmailSender = (1 << 1),
+            CalReader = (1 << 2),
+            CalWriter = (1 << 3),
+            ContactReader = (1 << 4),
+            ContactWriter = (1 << 5),
         };
 
         // This type is stored in the db; add to the end
@@ -50,10 +63,60 @@ namespace NachoCore.Model
             NotificationConfiguration = DefaultNotificationConfiguration;
             FastNotificationEnabled = true;
         }
+        // This is set as a side effect of setting AccountService. 
+        public AccountTypeEnum AccountType {
+            get; 
+            set {
+                switch (value) {
+                case AccountTypeEnum.Exchange:
+                    AccountCapability = (
+                        AccountCapabilityEnum.EmailReader |
+                        AccountCapabilityEnum.EmailSender |
+                        AccountCapabilityEnum.CalReader |
+                        AccountCapabilityEnum.CalWriter |
+                        AccountCapabilityEnum.ContactReader |
+                        AccountCapabilityEnum.ContactWriter);
+                    break;
+                case AccountTypeEnum.Device:
+                    // FIXME - need to support full contact/cal access thru BE.
+                    AccountCapability = (
+                        AccountCapabilityEnum.CalReader |
+                        AccountCapabilityEnum.ContactReader);
+                    break;
+                case AccountTypeEnum.IMAP_SMTP:
+                    AccountCapability = (
+                        AccountCapabilityEnum.EmailReader |
+                        AccountCapabilityEnum.EmailSender);
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            }
+        }
 
-        public AccountTypeEnum AccountType { get; set; }
+        public AccountServiceEnum AccountService {
+            get; 
+            set { 
+                switch (value) {
+                case AccountServiceEnum.GoogleDefault:
+                    AccountType = AccountTypeEnum.IMAP_SMTP;
+                    Protocols = (
+                        McProtocolState.ProtocolEnum.IMAP |
+                        McProtocolState.ProtocolEnum.SMTP);
+                    break;
+                case AccountServiceEnum.Exchange:
+                    AccountType = AccountTypeEnum.Exchange;
+                    Protocols = McProtocolState.ProtocolEnum.ActiveSync;
+                    break;
+                }
+            }
+        }  
+        // This is set as a side effect of setting AccountService. 
+        public AccountCapabilityEnum AccountCapability { get; private set; }
 
-        public AccountServiceEnum AccountService { get; set; }
+        // The protocol(s) - possibly more than one - required by this account.
+        // This is set as a side effect of setting AccountService. 
+        public McProtocolState.ProtocolEnum Protocols { get; private set; }
 
         public string EmailAddr { get; set; }
 
