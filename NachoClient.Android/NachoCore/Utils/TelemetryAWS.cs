@@ -36,14 +36,9 @@ namespace NachoCore.Utils
         private static Table UiTable;
         private static Table WbxmlTable;
 
-        private static string _ClientId;
-
         private static string ClientId {
             get {
-                return _ClientId;
-            }
-            set {
-                _ClientId = value;
+                return Device.Instance.Identity ();
             }
         }
 
@@ -81,34 +76,16 @@ namespace NachoCore.Utils
             // If it does not exist, we save the current Cognito id into the file. After
             // the 1st time, we use the id in the file as the client id. Note that we 
             // still need to talk to Cognito in order to get the session token.
-            var clientIdFile = Path.Combine (NcModel.Instance.GetDataDirPath (), "client_id");
-            if (File.Exists (clientIdFile)) {
-                // Get the client id from the file
-                UpdateClientIdFromFile (clientIdFile);
+            if (UserIdFile.SharedInstance.Exists ()) {
                 FreshInstall = false;
             } else {
                 // Save the current Cognito id as client id
                 Retry (() => {
-                    if (NcApplication.Instance.ClientId != null) {
-                        ClientId = NcApplication.Instance.ClientId;
-                    } else {
-                        ClientId = credentials.GetIdentityId ();
-                        NcApplication.Instance.ClientId = _ClientId;
-                    }
-                    WriteClientIdToFile (ClientId);
+                    NcApplication.Instance.UserId = credentials.GetIdentityId ();
                 });
                 FreshInstall = true;
             }
-
-            // Notify others (e.g. push assist SM) about the client id
-            var result = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken);
-            result.Value = ClientId;
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Status = result,
-            });
-            // start listening to changes in NcApplication
-            NcApplication.Instance.StatusIndEvent += TokensWatcher;
-
+                
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);
 
@@ -120,52 +97,6 @@ namespace NachoCore.Utils
                 UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
                 WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
             });
-        }
-
-        private void TokensWatcher (object sender, EventArgs ea)
-        {
-            StatusIndEventArgs siea = (StatusIndEventArgs)ea;
-            switch (siea.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_PushAssistClientToken:
-                if (null == siea.Status.Value) {
-                    // do nothing now
-                } else {
-                    // new ClientId 
-                    string userId = (string)siea.Status.Value;
-                    if (ClientId != userId) {
-                        ClientId = userId;
-                        // replace ClientId in client_id File. We can remove this file if there aren't any existing install concerns.
-                        WriteClientIdToFile (ClientId);
-                    }
-                }
-                break;
-            }
-        }
-
-        private void UpdateClientIdFromFile (string clientIdFile)
-        {
-            using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {
-                using (var reader = new StreamReader (stream)) {
-                    ClientId = reader.ReadLine ();
-                }
-            }
-            string cloudUserId = CloudHandler.Instance.GetUserId ();
-            if ((cloudUserId != null) && (cloudUserId != ClientId)) {
-                ClientId = cloudUserId;
-                // replace ClientId in client_id File.
-                WriteClientIdToFile (ClientId);
-            }
-        }
-
-        public void WriteClientIdToFile (string ClientId)
-        {
-            var clientIdFile = Path.Combine (NcModel.Instance.GetDataDirPath (), "client_id");
-            Console.WriteLine ("Writing ClientId in client_id file : {0}", ClientId);
-            using (var stream = new FileStream (clientIdFile, FileMode.Create, FileAccess.Write)) {
-                using (var writer = new StreamWriter (stream)) {
-                    writer.WriteLine (ClientId);
-                }
-            }
         }
 
         private void Retry (Action action)
@@ -280,7 +211,7 @@ namespace NachoCore.Utils
             } else {
                 anEvent ["id"] = tEvent.ServerId;
             }
-            anEvent ["client"] = GetUserName ();
+            anEvent ["client"] = ClientId;
             anEvent ["timestamp"] = tEvent.Timestamp.Ticks;
             return anEvent;
         }
@@ -376,7 +307,7 @@ namespace NachoCore.Utils
         {
             var anEvent = new Document ();
             anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
-            anEvent ["client"] = GetUserName ();
+            anEvent ["client"] = ClientId;
             anEvent ["timestamp"] = DateTime.UtcNow.Ticks;
             anEvent ["os_type"] = Device.Instance.OsType ();
             anEvent ["os_version"] = Device.Instance.OsVersion ();
@@ -419,7 +350,7 @@ namespace NachoCore.Utils
         {
             var anEvent = InitializeEvent (tEvent);
             anEvent ["event_type"] = "SUPPORT";
-            anEvent ["client"] = GetUserName ();
+            anEvent ["client"] = ClientId;
             anEvent ["support"] = tEvent.Support;
             return anEvent;
         }

@@ -929,16 +929,6 @@ namespace NachoCore.Utils
                 Log.Info (Log.LOG_UTILS, "Telemetry task exits");
             }
         }
-
-        public string GetUserName ()
-        {
-            if (BackEnd != null) {
-                return BackEnd.GetUserName ();
-            } else {
-                Log.Info (Log.LOG_LIFECYCLE, "Crash reporting has not been started but user name (clientId) was requested from BackEnd");
-                return null;
-            }
-        }
     }
 
     public interface ITelemetryBE

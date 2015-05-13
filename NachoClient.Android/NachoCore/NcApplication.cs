@@ -19,6 +19,67 @@ using System.Runtime.CompilerServices;
 
 namespace NachoCore
 {
+
+    public class UserIdFile
+    {
+        private const string FileName = "user_id";
+        private const string OldFileName = "client_id";
+
+        public string FilePath { get; protected set; }
+
+        private static UserIdFile _Instance;
+
+        public static UserIdFile SharedInstance {
+            get {
+                if (null == _Instance) {
+                    // Check if there is a file with the old file name. Rename it
+                    var dirPath = NcApplication.GetDataDirPath ();
+                    var oldFilePath = Path.Combine (dirPath, OldFileName);
+                    var newFilePath = Path.Combine (dirPath, FileName);
+                    if (File.Exists (oldFilePath)) {
+                        File.Move (oldFilePath, newFilePath);
+                    }
+
+                    _Instance = new UserIdFile ();
+                }
+                return _Instance;
+            }
+        }
+
+        public UserIdFile ()
+        {
+            FilePath = Path.Combine (NcApplication.GetDataDirPath (), FileName);
+        }
+
+        public bool Exists ()
+        {
+            return File.Exists (FilePath);
+        }
+
+        public string Read ()
+        {
+            try {
+                using (var stream = new FileStream (FilePath, FileMode.Open, FileAccess.Read)) {
+                    using (var reader = new StreamReader (stream)) {
+                        return reader.ReadLine ();
+                    }
+                }
+            } catch (IOException) {
+                return null;
+            }
+        }
+
+        public void Write (string userId)
+        {
+            Console.WriteLine ("Writing ClientId in {0} file : {1}", FileName, userId);
+            using (var stream = new FileStream (FilePath, FileMode.Create, FileAccess.Write)) {
+                using (var writer = new StreamWriter (stream)) {
+                    writer.WriteLine (userId);
+                }
+            }
+        }
+    }
+
     // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
     // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
     // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD.
@@ -28,6 +89,7 @@ namespace NachoCore
         private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
         private const int KSafeModeMaxSeconds = 120;
+        private const string KDataPathSegment = "Data";
 
         public enum ExecutionContextEnum
         {
@@ -45,6 +107,8 @@ namespace NachoCore
 
         private bool SafeMode = false;
         private bool SafeModeStarted = false;
+
+        private static string Documents;
 
         public double UpTimeSec { 
             get {
@@ -101,23 +165,24 @@ namespace NachoCore
 
         // Client Id is a string that uniquely identifies a NachoMail client on
         // all cloud servers (telemetry, pinger, etc.)
-        private string _ClientId;
+        private string _UserId;
+
+        public string UserId {
+            get {
+                return _UserId;
+            }
+            set {
+                if (value != _UserId) {
+                    _UserId = value;
+                    UserIdFile.SharedInstance.Write (_UserId);
+                    InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_UserIdChanged, _UserId);
+                }
+            }
+        }
 
         public string ClientId {
             get {
-                return _ClientId;
-            }
-            set {
-                bool same = (value == _ClientId);
-                _ClientId = value;
-                if (!same) {
-                    var status = new StatusIndEventArgs () {
-                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken),
-                        Account = ConstMcAccount.NotAccountSpecific,
-                    };
-                    status.Status.Value = value;
-                    InvokeStatusIndEvent (status);
-                }
+                return Device.Instance.Identity ();
             }
         }
 
@@ -227,6 +292,15 @@ namespace NachoCore
             return false;
         }
 
+        private void UpdateUserIdFromFile (string clientIdFile)
+        {
+            UserId = UserIdFile.SharedInstance.Read ();
+            string cloudUserId = CloudHandler.Instance.GetUserId ();
+            if ((cloudUserId != null) && (cloudUserId != UserId)) {
+                UserId = cloudUserId;
+            }
+        }
+
         private NcApplication ()
         {
             // SetMaxThreads needs to be called before SetMinThreads, because on some devices (such as
@@ -264,6 +338,9 @@ namespace NachoCore
             };
             UiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 
+            if (UserIdFile.SharedInstance.Exists ()) {
+                UpdateUserIdFromFile (UserIdFile.SharedInstance.FilePath);
+            }
             StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
 
@@ -340,9 +417,9 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             CloudHandler.Instance.Start ();
-            if (ClientId == null) {
+            if (UserId == null) {
                 // this can be null if cloud is not accessible or if this the first time
-                ClientId = CloudHandler.Instance.GetUserId (); 
+                UserId = CloudHandler.Instance.GetUserId (); 
             }
             Telemetry.StartService ();
             Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
@@ -666,12 +743,15 @@ namespace NachoCore
             }
         }
 
-        public void InvokeStatusIndEventInfo (McAccount account, NcResult.SubKindEnum subKind)
+        public void InvokeStatusIndEventInfo (McAccount account, NcResult.SubKindEnum subKind, object value = null)
         {
             var siea = new StatusIndEventArgs () {
                 Account = (null != account ? account : ConstMcAccount.NotAccountSpecific),
                 Status = NcResult.Info (subKind)
             };
+            if (null != value) {
+                siea.Status.Value = value;
+            }
             InvokeStatusIndEvent (siea);
         }
 
@@ -900,6 +980,27 @@ namespace NachoCore
                 message.Update ();
             }
         }
+
+        public static string GetDocumentsPath ()
+        {
+            if (Documents == null) {
+                Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            }
+            return Documents;
+        }
+
+        public static string GetDataDirPath ()
+        {
+            if (Documents == null) {
+                GetDocumentsPath ();
+            }
+            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
+            if (!Directory.Exists (dataDirPath)) {
+                Directory.CreateDirectory (dataDirPath);
+            }
+            return dataDirPath;
+        }
+
     }
 }
 
