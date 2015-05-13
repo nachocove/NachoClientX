@@ -157,7 +157,6 @@
     <Compile Include="NachoCore\BackEnd\IBackEnd.cs" />
     <Compile Include="NachoCore\BackEnd\IBackEndOwner.cs" />
     <Compile Include="NachoCore\BackEnd\IProtoControlOwner.cs" />
-    <Compile Include="NachoCore\BackEnd\ProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\StatusIndEventArgs.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\NcCommStatus.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommStatus\NcCommStatusServerEventArgs.cs" />
@@ -399,6 +398,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration22.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration23.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapExample.cs" />
+    <Compile Include="NachoCore\BackEnd\NcProtoControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -564,6 +564,7 @@
     <Folder Include="NachoCore\Index\" />
     <Folder Include="NachoCore\Model\Migration\" />
     <Folder Include="NachoCore\BackEnd\IMAP\" />
+    <Folder Include="NachoCore\BackEnd\SMTP\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

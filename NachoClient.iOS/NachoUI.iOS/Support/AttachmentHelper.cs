@@ -225,7 +225,6 @@ namespace NachoClient.iOS
 
             default:
                 throw new Exception ("Invalid image orientation");
-                break;
             }
 
             UIGraphics.BeginImageContext (bounds.Size);

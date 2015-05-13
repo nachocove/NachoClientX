@@ -167,12 +167,14 @@ namespace NachoCore.Utils
             Info_ServerStatus,
             Info_NetworkStatus,
             Info_PushAssistDeviceToken,
+            // This is now obsolete. ClientToken is the device id which is always available.
             Info_PushAssistClientToken,
             Info_PushAssistArmed,
             Info_UserInterventionFlagChanged,
             Info_SystemTimeZoneChanged,
             Info_FastNotificationChanged,
             Info_McCredPasswordChanged,
+            Info_UserIdChanged,
         };
 
         public enum WhyEnum

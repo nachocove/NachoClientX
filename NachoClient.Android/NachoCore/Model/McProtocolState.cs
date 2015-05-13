@@ -4,7 +4,12 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    // NOTE: eventually this will be a base class, with an active-sync sub-class.
+    // We choose to have a single table rather than a table per-protocol. So we use a prefix to 
+    // differentiate between variables that belong to each protocol. We assume that there will be 
+    // only one ProtoControl active for a given protocol per account.
+    // "As" is ActiveSync.
+    // "Imap" is IMAP.
+    // "Smtp" is SMTP.
     public class McProtocolState : McAbstrObjectPerAcc
     {
         public const string AsSyncKey_Initial = "0";

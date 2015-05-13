@@ -174,18 +174,6 @@ namespace Test.iOS
             MockNcCommStatus.Instance = null;
         }
 
-        private class HttpOpEvt : SmEvt
-        {
-            new public enum E : uint
-            {
-                Cancel = (SmEvt.E.Last + 1),
-                Delay,
-                Timeout,
-                Rephrase,
-                Final,
-            };
-        }
-
         static string WBXMLContentType = "application/vnd.ms-sync.wbxml";
 
         [Test]
@@ -795,7 +783,28 @@ namespace Test.iOS
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
                 LocalStateType = typeof(PhonySt),
                 TransTable = new [] {
+                    // the "start" state is used for tests where we expect not to fail.
                     new Node {State = (uint)St.Start,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetCred,
+                            (uint)AsProtoControl.CtlEvt.E.GetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.GetCertOk,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkYes,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkNo,
+                            (uint)AsProtoControl.CtlEvt.E.ReFSync,
+                            (uint)AsProtoControl.CtlEvt.E.PkFetch,
+                            (uint)AsProtoControl.CtlEvt.E.PkHotQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkPing,
+                            (uint)AsProtoControl.CtlEvt.E.PkQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkWait,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { 
                                 Event = (uint)SmEvt.E.Launch, 
@@ -825,39 +834,65 @@ namespace Test.iOS
                                     action();
                                 },
                                 State = (uint)St.Start },
-                            new Trans {
-                                Event = (uint)HttpOpEvt.E.Rephrase,
-                                Act = delegate () {
-                                    action();
-                                },
-                                State = (uint)St.Start },
                         }
                     },
+                    // The "FailureTests" state is used for tests where the HTTP operation fails in some manner.
                     new Node {State = (uint)PhonySt.FailureTests,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Launch,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetCred,
+                            (uint)AsProtoControl.CtlEvt.E.GetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.GetCertOk,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkYes,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkNo,
+                            (uint)AsProtoControl.CtlEvt.E.ReFSync,
+                            (uint)AsProtoControl.CtlEvt.E.PkFetch,
+                            (uint)AsProtoControl.CtlEvt.E.PkHotQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkPing,
+                            (uint)AsProtoControl.CtlEvt.E.PkQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkWait,
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
                                     action();
                                 },
-                                State = (uint)St.Start },
+                                State = (uint)St.Start,
+                            },
                             new Trans {
                                 Event = (uint)SmEvt.E.Success,
                                 Act = delegate () {
                                     errorIndicator ("Unexpected Success event");
                                 },
-                                State = (uint)St.Start },
+                                State = (uint)St.Start,
+                            },
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
                                     action();
                                 },
-                                State = (uint)St.Start },
+                                State = (uint)St.Start,
+                            },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                Act = delegate () {
+                                    action ();
+                                },
+                                State = (uint)St.Start,
+                            },
                         }
                     },
                 }
             };
-
+            sm.Validate ();
             return sm;
         }
 

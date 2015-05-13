@@ -33,7 +33,7 @@ source repos.sh
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile="alpha_build.$tag.$timestamp.log"
 make -f build.mk 2>&1 | tee $logfile
-if [ $? -neq 0 ]
+if [ $? -ne 0 ]
 then
     echo "Fail to build auxillary packages"
     exit 1

@@ -943,15 +943,6 @@ namespace NachoCore
                     }
                 }, "PushAssistDeviceToken");
                 break;
-            case NcResult.SubKindEnum.Info_PushAssistClientToken:
-                NcTask.Run (() => {
-                    if (null == siea.Status.Value) {
-                        PostEvent (PAEvt.E.CliTokLoss, "CLI_TOK_LOST");
-                    } else {
-                        DoGetCliTok ();
-                    }
-                }, "PushAssistClientToken");
-                break;
             case NcResult.SubKindEnum.Info_FastNotificationChanged:
                 if (Owner.Account.Id == siea.Account.Id) {
                     NcTask.Run (() => {

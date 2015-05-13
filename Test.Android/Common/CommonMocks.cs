@@ -210,7 +210,7 @@ namespace Test.iOS
         public static NcResult Status { get; set; }
 
         // Use these to check which error code was posted
-        public void StatusInd (ProtoControl sender, NcResult status)
+        public void StatusInd (NcProtoControl sender, NcResult status)
         {
             if (StatusIndCallback != null) {
                 StatusIndCallback (status);
@@ -218,7 +218,7 @@ namespace Test.iOS
             Status = status;
         }
 
-        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+        public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
         {
             if (StatusIndCallback != null) {
                 StatusIndCallback (status);
@@ -232,23 +232,23 @@ namespace Test.iOS
         }
 
         // we aren't interested in these
-        public void CredReq (ProtoControl sender)
+        public void CredReq (NcProtoControl sender)
         {
         }
 
-        public void ServConfReq (ProtoControl sender, object arg)
+        public void ServConfReq (NcProtoControl sender, object arg)
         {
         }
 
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+        public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate)
         {
         }
 
-        public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+        public void SearchContactsResp (NcProtoControl sender, string prefix, string token)
         {
         }
 
-        public void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend)
+        public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
         {
         }
     }

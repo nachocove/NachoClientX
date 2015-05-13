@@ -195,7 +195,7 @@ namespace NachoPlatform
         {
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
             switch (siea.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_PushAssistClientToken:
+            case NcResult.SubKindEnum.Info_UserIdChanged:
                 if (null == siea.Status.Value) {
                     // do nothing now
                 } else {
@@ -207,7 +207,7 @@ namespace NachoPlatform
                     } else if (newUserId != userId) {
                         if (CloudInstallDateEarlierThanLocal ()) {
                             Log.Info (Log.LOG_SYS, "CloudHandler: Earlier UserId exists in cloud. Replacing local UserId {0} with {1}", NcApplication.Instance.ClientId, userId);
-                            NcApplication.Instance.ClientId = userId;
+                            NcApplication.Instance.UserId = userId;
                         }
                     }
                 }
@@ -239,7 +239,7 @@ namespace NachoPlatform
                         if ((userId != null) && (userId != NcApplication.Instance.ClientId)) {
                             if (CloudInstallDateEarlierThanLocal ()) {
                                 Log.Info (Log.LOG_SYS, "CloudHandler: Replacing localUserId {0} with {1} from Cloud", NcApplication.Instance.ClientId, userId);
-                                NcApplication.Instance.ClientId = userId;
+                                NcApplication.Instance.UserId = userId;
                             }
                         }
                     }

@@ -62,14 +62,11 @@ namespace NachoCore.Model
 
     public sealed class NcModel
     {
-        private string Documents;
-
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
         public bool FreshInstall { private set; get; }
 
-        private const string KDataPathSegment = "Data";
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
         private const string KRemovingAccountLockFile = "removing_account_lockfile";
@@ -141,24 +138,9 @@ namespace NachoCore.Model
             }
         }
 
-        public string GetDocumentsPath ()
-        {
-            if (Documents == null) {
-                Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            }
-            return Documents;
-        }
-
         public string GetDataDirPath ()
         {
-            if (Documents == null) {
-                GetDocumentsPath ();
-            }
-            string dataDirPath = Path.Combine (Documents, KDataPathSegment);
-            if (!Directory.Exists (dataDirPath)) {
-                Directory.CreateDirectory (dataDirPath);
-            }
-            return dataDirPath;
+            return NcApplication.GetDataDirPath ();
         }
 
         public string GetFileDirPath (int accountId, string segment)
