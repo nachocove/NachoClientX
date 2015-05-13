@@ -433,7 +433,7 @@ namespace NachoCore.Model
             return false;
         }
 
-        public McPending ResolveAsSuccess (ProtoControl control)
+        public McPending ResolveAsSuccess (NcProtoControl control)
         {
             // Pick the default SubKind based on the Operation.
             // All Sync-command Ops must be covered. Non-Sync-commands need not be covered here.
@@ -494,7 +494,7 @@ namespace NachoCore.Model
             return ResolveAsSuccess (control, result);
         }
 
-        public McPending ResolveAsSuccess (ProtoControl control, NcResult result)
+        public McPending ResolveAsSuccess (NcProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsSuccess.
             var retval = this;
@@ -609,7 +609,7 @@ namespace NachoCore.Model
             attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
         }
 
-        public McPending ResolveAsHardFail (ProtoControl control, NcResult result)
+        public McPending ResolveAsHardFail (NcProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
             var retval = this;
@@ -724,7 +724,7 @@ namespace NachoCore.Model
         }
 
         // PUBLIC FOR TEST USE ONLY. OTHERWISE CONSIDER IT PRIVATE.
-        public bool UnblockSuccessors (ProtoControl control, StateEnum toState)
+        public bool UnblockSuccessors (NcProtoControl control, StateEnum toState)
         {
             var successors = QuerySuccessors (AccountId, Id);
             McPendDep.DeleteAllSucc (Id);
@@ -808,13 +808,13 @@ namespace NachoCore.Model
             return (0 != makeEligible.Count);
         }
         // register for status-ind, look for FSync and Sync success.
-        public McPending ResolveAsHardFail (ProtoControl control, NcResult.WhyEnum why)
+        public McPending ResolveAsHardFail (NcProtoControl control, NcResult.WhyEnum why)
         {
             var result = NcResult.Error (DefaultErrorSubKind (), why);
             return ResolveAsHardFail (control, result);
         }
 
-        public McPending ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
+        public McPending ResolveAsDeferred (NcProtoControl control, DeferredEnum reason, NcResult onFail)
         {
             NcAssert.True (StateEnum.Dispatched == State);
             // Added check in case of any bug causing underflow.
@@ -832,26 +832,26 @@ namespace NachoCore.Model
             }
         }
 
-        public void ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult onFail)
+        public void ResolveAsDeferred (NcProtoControl control, DateTime eligibleAfter, NcResult onFail)
         {
             DeferredReason = DeferredEnum.UntilTime;
             DeferredUntilTime = eligibleAfter;
             ResolveAsDeferred (control, DeferredEnum.UntilTime, onFail);
         }
 
-        public void ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why)
+        public void ResolveAsDeferred (NcProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why)
         {
             var result = NcResult.Error (DefaultErrorSubKind (), why);
             ResolveAsDeferred (control, eligibleAfter, result);
         }
 
-        public void ResolveAsDeferredForce (ProtoControl control)
+        public void ResolveAsDeferredForce (NcProtoControl control)
         {
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferredForce:{0}", Id);
             ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.NotSpecified);
         }
 
-        public McPending ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
+        public McPending ResolveAsUserBlocked (NcProtoControl control, BlockReasonEnum reason, NcResult result)
         {
             // This is the designated ResolveAsUserBlocked.
             NcAssert.True (StateEnum.Dispatched == State);
@@ -870,7 +870,7 @@ namespace NachoCore.Model
             });
         }
 
-        public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)
+        public void ResolveAsUserBlocked (NcProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)
         {
             ResolveAsUserBlocked (control, reason, NcResult.Error (DefaultErrorSubKind (), why));
         }
@@ -890,7 +890,7 @@ namespace NachoCore.Model
             }
         }
 
-        public static void ResolveAllDelayNotAllowedAsFailed (ProtoControl control, int accountId)
+        public static void ResolveAllDelayNotAllowedAsFailed (NcProtoControl control, int accountId)
         {
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
@@ -902,7 +902,7 @@ namespace NachoCore.Model
                     });
         }
 
-        public static void ResolveAllDispatchedAsDeferred (ProtoControl control, int accountId)
+        public static void ResolveAllDispatchedAsDeferred (NcProtoControl control, int accountId)
         {
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
