@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Utils;
 using MailKit.Net.Imap;
@@ -10,16 +11,38 @@ using MailKit.Search;
 using MailKit;
 using MimeKit;
 using NachoClient.Build;
+using NachoCore.Model;
+using NachoCore.Utils;
+using System.Collections.Generic;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Imap
 {
     public class Imap
     {
+        private int AccountId { get; set; }
+
         private string m_hostname { get; set; }
+
         private int m_port { get; set; }
+
         private bool m_useSsl { get; set; }
-        private string m_username { get; set;}
-        private string m_password { get; set;}
+
+        private string m_username { get; set; }
+
+        private string m_password { get; set; }
+
+        private ImapClient m_imapClient;
+
+        private ImapClient client {
+            get {
+                if (null == m_imapClient) {
+                    Log.Error (Log.LOG_IMAP, "no imapClient set in getter");
+                    GetAuthenticatedClient ();
+                }
+                return m_imapClient;
+            }
+        }
 
         public Imap (string hostname, int port, bool useSsl, string username, string password)
         {
@@ -28,17 +51,107 @@ namespace NachoCore.Imap
             m_useSsl = useSsl;
             m_username = username;
             m_password = password;
-            DoImap();
+            AccountId = 1;
+            GetAuthenticatedClient ();
+            DoImap ();
         }
 
-        public class NcProtocolLogger : MailKit.IProtocolLogger
+        private void DoImap (bool readSpecial = false)
+        {
+            var folder = CreateFolderInPersonalNamespace ("Nacho");
+            folder.Delete ();
+            // The Inbox folder is always available on all IMAP servers...
+            syncFolder (fromImapFolder (AccountId, client.Inbox));
+
+            if (readSpecial) {
+                foreach (SpecialFolder special in Enum.GetValues(typeof(SpecialFolder)).Cast<SpecialFolder>()) {
+                    folder = client.GetFolder (special);
+                    if (folder == null) {
+                        Log.Error (Log.LOG_IMAP, "Could not get folder {0}", special);
+                    } else {
+                        syncFolder (fromImapFolder(AccountId, folder));
+                    }
+                }
+            }
+            client.Disconnect (true);
+        }
+
+        public class FolderNotFoundException : Exception
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="FolderNotFoundException"/> class.
+            /// </summary>
+            /// <remarks>
+            /// Creates a new <see cref="FolderNotFoundException"/>.
+            /// </remarks>
+            /// <param name="message">The error message.</param>
+            /// <param name="innerException">An inner exception.</param>
+            public FolderNotFoundException (string message) : base (message)
+            {
+            }
+        }
+
+        private void syncFolder (McFolder mcFolder)
+        {
+            IMailFolder folder = null;
+            if (mcFolder.IsDistinguished) {
+                switch (mcFolder.Type) {
+                case Xml.FolderHierarchy.TypeCode.DefaultInbox_2:
+                    folder = client.Inbox;
+                    break;
+
+                case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
+                    folder = client.GetFolder (SpecialFolder.Drafts);
+                    break;
+                }
+            } else {
+                // TODO Is DisplayName the correct mapping to the IMAP path?
+                folder = client.GetFolder (mcFolder.DisplayName);
+            }
+            if (null == folder) {
+                throw new FolderNotFoundException (string.Format ("Could not find folder {0}", mcFolder.DisplayName));
+            }
+
+            folder.Open (FolderAccess.ReadOnly);
+            Log.Info (Log.LOG_IMAP, "Total {0} messages: {1}", folder.Name, folder.Count);
+            Log.Info (Log.LOG_IMAP, "Recent {0} messages: {1}", folder.Name, folder.Recent);
+            Log.Info (Log.LOG_IMAP, "UidValidity {0}: {1}", folder.Name, folder.UidValidity);
+            if (folder.UidValidity != mcFolder.AsFolderSyncEpoch) {
+                // TODO folder has been recreated. Dump everything and resync.
+            }
+
+            var mcMessages = McEmailMessage.QueryByFolderId<McEmailMessage> (mcFolder.AccountId, mcFolder.Id);
+            if (mcMessages.Count != folder.Count) {
+                // TODO something changed, so re-sync
+                var query = SearchQuery.DoesNotHaveFlags (MessageFlags.Deleted);
+                var uids = folder.Search (query);
+                foreach (var summary in folderSummary(folder, uids)) {
+                    if (!summary.UniqueId.HasValue) {
+                        Log.Error (Log.LOG_IMAP, "Message does not have a UID!");
+                        continue;
+                    }
+                    if (summary.UniqueId.Value.Validity != folder.UidValidity) {
+                        Log.Error (Log.LOG_IMAP, "Message does not belong to this folder!");
+                        continue;
+                    }
+                    var eMsg = ServerSaysAddOrChangeEmail (summary as MessageSummary, folder, mcFolder.AccountId);
+                    Log.Info (Log.LOG_IMAP, "IMAP: uid {0} Flags {1} Size {2}", 
+                        eMsg.ServerId,
+                        summary.Flags,
+                        summary.MessageSize);
+                }
+            }
+            folder.Close ();
+        }
+
+        public class NcProtocolLogger : IProtocolLogger
         {
             public void LogConnect (Uri uri)
             {
                 if (uri == null)
                     throw new ArgumentNullException ("uri");
 
-                Log.Info (Log.LOG_EMAIL, "Connected to {0}", uri);
+                Log.Info (Log.LOG_IMAP, "Connected to {0}", uri);
             }
 
             private void logBuffer (string prefix, byte[] buffer, int offset, int count)
@@ -48,7 +161,7 @@ namespace NachoCore.Imap
 
                 Array.ForEach (lines, (line) => {
                     if (line.Length > 0) {
-                        Log.Info (Log.LOG_EMAIL, "{0}{1}", prefix, line);
+                        Log.Info (Log.LOG_IMAP, "{0}{1}", prefix, line);
                     }
                 });
             }
@@ -73,24 +186,39 @@ namespace NachoCore.Imap
             return string.Join (", ", imapId.Properties);
         }
 
-        private ImapClient getClient ()
+        public class AuthenticationException : Exception
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AuthenticationException"/> class.
+            /// </summary>
+            /// <remarks>
+            /// Creates a new <see cref="AuthenticationException"/>.
+            /// </remarks>
+            /// <param name="message">The error message.</param>
+            /// <param name="innerException">An inner exception.</param>
+            public AuthenticationException (string message, Exception innerException) : base (message, innerException)
+            {
+            }
+        }
+
+        private void GetAuthenticatedClient ()
         {
             NcProtocolLogger logger = new NcProtocolLogger ();
-            ImapClient client = new ImapClient (logger);
-            client.ClientCertificates = new X509CertificateCollection ();
+            m_imapClient = new ImapClient (logger);
+            m_imapClient.ClientCertificates = new X509CertificateCollection ();
             /*
-                2015-05-07 17:02:00.703 NachoClientiOS[70577:13497471] Info:1:: Connected to imap://imap.gmail.com:143/?starttls=when-available
-                2015-05-07 17:02:00.809 NachoClientiOS[70577:13497471] Info:1:: IMAP S: * OK Gimap ready for requests from 69.145.38.236 pw12mb32849803pab
-                2015-05-07 17:02:00.826 NachoClientiOS[70577:13497471] Info:1:: IMAP C: A00000000 CAPABILITY
-                2015-05-07 17:02:00.855 NachoClientiOS[70577:13497471] Info:1:: IMAP S: * CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 XYZZY SASL-IR AUTH=XOAUTH2 AUTH=PLAIN AUTH=PLAIN-CLIENTTOKEN
-                2015-05-07 17:02:00.861 NachoClientiOS[70577:13497471] Info:1:: IMAP S: A00000000 OK Thats all she wrote! pw12mb32849803pab
+                    2015-05-07 17:02:00.703 NachoClientiOS[70577:13497471] Info:1:: Connected to imap://imap.gmail.com:143/?starttls=when-available
+                    2015-05-07 17:02:00.809 NachoClientiOS[70577:13497471] Info:1:: IMAP S: * OK Gimap ready for requests from 69.145.38.236 pw12mb32849803pab
+                    2015-05-07 17:02:00.826 NachoClientiOS[70577:13497471] Info:1:: IMAP C: A00000000 CAPABILITY
+                    2015-05-07 17:02:00.855 NachoClientiOS[70577:13497471] Info:1:: IMAP S: * CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 XYZZY SASL-IR AUTH=XOAUTH2 AUTH=PLAIN AUTH=PLAIN-CLIENTTOKEN
+                    2015-05-07 17:02:00.861 NachoClientiOS[70577:13497471] Info:1:: IMAP S: A00000000 OK Thats all she wrote! pw12mb32849803pab
             */
-            client.Connect (m_hostname, m_port, m_useSsl);
+            m_imapClient.Connect (m_hostname, m_port, m_useSsl);
 
             // Note: since we don't have an OAuth2 token, disable
             // the XOAUTH2 authentication mechanism.
-            client.AuthenticationMechanisms.Remove ("XOAUTH");
-            client.AuthenticationMechanisms.Remove ("XOAUTH2");
+            m_imapClient.AuthenticationMechanisms.Remove ("XOAUTH");
+            m_imapClient.AuthenticationMechanisms.Remove ("XOAUTH2");
             try {
                 /* Does all of this for gmail:
                     2015-05-07 16:58:42.670 NachoClientiOS[70517:13478094] Info:1:: IMAP C: A00000001 AUTHENTICATE PLAIN .....
@@ -115,41 +243,42 @@ namespace NachoCore.Imap
                     2015-05-07 16:58:43.614 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\HasNoChildren \Trash) "/" "[Gmail]/Trash"
                     2015-05-07 16:58:43.614 NachoClientiOS[70517:13478094] Info:1:: IMAP S: A00000004 OK Success
                 */
-                client.Authenticate (m_username, m_password);
+                m_imapClient.Authenticate (m_username, m_password);
             } catch (MailKit.Security.AuthenticationException e) {
-                Log.Error (Log.LOG_EMAIL, "Could not connect to server: {0}", e);
-                return null;
+                Log.Error (Log.LOG_IMAP, "Could not connect to server: {0}", e);
+                throw new AuthenticationException ("Could not authenticate", e);
             }
 
-            ImapImplementation clientId = new ImapImplementation ();
-            clientId.Name = "NachoMail";
-            clientId.Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber);
-            clientId.ReleaseDate = BuildInfo.Time;
-            clientId.SupportUrl = "https://support.nachocove.com/";
-            clientId.Vendor = "Nacho Cove, Inc";
-            Log.Info (Log.LOG_EMAIL, "Client ID: {0}", dumpImapImplementation (clientId));
+            ImapImplementation clientId = new ImapImplementation () {
+                Name = "NachoMail",
+                Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
+                ReleaseDate = BuildInfo.Time,
+                SupportUrl = "https://support.nachocove.com/",
+                Vendor = "Nacho Cove, Inc",
+            };
+            Log.Info (Log.LOG_IMAP, "Client ID: {0}", dumpImapImplementation (clientId));
 
-            ImapImplementation serverId = client.Identify (clientId);
-            Log.Info (Log.LOG_EMAIL, "Server ID: {0}", dumpImapImplementation (serverId));
+            ImapImplementation serverId = m_imapClient.Identify (clientId);
+            Log.Info (Log.LOG_IMAP, "Server ID: {0}", dumpImapImplementation (serverId));
 
-            foreach (FolderNamespace name in client.PersonalNamespaces) {
-                Log.Info (Log.LOG_EMAIL, "PersonalNamespaces: Separator '{0}' Path '{1}'", name.DirectorySeparator, name.Path);
+            foreach (FolderNamespace name in m_imapClient.PersonalNamespaces) {
+                Log.Info (Log.LOG_IMAP, "PersonalNamespaces: Separator '{0}' Path '{1}'", name.DirectorySeparator, name.Path);
             }
-            foreach (FolderNamespace name in client.SharedNamespaces) {
-                Log.Info (Log.LOG_EMAIL, "SharedNamespaces: Separator '{0}' Path '{1}'", name.DirectorySeparator, name.Path);
+            foreach (FolderNamespace name in m_imapClient.SharedNamespaces) {
+                Log.Info (Log.LOG_IMAP, "SharedNamespaces: Separator '{0}' Path '{1}'", name.DirectorySeparator, name.Path);
             }
-            foreach (FolderNamespace name in client.OtherNamespaces) {
-                Log.Info (Log.LOG_EMAIL, "OtherNamespaces: Separator '{0}' Path '{1}'", name.DirectorySeparator, name.Path);
+            foreach (FolderNamespace name in m_imapClient.OtherNamespaces) {
+                Log.Info (Log.LOG_IMAP, "OtherNamespaces: Separator '{0}' Path '{1}'", name.DirectorySeparator, name.Path);
             }
-            return client;
         }
 
-        private IMailFolder CreateFolderInPersonalNamespace(ImapClient client, string name)
+
+        private IMailFolder CreateFolderInPersonalNamespace (string name)
         {
             IMailFolder folder = null;
             if (client.PersonalNamespaces != null) {
                 // TODO Not sure if this is the right thing to do. Do we loop over all of them? How do we pick?
-                var personalRoot = client.GetFolder (client.PersonalNamespaces[0].Path);
+                var personalRoot = client.GetFolder (client.PersonalNamespaces [0].Path);
                 folder = personalRoot.Create (name, true);
             }
             if (folder == null) {
@@ -158,99 +287,260 @@ namespace NachoCore.Imap
             return folder;
         }
 
-        private void DoImap ()
+        private string findPreview (MessageSummary summary, IMailFolder folder)
         {
-            var client = getClient ();
-            if (client == null) {
-                Log.Error (Log.LOG_EMAIL, "Could not connect to imap");
-                return;
+            string preview = string.Empty;
+            var text = summary.Body as BodyPartText;
+            if (null == text) {
+                var multipart = summary.Body as BodyPartMultipart;
+                if (null == multipart) {
+                    throw new Exception ("FOO");
+                }
+                text = multipart.BodyParts.OfType<BodyPartText> ().FirstOrDefault ();
+                if (null == text) {
+                    foreach (var part in multipart.BodyParts) {
+                        Log.Info (Log.LOG_IMAP, "Have Mime part {0}", part.ContentType);
+                    }
+                }
             }
 
-            var folder = CreateFolderInPersonalNamespace (client, "Nacho");
-            folder.Delete ();
-            // The Inbox folder is always available on all IMAP servers...
-            handleFolder (client.Inbox, FolderAccess.ReadOnly);
-
-            foreach (SpecialFolder special in Enum.GetValues(typeof(SpecialFolder)).Cast<SpecialFolder>()) {
-                folder = client.GetFolder (special);
-                if (folder == null) {
-                    Log.Error (Log.LOG_EMAIL, "Could not get folder {0}", special);
+            if (null != text) {
+                if (text.Octets > 0 && text.Octets <= 255) {
+                    // this will download *just* the text part
+                    TextPart mimepart = folder.GetBodyPart (summary.UniqueId.Value, text) as TextPart;
+                    preview = mimepart.Text;
                 } else {
-                    handleFolder (folder, FolderAccess.ReadOnly);
-                }
-            }
-            client.Disconnect (true);
-        }
-
-        private void handleFolder (IMailFolder folder, FolderAccess access)
-        {
-            /*
-                    2015-05-07 17:14:12.389 NachoClientiOS[70782:13542016] Info:1:: IMAP C: A00000006 SELECT INBOX
-                    2015-05-07 17:14:12.565 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * FLAGS (\Answered \Flagged \Draft \Deleted \Seen $Phishing $NotPhishing $Junk)
-                    2015-05-07 17:14:12.566 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * OK [PERMANENTFLAGS (\Answered \Flagged \Draft \Deleted \Seen $Phishing $NotPhishing $Junk \*)] Flags permitted.
-                    2015-05-07 17:14:12.567 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * OK [UIDVALIDITY 3] UIDs valid.
-                    2015-05-07 17:14:12.567 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * 8 EXISTS
-                    2015-05-07 17:14:12.568 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * 0 RECENT
-                    2015-05-07 17:14:12.568 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * OK [UIDNEXT 8636] Predicted next UID.
-                    2015-05-07 17:14:12.569 NachoClientiOS[70782:13542016] Info:1:: IMAP S: * OK [HIGHESTMODSEQ 938719]
-                    2015-05-07 17:14:12.569 NachoClientiOS[70782:13542016] Info:1:: IMAP S: A00000006 OK [READ-WRITE] INBOX selected. (Success)
-                */
-            folder.Open (access);
-            Log.Info (Log.LOG_EMAIL, "Total {0} messages: {1}", folder.Name, folder.Count);
-            Log.Info (Log.LOG_EMAIL, "Recent {0} messages: {1}", folder.Name, folder.Recent);
-            //                    for (int i = 0; i < folder.Count; i++) {
-            //                        var message = folder.GetMessage (i);
-            //                        Log.Info (Log.LOG_EMAIL, "{0} Subject: {1}", special, message.Subject);
-            //                    }
-            // let's search for all messages received after Jan 12, 2013 with "MailKit" in the subject...
-            //var query = SearchQuery.All ().And (SearchQuery.NotDeleted);
-            var query = SearchQuery.DoesNotHaveFlags (MessageFlags.Deleted);
-            /*
-             * 2015-05-08 11:36:37.492 NachoClientiOS[75297:15205158] Info:1:: IMAP C: A00000007 UID SEARCH RETURN () DELETED
-             * 2015-05-08 11:36:37.683 NachoClientiOS[75297:15205158] Info:1:: IMAP S: * ESEARCH (TAG "A00000007") UID
-             * 2015-05-08 11:36:37.689 NachoClientiOS[75297:15205158] Info:1:: IMAP S: A00000007 OK SEARCH completed (Success)
-             */
-            var uids = folder.Search (query);
-            Log.Info (Log.LOG_EMAIL, "Search 'NotDeleted' has {0} results", uids.Count);
-            if (uids.Count > 0) {
-                var messageSummaries = folder.Fetch (uids, MessageSummaryItems.Envelope | MessageSummaryItems.InternalDate | MessageSummaryItems.Flags);
-                foreach (var summary in messageSummaries) {
-                    Log.Info (Log.LOG_EMAIL, "IMAP: uid {0} {1} {2} {3}", summary.UniqueId, summary.Flags, summary.InternalDate, summary.Envelope);
-                }
-                foreach (var uid in uids) {
-                    var textBody = new BodyPartText ();
-                    textBody.PartSpecifier = "TEXT";
-                    var message = folder.GetStream (uid, textBody, 0, 255);
+                    if (text.PartSpecifier == "") {
+                        // HACK HACK to trick GetStream into getting us the TEXT part of the message.
+                        // Otherwise, it returns all headers first, then the message
+                        text.PartSpecifier = text.ContentType.MediaType;
+                    }
+                    var previewStr = folder.GetStream (summary.UniqueId.Value, text, 0, 255);
                     var buffer = new byte[255];
-                    message.Read (buffer, 0, 255);
-                    Log.Info (Log.LOG_EMAIL, "Retrieved message <{0}>", Encoding.UTF8.GetString (buffer));
+                    var read = previewStr.Read (buffer, 0, 255);
+                    preview = Encoding.UTF8.GetString (buffer, 0, read);
                 }
             }
-            //            var query = SearchQuery.DeliveredAfter (DateTime.Parse ("2013-01-12"))
-            //                .And (SearchQuery.SubjectContains ("MailKit")).And (SearchQuery.Seen);
-            //
-            //            foreach (var uid in inbox.Search (query)) {
-            //                var message = inbox.GetMessage (uid);
-            //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
-            //            }
-            //
-            //            // let's do the same search, but this time sort them in reverse arrival order
-            //            var orderBy = new [] { OrderBy.ReverseArrival };
-            //            foreach (var uid in inbox.Search (query, orderBy)) {
-            //                var message = inbox.GetMessage (uid);
-            //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
-            //            }
-            //
-            //            // you'll notice that the orderBy argument is an array... this is because you
-            //            // can actually sort the search results based on multiple columns:
-            //            orderBy = new [] { OrderBy.ReverseArrival, OrderBy.Subject };
-            //            foreach (var uid in inbox.Search (query, orderBy)) {
-            //                var message = inbox.GetMessage (uid);
-            //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
-            //            }
-            folder.Close ();
+            if (string.Empty != preview) {
+                Log.Info (Log.LOG_IMAP, "IMAP uid {0} preview <{1}>", summary.UniqueId.Value, preview);
+            } else {
+                Log.Error (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
+            }
+            // TODO if there wasn't a TEXT part, we'll want to look for others, like html or something.
+            return preview;
         }
 
+        public McEmailMessage ServerSaysAddOrChangeEmail (MessageSummary summary, IMailFolder folder, int AccountId)
+        {
+            var emailMessage = new McEmailMessage () {
+                ServerId = summary.UniqueId.Value.Id.ToString (),
+                AccountId = AccountId,
+                Subject = summary.Envelope.Subject,
+                InReplyTo = summary.Envelope.InReplyTo,
+                cachedHasAttachments = summary.Attachments.Any (),
+                MessageID = summary.Envelope.MessageId,
+                DateReceived = summary.InternalDate.HasValue ? summary.InternalDate.Value.UtcDateTime : DateTime.MinValue,
+            };
+
+            // TODO: DRY this out. Perhaps via Reflection?
+            if (summary.Envelope.To.Count > 0) {
+                if (summary.Envelope.To.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} To entries in message.", summary.Envelope.To.Count);
+                }
+                emailMessage.To = summary.Envelope.To [0].Name;
+            }
+            if (summary.Envelope.Cc.Count > 0) {
+                if (summary.Envelope.Cc.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} Cc entries in message.", summary.Envelope.Cc.Count);
+                }
+                emailMessage.Cc = summary.Envelope.Cc [0].Name;
+            }
+            if (summary.Envelope.Bcc.Count > 0) {
+                if (summary.Envelope.Bcc.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} Bcc entries in message.", summary.Envelope.Bcc.Count);
+                }
+                emailMessage.Bcc = summary.Envelope.Bcc [0].Name;
+            }
+            if (summary.Envelope.From.Count > 0) {
+                if (summary.Envelope.From.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
+                }
+                emailMessage.From = summary.Envelope.From [0].Name;
+            }
+            if (summary.Envelope.ReplyTo.Count > 0) {
+                if (summary.Envelope.ReplyTo.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} ReplyTo entries in message.", summary.Envelope.ReplyTo.Count);
+                }
+                emailMessage.ReplyTo = summary.Envelope.ReplyTo [0].Name;
+            }
+            if (summary.Envelope.Sender.Count > 0) {
+                if (summary.Envelope.Sender.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
+                }
+                emailMessage.Sender = summary.Envelope.Sender [0].Name;
+            }
+            if (null != summary.References && summary.References.Count > 0) {
+                if (summary.References.Count > 1) {
+                    Log.Error (Log.LOG_IMAP, "Found {0} References entries in message.", summary.References.Count);
+                }
+                emailMessage.References = summary.References [0];
+            }
+                                
+            if (summary.Flags.HasValue && (summary.Flags.Value & MessageFlags.None) != MessageFlags.None) {
+                if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
+                    emailMessage.IsRead = true;
+                }
+                // TODO Where do we set these flags?
+                if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
+                }
+                if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
+                }
+                if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
+                }
+                if ((summary.Flags.Value & MessageFlags.Draft) == MessageFlags.Draft) {
+                }
+                if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
+                }
+                if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
+                    // TODO See if these are handled by the summary.UserFlags
+                }
+            }
+            if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
+                // TODO Where do we set these flags?
+            }
+
+            if (null != summary.Headers) {
+                foreach (var header in summary.Headers) {
+                    Log.Info (Log.LOG_IMAP, "IMAP header id {0} {1} {2}", header.Id, header.Field, header.Value);
+                    switch (header.Id) {
+                    case HeaderId.ContentClass:
+                        emailMessage.ContentClass = header.Value;
+                        break;
+
+                    case HeaderId.Importance:
+                        switch (header.Value) {
+                        case "low":
+                            emailMessage.Importance = NcImportance.Low_0;
+                            break;
+
+                        case "normal":
+                            emailMessage.Importance = NcImportance.Normal_1;
+                            break;
+
+                        case "high":
+                            emailMessage.Importance = NcImportance.High_2;
+                            break;
+
+                        default:
+                            Log.Error (Log.LOG_IMAP, string.Format ("Unknown importance header value '{0}'", header.Value));
+                            break;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (summary.GMailThreadId.HasValue) {
+                // TODO Where to put the thread ID? Is it the ThreadTopic? Seems unlikely..
+                emailMessage.ThreadTopic = summary.GMailThreadId.Value.ToString ();
+            }
+
+            if ("" == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
+                emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
+            }
+
+            emailMessage.BodyPreview = findPreview (summary, folder);
+
+            // TODO common code with AS. Abstract.
+            McEmailAddress fromEmailAddress;
+            if (McEmailAddress.Get (AccountId, emailMessage.From, out fromEmailAddress)) {
+                emailMessage.FromEmailAddressId = fromEmailAddress.Id;
+                emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
+            } else {
+                emailMessage.FromEmailAddressId = 0;
+                emailMessage.cachedFromLetters = "";
+                emailMessage.cachedFromColor = 1;
+            }
+
+            emailMessage.SenderEmailAddressId = McEmailAddress.Get (AccountId, emailMessage.Sender);
+            emailMessage.IsIncomplete = false;
+
+            // TODO insert and transaction stuff
+            return emailMessage;
+        }
+
+        private McFolder fromImapFolder (int AccountId, IMailFolder folder)
+        {
+            folder.Open (FolderAccess.ReadOnly);
+
+            // TODO Look up folder in DB first.
+            var mcFolder = new McFolder () {
+                DisplayName = folder.Name,
+                //ParentId = folder.ParentFolder, // Need to look up the parent folder to get the ID
+                AccountId = AccountId,
+                AsFolderSyncEpoch = folder.UidValidity,
+                IsDistinguished = !folder.IsNamespace,
+            };
+            if (!folder.IsNamespace) {
+                mcFolder.IsDistinguished = true;
+                switch (folder.Name) {
+                case "INBOX":
+                    mcFolder.Type = Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
+                    break;
+
+                case McFolder.DRAFTS_DISPLAY_NAME:
+                    mcFolder.Type = Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
+                    break;
+                }
+            } else {
+                mcFolder.IsDistinguished = false;
+                mcFolder.DisplayName = folder.Name;
+            }
+            return mcFolder;
+        }
+
+        private IList<IMessageSummary> folderSummary (IMailFolder folder, IList<UniqueId> uids)
+        {
+            HashSet<MimeKit.HeaderId> headerFields = new HashSet<MimeKit.HeaderId> ();
+            headerFields.Add (HeaderId.ContentClass);
+            headerFields.Add (HeaderId.Importance);
+
+            MessageSummaryItems flags = MessageSummaryItems.BodyStructure
+                                        | MessageSummaryItems.Envelope
+                                        | MessageSummaryItems.Flags
+                                        | MessageSummaryItems.InternalDate
+                                        | MessageSummaryItems.MessageSize
+                                        | MessageSummaryItems.UniqueId
+                                        | MessageSummaryItems.GMailMessageId
+                                        | MessageSummaryItems.GMailThreadId;
+            
+            // IMAP C: A00000011 UID FETCH 8622:8623,8630:8641 (UID FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODYSTRUCTURE X-GM-MSGID X-GM-THRID BODY.PEEK[HEADER.FIELDS (CONTENT-CLASS PRIORITY IMPORTANCE)])
+            return folder.Fetch (uids, flags, headerFields);
+        }
+
+        //            var query = SearchQuery.DeliveredAfter (DateTime.Parse ("2013-01-12"))
+        //                .And (SearchQuery.SubjectContains ("MailKit")).And (SearchQuery.Seen);
+        //
+        //            foreach (var uid in inbox.Search (query)) {
+        //                var message = inbox.GetMessage (uid);
+        //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
+        //            }
+        //
+        //            // let's do the same search, but this time sort them in reverse arrival order
+        //            var orderBy = new [] { OrderBy.ReverseArrival };
+        //            foreach (var uid in inbox.Search (query, orderBy)) {
+        //                var message = inbox.GetMessage (uid);
+        //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
+        //            }
+        //
+        //            // you'll notice that the orderBy argument is an array... this is because you
+        //            // can actually sort the search results based on multiple columns:
+        //            orderBy = new [] { OrderBy.ReverseArrival, OrderBy.Subject };
+        //            foreach (var uid in inbox.Search (query, orderBy)) {
+        //                var message = inbox.GetMessage (uid);
+        //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
+        //            }
     }
 }
 
