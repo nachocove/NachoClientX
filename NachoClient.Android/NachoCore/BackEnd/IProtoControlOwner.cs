@@ -7,12 +7,12 @@ namespace NachoCore
 {
     public interface IProtoControlOwner
     {
-        void StatusInd (ProtoControl sender, NcResult status);
-        void StatusInd (ProtoControl sender, NcResult status, string[] tokens);
-        void CredReq (ProtoControl sender);
-        void ServConfReq (ProtoControl sender, object arg);
-        void CertAskReq (ProtoControl sender, X509Certificate2 certificate);
-        void SearchContactsResp (ProtoControl sender, string prefix, string token);
-        void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend);
+        void StatusInd (NcProtoControl sender, NcResult status);
+        void StatusInd (NcProtoControl sender, NcResult status, string[] tokens);
+        void CredReq (NcProtoControl sender);
+        void ServConfReq (NcProtoControl sender, object arg);
+        void CertAskReq (NcProtoControl sender, X509Certificate2 certificate);
+        void SearchContactsResp (NcProtoControl sender, string prefix, string token);
+        void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend);
     }
 }

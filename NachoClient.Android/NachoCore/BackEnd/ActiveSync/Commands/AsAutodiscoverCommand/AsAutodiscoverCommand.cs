@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Xml.Linq;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -125,10 +126,21 @@ namespace NachoCore.ActiveSync
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                             (uint)TlEvt.E.CredSet
                         },
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail, 
+                            (uint)SmEvt.E.HardFail, 
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync, 
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty, 
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -141,9 +153,16 @@ namespace NachoCore.ActiveSync
 
                     // Robots ARE running in this state.
                     new Node {State = (uint)Lst.RobotW,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.SrvCertN, 
+                            (uint)SharedEvt.E.SrvCertY,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -191,9 +210,17 @@ namespace NachoCore.ActiveSync
                     },
 
                     new Node {State = (uint)Lst.AskW,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.TestDefaultServer,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -233,8 +260,14 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.TestW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk,
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Test the new server config.
@@ -294,8 +327,14 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.TestW2,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Test the new server config.
@@ -356,10 +395,19 @@ namespace NachoCore.ActiveSync
                     // Treat a 404 differently - as an auth-fail due to username.
                     new Node {State = (uint)Lst.Peek404,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success, 
+                            (uint)SmEvt.E.TempFail, 
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty, 
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, ActSetsState = true },
@@ -386,10 +434,21 @@ namespace NachoCore.ActiveSync
                     // Waiting for new creds before server config set or robot success.
                     new Node {State = (uint)Lst.CredW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync, 
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk,
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Ask app for creds.
@@ -405,10 +464,21 @@ namespace NachoCore.ActiveSync
                     // Waiting for new creds during server config testing.
                     new Node {State = (uint)Lst.CredW2,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.Success, 
+                            (uint)SmEvt.E.HardFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc,
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk,
+                            (uint)TlEvt.E.Empty, 
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new [] {
                             // Ask app for creds.
@@ -424,10 +494,21 @@ namespace NachoCore.ActiveSync
                     // Asked the app for a server config, waiting now...
                     new Node {State = (uint)Lst.SrvConfW, 
                         Drop = new [] { (uint)TlEvt.E.CredSet, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] { 
+                            (uint)SmEvt.E.Success, 
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc,
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Ask again and wait.

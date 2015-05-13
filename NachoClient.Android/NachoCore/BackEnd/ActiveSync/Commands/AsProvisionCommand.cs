@@ -48,6 +48,9 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc,
                             (uint)AsProtoControl.AsEvt.E.ReProv,
                             (uint)AsProtoControl.AsEvt.E.ReSync,
@@ -60,6 +63,11 @@ namespace NachoCore.ActiveSync
                     },
                     new Node {
                         State = (uint)Lst.GetWait,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGet, State = (uint)Lst.GetWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoAck, State = (uint)Lst.AckWait },
@@ -90,6 +98,11 @@ namespace NachoCore.ActiveSync
                     },
                     new Node {
                         State = (uint)Lst.AckWait,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoAck, State = (uint)Lst.AckWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSucceed, State = (uint)St.Stop },
