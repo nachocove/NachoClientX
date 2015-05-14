@@ -13,7 +13,7 @@ namespace NachoClient.iOS
 {
     public interface INachoLabelChooser
     {
-        void SetOwner (INachoLabelChooserParent owner);
+        void SetOwner (INachoLabelChooserParent owner, int accountId);
         void SetLabelList (List<string> labelList);
         void SetSelectedName (string selectedName);
     }

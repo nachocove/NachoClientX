@@ -708,7 +708,6 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.HotQOpW,
                         Drop = new [] {
                             (uint)PcEvt.E.PendQ,
-                            (uint)PcEvt.E.PendQHot,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -728,6 +727,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoExtraOrDont, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
@@ -1181,10 +1181,14 @@ namespace NachoCore.ActiveSync
             // If we got here, we decided that doing an extra request was a bad idea, ...
             if (0 == ConcurrentExtraRequests) {
                 // ... and we are currently processing no extra requests. Only in this case will we 
-                // interrupt the base request.
-                Log.Info (Log.LOG_AS, "DoExtraOrDont: calling Pick.");
-                DoPick ();
-                Sm.State = (uint)Lst.Pick;
+                // interrupt the base request, and only then if we are not already dealing with a "hot" request.
+                if ((uint)Lst.HotQOpW != Sm.State) {
+                    Log.Info (Log.LOG_AS, "DoExtraOrDont: calling Pick.");
+                    DoPick ();
+                    Sm.State = (uint)Lst.Pick;
+                } else {
+                    Log.Info (Log.LOG_AS, "DoExtraOrDont: not calling Pick (HotQOpW).");
+                }
             } else {
                 // ... and we are capable of processing extra requests, just not now.
                 Log.Info (Log.LOG_AS, "DoExtraOrDont: not starting extra request on top of {0}.", ConcurrentExtraRequests);

@@ -18,7 +18,6 @@ namespace NachoClient.iOS
         protected const float X_INDENT = 30;
 
         public string selectedName;
-        protected McContact contact;
         protected ContactsHelper contactHelper = new ContactsHelper ();
 
         protected const int SELECTED_BUTTON_IMAGE_TAG = 88;
@@ -42,11 +41,20 @@ namespace NachoClient.iOS
         {
         }
 
+        // INachoLabelChooser
+        public void SetOwner (INachoLabelChooserParent owner, int accountId)
+        {
+            this.owner = owner;
+            // Ignores accountId
+        }
+
+        // INachoLabelChooser
         public void SetLabelList (List<string> labelList)
         {
             this.labelList = labelList;
         }
 
+        // INachoLabelChooser
         public void SetSelectedName (string selectedName)
         {
             this.selectedName = selectedName;
@@ -58,11 +66,6 @@ namespace NachoClient.iOS
                 labelList.Insert (0, selectedName);
             }
             base.ViewDidLoad ();
-        }
-
-        public void SetOwner (INachoLabelChooserParent owner)
-        {
-            this.owner = owner;
         }
 
         protected override void CreateViewHierarchy ()
@@ -207,11 +210,6 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
 
-        }
-
-        public void SetContact (McContact contact)
-        {
-            this.contact = contact;
         }
 
         private void DismissViewTouchUpInside (object sender, EventArgs e)

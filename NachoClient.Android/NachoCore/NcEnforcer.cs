@@ -40,13 +40,14 @@ namespace NachoCore
 
         private void WipeAccountAndRestart(Object state)
         {
+            var account = (McAccount)state;
             // dont bother checking for ack from the server since as per spec : The client SHOULD NOT wait for or rely on any specific response from the server before proceeding with the remote wipe.
             Log.Info (Log.LOG_AS, "Remote Wipe Initiated");
             DelayTimer.Dispose ();
             DelayTimer = null;
             Action action = () => {
                 InvokeOnUIThread.Instance.Invoke (delegate () {
-                    NcAccountHandler.Instance.RemoveAccount ();
+                    NcAccountHandler.Instance.RemoveAccount (account.Id);
                     NcUIRedirector.Instance.GoBackToMainScreen();                        
                     Log.Info (Log.LOG_AS, "Remote Wipe Completed.");
                 });
@@ -58,8 +59,8 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_AS, "Remote Wipe Marked");
             // mark wipe in progress. This will go thru even if the app is stopped/restarted.
-            NcModel.Instance.WriteRemovingAccountIdToFile (NcApplication.Instance.Account.Id);
-            DelayTimer = new NcTimer ("RemoteWipeTimer", WipeAccountAndRestart, this, 1000, 1000);
+            NcModel.Instance.WriteRemovingAccountIdToFile (account.Id);
+            DelayTimer = new NcTimer ("RemoteWipeTimer", WipeAccountAndRestart, account, 1000, 1000);
             return true;
         }
     }

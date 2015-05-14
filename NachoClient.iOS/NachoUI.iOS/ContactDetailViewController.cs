@@ -183,26 +183,22 @@ namespace NachoClient.iOS
                 destinationController.owner = this;
                 return;
             }
-
             if (segue.Identifier.Equals ("SegueToMessageCompose")) {
                 var h = sender as SegueHolder;
                 MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
                 mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
                 return;
             }
-
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, false);
                 return;
             }
-
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
                 var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
                 destinationViewController.contact = contact;
                 return;
             }
-
             if (segue.Identifier == "NachoNowToMessagePriority") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;

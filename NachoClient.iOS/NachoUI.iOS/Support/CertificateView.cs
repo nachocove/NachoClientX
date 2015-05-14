@@ -15,16 +15,14 @@ namespace NachoClient.iOS
     public class CertificateView: UIView
     {
         INachoCertificateResponderParent owner;
+
         UIView certificateView;
+
+        int callbackAccountId;
 
         protected string certInfo;
         protected string certCommonName;
         protected string certOrganization;
-
-        public CertificateView ()
-        {
-
-        }
 
         public void SetOwner (INachoCertificateResponderParent owner)
         {
@@ -38,7 +36,6 @@ namespace NachoClient.iOS
 
         public CertificateView (IntPtr handle) : base (handle)
         {
-
         }
 
         const int GRAY_BACKGROUND_TAG = 20;
@@ -109,7 +106,7 @@ namespace NachoClient.iOS
             trustCertificateButton.AccessibilityIdentifier = "Allow";
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
-                owner.AcceptCertificate ();
+                owner.AcceptCertificate (callbackAccountId);
             };
             certificateView.Add (trustCertificateButton);
 
@@ -125,7 +122,7 @@ namespace NachoClient.iOS
             dontTrustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
-                owner.DontAcceptCertificate ();
+                owner.DontAcceptCertificate (callbackAccountId);
             };
             certificateView.Add (dontTrustCertificateButton);
 
@@ -165,9 +162,10 @@ namespace NachoClient.iOS
             certInfoTextView.Text = certInfo;
         }
 
-        public void SetCertificateInformation ()
+        public void SetCertificateInformation (int accountId)
         {
-            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
+            callbackAccountId = accountId;
+            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId);
             certInfo = CertificateHelper.FormatCertificateData (certToBeExamined);
             certCommonName = CertificateHelper.GetCommonName (certToBeExamined);
             certOrganization = CertificateHelper.GetOrganizationname (certToBeExamined);
