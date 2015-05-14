@@ -201,7 +201,7 @@ namespace NachoClient.iOS
             if (notification.HasPingerSection ()) {
                 PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
-                        var inbox = NcEmailManager.PriorityInbox ();
+                        var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
                         completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
@@ -1075,7 +1075,7 @@ namespace NachoClient.iOS
 
         public static void TestScheduleEmailNotification ()
         {
-            var list = NcEmailManager.PriorityInbox ();
+            var list = NcEmailManager.PriorityInbox (2);
             var thread = list.GetEmailThread (0);
             var message = thread.FirstMessageSpecialCase ();
             var notif = new UILocalNotification () {

@@ -56,9 +56,11 @@ namespace NachoCore.Utils
             McMutables.SetBool (accountId, MODULE, "hasViewedTutorial", toWhat);
         }
 
-        //Gets the status of the tutorial bit for given accountId
-        //True if they have viewed tutorial
-        //False if not
+        /// <summary>
+        /// Determines if the tutorial has been viewed.  The is a global flag.
+        /// </summary>
+        /// <returns><c>true</c> if has viewed tutorial the specified accountId; otherwise, <c>false</c>.</returns>
+        /// <param name="accountId">Account identifier should only be used during migration.</param>
         static public bool HasViewedTutorial (int accountId = 0)
         {
             if (0 == accountId) {

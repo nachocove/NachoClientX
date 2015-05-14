@@ -12,7 +12,7 @@ namespace NachoClient.iOS
     {
         public HotListViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (NcEmailManager.PriorityInbox ());
+            SetEmailMessages (NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id));
         }
 
 //        protected override void CustomizeBackButton ()
