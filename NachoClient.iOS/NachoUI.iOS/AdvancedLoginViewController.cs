@@ -62,8 +62,10 @@ namespace NachoClient.iOS
             TouchConnect,
         };
 
+        McAccount presetAccount = null;
         string presetEmailAddress = "";
         string presetPassword = "";
+
         bool showAdvanced = false;
         bool stayInAdvanced = false;
 
@@ -74,6 +76,11 @@ namespace NachoClient.iOS
             showAdvanced = true;
         }
 
+        public void SetAccount (McAccount account)
+        {
+            presetAccount = account;
+        }
+
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
         }
@@ -82,6 +89,9 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            theAccount = new AccountSettings ();
+            theAccount.Account = presetAccount;
+               
             CreateView ();
 
             waitScreen = new WaitingScreen (View.Frame);
@@ -171,6 +181,12 @@ namespace NachoClient.iOS
                 // On return, don't automatically
                 // restart the waiting cover view.
                 stayInAdvanced = true;
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToHome")) {
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToTabController")) {
                 return;
             }
         }
@@ -326,30 +342,16 @@ namespace NachoClient.iOS
         void onStartOver ()
         {
             stayInAdvanced = false;
-            if (!IsNcAppicationAccountSet ()) {
-                // Remove our local copies
-                NcModel.Instance.RunInTransaction (() => {
-                    if (null != theAccount) {
-                        if (null != theAccount.Account) {
-                            theAccount.Account.Delete ();
-                        }
-                        if (null != theAccount.Credentials) {
-                            theAccount.Credentials.Delete ();
-                        }
-                        if (null != theAccount.Server) {
-                            theAccount.Server.Delete ();
-                        }
-                    }
-                });
+            if (null != theAccount.Account) {
+                Action action = () => {
+                    NcAccountHandler.Instance.RemoveAccount (theAccount.Account.Id);
+                    InvokeOnMainThread (() => {
+                        // go back to main screen
+                        NcUIRedirector.Instance.GoBackToMainScreen ();                        
+                    });
+                };
+                NcTask.Run (action, "RemoveAccount");
             }
-            Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount ();
-                InvokeOnMainThread (() => {
-                    // go back to main screen
-                    NcUIRedirector.Instance.GoBackToMainScreen ();                        
-                });
-            };
-            NcTask.Run (action, "RemoveAccount");
         }
 
         void onConnect (object sender, EventArgs e)
@@ -369,8 +371,7 @@ namespace NachoClient.iOS
             if (freshAccount) {
                 Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
-                NcAssert.True (IsNcAppicationAccountSet ());
+                theAccount.Account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
                 RefreshTheAccount ();
             } 
 
@@ -397,9 +398,6 @@ namespace NachoClient.iOS
             // Delete the server record if the user didn't enter the server name
             if ((null != theAccount.Server) && (null == theAccount.Server.UserSpecifiedServerName)) {
                 DeleteTheServer ("onConnect");
-            }
-            if (null == theAccount.Server) {
-                LoginHelpers.SetAutoDCompleted (theAccount.Account.Id, false);
             }
             waitScreen.SetLoadingText ("Verifying Your Server...");
             BackEnd.Instance.Start (theAccount.Account.Id);
@@ -597,7 +595,7 @@ namespace NachoClient.iOS
 
         private void handleStatusEnums ()
         {
-            if (!IsNcAppicationAccountSet ()) {
+            if (!IsTheAccountSet ()) {
                 Log.Info (Log.LOG_UI, "avl: handleStatusEnums account not set");
                 ConfigureView (LoginStatus.EnterInfo);
                 haveEnteredEmailAndPass ();
@@ -608,25 +606,33 @@ namespace NachoClient.iOS
             BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (accountId);
             Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0}={1}", accountId, backEndState);
 
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                Log.Info (Log.LOG_UI, "avl: handleStatusEnums no network connection");
+                ConfigureView (LoginStatus.NoNetwork);
+                waitScreen.DismissView ();
+                stopBeIfRunning (accountId);
+            }
+
             switch (backEndState) {
             case BackEndStateEnum.ServerConfWait:
                 Log.Info (Log.LOG_UI, "avl: ServerConfWait Auto-D-State-Enum On Page Load");
-                stopBeIfRunning ();
+                stopBeIfRunning (accountId);
                 ConfigureView (LoginStatus.ServerConf);
+                waitScreen.DismissView ();
                 break;
             case BackEndStateEnum.CredWait:
                 Log.Info (Log.LOG_UI, "avl: CredWait Auto-D-State-Enum On Page Load");
                 ConfigureView (LoginStatus.BadCredentials);
+                waitScreen.DismissView ();
                 break;
             case BackEndStateEnum.CertAskWait:
                 Log.Info (Log.LOG_UI, "avl: CertAskWait Auto-D-State-Enum On Page Load");
                 ConfigureView (LoginStatus.AcceptCertificate);
-                certificateCallbackHandler ();
+                certificateCallbackHandler (accountId);
                 waitScreen.ShowView ();
                 break;
             case BackEndStateEnum.PostAutoDPreInboxSync:
                 Log.Info (Log.LOG_UI, "avl: PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
-                LoginHelpers.SetAutoDCompleted (accountId, true);
                 ConfigureView (LoginStatus.TouchConnect);
                 if (!stayInAdvanced) {
                     waitScreen.SetLoadingText ("Syncing Your Inbox...");
@@ -636,7 +642,7 @@ namespace NachoClient.iOS
             case BackEndStateEnum.PostAutoDPostInboxSync:
                 Log.Info (Log.LOG_UI, "avl: PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
                 LoginHelpers.SetFirstSyncCompleted (accountId, true);
-                PerformSegue (StartupViewController.NextSegue (), this);
+                TryToFinishUp ();
                 break;
             case BackEndStateEnum.Running:
                 Log.Info (Log.LOG_UI, "avl: Running Auto-D-State-Enum On Page Load");
@@ -647,6 +653,7 @@ namespace NachoClient.iOS
                 break;
             default:
                 ConfigureView (LoginStatus.EnterInfo);
+                waitScreen.DismissView ();
                 break;
             }
         }
@@ -656,10 +663,9 @@ namespace NachoClient.iOS
         /// </summary>
         private void RefreshTheAccount ()
         {
-            theAccount = new AccountSettings ();
-            if (IsNcAppicationAccountSet ()) {
+            if (null != theAccount.Account) {
                 // Reload the currently active account record
-                var accountId = GetNcApplicationAccountId ();
+                var accountId = theAccount.Account.Id;
                 theAccount.Account = McAccount.QueryById<McAccount> (accountId);
                 theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
                 gOriginalPassword = theAccount.Credentials.GetPassword ();
@@ -840,9 +846,9 @@ namespace NachoClient.iOS
             return true;
         }
 
-        private void stopBeIfRunning ()
+        private void stopBeIfRunning (int accountId)
         {
-            BackEnd.Instance.Stop (theAccount.Account.Id);
+            BackEnd.Instance.Stop (accountId);
         }
 
         bool IsBackEndRunning ()
@@ -850,7 +856,7 @@ namespace NachoClient.iOS
             if (null == theAccount.Account) {
                 return false;
             }
-            NcAssert.True (IsNcAppicationAccountSet ());
+            NcAssert.True (IsTheAccountSet ());
             BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
             Log.Info (Log.LOG_UI, "avl:  isrunning state {0}", backEndState);
             if (BackEndStateEnum.NotYetStarted == backEndState) {
@@ -867,7 +873,7 @@ namespace NachoClient.iOS
             if (null == theAccount.Account) {
                 return false;
             }
-            NcAssert.True (IsNcAppicationAccountSet ());
+            NcAssert.True (IsTheAccountSet ());
             BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
             if (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) {
                 return true;
@@ -878,15 +884,15 @@ namespace NachoClient.iOS
             return false;
         }
 
-        bool IsNcAppicationAccountSet ()
+        bool IsTheAccountSet ()
         {
-            return (null != NcApplication.Instance.Account);
+            return (null != theAccount.Account);
         }
 
-        int GetNcApplicationAccountId ()
+        int GetTheAccountId ()
         {
-            NcAssert.True (IsNcAppicationAccountSet ());
-            return NcApplication.Instance.Account.Id;
+            NcAssert.True (IsTheAccountSet ());
+            return theAccount.Account.Id;
         }
 
         protected override void OnKeyboardChanged ()
@@ -899,86 +905,101 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
 
+            // Can't do anything without an account
+            if ((null == theAccount) || (null == theAccount.Account)) {
+                return;
+            }
+
+            // Won't do anything if this isn't our account
+            if ((null != s.Account) && (s.Account.Id != theAccount.Account.Id)) {
+                return;
+            }
+
+            int accountId = theAccount.Account.Id;
+
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Info_EmailMessageSetChanged Status Ind (AdvancedView)");
-                SyncCompleted ();
+                handleStatusEnums ();
             }
             if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Info_InboxPingStarted Status Ind (AdvancedView)");
-                SyncCompleted ();
+                handleStatusEnums ();
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
-                waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                RefreshTheServer ();
-                LoginHelpers.SetAutoDCompleted (theAccount.Account.Id, true);
-                if (!LoginHelpers.HasViewedTutorial (theAccount.Account.Id)) {
-                    PerformSegue (StartupViewController.NextSegue (), this);
-                }
+                handleStatusEnums ();
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Error_NetworkUnavailable");
-                ConfigureView (LoginStatus.NoNetwork);
-                waitScreen.DismissView ();
-                stopBeIfRunning ();
+                handleStatusEnums ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.ServerConf, nuance: s.Status.Why.ToString ());
                 waitScreen.DismissView ();
-                stopBeIfRunning ();
+                stopBeIfRunning (accountId);
             }
             if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: CredReqCallback Status Ind (Adv. View)");
-                ConfigureView (LoginStatus.BadCredentials);
-                waitScreen.DismissView ();
+                handleStatusEnums ();
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
-                ConfigureView (LoginStatus.AcceptCertificate);
-                certificateCallbackHandler ();
+                handleStatusEnums ();
             }
             if (NcResult.SubKindEnum.Info_NetworkStatus == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Info_NetworkStatus");
-                if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                    ConfigureView (LoginStatus.NoNetwork);
-                    waitScreen.DismissView ();
-                    stopBeIfRunning ();
-                }
+                handleStatusEnums ();
             }
         }
 
-        private void certificateCallbackHandler ()
+        private void certificateCallbackHandler (int accountId)
         {
             setTextToRed (new AdvancedTextField[]{ });
-            certificateView.SetCertificateInformation ();
+            certificateView.SetCertificateInformation (accountId);
             certificateView.ShowView ();
-            waitScreen.InvalidateAutomaticSegueTimer ();
         }
 
         // INachoCertificateResponderParent
-        public void DontAcceptCertificate ()
+        public void DontAcceptCertificate (int accountId)
         {
             ConfigureView (LoginStatus.EnterInfo);
-            NcApplication.Instance.CertAskResp (theAccount.Account.Id, false);
+            NcApplication.Instance.CertAskResp (accountId, false);
             waitScreen.DismissView ();
         }
 
         // INachoCertificateResponderParent
-        public void AcceptCertificate ()
+        public void AcceptCertificate (int accountId)
         {
             ConfigureView (LoginStatus.AcceptCertificate);
-            NcApplication.Instance.CertAskResp (theAccount.Account.Id, true);
-            waitScreen.InitializeAutomaticSegueTimer ();
+            NcApplication.Instance.CertAskResp (accountId, true);
         }
 
-        private void SyncCompleted ()
+        private void SyncCompleted (int accountId)
         {
-            LoginHelpers.SetFirstSyncCompleted (theAccount.Account.Id, true);
+            LoginHelpers.SetFirstSyncCompleted (accountId, true);
             if (!hasSyncedEmail) {
                 waitScreen.Layer.RemoveAllAnimations ();
-                waitScreen.StartSyncedEmailAnimation ();
+                waitScreen.StartSyncedEmailAnimation (accountId);
                 hasSyncedEmail = true;
+            }
+        }
+
+        public void FinishedSyncedEmailAnimation (int accountId)
+        {
+            TryToFinishUp ();
+        }
+
+        void TryToFinishUp ()
+        {
+            if (LoginHelpers.HasViewedTutorial ()) {
+                if (null == NcApplication.Instance.Account) {
+                    // FIXME: There ought to be a better way
+                    NcApplication.Instance.Account = theAccount.Account;
+                }
+                PerformSegue ("SegueToTabController", this);
+            } else {
+                PerformSegue ("SegueToHome", this);
             }
         }
 

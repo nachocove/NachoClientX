@@ -22,8 +22,15 @@ namespace NachoClient.iOS
 
         protected string originalSignature;
 
+        int accountId;
+
         public SignatureEditViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        public void SetAccountId(int accountId)
+        {
+            this.accountId = accountId;
         }
 
         public override void ViewDidAppear (bool animated)
@@ -34,7 +41,7 @@ namespace NachoClient.iOS
 
         protected void CaptureOriginalSignature ()
         {
-            McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            McAccount theAccount = McAccount.QueryById<McAccount> (accountId);
             originalSignature = theAccount.Signature ?? "";
         }
 
@@ -81,7 +88,7 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            McAccount theAccount = McAccount.QueryById<McAccount> (accountId);
             var signatureTextView = (UITextView)View.ViewWithTag (SIGNATURE_TEXT_VIEW_TAG);
             signatureTextView.Text = theAccount.Signature ?? "";
         }
@@ -97,7 +104,7 @@ namespace NachoClient.iOS
 
         protected void SaveButtonClicked (object sender, EventArgs e)
         {
-            McAccount theAccount = McAccount.QueryById <McAccount> (LoginHelpers.GetCurrentAccountId ());
+            McAccount theAccount = McAccount.QueryById <McAccount> (accountId);
             var signatureTextView = (UITextView)View.ViewWithTag (SIGNATURE_TEXT_VIEW_TAG);
 
             theAccount.Signature = signatureTextView.Text.Trim ();
