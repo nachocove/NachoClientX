@@ -29,6 +29,10 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            CreateView ();
+            this.View.BackgroundColor = A.Color_NachoGreen;
+            Util.ConfigureNavBar (false, NavigationController);
+
             if (NcApplication.Instance.IsUp ()) {
                 GetThisPartyStarted ();
                 return;
@@ -43,9 +47,7 @@ namespace NachoClient.iOS
             }
 
             // We're not up yet.  Wait until we are and then move forward
-            CreateView ();
-            this.View.BackgroundColor = A.Color_NachoGreen;
-            Util.ConfigureNavBar (false, NavigationController);
+
         }
 
         void GetThisPartyStarted ()

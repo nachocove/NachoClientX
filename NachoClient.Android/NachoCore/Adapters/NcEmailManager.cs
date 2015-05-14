@@ -14,16 +14,15 @@ namespace NachoCore
         {
         }
 
-        public static McFolder InboxFolder ()
+        public static McFolder InboxFolder (int accountId)
         {
-            var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            var inboxFolder = McFolder.GetDefaultInboxFolder (account.Id);
+            var inboxFolder = McFolder.GetDefaultInboxFolder (accountId);
             return inboxFolder;
         }
 
-        public static INachoEmailMessages Inbox ()
+        public static INachoEmailMessages Inbox (int accountId )
         {
-            var inboxFolder = InboxFolder ();
+            var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Inbox");
             } else {
@@ -31,9 +30,9 @@ namespace NachoCore
             }
         }
 
-        public static INachoEmailMessages PriorityInbox ()
+        public static INachoEmailMessages PriorityInbox (int accountId)
         {
-            var inboxFolder = InboxFolder ();
+            var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Hot List");
             } else {

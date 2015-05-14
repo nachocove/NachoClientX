@@ -11,10 +11,13 @@ namespace NachoCore
 {
     public class NachoDeadlineEmailMessages : INachoEmailMessages
     {
+        int accountId;
         List<McEmailMessageThread> threadList;
 
-        public NachoDeadlineEmailMessages ()
+        public NachoDeadlineEmailMessages (int accountId)
         {
+            this.accountId = accountId;
+
             List<int> adds;
             List <int> deletes;
             Refresh (out adds, out deletes);
@@ -22,7 +25,7 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
+            var list = McEmailMessage.QueryDueDateMessageItems (accountId);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -49,7 +52,7 @@ namespace NachoCore
             if (null == message) {
                 return new List<McEmailMessageThread> ();
             } else {
-                var thread = McEmailMessage.QueryDueDateMessageItemsAllAccountsByThreadId (message.ConversationId);
+                var thread = McEmailMessage.QueryDueDateMessageItemsByThreadId (accountId, message.ConversationId);
                 return thread;
             }
         }
@@ -75,18 +78,21 @@ namespace NachoCore
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
         {
-            return new NachoDeadlineEmailThread (threadId);
+            return new NachoDeadlineEmailThread (accountId, threadId);
         }
 
     }
 
     public class NachoDeadlineEmailThread : INachoEmailMessages
     {
+        int accountId;
         string threadId;
         List<McEmailMessageThread> threadList;
 
-        public NachoDeadlineEmailThread (string threadId)
+        public NachoDeadlineEmailThread (int accountId, string threadId)
         {
+            this.accountId = accountId;
+
             List<int> adds;
             List <int> deletes;
             this.threadId = threadId;
@@ -95,7 +101,7 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryDueDateMessageItemsAllAccountsByThreadId (threadId);
+            var list = McEmailMessage.QueryDueDateMessageItemsByThreadId (accountId, threadId);
             var threads = NcMessageThreads.ThreadByMessage (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
