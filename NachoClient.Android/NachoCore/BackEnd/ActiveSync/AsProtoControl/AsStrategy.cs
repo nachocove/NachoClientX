@@ -1038,22 +1038,22 @@ namespace NachoCore.ActiveSync
                     }
                 }
             }
-            // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
-            // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
-            var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
-            if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
-                protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
-                Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
-                var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
-                if (null != nSyncKit) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                        new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
-                }
-            }
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+                // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
+                // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
+                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
+                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
+                    protocolState.LastNarrowSync < needNarrowSyncMarker &&
+                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
+                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
+                    if (null != nSyncKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                    }
+                }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId).FirstOrDefault ();
                 if (null != next) {
