@@ -531,9 +531,9 @@ namespace NachoClient.iOS
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
             if (!string.IsNullOrEmpty (phoneTextField.Text)) {
                 if (isDefaultSelected) {
-                    contact.AddDefaultPhoneNumberAttribute (LoginHelpers.GetCurrentAccountId (), phoneLabel.type, phoneLabel.label, phoneTextField.Text);
+                    contact.AddDefaultPhoneNumberAttribute (contact.AccountId, phoneLabel.type, phoneLabel.label, phoneTextField.Text);
                 } else {
-                    contact.AddPhoneNumberAttribute (LoginHelpers.GetCurrentAccountId (), phoneLabel.type, phoneLabel.label, phoneTextField.Text);
+                    contact.AddPhoneNumberAttribute (contact.AccountId, phoneLabel.type, phoneLabel.label, phoneTextField.Text);
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
@@ -548,9 +548,9 @@ namespace NachoClient.iOS
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
             if (EmailHelper.IsValidEmail (emailTextField.Text)) {
                 if (isDefaultSelected) {
-                    contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
+                    contact.AddDefaultEmailAddressAttribute (contact.AccountId, Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
                 } else {
-                    contact.AddEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
+                    contact.AddEmailAddressAttribute (contact.AccountId, Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel (Xml.Contacts.Email1Address), emailTextField.Text);
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
@@ -632,9 +632,11 @@ namespace NachoClient.iOS
                 ContactsHelper c = new ContactsHelper ();
                 destinationController.SetLabelList (c.GetAvailablePhoneNames (contact));
                 destinationController.SetSelectedName (c.GetAvailablePhoneNames (contact).First ());
-                destinationController.SetOwner (this);
+                destinationController.SetOwner (this, contact.AccountId);
                 return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         public void PrepareForDismissal (string selectedName)

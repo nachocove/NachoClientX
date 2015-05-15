@@ -12,11 +12,10 @@ namespace NachoClient.iOS
 {
     public partial class HomeViewController : NcUIViewController
     {
-        public UIPageViewController pageController;
-        int accountId;
         public UIPageControl pageDots;
-        public bool isFirstLoad = true;
         public UIButton closeTutorial;
+
+        UIPageViewController pageController;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -48,11 +47,6 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.NavigationBar.Hidden = true;
             }
-
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
-            accountId = LoginHelpers.GetCurrentAccountId ();
-
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -62,31 +56,10 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.NavigationBar.Hidden = false;
             }
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (Tutorial)");
-                LoginHelpers.SetFirstSyncCompleted (accountId, true);
-            }
-            if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Info_InboxPingStarted Status Ind (Tutorial)");
-                LoginHelpers.SetFirstSyncCompleted (accountId, true);
-            }
-            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Info_AsAutoDComplete Status Ind (Tutorial)");
-                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
-            }
         }
 
         public void InitializePageViewController ()
         {
-
-
             UIView dotsAndDismissContainerView = new UIView (); // contain pageDots and the dismiss button
             dotsAndDismissContainerView.Frame = new CoreGraphics.CGRect (0, this.View.Frame.Bottom - 35, this.View.Frame.Width, 35);
             dotsAndDismissContainerView.BackgroundColor = UIColor.White;
@@ -112,8 +85,8 @@ namespace NachoClient.iOS
             //closeTutorial.BackgroundColor = A.Color_NachoRed; // debug
             closeTutorial.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
-                LoginHelpers.SetHasViewedTutorial (accountId, true);
-                PerformSegue (StartupViewController.NextSegue (), this);
+                LoginHelpers.SetHasViewedTutorial (true);
+                NavigationController.PopViewController(true);
             };
             dotsAndDismissContainerView.Add (closeTutorial);
 

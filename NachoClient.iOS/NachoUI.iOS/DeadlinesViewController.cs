@@ -13,7 +13,7 @@ namespace NachoClient.iOS
     {
         public DeadlinesViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (new NachoDeadlineEmailMessages ());
+            SetEmailMessages (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id));
         }
 
 //        protected override void CustomizeBackButton ()
