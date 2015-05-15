@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.Wbxml;
 using NachoPlatform;
 
 namespace NachoCore.ActiveSync
@@ -912,12 +913,12 @@ namespace NachoCore.ActiveSync
                         // Here we re-enable sync with high freqency for folders that have never seen an Add - to a limit.
                         folder.UpdateSet_AsSyncMetaToClientExpected (true);
                         stillHaveUnsyncedFolders = true;
-                        Log.Warn (Log.LOG_AS, "ScrubSyncedFolders: re-enable of never-synced folder {0}", folder.ServerId);
+                        Log.Warn (Log.LOG_AS, "ScrubSyncedFolders: re-enable of never-synced folder {0}", NcXmlFilterState.ShortHash (folder.ServerId));
                     } else if (folder.LastSyncAttempt < (now - new TimeSpan (0, 5, 0))) {
                         // Re-enable any folder that hasn't synced in a long time. This is because the AS spec only
                         // requires Ping to report Adds, and not Changes or Deletes.
                         folder.UpdateSet_AsSyncMetaToClientExpected (true);
-                        Log.Info (Log.LOG_AS, "ScrubSyncedFolders: re-enable of folder {0}", folder.ServerId);
+                        Log.Info (Log.LOG_AS, "ScrubSyncedFolders: re-enable of folder {0}", NcXmlFilterState.ShortHash (folder.ServerId));
                     }
                 }
             }
@@ -1037,7 +1038,20 @@ namespace NachoCore.ActiveSync
                     }
                 }
             }
-
+            // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
+            // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
+            var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
+            if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
+                protocolState.LastNarrowSync < needNarrowSyncMarker &&
+                (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
+                Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
+                var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
+                if (null != nSyncKit) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                        new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                }
+            }
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
@@ -1124,20 +1138,6 @@ namespace NachoCore.ActiveSync
                         break;
                     }
                     return Tuple.Create<PickActionEnum, AsCommand> (action, cmd);
-                }
-                // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
-                // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
-                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
-                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
-                    protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
-                    if (null != nSyncKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
-                    }
                 }
                 // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
                 // It seems we can't rely on the server to tell us to do one in all situations.
