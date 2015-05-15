@@ -1380,6 +1380,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PermissionManager.cs">
       <Link>NachoCore\Utils\PermissionManager.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpExample.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpExample.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
