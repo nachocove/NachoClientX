@@ -11,6 +11,7 @@ using MailKit.Search;
 using MailKit;
 using MimeKit;
 using NachoClient.Build;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
@@ -58,10 +59,18 @@ namespace NachoCore.Imap
 
         private void DoImap (bool readSpecial = false)
         {
-            var folder = CreateFolderInPersonalNamespace ("Nacho");
+            IMailFolder folder;
+
+            folder = client.GetFolder ("Nacho");
+            if (null != folder) {
+                folder.Delete ();
+            }
+
+            folder = CreateFolderInPersonalNamespace ("Nacho");
             folder.Delete ();
+
             // The Inbox folder is always available on all IMAP servers...
-            syncFolder (fromImapFolder (AccountId, client.Inbox));
+            SyncFolder (fromImapFolder (AccountId, client.Inbox));
 
             if (readSpecial) {
                 foreach (SpecialFolder special in Enum.GetValues(typeof(SpecialFolder)).Cast<SpecialFolder>()) {
@@ -69,7 +78,7 @@ namespace NachoCore.Imap
                     if (folder == null) {
                         Log.Error (Log.LOG_IMAP, "Could not get folder {0}", special);
                     } else {
-                        syncFolder (fromImapFolder(AccountId, folder));
+                        SyncFolder (fromImapFolder (AccountId, folder));
                     }
                 }
             }
@@ -91,7 +100,7 @@ namespace NachoCore.Imap
             }
         }
 
-        private void syncFolder (McFolder mcFolder)
+        public void SyncFolder (McFolder mcFolder)
         {
             IMailFolder folder = null;
             if (mcFolder.IsDistinguished) {
@@ -120,6 +129,7 @@ namespace NachoCore.Imap
                 // TODO folder has been recreated. Dump everything and resync.
             }
 
+            // TODO Do not do this. Figure out a different way.
             var mcMessages = McEmailMessage.QueryByFolderId<McEmailMessage> (mcFolder.AccountId, mcFolder.Id);
             if (mcMessages.Count != folder.Count) {
                 // TODO something changed, so re-sync
@@ -144,7 +154,7 @@ namespace NachoCore.Imap
             folder.Close ();
         }
 
-        public class NcProtocolLogger : IProtocolLogger
+        public class ImapProtocolLogger : IProtocolLogger
         {
             public void LogConnect (Uri uri)
             {
@@ -203,7 +213,7 @@ namespace NachoCore.Imap
 
         private void GetAuthenticatedClient ()
         {
-            NcProtocolLogger logger = new NcProtocolLogger ();
+            ImapProtocolLogger logger = new ImapProtocolLogger ();
             m_imapClient = new ImapClient (logger);
             m_imapClient.ClientCertificates = new X509CertificateCollection ();
             /*
@@ -289,8 +299,37 @@ namespace NachoCore.Imap
 
         private string findPreview (MessageSummary summary, IMailFolder folder)
         {
+            Log.Info (Log.LOG_IMAP, "UID {0} TextBody {1} HtmlBody {2}", summary.UniqueId, summary.TextBody, summary.HtmlBody);
             string preview = string.Empty;
-            var text = summary.Body as BodyPartText;
+
+            preview = findPreviewTexBody (summary, folder);
+            if (string.Empty != preview) {
+                return preview;
+            }
+
+            preview = findPreviewHtml (summary, folder);
+            if (string.Empty != preview) {
+                return preview;
+            }
+
+            preview = findPreviewText (summary, folder);
+            if (string.Empty != preview) {
+                return preview;
+            }
+
+            if (string.Empty != preview) {
+                Log.Info (Log.LOG_IMAP, "IMAP uid {0} preview <{1}>", summary.UniqueId.Value, preview);
+            } else {
+                Log.Error (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
+            }
+            return preview;
+        }
+
+        private string findPreviewText (MessageSummary summary, IMailFolder folder)
+        {
+            string preview = string.Empty;
+            BodyPartText text;
+            text = summary.Body as BodyPartText;
             if (null == text) {
                 var multipart = summary.Body as BodyPartMultipart;
                 if (null == multipart) {
@@ -305,28 +344,43 @@ namespace NachoCore.Imap
             }
 
             if (null != text) {
-                if (text.Octets > 0 && text.Octets <= 255) {
-                    // this will download *just* the text part
-                    TextPart mimepart = folder.GetBodyPart (summary.UniqueId.Value, text) as TextPart;
-                    preview = mimepart.Text;
-                } else {
-                    if (text.PartSpecifier == "") {
-                        // HACK HACK to trick GetStream into getting us the TEXT part of the message.
-                        // Otherwise, it returns all headers first, then the message
-                        text.PartSpecifier = text.ContentType.MediaType;
-                    }
-                    var previewStr = folder.GetStream (summary.UniqueId.Value, text, 0, 255);
+                try {
+                    var previewStr = folder.GetStream (summary.UniqueId.Value, text, true, 0, 255);
                     var buffer = new byte[255];
                     var read = previewStr.Read (buffer, 0, 255);
                     preview = Encoding.UTF8.GetString (buffer, 0, read);
                 }
+                catch (ImapCommandException e) {
+                    Log.Error (Log.LOG_IMAP, "{0}", e);
+                }
             }
-            if (string.Empty != preview) {
-                Log.Info (Log.LOG_IMAP, "IMAP uid {0} preview <{1}>", summary.UniqueId.Value, preview);
-            } else {
-                Log.Error (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
+            return preview;
+        }
+
+        private string findPreviewTexBody (MessageSummary summary, IMailFolder folder)
+        {
+            string preview = string.Empty;
+            var text = summary.TextBody;
+            if (null != text && text.Octets < 4096) {
+                TextPart mime = folder.GetBodyPart (summary.UniqueId.Value, text) as TextPart;
+                if (null != mime) {
+                    Log.Info (Log.LOG_IMAP, "TEXT {0}", mime.Text);
+                }
+                //preview = mime.Text.Substring (0, 255);
             }
-            // TODO if there wasn't a TEXT part, we'll want to look for others, like html or something.
+            return preview;
+        }
+
+        private string findPreviewHtml (MessageSummary summary, IMailFolder folder)
+        {
+            string preview = string.Empty;
+            var html = summary.HtmlBody;
+            if (null != html && html.Octets < 10240) {
+                TextPart mime = folder.GetBodyPart (summary.UniqueId.Value, html) as TextPart;
+                if (null != mime) {
+                    Log.Info (Log.LOG_IMAP, "HTML {0}", mime.Text);
+                }
+            }
             return preview;
         }
 
@@ -442,7 +496,7 @@ namespace NachoCore.Imap
 
             if (summary.GMailThreadId.HasValue) {
                 // TODO Where to put the thread ID? Is it the ThreadTopic? Seems unlikely..
-                emailMessage.ThreadTopic = summary.GMailThreadId.Value.ToString ();
+                emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
             }
 
             if ("" == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
@@ -542,5 +596,266 @@ namespace NachoCore.Imap
         //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
         //            }
     }
+
+//    public partial class ImapProtoControl : NcProtoControl
+//    {
+//        private IImapCommand Cmd;
+//        public ImapProtoControl ProtoControl { set; get; }
+//
+//        public enum Lst : uint
+//        {
+//            DiscW = (St.Last + 1),
+//            // TODO Move to parent
+//            UiDCrdW,
+//            UiPCrdW,
+//            UiServConfW,
+//            UiCertOkW,
+//            SettingsW,
+//            Pick,
+//            SyncW,
+//            QOpW,
+//            HotQOpW,
+//            // we are active, but choosing not to execute.
+//            IdleW,
+//            // we are not active. when we re-activate on Launch, we pick-up at the saved state.
+//            // TODO: make Parked part of base SM functionality.
+//            Parked,
+//        }
+//
+//        public override BackEndStateEnum BackEndState {
+//            get {
+//                var state = Sm.State;
+//                if ((uint)Lst.Parked == state) {
+//                    state = ProtocolState.ProtoControlState;
+//                }
+//                // Every state above must be mapped here.
+//                switch (state) {
+//                case (uint)St.Start:
+//                    return BackEndStateEnum.NotYetStarted;
+//
+//                case (uint)Lst.DiscW:
+//                    return BackEndStateEnum.Running;
+//
+//                case (uint)Lst.UiDCrdW:
+//                case (uint)Lst.UiPCrdW:
+//                    return BackEndStateEnum.CredWait;
+//
+//                case (uint)Lst.UiServConfW:
+//                    return BackEndStateEnum.ServerConfWait;
+//
+//                case (uint)Lst.UiCertOkW:
+//                    return BackEndStateEnum.CertAskWait;
+//
+//                case (uint)Lst.SettingsW:
+//                case (uint)Lst.Pick:
+//                case (uint)Lst.SyncW:
+//                case (uint)Lst.QOpW:
+//                case (uint)Lst.HotQOpW:
+//                case (uint)Lst.IdleW:
+//                    return (ProtocolState.HasSyncedInbox) ? 
+//                        BackEndStateEnum.PostAutoDPostInboxSync : 
+//                        BackEndStateEnum.PostAutoDPreInboxSync;
+//
+//                default:
+//                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+//                    return BackEndStateEnum.PostAutoDPostInboxSync;
+//                }
+//            }
+//        }
+//
+//        // If you're exposed to AsHttpOperation, you need to cover these.
+//        public class ImapEvt : PcEvt
+//        {
+//            new public enum E : uint
+//            {
+//                ReDisc = (PcEvt.E.Last + 1),
+//                ReProv,
+//                ReSync,
+//                AuthFail,
+//                Last = AuthFail,
+//            };
+//        }
+//
+//        // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
+//        // DB-based events (even if UI-driven) and server-based events lack the Ui prefix.
+//        public class CtlEvt : ImapEvt
+//        {
+//            // QUESTION: Why the various event classes? CtlEvt, ImapEvt, Lst, etc.
+//            new public enum E : uint
+//            {
+//                UiSetCred = (ImapEvt.E.Last + 1),
+//                GetServConf,
+//                UiSetServConf,
+//                GetCertOk,
+//                UiCertOkYes,
+//                UiCertOkNo,
+//                ReFSync,
+//                PkPing,
+//                PkQOp,
+//                PkHotQOp,
+//                PkFetch,
+//                PkWait,
+//            };
+//        }
+//
+//        public ImapProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+//        {
+//            ProtoControl = this;
+//            EstablishService ();
+//            /*
+//             * State Machine design:
+//             * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
+//             * * ForceStop can happen at any time, and must Cancel anything that is going on immediately.
+//             * * ForceSync can happen at any time, and must Cancel anything that is going on immediately and initiate Sync.
+//             * * Objects can be added to the McPending Q at any time.
+//             * * All other events must come from the orderly completion of commands or internal forced transitions.
+//             * 
+//             * The SM Q is an event-Q not a work-Q. Where we need to "remember" to do more than one thing, that
+//             * memory must be embedded in the state machine.
+//             * 
+//             * Sync, Provision, Discovery and FolderSync can be forced by posting the appropriate event.
+//             * 
+//             * TempFail: for scenarios where a command can return TempFail, just keep re-trying:
+//             *  - NcCommStatus will eventually shut us down as TempFail counts against Quality. 
+//             *  - Max deferrals on pending will pull "bad" pendings out of the Q.
+//             */
+//            Sm = new NcStateMachine ("ASPC") { 
+//                Name = string.Format ("ASPC({0})", AccountId),
+//                LocalEventType = typeof(CtlEvt),
+//                LocalStateType = typeof(Lst),
+//                StateChangeIndication = UpdateSavedState,
+//                TransTable = new[] {
+//                    new Node {
+//                        State = (uint)St.Start,
+//                        Drop = new [] {
+//                            (uint)PcEvt.E.PendQ,
+//                        },
+//                        Invalid = new [] {
+//                            (uint)CtlEvt.E.GetCertOk,
+//                        },
+//                        On = new [] {
+//                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+//                            //new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+//                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+//                        }
+//                    },
+//                }
+//            };
+//        }
+//
+//        private void ExecuteCmd ()
+//        {
+//            if (null != PushAssist) {
+//                if (PushAssist.IsStartOrParked ()) {
+//                    PushAssist.Execute ();
+//                }
+//            }
+//            Cmd.Execute (Sm);
+//        }
+//
+//        private void SetCmd (IImapCommand nextCmd)
+//        {
+//            if (null != Cmd) {
+//                Cmd.Cancel ();
+//            }
+//            Cmd = nextCmd;
+//        }
+//
+//        private void DoDisc ()
+//        {
+//            SetCmd (new ImapAutodiscoverCommand (this));
+//            ExecuteCmd ();
+//        }
+//
+//        // State-machine's state persistance callback.
+//        private void UpdateSavedState ()
+//        {
+//            // TODO Move to parent?
+//            var protocolState = ProtocolState;
+//            uint stateToSave = Sm.State;
+//            switch (stateToSave) {
+//            case (uint)Lst.UiDCrdW:
+//            case (uint)Lst.UiServConfW:
+//            case (uint)Lst.UiCertOkW:
+//                stateToSave = (uint)Lst.DiscW;
+//                break;
+//            case (uint)Lst.Parked:
+//                // We never save Parked.
+//                return;
+//            }
+//            protocolState.ProtoControlState = stateToSave;
+//            protocolState.Update ();
+//        }
+//
+//        private void EstablishService ()
+//        {
+//            // TODO Abstract to parent.
+//
+//            // Hang our records off Account.
+//            NcModel.Instance.RunInTransaction (() => {
+//                var account = Account;
+//                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
+//                if (null == policy) {
+//                    policy = new McPolicy () {
+//                        AccountId = account.Id,
+//                    };
+//                    policy.Insert ();
+//                }
+//                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
+//                if (null == protocolState) {
+//                    protocolState = new McProtocolState () {
+//                        AccountId = account.Id,
+//                    };
+//                    protocolState.Insert ();
+//                }
+//            });
+//        }
+//    }
+//
+//    public interface IImapCommand
+//    {
+//        void Execute (NcStateMachine sm);
+//        void Cancel ();
+//    }
+//
+//    public abstract class ImapCommand : IImapCommand
+//    {
+//        public string CommandName;
+//        public TimeSpan Timeout { get; set; }
+//        protected IBEContext BEContext;
+//        protected List<McPending> PendingList;
+//        protected object PendingResolveLockObj;
+//
+//        public ImapCommand (string commandName, IBEContext beContext)
+//        {
+//            Timeout = TimeSpan.Zero;
+//            CommandName = commandName;
+//            BEContext = beContext;
+//            PendingList = new List<McPending> ();
+//            PendingResolveLockObj = new object ();
+//        }
+//        public void Execute (NcStateMachine sm)
+//        {
+//        }
+//        public void Cancel ()
+//        {
+//        }
+//    }
+//
+//    public partial class ImapAutodiscoverCommand : ImapCommand
+//    {
+//        public ImapAutodiscoverCommand (IBEContext dataSource) : base ("Autodiscover", dataSource)
+//        {
+//        }
+//
+//        public void Execute (NcStateMachine sm)
+//        {
+//            
+//        }
+//        public void Cancel ()
+//        {
+//            
+//        }
+//    }
 }
 
