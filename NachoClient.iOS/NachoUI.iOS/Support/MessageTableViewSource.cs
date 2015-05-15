@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
@@ -617,8 +618,7 @@ namespace NachoClient.iOS
             // Preview label view
             var previewLabelView = (UILabel)cell.ContentView.ViewWithTag (PREVIEW_TAG);
             previewLabelView.Hidden = false;
-            var rawPreview = message.GetBodyPreviewOrEmpty ();
-            var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+            var cookedPreview = AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
             }
@@ -636,6 +636,20 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
+        }
+
+        /// <summary>
+        /// Compress the message preview so it is more tightly packed with useful information.
+        /// Remove some pieces that the user is unlikely to find useful.  Collapse adjacent
+        /// white space into a single space character.
+        /// </summary>
+        protected string AdjustPreviewText (string raw)
+        {
+            return Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
+                @"\[(http|image|cid).*\]", ""),
+                @"<http.*>", ""),
+                @"\s+", " "),
+                @"^\s", "");
         }
 
         protected void ConfigureDraftMessageCell (UITableView tableView, UITableViewCell cell, int messageThreadIndex)
