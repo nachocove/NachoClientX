@@ -964,8 +964,8 @@ namespace Test.iOS
                 var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: "c1");
                 var email2 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: 3, serverId: "e2");
                 var pend1 = CreatePending (operation: Operations.EmailSend, item: email1);
-                var pend2 = CreatePending (operation: Operations.EmailBodyDownload, item: email1);
-                var pend3 = CreatePending (accountId:5, operation: Operations.EmailSend, item: email1);
+                CreatePending (operation: Operations.EmailBodyDownload, item: email1);
+                CreatePending (accountId:5, operation: Operations.EmailSend, item: email1);
                 var pend4 = CreatePending (operation: Operations.EmailSend, item: email2);
                 var pend5 = CreatePending (operation: Operations.CalDelete, item: cal);
 

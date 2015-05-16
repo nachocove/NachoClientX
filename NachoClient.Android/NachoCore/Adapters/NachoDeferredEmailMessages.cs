@@ -12,10 +12,13 @@ namespace NachoCore
 {
     public class NachoDeferredEmailMessages : INachoEmailMessages
     {
+        int accountId;
         List<McEmailMessageThread> threadList;
 
-        public NachoDeferredEmailMessages ()
+        public NachoDeferredEmailMessages (int accountId)
         {
+            this.accountId = accountId;
+
             List<int> adds;
             List <int> deletes;
             Refresh (out adds, out deletes);
@@ -23,7 +26,7 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
+            var list = McEmailMessage.QueryDeferredMessageItems (accountId);
             var threads = NcMessageThreads.ThreadByConversation (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;
@@ -50,7 +53,7 @@ namespace NachoCore
             if (null == message) {
                 return new List<McEmailMessageThread> ();
             } else {
-                var thread = McEmailMessage.QueryDeferredMessageItemsAllAccountsByThreadId (message.ConversationId);
+                var thread = McEmailMessage.QueryDeferredMessageItemsByThreadId (accountId, message.ConversationId);
                 return thread;
             }
         }
@@ -77,17 +80,20 @@ namespace NachoCore
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
         {
-            return new NachoDeferredEmailThread (threadId);
+            return new NachoDeferredEmailThread (accountId, threadId);
         }
     }
 
     public class NachoDeferredEmailThread : INachoEmailMessages
     {
+        int accountId;
         string threadId;
         List<McEmailMessageThread> threadList;
 
-        public NachoDeferredEmailThread (string threadId)
+        public NachoDeferredEmailThread (int accountId, string threadId)
         {
+            this.accountId = accountId;
+
             List<int> adds;
             List <int> deletes;
             this.threadId = threadId;
@@ -96,7 +102,7 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryDeferredMessageItemsAllAccountsByThreadId (threadId);
+            var list = McEmailMessage.QueryDeferredMessageItemsByThreadId (accountId, threadId);
             var threads = NcMessageThreads.ThreadByMessage (list);
             if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
                 threadList = threads;

@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using ModernHttpClient;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -139,8 +140,13 @@ namespace NachoCore.ActiveSync
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
                         new Node {State = (uint)RobotLst.PostWait, 
-                            Invalid = new [] {(uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -198,8 +204,15 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.GetWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                (uint)SharedEvt.E.ReStart,
+                                (uint)SharedEvt.E.SrvCertN,
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -247,9 +260,19 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.SrvDnsWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                                (uint)AsProtoControl.AsEvt.E.ReProv, 
+                                (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                                (uint)SharedEvt.E.ReStart, 
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, 
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -277,9 +300,19 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.MxDnsWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                (uint)AsProtoControl.AsEvt.E.ReProv,
+                                (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                (uint)SharedEvt.E.ReStart, 
+                                (uint)SharedEvt.E.SrvCertN,
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, 
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -307,9 +340,19 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.CertWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                                (uint)AsProtoControl.AsEvt.E.ReProv, 
+                                (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                                (uint)SharedEvt.E.ReStart,
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, 
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -337,10 +380,20 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.OkWait,
-                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                                (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)SmEvt.E.Success,
+                                (uint)SmEvt.E.HardFail, 
+                                (uint)SmEvt.E.TempFail,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                (uint)AsProtoControl.AsEvt.E.ReProv, 
+                                (uint)AsProtoControl.AsEvt.E.ReSync, 
+                                (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                (uint)SharedEvt.E.ReStart,
+                                (uint)RobotEvt.E.ReDir,
+                                (uint)RobotEvt.E.NullCode,
                             }, 
                             On = new[] {
                                 new Trans {
@@ -363,8 +416,13 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                            Invalid = new [] {(uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {

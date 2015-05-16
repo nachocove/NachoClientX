@@ -12,7 +12,7 @@ namespace NachoClient.iOS
     {
         public DeferredViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (new NachoDeferredEmailMessages ());
+            SetEmailMessages (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id));
         }
 
         protected override void SetRowHeight ()

@@ -770,10 +770,11 @@ namespace NachoClient.iOS
                     destinationController.SetSelectedName (editingMiscCell.Name);
                     break;
                 }
-                destinationController.SetContact (contactCopy);
-                destinationController.SetOwner (this);
+                destinationController.SetOwner (this, contactCopy.AccountId);
                 return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         protected override void OnKeyboardChanged ()
@@ -937,9 +938,7 @@ namespace NachoClient.iOS
             if (null != contactBody) {
                 contactBody.UpdateData (notesTextView.Text);
             } else {
-                contactCopy.BodyId = McBody.InsertFile (LoginHelpers.GetCurrentAccountId ()
-                    , McAbstrFileDesc.BodyTypeEnum.PlainText_1,
-                    notesTextView.Text).Id;
+                contactCopy.BodyId = McBody.InsertFile (contactCopy.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, notesTextView.Text).Id;
             }
         }
 
@@ -1107,7 +1106,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var phoneAttribute = contactCopy.AddOrUpdatePhoneNumberAttribute (LoginHelpers.GetCurrentAccountId (), 
+            var phoneAttribute = contactCopy.AddOrUpdatePhoneNumberAttribute (contactCopy.AccountId, 
                                      contactHelper.GetAvailablePhoneNames (contactCopy).First (),
                                      contactHelper.ExchangeNameToLabel (contactHelper.GetAvailablePhoneNames (contactCopy).First ()),
                                      ""
@@ -1128,7 +1127,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var emailAttribute = contactCopy.AddOrUpdateEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), 
+            var emailAttribute = contactCopy.AddOrUpdateEmailAddressAttribute (contactCopy.AccountId, 
                                      contactHelper.GetAvailableEmailNames (contactCopy).First (),
                                      contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableEmailNames (contactCopy).First ()),
                                      ""

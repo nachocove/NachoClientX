@@ -236,6 +236,7 @@
     <Folder Include="NachoCore\Index\" />
     <Folder Include="NachoCore\Model\Migration\" />
     <Folder Include="NachoCore\BackEnd\IMAP\" />
+    <Folder Include="NachoCore\BackEnd\SMTP\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -394,9 +395,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IProtoControlOwner.cs">
       <Link>NachoCore\BackEnd\IProtoControlOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ProtoControl.cs">
-      <Link>NachoCore\BackEnd\ProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\StatusIndEventArgs.cs">
       <Link>NachoCore\BackEnd\StatusIndEventArgs.cs</Link>
@@ -1370,6 +1368,15 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountsTableViewSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcProtoControl.cs">
+      <Link>NachoCore\BackEnd\NcProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration24.cs">
+      <Link>NachoCore\Model\Migration\NcMigration24.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\PermissionManager.cs">
+      <Link>NachoCore\Utils\PermissionManager.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

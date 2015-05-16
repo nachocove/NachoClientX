@@ -60,7 +60,7 @@ namespace NachoCore
             WillDelete,
         };
 
-        private ConcurrentDictionary<int,ProtoControl> Services;
+        private ConcurrentDictionary<int,NcProtoControl> Services;
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -70,10 +70,10 @@ namespace NachoCore
             return Services.ContainsKey (accountId);
         }
 
-        private NcResult ServiceFromAccountId (int accountId, Func<ProtoControl, NcResult> func)
+        private NcResult ServiceFromAccountId (int accountId, Func<NcProtoControl, NcResult> func)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
-            ProtoControl protoCtrl;
+            NcProtoControl protoCtrl;
             if (!Services.TryGetValue (accountId, out protoCtrl)) {
                 Log.Error (Log.LOG_SYS, "ServiceFromAccountId called with bad accountId {0} @ {1}", accountId, new StackTrace ());
                 return NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist);
@@ -86,7 +86,7 @@ namespace NachoCore
             // Adjust system settings.
             ServicePointManager.DefaultConnectionLimit = 25;
 
-            Services = new ConcurrentDictionary<int, ProtoControl> ();
+            Services = new ConcurrentDictionary<int, NcProtoControl> ();
         }
 
         public void EstablishService ()
@@ -139,11 +139,11 @@ namespace NachoCore
 
         public void EstablishService (int accountId)
         {
-            ProtoControl service = null;
+            NcProtoControl service = null;
             var account = McAccount.QueryById<McAccount> (accountId);
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Device:
-                service = new ProtoControl (this, accountId);
+                service = new NcProtoControl (this, accountId);
                 break;
 
             case McAccount.AccountTypeEnum.Exchange:
@@ -164,7 +164,7 @@ namespace NachoCore
         // Service must be Stop()ed before calling RemoveService().
         public void RemoveService (int accountId)
         {
-            ProtoControl service = null;
+            NcProtoControl service = null;
             if (Services.TryGetValue (accountId, out service)) {
                 service.Remove ();
                 Log.Info (Log.LOG_LIFECYCLE, "RemoveService {0}", accountId);
@@ -261,7 +261,7 @@ namespace NachoCore
             return retval;
         }
 
-        private NcResult CmdInDoNotDelayContext (int accountId, Func<ProtoControl, NcResult> cmd)
+        private NcResult CmdInDoNotDelayContext (int accountId, Func<NcProtoControl, NcResult> cmd)
         {
             return ServiceFromAccountId (accountId, (service) => {
                 if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
@@ -321,7 +321,7 @@ namespace NachoCore
 
        
         private List<NcResult> DeleteMultiCmd (int accountId, List<int> Ids,
-            Func<ProtoControl, int, bool, NcResult> deleter)
+            Func<NcProtoControl, int, bool, NcResult> deleter)
         {
             var outer = ServiceFromAccountId (accountId, (service) => {
                 var retval = new List<NcResult> ();
@@ -338,7 +338,7 @@ namespace NachoCore
         }
 
         private List<NcResult> MoveMultiCmd (int accountId, List<int> Ids, int destFolderId,
-            Func<ProtoControl, int, int, bool, NcResult> mover)
+            Func<NcProtoControl, int, int, bool, NcResult> mover)
         {
             var outer = ServiceFromAccountId (accountId, (service) => {
                 var retval = new List<NcResult> ();
@@ -626,7 +626,7 @@ namespace NachoCore
             NcApplication.Instance.InvokeStatusIndEvent (e);
         }
 
-        public void StatusInd (ProtoControl sender, NcResult status)
+        public void StatusInd (NcProtoControl sender, NcResult status)
         {
             InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Account = sender.Account,
@@ -634,7 +634,7 @@ namespace NachoCore
             });
         }
 
-        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+        public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
         {
             InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Account = sender.Account,
@@ -643,35 +643,35 @@ namespace NachoCore
             });
         }
 
-        public void CredReq (ProtoControl sender)
+        public void CredReq (NcProtoControl sender)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.CredReq (sender.AccountId);
             });
         }
 
-        public void ServConfReq (ProtoControl sender, object arg)
+        public void ServConfReq (NcProtoControl sender, object arg)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.ServConfReq (sender.AccountId, arg);
             });
         }
 
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+        public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.CertAskReq (sender.AccountId, certificate);
             });
         }
 
-        public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+        public void SearchContactsResp (NcProtoControl sender, string prefix, string token)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.SearchContactsResp (sender.AccountId, prefix, token);
             });
         }
 
-        public void SendEmailResp (ProtoControl sender, int emailMessageId, bool didSend)
+        public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.SendEmailResp (sender.AccountId, emailMessageId, didSend);

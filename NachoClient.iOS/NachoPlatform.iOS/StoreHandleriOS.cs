@@ -484,7 +484,7 @@ namespace NachoPlatform
         {
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
             switch (siea.Status.SubKind) {
-            case NcResult.SubKindEnum.Info_PushAssistClientToken:
+            case NcResult.SubKindEnum.Info_UserIdChanged:
                 if (null == siea.Status.Value) {
                     // do nothing now
                 } else {

@@ -36,12 +36,8 @@ namespace NachoClient.iOS
         protected const int SPINNER_HEIGHT = 338;
         protected const int MASK_DIAMETER = 80;
         protected nfloat LOWER_SECTION_Y_VAL;
-        protected bool quitLoadingAnimation;
         protected CGPoint topHalfSpinnerCenter;
         protected CGPoint bottomHalfSpinnerCenter;
-
-        protected NSTimer SegueToTutorial;
-        protected const int WAIT_TIME = 12;
 
         public WaitingScreen ()
         {
@@ -202,44 +198,17 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void InitializeAutomaticSegueTimer ()
-        {
-            if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
-                SegueToTutorial = NSTimer.CreateScheduledTimer (WAIT_TIME, delegate {
-                    // TODO: Move this logic to advanced view controller
-                    if (LoginHelpers.IsCurrentAccountSet ()) {
-                        if (!LoginHelpers.HasAutoDCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                            owner.PerformSegue ("SegueToHome", this);
-                        }
-                    } else {
-                        Log.Info (Log.LOG_UI, "avl: segue timer account null");
-                    }
-                });
-            }
-        }
-
-        public void InvalidateAutomaticSegueTimer ()
-        {
-            if (null != SegueToTutorial) {
-                SegueToTutorial.Invalidate ();
-            }
-        }
-
         public void ShowView ()
         {
-            InitializeAutomaticSegueTimer ();
             this.Hidden = false;
             owner.NavigationItem.Title = "";
             Util.ConfigureNavBar (true, owner.NavigationController);
-            quitLoadingAnimation = false;
             ResetLoadingItems ();
             StartLoadingAnimation ();
         }
 
         public void DismissView ()
         {
-            InvalidateAutomaticSegueTimer ();
-            quitLoadingAnimation = true;
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
             topHalfSpinner.Layer.RemoveAllAnimations ();
             owner.NavigationItem.Title = "Account Setup";
@@ -286,7 +255,7 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void StartSyncedEmailAnimation ()
+        public void StartSyncedEmailAnimation (int accountId)
         {
             UIView.AnimateKeyframes (4, .1, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
@@ -322,7 +291,7 @@ namespace NachoClient.iOS
                 });
 
             }, ((bool finished) => {
-                owner.PerformSegue (StartupViewController.NextSegue (), this);
+                owner.FinishedSyncedEmailAnimation(accountId);
             }));
         }
     }

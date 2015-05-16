@@ -64,7 +64,7 @@ namespace Test.iOS
             }
 
             // remove account
-            NcAccountHandler.Instance.RemoveAccount (stopStartServices: false);
+            NcAccountHandler.Instance.RemoveAccount (account.Id, stopStartServices: false);
 
             // assert not founds
             foundAccount = McAccount.QueryById<McAccount> (defaultAccountId);

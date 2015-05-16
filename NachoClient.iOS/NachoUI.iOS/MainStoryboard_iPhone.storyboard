@@ -128,6 +128,7 @@
                         <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
                         <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="z0K-Fc-ato"/>
+                        <segue destination="6rF-Ad-StO" kind="push" identifier="SegueToLaunch" id="ntd-BZ-hgR"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -229,10 +230,10 @@
             <objects>
                 <viewController storyboardIdentifier="LaunchViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="6rF-Ad-StO" customClass="LaunchViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="RIJ-2d-dqb">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="455"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="otx-5M-4eP">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="-57" width="320" height="568"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Nxw-gv-RGA" userLabel="View - ContentView">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
@@ -1392,31 +1393,32 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="RKu-FY-1IX"/>
+        <segue reference="Kfq-r2-VA6"/>
+        <segue reference="22b-Az-fdF"/>
         <segue reference="lbY-YF-b2b"/>
         <segue reference="XQg-JR-vxA"/>
+        <segue reference="RKu-FY-1IX"/>
+        <segue reference="TEI-cG-N0R"/>
+        <segue reference="Aba-pv-mzB"/>
+        <segue reference="VR8-PG-xAi"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="z8t-Er-kGd"/>
+        <segue reference="DcC-EH-FAx"/>
+        <segue reference="ntd-BZ-hgR"/>
+        <segue reference="v9F-jf-qe1"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="tQS-oL-XNh"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="z10-H9-HYt"/>
-        <segue reference="v9F-jf-qe1"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="qB9-ce-7gT"/>
+        <segue reference="yNo-Ue-PAG"/>
         <segue reference="zDw-Tx-fTt"/>
-        <segue reference="k2t-Pj-AhS"/>
-        <segue reference="HCr-Oa-UHV"/>
         <segue reference="tdu-G2-PEp"/>
         <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="yNo-Ue-PAG"/>
-        <segue reference="22b-Az-fdF"/>
-        <segue reference="Kfq-r2-VA6"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="VR8-PG-xAi"/>
-        <segue reference="TEI-cG-N0R"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="z8t-Er-kGd"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="k2t-Pj-AhS"/>
         <segue reference="od0-Sz-R9p"/>
         <segue reference="tzJ-j2-YOi"/>
     </inferredMetricsTieBreakers>

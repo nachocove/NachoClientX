@@ -182,7 +182,6 @@ namespace Test.Common
             Wpa.Dispose ();
             Wpa = null;
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
-            NcApplication.Instance.ClientId = null;
             PushAssist.MinDelayMsec = OriginalMinDelayMsec;
             PushAssist.IncrementalDelayMsec = OriginalIncrementalDelayMsec;
             WrapPushAssist.SetDeviceToken (null); // do not use PushAssist.SetDeviceToken() as it creates a new task.
@@ -347,14 +346,10 @@ namespace Test.Common
             Wpa.Execute ();
             WaitForState ((uint)PushAssist.Lst.DevTokW);
 
-            // [got device token] -> CliTokW
-            PushAssist.SetDeviceToken (DeviceToken);
-            WaitForState ((uint)PushAssist.Lst.CliTokW);
-
-            // [got client token] -> SessTokW -> Active
+            // [got device token] -> CliTokW -> SessTokW -> Active
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
-            NcApplication.Instance.ClientId = ClientToken;
+            PushAssist.SetDeviceToken (DeviceToken);
             WaitForState ((uint)PushAssist.Lst.Active);
 
             // [defer] -> Active
@@ -375,7 +370,6 @@ namespace Test.Common
         {
             // Set device and client tokens first
             PushAssist.SetDeviceToken (DeviceToken);
-            NcApplication.Instance.ClientId = ClientToken;
 
             // Start
             WaitForState ((uint)St.Start);
@@ -405,7 +399,6 @@ namespace Test.Common
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionWarnResponse;
             PushAssist.SetDeviceToken (DeviceToken);
-            NcApplication.Instance.ClientId = ClientToken;
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
@@ -429,7 +422,6 @@ namespace Test.Common
                 return StartSessionOkResponse (request);
             };
             PushAssist.SetDeviceToken (DeviceToken);
-            NcApplication.Instance.ClientId = ClientToken;
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
@@ -470,7 +462,6 @@ namespace Test.Common
             MockHttpClient.ExamineHttpRequestMessage = CheckStartSessionRequest;
             MockHttpClient.ProvideHttpResponseMessage = StartSessionOkResponse;
             PushAssist.SetDeviceToken (DeviceToken);
-            NcApplication.Instance.ClientId = ClientToken;
 
             WaitForState ((uint)St.Start);
             Wpa.Execute ();
