@@ -779,6 +779,10 @@ namespace NachoCore.Model
             EvaluateSelfEclipsing ();
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
+                // Delete the old index document. Brain will re-index it in the background.
+                IndexVersion = 0;
+                NcBrain.UnindexContact (this);
+
                 retval = base.Update ();
                 if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
                     InsertAncillaryData ();
