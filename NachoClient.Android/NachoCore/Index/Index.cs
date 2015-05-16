@@ -166,6 +166,7 @@ namespace NachoCore.Index
             try {
                 using (var reader = IndexReader.Open (IndexDirectory, true)) {
                     var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
+                    parser.AllowLeadingWildcard = true;
                     var query = parser.Parse (queryString);
                     var searcher = new IndexSearcher (reader);
                     var matches = searcher.Search (query, maxMatches);
@@ -179,24 +180,36 @@ namespace NachoCore.Index
             return matchedItems;
         }
 
-        public List<MatchedItem> SearchAllFields (string queryString, int maxMatches = 1000)
+        public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000)
         {
-            List<MatchedItem> matchedItems = new List<MatchedItem> ();
-            try {
-                using (var reader = IndexReader.Open (IndexDirectory, true)) {
-                    var fields = new string[] { "body", "from", "subject", };
-                    var parser = new MultiFieldQueryParser (Lucene.Net.Util.Version.LUCENE_30, fields, Analyzer);
-                    var query = parser.Parse (queryString);
-                    var searcher = new IndexSearcher (reader);
-                    var matches = searcher.Search (query, maxMatches);
-                    foreach (var scoreDoc in matches.ScoreDocs) {
-                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
-                    }
-                }
-            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
-                // This can happen if a search is done before anything is written to the index.
+            string newQueryString = "";
+            if (null != type) {
+                newQueryString += "+type:" + type;
             }
-            return matchedItems;
+            newQueryString += " +(";
+            foreach (var f in fields) {
+                newQueryString += f + ":" + queryString + " ";
+            }
+            newQueryString += ")";
+            return Search (newQueryString, maxMatches);
+        }
+
+        public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
+        {
+            return SearchFields ("message", queryString, new string[] { "body", "from", "subject" }, maxMatches);
+        }
+
+        public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)
+        {
+            return SearchFields ("contact", queryString, new string[] {
+                "first_name",
+                "middle_name",
+                "last_name",
+                "email_address",
+                "phone_number",
+                "address",
+                "note"
+            }, maxMatches);
         }
     }
 

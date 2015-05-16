@@ -18,6 +18,7 @@ namespace NachoCore.Brain
         UPDATE_ADDRESS_SCORE,
         UPDATE_MESSAGE_SCORE,
         UNINDEX_MESSAGE,
+        UNINDEX_CONTACT,
     };
 
     [Serializable]
@@ -185,6 +186,37 @@ namespace NachoCore.Brain
     {
         public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
             : base (NcBrainEventType.UNINDEX_MESSAGE, accountId, emailMessageId)
+        {
+        }
+    }
+
+    [Serializable]
+    public class NcBrainContactEvent : NcBrainEvent
+    {
+        public Int64 AccountId;
+
+        public Int64 ContactId;
+
+        public NcBrainContactEvent (NcBrainEventType eventType, Int64 accountId, Int64 contactId)
+            : base (eventType)
+        {
+            AccountId = accountId;
+            ContactId = contactId;
+        }
+
+
+        public override string ToString ()
+        {
+            return String.Format ("[{0}: type={1}, accountId={2}, ContactId={3}",
+                GetType ().Name, Type, AccountId, ContactId);
+        }
+    }
+
+    [Serializable]
+    public class NcCBrainUnindexContactEvent : NcBrainContactEvent
+    {
+        public NcCBrainUnindexContactEvent (Int64 accountId, Int64 contactId)
+            : base (NcBrainEventType.UNINDEX_CONTACT, accountId, contactId)
         {
         }
     }

@@ -913,6 +913,9 @@ namespace NachoClient.iOS
                     contact.IMAddresses.Clear ();
                     contact.Dates.Clear ();
                     ContactsHelper.CopyContact (contactCopy, ref contact);
+                    // Delete the old index document. Brain will re-index it in the background.
+                    contact.IndexVersion = 0;
+                    NcBrain.UnindexContact (contact);
                     contact.Update ();
                     NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
                     break;

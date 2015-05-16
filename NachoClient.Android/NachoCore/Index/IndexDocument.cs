@@ -30,10 +30,9 @@ namespace NachoCore.Index
         {
             BytesIndexed = 0;
             Doc = new Document ();
-            Doc.Add (GetExactMatchOnlyField ("type", type));
-            Doc.Add (GetExactMatchOnlyField ("id", id));
-            Doc.Add (GetIndexedField ("body", body));
-            BytesIndexed += type.Length + id.Length;
+            AddExactMatchOnlyField ("type", type);
+            AddExactMatchOnlyField ("id", id);
+            AddIndexedField ("body", body);
         }
 
         protected Field GetExactMatchOnlyField (string field, string value)
@@ -50,42 +49,111 @@ namespace NachoCore.Index
         {
             foreach (var address in addressList) {
                 var addressString = address.ToString ();
-                Doc.Add (GetIndexedField (field, addressString));
-                BytesIndexed += addressString.Length;
+                AddIndexedField (field, addressString);
             }
+        }
+
+        protected void AddExactMatchOnlyField (string field, string value)
+        {
+            if (String.IsNullOrEmpty (value)) {
+                return;
+            }
+            Doc.Add (GetExactMatchOnlyField (field, value));
+            BytesIndexed += value.Length;
+        }
+
+        protected void AddIndexedField (string field, string value)
+        {
+            if (String.IsNullOrEmpty (value)) {
+                return;
+            }
+            Doc.Add (GetIndexedField (field, value));
+            BytesIndexed += value.Length;
         }
     }
 
-    public class IndexMimeDocument : NcIndexDocument
+    public class MimeIndexDocument : NcIndexDocument
     {
         protected MimeMessage Message;
 
-        public IndexMimeDocument (string type, string id, string content, MimeMessage message) :
+        public MimeIndexDocument (string type, string id, string content, MimeMessage message) :
             base (type, id, content)
         {
             Message = message;
         }
     }
 
-    public class IndexEmailMessage : IndexMimeDocument
+    public class EmailMessageIndexDocument : MimeIndexDocument
     {
-        public IndexEmailMessage (string id, string content, MimeMessage message) :
+        public EmailMessageIndexDocument (string id, string content, MimeMessage message) :
             base ("message", id, content, message)
         {
-            if (!String.IsNullOrEmpty (Message.Subject)) {
-                Doc.Add (GetIndexedField ("subject", Message.Subject));
-                BytesIndexed += Message.Subject.Length;
-            }
+            AddIndexedField ("subject", Message.Subject);
 
             var dateString = DateTools.DateToString (Message.Date.DateTime, DateTools.Resolution.SECOND);
             var dateField = GetExactMatchOnlyField ("received_date", dateString);
             Doc.Add (dateField);
+            BytesIndexed += dateString.Length;
 
             // Index the addresses
             AddAddressList ("from", Message.From);
             AddAddressList ("to", Message.To);
             AddAddressList ("cc", Message.Cc);
             AddAddressList ("bcc", Message.Bcc);
+        }
+    }
+
+    /// <summary>
+    /// This class is used for McContact to convert to 
+    /// </summary>
+    public class ContactIndexParameters
+    {
+        public string FirstName;
+        public string MiddleName;
+        public string LastName;
+        public List<string> EmailAddresses;
+        public List<string> PhoneNumbers;
+        public List<string> Addresses;
+        public string Note;
+
+        public ContactIndexParameters ()
+        {
+            EmailAddresses = new List<string> ();
+            PhoneNumbers = new List<string> ();
+            Addresses = new List<string> ();
+        }
+    }
+
+    public class ContactIndexDocument : NcIndexDocument
+    {
+        // We support versioned indexing in case we want to add some field to the index
+        // later. Initially, there are two versions. V1 is for all non-body field. V2
+        // is for body field. The reason for this is that we want to index contact's
+        // name, emails and etc ASAP and body is not downloaded until the user selects
+        // the contact. I believe most contacts do not have a body. So, we index
+        // everything else (in v1). When the body is downloaded, we re-index.
+        //
+        // If in the future, we need to add a new indexed field. That will become v2
+        // and v3 is when body (really notes) is indexed. A migration will be needed
+        // to set all v1 and v2 to v1. They will be re-indexed to v2 or v3.
+        public const int Version = 2;
+
+        public ContactIndexDocument (string id, ContactIndexParameters contact)
+            : base ("contact", id, null)
+        {
+            AddIndexedField ("first_name", contact.FirstName);
+            AddIndexedField ("middle_name", contact.MiddleName);
+            AddIndexedField ("last_name", contact.LastName);
+            foreach (var emailAddress in contact.EmailAddresses) {
+                AddIndexedField ("email_address", emailAddress);
+            }
+            foreach (var phoneNumber in contact.PhoneNumbers) {
+                AddIndexedField ("phone_number", phoneNumber);
+            }
+            foreach (var address in contact.Addresses) {
+                AddIndexedField ("address", address);
+            }
+            AddIndexedField ("note", contact.Note);
         }
     }
 }
