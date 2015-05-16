@@ -300,7 +300,7 @@ namespace Test.Common
 
             // Search for "words". Should return 4 matches
             List<MatchedItem> matches;
-            matches = Index.SearchFields ("body:words", new string[] { "body" });
+            matches = Index.SearchFields ("message", "words", new string[] { "body" });
             VerifyEmailMatches (matches, new int[4] { 0, 1, 2, 3 });
 
             // Search for "nonsense". Should return 2 matches
