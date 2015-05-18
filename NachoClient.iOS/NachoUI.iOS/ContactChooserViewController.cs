@@ -392,7 +392,7 @@ namespace NachoClient.iOS
         protected void CancelSearchIfActive ()
         {
             if (!String.IsNullOrEmpty (contactSearchToken)) {
-                BackEnd.Instance.Cancel (account.Id, contactSearchToken);
+                McPending.Cancel (account.Id, contactSearchToken);
                 contactSearchToken = null;
             }
         }

@@ -15,6 +15,8 @@ namespace NachoCore.Model
             Port = 443;
         }
 
+        public McAccount.AccountCapabilityEnum Capabilities { set; get; }
+
         public string Host { get; set; }
 
         public const string Default_Path = "/Microsoft-Server-ActiveSync";
@@ -83,10 +85,11 @@ namespace NachoCore.Model
             return Host.EndsWith (McServer.GMail_Host, StringComparison.OrdinalIgnoreCase);
         }
 
-        public static McServer Create (int accountId, Uri uri)
+        public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, Uri uri)
         {
             return new McServer () {
                 AccountId = accountId,
+                Capabilities = capabilities,
                 Host = uri.Host,
                 Path = uri.AbsolutePath,
                 Scheme = uri.Scheme,
@@ -96,6 +99,7 @@ namespace NachoCore.Model
 
         public void CopyFrom (McServer src)
         {
+            Capabilities = src.Capabilities;
             Host = src.Host;
             Path = src.Path;
             Scheme = src.Scheme;
@@ -104,6 +108,9 @@ namespace NachoCore.Model
 
         public bool IsSameServer(McServer match)
         {
+            if (Capabilities != match.Capabilities) {
+                return false;
+            }
             if ((Host != match.Host) || (Port != match.Port)) {
                 return false;
             }

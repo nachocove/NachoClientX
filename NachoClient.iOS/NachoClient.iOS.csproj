@@ -737,7 +737,7 @@
       <Link>NachoCore\Utils\NcEmailAddress.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
-      <Link>NachoCore\NcApplication.cs</Link>
+      <Link>NcApplication.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry.cs">
       <Link>NachoCore\Utils\Telemetry.cs</Link>
@@ -1375,8 +1375,17 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration24.cs">
       <Link>NachoCore\Model\Migration\NcMigration24.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration25.cs">
+      <Link>NachoCore\Model\Migration\NcMigration25.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PermissionManager.cs">
       <Link>NachoCore\Utils\PermissionManager.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapProtoControl.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

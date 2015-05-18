@@ -29,14 +29,32 @@ namespace NachoCore.Model
 
         public enum AccountCapabilityEnum
         {
-            EmailReader = (1 << 0),
+            EmailReaderWriter = (1 << 0),
             EmailSender = (1 << 1),
             CalReader = (1 << 2),
             CalWriter = (1 << 3),
             ContactReader = (1 << 4),
             ContactWriter = (1 << 5),
+            TaskReader = (1 << 6),
+            TaskWriter = (1 << 7),
         };
 
+        public const AccountCapabilityEnum ActiveSyncCapabilities = (
+            AccountCapabilityEnum.EmailReaderWriter |
+            AccountCapabilityEnum.EmailSender |
+            AccountCapabilityEnum.CalReader |
+            AccountCapabilityEnum.CalWriter |
+            AccountCapabilityEnum.ContactReader |
+            AccountCapabilityEnum.ContactWriter |
+            AccountCapabilityEnum.TaskReader |
+            AccountCapabilityEnum.TaskWriter);
+
+        public const AccountCapabilityEnum ImapCapabilities = (
+            AccountCapabilityEnum.EmailReaderWriter);
+
+        public const AccountCapabilityEnum SmtpCapabilities = (
+            AccountCapabilityEnum.EmailSender);
+        
         // This type is stored in the db; add to the end
         public enum NotificationConfigurationEnum : int
         {
@@ -65,14 +83,15 @@ namespace NachoCore.Model
         }
         /// AccountType is set as a side effect of setting AccountService. 
         /// It is preferred to set it that way, rather than directly.
-        public AccountTypeEnum AccountType { get; private set; }
+        public AccountTypeEnum AccountType { get; set; }
 
         public void SetAccountType (AccountTypeEnum value)
         {
+            AccountType = value;
             switch (value) {
             case AccountTypeEnum.Exchange:
                 AccountCapability = (
-                    AccountCapabilityEnum.EmailReader |
+                    AccountCapabilityEnum.EmailReaderWriter |
                     AccountCapabilityEnum.EmailSender |
                     AccountCapabilityEnum.CalReader |
                     AccountCapabilityEnum.CalWriter |
@@ -87,7 +106,7 @@ namespace NachoCore.Model
                 break;
             case AccountTypeEnum.IMAP_SMTP:
                 AccountCapability = (
-                    AccountCapabilityEnum.EmailReader |
+                    AccountCapabilityEnum.EmailReaderWriter |
                     AccountCapabilityEnum.EmailSender);
                 break;
             default:
@@ -96,7 +115,7 @@ namespace NachoCore.Model
             }
         }
 
-        public AccountServiceEnum AccountService { get; private set; }
+        public AccountServiceEnum AccountService { get; set; }
 
         public void SetAccountService (AccountServiceEnum value)
         { 

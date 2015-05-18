@@ -133,8 +133,6 @@ namespace NachoCore.ActiveSync
             };
         }
 
-        public AsProtoControl ProtoControl { set; get; }
-
         public IAsStrategy SyncStrategy { set; get; }
 
         private PushAssist PushAssist { set; get; }
@@ -146,6 +144,8 @@ namespace NachoCore.ActiveSync
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
+            Capabilities = McAccount.ActiveSyncCapabilities;
+
             // TODO decouple disk setup from constructor.
             EstablishService ();
             /*

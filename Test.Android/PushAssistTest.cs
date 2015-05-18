@@ -29,8 +29,8 @@ namespace Test.Common
 
         // IBEContext
         public IProtoControlOwner Owner { set; get; }
-        // TODO - this is AS-specific.
-        public AsProtoControl ProtoControl { set; get; }
+
+        public NcProtoControl ProtoControl { set; get; }
 
         public McProtocolState ProtocolState { get; set; }
 

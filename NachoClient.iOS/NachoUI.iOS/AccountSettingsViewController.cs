@@ -727,7 +727,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            McServer testServer = new McServer ();
+            McServer testServer = new McServer () {
+                // FIXME STEVE
+                Capabilities = McAccount.ActiveSyncCapabilities,
+            };
             SetHostAndPort (testServer, mailserverTextField.Text);
 
             McCred testCred = new McCred ();
@@ -1070,7 +1073,8 @@ namespace NachoClient.iOS
 
         protected void FixBackEndButtonClicked (object sender, EventArgs e)
         {
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Id);
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Id, McAccount.AccountCapabilityEnum.EmailSender);
 
             if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
                 UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);

@@ -44,19 +44,11 @@ namespace NachoCore
         // remove service for an account.
         void Remove (int accountId);
         // let the BE know that the asked-about server cert is/not okay to trust.
-        void CertAskResp (int accountId, bool isOkay);
+        void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay);
         // let the BE know that the server info has been updated for this account.
-        void ServerConfResp (int accountId, bool forceAutodiscovery);
+        void ServerConfResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool forceAutodiscovery);
         // let the BE know that the credentials have been updated for this account.
         void CredResp (int accountId);
-        // cancel command/request associated with this token (if possible).
-        void Cancel (int accountId, string token);
-        // Move an operation to the head of the pending Q.
-        void Prioritize (int accountId, string token);
-        // user-block issue is resolved, try again.
-        McPending UnblockPendingCmd (int accountId, int pendingId);
-        // accept the fail. delete the pending obj.
-        McPending DeletePendingCmd (int accountId, int pendingId);
         // search email. returns token that can be used to cancel the search and all eclipsed searches.
         NcResult StartSearchEmailReq (int accountId, string prefix, uint? maxResults);
         // follow-on email search, using same token.
@@ -145,9 +137,9 @@ namespace NachoCore
         NcResult ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);
         // state, including auto-d.
-        BackEndStateEnum BackEndState (int accountId);
-        AutoDInfoEnum AutoDInfo (int accountId);
-        X509Certificate2 ServerCertToBeExamined (int accountId);
+        BackEndStateEnum BackEndState (int accountId, McAccount.AccountCapabilityEnum capabilities);
+        AutoDInfoEnum AutoDInfo (int accountId, McAccount.AccountCapabilityEnum capabilities);
+        X509Certificate2 ServerCertToBeExamined (int accountId, McAccount.AccountCapabilityEnum capabilities);
     }
 }
 

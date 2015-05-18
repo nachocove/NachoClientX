@@ -46,7 +46,7 @@ namespace Test.iOS
             {
                 base.SetUp ();
 
-                var server = McServer.Create (defaultAccountId, CommonMockData.MockUri);
+                var server = McServer.Create (defaultAccountId, McAccount.ActiveSyncCapabilities, CommonMockData.MockUri);
                 Context = new MockContext (null, server);
 
                 FolderCmd = CreateFolderSyncCmd (Context);

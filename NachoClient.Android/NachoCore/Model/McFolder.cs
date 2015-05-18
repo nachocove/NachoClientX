@@ -168,6 +168,7 @@ namespace NachoCore.Model
          */
         public static McFolder GetDeviceContactsFolder ()
         {
+            var x = McAccount.GetDeviceAccount ();
             return McFolder.GetClientOwnedFolder (McAccount.GetDeviceAccount ().Id, ClientOwned_DeviceContacts);
         }
 

@@ -382,7 +382,8 @@ namespace NachoClient.iOS
             if (!freshAccount) {
                 if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.Ordinal)) {
                     Log.Info (Log.LOG_UI, "avl: onConnect retry password");
-                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
+                    // FIXME STEVE
+                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
                     if (BackEndStateEnum.CredWait == backEndState) {
                         BackEnd.Instance.CredResp (theAccount.Account.Id);
                         waitScreen.SetLoadingText ("Verifying Your Credentials...");
@@ -603,7 +604,8 @@ namespace NachoClient.iOS
             }
 
             var accountId = theAccount.Account.Id;
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (accountId);
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (accountId, McAccount.AccountCapabilityEnum.EmailSender);
             Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0}={1}", accountId, backEndState);
 
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
@@ -782,7 +784,11 @@ namespace NachoClient.iOS
 
             // the user specified the host name, save it
             if (null == theAccount.Server) {
-                theAccount.Server = new McServer () { AccountId = theAccount.Account.Id };
+                theAccount.Server = new McServer () { 
+                    AccountId = theAccount.Account.Id,
+                    // FIXME STEVE
+                    Capabilities = McAccount.ActiveSyncCapabilities,
+                };
                 theAccount.Server.Insert ();
             }
             var temp = new McServer ();
@@ -857,7 +863,8 @@ namespace NachoClient.iOS
                 return false;
             }
             NcAssert.True (IsTheAccountSet ());
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
             Log.Info (Log.LOG_UI, "avl:  isrunning state {0}", backEndState);
             if (BackEndStateEnum.NotYetStarted == backEndState) {
                 return true;
@@ -874,7 +881,8 @@ namespace NachoClient.iOS
                 return false;
             }
             NcAssert.True (IsTheAccountSet ());
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
             if (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) {
                 return true;
             }
@@ -964,7 +972,8 @@ namespace NachoClient.iOS
         public void DontAcceptCertificate (int accountId)
         {
             ConfigureView (LoginStatus.EnterInfo);
-            NcApplication.Instance.CertAskResp (accountId, false);
+            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             waitScreen.DismissView ();
         }
 
@@ -972,7 +981,8 @@ namespace NachoClient.iOS
         public void AcceptCertificate (int accountId)
         {
             ConfigureView (LoginStatus.AcceptCertificate);
-            NcApplication.Instance.CertAskResp (accountId, true);
+            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
         }
 
         private void SyncCompleted (int accountId)

@@ -56,7 +56,8 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
             NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
 
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccountId);
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccountId, McAccount.AccountCapabilityEnum.EmailSender);
             if (BackEndStateEnum.CertAskWait == backEndState) {
                 certificateView.SetCertificateInformation (theAccountId);
                 certificateView.ShowView ();
@@ -246,7 +247,8 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void AcceptCertificate (int accountId)
         {
-            NcApplication.Instance.CertAskResp (accountId, true);
+            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
             LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
             View.EndEditing (true);
             DismissViewController (true, null);

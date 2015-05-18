@@ -751,8 +751,9 @@ namespace Test.iOS
             };
 
             McServer server = new McServer () {
-                    Host = "foo.utopiasystems.net",
-                };
+                Capabilities = McAccount.ActiveSyncCapabilities,
+                Host = "foo.utopiasystems.net",
+            };
             Context = new MockContext ( protoControl : null, server : server);
 
             // provides the mock owner

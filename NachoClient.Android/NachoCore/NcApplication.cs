@@ -216,7 +216,7 @@ namespace NachoCore
         /// </summary>
         public CredReqCallbackDele CredReqCallback { set; get; }
 
-        public delegate void ServConfReqCallbackDele (int accountId, object arg = null);
+        public delegate void ServConfReqCallbackDele (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg = null);
 
         /// <summary>
         /// ServConfRequest: When called the callee must gather the server information for the 
@@ -586,7 +586,9 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
 
             if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId (),
+                    // FIXME STEVE
+                McAccount.AccountCapabilityEnum.EmailSender);
 
                 int accountId = LoginHelpers.GetCurrentAccountId ();
                 switch (backEndState) {
@@ -599,7 +601,8 @@ namespace NachoCore
                     Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    ServConfReqCallback (accountId);
+                    // FIXME STEVE
+                    ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender);
                     Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
                     break;
                 default:
@@ -764,19 +767,19 @@ namespace NachoCore
             }
         }
 
-        public void ServConfReq (int accountId, object arg)
+        public void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg)
         {
             if (null != ServConfReqCallback) {
-                ServConfReqCallback (accountId, arg);
+                ServConfReqCallback (accountId, capabilities, arg);
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication ServConfReqCallback.");
             }
         }
 
-        public void CertAskReq (int accountId, X509Certificate2 certificate)
+        public void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, X509Certificate2 certificate)
         {
             if (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint)) {
-                CertAskResp (accountId, true);
+                CertAskResp (accountId, capabilities, true);
                 return;
             }
             if (null != CertAskReqCallback) {
@@ -804,13 +807,13 @@ namespace NachoCore
             }
         }
 
-        public void CertAskResp (int accountId, bool isOkay)
+        public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)
         {
             if (isOkay) {
                 McMutables.GetOrCreateBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", 
-                    BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
+                    BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities).Thumbprint, true);
             }
-            BackEnd.Instance.CertAskResp (accountId, isOkay);
+            BackEnd.Instance.CertAskResp (accountId, capabilities, isOkay);
         }
 
         public string GetPushService ()
