@@ -190,6 +190,7 @@ namespace NachoCore.Brain
                 FirstName = contact.FirstName,
                 MiddleName = contact.MiddleName,
                 LastName = contact.LastName,
+                CompanyName = contact.CompanyName,
             };
 
             // Add all email address, phone numbers and addresses
@@ -237,7 +238,7 @@ namespace NachoCore.Brain
             }
 
             contact.SetIndexVersion ();
-            contact.Update ();
+            contact.UpdateIndexVersion ();
 
             return true;
         }

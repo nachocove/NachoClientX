@@ -808,6 +808,14 @@ namespace NachoCore.Model
             });
         }
 
+        public void UpdateIndexVersion ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET IndexVersion = ? WHERE Id = ?",
+                    IndexVersion, Id);
+            });
+        }
+
         public override int Delete ()
         {
             // Force an auxilary read
