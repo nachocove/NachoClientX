@@ -178,6 +178,7 @@
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
       </CustomCommands>
     </CustomCommands>
     <IpaPackageName>
