@@ -23,7 +23,6 @@ namespace NachoClient.iOS
 
         protected INachoNotesControllerParent Owner;
         protected bool SupressAutoDate;
-        protected McAccount account;
         UIColor separatorColor = A.Color_NachoBorderGray;
         protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected static nfloat LINE_OFFSET = 30f;
@@ -48,7 +47,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateNotesView ();
             notesTextView.BecomeFirstResponder ();
         }
@@ -81,10 +79,10 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
 
             if (SupressAutoDate) {
-                Owner.SaveNote (account.Id, notesTextView.Text);
+                Owner.SaveNote (notesTextView.Text);
             } else {
                 if ((embeddedDateString + originalNote) != notesTextView.Text) {
-                    Owner.SaveNote (account.Id, notesTextView.Text);
+                    Owner.SaveNote (notesTextView.Text);
                 }
             }
         }

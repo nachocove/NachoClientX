@@ -294,7 +294,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
                 ExtractValues ();
-                dc.Setup (this, c.attendees, c, true, CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr));
+                dc.Setup (this, account, c.attendees, c, true, CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr));
                 return;
             }
 
@@ -315,7 +315,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToAddAttachment")) {
                 var dc = (AddAttachmentViewController)segue.DestinationViewController;
                 ExtractValues ();
-                dc.SetOwner (this);
+                dc.SetOwner (this, account);
                 return;
             }
 

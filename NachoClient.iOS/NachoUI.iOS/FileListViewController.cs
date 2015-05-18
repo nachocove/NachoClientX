@@ -21,7 +21,6 @@ namespace NachoClient.iOS
         }
 
         INachoFileChooserParent Owner;
-        protected McAccount account;
         FilesTableViewSource AttachmentsSource;
          
         string Token;
@@ -78,8 +77,6 @@ namespace NachoClient.iOS
             // if (null != NavigationItem) {
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
-
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             CreateView ();
         }
@@ -178,7 +175,7 @@ namespace NachoClient.iOS
             tableView.AccessibilityLabel = "Attachments";
 
             InitializeSearchDisplayController ();
-            AttachmentsSource = new FilesTableViewSource (this, account);
+            AttachmentsSource = new FilesTableViewSource (this, NcApplication.Instance.Account);
             AttachmentsSource.SetOwner (this, SearchDisplayController);
 
             View.AddSubview (tableView);
@@ -379,7 +376,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SaveNote (int accountId, string noteText)
+        public void SaveNote (string noteText)
         {
             selectedNote.noteContent = noteText;
             selectedNote.Update ();
@@ -389,7 +386,7 @@ namespace NachoClient.iOS
         {
             // show most recent attachments first
             AttachmentsSource.Items = new List<NcFileIndex> ();
-            AttachmentsSource.Items = McAbstrFileDesc.GetAllFiles (account.Id);
+            AttachmentsSource.Items = McAbstrFileDesc.GetAllFiles (NcApplication.Instance.Account.Id);
 
             switch (segmentedControl.SelectedSegment) {
             case 0:
