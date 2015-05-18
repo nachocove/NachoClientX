@@ -742,11 +742,8 @@ namespace NachoCore.Utils
 
         public static void StartService ()
         {
-            #if __IOS__
-            // FIXME - Add AWS SDK for Android so we can actually run telemetry for Android.
             SharedInstance.Throttling = true;
             SharedInstance.Start ();
-            #endif
         }
 
         public void Start ()
@@ -782,10 +779,7 @@ namespace NachoCore.Utils
             try {
                 bool ranOnce = false;
 
-                #if __IOS__
-                // FIXME - Need to build Android version of AWS SDK for this
                 BackEnd = new TelemetryBEAWS ();
-                #endif
                 BackEnd.Initialize ();
                 if (Token.IsCancellationRequested) {
                     // If cancellation occurred and this telemetry didn't quit in time.
