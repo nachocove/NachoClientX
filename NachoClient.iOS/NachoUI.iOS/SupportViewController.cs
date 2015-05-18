@@ -29,7 +29,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            Telemetry.RecordSupport (new Dictionary<string, string>());
         }
 
         protected override void CreateViewHierarchy ()
