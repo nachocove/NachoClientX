@@ -26,11 +26,6 @@ namespace NachoClient.iOS
         {
         }
 
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-        }
-
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
