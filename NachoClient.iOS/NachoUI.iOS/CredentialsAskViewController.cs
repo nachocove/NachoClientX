@@ -238,7 +238,8 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void DontAcceptCertificate (int accountId)
         {
-            NcApplication.Instance.CertAskResp (accountId, false);
+            // FIXME STEVE
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
             View.EndEditing (true);
             DismissViewController (true, null);

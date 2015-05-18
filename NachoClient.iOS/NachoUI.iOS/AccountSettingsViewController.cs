@@ -1086,7 +1086,8 @@ namespace NachoClient.iOS
 
             if (BackEndStateEnum.ServerConfWait == backEndState) {
                 var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                x.ServConfReqCallback (theAccount.Id);
+                // FIXME STEVE
+                x.ServConfReqCallback (theAccount.Id, McAccount.AccountCapabilityEnum.EmailSender);
             }
         }
 

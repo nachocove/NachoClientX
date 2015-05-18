@@ -4,7 +4,7 @@ using System;
 
 namespace NachoCore.Model
 {
-    public class NcMigration24 : NcMigration
+    public class NcMigration25 : NcMigration
     {
         public override int GetNumberOfObjects ()
         {

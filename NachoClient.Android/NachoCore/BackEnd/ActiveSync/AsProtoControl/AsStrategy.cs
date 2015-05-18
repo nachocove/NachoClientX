@@ -1051,7 +1051,7 @@ namespace NachoCore.ActiveSync
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                            new AsSyncCommand ((AsProtoControl)BEContext.ProtoControl, nSyncKit));
                     }
                 }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.

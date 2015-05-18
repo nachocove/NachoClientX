@@ -111,7 +111,8 @@ namespace NachoCore.Utils
             if (null == NcApplication.Instance.Account) {
                 return false;
             }
-            var backendState = BackEnd.Instance.BackEndState (NcApplication.Instance.Account.Id);
+            // FIXME STEVE
+            var backendState = BackEnd.Instance.BackEndState (NcApplication.Instance.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
             return LoginHelpers.HasViewedTutorial () && (BackEndStateEnum.PostAutoDPostInboxSync == backendState);
         }
 
