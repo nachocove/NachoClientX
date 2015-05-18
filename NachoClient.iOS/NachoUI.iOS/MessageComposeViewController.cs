@@ -247,7 +247,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            account = NcApplication.Instance.Account;
 
             sendButton = new NcUIBarButtonItem ();
             cancelButton = new NcUIBarButtonItem ();
@@ -403,7 +403,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("SegueToAddAttachment")) {
                 var dc = (AddAttachmentViewController)segue.DestinationViewController;
-                dc.SetOwner (this);
+                dc.SetOwner (this, account);
                 return;
             }
 

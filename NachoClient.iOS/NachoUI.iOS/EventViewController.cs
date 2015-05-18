@@ -840,7 +840,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr));
+                dc.Setup (null, account, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr));
                 return;
             }
 
@@ -1302,7 +1302,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SaveNote (int accountId, string noteText)
+        public void SaveNote (string noteText)
         {
             McNote Note;
             if (null != c) {

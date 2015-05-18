@@ -1186,14 +1186,14 @@ namespace NachoClient.iOS
             this.messageSource.SetEmailMessages (messageThreads, "No interactions");
         }
 
-        public void SaveNote (int accountId, string noteText)
+        public void SaveNote (string noteText)
         {
             if (null != contact) {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
                 if (null != contactBody) {
                     contactBody.UpdateData (noteText);
                 } else {
-                    contact.BodyId = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, noteText).Id;
+                    contact.BodyId = McBody.InsertFile (contact.AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, noteText).Id;
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);

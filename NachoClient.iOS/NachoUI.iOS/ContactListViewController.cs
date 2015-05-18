@@ -21,7 +21,6 @@ namespace NachoClient.iOS
         SwipeView swipeView;
         LettersSwipeViewDataSource swipeViewDateSource;
         UITableView TableView;
-        McAccount account;
 
         protected bool contactsNeedsRefresh;
 
@@ -47,8 +46,6 @@ namespace NachoClient.iOS
             ReloadCaptureName = "ContactListViewController.Reload";
             NcCapture.AddKind (ReloadCaptureName);
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
-
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             swipeView = new SwipeView ();
             swipeView.Frame = new CGRect (10, 0, View.Frame.Width - 20, 55);
@@ -76,7 +73,7 @@ namespace NachoClient.iOS
 
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, account, true, SearchDisplayController);
+            contactTableViewSource.SetOwner (this, NcApplication.Instance.Account, true, SearchDisplayController);
 
             TableView.Source = contactTableViewSource;
 
@@ -216,7 +213,8 @@ namespace NachoClient.iOS
                 contactsNeedsRefresh = false;
                 ReloadCapture.Start ();
                 NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacts");
-                var recents = McContact.RicContactsSortedByRank (account.Id, 5);
+                // RIC -- only highlight recents from the current account
+                var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
                 var contacts = McContact.AllContactsSortedByName (true);
                 contactTableViewSource.SetContacts (recents, contacts, true);
                 TableView.ReloadData ();

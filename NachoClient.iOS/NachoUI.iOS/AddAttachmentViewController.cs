@@ -33,15 +33,15 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetOwner (INachoFileChooserParent owner)
+        public void SetOwner (INachoFileChooserParent owner, McAccount account)
         {
             this.owner = owner;
+            this.account = account;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateViewHierarchy ();
         }
 

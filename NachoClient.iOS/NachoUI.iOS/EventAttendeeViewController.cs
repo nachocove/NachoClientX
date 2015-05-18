@@ -52,9 +52,10 @@ namespace NachoClient.iOS
         {
         }
 
-        public void Setup (INachoAttendeeListChooserDelegate owner, IList<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
+        public void Setup (INachoAttendeeListChooserDelegate owner, McAccount account, IList<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
         {
             this.owner = owner;
+            this.account = account;
             this.AttendeeList = new List<McAttendee> (attendees);
             this.c = c;
             this.editing = editing;
@@ -65,7 +66,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             AttendeeSource = new AttendeeTableViewSource (this);
 
             CreateEventAttendeeView ();
