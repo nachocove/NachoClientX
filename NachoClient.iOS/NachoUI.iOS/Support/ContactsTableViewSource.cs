@@ -131,7 +131,7 @@ namespace NachoClient.iOS
         {
             base.Dispose ();
             if (null != searchToken) {
-                BackEnd.Instance.Cancel (accountForSearchAPI.Id, searchToken);
+                McPending.Cancel (accountForSearchAPI.Id, searchToken);
                 searchToken = null;
             }
         }

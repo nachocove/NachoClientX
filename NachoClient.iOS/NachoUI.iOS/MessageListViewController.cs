@@ -650,7 +650,7 @@ namespace NachoClient.iOS
         protected void CancelSearchIfActive ()
         {
             if (!String.IsNullOrEmpty (searchToken)) {
-                BackEnd.Instance.Cancel (NcApplication.Instance.Account.Id, searchToken);
+                McPending.Cancel (NcApplication.Instance.Account.Id, searchToken);
                 searchToken = null;
             }
         }

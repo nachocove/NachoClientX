@@ -289,7 +289,7 @@ namespace NachoClient.iOS
                     // A variable height view should always be visible. A fixed size
                     // view might be off the screen. The Hot view will call
                     // PrioritizeBodyDownload() when the card becomes visible.
-                    BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
+                    McPending.Prioritize (item.AccountId, downloadToken);
                 }
                 ActivateSpinner ();
             }
@@ -419,7 +419,7 @@ namespace NachoClient.iOS
         public void PrioritizeBodyDownload ()
         {
             if (null != downloadToken) {
-                BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
+                McPending.Prioritize (item.AccountId, downloadToken);
             }
         }
 

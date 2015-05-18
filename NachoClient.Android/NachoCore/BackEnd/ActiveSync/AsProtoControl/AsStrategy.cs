@@ -943,7 +943,7 @@ namespace NachoCore.ActiveSync
                 if (null != search) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Search");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, 
-                        new AsSearchCommand (BEContext.ProtoControl, search));
+                        new AsSearchCommand ((AsProtoControl)BEContext.ProtoControl, search));
                 }
                 // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
                 var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId).
@@ -959,7 +959,7 @@ namespace NachoCore.ActiveSync
                     // TODO: aggregate more than one hot fetch into this command, keeping in mind the
                     // total expected size.
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp,
-                        new AsItemOperationsCommand (BEContext.ProtoControl,
+                        new AsItemOperationsCommand ((AsProtoControl)BEContext.ProtoControl,
                             new FetchKit () {
                                 FetchBodies = new List<FetchKit.FetchBody> (),
                                 FetchAttachments = new List<McAttachment> (),
@@ -1002,17 +1002,17 @@ namespace NachoCore.ActiveSync
                     AsCommand cmd = null;
                     switch (send.Operation) {
                     case McPending.Operations.EmailSend:
-                        cmd = new AsSendMailCommand (BEContext.ProtoControl, send);
+                        cmd = new AsSendMailCommand ((AsProtoControl)BEContext.ProtoControl, send);
                         break;
                     case McPending.Operations.EmailForward:
                     case McPending.Operations.CalForward:
-                        cmd = new AsSmartForwardCommand (BEContext.ProtoControl, send);
+                        cmd = new AsSmartForwardCommand ((AsProtoControl)BEContext.ProtoControl, send);
                         break;
                     case McPending.Operations.EmailReply:
-                        cmd = new AsSmartReplyCommand (BEContext.ProtoControl, send);
+                        cmd = new AsSmartReplyCommand ((AsProtoControl)BEContext.ProtoControl, send);
                         break;
                     case McPending.Operations.CalRespond:
-                        cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, send);
+                        cmd = new AsMeetingResponseCommand ((AsProtoControl)BEContext.ProtoControl, send);
                         break;
                     default:
                         NcAssert.CaseError (send.Operation.ToString ());
@@ -1034,7 +1034,7 @@ namespace NachoCore.ActiveSync
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:QS:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                            new AsSyncCommand ((AsProtoControl)BEContext.ProtoControl, nSyncKit));
                     }
                 }
             }
@@ -1051,7 +1051,7 @@ namespace NachoCore.ActiveSync
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                            new AsSyncCommand ((AsProtoControl)BEContext.ProtoControl, nSyncKit));
                     }
                 }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
@@ -1064,45 +1064,45 @@ namespace NachoCore.ActiveSync
                     switch (next.Operation) {
                     // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:
-                        cmd = new AsFolderCreateCommand (BEContext.ProtoControl, next);
+                        cmd = new AsFolderCreateCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.FolderUpdate:
-                        cmd = new AsFolderUpdateCommand (BEContext.ProtoControl, next);
+                        cmd = new AsFolderUpdateCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.FolderDelete:
-                        cmd = new AsFolderDeleteCommand (BEContext.ProtoControl, next);
+                        cmd = new AsFolderDeleteCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.EmailMove:
                     case McPending.Operations.CalMove:
                     case McPending.Operations.ContactMove:
                     case McPending.Operations.TaskMove:
-                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, GenMoveKit (accountId));
+                        cmd = new AsMoveItemsCommand ((AsProtoControl)BEContext.ProtoControl, GenMoveKit (accountId));
                         break;
                     // ... however one of these below, which would have been handled above, could have been
                     // inserted into the Q while Pick() is in the middle of running.
                     case McPending.Operations.EmailForward:
                     case McPending.Operations.CalForward:
-                        cmd = new AsSmartForwardCommand (BEContext.ProtoControl, next);
+                        cmd = new AsSmartForwardCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.EmailReply:
-                        cmd = new AsSmartReplyCommand (BEContext.ProtoControl, next);
+                        cmd = new AsSmartReplyCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.EmailSend:
-                        cmd = new AsSendMailCommand (BEContext.ProtoControl, next);
+                        cmd = new AsSendMailCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.ContactSearch:
                     case McPending.Operations.EmailSearch:
-                        cmd = new AsSearchCommand (BEContext.ProtoControl, next);
+                        cmd = new AsSearchCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.CalRespond:
-                        cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, next);
+                        cmd = new AsMeetingResponseCommand ((AsProtoControl)BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.EmailBodyDownload:
                     case McPending.Operations.ContactBodyDownload:
                     case McPending.Operations.CalBodyDownload:
                     case McPending.Operations.TaskBodyDownload:
                     case McPending.Operations.AttachmentDownload:
-                        cmd = new AsItemOperationsCommand (BEContext.ProtoControl,
+                        cmd = new AsItemOperationsCommand ((AsProtoControl)BEContext.ProtoControl,
                             new FetchKit () {
                                 FetchBodies = new List<FetchKit.FetchBody> (),
                                 FetchAttachments = new List<McAttachment> (),
@@ -1112,7 +1112,7 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.Sync:
                         var uSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Directed, next);
                         if (null != uSyncKit) {
-                            cmd = new AsSyncCommand (BEContext.ProtoControl, uSyncKit);
+                            cmd = new AsSyncCommand ((AsProtoControl)BEContext.ProtoControl, uSyncKit);
                             action = PickActionEnum.Sync;
                         } else {
                             Log.Error (Log.LOG_AS, "Strategy:FG/BG:QOp: null SyncKit");
@@ -1127,7 +1127,7 @@ namespace NachoCore.ActiveSync
                             var syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide);
                             if (null != syncKit) {
                                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                                    new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                                    new AsSyncCommand ((AsProtoControl)BEContext.ProtoControl, syncKit));
                             } else {
                                 Log.Error (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand: null SyncKit.");
                                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
@@ -1155,14 +1155,14 @@ namespace NachoCore.ActiveSync
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext.ProtoControl, rlPingKit));
+                            new AsPingCommand ((AsProtoControl)BEContext.ProtoControl, rlPingKit));
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
                     else {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Wait");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                            new AsWaitCommand (BEContext.ProtoControl, 120, false));
+                            new AsWaitCommand ((AsProtoControl)BEContext.ProtoControl, 120, false));
                     }
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
@@ -1178,12 +1178,12 @@ namespace NachoCore.ActiveSync
                     if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
-                            new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
+                            new AsItemOperationsCommand ((AsProtoControl)BEContext.ProtoControl, fetchKit));
                     }
                     if (null != syncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Sync");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                            new AsSyncCommand ((AsProtoControl)BEContext.ProtoControl, syncKit));
                     }
                 }
                 // DEBUG. It seems like the server is slow to respond when there is new email. 
@@ -1202,17 +1202,17 @@ namespace NachoCore.ActiveSync
                 if (null != pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
-                        new AsPingCommand (BEContext.ProtoControl, pingKit));
+                        new AsPingCommand ((AsProtoControl)BEContext.ProtoControl, pingKit));
                 }
                 Log.Info (Log.LOG_AS, "Strategy:FG/BG:Wait");
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                    new AsWaitCommand (BEContext.ProtoControl, 120, false));
+                    new AsWaitCommand ((AsProtoControl)BEContext.ProtoControl, 120, false));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 Log.Info (Log.LOG_AS, "Strategy:QS:Wait");
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                    new AsWaitCommand (BEContext.ProtoControl, 120, true));
+                    new AsWaitCommand ((AsProtoControl)BEContext.ProtoControl, 120, true));
             }
             NcAssert.True (false);
             return null;

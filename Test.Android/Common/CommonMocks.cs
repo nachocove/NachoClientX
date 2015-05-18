@@ -155,7 +155,7 @@ namespace Test.iOS
     {
         public IProtoControlOwner Owner { set; get; }
 
-        public AsProtoControl ProtoControl { set; get; }
+        public NcProtoControl ProtoControl { set; get; }
 
         public McProtocolState ProtocolState { get; set; }
 

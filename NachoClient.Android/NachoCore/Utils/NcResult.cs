@@ -175,6 +175,7 @@ namespace NachoCore.Utils
             Info_FastNotificationChanged,
             Info_McCredPasswordChanged,
             Info_UserIdChanged,
+            Error_NoCapableService,
         };
 
         public enum WhyEnum

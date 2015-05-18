@@ -46,7 +46,7 @@ namespace NachoCore.ActiveSync
             }
             var mimePath = EmailMessage.MimePath ();
             var length = new FileInfo (mimePath).Length;
-            Timeout = new TimeSpan (0, 0, BEContext.ProtoControl.SyncStrategy.UploadTimeoutSecs (length));
+            Timeout = new TimeSpan (0, 0, ((AsProtoControl)BEContext.ProtoControl).SyncStrategy.UploadTimeoutSecs (length));
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
                                new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
@@ -62,7 +62,7 @@ namespace NachoCore.ActiveSync
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 long length;
                 var stream = EmailMessage.ToMime (out length);
-                Timeout = new TimeSpan (0, 0, BEContext.ProtoControl.SyncStrategy.UploadTimeoutSecs (length));
+                Timeout = new TimeSpan (0, 0, ((AsProtoControl)BEContext.ProtoControl).SyncStrategy.UploadTimeoutSecs (length));
                 return stream;
             }
             return null;

@@ -400,7 +400,10 @@
     <Compile Include="NachoCore\BackEnd\NcProtoControl.cs" />
     <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration24.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration25.cs" />
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

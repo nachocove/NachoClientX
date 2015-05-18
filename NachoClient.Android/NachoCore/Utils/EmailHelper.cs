@@ -112,7 +112,7 @@ namespace NachoCore.Utils
         {
             var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
             if (null != pending) {
-                BackEnd.Instance.Cancel (message.AccountId, pending.Token);
+                McPending.Cancel (message.AccountId, pending.Token);
             }
             // Move files in client-owned folders manually
             var draftsFolder = McFolder.GetClientOwnedDraftsFolder (message.AccountId);
@@ -138,7 +138,7 @@ namespace NachoCore.Utils
         {
             var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
             if (null != pending) {
-                BackEnd.Instance.Cancel (message.AccountId, pending.Token);
+                McPending.Cancel (message.AccountId, pending.Token);
             }
             message.Delete ();
             // Send status ind after the message is deleted (and unlinked).

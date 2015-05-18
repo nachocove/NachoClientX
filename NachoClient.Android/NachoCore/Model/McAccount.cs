@@ -11,8 +11,10 @@ namespace NachoCore.Model
     {
         public enum AccountTypeEnum
         {
+            // Exchange ActiveSync.
             Exchange,
             Device,
+            IMAP_SMTP,
         };
 
         public enum AccountServiceEnum
@@ -22,8 +24,37 @@ namespace NachoCore.Model
             HotmailExchange,
             OutlookExchange,
             GoogleExchange,
+            GoogleDefault,
         };
 
+        public enum AccountCapabilityEnum
+        {
+            EmailReaderWriter = (1 << 0),
+            EmailSender = (1 << 1),
+            CalReader = (1 << 2),
+            CalWriter = (1 << 3),
+            ContactReader = (1 << 4),
+            ContactWriter = (1 << 5),
+            TaskReader = (1 << 6),
+            TaskWriter = (1 << 7),
+        };
+
+        public const AccountCapabilityEnum ActiveSyncCapabilities = (
+            AccountCapabilityEnum.EmailReaderWriter |
+            AccountCapabilityEnum.EmailSender |
+            AccountCapabilityEnum.CalReader |
+            AccountCapabilityEnum.CalWriter |
+            AccountCapabilityEnum.ContactReader |
+            AccountCapabilityEnum.ContactWriter |
+            AccountCapabilityEnum.TaskReader |
+            AccountCapabilityEnum.TaskWriter);
+
+        public const AccountCapabilityEnum ImapCapabilities = (
+            AccountCapabilityEnum.EmailReaderWriter);
+
+        public const AccountCapabilityEnum SmtpCapabilities = (
+            AccountCapabilityEnum.EmailSender);
+        
         // This type is stored in the db; add to the end
         public enum NotificationConfigurationEnum : int
         {
@@ -50,10 +81,64 @@ namespace NachoCore.Model
             NotificationConfiguration = DefaultNotificationConfiguration;
             FastNotificationEnabled = true;
         }
-
+        /// AccountType is set as a side effect of setting AccountService. 
+        /// It is preferred to set it that way, rather than directly.
         public AccountTypeEnum AccountType { get; set; }
 
+        public void SetAccountType (AccountTypeEnum value)
+        {
+            AccountType = value;
+            switch (value) {
+            case AccountTypeEnum.Exchange:
+                AccountCapability = (
+                    AccountCapabilityEnum.EmailReaderWriter |
+                    AccountCapabilityEnum.EmailSender |
+                    AccountCapabilityEnum.CalReader |
+                    AccountCapabilityEnum.CalWriter |
+                    AccountCapabilityEnum.ContactReader |
+                    AccountCapabilityEnum.ContactWriter);
+                break;
+            case AccountTypeEnum.Device:
+                    // FIXME - need to support full contact/cal access thru BE.
+                AccountCapability = (
+                    AccountCapabilityEnum.CalReader |
+                    AccountCapabilityEnum.ContactReader);
+                break;
+            case AccountTypeEnum.IMAP_SMTP:
+                AccountCapability = (
+                    AccountCapabilityEnum.EmailReaderWriter |
+                    AccountCapabilityEnum.EmailSender);
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+        }
+
         public AccountServiceEnum AccountService { get; set; }
+
+        public void SetAccountService (AccountServiceEnum value)
+        { 
+            switch (value) {
+            case AccountServiceEnum.GoogleDefault:
+                AccountType = AccountTypeEnum.IMAP_SMTP;
+                Protocols = (
+                    McProtocolState.ProtocolEnum.IMAP |
+                    McProtocolState.ProtocolEnum.SMTP);
+                break;
+            case AccountServiceEnum.Exchange:
+                AccountType = AccountTypeEnum.Exchange;
+                Protocols = McProtocolState.ProtocolEnum.ActiveSync;
+                break;
+            }
+        }
+         
+        // This is set as a side effect of setting AccountService. 
+        public AccountCapabilityEnum AccountCapability { get; private set; }
+
+        // The protocol(s) - possibly more than one - required by this account.
+        // This is set as a side effect of setting AccountService. 
+        public McProtocolState.ProtocolEnum Protocols { get; private set; }
 
         public string EmailAddr { get; set; }
 

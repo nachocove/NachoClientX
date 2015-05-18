@@ -542,6 +542,7 @@ namespace Test.iOS
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
             phonyServer.AccountId = mockContext.Account.Id;
+            phonyServer.Capabilities = McAccount.ActiveSyncCapabilities;
             phonyServer.Host = "/Phony-Server";
             phonyServer.Path = "/phonypath";
             phonyServer.Port = 500;

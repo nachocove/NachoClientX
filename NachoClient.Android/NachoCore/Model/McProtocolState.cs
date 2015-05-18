@@ -12,6 +12,15 @@ namespace NachoCore.Model
     // "Smtp" is SMTP.
     public class McProtocolState : McAbstrObjectPerAcc
     {
+        // Supported protocols. Bitfield for McAccount's benefit.
+        public enum ProtocolEnum {
+            ActiveSync = (1 << 0),
+            IMAP = (1 << 1),
+            SMTP = (1 << 2),
+        };
+        // The protocol for this instance. Only one!
+        public ProtocolEnum Protocol { get; set; }
+
         public const string AsSyncKey_Initial = "0";
         public const string AsPolicyKey_Initial = "0";
         public const uint KDefaultSyncLimit = 10;
