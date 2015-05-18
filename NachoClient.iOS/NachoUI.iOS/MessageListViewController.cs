@@ -598,7 +598,7 @@ namespace NachoClient.iOS
             var quoted = Lucene.Net.QueryParsers.QueryParser.Escape (match);
             var wildcard = (char.IsWhiteSpace (quoted.Last<char> ())) ? "" : "*";
             var query = quoted + wildcard;
-            var matches = index.SearchAllFields (query);
+            var matches = index.SearchAllEmailMessageFields (query);
             searchResultsMessages.UpdateMatches (matches);
             List<int> adds;
             List<int> deletes;

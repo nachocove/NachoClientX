@@ -91,6 +91,11 @@ namespace NachoCore.Model
             return McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
         }
 
+        public static List<McAccount> GetAllAccounts ()
+        {
+            return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
+        }
+
         public static string AccountServiceName (AccountServiceEnum service)
         {
             switch (service) {

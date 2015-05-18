@@ -12,7 +12,6 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MimeKit;
-using NachoCore.Brain;
 using System.Text.RegularExpressions;
 using NachoCore.ActiveSync;
 

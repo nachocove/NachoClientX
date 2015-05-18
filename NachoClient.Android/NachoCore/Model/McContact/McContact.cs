@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Text;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using NachoCore.Brain;
+using NachoCore.Index;
 
 namespace NachoCore.Model
 {
@@ -52,6 +54,22 @@ namespace NachoCore.Model
         public int GetHashCode (McContact c)
         {
             return c.Id;
+        }
+    }
+
+    public class McContactNameComparer : IComparer<McContact>
+    {
+        public int Compare (McContact a, McContact b)
+        {
+            int result = String.Compare (a.FirstName, b.FirstName);
+            if (0 != result) {
+                return result;
+            }
+            result = String.Compare (a.MiddleName, b.MiddleName);
+            if (0 != result) {
+                return result;
+            }
+            return String.Compare (a.LastName, b.LastName);
         }
     }
 
@@ -208,6 +226,10 @@ namespace NachoCore.Model
 
         [Indexed]
         public bool IsVip { get; set; }
+
+        // 0 means unindexed. If IndexedVersion < ContactIndexDocument.Version, it needs to be re-indexed.
+        [Indexed]
+        public int IndexVersion { get; set; }
 
         public override ClassCodeEnum GetClassCode ()
         {
@@ -757,6 +779,10 @@ namespace NachoCore.Model
             EvaluateSelfEclipsing ();
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
+                // Delete the old index document. Brain will re-index it in the background.
+                IndexVersion = 0;
+                NcBrain.UnindexContact (this);
+
                 retval = base.Update ();
                 if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
                     InsertAncillaryData ();
@@ -789,6 +815,7 @@ namespace NachoCore.Model
             var phoneList = PhoneNumbers;
             int retval = 0;
             NcModel.Instance.RunInTransaction (() => {
+                NcBrain.UnindexContact (this);
                 retval = base.Delete ();
                 EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
             });
@@ -1392,6 +1419,67 @@ namespace NachoCore.Model
                 (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
         }
 
+        public static List<McContact> QueryByIds (List<string> ids)
+        {
+            var query = String.Format ("SELECT c.* FROM McContact AS c WHERE c.Id IN ({0})", String.Join (",", ids));
+            return NcModel.Instance.Db.Query<McContact> (query);
+        }
+
+        public static List<McContactEmailAddressAttribute> SearchIndexAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
+        {
+            var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
+            if (String.IsNullOrEmpty (searchFor)) {
+                return emailAddressAttributes;
+            }
+
+            // Query the index for contacts up to 100 of them
+            foreach (var account in McAccount.GetAllAccounts()) {
+                var index = NcBrain.SharedInstance.Index (account.Id);
+                var matches = index.SearchAllContactFields ("*" + searchFor + "*", 100);
+                if (0 == matches.Count) {
+                    continue;
+                }
+                var contacts = McContact.QueryByIds (matches.Select (x => x.Id).ToList ());
+                if (matches.Count > contacts.Count) {
+                    // Some ids in the index are no longer value. We need to remove those entries in the index
+                    var hash = new HashSet<int> ();
+                    contacts.ForEach ((x) => {
+                        hash.Add (x.Id);
+                    });
+                    foreach (var match in matches) {
+                        var id = int.Parse (match.Id);
+                        if (!hash.Contains (id)) {
+                            NcBrain.UnindexContact (new McContact () {
+                                Id = int.Parse (match.Id),
+                                AccountId = account.Id,
+                            });
+                        }
+                    }
+                } else {
+                    NcAssert.True (matches.Count == contacts.Count);
+                }
+
+                contacts.Sort (new McContactNameComparer ());
+
+                // Get all matching email addresses
+                int count = 0;
+                foreach (var contact in contacts) {
+                    if (withEclipsing && contact.EmailAddressesEclipsed) {
+                        continue;
+                    }
+                    foreach (var emailAddress in contact.EmailAddresses) {
+                        emailAddressAttributes.Add (emailAddress);
+                        count += 1;
+                        if (100 < count) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return emailAddressAttributes;
+        }
+
         static string GetAllContactsQueryString (bool withEclipsing, int accountId = 0)
         {
             string fmt =
@@ -1463,6 +1551,21 @@ namespace NachoCore.Model
             " likelihood (AccountId = ?, 1.0) AND " +
             " likelihood (DeviceUniqueId = ?, 0.001) ",
                 account.Id, deviceUniqueId).SingleOrDefault ();
+        }
+
+        public static List<McContact> QueryNeedIndexing (int maxContact)
+        {
+            return NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact as c " +
+                " LEFT JOIN McBody as b ON b.Id == c.BodyId " +
+                " WHERE likelihood (c.IndexVersion < ?, 0.5) OR " +
+                " (likelihood (c.BodyId > 0, 0.2) AND " +
+                "  likelihood (b.FilePresence = ?, 0.5) AND " +
+                "  likelihood (c.IndexVersion < ?, 0.5)) " +
+                " LIMIT ?",
+                ContactIndexDocument.Version - 1, ContactIndexDocument.Version,
+                McAbstrFileDesc.FilePresenceEnum.Complete, maxContact
+            );
         }
 
         public string GetDisplayName ()
@@ -1766,6 +1869,20 @@ namespace NachoCore.Model
         {
             NcAssert.True (NcModel.Instance.Db.IsInTransaction);
             ricCache = null;
+        }
+
+        public void SetIndexVersion ()
+        {
+            if (0 == BodyId) {
+                IndexVersion = ContactIndexDocument.Version;
+            } else {
+                var body = GetBody ();
+                if ((null != body) && body.IsComplete ()) {
+                    IndexVersion = ContactIndexDocument.Version;
+                } else {
+                    IndexVersion = ContactIndexDocument.Version - 1;
+                }
+            }
         }
     }
 }
