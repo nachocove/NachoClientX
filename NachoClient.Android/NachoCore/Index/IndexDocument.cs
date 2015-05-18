@@ -115,6 +115,7 @@ namespace NachoCore.Index
         public List<string> PhoneNumbers;
         public List<string> Addresses;
         public string Note;
+        public string CompanyName;
 
         public ContactIndexParameters ()
         {
@@ -144,6 +145,7 @@ namespace NachoCore.Index
             AddIndexedField ("first_name", contact.FirstName);
             AddIndexedField ("middle_name", contact.MiddleName);
             AddIndexedField ("last_name", contact.LastName);
+            AddIndexedField ("company_name", contact.CompanyName);
             foreach (var emailAddress in contact.EmailAddresses) {
                 AddIndexedField ("email_address", emailAddress);
             }

@@ -282,7 +282,7 @@ namespace NachoCore.Brain
                 Log.Info (Log.LOG_BRAIN, "{0} contacts indexed", numIndexed);
             }
             if (0 != bytesIndexed) {
-                Log.Info (Log.LOG_BRAIN, "{0:NO} bytes indexed", bytesIndexed);
+                Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
             }
             return numIndexed;
         }
