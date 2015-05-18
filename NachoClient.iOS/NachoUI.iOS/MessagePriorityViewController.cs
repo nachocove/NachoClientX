@@ -203,6 +203,9 @@ namespace NachoClient.iOS
                 var vc = (DatePickerViewController)segue.DestinationViewController;
                 vc.owner = this;
             }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)

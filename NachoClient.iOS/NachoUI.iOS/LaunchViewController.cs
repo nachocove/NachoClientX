@@ -296,7 +296,6 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: starting fresh");
-            NcAssert.False (LoginHelpers.IsCurrentAccountSet ());
             emailField.Text = "";
             passwordField.Text = "";
             emailServices.SetSelectedItem (McAccount.AccountServiceEnum.None);
@@ -436,10 +435,9 @@ namespace NachoClient.iOS
 
         private void StartLoginProcess ()
         {
-            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-            NcAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
-            BackEnd.Instance.Start (NcApplication.Instance.Account.Id);
-            PerformSegue (StartupViewController.NextSegue (), this);
+            var account = NcAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
+            BackEnd.Instance.Start (account.Id);
+            PerformSegue ("SegueToAdvancedLogin", new SegueHolder(account));
         }
 
         public void maybeEnableConnect ()
@@ -493,7 +491,7 @@ namespace NachoClient.iOS
         protected void AdvancedLoginTouchUpInside (object sender, EventArgs e)
         {
             View.EndEditing (true);
-            PerformSegue ("SegueToAdvancedLogin", this);
+            PerformSegue ("SegueToAdvancedLogin", new SegueHolder(null));
         }
 
         protected void SupportButtonTouchUpInside (object sender, EventArgs e)
@@ -533,14 +531,20 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier.Equals ("SegueToAdvancedLogin")) {
-                if (!LoginHelpers.IsCurrentAccountSet ()) {
+                var h = (SegueHolder)sender;
+                var account = (McAccount)h.value;
+                var vc = (AdvancedLoginViewController)segue.DestinationViewController;
+                if (null == account) {
                     // Save the user's work in progress.
-                    var vc = (AdvancedLoginViewController)segue.DestinationViewController;
                     vc.SetAdvanced (emailField.Text, passwordField.Text);
+                } else {
+                    vc.SetAccount (account);
                 }
                 return;
             }
 
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
     }

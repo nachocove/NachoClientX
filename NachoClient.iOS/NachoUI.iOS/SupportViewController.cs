@@ -189,17 +189,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-
-            if (!LoginHelpers.IsCurrentAccountSet ()) {
-                NavigationItem.SetHidesBackButton (false, true);
-                NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
-            }
-            else if (!LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
-                NavigationItem.SetHidesBackButton (false, true);
-            } else {
-                // Uncomment to hide <More
-                // NavigationItem.SetHidesBackButton (true, true);
-            }
         }
 
         public override void ViewWillDisappear (bool animated)

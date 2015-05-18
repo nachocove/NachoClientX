@@ -621,7 +621,7 @@ namespace NachoClient.iOS
             var inboxLabel = (UILabel)footer.ViewWithTag (INBOX_LABEL);
             inboxLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
-            var inboxFolder = NcEmailManager.InboxFolder ();
+            var inboxFolder = NcEmailManager.InboxFolder (NcApplication.Instance.Account.Id);
             var unreadInboxMessagesCount = 0;
             if (null != inboxFolder) {
                 unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
@@ -636,7 +636,7 @@ namespace NachoClient.iOS
 
             // Deadline label
             var deadlinesButton = (UIButton)footer.ViewWithTag (DEADLINES_BUTTON_TAG);
-            var deadlineMessages = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
+            var deadlineMessages = McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId);
             var deadlinesLabel = (UILabel)footer.ViewWithTag (DEADLINES_LABEL);
             deadlinesLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
@@ -649,7 +649,7 @@ namespace NachoClient.iOS
 
             // Deferred label
             var deferredButton = (UIButton)footer.ViewWithTag (DEFERRED_BUTTON_TAG);
-            var deferredMessages = new NachoDeferredEmailMessages ();
+            var deferredMessages = new NachoDeferredEmailMessages (inboxFolder.AccountId);
             var deferredLabel = (UILabel)footer.ViewWithTag (DEFERRED_LABEL);
             deferredLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
@@ -741,17 +741,17 @@ namespace NachoClient.iOS
 
         private void InboxClicked (object sender, EventArgs e)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox ()));
+            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox (NcApplication.Instance.Account.Id)));
         }
 
         private void DeferredClicked (object sender, EventArgs e)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages ()));
+            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id)));
         }
 
         private void DeadlinesClicked (object sender, EventArgs e)
         {
-            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages ()));
+            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id)));
         }
 
         /// INachoMessageEditorParent delegate

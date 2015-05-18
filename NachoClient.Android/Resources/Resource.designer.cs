@@ -33,6 +33,8 @@ namespace NachoClient.AndroidClient
 			global::Lucene.Net.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::ModernHttpClient.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::DnDns.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::AWSSDK_XMOBILE.Resource.String.ApplicationName = global::NachoClient.AndroidClient.Resource.String.ApplicationName;
+			global::AWSSDK_XMOBILE.Resource.String.Hello = global::NachoClient.AndroidClient.Resource.String.Hello;
 		}
 		
 		public partial class Animation
@@ -1368,11 +1370,17 @@ namespace NachoClient.AndroidClient
 		public partial class String
 		{
 			
+			// aapt resource value: 0x7f05001a
+			public const int ApplicationName = 2131034138;
+			
 			// aapt resource value: 0x7f050002
 			public const int DrawerClose = 2131034114;
 			
 			// aapt resource value: 0x7f050001
 			public const int DrawerOpen = 2131034113;
+			
+			// aapt resource value: 0x7f050019
+			public const int Hello = 2131034137;
 			
 			// aapt resource value: 0x7f05000d
 			public const int abc_action_bar_home_description = 2131034125;
@@ -1443,8 +1451,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f050000
 			public const int app_name = 2131034112;
 			
-			// aapt resource value: 0x7f050019
-			public const int library_name = 2131034137;
+			// aapt resource value: 0x7f05001b
+			public const int library_name = 2131034139;
 			
 			static String()
 			{

@@ -201,7 +201,7 @@ namespace NachoClient.iOS
             if (notification.HasPingerSection ()) {
                 PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
-                        var inbox = NcEmailManager.PriorityInbox ();
+                        var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
                         completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
@@ -380,7 +380,7 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (NcApplication.Instance.IsUp () && "SegueToTabController" == StartupViewController.NextSegue ()) {
+            if(LoginHelpers.ReadyToStart()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -803,10 +803,10 @@ namespace NachoClient.iOS
             if (hasFirstSyncCompleted == false) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
-                    Account = ConstMcAccount.NotAccountSpecific,
+                    Account = McAccount.QueryById<McAccount>(accountId),
                 });
             } else {
-                DisplayCredentialsFixView ();
+                DisplayCredentialsFixView (accountId);
             }
         }
 
@@ -841,7 +841,7 @@ namespace NachoClient.iOS
                 // called if server name is wrong
                 // cancel should call "exit program, enter new server name should be updated server
 
-                LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
+                LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
 
                 var Mo = NcModel.Instance;
                 var Be = BackEnd.Instance;
@@ -857,7 +857,7 @@ namespace NachoClient.iOS
                     var parent = (UIAlertView)a;
                     if (b.ButtonIndex == 0) {
 
-                        LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
+                        LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
 
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format (regex).
@@ -911,20 +911,21 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
-                    Account = ConstMcAccount.NotAccountSpecific,
+                    Account = McAccount.QueryById<McAccount>(accountId),
                 });
             } else {
                 // UI FIXME - ask user and call CertAskResp async'ly.
-                DisplayCredentialsFixView ();
+                DisplayCredentialsFixView (accountId);
             }
         }
 
-        protected void DisplayCredentialsFixView ()
+        protected void DisplayCredentialsFixView (int accountId)
         {
-            LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
+            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
 
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+            var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+            cvc.SetAccountId (accountId);
             cvc.SetTabBarController (Util.GetActiveTabBarOrNull ());
             this.Window.RootViewController.PresentViewController (cvc, true, null);
         }
@@ -1074,7 +1075,7 @@ namespace NachoClient.iOS
 
         public static void TestScheduleEmailNotification ()
         {
-            var list = NcEmailManager.PriorityInbox ();
+            var list = NcEmailManager.PriorityInbox (2);
             var thread = list.GetEmailThread (0);
             var message = thread.FirstMessageSpecialCase ();
             var notif = new UILocalNotification () {

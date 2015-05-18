@@ -22,8 +22,15 @@ namespace NachoClient.iOS
         CertificateView certificateView;
         protected NachoTabBarController sendersTabBar;
 
+        int theAccountId;
+
         public CredentialsAskViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        public void SetAccountId(int accountId)
+        {
+            theAccountId = accountId;
         }
 
         public override void ViewDidLoad ()
@@ -49,9 +56,9 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
             NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
 
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccountId);
             if (BackEndStateEnum.CertAskWait == backEndState) {
-                certificateView.SetCertificateInformation ();
+                certificateView.SetCertificateInformation (theAccountId);
                 certificateView.ShowView ();
             }
         }
@@ -154,15 +161,14 @@ namespace NachoClient.iOS
 
             submitButton.TouchUpInside += delegate {
                 if (EmailHelper.IsValidEmail (emailField.Text)) {
-                    McAccount UsersAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                    McCred UsersCredentials = McCred.QueryByAccountId<McCred> (UsersAccount.Id).SingleOrDefault ();
+                    McCred UsersCredentials = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
                     UsersCredentials.UpdatePassword (passwordField.Text);
                     UsersCredentials.Update ();
-                    BackEnd.Instance.CredResp (UsersAccount.Id);
+                    BackEnd.Instance.CredResp (theAccountId);
                     View.EndEditing (true);
                     DismissViewController (true, null);
-                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
+                    LoginHelpers.SetDoesBackEndHaveIssues (theAccountId, false);
                 } else {
                     errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
                 }
@@ -197,24 +203,15 @@ namespace NachoClient.iOS
 
         protected string GetUsername ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                McCred Cred = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
-                return Cred.Username;
-            } else {
-                return "";
-            }
+            var cred = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
+            return cred.Username;
         }
 
         protected string GetPassword ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                McCred Cred = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
-                return Cred.GetPassword ();
-            } else {
-                return "";
-            }
+
+            var cred = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
+            return cred.GetPassword ();
         }
 
         private void OnTextFieldChanged (NSNotification notification)
@@ -237,16 +234,20 @@ namespace NachoClient.iOS
             submitButton.Alpha = (shouldWe ? 1.0f : 0.5f);
         }
 
-        public void DontAcceptCertificate ()
+        // INachoCertificateResponderParent
+        public void DontAcceptCertificate (int accountId)
         {
+            NcApplication.Instance.CertAskResp (accountId, false);
+            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
             View.EndEditing (true);
             DismissViewController (true, null);
         }
 
-        public void AcceptCertificate ()
+        // INachoCertificateResponderParent
+        public void AcceptCertificate (int accountId)
         {
-            NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
-            LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
+            NcApplication.Instance.CertAskResp (accountId, true);
+            LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
             View.EndEditing (true);
             DismissViewController (true, null);
         }

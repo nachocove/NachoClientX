@@ -12,7 +12,7 @@ namespace NachoClient.iOS
     {
         public InboxViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (NcEmailManager.Inbox ());
+            SetEmailMessages (NcEmailManager.Inbox (NcApplication.Instance.Account.Id));
         }
 
         public override void ViewDidLoad ()

@@ -525,56 +525,58 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
-        /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
-        public static List<McEmailMessageThread> QueryDeferredMessageItemsAllAccounts ()
+        public static List<McEmailMessageThread> QueryDeferredMessageItems (int accountId)
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagStatus <> 0 AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
-                DateTime.UtcNow);
+                accountId, DateTime.UtcNow);
         }
 
-        /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
-        public static List<McEmailMessageThread> QueryDeferredMessageItemsAllAccountsByThreadId (string threadId)
+        public static List<McEmailMessageThread> QueryDeferredMessageItemsByThreadId (int accountId, string threadId)
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.ConversationId = ?, 0.01) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagStatus <> 0 AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
-                threadId, DateTime.UtcNow);
+                accountId, threadId, DateTime.UtcNow);
         }
 
-        public static List<McEmailMessageThread> QueryDueDateMessageItemsAllAccounts ()
+        public static List<McEmailMessageThread> QueryDueDateMessageItems (int accountId)
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
                 " e.FlagStatus <> 0 AND" +
                 " e.FlagType <> ?", 
-                "Defer until");
+                accountId, "Defer until");
         }
 
-        public static List<McEmailMessageThread> QueryDueDateMessageItemsAllAccountsByThreadId (string threadId)
+        public static List<McEmailMessageThread> QueryDueDateMessageItemsByThreadId (int accountId, string threadId)
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
                 " e.ConversationId = ? AND" +
                 " e.IsAwaitingDelete = 0 AND" +
                 " e.FlagStatus <> 0 AND" +
                 " e.FlagType <> ?", 
-                threadId, "Defer until");
+                accountId, threadId, "Defer until");
         }
 
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)

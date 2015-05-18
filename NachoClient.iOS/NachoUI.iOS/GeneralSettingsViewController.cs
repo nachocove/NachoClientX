@@ -19,6 +19,8 @@ namespace NachoClient.iOS
         UITableView accountsTableView;
         AccountsTableViewSource accountsTableViewSource;
 
+        UIButton newAccountButton;
+
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
         }
@@ -70,6 +72,19 @@ namespace NachoClient.iOS
 
             yOffset = accountsTableView.Frame.Bottom + 30;
 
+            newAccountButton = UIButton.FromType (UIButtonType.System);
+            newAccountButton.SetTitle ("New Account", UIControlState.Normal);
+            newAccountButton.SizeToFit ();
+            ViewFramer.Create(newAccountButton).Center(View.Frame.Width / 2, yOffset + (newAccountButton.Frame.Height / 2));
+
+            newAccountButton.TouchUpInside += (object sender, EventArgs e) => {
+                PerformSegue("SegueToLaunch", this);
+            };
+
+            contentView.AddSubview (newAccountButton);
+
+            yOffset = newAccountButton.Frame.Bottom;
+
         }
 
         void NewAccountButton_TouchUpInside (object sender, EventArgs e)
@@ -99,6 +114,13 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
+                var h = (SegueHolder)sender;
+                var account = (McAccount)h.value;
+                var vc = (AccountSettingsViewController)segue.DestinationViewController;
+                vc.SetAccount (account);
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToLaunch")) {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

@@ -103,7 +103,7 @@ namespace NachoClient.iOS
         void CacheUrlHtml (object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty (urlSourceCode)) {
-                McMutables.Set (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, urlSourceCode);
+                McMutables.Set (LoginHelpers.GlobalAccountId, CACHE_MODULE, key, urlSourceCode);
             }
             LayoutView ();
         }
@@ -111,7 +111,7 @@ namespace NachoClient.iOS
         void HandleLoadError (object sender, UIWebErrorArgs e)
         {
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            string urlHtml = McMutables.GetOrCreate (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, "");
+            string urlHtml = McMutables.GetOrCreate (LoginHelpers.GlobalAccountId, CACHE_MODULE, key, "");
             if (!string.IsNullOrEmpty (urlHtml)) {
                 webView.LoadHtmlString (urlHtml, new NSUrl ("about:blank"));
             } else if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
