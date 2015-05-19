@@ -81,6 +81,11 @@ namespace NachoCore
             return new NachoDeadlineEmailThread (accountId, threadId);
         }
 
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == accountId;
+        }
+
     }
 
     public class NachoDeadlineEmailThread : INachoEmailMessages
@@ -156,5 +161,9 @@ namespace NachoCore
             return null;
         }
 
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == accountId;
+        }
     }
 }

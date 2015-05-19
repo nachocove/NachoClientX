@@ -86,7 +86,11 @@ namespace NachoCore
         {
             return new NachoThreadedEmailMessages (folder, threadId);
         }
-            
+
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == folder.AccountId;
+        }
     }
 }
 

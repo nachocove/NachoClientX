@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         }
 
         protected bool foldersNeedRefresh;
-        protected McAccount account;
+        protected McAccount currentAccount;
         protected bool hasRecents = false;
         protected UILabel recentLabel;
         protected UILabel defaultsLabel;
@@ -60,7 +60,8 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
 
-            account = NcApplication.Instance.Account;
+            currentAccount = NcApplication.Instance.Account;
+
             CreateView ();
             ConfigureFolders ();
             ConfigureView ();
@@ -93,6 +94,11 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshFolders ()
         {
+            if (NcApplication.Instance.Account.Id != currentAccount.Id) {
+                SwitchToAccount (NcApplication.Instance.Account);
+                return;
+            }
+
             if (foldersNeedRefresh) {
                 foldersNeedRefresh = false;
                 ClearLists ();
@@ -100,6 +106,16 @@ namespace NachoClient.iOS
                 ClearViews ();
                 ConfigureView ();
             }
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            this.currentAccount = account;
+            foldersNeedRefresh = false;
+            ClearLists ();
+            ConfigureFolders ();
+            ClearViews ();
+            ConfigureView ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -276,23 +292,14 @@ namespace NachoClient.iOS
 
             foreach (var account in accounts) {
                 var action = new NcAlertAction (account.DisplayName, () => {
-                    SwitchToAccount (account.Id);
+                    NcApplication.Instance.Account = account;
+                    SwitchToAccount (account);
                 });
                 actions.Add (action); 
             }
             actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
 
             NcActionSheet.Show (View, this, actions.ToArray ());
-        }
-
-        void SwitchToAccount (int accountId)
-        {
-            account = McAccount.QueryById<McAccount> (accountId);
-            foldersNeedRefresh = false;
-            ClearLists ();
-            ConfigureFolders ();
-            ClearViews ();
-            ConfigureView ();
         }
 
         protected void ConfigureColors ()
@@ -326,7 +333,7 @@ namespace NachoClient.iOS
         {
             if (!modal) {
                 topFolderCount = 0;
-                var folder = McFolder.GetDefaultInboxFolder (account.Id);
+                var folder = McFolder.GetDefaultInboxFolder (currentAccount.Id);
                 if (null != folder) {
                     CreateTopFolderCell (folder.DisplayName, topFolderCount, true, () => {
                         SegueToMessageList (folder);
@@ -798,7 +805,7 @@ namespace NachoClient.iOS
 
         public void ConfigureFolders ()
         {
-            Folders = new NachoFolders (account.Id, NachoFolders.FilterForEmail);
+            Folders = new NachoFolders (currentAccount.Id, NachoFolders.FilterForEmail);
             ConvertFoldersToMcFolders ();
             CreateNestedFolderList ();
         }
@@ -928,12 +935,12 @@ namespace NachoClient.iOS
 
         public McFolder GetParentFolder (McFolder folder)
         {
-            return McFolder.QueryByServerId (account.Id, folder.ParentId);
+            return McFolder.QueryByServerId (currentAccount.Id, folder.ParentId);
         }
 
         public void UpdateLastAccessed ()
         {
-            var list = McFolder.QueryByMostRecentlyAccessedVisibleFolders (account.Id);
+            var list = McFolder.QueryByMostRecentlyAccessedVisibleFolders (currentAccount.Id);
             recentFolderList = list.Take (MAX_RECENT_FOLDERS).ToList ();
         }
 
