@@ -918,12 +918,19 @@ namespace NachoClient.iOS
 
         protected string ConvertToPlainText (string formattedText, NSDocumentType type)
         {
-            NSError error = null;
-            var descriptionData = NSData.FromString (formattedText);
-            var descriptionAttributed = new NSAttributedString (descriptionData, new NSAttributedStringDocumentAttributes {
-                DocumentType = type
-            }, ref error);
-            return descriptionAttributed.Value;
+            try {
+                NSError error = null;
+                var descriptionData = NSData.FromString (formattedText);
+                var descriptionAttributed = new NSAttributedString (descriptionData, new NSAttributedStringDocumentAttributes {
+                    DocumentType = type
+                }, ref error);
+                return descriptionAttributed.Value;
+            } catch (Exception e) {
+                // The NSAttributedString init: routine will fail if formattedText is not the specified type.
+                // We don't want to crash the app in this case.
+                Log.Warn (Log.LOG_CALENDAR, "Calendar body has unexpected format and will be treated as plain text: {0}", e.ToString());
+                return formattedText;
+            }
         }
 
         protected McFolder GetCalendarFolder ()
