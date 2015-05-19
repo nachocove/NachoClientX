@@ -11,15 +11,16 @@ namespace NachoCore
 {
     public class NachoMessageSearchResults : INachoEmailMessages
     {
-
+        int accountId;
         List<McEmailMessageThread> list;
         List<McEmailMessageThread> threadList;
 
         List<Index.MatchedItem> matches;
         List<McEmailMessageThread> serverMatches;
 
-        public NachoMessageSearchResults ()
+        public NachoMessageSearchResults (int accountId)
         {
+            this.accountId = accountId;
             threadList = new List<McEmailMessageThread> ();
         }
 
@@ -132,6 +133,12 @@ namespace NachoCore
         {
             return null;
         }
+
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == accountId;
+        }
+
     }
 }
 

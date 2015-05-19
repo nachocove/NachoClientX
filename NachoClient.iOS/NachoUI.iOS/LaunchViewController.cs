@@ -436,6 +436,7 @@ namespace NachoClient.iOS
         private void StartLoginProcess ()
         {
             var account = NcAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
+            NcAccountHandler.Instance.MaybeCreateServersForIMAP(account, selectedEmailService);
             BackEnd.Instance.Start (account.Id);
             PerformSegue ("SegueToAdvancedLogin", new SegueHolder(account));
         }

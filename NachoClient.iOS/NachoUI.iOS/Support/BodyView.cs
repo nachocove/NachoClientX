@@ -170,7 +170,7 @@ namespace NachoClient.iOS
                 RenderHtmlString (body.GetContentsString ());
                 break;
             case McAbstrFileDesc.BodyTypeEnum.RTF_3:
-                RenderRtfString (body.GetContentsString ());
+                RenderRtfString (AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ()));
                 break;
             case McAbstrFileDesc.BodyTypeEnum.MIME_4:
                 RenderMime (body);

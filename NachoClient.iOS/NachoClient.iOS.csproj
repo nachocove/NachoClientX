@@ -2274,6 +2274,10 @@
     <BundleResource Include="Resources\more-policy%403x.png" />
     <BundleResource Include="Resources\more-policy%404x.png" />
     <BundleResource Include="Resources\more-policy%406x.png" />
+    <BundleResource Include="Resources\login-imap-min%402x.png" />
+    <BundleResource Include="Resources\login-imap%402x.png" />
+    <BundleResource Include="Resources\login-gmail%402x.png" />
+    <BundleResource Include="Resources\login-gmail-min%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

@@ -636,11 +636,14 @@ namespace NachoClient.iOS
 
             // Deadline label
             var deadlinesButton = (UIButton)footer.ViewWithTag (DEADLINES_BUTTON_TAG);
-            var deadlineMessages = McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId);
+            var deadlineMessageCount = 0;
+            if (null != inboxFolder) {
+                deadlineMessageCount = McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
+            }
             var deadlinesLabel = (UILabel)footer.ViewWithTag (DEADLINES_LABEL);
             deadlinesLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
-            deadlinesLabel.Text = "Go to Deadlines (" + deadlineMessages.Count + ")";
+            deadlinesLabel.Text = "Go to Deadlines (" + deadlineMessageCount + ")";
             deadlinesButton.Enabled = true;
             deadlinesLabel.Hidden = false;
             footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = false;
@@ -649,11 +652,14 @@ namespace NachoClient.iOS
 
             // Deferred label
             var deferredButton = (UIButton)footer.ViewWithTag (DEFERRED_BUTTON_TAG);
-            var deferredMessages = new NachoDeferredEmailMessages (inboxFolder.AccountId);
+            var deferredMessageCount = 0;
+            if (null != inboxFolder) {
+                deferredMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count();
+            }
             var deferredLabel = (UILabel)footer.ViewWithTag (DEFERRED_LABEL);
             deferredLabel.Frame = new CGRect (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
-            deferredLabel.Text = "Go to Deferred Messages (" + deferredMessages.Count () + ")";
+            deferredLabel.Text = "Go to Deferred Messages (" + deferredMessageCount + ")";
             deferredButton.Enabled = true;
             footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = false;
 
@@ -661,7 +667,6 @@ namespace NachoClient.iOS
             deferredLabel.SizeToFit ();
             deferredLabel.Center = new CGPoint (deferredLabel.Center.X, deferredButton.Frame.Height / 2);
         }
-
 
         /// <summary>
         /// Reconfigures the visible cells.
@@ -696,7 +701,7 @@ namespace NachoClient.iOS
                     // Pretend that no row is visible, so the caller will use the indexPath passed into RowSelected.
                     return -1;
                 }
-                if (0 == visibleRows[0].Row) {
+                if (0 == visibleRows [0].Row) {
                     // At the beginning.
                     return 0;
                 } else {

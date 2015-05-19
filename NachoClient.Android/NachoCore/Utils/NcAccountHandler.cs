@@ -60,6 +60,44 @@ namespace NachoCore.Model
             return account;
         }
 
+        public bool MaybeCreateServersForIMAP(McAccount account, McAccount.AccountServiceEnum service)
+        {
+            int imapServerPort;
+            int smtpServerPort;
+            string imapServerName;
+            string smtpServerName;
+
+            switch (service) {
+            case McAccount.AccountServiceEnum.Exchange:
+                return false;
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                imapServerPort = 993;
+                imapServerName = "imap.gmail.com";
+                smtpServerPort = 587;
+                smtpServerName = "smtp.gmail.com";
+                break;
+            case McAccount.AccountServiceEnum.GoogleExchange:
+                return false;
+            case McAccount.AccountServiceEnum.HotmailExchange:
+                return false;
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
+                return false;
+            case McAccount.AccountServiceEnum.OutlookExchange:
+                return false;
+            default:
+                NcAssert.CaseError ();
+                return false;
+            }
+            var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
+            var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
+            NcModel.Instance.RunInTransaction (() => {
+                imapServer.Insert();
+                smtpServer.Insert();
+            });
+            Log.Info (Log.LOG_UI, "CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
+            return true;
+        }
+
         // delete the file
         public bool DeleteRemovingAccountFile ()
         {
