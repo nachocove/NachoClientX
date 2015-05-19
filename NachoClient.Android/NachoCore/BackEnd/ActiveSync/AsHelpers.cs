@@ -1280,6 +1280,33 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_AS, "TrySetCompactDateTimeFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
             }
         }
+
+        /// <summary>
+        /// ActiveSync delivers RTF bodies in a base-64 compressed format. This method converts
+        /// from that format to normal RTF.
+        /// </summary>
+        /// <returns>Normal uncompressed RTF.</returns>
+        /// <param name="base64Compressed">The base-64 compressed RTF.</param>
+        public static string Base64CompressedRtfToNormalRtf (string base64Compressed)
+        {
+            try {
+                byte[] compressed = Convert.FromBase64String (base64Compressed);
+                // The algorithm to decompress the RTF is too complex to be worth implementing ourselves.
+                // Fortunately, MimeKit has a converter that is usable, even though it doesn't look like it
+                // was designed to be used outside of MimeKit.
+                var compressedToNormalConverter = new MimeKit.Tnef.RtfCompressedToRtf ();
+                int normalIndex;
+                int normalLength;
+                byte[] normalBytes = compressedToNormalConverter.Filter (compressed, 0, compressed.Length, out normalIndex, out normalLength);
+                return System.Text.Encoding.UTF8.GetString (normalBytes, normalIndex, normalLength);
+            } catch (FormatException) {
+                Log.Warn (Log.LOG_UTILS, "Base-64 compressed RTF string is not a valid base-64 format.");
+                return base64Compressed;
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_UTILS, "Conversion of base-64 compressed RTF to normal RTF failed: {0}", e.ToString ());
+                return base64Compressed;
+            }
+        }
     }
 }
 
