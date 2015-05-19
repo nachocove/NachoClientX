@@ -82,6 +82,11 @@ namespace NachoCore
         {
             return null;
         }
+
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == folder.AccountId;
+        }
     }
 }
 

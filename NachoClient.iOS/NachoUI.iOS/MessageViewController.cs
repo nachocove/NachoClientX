@@ -102,6 +102,15 @@ namespace NachoClient.iOS
             this.thread = thread;
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+
+            // Can't switch acct; let's be sure for now
+            var message = thread.FirstMessageSpecialCase ();
+            NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
+        }
+            
         protected override void CreateViewHierarchy ()
         {
             scrollView.Frame = View.Frame;
