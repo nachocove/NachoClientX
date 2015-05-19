@@ -404,6 +404,8 @@
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryEvent.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
