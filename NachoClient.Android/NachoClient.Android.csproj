@@ -406,6 +406,7 @@
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
     <Compile Include="NachoCore\Utils\TelemetryEvent.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
+    <Compile Include="NachoCore\Utils\NcSamples.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

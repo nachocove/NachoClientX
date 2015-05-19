@@ -1393,6 +1393,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonEvent.cs">
       <Link>NachoCore\Utils\TelemetryJsonEvent.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcSamples.cs">
+      <Link>NachoCore\Utils\NcSamples.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

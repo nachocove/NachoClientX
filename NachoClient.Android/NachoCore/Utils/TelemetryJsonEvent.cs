@@ -14,9 +14,10 @@ namespace NachoCore.Utils
     /// </summary>
     public class TelemetryJsonEvent
     {
-        public string ServerId;
-        public DateTime TimeStamp;
-        public string EventType;
+        public string id;
+        public string client;
+        public DateTime timestamp;
+        public string event_type;
 
         public TelemetryJsonEvent ()
         {
@@ -28,54 +29,65 @@ namespace NachoCore.Utils
         }
     }
 
-    public class TelemetryLogJsonEvent : TelemetryJsonEvent
+    public class TelemetryLogEvent : TelemetryJsonEvent
     {
-        public int ThreadId;
-        public string Message;
+        public int thread_id;
+        public string message;
     }
 
-    public class TelemetryWbxmlJsonEvent : TelemetryJsonEvent
+    public class TelemetryWbxmlEvent : TelemetryJsonEvent
     {
-        public byte[] Wbxml;
+        public byte[] wbxml;
     }
 
-    public class TelemetryCounterJsonEvent : TelemetryJsonEvent
+    public class TelemetryCounterEvent : TelemetryJsonEvent
     {
-        public string CounterName;
-        public Int64 Count;
-        public DateTime CounterStart;
-        public DateTime CounterEnd;
+        public string counter_name;
+        public Int64 count;
+        public DateTime counter_start;
+        public DateTime counter_end;
     }
 
-    public class TelemetrySamplesJsonEvent : TelemetryJsonEvent
+    public class TelemetrySamplesEvent : TelemetryJsonEvent
     {
-        public string SamplesName;
-        public List<int> Samples;
+        public string samples_name;
+        public List<int> samples;
     }
 
-    public class TelemetryTimeSeriesSamplesJsonEvent : TelemetryJsonEvent
+    public class TelemetryTimeSeriesSamplesEvent : TelemetryJsonEvent
     {
-        public string TimeSeriesName;
-        public List<KeyValuePair<DateTime, int>> TimeSeriesSamples;
+        public string time_series_name;
+        public List<DateTime> time_series_timestamp;
+        public List<int> time_series_samples;
     }
 
-    public class TelemetryDistributionJsonEvent : TelemetryJsonEvent
+    public class TelemetryDistributionEvent : TelemetryJsonEvent
     {
-        public string DistributionName;
-        public List<KeyValuePair<int, int>> Cdf;
+        public string distribution_name;
+        public List<KeyValuePair<int, int>> cdf;
     }
 
-    public class TelemetryUiJsonEvent : TelemetryJsonEvent
+    public class TelemetryStatistics2Event : TelemetryJsonEvent
     {
-        public string UiType;
-        public string UiObject;
-        public string UiString;
-        public long UiLong;
+        public string stat2_name;
+        public int count;
+        public int min;
+        public int max;
+        public long sum;
+        public long sum2;
     }
 
-    public class TelemetrySupportJsonEvent : TelemetryJsonEvent
+    public class TelemetryUiEvent : TelemetryJsonEvent
     {
-        public string Support;
+        public string ui_type;
+        public string ui_object;
+        public string ui_string;
+        public long ui_long;
+    }
+
+    public class TelemetrySupportEvent : TelemetryJsonEvent
+    {
+        public string support;
     }
 
     public class TelemetryJsonFile
