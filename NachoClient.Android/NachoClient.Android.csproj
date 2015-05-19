@@ -405,6 +405,8 @@
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpExample.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\ISmtpCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
