@@ -338,10 +338,6 @@ namespace NachoCore.Utils
 
         public static bool IsServiceUnsupported (string emailAddress, out string serviceName)
         {
-            if (emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Gmail";
-                return true;
-            }
             if (emailAddress.EndsWith ("@yahoo.com", StringComparison.OrdinalIgnoreCase)) {
                 serviceName = "Yahoo!";
                 return true;
@@ -356,6 +352,11 @@ namespace NachoCore.Utils
             }
             serviceName = "";
             return false;
+        }
+
+        public static bool IsGmailServiceAddress(string emailAddress)
+        {
+            return emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsHotmailServiceAddress (string emailAddress)

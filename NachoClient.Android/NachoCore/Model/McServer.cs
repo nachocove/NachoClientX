@@ -47,7 +47,7 @@ namespace NachoCore.Model
             return new Uri (BaseUriString ());
         }
 
-        public string BaseUriString()
+        public string BaseUriString ()
         {
             string uriString;
             if (443 == Port && "https" == Scheme) {
@@ -93,7 +93,19 @@ namespace NachoCore.Model
                 Host = uri.Host,
                 Path = uri.AbsolutePath,
                 Scheme = uri.Scheme,
-                Port = uri.Port
+                Port = uri.Port,
+            };
+        }
+
+        public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, string host, int port)
+        {
+            return new McServer () {
+                AccountId = accountId,
+                Capabilities = capabilities,
+                Host = host,
+                Path = null,
+                Scheme = null,
+                Port = port,
             };
         }
 
@@ -106,7 +118,7 @@ namespace NachoCore.Model
             Port = src.Port;
         }
 
-        public bool IsSameServer(McServer match)
+        public bool IsSameServer (McServer match)
         {
             if (Capabilities != match.Capabilities) {
                 return false;
@@ -127,7 +139,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McServer> ().Where (x => 
                 accountId == x.AccountId &&
-                host == x.Host
+            host == x.Host
             ).SingleOrDefault ();
         }
     }

@@ -35,9 +35,11 @@ namespace NachoClient.iOS
         protected List<ServiceInfo> providers = new List<ServiceInfo> {
             new ServiceInfo (true, "", McAccount.AccountServiceEnum.None),
             new ServiceInfo (false, "login-mex@2x", McAccount.AccountServiceEnum.Exchange),
+            new ServiceInfo (false, "login-gmail@2x", McAccount.AccountServiceEnum.GoogleDefault),
             new ServiceInfo (false, "login-hotmail@2x", McAccount.AccountServiceEnum.HotmailExchange),
             new ServiceInfo (false, "login-google@2x", McAccount.AccountServiceEnum.GoogleExchange),
             new ServiceInfo (false, "login-outlook@2x", McAccount.AccountServiceEnum.OutlookExchange),
+            new ServiceInfo (false, "login-imap@2x", McAccount.AccountServiceEnum.IMAP_SMTP),
         };
 
         protected bool expanded;
