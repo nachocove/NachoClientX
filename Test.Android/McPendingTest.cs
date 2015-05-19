@@ -966,8 +966,8 @@ namespace Test.iOS
                 var pend1 = CreatePending (operation: Operations.EmailSend, item: email1);
                 CreatePending (operation: Operations.EmailBodyDownload, item: email1);
                 CreatePending (accountId:5, operation: Operations.EmailSend, item: email1);
-                var pend4 = CreatePending (operation: Operations.EmailSend, item: email2);
-                var pend5 = CreatePending (operation: Operations.CalDelete, item: cal);
+                CreatePending (operation: Operations.EmailSend, item: email2);
+                CreatePending (operation: Operations.CalDelete, item: cal);
 
                 var found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
                 PendingsAreEqual (found, pend1);

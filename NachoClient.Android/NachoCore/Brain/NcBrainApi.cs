@@ -40,6 +40,16 @@ namespace NachoCore.Brain
             dbEvent.Insert ();
         }
 
+        public static void UnindexContact (McContact contact)
+        {
+            if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+                return;
+            }
+            var brainEvent = new NcCBrainUnindexContactEvent (contact.AccountId, contact.Id);
+            var dbEvent = new McBrainEvent (brainEvent);
+            dbEvent.AccountId = contact.AccountId;
+            dbEvent.Insert ();
+        }
     }
 }
 

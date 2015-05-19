@@ -43,7 +43,7 @@ namespace NachoCore.Model
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
                 account.Signature = "Sent from Nacho Mail";
-                account.AccountService = service;
+                account.SetAccountService (service);
                 account.DisplayName = McAccount.AccountServiceName (service);
                 account.Insert ();
                 var cred = new McCred () { 

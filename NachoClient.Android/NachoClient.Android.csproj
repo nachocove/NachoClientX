@@ -399,8 +399,12 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration23.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapExample.cs" />
     <Compile Include="NachoCore\BackEnd\NcProtoControl.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration24.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration25.cs" />
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -630,6 +634,10 @@
     <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
       <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
       <Name>CSharpNameParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_Android\AWSSDK_Android.csproj">
+      <Project>{4A459CB4-279E-4626-8ADC-BC8FAEF391B7}</Project>
+      <Name>AWSSDK_Android</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

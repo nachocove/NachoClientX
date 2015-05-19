@@ -133,8 +133,6 @@ namespace NachoCore.ActiveSync
             };
         }
 
-        public AsProtoControl ProtoControl { set; get; }
-
         public IAsStrategy SyncStrategy { set; get; }
 
         private PushAssist PushAssist { set; get; }
@@ -146,6 +144,8 @@ namespace NachoCore.ActiveSync
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
+            Capabilities = McAccount.ActiveSyncCapabilities;
+
             // TODO decouple disk setup from constructor.
             EstablishService ();
             /*
@@ -1128,7 +1128,10 @@ namespace NachoCore.ActiveSync
                 2 > ConcurrentExtraRequests) {
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = SyncStrategy.PickUserDemand ();
-                if (null != pack) {
+                if (null == pack) {
+                    // If strategy could not find something to do, we won't be using the side channel.
+                    Interlocked.Decrement (ref ConcurrentExtraRequests);
+                } else {
                     Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");
                     var dummySm = new NcStateMachine ("ASPC:EXTRA") { 
                         Name = string.Format ("ASPC:EXTRA({0})", AccountId),

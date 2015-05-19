@@ -87,7 +87,7 @@ namespace NachoCore.Brain
             LockObj = new object ();
         }
 
-        protected NcIndex Index (int accountId)
+        public NcIndex Index (int accountId)
         {
             NcIndex index;
             if (_Indexes.TryGetValue (accountId, out index)) {
@@ -164,11 +164,15 @@ namespace NachoCore.Brain
             return numGleaned;
         }
 
+        private bool IsInterrupted ()
+        {
+            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
+        }
+
         private int ProcessLoop (int count, string message, Func<bool> action)
         {
             int numProcessed = 0;
-            while (numProcessed < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
-                   !EventQueue.Token.IsCancellationRequested) {
+            while (numProcessed < count && !IsInterrupted ()) {
                 if (!action ()) {
                     break;
                 }
@@ -221,37 +225,65 @@ namespace NachoCore.Brain
             int numIndexed = 0;
             long bytesIndexed = 0;
             List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
-            Dictionary<int, Index.NcIndex> indexes = new Dictionary<int, Index.NcIndex> ();
+            var indexes = new OpenedIndexSet (this);
             foreach (var emailMessage in emailMessages) {
-                if (EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired) {
+                if (IsInterrupted ()) {
                     break;
                 }
 
-                // If we don't have an index for this account, open one
-                NcIndex index;
-                if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
-                    index = Index (emailMessage.AccountId);
-                    if (!index.BeginAddTransaction ()) {
-                        Log.Warn (Log.LOG_BRAIN, "fail to begin add transaction (accountId={0})", emailMessage.AccountId);
-                        break;
-                    }
-                    indexes.Add (emailMessage.AccountId, index);
+                var index = indexes.Get (emailMessage.AccountId);
+                if (null == index) {
+                    break;
                 }
                 if (IndexEmailMessage (index, emailMessage, ref bytesIndexed)) {
                     numIndexed += 1;
                 }
             }
 
-            foreach (var index in indexes.Values) {
-                index.EndAddTransaction ();
-            }
+            indexes.Cleanup ();
             if (0 != numIndexed) {
                 Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);
             }
             if (0 != bytesIndexed) {
                 Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
             }
-            indexes.Clear ();
+            return numIndexed;
+        }
+
+        private int IndexContacts (int count)
+        {
+            if (0 == count) {
+                return 0;
+            }
+
+            int numIndexed = 0;
+            long bytesIndexed = 0;
+            List<McContact> contacts = McContact.QueryNeedIndexing (count);
+            if (0 == contacts.Count) {
+                return 0;
+            }
+            var indexes = new OpenedIndexSet (this);
+            foreach (var contact in contacts) {
+                if (IsInterrupted ()) {
+                    break;
+                }
+
+                var index = indexes.Get (contact.AccountId);
+                if (null == index) {
+                    break;
+                }
+                if (IndexContact (index, contact, ref bytesIndexed)) {
+                    numIndexed += 1;
+                }
+            }
+
+            indexes.Cleanup ();
+            if (0 != numIndexed) {
+                Log.Info (Log.LOG_BRAIN, "{0} contacts indexed", numIndexed);
+            }
+            if (0 != bytesIndexed) {
+                Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
+            }
             return numIndexed;
         }
 
@@ -267,6 +299,10 @@ namespace NachoCore.Brain
                 case NcBrainEventType.UNINDEX_MESSAGE:
                     var unindexEvent = brainEvent as NcBrainUnindexMessageEvent;
                     UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
+                    break;
+                case NcBrainEventType.UNINDEX_CONTACT:
+                    var contactEvent = brainEvent as NcCBrainUnindexContactEvent;
+                    UnindexContact ((int)contactEvent.AccountId, (int)contactEvent.ContactId);
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
@@ -376,6 +412,7 @@ namespace NachoCore.Brain
                 // get to index any message. What we do is to split the remaining allowed
                 // entries into two halves. 1st half goes to indexing and the leftover goes to
                 // score update.
+                num_entries -= IndexContacts (num_entries);
                 num_entries -= IndexEmailMessages (Math.Max (1, num_entries / 2));
                 // This must be the last action. See comment above.
                 num_entries -= UpdateEmailMessageScores (num_entries);
@@ -587,6 +624,42 @@ namespace NachoCore.Brain
                     SendAndUpdate (now, type);
                 }
             }
+        }
+    }
+
+    public class OpenedIndexSet : Dictionary<int, NcIndex>
+    {
+        protected NcBrain Brain;
+
+        public OpenedIndexSet (NcBrain brain)
+        {
+            Brain = brain;
+        }
+
+        public NcIndex Get (int accountId)
+        {
+            NcIndex index;
+            if (!TryGetValue (accountId, out index)) {
+                index = Brain.Index (accountId);
+                if (null == index) {
+                    Log.Warn (Log.LOG_BRAIN, "fail to get index for account {0}", accountId);
+                    return null;
+                }
+                if (!index.BeginAddTransaction ()) {
+                    Log.Warn (Log.LOG_BRAIN, "fail to begin add transaction (accountId={0})", accountId);
+                    return null;
+                }
+                Add (accountId, index);
+            }
+            return index;
+        }
+
+        public void Cleanup ()
+        {
+            foreach (var index in Values) {
+                index.EndAddTransaction ();
+            }
+            Clear ();
         }
     }
 }

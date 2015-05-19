@@ -240,6 +240,99 @@ namespace NachoCore.Model
 
         public const string KSynchronouslyCompleted	= "synchronously completed";
 
+        public static bool Cancel (int accountId, string token)
+        {
+            var retval = false;
+            NcModel.Instance.RunInTransaction (() => {
+                var pendings = McPending.QueryByToken (accountId, token);
+                foreach (var iterPending in pendings) {
+                    var pending = iterPending;
+                    switch (pending.State) {
+                    case McPending.StateEnum.Eligible:
+                        pending.ResolveAsCancelled (false);
+                        retval = true;
+                        break;
+
+                    case McPending.StateEnum.Deferred:
+                    case McPending.StateEnum.Failed:
+                    case McPending.StateEnum.PredBlocked:
+                    case McPending.StateEnum.UserBlocked:
+                        if (McPending.Operations.ContactSearch == pending.Operation || 
+                            McPending.Operations.EmailSearch == pending.Operation) {
+                            McPending.ResolvePendingSearchReqs (accountId, token, false);
+                        } else {
+                            pending.ResolveAsCancelled (false);
+                        }
+                        retval = true;
+                        break;
+
+                    case McPending.StateEnum.Dispatched:
+                        // Prevent any more high-level attempts after Cancel().
+                        // TODO - need method to find executing Op/Cmd so we can prevent HTTP retries.
+                        pending.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.DefersRemaining = 0;
+                            return true;
+                        });
+                        retval = false;
+                        break;
+
+                    case McPending.StateEnum.Deleted:
+                        // Nothing to do.
+                        retval = true;
+                        break;
+
+                    default:
+                        NcAssert.CaseError (string.Format ("Unknown State {0}", pending.State));
+                        break;
+                    }
+                }
+            });
+            return retval;
+        }
+
+        public static McPending UnblockPending (int accountId, int pendingId)
+        {
+            McPending retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = McAbstrObject.QueryById<McPending> (pendingId);
+                if (null != pending) {
+                    NcAssert.True (accountId == pending.AccountId);
+                    NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
+                    retval = pending.UpdateWithOCApply<McPending>((record) => {
+                        var target = (McPending)record;
+                        target.BlockReason = McPending.BlockReasonEnum.NotBlocked;
+                        target.State = McPending.StateEnum.Eligible;
+                        return true;
+                    });
+                }
+            });
+            return retval;
+        }
+
+        public virtual McPending DeletePendingCmd (int accountId, int pendingId)
+        {
+            McPending retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = McAbstrObject.QueryById<McPending> (pendingId);
+                if (null != pending) {
+                    NcAssert.True (accountId == pending.AccountId);
+                    retval = pending.ResolveAsCancelled (false);
+                }
+            });
+            return retval;
+        }
+
+        public static void Prioritize (int accountId, string token)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var pendings = McPending.QueryByToken (accountId, token);
+                foreach (var pending in pendings) {
+                    pending.Prioritize ();
+                }
+            });
+        }
+
         public void Prioritize ()
         {
             UpdateWithOCApply<McPending> ((record) => {

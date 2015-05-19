@@ -103,7 +103,7 @@ namespace NachoCore.ActiveSync
             set { BEContext.Owner = value; }
         }
 
-        public AsProtoControl ProtoControl {
+        public NcProtoControl ProtoControl {
             get { return BEContext.ProtoControl; }
             set { BEContext.ProtoControl = value; }
         }

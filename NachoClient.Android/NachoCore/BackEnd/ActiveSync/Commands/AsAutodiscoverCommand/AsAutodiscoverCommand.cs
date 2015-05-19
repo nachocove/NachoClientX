@@ -545,6 +545,7 @@ namespace NachoCore.ActiveSync
             if (null == BEContext.Server && null != known) {
                 var server = new McServer () {
                     AccountId = Account.Id,
+                    Capabilities = McAccount.ActiveSyncCapabilities,
                     Host = known,
                 };
                 server.Insert ();
@@ -816,7 +817,7 @@ namespace NachoCore.ActiveSync
             Log.Info (Log.LOG_AS, "AUTOD::END: Auto discovery succeeded.");
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
-            ServerCandidate = McServer.Create (Account.Id, robot.SrServerUri);
+            ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, robot.SrServerUri);
             // Must shut down any remaining robots so they don't post events to TL SM.
             KillAllRobots ();
             // Must clear event Q for TL SM of anything a robot may have posted (threads).
@@ -831,7 +832,8 @@ namespace NachoCore.ActiveSync
         private void DoTestDefaultServer ()
         {
             AutoDSucceeded = false;
-            ServerCandidate = McServer.Create (Account.Id, McServer.BaseUriForHost (McServer.GMail_Host));
+            ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, 
+                McServer.BaseUriForHost (McServer.GMail_Host));
             DoTest ();
         }
 
@@ -891,7 +893,7 @@ namespace NachoCore.ActiveSync
             set { BEContext.Owner = value; }
         }
 
-        public AsProtoControl ProtoControl {
+        public NcProtoControl ProtoControl {
             get { return BEContext.ProtoControl; }
             set { BEContext.ProtoControl = value; }
         }

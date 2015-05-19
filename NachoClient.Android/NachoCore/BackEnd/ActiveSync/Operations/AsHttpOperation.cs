@@ -166,7 +166,7 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = BEContext.ProtoControl.SyncStrategy.DefaultTimeoutSecs;
+            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).SyncStrategy.DefaultTimeoutSecs;
             Timeout = new TimeSpan (0, 0, timeoutSeconds);
             TimeoutExpander = KDefaultTimeoutExpander;
             MaxRetries = KDefaultRetries;
@@ -811,7 +811,7 @@ namespace NachoCore.ActiveSync
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451B");
                         }
                         ServerUriBeingTested = true;
-                        var dummy = McServer.Create (BEContext.Account.Id, redirUri);
+                        var dummy = McServer.Create (BEContext.Account.Id, McAccount.ActiveSyncCapabilities, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (dummy.BaseUri (), query);
                         RedactedServerUri  = HashHelper.HashEmailAddressesInUrl(ServerUri.ToString());

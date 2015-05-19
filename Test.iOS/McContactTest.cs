@@ -5,6 +5,7 @@ using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
+using NachoCore.Index;
 using System.Collections.Generic;
 using System.Linq;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
@@ -770,6 +771,72 @@ namespace Test.Common
             CheckContactIMAddress (contact.Id, imaddressAttribute [0], false);
             CheckContactPhoneNumber (contact.Id, phoneNumberAttribute [0], false);
             relationshpiAttribute = CheckContactRelationship (contact.Id, relationshpiAttribute [0], true);
+        }
+
+        protected McBody TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum presence)
+        {
+            var body = new McBody () {
+                AccountId = 1,
+                IsValid = (McAbstrFileDesc.FilePresenceEnum.Complete == presence),
+                FilePresence = presence
+            };
+            int rows = body.Insert ();
+            Assert.True (0 < rows);
+            return body;
+        }
+
+        protected McContact TestMcContactForQueryNeedIndexing (int bodyId, int indexVersion)
+        {
+            var contact = new McContact () {
+                AccountId = 1,
+                BodyId = bodyId,
+                IndexVersion = indexVersion
+            };
+            int rows = contact.Insert ();
+            Assert.True (0 < rows);
+            return contact;
+        }
+
+        [Test]
+        public void QueryNeedIndexing ()
+        {
+            // 7 contacts and their expected match status
+            // 1. no body, latest version [NO MATCH]
+            // 2. no body, version 0 [MATCH]
+            // 3. body (complete), latest version [NO MATCH]
+            // 4. body (complete), version 0 [MATCH]
+            // 5. body (complete), latest version - 1 [MATCH]
+            // 6. body (incomplete), version 0 [MATCH]
+            // 7. body (incomplete), lastest version - 1 [NO MATCH]
+            var contact1 = TestMcContactForQueryNeedIndexing (0, ContactIndexDocument.Version);
+            var contact2 = TestMcContactForQueryNeedIndexing (0, 0);
+
+            var body3 = TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum.Complete);
+            TestMcContactForQueryNeedIndexing (body3.Id, ContactIndexDocument.Version);
+
+            var body4 = TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum.Complete);
+            var contact4 = TestMcContactForQueryNeedIndexing (body4.Id, 0);
+
+            var body5 = TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum.Complete);
+            var contact5 = TestMcContactForQueryNeedIndexing (body5.Id, ContactIndexDocument.Version - 1);
+
+            var body6 = TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum.Partial);
+            var contact6 = TestMcContactForQueryNeedIndexing (body6.Id, 0);
+
+            var body7 = TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum.Partial);
+            TestMcContactForQueryNeedIndexing (body7.Id, ContactIndexDocument.Version - 1);
+
+            var contacts = McContact.QueryNeedIndexing (1000);
+            Assert.AreEqual (4, contacts.Count);
+            Assert.AreEqual (contact2.Id, contacts [0].Id);
+            Assert.AreEqual (contact4.Id, contacts [1].Id);
+            Assert.AreEqual (contact5.Id, contacts [2].Id);
+            Assert.AreEqual (contact6.Id, contacts [3].Id);
+
+            var contacts2 = McContact.QueryNeedIndexing (2);
+            Assert.AreEqual (2, contacts2.Count);
+            Assert.AreEqual (contact2.Id, contacts2 [0].Id);
+            Assert.AreEqual (contact4.Id, contacts2 [1].Id);
         }
     }
 }

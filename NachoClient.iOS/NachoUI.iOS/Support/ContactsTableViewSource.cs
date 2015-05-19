@@ -32,7 +32,7 @@ namespace NachoClient.iOS
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
         protected string searchToken;
-        McAccount account;
+        McAccount accountForSearchAPI;
 
         public ContactsTableViewSource ()
         {
@@ -40,10 +40,10 @@ namespace NachoClient.iOS
             allowSwiping = false;
         }
 
-        public void SetOwner (IContactsTableViewSourceDelegate owner, McAccount account, bool allowSwiping, UISearchDisplayController SearchDisplayController)
+        public void SetOwner (IContactsTableViewSourceDelegate owner, McAccount accountForSearchAPI, bool allowSwiping, UISearchDisplayController SearchDisplayController)
         {
             this.owner = owner;
-            this.account = account;
+            this.accountForSearchAPI = accountForSearchAPI;
             this.allowSwiping = allowSwiping;
             this.SearchDisplayController = SearchDisplayController;
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
@@ -131,7 +131,7 @@ namespace NachoClient.iOS
         {
             base.Dispose ();
             if (null != searchToken) {
-                BackEnd.Instance.Cancel (account.Id, searchToken);
+                McPending.Cancel (accountForSearchAPI.Id, searchToken);
                 searchToken = null;
             }
         }
@@ -382,20 +382,20 @@ namespace NachoClient.iOS
         /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
         public bool UpdateSearchResults (nint forSearchOption, string forSearchString, bool doGalSearch = true)
         {
-            if ((null != account) && doGalSearch) {
+            if ((null != accountForSearchAPI) && doGalSearch) {
                 // Issue a GAL search. The status indication handler will update the search results
                 // (with doGalSearch = false) to reflect potential matches from GAL.
                 if (String.IsNullOrEmpty (searchToken)) {
                     // TODO: Think about whether we want to users about errors during GAL search
-                    searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
+                    searchToken = BackEnd.Instance.StartSearchContactsReq (accountForSearchAPI.Id, forSearchString, null).GetValue<string> ();
                 } else {
-                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
+                    BackEnd.Instance.SearchContactsReq (accountForSearchAPI.Id, forSearchString, null, searchToken);
                 }
             }
 
             // We immediately display matches from our db
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
-            var results = McContact.SearchAllContactsWithEmailAddresses (forSearchString, true);
+            var results = McContact.SearchIndexAllContactsWithEmailAddresses (forSearchString, true);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
             return true;

@@ -231,7 +231,7 @@ namespace NachoClient.iOS
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
-                searchResults = McContact.SearchAllContactsWithEmailAddresses (forSearchString, true);
+                searchResults = McContact.SearchIndexAllContactsWithEmailAddresses (forSearchString, true);
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
@@ -392,7 +392,7 @@ namespace NachoClient.iOS
         protected void CancelSearchIfActive ()
         {
             if (!String.IsNullOrEmpty (contactSearchToken)) {
-                BackEnd.Instance.Cancel (account.Id, contactSearchToken);
+                McPending.Cancel (account.Id, contactSearchToken);
                 contactSearchToken = null;
             }
         }

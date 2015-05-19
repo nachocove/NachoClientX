@@ -165,7 +165,8 @@ namespace NachoClient.iOS
         public void SetCertificateInformation (int accountId)
         {
             callbackAccountId = accountId;
-            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId);
+            // FIXME STEVE
+            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId, NachoCore.Model.McAccount.AccountCapabilityEnum.EmailSender);
             certInfo = CertificateHelper.FormatCertificateData (certToBeExamined);
             certCommonName = CertificateHelper.GetCommonName (certToBeExamined);
             certOrganization = CertificateHelper.GetOrganizationname (certToBeExamined);

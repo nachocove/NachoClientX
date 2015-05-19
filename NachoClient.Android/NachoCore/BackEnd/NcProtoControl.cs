@@ -24,6 +24,10 @@ namespace NachoCore
 
         public IProtoControlOwner Owner { get; set; }
 
+        public NcProtoControl ProtoControl { set; get; }
+
+        public McAccount.AccountCapabilityEnum Capabilities { protected set; get; }
+
         public McAccount Account {
             get {
                 return NcModel.Instance.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
@@ -212,102 +216,6 @@ namespace NachoCore
 
         public virtual void CredResp ()
         {
-        }
-
-        public virtual void Prioritize (string token)
-        {
-            NcModel.Instance.RunInTransaction (() => {
-                var pendings = McPending.QueryByToken (Account.Id, token);
-                foreach (var pending in pendings) {
-                    pending.Prioritize ();
-                }
-            });
-        }
-
-        public virtual bool Cancel (string token)
-        {
-            var retval = false;
-            NcModel.Instance.RunInTransaction (() => {
-                var pendings = McPending.QueryByToken (Account.Id, token);
-                foreach (var iterPending in pendings) {
-                    var pending = iterPending;
-                    switch (pending.State) {
-                    case McPending.StateEnum.Eligible:
-                        pending.ResolveAsCancelled (false);
-                        retval = true;
-                        break;
-
-                    case McPending.StateEnum.Deferred:
-                    case McPending.StateEnum.Failed:
-                    case McPending.StateEnum.PredBlocked:
-                    case McPending.StateEnum.UserBlocked:
-                        if (McPending.Operations.ContactSearch == pending.Operation || 
-                            McPending.Operations.EmailSearch == pending.Operation) {
-                            McPending.ResolvePendingSearchReqs (Account.Id, token, false);
-                        } else {
-                            pending.ResolveAsCancelled (false);
-                        }
-                        retval = true;
-                        break;
-
-                    case McPending.StateEnum.Dispatched:
-                        // Prevent any more high-level attempts after Cancel().
-                        // TODO - need method to find executing Op/Cmd so we can prevent HTTP retries.
-                        pending.UpdateWithOCApply<McPending> ((record) => {
-                            var target = (McPending)record;
-                            target.DefersRemaining = 0;
-                            return true;
-                        });
-                        retval = false;
-                        break;
-
-                    case McPending.StateEnum.Deleted:
-                        // Nothing to do.
-                        retval = true;
-                        break;
-
-                    default:
-                        NcAssert.CaseError (string.Format ("Unknown State {0}", pending.State));
-                        break;
-                    }
-                }
-            });
-            return retval;
-        }
-
-        public virtual McPending UnblockPendingCmd (int pendingId)
-        {
-            McPending retval = null;
-            NcModel.Instance.RunInTransaction (() => {
-                var pending = McAbstrObject.QueryById<McPending> (pendingId);
-                if (null != pending) {
-                    NcAssert.True (Account.Id == pending.AccountId);
-                    NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
-                    retval = pending.UpdateWithOCApply<McPending>((record) => {
-                        var target = (McPending)record;
-                        target.BlockReason = McPending.BlockReasonEnum.NotBlocked;
-                        target.State = McPending.StateEnum.Eligible;
-                        return true;
-                    });
-                    NcTask.Run (delegate {
-                        Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCUNBLK");
-                    }, "UnblockPendingCmd");
-                }
-            });
-            return retval;
-        }
-
-        public virtual McPending DeletePendingCmd (int pendingId)
-        {
-            McPending retval = null;
-            NcModel.Instance.RunInTransaction (() => {
-                var pending = McAbstrObject.QueryById<McPending> (pendingId);
-                if (null != pending) {
-                    NcAssert.True (Account.Id == pending.AccountId);
-                    retval = pending.ResolveAsCancelled (false);
-                }
-            });
-            return retval;
         }
 
         public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)

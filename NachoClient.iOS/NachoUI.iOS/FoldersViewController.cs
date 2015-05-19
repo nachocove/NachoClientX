@@ -60,7 +60,7 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
 
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            account = NcApplication.Instance.Account;
             CreateView ();
             ConfigureFolders ();
             ConfigureView ();
@@ -188,7 +188,7 @@ namespace NachoClient.iOS
                 NavigationItem.RightBarButtonItem = composeButton;
 
                 // TEMP
-                var switchAccountButton = new NcUIBarButtonItem();
+                var switchAccountButton = new NcUIBarButtonItem ();
                 Util.SetAutomaticImageForButton (switchAccountButton, "more-nachomail");
                 switchAccountButton.AccessibilityLabel = "Switch Account";
                 switchAccountButton.Clicked += SwitchAccountButton_Clicked;
@@ -275,8 +275,8 @@ namespace NachoClient.iOS
             var accounts = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange);
 
             foreach (var account in accounts) {
-                var action = new NcAlertAction(account.DisplayName, () => {
-                    SwitchToAccount(account.Id);
+                var action = new NcAlertAction (account.DisplayName, () => {
+                    SwitchToAccount (account.Id);
                 });
                 actions.Add (action); 
             }
@@ -285,7 +285,7 @@ namespace NachoClient.iOS
             NcActionSheet.Show (View, this, actions.ToArray ());
         }
 
-        void SwitchToAccount(int accountId)
+        void SwitchToAccount (int accountId)
         {
             account = McAccount.QueryById<McAccount> (accountId);
             foldersNeedRefresh = false;

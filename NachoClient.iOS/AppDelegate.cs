@@ -811,7 +811,7 @@ namespace NachoClient.iOS
         }
 
 
-        public void ServConfReqCallback (int accountId, object arg = null)
+        public void ServConfReqCallback (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg = null)
         {
             Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0} with arg {1}", accountId, arg);
 
@@ -832,8 +832,10 @@ namespace NachoClient.iOS
                 break;
             }
             if (hasFirstSyncCompleted == false) {
+                var status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why);
+                status.Value = capabilities;
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why),
+                    Status = status,
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
@@ -867,6 +869,8 @@ namespace NachoClient.iOS
                                 var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
                                 if (null == tmpServer) {
                                     tmpServer = new McServer () {
+                                        // FIXME STEVE
+                                        Capabilities = McAccount.ActiveSyncCapabilities,
                                         Host = txt,
                                     };
                                     tmpServer.Insert ();
@@ -875,7 +879,9 @@ namespace NachoClient.iOS
                                     tmpServer.Update ();
                                 }
                             });
-                            Be.ServerConfResp (accountId, false); 
+                            // FIXME STEVE - need to pass matching capability from request.
+                            // TODO Generic code needs to be moved out of AppDelegate.
+                            Be.ServerConfResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false); 
                             credView.ResignFirstResponder ();
                         }
                         ;
@@ -892,7 +898,8 @@ namespace NachoClient.iOS
                         gonnaquit.Show ();
                         gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
                             if (e.ButtonIndex == 1) {
-                                ServConfReqCallback (accountId); // go again
+                                // FIXME STEVE
+                                ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender); // go again
                             }
                             gonnaquit.ResignFirstResponder ();
                         };
