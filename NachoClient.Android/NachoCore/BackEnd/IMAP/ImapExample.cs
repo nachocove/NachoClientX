@@ -4,24 +4,28 @@ using System;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
-using NachoCore.Utils;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit;
 using MimeKit;
 using NachoClient.Build;
+using NachoPlatform;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Imap;
 using System.Collections.Generic;
 using NachoCore.ActiveSync;
+using NachoCore.Brain;
 
 namespace NachoCore.Imap
 {
-    public class Imap
+    public class NcImap
     {
-        private int AccountId { get; set; }
+        public int AccountId { get; set; }
 
         private string m_hostname { get; set; }
 
@@ -45,20 +49,109 @@ namespace NachoCore.Imap
             }
         }
 
-        public Imap (string hostname, int port, bool useSsl, string username, string password)
+        NcStateMachine Sm { get; set; }
+
+        public NcImap (int accountId, string hostname, int port, bool useSsl, string username, string password)
         {
             m_hostname = hostname;
             m_port = port;
             m_useSsl = useSsl;
             m_username = username;
             m_password = password;
-            AccountId = 1;
-            GetAuthenticatedClient ();
-            DoImap ();
+            AccountId = accountId;
         }
 
-        private void DoImap (bool readSpecial = false)
+        public async void ConnectAsync (CancellationToken cToken)
         {
+            ImapProtocolLogger logger = new ImapProtocolLogger ();
+            m_imapClient = new ImapClient (logger);
+            m_imapClient.ClientCertificates = new X509CertificateCollection ();
+            /*
+                    2015-05-07 17:02:00.703 NachoClientiOS[70577:13497471] Info:1:: Connected to imap://imap.gmail.com:143/?starttls=when-available
+                    2015-05-07 17:02:00.809 NachoClientiOS[70577:13497471] Info:1:: IMAP S: * OK Gimap ready for requests from 69.145.38.236 pw12mb32849803pab
+                    2015-05-07 17:02:00.826 NachoClientiOS[70577:13497471] Info:1:: IMAP C: A00000000 CAPABILITY
+                    2015-05-07 17:02:00.855 NachoClientiOS[70577:13497471] Info:1:: IMAP S: * CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 XYZZY SASL-IR AUTH=XOAUTH2 AUTH=PLAIN AUTH=PLAIN-CLIENTTOKEN
+                    2015-05-07 17:02:00.861 NachoClientiOS[70577:13497471] Info:1:: IMAP S: A00000000 OK Thats all she wrote! pw12mb32849803pab
+            */
+            try {
+                var task = m_imapClient.ConnectAsync (m_hostname, m_port, m_useSsl, cToken);
+                task.ConfigureAwait (false);
+                task.Wait ();
+            } catch (ImapProtocolException e) {
+                Log.Error (Log.LOG_IMAP, "Connect command failed {0}", e);
+                throw;
+            }
+        }
+
+        public async void AuthenticateAndIdAsync (CancellationToken cToken)
+        {
+            // Note: since we don't have an OAuth2 token, disable
+            // the XOAUTH2 authentication mechanism.
+            m_imapClient.AuthenticationMechanisms.Remove ("XOAUTH");
+            m_imapClient.AuthenticationMechanisms.Remove ("XOAUTH2");
+            try {
+                /* Does all of this for gmail:
+                    2015-05-07 16:58:42.670 NachoClientiOS[70517:13478094] Info:1:: IMAP C: A00000001 AUTHENTICATE PLAIN .....
+                    2015-05-07 16:58:43.049 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * CAPABILITY IMAP4rev1 UNSELECT IDLE NAMESPACE QUOTA ID XLIST CHILDREN X-GM-EXT-1 UIDPLUS XXXXXXXXXXXXXXXX ENABLE MOVE XXXXXXXXX ESEARCH UTF8=ACCEPT
+                    2015-05-07 16:58:43.050 NachoClientiOS[70517:13478094] Info:1:: IMAP S: A00000001 OK jan.vilhuber@gmail.com authenticated (Success)
+                    2015-05-07 16:58:43.052 NachoClientiOS[70517:13478094] Info:1:: IMAP C: A00000002 NAMESPACE
+                    2015-05-07 16:58:43.227 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * NAMESPACE (("" "/")) NIL NIL
+                    2015-05-07 16:58:43.237 NachoClientiOS[70517:13478094] Info:1:: IMAP S: A00000002 OK Success
+                    2015-05-07 16:58:43.238 NachoClientiOS[70517:13478094] Info:1:: IMAP C: A00000003 LIST "" "INBOX"
+                    2015-05-07 16:58:43.418 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * LIST (\HasNoChildren) "/" "INBOX"
+                    2015-05-07 16:58:43.420 NachoClientiOS[70517:13478094] Info:1:: IMAP S: A00000003 OK Success
+                    2015-05-07 16:58:43.421 NachoClientiOS[70517:13478094] Info:1:: IMAP C: A00000004 XLIST "" "*"
+                    2015-05-07 16:58:43.604 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\Inbox \HasNoChildren) "/" "Inbox"
+                    2015-05-07 16:58:43.605 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\HasNoChildren) "/" "Notes"
+                    2015-05-07 16:58:43.606 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\Noselect \HasChildren) "/" "[Gmail]"
+                    2015-05-07 16:58:43.606 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\AllMail \HasNoChildren) "/" "[Gmail]/All Mail"
+                    2015-05-07 16:58:43.607 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\HasNoChildren \Drafts) "/" "[Gmail]/Drafts"
+                    2015-05-07 16:58:43.607 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\Important \HasNoChildren) "/" "[Gmail]/Important"
+                    2015-05-07 16:58:43.608 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\HasNoChildren \Sent) "/" "[Gmail]/Sent Mail"
+                    2015-05-07 16:58:43.612 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\Spam \HasNoChildren) "/" "[Gmail]/Spam"
+                    2015-05-07 16:58:43.613 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\Starred \HasNoChildren) "/" "[Gmail]/Starred"
+                    2015-05-07 16:58:43.614 NachoClientiOS[70517:13478094] Info:1:: IMAP S: * XLIST (\HasNoChildren \Trash) "/" "[Gmail]/Trash"
+                    2015-05-07 16:58:43.614 NachoClientiOS[70517:13478094] Info:1:: IMAP S: A00000004 OK Success
+                */
+                if (cToken.IsCancellationRequested) {
+                    return;
+                }
+                var authtask = m_imapClient.AuthenticateAsync (m_username, m_password, cToken);
+                authtask.ConfigureAwait (false);
+                authtask.Wait ();
+                if (cToken.IsCancellationRequested) {
+                    return;
+                }
+            } catch (MailKit.Security.AuthenticationException e) {
+                Log.Error (Log.LOG_IMAP, "Could not connect to server: {0}", e);
+                throw new AuthenticationException ("Could not authenticate", e);
+            }
+
+            ImapImplementation clientId = new ImapImplementation () {
+                Name = "NachoMail",
+                Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
+                ReleaseDate = BuildInfo.Time,
+                SupportUrl = "https://support.nachocove.com/",
+                Vendor = "Nacho Cove, Inc",
+            };
+            Log.Info (Log.LOG_IMAP, "Client ID: {0}", dumpImapImplementation (clientId));
+
+            var idtask = m_imapClient.IdentifyAsync (clientId, cToken);
+            idtask.ConfigureAwait (false);
+            idtask.Wait ();
+            var serverId = idtask.Result;
+            if (cToken.IsCancellationRequested) {
+                return;
+            }
+            Log.Info (Log.LOG_IMAP, "Server ID: {0}", dumpImapImplementation (serverId));
+        }
+
+        public void DoImap (bool readSpecial = false)
+        {
+            var cts = new CancellationTokenSource ();
+            ConnectAsync (cts.Token);
+            AuthenticateAndIdAsync (cts.Token);
+
             IMailFolder folder;
 
             folder = client.GetFolder ("Nacho");
@@ -144,11 +237,12 @@ namespace NachoCore.Imap
                         Log.Error (Log.LOG_IMAP, "Message does not belong to this folder!");
                         continue;
                     }
-                    var eMsg = ServerSaysAddOrChangeEmail (summary as MessageSummary, folder, mcFolder.AccountId);
+                    var eMsg = ServerSaysAddOrChangeEmail (summary as MessageSummary, mcFolder);
                     Log.Info (Log.LOG_IMAP, "IMAP: uid {0} Flags {1} Size {2}", 
                         eMsg.ServerId,
                         summary.Flags,
                         summary.MessageSize);
+                    eMsg.BodyPreview = findPreview (summary as MessageSummary, folder);
                 }
             }
             folder.Close ();
@@ -349,8 +443,7 @@ namespace NachoCore.Imap
                     var buffer = new byte[255];
                     var read = previewStr.Read (buffer, 0, 255);
                     preview = Encoding.UTF8.GetString (buffer, 0, read);
-                }
-                catch (ImapCommandException e) {
+                } catch (ImapCommandException e) {
                     Log.Error (Log.LOG_IMAP, "{0}", e);
                 }
             }
@@ -384,7 +477,7 @@ namespace NachoCore.Imap
             return preview;
         }
 
-        public McEmailMessage ServerSaysAddOrChangeEmail (MessageSummary summary, IMailFolder folder, int AccountId)
+        public NcResult ParseEmail (MessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
                 ServerId = summary.UniqueId.Value.Id.ToString (),
@@ -394,6 +487,9 @@ namespace NachoCore.Imap
                 cachedHasAttachments = summary.Attachments.Any (),
                 MessageID = summary.Envelope.MessageId,
                 DateReceived = summary.InternalDate.HasValue ? summary.InternalDate.Value.UtcDateTime : DateTime.MinValue,
+                FromEmailAddressId = 0,
+                cachedFromLetters = "",
+                cachedFromColor = 1,
             };
 
             // TODO: DRY this out. Perhaps via Reflection?
@@ -401,37 +497,48 @@ namespace NachoCore.Imap
                 if (summary.Envelope.To.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} To entries in message.", summary.Envelope.To.Count);
                 }
-                emailMessage.To = summary.Envelope.To [0].Name;
+                emailMessage.To = ((MailboxAddress)summary.Envelope.To [0]).Address;
             }
             if (summary.Envelope.Cc.Count > 0) {
                 if (summary.Envelope.Cc.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} Cc entries in message.", summary.Envelope.Cc.Count);
                 }
-                emailMessage.Cc = summary.Envelope.Cc [0].Name;
+                emailMessage.Cc = ((MailboxAddress)summary.Envelope.Cc [0]).Address;
             }
             if (summary.Envelope.Bcc.Count > 0) {
                 if (summary.Envelope.Bcc.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} Bcc entries in message.", summary.Envelope.Bcc.Count);
                 }
-                emailMessage.Bcc = summary.Envelope.Bcc [0].Name;
+                emailMessage.Bcc = ((MailboxAddress)summary.Envelope.Bcc [0]).Address;
             }
+
+            McEmailAddress fromEmailAddress;
             if (summary.Envelope.From.Count > 0) {
                 if (summary.Envelope.From.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
-                emailMessage.From = summary.Envelope.From [0].Name;
+                emailMessage.From = ((MailboxAddress)summary.Envelope.From [0]).Address;
+                if (McEmailAddress.Get (AccountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
+                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
+                    emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
+                }
             }
+
             if (summary.Envelope.ReplyTo.Count > 0) {
                 if (summary.Envelope.ReplyTo.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} ReplyTo entries in message.", summary.Envelope.ReplyTo.Count);
                 }
-                emailMessage.ReplyTo = summary.Envelope.ReplyTo [0].Name;
+                emailMessage.ReplyTo = ((MailboxAddress)summary.Envelope.ReplyTo [0]).Address;
             }
             if (summary.Envelope.Sender.Count > 0) {
                 if (summary.Envelope.Sender.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
-                emailMessage.Sender = summary.Envelope.Sender [0].Name;
+                emailMessage.Sender = ((MailboxAddress)summary.Envelope.Sender [0]).Address;
+                if (McEmailAddress.Get (AccountId, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
+                    emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
+                }
             }
             if (null != summary.References && summary.References.Count > 0) {
                 if (summary.References.Count > 1) {
@@ -439,24 +546,26 @@ namespace NachoCore.Imap
                 }
                 emailMessage.References = summary.References [0];
             }
-                                
-            if (summary.Flags.HasValue && (summary.Flags.Value & MessageFlags.None) != MessageFlags.None) {
-                if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
-                    emailMessage.IsRead = true;
-                }
-                // TODO Where do we set these flags?
-                if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
-                }
-                if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
-                }
-                if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
-                }
-                if ((summary.Flags.Value & MessageFlags.Draft) == MessageFlags.Draft) {
-                }
-                if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
-                }
-                if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
-                    // TODO See if these are handled by the summary.UserFlags
+
+            if (summary.Flags.HasValue) {
+                if ((summary.Flags.Value & MessageFlags.None) != MessageFlags.None) {
+                    if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
+                        emailMessage.IsRead = true;
+                    }
+                    // TODO Where do we set these flags?
+                    if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Draft) == MessageFlags.Draft) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
+                        // TODO See if these are handled by the summary.UserFlags
+                    }
                 }
             }
             if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
@@ -495,32 +604,80 @@ namespace NachoCore.Imap
             }
 
             if (summary.GMailThreadId.HasValue) {
-                // TODO Where to put the thread ID? Is it the ThreadTopic? Seems unlikely..
                 emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
             }
 
             if ("" == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
             }
-
-            emailMessage.BodyPreview = findPreview (summary, folder);
-
-            // TODO common code with AS. Abstract.
-            McEmailAddress fromEmailAddress;
-            if (McEmailAddress.Get (AccountId, emailMessage.From, out fromEmailAddress)) {
-                emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
-            } else {
-                emailMessage.FromEmailAddressId = 0;
-                emailMessage.cachedFromLetters = "";
-                emailMessage.cachedFromColor = 1;
-            }
-
-            emailMessage.SenderEmailAddressId = McEmailAddress.Get (AccountId, emailMessage.Sender);
             emailMessage.IsIncomplete = false;
 
-            // TODO insert and transaction stuff
+            return NcResult.OK (emailMessage);
+        }
+        
+        public void InsertAttachments (McEmailMessage msg)
+        {
+            
+        }
+
+        public McEmailMessage ServerSaysAddOrChangeEmail (MessageSummary summary, McFolder folder)
+        {
+            var ServerId = summary.UniqueId;
+
+            if (null == ServerId || string.Empty == ServerId.Value.ToString ()) {
+                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No ServerId present.");
+                return null;
+            }
+            // If the server attempts to overwrite, delete the pre-existing record first.
+            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, ServerId.Value.ToString ());
+            if (null != eMsg) {
+                eMsg.Delete ();
+                eMsg = null;
+            }
+
+            McEmailMessage emailMessage = null;
+            try {
+                var r = ParseEmail (summary);
+                emailMessage = r.GetValue<McEmailMessage> ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
+                if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
+                    emailMessage = new McEmailMessage () {
+                        ServerId = summary.UniqueId.Value.ToString (),
+                    };
+                }
+                emailMessage.IsIncomplete = true;
+            }
+
+            // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
+            NcModel.Instance.RunInTransaction (() => {
+                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty(emailMessage.To)) {
+                    if (!folder.IsJunkFolder ()) {
+                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                    }
+                }
+
+                bool justCreated = false;
+                if (null == eMsg) {
+                    justCreated = true;
+                    emailMessage.AccountId = folder.AccountId;
+                }
+                if (justCreated) {
+                    emailMessage.Insert ();
+                    folder.Link (emailMessage);
+                    InsertAttachments (emailMessage);
+                } else {
+                    emailMessage.AccountId = folder.AccountId;
+                    emailMessage.Id = eMsg.Id;
+                    folder.UpdateLink (emailMessage);
+                    emailMessage.Update ();
+                }
+            });
+
+            if (!emailMessage.IsIncomplete) {
+                // Extra work that needs to be done, but doesn't need to be in the same database transaction.
+            }
+
             return emailMessage;
         }
 
@@ -596,266 +753,555 @@ namespace NachoCore.Imap
         //                Console.WriteLine ("[match] {0}: {1}", uid, message.Subject);
         //            }
     }
+}
 
-//    public partial class ImapProtoControl : NcProtoControl
-//    {
-//        private IImapCommand Cmd;
-//        public ImapProtoControl ProtoControl { set; get; }
-//
-//        public enum Lst : uint
-//        {
-//            DiscW = (St.Last + 1),
-//            // TODO Move to parent
-//            UiDCrdW,
-//            UiPCrdW,
-//            UiServConfW,
-//            UiCertOkW,
-//            SettingsW,
-//            Pick,
-//            SyncW,
-//            QOpW,
-//            HotQOpW,
-//            // we are active, but choosing not to execute.
-//            IdleW,
-//            // we are not active. when we re-activate on Launch, we pick-up at the saved state.
-//            // TODO: make Parked part of base SM functionality.
-//            Parked,
-//        }
-//
-//        public override BackEndStateEnum BackEndState {
-//            get {
-//                var state = Sm.State;
-//                if ((uint)Lst.Parked == state) {
-//                    state = ProtocolState.ProtoControlState;
-//                }
-//                // Every state above must be mapped here.
-//                switch (state) {
-//                case (uint)St.Start:
-//                    return BackEndStateEnum.NotYetStarted;
-//
-//                case (uint)Lst.DiscW:
-//                    return BackEndStateEnum.Running;
-//
-//                case (uint)Lst.UiDCrdW:
-//                case (uint)Lst.UiPCrdW:
-//                    return BackEndStateEnum.CredWait;
-//
-//                case (uint)Lst.UiServConfW:
-//                    return BackEndStateEnum.ServerConfWait;
-//
-//                case (uint)Lst.UiCertOkW:
-//                    return BackEndStateEnum.CertAskWait;
-//
-//                case (uint)Lst.SettingsW:
-//                case (uint)Lst.Pick:
-//                case (uint)Lst.SyncW:
-//                case (uint)Lst.QOpW:
-//                case (uint)Lst.HotQOpW:
-//                case (uint)Lst.IdleW:
-//                    return (ProtocolState.HasSyncedInbox) ? 
-//                        BackEndStateEnum.PostAutoDPostInboxSync : 
-//                        BackEndStateEnum.PostAutoDPreInboxSync;
-//
-//                default:
-//                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
-//                    return BackEndStateEnum.PostAutoDPostInboxSync;
-//                }
-//            }
-//        }
-//
-//        // If you're exposed to AsHttpOperation, you need to cover these.
-//        public class ImapEvt : PcEvt
-//        {
-//            new public enum E : uint
-//            {
-//                ReDisc = (PcEvt.E.Last + 1),
-//                ReProv,
-//                ReSync,
-//                AuthFail,
-//                Last = AuthFail,
-//            };
-//        }
-//
-//        // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
-//        // DB-based events (even if UI-driven) and server-based events lack the Ui prefix.
-//        public class CtlEvt : ImapEvt
-//        {
-//            // QUESTION: Why the various event classes? CtlEvt, ImapEvt, Lst, etc.
-//            new public enum E : uint
-//            {
-//                UiSetCred = (ImapEvt.E.Last + 1),
-//                GetServConf,
-//                UiSetServConf,
-//                GetCertOk,
-//                UiCertOkYes,
-//                UiCertOkNo,
-//                ReFSync,
-//                PkPing,
-//                PkQOp,
-//                PkHotQOp,
-//                PkFetch,
-//                PkWait,
-//            };
-//        }
-//
-//        public ImapProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
-//        {
-//            ProtoControl = this;
-//            EstablishService ();
-//            /*
-//             * State Machine design:
-//             * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
-//             * * ForceStop can happen at any time, and must Cancel anything that is going on immediately.
-//             * * ForceSync can happen at any time, and must Cancel anything that is going on immediately and initiate Sync.
-//             * * Objects can be added to the McPending Q at any time.
-//             * * All other events must come from the orderly completion of commands or internal forced transitions.
-//             * 
-//             * The SM Q is an event-Q not a work-Q. Where we need to "remember" to do more than one thing, that
-//             * memory must be embedded in the state machine.
-//             * 
-//             * Sync, Provision, Discovery and FolderSync can be forced by posting the appropriate event.
-//             * 
-//             * TempFail: for scenarios where a command can return TempFail, just keep re-trying:
-//             *  - NcCommStatus will eventually shut us down as TempFail counts against Quality. 
-//             *  - Max deferrals on pending will pull "bad" pendings out of the Q.
-//             */
-//            Sm = new NcStateMachine ("ASPC") { 
-//                Name = string.Format ("ASPC({0})", AccountId),
-//                LocalEventType = typeof(CtlEvt),
-//                LocalStateType = typeof(Lst),
-//                StateChangeIndication = UpdateSavedState,
-//                TransTable = new[] {
-//                    new Node {
-//                        State = (uint)St.Start,
-//                        Drop = new [] {
-//                            (uint)PcEvt.E.PendQ,
-//                        },
-//                        Invalid = new [] {
-//                            (uint)CtlEvt.E.GetCertOk,
-//                        },
-//                        On = new [] {
-//                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
-//                            //new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-//                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
-//                        }
-//                    },
-//                }
-//            };
-//        }
-//
-//        private void ExecuteCmd ()
-//        {
-//            if (null != PushAssist) {
-//                if (PushAssist.IsStartOrParked ()) {
-//                    PushAssist.Execute ();
-//                }
-//            }
-//            Cmd.Execute (Sm);
-//        }
-//
-//        private void SetCmd (IImapCommand nextCmd)
-//        {
-//            if (null != Cmd) {
-//                Cmd.Cancel ();
-//            }
-//            Cmd = nextCmd;
-//        }
-//
-//        private void DoDisc ()
-//        {
-//            SetCmd (new ImapAutodiscoverCommand (this));
-//            ExecuteCmd ();
-//        }
-//
-//        // State-machine's state persistance callback.
-//        private void UpdateSavedState ()
-//        {
-//            // TODO Move to parent?
-//            var protocolState = ProtocolState;
-//            uint stateToSave = Sm.State;
-//            switch (stateToSave) {
-//            case (uint)Lst.UiDCrdW:
-//            case (uint)Lst.UiServConfW:
-//            case (uint)Lst.UiCertOkW:
-//                stateToSave = (uint)Lst.DiscW;
-//                break;
-//            case (uint)Lst.Parked:
-//                // We never save Parked.
-//                return;
-//            }
-//            protocolState.ProtoControlState = stateToSave;
-//            protocolState.Update ();
-//        }
-//
-//        private void EstablishService ()
-//        {
-//            // TODO Abstract to parent.
-//
-//            // Hang our records off Account.
-//            NcModel.Instance.RunInTransaction (() => {
-//                var account = Account;
-//                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
-//                if (null == policy) {
-//                    policy = new McPolicy () {
-//                        AccountId = account.Id,
-//                    };
-//                    policy.Insert ();
-//                }
-//                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
-//                if (null == protocolState) {
-//                    protocolState = new McProtocolState () {
-//                        AccountId = account.Id,
-//                    };
-//                    protocolState.Insert ();
-//                }
-//            });
-//        }
-//    }
-//
-//    public interface IImapCommand
-//    {
-//        void Execute (NcStateMachine sm);
-//        void Cancel ();
-//    }
-//
-//    public abstract class ImapCommand : IImapCommand
-//    {
-//        public string CommandName;
-//        public TimeSpan Timeout { get; set; }
-//        protected IBEContext BEContext;
-//        protected List<McPending> PendingList;
-//        protected object PendingResolveLockObj;
-//
-//        public ImapCommand (string commandName, IBEContext beContext)
-//        {
-//            Timeout = TimeSpan.Zero;
-//            CommandName = commandName;
-//            BEContext = beContext;
-//            PendingList = new List<McPending> ();
-//            PendingResolveLockObj = new object ();
-//        }
-//        public void Execute (NcStateMachine sm)
-//        {
-//        }
-//        public void Cancel ()
-//        {
-//        }
-//    }
-//
-//    public partial class ImapAutodiscoverCommand : ImapCommand
-//    {
-//        public ImapAutodiscoverCommand (IBEContext dataSource) : base ("Autodiscover", dataSource)
-//        {
-//        }
-//
-//        public void Execute (NcStateMachine sm)
-//        {
-//            
-//        }
-//        public void Cancel ()
-//        {
-//            
-//        }
-//    }
+namespace NachoCore.Imap
+{
+    public interface IImapCommand
+    {
+        void Execute (NcStateMachine sm);
+
+        void Cancel ();
+    }
+}
+
+namespace NachoCore.Imap
+{
+    public partial class ImapProtoControl : NcProtoControl
+    {
+        public ImapProtoControl ProtoControl { set; get; }
+
+        private CancellationTokenSource Cts;
+
+        NcImap client { get; set; }
+
+
+        public enum Lst : uint
+        {
+            DiscW = (St.Last + 1),
+            // TODO Move to parent
+            UiDCrdW,
+            UiPCrdW,
+            UiServConfW,
+            UiCertOkW,
+            SettingsW,
+            Pick,
+            SyncW,
+            QOpW,
+            HotQOpW,
+            // we are active, but choosing not to execute.
+            IdleW,
+            // we are not active. when we re-activate on Launch, we pick-up at the saved state.
+            // TODO: make Parked part of base SM functionality.
+            Parked,
+        }
+
+        public override BackEndStateEnum BackEndState {
+            get {
+                var state = Sm.State;
+                if ((uint)Lst.Parked == state) {
+                    state = ProtocolState.ProtoControlState;
+                }
+                // Every state above must be mapped here.
+                switch (state) {
+                case (uint)St.Start:
+                    return BackEndStateEnum.NotYetStarted;
+
+                case (uint)Lst.DiscW:
+                    return BackEndStateEnum.Running;
+
+                case (uint)Lst.UiDCrdW:
+                case (uint)Lst.UiPCrdW:
+                    return BackEndStateEnum.CredWait;
+
+                case (uint)Lst.UiServConfW:
+                    return BackEndStateEnum.ServerConfWait;
+
+                case (uint)Lst.UiCertOkW:
+                    return BackEndStateEnum.CertAskWait;
+
+                case (uint)Lst.SettingsW:
+                case (uint)Lst.Pick:
+                case (uint)Lst.SyncW:
+                case (uint)Lst.QOpW:
+                case (uint)Lst.HotQOpW:
+                case (uint)Lst.IdleW:
+                    return (ProtocolState.HasSyncedInbox) ? 
+                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                        BackEndStateEnum.PostAutoDPreInboxSync;
+
+                default:
+                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    return BackEndStateEnum.PostAutoDPostInboxSync;
+                }
+            }
+        }
+
+        public class ImapEvt : PcEvt
+        {
+            new public enum E : uint
+            {
+                ReDisc = (PcEvt.E.Last + 1),
+                ReProv,
+                ConnW,
+                AuthW,
+                AuthFail,
+                Auth,
+                // base IMAP state
+                SelectW,
+                Selected,
+                // base IMAP state for folder actions (marking messages, syncing, etc)
+                Last = Selected,
+            };
+        }
+
+        // Events of the form UiXxYy are events coming directly from the UI/App toward the controller.
+        // DB-based events (even if UI-driven) and server-based events lack the Ui prefix.
+        public class CtlEvt : ImapEvt
+        {
+            // QUESTION: Why the various event classes? CtlEvt, ImapEvt, Lst, etc.
+            new public enum E : uint
+            {
+                UiSetCred = (ImapEvt.E.Last + 1),
+                GetServConf,
+                UiSetServConf,
+                GetCertOk,
+                UiCertOkYes,
+                UiCertOkNo,
+                ReFSync,
+                PkPing,
+                PkQOp,
+                PkHotQOp,
+                PkFetch,
+                PkWait,
+                Cancel,
+            };
+        }
+
+        public ImapProtoControl (IProtoControlOwner owner, NcImap imap_client) : base (owner, imap_client.AccountId)
+        {
+            ProtoControl = this;
+            EstablishService ();
+            client = imap_client;
+            Cts = new CancellationTokenSource ();
+
+            /*
+             * State Machine design:
+             * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
+             * * ForceStop can happen at any time, and must Cancel anything that is going on immediately.
+             * * ForceSync can happen at any time, and must Cancel anything that is going on immediately and initiate Sync.
+             * * Objects can be added to the McPending Q at any time.
+             * * All other events must come from the orderly completion of commands or internal forced transitions.
+             * 
+             * The SM Q is an event-Q not a work-Q. Where we need to "remember" to do more than one thing, that
+             * memory must be embedded in the state machine.
+             * 
+             * Sync, Provision, Discovery and FolderSync can be forced by posting the appropriate event.
+             * 
+             * TempFail: for scenarios where a command can return TempFail, just keep re-trying:
+             *  - NcCommStatus will eventually shut us down as TempFail counts against Quality. 
+             *  - Max deferrals on pending will pull "bad" pendings out of the Q.
+             */
+            Sm = new NcStateMachine ("IMAPC") { 
+                Name = string.Format ("IMAPC({0})", AccountId),
+                LocalEventType = typeof(CtlEvt),
+                LocalStateType = typeof(Lst),
+                StateChangeIndication = UpdateSavedState,
+                TransTable = new[] {
+                    new Node {
+                        State = (uint)St.Start,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)CtlEvt.E.UiSetCred,
+                            (uint)CtlEvt.E.UiSetServConf,
+                            (uint)CtlEvt.E.UiCertOkNo, 
+                            (uint)CtlEvt.E.UiCertOkYes,
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)ImapEvt.E.ReProv,
+                            (uint)CtlEvt.E.GetServConf,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.ReFSync,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
+                            (uint)CtlEvt.E.Cancel,
+                            (uint)ImapEvt.E.ConnW,
+                            (uint)ImapEvt.E.AuthW,
+                            (uint)ImapEvt.E.AuthFail,
+                            (uint)ImapEvt.E.Auth,
+                            (uint)ImapEvt.E.SelectW,
+                            (uint)ImapEvt.E.Selected,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                        }
+                    },
+                    // There is no HardFail. Can't pass DiscW w/out a working server - period.
+                    new Node {
+                        State = (uint)Lst.DiscW, 
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)ImapEvt.E.ReProv,
+                            (uint)CtlEvt.E.ReFSync,
+                            (uint)CtlEvt.E.Cancel,
+                            (uint)ImapEvt.E.ConnW,
+                            (uint)ImapEvt.E.AuthW,
+                            (uint)ImapEvt.E.AuthFail,
+                            (uint)ImapEvt.E.Auth,
+                            (uint)ImapEvt.E.SelectW,
+                            (uint)ImapEvt.E.Selected,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoConn, State = (uint)ImapEvt.E.ConnW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans {
+                                Event = (uint)ImapEvt.E.AuthFail,
+                                Act = DoUiCredReq,
+                                State = (uint)Lst.UiDCrdW
+                            },
+                            new Trans {
+                                Event = (uint)CtlEvt.E.GetCertOk,
+                                Act = DoUiCertOkReq,
+                                State = (uint)Lst.UiCertOkW
+                            },
+                            new Trans {
+                                Event = (uint)CtlEvt.E.UiSetServConf,
+                                Act = DoSetServConf,
+                                State = (uint)Lst.DiscW
+                            },
+                            new Trans { Event = (uint)CtlEvt.E.UiSetCred, Act = DoSetCred, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
+                    new Node {
+                        State = (uint)ImapEvt.E.ConnW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)ImapEvt.E.ReProv,
+                            (uint)ImapEvt.E.AuthFail,
+                            (uint)CtlEvt.E.GetServConf,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.ReFSync,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAuth, State = (uint)ImapEvt.E.AuthW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
+                    new Node {
+                        State = (uint)ImapEvt.E.AuthW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                        },
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)ImapEvt.E.ReProv,
+                            (uint)ImapEvt.E.AuthFail,
+                            (uint)CtlEvt.E.GetServConf,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.ReFSync,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPark, State = (uint)ImapEvt.E.Auth },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        }
+                    },
+                }
+            };
+            Sm.Validate ();
+            Sm.State = ProtocolState.ProtoControlState;
+            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
+            NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
+            NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
+        }
+
+        public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
+        {
+            if (e.ServerId == Server.Id) {
+                switch (e.Quality) {
+                case NcCommStatus.CommQualityEnum.OK:
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality OK.", Server.Host);
+                    Execute ();
+                    break;
+
+                default:
+                case NcCommStatus.CommQualityEnum.Degraded:
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality degraded.", Server.Host);
+                    break;
+
+                case NcCommStatus.CommQualityEnum.Unusable:
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "SSEHPARK");
+                    break;
+                }
+            }
+        }
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        {
+            if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
+                Execute ();
+            } else {
+                // The "Down" case.
+                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
+            }
+        }
+
+        private NcTimer PendingOnTimeTimer { set; get; }
+        public override void Execute ()
+        {
+            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
+                return;
+            }
+            if (null == PendingOnTimeTimer) {
+                PendingOnTimeTimer = new NcTimer ("ImapProtoControl:PendingOnTimeTimer", state => {
+                    McPending.MakeEligibleOnTime (Account.Id);
+                }, null, 1000, 2000);
+                PendingOnTimeTimer.Stfu = true;
+            }
+            if (null == Server) {
+                Sm.PostEvent ((uint)ImapEvt.E.ReDisc, "ASPCEXECAUTOD");
+            } else {
+                // All states are required to handle the Launch event gracefully.
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            }
+        }
+
+        IImapCommand Cmd;
+
+        private void ExecuteCmd ()
+        {
+            Cmd.Execute (Sm);
+        }
+
+        private void SetCmd (IImapCommand nextCmd)
+        {
+            if (null != Cmd) {
+                Cmd.Cancel ();
+            }
+            Cmd = nextCmd;
+        }
+
+        public void Cancel ()
+        {
+            if (null != Cts) {
+                Cts.Cancel ();
+                Cts = null;
+            }
+            Sm.PostEvent ((uint)CtlEvt.E.Cancel, "SRCANCEL");
+        }
+
+        private void DoDisc ()
+        {
+            Sm.PostEvent ((uint)ImapEvt.E.ConnW, "IMAPDISCSKIPPED");
+        }
+
+        private void DoConn ()
+        {
+            try {
+                client.ConnectAsync (Cts.Token);
+                Sm.PostEvent ((uint)ImapEvt.E.AuthW, "IMCONNSUC");
+            } catch (ImapCommandException e) {
+                Log.Error (Log.LOG_IMAP, "ConnectAsync failed: {0}", e);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMCNFAIL");
+            }
+        }
+
+        private void DoAuth ()
+        {
+            try {
+                client.AuthenticateAndIdAsync (Cts.Token);
+                Sm.PostEvent ((uint)ImapEvt.E.Auth, "IMAUTHSUCC");
+            } catch (ImapCommandException e) {
+                Log.Error (Log.LOG_IMAP, "AuthenticateAndIdAsync failed: {0}", e);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAUTHFAIL");
+            }
+        }
+
+        private void DoPark ()
+        {
+            SetCmd (null);
+            // Because we are going to stop for a while, we need to fail any
+            // pending that aren't allowed to be delayed.
+            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
+        }
+
+        private X509Certificate2 _ServerCertToBeExamined;
+
+        public override X509Certificate2 ServerCertToBeExamined {
+            get {
+                return _ServerCertToBeExamined;
+            }
+        }
+
+        private void DoUiCertOkReq ()
+        {
+            _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
+            Owner.CertAskReq (this, _ServerCertToBeExamined);
+        }
+
+        private void DoCertOkNo ()
+        {
+            throw new Exception ("Not implemented");
+        }
+
+        private void DoCertOkYes ()
+        {
+            throw new Exception ("Not implemented");
+        }
+
+        private void DoSetServConf ()
+        {
+            throw new Exception ("Not implemented");
+        }
+
+        private void DoUiCredReq ()
+        {
+            Owner.CredReq (this);
+        }
+
+        private void DoSetCred ()
+        {
+            throw new Exception ("Not implemented");
+        }
+
+        // State-machine's state persistance callback.
+        private void UpdateSavedState ()
+        {
+            // TODO Move to parent?
+            var protocolState = ProtocolState;
+            uint stateToSave = Sm.State;
+            switch (stateToSave) {
+            case (uint)Lst.UiDCrdW:
+            case (uint)Lst.UiServConfW:
+            case (uint)Lst.UiCertOkW:
+                stateToSave = (uint)Lst.DiscW;
+                break;
+            case (uint)Lst.Parked:
+                // We never save Parked.
+                return;
+            }
+            protocolState.ProtoControlState = stateToSave;
+            protocolState.Update ();
+        }
+
+        private void EstablishService ()
+        {
+            // TODO Abstract to parent.
+
+            // Hang our records off Account.
+            NcModel.Instance.RunInTransaction (() => {
+                var account = Account;
+                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
+                if (null == policy) {
+                    policy = new McPolicy () {
+                        AccountId = account.Id,
+                    };
+                    policy.Insert ();
+                }
+                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
+                if (null == protocolState) {
+                    protocolState = new McProtocolState () {
+                        AccountId = account.Id,
+                    };
+                    protocolState.Insert ();
+                }
+            });
+        }
+    }
+}
+namespace NachoCore.Imap
+{
+    public abstract class ImapCommand : IImapCommand
+    {
+        public string CommandName;
+
+        public TimeSpan Timeout { get; set; }
+
+        protected IBEContext BEContext;
+        protected List<McPending> PendingList;
+        protected object PendingResolveLockObj;
+
+        public ImapCommand (string commandName, IBEContext beContext)
+        {
+            Timeout = TimeSpan.Zero;
+            CommandName = commandName;
+            BEContext = beContext;
+            PendingList = new List<McPending> ();
+            PendingResolveLockObj = new object ();
+        }
+
+        public void Execute (NcStateMachine sm)
+        {
+            throw new Exception ("SubClass must override");
+        }
+
+        public void Cancel ()
+        {
+            throw new Exception ("SubClass must override");
+        }
+    }
+
+    public partial class ImapGeneric : ImapCommand
+    {
+        public ImapGeneric (IBEContext dataSource) : base ("Foo", dataSource)
+        {
+        }
+
+        // Virtual Methods.
+        protected virtual void Execute (NcStateMachine sm)
+        {
+        }
+
+        // Cancel() must be safe to call even when the command has already completed.
+        public virtual void Cancel ()
+        {
+        }
+    }
 }
 

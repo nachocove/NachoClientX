@@ -305,6 +305,7 @@
     <Compile Include="..\Test.Android\ErrorHelperTest.cs">
       <Link>ErrorHelperTest.cs</Link>
     </Compile>
+    <Compile Include="ImapOperationTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -390,6 +391,10 @@
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
+      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
+      <Name>MailKit.iOS</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
