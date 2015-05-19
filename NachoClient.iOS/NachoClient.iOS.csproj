@@ -384,7 +384,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
       <Link>NachoCore\Adapters\INachoContacts.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Adapters\DeviceCalendar.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\BackEnd.cs">
       <Link>NachoCore\BackEnd\BackEnd.cs</Link>
     </Compile>
