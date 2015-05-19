@@ -25,6 +25,7 @@ namespace NachoCore.Model
             OutlookExchange,
             GoogleExchange,
             GoogleDefault,
+            IMAP_SMTP,
         };
 
         public enum AccountCapabilityEnum
@@ -194,6 +195,10 @@ namespace NachoCore.Model
                 return "Outlook.com";
             case AccountServiceEnum.GoogleExchange:
                 return "Google Apps for Work";
+            case AccountServiceEnum.GoogleDefault:
+                return "GMail";
+            case AccountServiceEnum.IMAP_SMTP:
+                return "IMAP";
             default:
                 NcAssert.CaseError (String.Format ("AccountServiceName: unknown {0}", service));
                 return "";
