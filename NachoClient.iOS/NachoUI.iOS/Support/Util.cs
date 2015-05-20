@@ -1148,6 +1148,69 @@ namespace NachoClient
             return String.Format ("({0},{1})", s.Width, s.Height);
         }
 
+        public static string GetAccountServiceImageName (McAccount.AccountServiceEnum service)
+        {
+            string imageName;
+
+            // FIXME
+            // imageName = "avatar-office365";
+
+            switch (service) {
+            case McAccount.AccountServiceEnum.Exchange:
+                imageName = "avatar-msexchange";
+                break;
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                imageName = "avatar-gmail";
+                break;
+            case McAccount.AccountServiceEnum.GoogleExchange:
+                imageName = "avatar-googleapps";
+                break;
+            case McAccount.AccountServiceEnum.HotmailExchange:
+                imageName = "avatar-hotmail";
+                break;
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
+                // FIXME
+                imageName = "avatar-yahoo";
+                break;
+            case McAccount.AccountServiceEnum.OutlookExchange:
+                imageName = "avatar-outlook";
+                break;
+            default:
+                imageName = "Icon";
+                break;
+            }
+            return imageName;
+        }
+
+        public static UIImage ImageForAccount (McAccount account)
+        {
+            if (0 == account.DisplayPortraitId) {
+                return UIImage.FromBundle (GetAccountServiceImageName (account.AccountService));
+            } else {
+                return Util.PortraitToImage (account.DisplayPortraitId);
+            }
+        }
+
+        public delegate void SwitchAccountCallback (McAccount account);
+
+        public static void SwitchAccountActionSheet(UIViewController vc, UIView view, SwitchAccountCallback SwitchToAccount)
+        {
+            var actions = new List<NcAlertAction> ();
+
+            var accounts = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange);
+
+            foreach (var account in accounts) {
+                var action = new NcAlertAction (account.DisplayName, () => {
+                    NcApplication.Instance.Account = account;
+                    SwitchToAccount (account);
+                });
+                actions.Add (action); 
+            }
+            actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+
+            NcActionSheet.Show (view, vc, actions.ToArray ());
+        }
+
         #endregion
     }
 }

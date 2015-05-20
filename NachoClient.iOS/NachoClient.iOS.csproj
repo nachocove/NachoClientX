@@ -1402,6 +1402,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
+      <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2287,6 +2291,34 @@
     <BundleResource Include="Resources\login-imap%402x.png" />
     <BundleResource Include="Resources\login-gmail%402x.png" />
     <BundleResource Include="Resources\login-gmail-min%402x.png" />
+    <BundleResource Include="Resources\avatar-gmail%402x.png" />
+    <BundleResource Include="Resources\avatar-gmail%403x.png" />
+    <BundleResource Include="Resources\avatar-gmail%404x.png" />
+    <BundleResource Include="Resources\avatar-gmail%406x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%402x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%403x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%404x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%406x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%402x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%403x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%404x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%406x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%402x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%403x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%404x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%406x.png" />
+    <BundleResource Include="Resources\avatar-office365%402x.png" />
+    <BundleResource Include="Resources\avatar-office365%403x.png" />
+    <BundleResource Include="Resources\avatar-office365%404x.png" />
+    <BundleResource Include="Resources\avatar-office365%406x.png" />
+    <BundleResource Include="Resources\avatar-outlook%402x.png" />
+    <BundleResource Include="Resources\avatar-outlook%403x.png" />
+    <BundleResource Include="Resources\avatar-outlook%404x.png" />
+    <BundleResource Include="Resources\avatar-outlook%406x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%402x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%403x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%404x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

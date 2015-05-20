@@ -16,7 +16,7 @@ namespace NachoClient.iOS
 
         protected const int NAME_LABEL_TAG = 100;
         protected const int EMAIL_ADDRESS_LABEL_TAG = 101;
-        protected const int USER_IMAGE_VIEW_TAG = 102;
+        protected const int ACCOUNT_IMAGE_VIEW_TAG = 102;
         protected const int USER_LABEL_VIEW_TAG = 103;
 
         public AccountInfoView (CGRect frame) : base (frame)
@@ -28,13 +28,13 @@ namespace NachoClient.iOS
             accountInfoView.Layer.BorderColor = A.Card_Border_Color;
             accountInfoView.Layer.BorderWidth = A.Card_Border_Width;
 
-            var userImageView = new UIImageView (new CGRect (12, 15, 50, 50));
-            userImageView.Center = new CGPoint (userImageView.Center.X, accountInfoView.Frame.Height / 2);
-            userImageView.Layer.CornerRadius = 25;
-            userImageView.Layer.MasksToBounds = true;
-            userImageView.Hidden = true;
-            userImageView.Tag = USER_IMAGE_VIEW_TAG;
-            accountInfoView.AddSubview (userImageView);
+            var accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
+            accountImageView.Center = new CGPoint (accountImageView.Center.X, accountInfoView.Frame.Height / 2);
+            accountImageView.Layer.CornerRadius = 25;
+            accountImageView.Layer.MasksToBounds = true;
+            accountImageView.Hidden = true;
+            accountImageView.Tag = ACCOUNT_IMAGE_VIEW_TAG;
+            accountInfoView.AddSubview (accountImageView);
 
             var userLabelView = new UILabel (new CGRect (12, 15, 50, 50));
             userLabelView.Font = A.Font_AvenirNextRegular24;
@@ -70,39 +70,22 @@ namespace NachoClient.iOS
 
         public void Configure (McAccount account)
         {
-            var userImageView = (UIImageView)this.ViewWithTag (USER_IMAGE_VIEW_TAG);
+            var accountImageView = (UIImageView)this.ViewWithTag (ACCOUNT_IMAGE_VIEW_TAG);
             var userLabelView = (UILabel)this.ViewWithTag (USER_LABEL_VIEW_TAG);
             var nameLabel = (UILabel)this.ViewWithTag (NAME_LABEL_TAG);
             var emailLabel = (UILabel)this.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
 
-            userImageView.Hidden = true;
             userLabelView.Hidden = true;
+            nameLabel.Hidden = (null == account);
+            emailLabel.Hidden = (null == account);
+            accountImageView.Hidden = (null == account);
 
-            if (null == account) {
-                nameLabel.Hidden = true;
-                emailLabel.Hidden = true;
-                return;
-            }
-
-            // Account name
-            nameLabel.Text = Pretty.AccountName (account);
-
-            // Email address
-            var emailAddress = account.EmailAddr;
-            emailLabel.Text = emailAddress;
-
-            var userImage = Util.ImageOfSender (account.Id, emailAddress);
-
-            if (null != userImage) {
-                userImageView.Image = userImage;
-                userImageView.Hidden = false;
-            } else {
-                int ColorIndex;
-                string Initials;
-                Util.UserMessageField (emailAddress, account.Id, out ColorIndex, out Initials);
-                userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
-                userLabelView.Text = Initials;
-                userLabelView.Hidden = false;
+            if (null != account) {
+                nameLabel.Text = Pretty.AccountName (account);
+                using (var image = Util.ImageForAccount (account)) {
+                    accountImageView.Image = image;
+                }
+                emailLabel.Text = account.EmailAddr;
             }
         }
 

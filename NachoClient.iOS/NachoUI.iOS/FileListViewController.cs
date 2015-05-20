@@ -31,6 +31,8 @@ namespace NachoClient.iOS
         protected UISegmentedControl segmentedControl;
         protected UIView segmentedControlView;
 
+        SwitchAccountButton switchAccountButton;
+
         UILabel EmptyListLabel;
 
         // segue id's
@@ -141,7 +143,9 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
             } else {
-                NavigationItem.Title = "Files";
+                switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+                NavigationItem.TitleView = switchAccountButton; 
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
 
             segmentedControlView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 40));
@@ -355,6 +359,17 @@ namespace NachoClient.iOS
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        void SwitchAccountButtonPressed ()
+        {
+            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            switchAccountButton.SetAccountImage (account);
+            RefreshTableSource ();
         }
 
         protected void InitializeSearchDisplayController ()

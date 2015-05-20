@@ -215,20 +215,13 @@ namespace NachoCore.ActiveSync
                     switch (classCodeEnum) {
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        // If the server supports previews, then ask for 0-sized MIME with a preview.
-                        // Otherwise, ask for 255 bytes of plain text.
-                        if (BEContext.Server.HostIsGMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "255")));
-                        } else {
-                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.AllMime_2));
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "0"),
-                                new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
-                        }
+                        options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
+                        // Some servers support a preview option, but that is limited by the spec to 255 bytes.
+                        // The app wants more than that, so it can have some useful text left after stripping
+                        // away all the junk.  For all servers, ask for a plain text body truncated to 500 bytes.
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "500")));
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:

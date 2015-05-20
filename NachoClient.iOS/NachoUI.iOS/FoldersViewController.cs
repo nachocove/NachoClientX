@@ -51,6 +51,8 @@ namespace NachoClient.iOS
         protected UIImage moreIconSelected;
         protected UIBarButtonItem composeButton;
 
+        SwitchAccountButton switchAccountButton;
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -60,11 +62,9 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
 
-            currentAccount = NcApplication.Instance.Account;
-
             CreateView ();
-            ConfigureFolders ();
-            ConfigureView ();
+
+            SwitchToAccount (NcApplication.Instance.Account);
 
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
@@ -116,6 +116,9 @@ namespace NachoClient.iOS
             ConfigureFolders ();
             ClearViews ();
             ConfigureView ();
+            if (!modal) {
+                switchAccountButton.SetAccountImage (account);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -192,7 +195,6 @@ namespace NachoClient.iOS
                 View.AddSubview (titleView);
 
             } else {
-                NavigationItem.Title = "Mail";
                 NavigationController.NavigationBar.Translucent = false;
 
                 var composeButton = new NcUIBarButtonItem ();
@@ -203,12 +205,8 @@ namespace NachoClient.iOS
                 };
                 NavigationItem.RightBarButtonItem = composeButton;
 
-                // TEMP
-                var switchAccountButton = new NcUIBarButtonItem ();
-                Util.SetAutomaticImageForButton (switchAccountButton, "more-nachomail");
-                switchAccountButton.AccessibilityLabel = "Switch Account";
-                switchAccountButton.Clicked += SwitchAccountButton_Clicked;
-                NavigationItem.LeftBarButtonItem = switchAccountButton;
+                switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+                NavigationItem.TitleView = switchAccountButton;
             }
 
             nfloat marginPadding = 15f;
@@ -284,22 +282,9 @@ namespace NachoClient.iOS
             }
         }
 
-        void SwitchAccountButton_Clicked (object sender, EventArgs e)
+        void SwitchAccountButtonPressed ()
         {
-            var actions = new List<NcAlertAction> ();
-
-            var accounts = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange);
-
-            foreach (var account in accounts) {
-                var action = new NcAlertAction (account.DisplayName, () => {
-                    NcApplication.Instance.Account = account;
-                    SwitchToAccount (account);
-                });
-                actions.Add (action); 
-            }
-            actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-
-            NcActionSheet.Show (View, this, actions.ToArray ());
+            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
         }
 
         protected void ConfigureColors ()
