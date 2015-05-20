@@ -86,6 +86,7 @@ namespace NachoCore
                             });
                         }
                     }
+                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
                 }, "NcDeviceCalendars:Process", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
@@ -98,6 +99,7 @@ namespace NachoCore
                         folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
                         McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
                     });
+                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
                 }, "NcDeviceCalendars:Delete", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
