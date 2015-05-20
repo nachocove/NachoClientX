@@ -402,7 +402,7 @@ namespace NachoCore
             NcContactGleaner.Start ();
             EmailHelper.Setup ();
             BackEnd.Instance.Owner = this;
-            BackEnd.Instance.EstablishService ();
+            BackEnd.Instance.CreateServices ();
             BackEnd.Instance.Start ();
             ExecutionContext = _PlatformIndication; 
             ContinueOnActivation ();

@@ -14,6 +14,7 @@ namespace NachoCore.SMTP
         {
             ProtoControl = this;
             Capabilities = McAccount.SmtpCapabilities;
+            SetupAccount ();
         }
     }
 }
