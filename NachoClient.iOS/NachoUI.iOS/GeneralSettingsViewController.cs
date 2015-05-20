@@ -20,6 +20,7 @@ namespace NachoClient.iOS
         AccountsTableViewSource accountsTableViewSource;
 
         UIButton newAccountButton;
+        SwitchAccountButton switchAccountButton;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
@@ -28,7 +29,9 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            NavigationItem.Title = "Settings";
+
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            NavigationItem.TitleView = switchAccountButton;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -75,33 +78,42 @@ namespace NachoClient.iOS
             newAccountButton = UIButton.FromType (UIButtonType.System);
             newAccountButton.SetTitle ("New Account", UIControlState.Normal);
             newAccountButton.SizeToFit ();
-            ViewFramer.Create(newAccountButton).Center(View.Frame.Width / 2, yOffset + (newAccountButton.Frame.Height / 2));
+            ViewFramer.Create (newAccountButton).Center (View.Frame.Width / 2, yOffset + (newAccountButton.Frame.Height / 2));
 
-            newAccountButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue("SegueToLaunch", this);
-            };
-
+            newAccountButton.TouchUpInside += NewAccountButton_TouchUpInside;
             contentView.AddSubview (newAccountButton);
 
             yOffset = newAccountButton.Frame.Bottom;
-
         }
-
+            
         void NewAccountButton_TouchUpInside (object sender, EventArgs e)
         {
-            NachoPlatform.NcUIRedirector.Instance.GoBackToMainScreen ();                        
+            PerformSegue ("SegueToLaunch", this);
+        }
+
+        void SwitchAccountButtonPressed ()
+        {
+            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            switchAccountButton.SetAccountImage (account);
         }
 
         protected override void ConfigureAndLayout ()
         {
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         protected override void Cleanup ()
         {
+            newAccountButton.TouchUpInside -= NewAccountButton_TouchUpInside;
 
         }
 
