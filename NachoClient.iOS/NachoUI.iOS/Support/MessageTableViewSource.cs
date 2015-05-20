@@ -650,11 +650,11 @@ namespace NachoClient.iOS
             if (raw.StartsWith ("<") && (raw.Contains ("<body") || raw.Contains ("<BODY"))) {
                 // It looks like it might be HTML.  Parse it as such and see if the <body> tag can be found.
                 HtmlDocument html = new HtmlDocument ();
-                // Some tags, such as <p> and <br>, become white space when rendered.  Since we are just
-                // pulling out the text, not rendering it, we want to convert those tags to white space
+                // Some tags, such as <p>, <br>, and <li>, become white space when rendered.  Since we are
+                // just pulling out the text, not rendering it, we want to convert those tags to white space
                 // right now.  If this is not done, then "<p>Call me Ishmael.</p><p>Some years ago" will
                 // display as "Call me Ishmael.Some years ago" instead of "Call me Ishmael. Some years ago".
-                html.LoadHtml (Regex.Replace (raw, @"<(/?[Pp]|[Bb][Rr]\s*/?)>", " "));
+                html.LoadHtml (Regex.Replace (raw, @"<(/?[Pp]|/?[Ll][Ii]|[Bb][Rr]\s*/?)>", " "));
                 foreach (var bodyNode in html.DocumentNode.Descendants("body")) {
                     adjusted = Regex.Replace (Regex.Replace (bodyNode.InnerText, @"\s+", " "), @"^\s", "");
                     break;
