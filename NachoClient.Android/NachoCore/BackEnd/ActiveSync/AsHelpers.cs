@@ -98,11 +98,7 @@ namespace NachoCore.ActiveSync
                     bodyText = xmlData.Value;
                 }
                 if (null == xmlPreview) {
-                    if (255 >= bodyText.Length) {
-                        item.BodyPreview = bodyText;
-                    } else {
-                        item.BodyPreview = bodyText.Substring (0, 255);
-                    }
+                    item.BodyPreview = bodyText;
                 }
             }
         }
