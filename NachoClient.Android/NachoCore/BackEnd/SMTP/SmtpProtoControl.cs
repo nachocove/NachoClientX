@@ -86,6 +86,7 @@ namespace NachoCore.SMTP
         {
             ProtoControl = this;
             Capabilities = McAccount.SmtpCapabilities;
+            SetupAccount ();
 
             Sm = new NcStateMachine ("SMTPPC") { 
                 Name = string.Format ("SMTPPC({0})", AccountId),
@@ -577,6 +578,6 @@ namespace NachoCore.SMTP
             Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
             return result;
         }
-        }
+    }
 }
 

@@ -76,45 +76,42 @@ namespace NachoClient.iOS
         // Calendar
         public static void DealWithCalendarPermission ()
         {
-            // FIXME
-            return;
+            var module = PM.Module_Calendar;
+            var accountId = McAccount.GetDeviceAccount ().Id;
 
-//            var module = PM.Module_Calendar;
-//            var accountId = McAccount.GetDeviceAccount ().Id;
-//
-//            // If we have already asked, then don't ask again.  TODO:  Setting to enabled access
-//            if (McMutables.GetOrCreateBool (accountId, module, PM.Key_AskedUserForPermission, false)) {
-//                return;
-//            }
-//
-//            // Has the system already allowed or denied Nacho Mail?
-//            if (!NachoPlatform.Calendars.Instance.ShouldWeBotherToAsk ()) {
-//                McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-//                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "do not bother");
-//                return;
-//            }
-//
-//            var title = "Nacho Mail would like to access your Calendar";
-//            var body = "This allows Nacho Mail to show events from your calendar in the Nacho Mail calendar.";
-//
-//            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
-//            alert.Clicked += (s, b) => {
-//                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
-//                    NachoPlatform.Calendars.Instance.AskForPermission ((bool granted) => {
-//                        McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-//                        McMutables.SetBool (accountId, module, PM.Key_UserGrantedUsPermission, granted);
-//                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
-//                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
-//                        if (granted) {
-//                            NcDeviceCalendars.Run ();
-//                        }
-//                    });
-//                } else {
-//                    McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
-//                    Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "no");
-//                }
-//            };
-//            alert.Show ();
+            // If we have already asked, then don't ask again.  TODO:  Setting to enabled access
+            if (McMutables.GetOrCreateBool (accountId, module, PM.Key_AskedUserForPermission, false)) {
+                return;
+            }
+
+            // Has the system already allowed or denied Nacho Mail?
+            if (!NachoPlatform.Calendars.Instance.ShouldWeBotherToAsk ()) {
+                McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
+                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "do not bother");
+                return;
+            }
+
+            var title = "Nacho Mail would like to access your Calendar";
+            var body = "This allows Nacho Mail to show events from your calendar in the Nacho Mail calendar.";
+
+            var alert = new UIAlertView (title, body, null, null, new string[] { "Don't Allow", "OK" });
+            alert.Clicked += (s, b) => {
+                if ((alert.FirstOtherButtonIndex + 1) == b.ButtonIndex) {
+                    NachoPlatform.Calendars.Instance.AskForPermission ((bool granted) => {
+                        McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
+                        McMutables.SetBool (accountId, module, PM.Key_UserGrantedUsPermission, granted);
+                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "yes");
+                        Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_UserGrantedUsPermission, granted);
+                        if (granted) {
+                            NcDeviceCalendars.Run ();
+                        }
+                    });
+                } else {
+                    McMutables.SetBool (accountId, module, PM.Key_AskedUserForPermission, true);
+                    Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, PM.Key_AskedUserForPermission, "no");
+                }
+            };
+            alert.Show ();
         }
 
         // Contacts

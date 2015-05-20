@@ -350,8 +350,9 @@ namespace NachoCore.Utils
         public const ulong LOG_ASSERT = (1 << 19);
         public const ulong LOG_DB = (1 << 20);
         public const ulong LOG_PUSH = (1 << 21);
-        public const ulong LOG_IMAP = (1 << 22);
+        public const ulong LOG_BACKEND = (1 << 22);
         public const ulong LOG_SMTP = (1 << 23);
+        public const ulong LOG_IMAP = (1 << 24);
 
         private static Logger DefaultLogger;
 

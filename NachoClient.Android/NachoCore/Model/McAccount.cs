@@ -173,6 +173,11 @@ namespace NachoCore.Model
 
         public bool FastNotificationEnabled { get; set; }
 
+        public static IEnumerable<McAccount> QueryByEmailAddr (string emailAddr)
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr);
+        }
+
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == accountType);

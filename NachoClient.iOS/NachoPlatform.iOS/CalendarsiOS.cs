@@ -145,16 +145,22 @@ namespace NachoPlatform
                 if (null != Event.TimeZone) {
                     cal.StartTime = Event.StartDate.ShiftToUTC (Event.TimeZone).ToDateTime ();
                     cal.EndTime = Event.EndDate.ShiftToUTC (Event.TimeZone).ToDateTime ();
+                    // FIXME DAVID - need to properly convert from NSTimeZone: Event.TimeZone.
+                    cal.TimeZone = "WAIAAEgAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
                 } else {
                     cal.StartTime = Event.StartDate.ToDateTime ();
                     cal.EndTime = Event.EndDate.ToDateTime ();
+                    // FIXME DAVID
+                    cal.TimeZone = "WAIAAEgAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
                 }
 
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
                 if (null != ekAttendees) {
                     foreach (var ekAttendee in ekAttendees) {
-                        var attendee = new McAttendee ();
+                        var attendee = new McAttendee () {
+                            AccountId = accountId,
+                        };
 
                         attendee.Name = ekAttendee.Name;
 
@@ -268,10 +274,22 @@ namespace NachoPlatform
             var end = DateTime.Now.AddMonths (1);
             var calendars = EventStore.GetCalendars (EKEntityType.Event);
             var retval = new List<PlatformCalendarRecordiOS> ();
-            calendars = calendars.Where (x => 
-                x.Source.SourceType != EKSourceType.Exchange &&
-            x.Source.SourceType != EKSourceType.Birthdays
-            ).ToArray ();
+            var ignoredSources = new List<string> ();
+            foreach (var calendar in calendars) {
+                var account = McAccount.QueryByEmailAddr (calendar.Title.Trim ()).FirstOrDefault ();
+                if (null != calendar.Title && null != account && 
+                    McAccount.AccountCapabilityEnum.CalReader == 
+                    (account.AccountCapability & McAccount.AccountCapabilityEnum.CalReader)) {
+                    // This is probably one of our accounts - note it as a source we want to ignore.
+                    if (null != calendar.Source && null != calendar.Source.Title) {
+                        ignoredSources.Add (calendar.Source.Title.Trim ());
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "GetCalendars: could not exclude calendar source.");
+                    }
+                }
+            }
+            calendars = calendars.Where (x => null == x.Source || null == x.Source.Title ||
+            !ignoredSources.Contains (x.Source.Title.Trim ())).ToArray ();
             var predicate = EventStore.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
             var calEvents = EventStore.EventsMatching (predicate);
             if (null != calEvents) {

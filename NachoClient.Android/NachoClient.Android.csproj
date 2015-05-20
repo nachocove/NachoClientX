@@ -413,6 +413,7 @@
     <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\IImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

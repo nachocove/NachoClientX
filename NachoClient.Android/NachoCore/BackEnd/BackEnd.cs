@@ -66,7 +66,7 @@ namespace NachoCore
 
         public IBackEndOwner Owner { set; private get; }
 
-        private bool HasServiceFromAccountId (int accountId)
+        private bool AccountHasServices (int accountId)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
             return Services.ContainsKey (accountId);
@@ -77,12 +77,12 @@ namespace NachoCore
             NcAssert.True (0 != accountId, "0 != accountId");
             ConcurrentQueue<NcProtoControl> services;
             if (!Services.TryGetValue (accountId, out services)) {
-                Log.Error (Log.LOG_SYS, "ServiceFromAccountId called with bad accountId {0} @ {1}", accountId, new StackTrace ());
+                Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId called with bad accountId {0} @ {1}", accountId, new StackTrace ());
                 return NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist);
             }
             var protoControl = services.FirstOrDefault (x => capability == (x.Capabilities & capability));
             if (null == protoControl) {
-                Log.Error (Log.LOG_SYS, "ServiceFromAccountId: can't find controller with desired capability {0}", capability);
+                Log.Error (Log.LOG_BACKEND, "ServiceFromAccountId: can't find controller with desired capability {0}", capability);
                 return NcResult.Error (NcResult.SubKindEnum.Error_NoCapableService);
             }
             return func (protoControl);
@@ -101,12 +101,12 @@ namespace NachoCore
                     }
                 }
                 if (result.isOK ()) {
-                    Log.Info (Log.LOG_LIFECYCLE, "{0}({1})", name, accountId);
+                    Log.Info (Log.LOG_BACKEND, "{0}({1})", name, accountId);
                 } else {
-                    Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.ApplyAcrossServices {0}({1}):{2}.", name, accountId, result.Message);
+                    Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}):{2}.", name, accountId, result.Message);
                 }
             } else {
-                Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.ApplyAcrossServices {0}({1}) could not find services.", name, accountId);
+                Log.Warn (Log.LOG_BACKEND, "BackEnd.ApplyAcrossServices {0}({1}) could not find services.", name, accountId);
             }
             return result;
         }
@@ -128,18 +128,18 @@ namespace NachoCore
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
         }
 
-        public void EstablishService ()
+        public void CreateServices ()
         {
-            ApplyAcrossAccounts ("EstablishService", (accountId) => {
-                if (!HasServiceFromAccountId (accountId)) {
-                    EstablishService (accountId);
+            ApplyAcrossAccounts ("CreateServices", (accountId) => {
+                if (!AccountHasServices (accountId)) {
+                    CreateServices (accountId);
                 }
             });
         }
 
         public void Start ()
         {
-            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start() called");
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
             // The callee does Task.Run.
             ApplyAcrossAccounts ("Start", (accountId) => {
                 Start (accountId);
@@ -151,7 +151,7 @@ namespace NachoCore
         // return without waiting.
         public void Stop ()
         {
-            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Stop() called");
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
             ApplyAcrossAccounts ("Stop", (accountId) => {
                 Stop (accountId);
             });
@@ -159,8 +159,8 @@ namespace NachoCore
 
         public void Stop (int accountId)
         {
-            if (!HasServiceFromAccountId (accountId)) {
-                EstablishService (accountId);
+            if (!AccountHasServices (accountId)) {
+                CreateServices (accountId);
             }
             ApplyAcrossServices (accountId, "Stop", (service) => {
                 service.ForceStop ();
@@ -174,7 +174,7 @@ namespace NachoCore
             RemoveService (accountId);
         }
 
-        public void EstablishService (int accountId)
+        public void CreateServices (int accountId)
         {
             var services = new ConcurrentQueue<NcProtoControl> ();
             var account = McAccount.QueryById<McAccount> (accountId);
@@ -196,10 +196,10 @@ namespace NachoCore
                 NcAssert.True (false);
                 break;
             }
-            Log.Info (Log.LOG_LIFECYCLE, "EstablishService {0}", accountId);
+            Log.Info (Log.LOG_BACKEND, "CreateServices {0}", accountId);
             if (!Services.TryAdd (accountId, services)) {
                 // Concurrency. Another thread has jumped in and done the add.
-                Log.Info (Log.LOG_LIFECYCLE, "Another thread has already called EstablishService for Account.Id {0}", accountId);
+                Log.Info (Log.LOG_BACKEND, "Another thread has already called CreateServices for Account.Id {0}", accountId);
             }
         }
 
@@ -214,10 +214,10 @@ namespace NachoCore
 
         public void Start (int accountId)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) called", accountId);
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
             NcCommStatus.Instance.Refresh ();
-            if (!HasServiceFromAccountId (accountId)) {
-                EstablishService (accountId);
+            if (!AccountHasServices (accountId)) {
+                CreateServices (accountId);
             }
             NcTask.Run (() => {
                 ApplyAcrossServices (accountId, "Start", (service) => {
@@ -225,7 +225,7 @@ namespace NachoCore
                     return NcResult.OK ();
                 });
             }, "Start");
-            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) exited", accountId);
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)

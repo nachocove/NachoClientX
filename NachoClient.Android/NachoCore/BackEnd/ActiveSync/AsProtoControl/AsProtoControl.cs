@@ -145,9 +145,7 @@ namespace NachoCore.ActiveSync
         {
             ProtoControl = this;
             Capabilities = McAccount.ActiveSyncCapabilities;
-
-            // TODO decouple disk setup from constructor.
-            EstablishService ();
+            SetupAccount ();
             /*
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
@@ -846,80 +844,7 @@ namespace NachoCore.ActiveSync
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
-        private void EstablishService ()
-        {
-            // Hang our records off Account.
-            NcModel.Instance.RunInTransaction (() => {
-                var account = Account;
-                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
-                if (null == policy) {
-                    policy = new McPolicy () {
-                        AccountId = account.Id,
-                    };
-                    policy.Insert ();
-                }
-                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
-                if (null == protocolState) {
-                    protocolState = new McProtocolState () {
-                        AccountId = account.Id,
-                    };
-                    protocolState.Insert ();
-                }
-            });
 
-            // Make the application-defined folders.
-            McFolder freshMade;
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetClientOwnedOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_Outbox, "On-Device Outbox",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetClientOwnedDraftsFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_EmailDrafts, "On-Device Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetCalDraftsFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetGalCacheFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_GalCache, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetGleanedFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_Gleaned, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_LostAndFound, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
-                    freshMade.Insert ();
-                }
-            });
-            // Create file directories.
-            NcModel.Instance.InitializeDirs (AccountId);
-        }
 
         public override void Remove ()
         {
@@ -965,7 +890,6 @@ namespace NachoCore.ActiveSync
             if (forceAutodiscovery) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
             } else {
-                Server = McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
                 Sm.PostEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
             }
         }

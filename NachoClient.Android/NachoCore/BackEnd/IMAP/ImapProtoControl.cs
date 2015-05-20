@@ -82,6 +82,7 @@ namespace NachoCore.IMAP
         {
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
+            SetupAccount ();
 
             Sm = new NcStateMachine ("IMAPPC") { 
                 Name = string.Format ("IMAPPC({0})", AccountId),

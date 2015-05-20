@@ -403,7 +403,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+                BackEnd.Instance.CreateServices (defaultAccountId);  // make L&F folder
             }
 
             private Inbox SetStateWithDestFolder<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, int, string> clientOp) where T : McAbstrItem, new()
@@ -584,7 +584,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+                BackEnd.Instance.CreateServices (defaultAccountId);  // make L&F folder
             }
 
             [Test]

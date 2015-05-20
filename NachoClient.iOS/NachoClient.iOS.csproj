@@ -384,7 +384,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
       <Link>NachoCore\Adapters\INachoContacts.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Adapters\DeviceCalendar.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\BackEnd.cs">
       <Link>NachoCore\BackEnd\BackEnd.cs</Link>
     </Compile>
@@ -1414,6 +1413,8 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\IImapCommand.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
+      <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
