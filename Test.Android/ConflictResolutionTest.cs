@@ -573,7 +573,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+                BackEnd.Instance.CreateServices (defaultAccountId);  // make L&F folder
             }
 
             // create cal, contact, and task

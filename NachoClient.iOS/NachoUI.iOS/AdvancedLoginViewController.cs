@@ -740,7 +740,7 @@ namespace NachoClient.iOS
             NcAssert.NotNull (theAccount.Credentials);
 
             // Save email & password
-            theAccount.Account.EmailAddr = emailView.textField.Text;
+            theAccount.Account.EmailAddr = emailView.textField.Text.Trim ();
             theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
 
             // If the user clears the username, we'll let them start over

@@ -560,7 +560,7 @@ namespace NachoCore.Wbxml
         {
             try {
                 return EncodeOpaqueBytes (Convert.FromBase64String (value));
-            } catch (FormatException e) {
+            } catch (FormatException) {
                 Log.Error (Log.LOG_UTILS, "Internal error: The string passed to WBXML.EncodeBase64String is not a valid base-64 string: {0}", value);
                 return EncodeOpaqueString (value);
             }

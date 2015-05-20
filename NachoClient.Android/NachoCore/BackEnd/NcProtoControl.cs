@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
 
 namespace NachoCore
 {
@@ -86,6 +87,80 @@ namespace NachoCore
         {
             Owner = owner;
             AccountId = accountId;
+        }
+
+        protected void SetupAccount ()
+        {
+            // Hang our records off Account.
+            NcModel.Instance.RunInTransaction (() => {
+                var policy = McPolicy.QueryByAccountId<McPolicy> (AccountId).SingleOrDefault ();
+                if (null == policy) {
+                    policy = new McPolicy () {
+                        AccountId = AccountId,
+                    };
+                    policy.Insert ();
+                }
+                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
+                if (null == protocolState) {
+                    protocolState = new McProtocolState () {
+                        AccountId = AccountId,
+                    };
+                    protocolState.Insert ();
+                }
+            });
+
+            // Make the application-defined folders.
+            McFolder freshMade;
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetClientOwnedOutboxFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                        McFolder.ClientOwned_Outbox, "On-Device Outbox",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetClientOwnedDraftsFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                        McFolder.ClientOwned_EmailDrafts, "On-Device Drafts",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetCalDraftsFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetGalCacheFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_GalCache, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetGleanedFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_Gleaned, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_LostAndFound, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                    freshMade.Insert ();
+                }
+            });
+            // Create file directories.
+            NcModel.Instance.InitializeDirs (AccountId);
         }
 
         public NcStateMachine Sm { set; get; }

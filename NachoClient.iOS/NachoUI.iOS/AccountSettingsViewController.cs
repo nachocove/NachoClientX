@@ -991,7 +991,7 @@ namespace NachoClient.iOS
                 var theConference = McConference.QueryByAccountId <McConference> (theAccount.Id).FirstOrDefault ();
 
                 theAccount.DisplayName = accountNameTextField.Text;
-                theAccount.EmailAddr = emailTextField.Text;
+                theAccount.EmailAddr = emailTextField.Text.Trim ();
                 SetHostAndPort (theServer, mailserverTextField.Text);
                 theCred.Username = usernameTextField.Text;
                 theCred.UpdatePassword (passwordTextField.Text);

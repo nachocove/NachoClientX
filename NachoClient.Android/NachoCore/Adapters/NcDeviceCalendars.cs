@@ -72,7 +72,10 @@ namespace NachoCore
                         // If missing, insert it.
                         inserter.Invoke (deviceCalendar);
                     } else {
-                        NcAssert.AreEqual (1, present.RemoveAll (x => x.FolderEntryId == existing.Id));
+                        var count = present.RemoveAll (x => x.FolderEntryId == existing.Id);
+                        if (1 != count) {
+                            Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.UniqueId, existing.Id);
+                        }
                         // If present and stale, update it.
                         if (deviceCalendar.LastUpdate > existing.DeviceLastUpdate) {
                             NcModel.Instance.RunInTransaction (() => {

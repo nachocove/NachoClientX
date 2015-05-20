@@ -14,6 +14,7 @@ namespace NachoCore.IMAP
         {
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
+            SetupAccount ();
         }
 
         public PushAssistParameters PushAssistParameters ()

@@ -66,7 +66,7 @@ namespace NachoCore
 
         public IBackEndOwner Owner { set; private get; }
 
-        private bool HasServiceFromAccountId (int accountId)
+        private bool AccountHasServices (int accountId)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
             return Services.ContainsKey (accountId);
@@ -128,11 +128,11 @@ namespace NachoCore
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
         }
 
-        public void EstablishService ()
+        public void CreateServices ()
         {
-            ApplyAcrossAccounts ("EstablishService", (accountId) => {
-                if (!HasServiceFromAccountId (accountId)) {
-                    EstablishService (accountId);
+            ApplyAcrossAccounts ("CreateServices", (accountId) => {
+                if (!AccountHasServices (accountId)) {
+                    CreateServices (accountId);
                 }
             });
         }
@@ -159,8 +159,8 @@ namespace NachoCore
 
         public void Stop (int accountId)
         {
-            if (!HasServiceFromAccountId (accountId)) {
-                EstablishService (accountId);
+            if (!AccountHasServices (accountId)) {
+                CreateServices (accountId);
             }
             ApplyAcrossServices (accountId, "Stop", (service) => {
                 service.ForceStop ();
@@ -174,7 +174,7 @@ namespace NachoCore
             RemoveService (accountId);
         }
 
-        public void EstablishService (int accountId)
+        public void CreateServices (int accountId)
         {
             var services = new ConcurrentQueue<NcProtoControl> ();
             var account = McAccount.QueryById<McAccount> (accountId);
@@ -196,10 +196,10 @@ namespace NachoCore
                 NcAssert.True (false);
                 break;
             }
-            Log.Info (Log.LOG_LIFECYCLE, "EstablishService {0}", accountId);
+            Log.Info (Log.LOG_LIFECYCLE, "CreateServices {0}", accountId);
             if (!Services.TryAdd (accountId, services)) {
                 // Concurrency. Another thread has jumped in and done the add.
-                Log.Info (Log.LOG_LIFECYCLE, "Another thread has already called EstablishService for Account.Id {0}", accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "Another thread has already called CreateServices for Account.Id {0}", accountId);
             }
         }
 
@@ -216,8 +216,8 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) called", accountId);
             NcCommStatus.Instance.Refresh ();
-            if (!HasServiceFromAccountId (accountId)) {
-                EstablishService (accountId);
+            if (!AccountHasServices (accountId)) {
+                CreateServices (accountId);
             }
             NcTask.Run (() => {
                 ApplyAcrossServices (accountId, "Start", (service) => {
