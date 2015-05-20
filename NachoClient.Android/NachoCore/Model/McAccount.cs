@@ -116,10 +116,13 @@ namespace NachoCore.Model
             }
         }
 
+        // The service that the user picked when setting up the account
         public AccountServiceEnum AccountService { get; set; }
 
         public void SetAccountService (AccountServiceEnum value)
-        { 
+        {
+            AccountService = value;
+
             switch (value) {
             case AccountServiceEnum.GoogleDefault:
                 AccountType = AccountTypeEnum.IMAP_SMTP;
@@ -145,6 +148,9 @@ namespace NachoCore.Model
 
         // This is the nickname of the account, not the user's name
         public string DisplayName { get; set; }
+
+        // This is the image associated with the account, not the user's initials
+        public int DisplayPortraitId { get; set; }
 
         // This is the user's display name, it should be null.
         // Exchange servers do a good job of converting the email

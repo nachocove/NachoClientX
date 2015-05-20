@@ -60,7 +60,7 @@ namespace NachoCore.Model
             return account;
         }
 
-        public bool MaybeCreateServersForIMAP(McAccount account, McAccount.AccountServiceEnum service)
+        public bool MaybeCreateServersForIMAP (McAccount account, McAccount.AccountServiceEnum service)
         {
             int imapServerPort;
             int smtpServerPort;
@@ -91,8 +91,8 @@ namespace NachoCore.Model
             var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
             var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
             NcModel.Instance.RunInTransaction (() => {
-                imapServer.Insert();
-                smtpServer.Insert();
+                imapServer.Insert ();
+                smtpServer.Insert ();
             });
             Log.Info (Log.LOG_UI, "CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
             return true;
