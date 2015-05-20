@@ -890,7 +890,6 @@ namespace NachoCore.ActiveSync
             if (forceAutodiscovery) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
             } else {
-                Server = McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
                 Sm.PostEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
             }
         }
