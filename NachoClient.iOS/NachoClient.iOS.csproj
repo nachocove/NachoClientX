@@ -1413,6 +1413,7 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\IImapCommand.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
       <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>
