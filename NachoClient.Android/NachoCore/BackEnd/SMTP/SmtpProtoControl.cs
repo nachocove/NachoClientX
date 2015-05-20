@@ -10,11 +10,14 @@ using NachoPlatform;
 using MailKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using System.Threading;
 
 namespace NachoCore.SMTP
 {
-    public class SmtpProtoControl : NcProtoControl
+    public class SmtpProtoControl : NcProtoControl, IBEContext
     {
+        private SmtpValidateConfig Validator;
+
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
@@ -65,7 +68,6 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.PkHotQOp,
                         },
                         Invalid = new uint[] {
-                            (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.AuthFail,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
@@ -75,6 +77,7 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     },
                     new Node {
@@ -214,13 +217,25 @@ namespace NachoCore.SMTP
                     return BackEndStateEnum.NotYetStarted;
 
                 case (uint)Lst.DiscW:
-                    return BackEndStateEnum.Running;
+                case (uint)Lst.ConnW:
+                case (uint)Lst.Pick:
+                case (uint)Lst.Parked:
+                    return BackEndStateEnum.PostAutoDPostInboxSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
             }
+        }
+
+        public override void Execute ()
+        {
+            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_IMAP, "Execute called while network is down.");
+                return;
+            }
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
         }
 
         private ISmtpCommand Cmd;
@@ -256,34 +271,25 @@ namespace NachoCore.SMTP
             }
         }
 
+        private void DoDisc ()
+        {
+            Sm.PostEvent ((uint)SmEvt.E.Success, "SMTPAUTODDASC");
+        }
+
+        public static SmtpClient newClientWithLogger()
+        {
+            SmtpProtocolLogger logger = new SmtpProtocolLogger ();
+            return new SmtpClient (logger);
+        }
+
         private async void DoConn ()
         {
             if (null == m_smtpClient) {
                 try {
-                    var server = McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
-                    if (null == server) {
-                        // Yes, the SM is SOL at this point.
-                        Log.Error (Log.LOG_PUSH, "DoConn: No McServer for accountId {0}", AccountId);
-                        Sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTP_START_NO_SERVER");
-                        return;
-                    }
-                    var cred = McCred.QueryByAccountId<McCred> (AccountId).FirstOrDefault ();
-                    if (null == cred) {
-                        // Yes, the SM is SOL at this point.
-                        Log.Error (Log.LOG_PUSH, "DoConn: No McCred for accountId {0}", AccountId);
-                        Sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTP_START_NO_CRED");
-                        return;
-                    }
-                    SmtpProtocolLogger logger = new SmtpProtocolLogger ();
-                    m_smtpClient = new SmtpClient (logger);
-                    //m_smtpClient.ClientCertificates = new X509CertificateCollection ();
-                    await m_smtpClient.ConnectAsync (server.Host, server.Port, false).ConfigureAwait (false);
-
-                    // Note: since we don't have an OAuth2 token, disable
-                    // the XOAUTH2 authentication mechanism.
-                    m_smtpClient.AuthenticationMechanisms.Remove ("XOAUTH2");
-
-                    await m_smtpClient.AuthenticateAsync (cred.Username, cred.GetPassword ()).ConfigureAwait (false);
+                    var client = newClientWithLogger();
+                    SetCmd (new SmtpAuthenticateCommand(Sm, client));
+                    ExecuteCmd (); // FAIL: The execute uses await's, but of course we don't block on that here.
+                    m_smtpClient = client;
                     Sm.PostEvent ((uint)SmEvt.E.Success, "SMTPCONEST");
                 } catch (SmtpProtocolException e) {
                     Log.Error (Log.LOG_SMTP, "Could not set up authenticated client: {0}", e);
@@ -418,6 +424,74 @@ namespace NachoCore.SMTP
             }
         }
 
+        public override void ValidateConfig (McServer server, McCred cred)
+        {
+            CancelValidateConfig ();
+            Validator = new SmtpValidateConfig(this);
+            Validator.Execute (server, cred);
+        }
+
+        public override void CancelValidateConfig ()
+        {
+            if (null != Validator) {
+                Validator.Cancel ();
+                Validator = null;
+            }
+        }
+        public class SmtpAuthenticateCommand : SmtpCommand
+        {
+            public CancellationTokenSource cToken { get; protected set; }
+
+            SmtpClient client { get; set; }
+            int AccountId { get; set; }
+            public SmtpAuthenticateCommand(int accountId, SmtpClient smtp) : base()  // TODO Do I need the base here to get the base initializer to run?
+            {
+                cToken = new CancellationTokenSource ();
+                client = smtp;
+                AccountId = accountId;
+            }
+
+            async public void Execute (NcStateMachine sm)
+            {
+                try {
+                    var server = McServer.QueryByAccountId<McServer> (AccountId).SingleOrDefault ();
+                    if (null == server) {
+                        // Yes, the SM is SOL at this point.
+                        Log.Error (Log.LOG_PUSH, "DoConn: No McServer for accountId {0}", AccountId);
+                        sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTP_START_NO_SERVER");
+                        return;
+                    }
+                    var cred = McCred.QueryByAccountId<McCred> (AccountId).FirstOrDefault ();
+                    if (null == cred) {
+                        // Yes, the SM is SOL at this point.
+                        Log.Error (Log.LOG_PUSH, "DoConn: No McCred for accountId {0}", AccountId);
+                        sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTP_START_NO_CRED");
+                        return;
+                    }
+
+                    //client.ClientCertificates = new X509CertificateCollection ();
+                    await client.ConnectAsync (server.Host, server.Port, false, cToken.Token).ConfigureAwait (false);
+
+                    // Note: since we don't have an OAuth2 token, disable
+                    // the XOAUTH2 authentication mechanism.
+                    client.AuthenticationMechanisms.Remove ("XOAUTH2");
+
+                    await client.AuthenticateAsync (cred.Username, cred.GetPassword (), cToken.Token).ConfigureAwait (false);
+                }
+                catch (SmtpProtocolException e) {
+                    Log.Error (Log.LOG_SMTP, "Could not set up authenticated client: {0}", e);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPPROTOFAIL");
+                }
+                catch (AuthenticationException e) {
+                    Log.Error (Log.LOG_SMTP, "Authentication failed: {0}", e);
+                    sm.PostEvent ((uint)NachoCore.SMTP.SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL");
+                }
+            }
+            public void Cancel()
+            {
+                cToken.Cancel ();
+            }
+        }
     }
 }
 

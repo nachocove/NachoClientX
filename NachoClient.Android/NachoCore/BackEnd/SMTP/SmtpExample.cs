@@ -9,7 +9,7 @@ using MailKit;
 using NachoCore.Utils;
 using System.Security.Cryptography.X509Certificates;
 
-namespace NachoCore.Smtp
+namespace NachoCore.SMTP
 {
     public class Smtp
     {
