@@ -68,41 +68,6 @@ namespace NachoClient.iOS
             accountInfoView.AddSubview (accountSettingsIndicatorArrow);
         }
 
-        public string GetImageName (McAccount.AccountServiceEnum service)
-        {
-            string imageName;
-
-            // FIXME
-            // imageName = "avatar-office365";
-
-            switch (service) {
-            case McAccount.AccountServiceEnum.Exchange:
-                imageName = "avatar-msexchange";
-                break;
-            case McAccount.AccountServiceEnum.GoogleDefault:
-                imageName = "avatar-gmail";
-                break;
-            case McAccount.AccountServiceEnum.GoogleExchange:
-                imageName = "avatar-googleapps";
-                break;
-            case McAccount.AccountServiceEnum.HotmailExchange:
-                imageName = "avatar-hotmail";
-                break;
-            case McAccount.AccountServiceEnum.IMAP_SMTP:
-                        // FIXME
-                imageName = "avatar-yahoo";
-                break;
-            case McAccount.AccountServiceEnum.OutlookExchange:
-                imageName = "avatar-outlook";
-                break;
-            default:
-                imageName = String.Empty;
-                NcAssert.CaseError ();
-                break;
-            }
-            return imageName;
-        }
-
         public void Configure (McAccount account)
         {
             var accountImageView = (UIImageView)this.ViewWithTag (ACCOUNT_IMAGE_VIEW_TAG);
@@ -117,18 +82,11 @@ namespace NachoClient.iOS
 
             if (null != account) {
                 nameLabel.Text = Pretty.AccountName (account);
-                if (0 == account.DisplayPortraitId) {
-                    using (var image = UIImage.FromBundle (GetImageName (account.AccountService))) {
-                        accountImageView.Image = image;
-                    }
-                } else {
-                    using (var image = Util.PortraitToImage (account.DisplayPortraitId)) {
-                        accountImageView.Image = image;
-                    }
+                using (var image = Util.ImageForAccount (account)) {
+                    accountImageView.Image = image;
                 }
                 emailLabel.Text = account.EmailAddr;
             }
-
         }
 
         public void Cleanup ()

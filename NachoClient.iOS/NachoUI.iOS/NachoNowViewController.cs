@@ -30,6 +30,8 @@ namespace NachoClient.iOS
 
         McAccount currentAccount;
 
+        SwitchAccountButton switchAccountButton;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -94,15 +96,9 @@ namespace NachoClient.iOS
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
 
-            // TEMP
-            var switchAccountButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (switchAccountButton, "more-nachomail");
-            switchAccountButton.AccessibilityLabel = "Switch Account";
-            switchAccountButton.Clicked += SwitchAccountButton_Clicked;
-
-            NavigationItem.Title = "Hot";
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            NavigationItem.TitleView = switchAccountButton;
                 
-            NavigationItem.LeftBarButtonItem = switchAccountButton;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
             hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Grouped);
@@ -143,22 +139,9 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
 
-        void SwitchAccountButton_Clicked (object sender, EventArgs e)
+        void SwitchAccountButtonPressed ()
         {
-            var actions = new List<NcAlertAction> ();
-
-            var accounts = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange);
-
-            foreach (var account in accounts) {
-                var action = new NcAlertAction (account.DisplayName, () => {
-                    NcApplication.Instance.Account = account;
-                    SwitchToAccount (account);
-                });
-                actions.Add (action); 
-            }
-            actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-
-            NcActionSheet.Show (View, this, actions.ToArray ());
+            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -367,6 +350,7 @@ namespace NachoClient.iOS
             hotListView.Source = hotListSource;
             hotListView.ReloadData ();
             hotListSource.ConfigureFooter (hotListView);
+            switchAccountButton.SetAccountImage (account);
             NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
         }
 

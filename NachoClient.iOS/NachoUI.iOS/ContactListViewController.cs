@@ -22,6 +22,8 @@ namespace NachoClient.iOS
         LettersSwipeViewDataSource swipeViewDateSource;
         UITableView TableView;
 
+        SwitchAccountButton switchAccountButton;
+
         protected bool contactsNeedsRefresh;
 
         ContactsTableViewSource contactTableViewSource;
@@ -94,7 +96,12 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = searchButton;
 
             NavigationController.NavigationBar.Translucent = false;
-            NavigationItem.Title = "Contacts";
+
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            NavigationItem.TitleView = switchAccountButton;
+
+            // Adjust the icon; contacts covers all account
+            SwitchToAccount (NcApplication.Instance.Account);
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
@@ -136,6 +143,16 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+        }
+
+        void SwitchAccountButtonPressed ()
+        {
+            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            switchAccountButton.SetAccountImage (account);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
