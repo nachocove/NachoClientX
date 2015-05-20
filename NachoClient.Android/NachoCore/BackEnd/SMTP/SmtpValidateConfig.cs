@@ -17,7 +17,7 @@ namespace NachoCore.SMTP
         private McServer ServerCandidate;
         private McCred CredCandidate;
         private NcStateMachine Sm;
-        private SmtpProtoControl.SmtpAuthenticateCommand Cmd;
+        private SmtpAuthenticateCommand Cmd;
 
         public SmtpValidateConfig (IBEContext bEContext)
         {
@@ -68,11 +68,14 @@ namespace NachoCore.SMTP
         {
             var client = SmtpProtoControl.newClientWithLogger ();
             try {
-                Cmd = new SmtpProtoControl.SmtpAuthenticateCommand (BEContext.Account.Id, null);
+                Cmd = new SmtpAuthenticateCommand (BEContext.Server, BEContext.Cred, client);
                 Cmd.Execute (Sm);
             }
             finally {
-                client.Disconnect (true); // TODO what about the cancellation token?
+                // TODO Blocking!
+                lock (client.SyncRoot) {
+                    client.Disconnect (true); // TODO what about the cancellation token?
+                }
             }
         }
 

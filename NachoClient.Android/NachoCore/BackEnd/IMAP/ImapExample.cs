@@ -16,12 +16,11 @@ using NachoPlatform;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoCore.Imap;
 using System.Collections.Generic;
 using NachoCore.ActiveSync;
 using NachoCore.Brain;
 
-namespace NachoCore.Imap
+namespace NachoCore.IMAPExample
 {
     public class NcImap
     {
@@ -755,7 +754,7 @@ namespace NachoCore.Imap
     }
 }
 
-namespace NachoCore.Imap
+namespace NachoCore.IMAPExample
 {
     public interface IImapCommand
     {
@@ -765,7 +764,7 @@ namespace NachoCore.Imap
     }
 }
 
-namespace NachoCore.Imap
+namespace NachoCore.IMAPExample
 {
     public partial class ImapProtoControl : NcProtoControl
     {
@@ -1255,7 +1254,7 @@ namespace NachoCore.Imap
         }
     }
 }
-namespace NachoCore.Imap
+namespace NachoCore.IMAPExample
 {
     public abstract class ImapCommand : IImapCommand
     {

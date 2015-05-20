@@ -2,14 +2,14 @@
 //
 using System;
 using NachoCore.Utils;
-using MailKit.Net.Smtp;
-using NachoCore.Model;
 using System.Threading;
+using MailKit.Net.Imap;
+using NachoCore.Model;
 using MailKit.Security;
 
-namespace NachoCore.SMTP
+namespace NachoCore.IMAP
 {
-    public abstract class SmtpCommand : ISmtpCommand
+    public class ImapCommand : IImapCommand
     {
         public virtual void Execute (NcStateMachine sm)
         {
@@ -20,14 +20,14 @@ namespace NachoCore.SMTP
         }
     }
 
-    public class SmtpAuthenticateCommand : SmtpCommand
+    public class ImapAuthenticateCommand : ImapCommand
     {
         public CancellationTokenSource cToken { get; protected set; }
 
-        SmtpClient client { get; set; }
+        ImapClient client { get; set; }
         McServer Server { get; set; }
         McCred Creds { get; set; }
-        public SmtpAuthenticateCommand(McServer server, McCred creds, SmtpClient smtp) : base()  // TODO Do I need the base here to get the base initializer to run?
+        public ImapAuthenticateCommand(McServer server, McCred creds, ImapClient smtp) : base()  // TODO Do I need the base here to get the base initializer to run?
         {
             cToken = new CancellationTokenSource ();
             client = smtp;
@@ -46,15 +46,15 @@ namespace NachoCore.SMTP
                 client.AuthenticationMechanisms.Remove ("XOAUTH2");
 
                 await client.AuthenticateAsync (Creds.Username, Creds.GetPassword (), cToken.Token).ConfigureAwait (false);
-                sm.PostEvent ((uint)SmEvt.E.Success, "SMTPCONNSUC");
+                sm.PostEvent ((uint)SmEvt.E.Success, "IMAPCONNSUC");
             }
-            catch (SmtpProtocolException e) {
-                Log.Error (Log.LOG_SMTP, "Could not set up authenticated client: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPPROTOFAIL");
+            catch (ImapProtocolException e) {
+                Log.Error (Log.LOG_IMAP, "Could not set up authenticated client: {0}", e);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPROTOFAIL");
             }
             catch (AuthenticationException e) {
-                Log.Error (Log.LOG_SMTP, "Authentication failed: {0}", e);
-                sm.PostEvent ((uint)NachoCore.SMTP.SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL");
+                Log.Error (Log.LOG_IMAP, "Authentication failed: {0}", e);
+                sm.PostEvent ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL");
             }
         }
 

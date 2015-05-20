@@ -9,7 +9,7 @@ using MailKit;
 using NachoCore.Utils;
 using System.Security.Cryptography.X509Certificates;
 
-namespace NachoCore.SMTP
+namespace NachoCore.SMTPExample
 {
     public class Smtp
     {
@@ -71,7 +71,7 @@ namespace NachoCore.SMTP
         private void GetAuthenticatedClient ()
         {
             if (null == m_smtpClient) {
-                SmtpProtocolLogger logger = new SmtpProtocolLogger ();
+                MailKitProtocolLogger logger = new MailKitProtocolLogger ("SMTP", Log.LOG_SMTP);
                 m_smtpClient = new SmtpClient (logger);
                 m_smtpClient.ClientCertificates = new X509CertificateCollection ();
                 m_smtpClient.Connect (m_hostname, m_port, m_useSsl);
@@ -81,43 +81,6 @@ namespace NachoCore.SMTP
                 m_smtpClient.AuthenticationMechanisms.Remove ("XOAUTH2");
 
                 m_smtpClient.Authenticate (m_username, m_password);
-            }
-        }
-
-        public class SmtpProtocolLogger : IProtocolLogger
-        {
-            public void LogConnect (Uri uri)
-            {
-                if (uri == null)
-                    throw new ArgumentNullException ("uri");
-
-                Log.Info (Log.LOG_SMTP, "Connected to {0}", uri);
-            }
-
-            private void logBuffer (string prefix, byte[] buffer, int offset, int count)
-            {
-                char[] delimiterChars = { '\n' };
-                var lines = Encoding.UTF8.GetString (buffer.Skip (offset).Take (count).ToArray ()).Split (delimiterChars);
-
-                Array.ForEach (lines, (line) => {
-                    if (line.Length > 0) {
-                        Log.Info (Log.LOG_SMTP, "{0}{1}", prefix, line);
-                    }
-                });
-            }
-
-            public void LogClient (byte[] buffer, int offset, int count)
-            {
-                logBuffer ("SMTP C: ", buffer, offset, count);
-            }
-
-            public void LogServer (byte[] buffer, int offset, int count)
-            {
-                logBuffer ("SMTP S: ", buffer, offset, count);
-            }
-
-            public void Dispose ()
-            {
             }
         }
     }
