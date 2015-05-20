@@ -1390,6 +1390,9 @@
       <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
+      <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
