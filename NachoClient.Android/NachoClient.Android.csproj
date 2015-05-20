@@ -405,6 +405,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
+    <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

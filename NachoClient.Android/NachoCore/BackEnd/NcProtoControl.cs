@@ -346,7 +346,7 @@ namespace NachoCore
         public virtual NcResult SendEmailCmd (int emailMessageId)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0})", emailMessageId);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0})", emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
                 if (null == emailMessage) {
@@ -362,14 +362,14 @@ namespace NachoCore
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSEND");
             }, "SendEmailCmd");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
             return result;
         }
 
         public virtual NcResult SendEmailCmd (int emailMessageId, int calId)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1})", emailMessageId, calId);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0},{1})", emailMessageId, calId);
             NcModel.Instance.RunInTransaction (() => {
                 var cal = McCalendar.QueryById<McCalendar> (calId);
                 var emailMessage = McEmailMessage.QueryById<McEmailMessage> (emailMessageId);
@@ -416,7 +416,7 @@ namespace NachoCore
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCSENDCAL");
             }, "SendEmailCmd(cal)");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
             return result;
         }
 
@@ -478,11 +478,11 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             if (null != emailMessage && result.isOK ()) {
-                Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
+                Log.Info (Log.LOG_BACKEND, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
                     emailMessage.Id, emailMessage.ServerId, result.GetValue<string> ());
                 if (lastInSeq) {
                     StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                    Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
+                    Log.Debug (Log.LOG_BACKEND, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
                     NcTask.Run (delegate {
                         Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCDELMSG");
                     }, "DeleteEmailCmd");
@@ -572,7 +572,7 @@ namespace NachoCore
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_AS, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
@@ -1069,7 +1069,7 @@ namespace NachoCore
                 };
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
-                    Log.Info (Log.LOG_AS, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
