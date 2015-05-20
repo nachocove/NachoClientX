@@ -118,10 +118,8 @@ namespace NachoPlatform
                     cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
                 }
 
-                if (null != Event.Notes) {
-                    var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Event.Notes);
-                    cal.BodyId = body.Id;
-                }
+                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Event.Notes ?? "");
+                cal.BodyId = body.Id;
 
                 cal.ResponseTypeIsSet = true;
                 switch (Event.Status) {
