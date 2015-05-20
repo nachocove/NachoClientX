@@ -15,6 +15,30 @@ namespace Test.Android
         }
 
         [Test]
+        public void QueryByAccountIdAndCapabilities ()
+        {
+            var yes = new McServer () {
+                AccountId = 1,
+                Capabilities = McAccount.AccountCapabilityEnum.EmailSender,
+            };
+            yes.Insert ();
+            var no1 = new McServer () {
+                // rejected on account id.
+                AccountId = 2,
+                Capabilities = McAccount.AccountCapabilityEnum.EmailSender,
+            };
+            no1.Insert ();
+            var no2 = new McServer () {
+                // rejected on caps.
+                AccountId = 1,
+                Capabilities = McAccount.AccountCapabilityEnum.CalReader,
+            };
+            no2.Insert ();
+            var fetched = McServer.QueryByAccountIdAndCapabilities (1, McAccount.AccountCapabilityEnum.EmailSender);
+            Assert.AreEqual (yes.Id, fetched.Id);
+        }
+
+        [Test]
         public void IsSameNulls()
         {
             var a = new McServer ();

@@ -142,5 +142,16 @@ namespace NachoCore.Model
             host == x.Host
             ).SingleOrDefault ();
         }
+
+        public static McServer QueryByAccountIdAndCapabilities (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var servers = McServer.QueryByAccountId<McServer> (accountId);
+            foreach (var server in servers) {
+                if (capabilities == (capabilities & server.Capabilities)) {
+                    return server;
+                }
+            }
+            return null;
+        }
     }
 }
