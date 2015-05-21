@@ -289,7 +289,7 @@ namespace NachoCore.SMTP
 
         public override void Remove ()
         {
-            // TODO Move to base
+            // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
             NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
@@ -330,7 +330,7 @@ namespace NachoCore.SMTP
 
         private void DoDisc ()
         {
-            NcTask.Run (async delegate {
+            NcTask.Run (delegate {
                 if (null != m_smtpClient) {
                     if (m_smtpClient.IsConnected) {
                         lock(m_smtpClient.SyncRoot) {
@@ -389,7 +389,7 @@ namespace NachoCore.SMTP
             return new SmtpClient (logger);
         }
 
-        private async void DoConn ()
+        private void DoConn ()
         {
             if (null != m_smtpClient && m_smtpClient.IsConnected) {
                 m_smtpClient = null;
@@ -403,7 +403,7 @@ namespace NachoCore.SMTP
             }
         }
 
-        private async void DoPick ()
+        private void DoPick ()
         {
             // Due to threading race condition we must clear any event possibly posted
             // by a non-cancelled-in-time await.
@@ -439,7 +439,7 @@ namespace NachoCore.SMTP
             }
         }
 
-        private async void DoPark ()
+        private void DoPark ()
         {
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
