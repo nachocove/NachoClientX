@@ -1362,6 +1362,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration23.cs">
       <Link>NachoCore\Model\Migration\NcMigration23.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapExample.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapExample.cs</Link>
+    </Compile>
     <Compile Include="NachoUI.iOS\FileListViewController.cs" />
     <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
       <DependentUpon>FileListViewController.cs</DependentUpon>
@@ -1386,10 +1389,28 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\ISmtpCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\ISmtpCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
       <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MailKitProtocolLogger.cs">
+      <Link>NachoCore\Utils\MailKitProtocolLogger.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\IImapCommand.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
       <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>

@@ -14,7 +14,7 @@ namespace NachoCore.ActiveSync
     public partial class AsSyncCommand : AsCommand
     {
         public static McEmailMessage ServerSaysAddOrChangeEmail (XElement command, McFolder folder)
-        {   
+        {
             var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
             if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
                 Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeEmail: No ServerId present.");
@@ -42,6 +42,7 @@ namespace NachoCore.ActiveSync
                 emailMessage.IsIncomplete = true;
             }
 
+            // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
             McEmailAddress fromEmailAddress;
             if (McEmailAddress.Get (folder.AccountId, emailMessage.From, out fromEmailAddress)) {
                 emailMessage.FromEmailAddressId = fromEmailAddress.Id;
