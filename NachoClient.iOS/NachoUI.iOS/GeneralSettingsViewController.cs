@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks
+    public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks, INachoAccountsTableDelegate
     {
         protected nfloat yOffset;
 
@@ -20,6 +20,7 @@ namespace NachoClient.iOS
         AccountsTableViewSource accountsTableViewSource;
 
         UIButton newAccountButton;
+        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
@@ -29,6 +30,9 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            switchAccountView = new SwitchAccountView ();
+            View.AddSubview (switchAccountView);
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
@@ -58,7 +62,7 @@ namespace NachoClient.iOS
             yOffset = A.Card_Vertical_Indent;
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.owner = this;
+            accountsTableViewSource.Setup (this, showAccessory:true);
 
             accountsTableView = new UITableView ();
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -93,7 +97,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+            switchAccountView.Activate (SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)
@@ -117,7 +121,7 @@ namespace NachoClient.iOS
 
         }
 
-        public void ShowAccount (McAccount account)
+        public void AccountSelected (McAccount account)
         {
             View.EndEditing (true);
             PerformSegue ("SegueToAccountSettings", new SegueHolder (account));

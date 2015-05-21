@@ -15,6 +15,7 @@ namespace NachoClient.iOS
     {
         protected static readonly nfloat INDENT = 18;
 
+        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         protected UITapGestureRecognizer messageTapGesture;
@@ -33,6 +34,9 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             Util.ConfigureNavBar (false, this.NavigationController);
+
+            switchAccountView = new SwitchAccountView ();
+            View.AddSubview (switchAccountView);
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
@@ -171,7 +175,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+            switchAccountView.Activate (SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)

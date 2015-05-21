@@ -20,6 +20,12 @@ namespace NachoClient.iOS
         {
             callback = switchAccountCallback;
 
+            haloView = new UIView (new CGRect (0, 0, 44, 44));
+            haloView.Layer.CornerRadius = 22;
+            haloView.BackgroundColor = A.Color_NachoGreen;
+            haloView.Layer.AllowsEdgeAntialiasing = true;
+            ViewFramer.Create (haloView).Y (4);
+
             switchButton = UIButton.FromType (UIButtonType.System);
             switchButton.Frame = new CGRect (2, 2, 40, 40);
             switchButton.Layer.MasksToBounds = true;
@@ -27,18 +33,14 @@ namespace NachoClient.iOS
             switchButton.BackgroundColor = A.Color_NachoGreen;
             switchButton.Layer.AllowsEdgeAntialiasing = true;
             switchButton.TouchUpInside += SwitchButton_TouchUpInside;
+            switchButton.AccessibilityLabel = "Switch account";
 
-            haloView = new UIView (new CGRect (0, 0, 44, 44));
-            haloView.Layer.CornerRadius = 22;
-            haloView.BackgroundColor = A.Color_NachoGreen;
-            switchButton.Layer.AllowsEdgeAntialiasing = true;
+            switchButton.AdjustsImageWhenHighlighted = false;
 
             haloView.AddSubview (switchButton);
-
-            this.BackgroundColor = A.Color_NachoGreen;
             this.AddSubview (haloView);
 
-            ViewFramer.Create (haloView).Y (4);
+            this.BackgroundColor = A.Color_NachoGreen;
         }
 
         void SwitchButton_TouchUpInside (object sender, EventArgs e)
@@ -50,8 +52,20 @@ namespace NachoClient.iOS
 
         public void SetAccountImage (McAccount account)
         {
-            var image = Util.ImageForAccount (account).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            switchButton.SetImage (image, UIControlState.Normal);
+            using (var image = Util.ImageForAccount (account).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                switchButton.SetImage (image, UIControlState.Normal);
+                switchButton.SetImage (image, UIControlState.Selected);
+                switchButton.SetImage (image, UIControlState.Highlighted);
+            }
+        }
+
+        public void SetImage (string imageName)
+        {
+            using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                switchButton.SetImage (image, UIControlState.Normal);
+                switchButton.SetImage (image, UIControlState.Selected);
+                switchButton.SetImage (image, UIControlState.Highlighted);
+            }
         }
 
     }

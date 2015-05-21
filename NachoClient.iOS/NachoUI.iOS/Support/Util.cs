@@ -1191,26 +1191,6 @@ namespace NachoClient
             }
         }
 
-        public delegate void SwitchAccountCallback (McAccount account);
-
-        public static void SwitchAccountActionSheet(UIViewController vc, UIView view, SwitchAccountCallback SwitchToAccount)
-        {
-            var actions = new List<NcAlertAction> ();
-
-            var accounts = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange);
-
-            foreach (var account in accounts) {
-                var action = new NcAlertAction (account.DisplayName, () => {
-                    NcApplication.Instance.Account = account;
-                    SwitchToAccount (account);
-                });
-                actions.Add (action); 
-            }
-            actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-
-            NcActionSheet.Show (view, vc, actions.ToArray ());
-        }
-
         #endregion
     }
 }

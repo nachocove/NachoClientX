@@ -33,6 +33,7 @@ namespace NachoClient.iOS
         UIButton showOpenSourceButton;
         UIButton showReleaseNotesButton;
         UIButton showPrivacyPolicyButton;
+        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         public AboutUsViewController (IntPtr handle) : base (handle)
@@ -42,6 +43,9 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             NavigationController.NavigationBar.Translucent = false;
+
+            switchAccountView = new SwitchAccountView ();
+            View.AddSubview (switchAccountView);
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
@@ -216,7 +220,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+            switchAccountView.Activate (SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)
