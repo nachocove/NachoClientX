@@ -24,11 +24,11 @@ namespace NachoCore.SMTP
 
         public SmtpCommand(SmtpClient smtp, bool checkConnected = true)
         {
-            if (null == client) {
+            if (null == smtp) {
                 throw new SmtpCommandFailure("No client passed in");
             }
             if (checkConnected) {
-                if (!client.IsConnected) {
+                if (!smtp.IsConnected) {
                     throw new SmtpCommandFailure ("Client is not connected");
                 }
             }
