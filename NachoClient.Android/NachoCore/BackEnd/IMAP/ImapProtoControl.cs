@@ -110,10 +110,14 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.GetCertOk,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+//                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+//                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+//                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
+//                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoPark, State = (uint)Lst.Parked },
                         }
                     },
                     new Node {
@@ -275,7 +279,6 @@ namespace NachoCore.IMAP
                 }
             };
             Sm.Validate ();
-            SetupProtocolState ();
             Sm.State = ProtocolState.ProtoControlState;
             //SyncStrategy = new ImapStrategy (this);
             //PushAssist = new PushAssist (this);
@@ -284,28 +287,6 @@ namespace NachoCore.IMAP
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
-        private void SetupProtocolState()
-        {
-            // Hang our records off Account.
-            NcModel.Instance.RunInTransaction (() => {
-                var account = Account;
-                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
-                if (null == policy) {
-                    policy = new McPolicy () {
-                        AccountId = account.Id,
-                    };
-                    policy.Insert ();
-                }
-                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
-                if (null == protocolState) {
-                    protocolState = new McProtocolState () {
-                        AccountId = account.Id,
-                    };
-                    protocolState.Insert ();
-                }
-            });
-
-        }
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
@@ -350,13 +331,6 @@ namespace NachoCore.IMAP
         {
             NcAssert.True (false);
             return null;
-        }
-
-        private void EstablishService ()
-        {
-            SetupProtocolState ();
-            // Create file directories.
-            NcModel.Instance.InitializeDirs (AccountId);
         }
 
         public override void Remove ()
@@ -459,22 +433,22 @@ namespace NachoCore.IMAP
         private ImapClient temp_client { get; set; }
         private async void DoConn ()
         {
-            if (null == m_imapClient) {
-                NcTask.Run (delegate {
-                    try {
-                        temp_client = newClientWithLogger();
-                        var cmd = new ImapAuthenticateCommand(Server, Cred, temp_client);
-                        SetCmd (cmd);
-                        ExecuteCmd ();
-                    } catch (ImapProtocolException e) {
-                        Log.Error (Log.LOG_IMAP, "Could not set up authenticated client: {0}", e);
-                        Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPROTOFAIL");
-                    } catch (AuthenticationException e) {
-                        Log.Error (Log.LOG_IMAP, "Authentication failed: {0}", e);
-                        Sm.PostEvent ((uint)ImapEvt.E.AuthFail, "IMAPAUTHFAIL");
-                    }
-                }, "ImapDoConn");
-            }
+//            if (null == m_imapClient) {
+//                NcTask.Run (delegate {
+//                    try {
+//                        temp_client = newClientWithLogger();
+//                        var cmd = new ImapAuthenticateCommand(Server, Cred, temp_client);
+//                        SetCmd (cmd);
+//                        ExecuteCmd ();
+//                    } catch (ImapProtocolException e) {
+//                        Log.Error (Log.LOG_IMAP, "Could not set up authenticated client: {0}", e);
+//                        Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPROTOFAIL");
+//                    } catch (AuthenticationException e) {
+//                        Log.Error (Log.LOG_IMAP, "Authentication failed: {0}", e);
+//                        Sm.PostEvent ((uint)ImapEvt.E.AuthFail, "IMAPAUTHFAIL");
+//                    }
+//                }, "ImapDoConn");
+//            }
         }
 
         private async void DoPick ()
