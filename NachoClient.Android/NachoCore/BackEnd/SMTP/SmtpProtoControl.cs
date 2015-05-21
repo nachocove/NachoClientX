@@ -227,11 +227,9 @@ namespace NachoCore.SMTP
                     new Node {
                         State = (uint)Lst.Pick,
                         Drop = new [] {
-                            (uint)SmtpEvt.E.PkQOp,
                             (uint)SmtpEvt.E.PkHotQOp,
                         },
                         Invalid = new [] {
-                            (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.AuthFail,
@@ -240,6 +238,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.UiCertOkYes,
                         },
                         On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
                             new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
@@ -247,6 +246,7 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmtpEvt.E.PkQOp, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                         }
                     },
@@ -279,42 +279,12 @@ namespace NachoCore.SMTP
                 }
             };
             Sm.Validate ();
-            SetupProtocolState ();
             Sm.State = ProtocolState.ProtoControlState;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
-        }
-
-        private void SetupProtocolState()
-        {
-            // Hang our records off Account.
-            NcModel.Instance.RunInTransaction (() => {
-                var account = Account;
-                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
-                if (null == policy) {
-                    policy = new McPolicy () {
-                        AccountId = account.Id,
-                    };
-                    policy.Insert ();
-                }
-                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
-                if (null == protocolState) {
-                    protocolState = new McProtocolState () {
-                        AccountId = account.Id,
-                    };
-                    protocolState.Insert ();
-                }
-            });
-
-        }
-        private void EstablishService ()
-        {
-            SetupProtocolState ();
-            // Create file directories.
-            NcModel.Instance.InitializeDirs (AccountId);
         }
 
         public override void Remove ()
@@ -369,7 +339,9 @@ namespace NachoCore.SMTP
                         m_smtpClient = null;
                     }
                 }
-                Sm.PostEvent ((uint)SmEvt.E.Success, "SMTPAUTODDASC");
+                SmtpClient client = newClientWithLogger();
+                var cmd = new SmtpAuthenticateCommand(client, Server, Cred);
+                cmd.Execute (Sm);
             }, "SmtpDoDisc");
         }
 
@@ -406,7 +378,7 @@ namespace NachoCore.SMTP
         public override void ServerConfResp (bool forceAutodiscovery)
         {
             if (forceAutodiscovery) {
-                Log.Error (Log.LOG_SMTP, "Wy a forceautodiscovery?");
+                Log.Error (Log.LOG_SMTP, "Why a forceautodiscovery?");
             }
             Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "ASPCUSSC");
         }
@@ -417,76 +389,68 @@ namespace NachoCore.SMTP
             return new SmtpClient (logger);
         }
 
-        private SmtpClient temp_client { get; set; }
         private async void DoConn ()
         {
+            if (null != m_smtpClient && m_smtpClient.IsConnected) {
+                m_smtpClient = null;
+            }
             if (null == m_smtpClient) {
                 NcTask.Run (delegate {
-                    try {
-                        temp_client = newClientWithLogger();
-                        var cmd = new SmtpAuthenticateCommand(Server, Cred, temp_client);
-                        SetCmd (cmd);
-                        ExecuteCmd ();
-                    } catch (SmtpProtocolException e) {
-                        Log.Error (Log.LOG_SMTP, "Could not set up authenticated client: {0}", e);
-                        Sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPPROTOFAIL");
-                    } catch (AuthenticationException e) {
-                        Log.Error (Log.LOG_SMTP, "Authentication failed: {0}", e);
-                        Sm.PostEvent ((uint)SmtpEvt.E.AuthFail, "SMTPAUTHFAIL");
-                    }
+                    m_smtpClient = newClientWithLogger();
+                    var cmd = new SmtpAuthenticateCommand(m_smtpClient, Server, Cred);
+                    cmd.Execute (Sm);
                 }, "SmtpDoConn");
             }
         }
 
         private async void DoPick ()
         {
-            if (null != temp_client) {
-                m_smtpClient = temp_client;
-                temp_client = null;
-            }
-
             // Due to threading race condition we must clear any event possibly posted
             // by a non-cancelled-in-time await.
             // TODO: find a way to detect already running op and log an error.
             // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
-            if (null != Cmd) {
-                Cmd.Cancel ();
-            }
             Sm.ClearEventQueue ();
             var send = McPending.QueryEligible (AccountId).
                 Where (x => 
                     McPending.Operations.EmailSend == x.Operation ||
                        McPending.Operations.EmailForward == x.Operation ||
-                       McPending.Operations.EmailReply == x.Operation ||
-                       McPending.Operations.CalRespond == x.Operation ||
-                       McPending.Operations.CalForward == x.Operation
+                       McPending.Operations.EmailReply == x.Operation
                        ).FirstOrDefault ();
             if (null != send) {
                 Log.Info (Log.LOG_SMTP, "Strategy:FG/BG:Send");
                 switch (send.Operation) {
                 case McPending.Operations.EmailSend:
-                    // TODO Fill me in
-                    Log.Info (Log.LOG_SMTP, "Should do sendmail here");
+                case McPending.Operations.EmailForward:
+                case McPending.Operations.EmailReply:
+                    var cmd = new SmtpSendMailCommand (m_smtpClient, send);
+                    cmd.Execute (Sm);
+                    NcTask.Run (delegate {
+                        Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT");
+                    }, "SMTPSEND");
                     break;
                 default:
                     NcAssert.CaseError (send.Operation.ToString ());
                     break;
                 }
-                // Get a new one.
-                Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT");
             } else {
-                Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPARK");
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPICKPARK");
+                }, "SMTPSENDPA");
             }
         }
 
         private async void DoPark ()
         {
-            SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
             if (null != m_smtpClient) {
-                await m_smtpClient.DisconnectAsync (true).ConfigureAwait (false); // TODO Where does the Cancellation token come from?
+                if (m_smtpClient.IsConnected) {
+                    lock (m_smtpClient.SyncRoot) {
+                        m_smtpClient.Disconnect (true);
+                    }
+                }
+                m_smtpClient = null;
             }
         }
 

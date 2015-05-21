@@ -62,19 +62,19 @@ namespace NachoCore.SMTP
                     },
                 }
             };
+            Sm.Validate ();
         }
 
         private void DoVal ()
         {
             var client = SmtpProtoControl.newClientWithLogger ();
             try {
-                Cmd = new SmtpAuthenticateCommand (BEContext.Server, BEContext.Cred, client);
+                Cmd = new SmtpAuthenticateCommand (client, BEContext.Server, BEContext.Cred);
                 Cmd.Execute (Sm);
             }
             finally {
-                // TODO Blocking!
                 lock (client.SyncRoot) {
-                    client.Disconnect (true); // TODO what about the cancellation token?
+                    client.Disconnect (true);
                 }
             }
         }
