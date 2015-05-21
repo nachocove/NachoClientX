@@ -866,8 +866,11 @@ namespace NachoCore.ActiveSync
         private void DoAcceptServerConf ()
         {
             var protocolState = BEContext.ProtocolState;
-            protocolState.LastAutoDSucceeded = AutoDSucceeded;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastAutoDSucceeded = AutoDSucceeded;
+                return true;
+            });
 
             // Save validated server config in DB.
             NcModel.Instance.RunInTransaction (() => {

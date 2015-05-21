@@ -37,14 +37,20 @@ namespace NachoCore.ActiveSync
             }
             McProtocolState protocolState = BEContext.ProtocolState;
             var status = (Xml.FolderHierarchy.FolderSyncStatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.FolderHierarchy.Status).Value);
-            protocolState.AsLastFolderSync = DateTime.UtcNow;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsLastFolderSync = DateTime.UtcNow;
+                return true;
+            });
             switch (status) {
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 Log.Info (Log.LOG_AS, "AsFolderSyncCommand process response: SyncKey=" + syncKey);
-                protocolState.AsSyncKey = syncKey;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncKey = syncKey;
+                    return true;
+                });
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     foreach (var change in changes) {
@@ -104,8 +110,11 @@ namespace NachoCore.ActiveSync
 
                 if (protocolState.AsFolderSyncEpochScrubNeeded) {
                     PerformFolderSyncEpochScrub ();
-                    protocolState.AsFolderSyncEpochScrubNeeded = false;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsFolderSyncEpochScrubNeeded = false;
+                        return true;
+                    });
                 }
 
                 if (HadFolderChanges) {
@@ -121,7 +130,11 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderSyncStatusCode.ReSync_9:
                 // "Delete items added since last synchronization." <= Let conflict resolution deal with this.
                 protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FSYNCAGAIN2");
 
             case Xml.FolderHierarchy.FolderSyncStatusCode.ServerFail_12:

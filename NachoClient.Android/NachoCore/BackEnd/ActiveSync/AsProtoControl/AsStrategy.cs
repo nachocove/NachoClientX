@@ -197,8 +197,11 @@ namespace NachoCore.ActiveSync
                 // This is meant to fix an out-of-bounds value on-the-fly in an upgrade scenario.
                 // TODO - delete this once there is a general approach to migration.
                 if (protocolState.StrategyRung > MaxRung ()) {
-                    protocolState.StrategyRung = MaxRung ();
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.StrategyRung = MaxRung ();
+                        return true;
+                    });
                 }
                 return protocolState.StrategyRung;
             }
@@ -334,8 +337,11 @@ namespace NachoCore.ActiveSync
             if (CanAdvance (accountId, rung)) {
                 Log.Info (Log.LOG_AS, "Strategy:AdvanceIfPossible: {0} => {1}", rung, rung + 1);
                 var protocolState = BEContext.ProtocolState;
-                protocolState.StrategyRung++;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.StrategyRung++;
+                    return true;
+                });
                 rung = protocolState.StrategyRung;
                 var folders = FolderListProvider (accountId, rung, false);
                 foreach (var iterFolder in folders) {

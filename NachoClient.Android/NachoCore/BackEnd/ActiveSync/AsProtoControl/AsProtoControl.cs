@@ -917,8 +917,11 @@ namespace NachoCore.ActiveSync
                 // We never save Parked.
                 return;
             }
-            protocolState.ProtoControlState = stateToSave;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.ProtoControlState = stateToSave;
+                return true;
+            });
         }
         // State-machine action methods.
         private void DoNop ()
