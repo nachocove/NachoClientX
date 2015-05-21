@@ -47,9 +47,12 @@ namespace NachoCore.ActiveSync
 
         internal static void SetOldestProtoVers (IBEContext beContext)
         {
-            McProtocolState update = beContext.ProtocolState;
-            update.AsProtocolVersion = "12.0";
-            beContext.ProtocolState = update;
+            McProtocolState protocolState = beContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)protocolState;
+                target.AsProtocolVersion = "12.0";
+                return true;
+            });
         }
 
         internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
@@ -68,10 +71,18 @@ namespace NachoCore.ActiveSync
                 Array.Sort (float_versions);
                 Array.Reverse (float_versions);
                 string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
-                protocolState.AsProtocolVersion = versions [0];
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsProtocolVersion = versions [0];
+                    return true;
+                });
             } else {
                 Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
-                protocolState.AsProtocolVersion = "12.0";
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsProtocolVersion = "12.0";
+                    return true;
+                });
             }
             values = null;
             retval = headers.TryGetValues ("MS-ASProtocolCommands", out values);
@@ -84,10 +95,13 @@ namespace NachoCore.ActiveSync
                 string[] commands = value.Split (',');
                 // TODO: check for other potentially missing commands. ensure that all fundamental commands are listed.
                 if (!commands.Contains ("Provision")) {
-                    protocolState.DisableProvisionCommand = true;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.DisableProvisionCommand = true;
+                        return true;
+                    });
                 }
             }
-            beContext.ProtocolState = protocolState;
             // Rather than just fail, make conservative assumptions.
             return true;
         }

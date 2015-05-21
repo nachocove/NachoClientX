@@ -372,8 +372,11 @@ namespace Test.iOS
                     // will result in the item getting moved to LAF (and still findable.
                     // TODO - add test cases: !Inbox, < 14.1, email item.
                     var protocolState = Context.ProtoControl.ProtocolState;
-                    protocolState.AsProtocolVersion = "14.1";
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsProtocolVersion = "14.1";
+                        return true;
+                    });
                     token = Context.ProtoControl.RespondCalCmd (inbox.Item.Id, response).GetValue<string> ();
                 });
 

@@ -139,16 +139,9 @@ namespace NachoPlatform
             return NSDate.FromTimeIntervalSinceReferenceDate ((dateTime - (new DateTime (2001, 1, 1, 0, 0, 0))).TotalSeconds);
         }
 
-        public static NSDate ShiftToUTC (this NSDate nsDate, NSTimeZone nsTimeZone)
-        {
-            var deltaSecs = nsTimeZone.SecondsFromGMT (nsDate);
-            var origSecs = nsDate.SecondsSinceReferenceDate;
-            return NSDate.FromTimeIntervalSinceReferenceDate (origSecs + deltaSecs);
-        }
-
         public static DateTime ToDateTime (this NSDate nsDate)
         {
-            return (new DateTime (2001, 1, 1, 0, 0, 0)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+            return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
         }
     }
 }
