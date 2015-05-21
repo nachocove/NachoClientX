@@ -25,6 +25,8 @@ namespace NachoCore.Model
             OutlookExchange,
             GoogleExchange,
             GoogleDefault,
+            HotmailDefault,
+            Aol,
             IMAP_SMTP,
         };
 
@@ -111,7 +113,7 @@ namespace NachoCore.Model
                     AccountCapabilityEnum.EmailSender);
                 break;
             default:
-                NcAssert.CaseError ();
+                NcAssert.CaseError (value.ToString ());
                 break;
             }
         }
@@ -125,14 +127,23 @@ namespace NachoCore.Model
 
             switch (value) {
             case AccountServiceEnum.GoogleDefault:
+            case AccountServiceEnum.HotmailDefault:
+            case AccountServiceEnum.Aol:
+            case AccountServiceEnum.IMAP_SMTP:
                 AccountType = AccountTypeEnum.IMAP_SMTP;
                 Protocols = (
                     McProtocolState.ProtocolEnum.IMAP |
                     McProtocolState.ProtocolEnum.SMTP);
                 break;
             case AccountServiceEnum.Exchange:
+            case AccountServiceEnum.GoogleExchange:
+            case AccountServiceEnum.HotmailExchange:
+            case AccountServiceEnum.OutlookExchange:
                 AccountType = AccountTypeEnum.Exchange;
                 Protocols = McProtocolState.ProtocolEnum.ActiveSync;
+                break;
+            default:
+                NcAssert.CaseError (value.ToString ());
                 break;
             }
         }
@@ -208,6 +219,10 @@ namespace NachoCore.Model
                 return "Google Apps for Work";
             case AccountServiceEnum.GoogleDefault:
                 return "GMail";
+            case AccountServiceEnum.HotmailDefault:
+                return "Hotmail";
+            case AccountServiceEnum.Aol:
+                return "Aol";
             case AccountServiceEnum.IMAP_SMTP:
                 return "IMAP";
             default:

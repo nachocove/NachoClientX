@@ -20,14 +20,20 @@ namespace NachoCore.Model
         public string Host { get; set; }
 
         public const string Default_Path = "/Microsoft-Server-ActiveSync";
+        // Well known server/host values:
         public const string GMail_Host = "m.google.com";
+        public const string HotMail_Host = "s.outlook.com";
+        // Well known MX record values:
         public const string GMail_MX_Suffix = "aspmx.l.google.com";
         public const string GMail_MX_Suffix2 = "googlemail.com";
-        public const string HotMail_Host = "s.outlook.com";
+        // Well know email domain name suffixes:
         public const string HotMail_Suffix = "hotmail.com";
         public const string Outlook_Suffix = "outlook.com";
+        public const string GMail_Suffix = "gmail.com";
+        public const string GMail_Suffix2 = "googlemail.com";
 
         public string Path { get; set; }
+
 
         public string Scheme { get; set; }
 
