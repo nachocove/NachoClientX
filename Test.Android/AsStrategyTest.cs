@@ -288,8 +288,11 @@ namespace Test.iOS
             account.Insert ();
             var context = new MockContext ();
             context.ProtoControl = new MockProtoControl (context.Owner, account.Id);
-            context.ProtocolState.StrategyRung = 5;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 5;
+                return true;
+            });
             int result;
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
@@ -624,9 +627,12 @@ namespace Test.iOS
             folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-3);
             folder.Insert ();
-            context.ProtocolState.StrategyRung = 6;
-            context.ProtocolState.MaxFolders = 7;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 6;
+                target.MaxFolders = 7;
+                return true;
+            });
             result = strat.GenPingKit (account.Id, context.ProtocolState, true, false, false);
             Assert.AreEqual (2, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
@@ -639,8 +645,11 @@ namespace Test.iOS
             inbox.UpdateSet_AsSyncMetaToClientExpected (false);
             result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.AreEqual (7, result.Folders.Count);
-            context.ProtocolState.MaxFolders = 3;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.MaxFolders = 3;
+                return true;
+            });
             result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.AreEqual (3, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
@@ -788,9 +797,12 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            context.ProtocolState.StrategyRung = 6;
-            context.ProtocolState.AsSyncLimit = 5;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 6;
+                target.AsSyncLimit = 5;
+                return true;
+            });
             var dummy = new McPending (account.Id) {
                 Operation = McPending.Operations.Sync,
                 ServerId = "bogus",
@@ -847,8 +859,11 @@ namespace Test.iOS
             foreach (var rst in folders) {
                 rst.UpdateSet_AsSyncMetaToClientExpected (true);
             }
-            context.ProtocolState.AsSyncLimit = 4;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsSyncLimit = 4;
+                return true;
+            });
             // Verify inbox does not have getChanges or pending attached.
             inbox = inbox.UpdateResetSyncState ();
             var pending = new McPending () {
@@ -1010,8 +1025,11 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            context.ProtocolState.StrategyRung = 3;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 3;
+                return true;
+            });
             var folders = new List<McFolder> ();
             var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncKey = "1";

@@ -400,8 +400,11 @@ namespace NachoCore.ActiveSync
                     try {
                         var limit = uint.Parse (xmlLimit.Value);
                         var protocolState = BEContext.ProtoControl.ProtocolState;
-                        protocolState.AsSyncLimit = limit;
-                        protocolState.Update ();
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsSyncLimit = limit;
+                            return true;
+                        });
                     } catch (Exception ex) {
                         Log.Error (Log.LOG_AS, "AsSyncCommand: exception parsing Limit: {0}", ex.ToString ());
                     }
@@ -511,8 +514,11 @@ namespace NachoCore.ActiveSync
                         if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
                             var protocolState = BEContext.ProtocolState;
                             if (!protocolState.HasSyncedInbox) {
-                                protocolState.HasSyncedInbox = true;
-                                protocolState.Update ();
+                                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                                    var target = (McProtocolState)record;
+                                    target.HasSyncedInbox = true;
+                                    return true;
+                                });
                             }
                         }
                         // If we have been cancelled, this sync can't cause an epoch scrub.
@@ -682,8 +688,11 @@ namespace NachoCore.ActiveSync
         {
             if (IsNarrow) {
                 var protocolState = BEContext.ProtocolState;
-                protocolState.LastNarrowSync = DateTime.UtcNow;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.LastNarrowSync = DateTime.UtcNow;
+                    return true;
+                });
             }
             return Event.Create ((uint)SmEvt.E.Success, mnemonic);
         }
@@ -1031,7 +1040,11 @@ namespace NachoCore.ActiveSync
                     Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
                     var protocolState = BEContext.ProtoControl.ProtocolState;
                     if (null != Limit) {
-                        protocolState.AsSyncLimit = (uint)Limit;
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsSyncLimit = (uint)Limit;
+                            return true;
+                        });
                     }
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsSuccess (BEContext.ProtoControl);
@@ -1159,8 +1172,11 @@ namespace NachoCore.ActiveSync
                             Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
                             var protocolState = BEContext.ProtoControl.ProtocolState;
                             if (null != Limit) {
-                                protocolState.AsSyncLimit = (uint)Limit;
-                                protocolState.Update ();
+                                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                                    var target = (McProtocolState)record;
+                                    target.AsSyncLimit = (uint)Limit;
+                                    return true;
+                                });
                             }
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsSuccess (BEContext.ProtoControl);

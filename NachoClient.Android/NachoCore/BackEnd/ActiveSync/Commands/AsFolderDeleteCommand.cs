@@ -46,8 +46,11 @@ namespace NachoCore.ActiveSync
             var folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
             switch ((Xml.FolderHierarchy.FolderDeleteStatusCode)Convert.ToUInt32 (xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
-                protocolState.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                    return true;
+                });
                 pathElem.Delete ();
                 folder.Delete ();
                 PendingResolveApply ((pending) => {
@@ -89,16 +92,22 @@ namespace NachoCore.ActiveSync
                  * consider returning to synchronization key zero (0)."
                  * Right now, we don't retry - we just slam the key to 0.
                  */
-                protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC2");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.ReSync_9:
-                protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });

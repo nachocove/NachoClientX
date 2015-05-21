@@ -437,6 +437,7 @@ namespace NachoCore.ActiveSync
         // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
         public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
         {
+            McProtocolState protocolState = null;
             switch ((Xml.StatusCode)status) {
             case Xml.StatusCode.InvalidContent_101:
             case Xml.StatusCode.InvalidWBXML_102:
@@ -534,9 +535,12 @@ namespace NachoCore.ActiveSync
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 
             case Xml.StatusCode.RemoteWipeRequested_140:
-                var protocolState = BEContext.ProtocolState;
-                protocolState.IsWipeRequired = true;
-                protocolState.Update ();
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IsWipeRequired = true;
+                    return true;
+                });
                 PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
@@ -559,7 +563,12 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
-                BEContext.ProtocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                    return true;
+                });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
 
             case Xml.StatusCode.ExternallyManagedDevicesNotAllowed_145:
