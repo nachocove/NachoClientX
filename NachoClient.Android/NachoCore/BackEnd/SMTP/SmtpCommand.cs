@@ -15,8 +15,23 @@ namespace NachoCore.SMTP
         public CancellationTokenSource cToken { get; protected set; }
         public SmtpClient client { get; set; }
 
-        public SmtpCommand(SmtpClient smtp)
+        public class SmtpCommandFailure : Exception {
+            public SmtpCommandFailure (string message) : base (message)
+            {
+            }
+
+        }
+
+        public SmtpCommand(SmtpClient smtp, bool checkConnected = true)
         {
+            if (null == client) {
+                throw new SmtpCommandFailure("No client passed in");
+            }
+            if (checkConnected) {
+                if (!client.IsConnected) {
+                    throw new SmtpCommandFailure ("Client is not connected");
+                }
+            }
             cToken = new CancellationTokenSource ();
             client = smtp;
         }
@@ -42,7 +57,7 @@ namespace NachoCore.SMTP
         McServer Server { get; set; }
         McCred Creds { get; set; }
 
-        public SmtpAuthenticateCommand(SmtpClient smtp, McServer server, McCred creds) : base(smtp)  // TODO Do I need the base here to get the base initializer to run?
+        public SmtpAuthenticateCommand(SmtpClient smtp, McServer server, McCred creds) : base(smtp, false)
         {
             Server = server;
             Creds = creds;
