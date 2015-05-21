@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         protected UISegmentedControl segmentedControl;
         protected UIView segmentedControlView;
 
+        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         UILabel EmptyListLabel;
@@ -143,6 +144,8 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
             } else {
+                switchAccountView = new SwitchAccountView ();
+                View.AddSubview (switchAccountView);
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton; 
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -363,7 +366,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+            switchAccountView.Activate (SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)

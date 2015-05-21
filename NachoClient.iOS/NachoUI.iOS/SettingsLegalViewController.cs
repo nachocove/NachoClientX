@@ -100,6 +100,12 @@ namespace NachoClient.iOS
             yOffset += 20;
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         void CacheUrlHtml (object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty (urlSourceCode)) {

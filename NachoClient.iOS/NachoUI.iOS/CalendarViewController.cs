@@ -17,6 +17,7 @@ namespace NachoClient.iOS
     {
         protected CalendarTableViewSource calendarSource;
         protected UITableView calendarTableView;
+        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
         public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
@@ -67,6 +68,9 @@ namespace NachoClient.iOS
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
+
+            switchAccountView = new SwitchAccountView ();
+            View.AddSubview (switchAccountView);
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
@@ -956,7 +960,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            Util.SwitchAccountActionSheet (this, View, SwitchToAccount);
+            switchAccountView.Activate (SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)

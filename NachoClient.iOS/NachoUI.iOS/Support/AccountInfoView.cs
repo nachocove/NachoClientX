@@ -18,6 +18,7 @@ namespace NachoClient.iOS
         protected const int EMAIL_ADDRESS_LABEL_TAG = 101;
         protected const int ACCOUNT_IMAGE_VIEW_TAG = 102;
         protected const int USER_LABEL_VIEW_TAG = 103;
+        protected const int ARROW_VIEW_TAG = 104;
 
         public AccountInfoView (CGRect frame) : base (frame)
         {
@@ -64,18 +65,21 @@ namespace NachoClient.iOS
             using (var disclosureIcon = UIImage.FromBundle ("gen-more-arrow")) {
                 accountSettingsIndicatorArrow = new UIImageView (disclosureIcon);
             }
+            accountSettingsIndicatorArrow.Tag = ARROW_VIEW_TAG;
             accountSettingsIndicatorArrow.Frame = new CGRect (accountInfoView.Frame.Width - (accountSettingsIndicatorArrow.Frame.Width + 10), accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
             accountInfoView.AddSubview (accountSettingsIndicatorArrow);
         }
 
-        public void Configure (McAccount account)
+        public void Configure (McAccount account, bool showArrow)
         {
             var accountImageView = (UIImageView)this.ViewWithTag (ACCOUNT_IMAGE_VIEW_TAG);
             var userLabelView = (UILabel)this.ViewWithTag (USER_LABEL_VIEW_TAG);
             var nameLabel = (UILabel)this.ViewWithTag (NAME_LABEL_TAG);
             var emailLabel = (UILabel)this.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
+            var arrowImageView = (UIImageView)this.ViewWithTag (ARROW_VIEW_TAG);
 
             userLabelView.Hidden = true;
+            arrowImageView.Hidden = showArrow;
             nameLabel.Hidden = (null == account);
             emailLabel.Hidden = (null == account);
             accountImageView.Hidden = (null == account);

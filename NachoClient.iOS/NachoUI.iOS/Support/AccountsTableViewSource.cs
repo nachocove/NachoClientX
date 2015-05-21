@@ -14,7 +14,14 @@ namespace NachoClient.iOS
     {
         List<McAccount> accounts;
 
-        public GeneralSettingsViewController owner;
+        bool showAccessory;
+        INachoAccountsTableDelegate owner;
+
+        public void Setup(INachoAccountsTableDelegate owner, bool showAccessory)
+        {
+            this.owner = owner;
+            this.showAccessory = showAccessory;
+        }
 
         public AccountsTableViewSource ()
         {
@@ -50,13 +57,13 @@ namespace NachoClient.iOS
             cell.ContentView.AddSubview (accountView);
 
             var account = accounts [indexPath.Row];
-            accountView.Configure (account);
+            accountView.Configure (account, showAccessory);
             return cell;
         }
 
         public override void RowSelected (UITableView tableView, Foundation.NSIndexPath indexPath)
         {
-            owner.ShowAccount (accounts [indexPath.Row]);
+            owner.AccountSelected (accounts [indexPath.Row]);
         }
     }
 }
