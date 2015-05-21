@@ -292,8 +292,11 @@ namespace NachoCore.IMAP
         {
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
-            protocolState.ProtoControlState = stateToSave;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.ProtoControlState = stateToSave;
+                return true;
+            });
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
