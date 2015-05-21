@@ -4,7 +4,7 @@ using System;
 using MimeKit;
 using MailKit;
 using MailKit.Net.Imap;
-using NachoCore.Imap;
+using NachoCore.IMAPExample;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 using NUnit.Framework;
