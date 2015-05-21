@@ -79,7 +79,7 @@ namespace NachoClient.iOS
             var arrowImageView = (UIImageView)this.ViewWithTag (ARROW_VIEW_TAG);
 
             userLabelView.Hidden = true;
-            arrowImageView.Hidden = showArrow;
+            arrowImageView.Hidden = !showArrow;
             nameLabel.Hidden = (null == account);
             emailLabel.Hidden = (null == account);
             accountImageView.Hidden = (null == account);
