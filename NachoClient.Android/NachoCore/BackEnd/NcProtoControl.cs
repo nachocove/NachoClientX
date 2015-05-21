@@ -43,7 +43,7 @@ namespace NachoCore
 
         public McServer Server { 
             get {
-                return McServer.QueryByAccountId<McServer> (Account.Id).Where (server => server.Capabilities == Capabilities).SingleOrDefault ();
+                return McServer.QueryByAccountIdAndCapabilities (Account.Id, Capabilities);
             }
             set {
                 var update = value;
