@@ -8,6 +8,7 @@ using Foundation;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.ActiveSync;
 
 namespace NachoPlatform
 {
@@ -140,17 +141,29 @@ namespace NachoPlatform
                     break;
                 }
 
-                if (null != Event.TimeZone) {
-                    cal.StartTime = Event.StartDate.ShiftToUTC (Event.TimeZone).ToDateTime ();
-                    cal.EndTime = Event.EndDate.ShiftToUTC (Event.TimeZone).ToDateTime ();
-                    // FIXME DAVID - need to properly convert from NSTimeZone: Event.TimeZone.
-                    cal.TimeZone = "WAIAAEgAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
-                } else {
-                    cal.StartTime = Event.StartDate.ToDateTime ();
-                    cal.EndTime = Event.EndDate.ToDateTime ();
-                    // FIXME DAVID
-                    cal.TimeZone = "WAIAAEgAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+                cal.StartTime = Event.StartDate.ToDateTime ();
+                cal.EndTime = Event.EndDate.ToDateTime ();
+                if (Event.AllDay) {
+                    // iOS Calendar stores the end time for an all-day event at one second before midnight.
+                    // Nacho Mail wants the end time to be midnight at the end of the last day.  Adjust the
+                    // end time to be an integral number of days after the start time.
+                    cal.EndTime = cal.StartTime.AddDays (Math.Round ((cal.EndTime - cal.StartTime).TotalDays));
                 }
+
+                TimeZoneInfo timeZone = null;
+                if (null != Event.TimeZone) {
+                    // iOS's NSTimeZone does not expose the daylight saving transition rules, so there is no way
+                    // to construct a TimeZoneInfo object from the NSTimeZone object.  Instead we have to look
+                    // up the TimeZoneInfo by its ID.
+                    timeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                }
+                if (null == timeZone) {
+                    // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be
+                    // found, assume the local time zone.  Time zones only matter for all-day events and recurring
+                    // events, so getting the wrong time zone won't be a problem for most events.
+                    timeZone = TimeZoneInfo.Local;
+                }
+                cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (timeZone), cal.StartTime).toEncodedTimeZone ();
 
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
