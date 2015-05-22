@@ -102,12 +102,12 @@ namespace NachoPlatform
                             (uint)InAppPurchaseEvent.E.PurchaseExpiredEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseFailedEvt,
                             (uint)InAppPurchaseEvent.E.PurchaseRestoredEvt,
+                            (uint)InAppPurchaseEvent.E.StopEvt,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
-                            (uint)InAppPurchaseEvent.E.StopEvt,
                         },
                         On = new [] {
                             new Trans {
