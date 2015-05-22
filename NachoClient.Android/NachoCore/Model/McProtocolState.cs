@@ -13,6 +13,7 @@ namespace NachoCore.Model
     public class McProtocolState : McAbstrObjectPerAcc
     {
         // Supported protocols. Bitfield for McAccount's benefit.
+        [Flags]
         public enum ProtocolEnum {
             ActiveSync = (1 << 0),
             IMAP = (1 << 1),

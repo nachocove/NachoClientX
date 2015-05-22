@@ -422,7 +422,7 @@ namespace NachoCore
                 UserId = CloudHandler.Instance.GetUserId (); 
             }
             Telemetry.StartService ();
-            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            Account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).FirstOrDefault ();
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
@@ -674,7 +674,7 @@ namespace NachoCore
                 deviceAccount = McAccount.GetDeviceAccount ();
                 if (null == deviceAccount) {
                     deviceAccount = new McAccount ();
-                    deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
+                    deviceAccount.SetAccountCapabilities (McAccount.AccountTypeEnum.Device);
                     deviceAccount.Insert ();
                 }
             });
