@@ -20,7 +20,6 @@ namespace NachoClient.iOS
         protected const int PASSWORD_FIELD_TAG = 101;
         protected const int SUBMIT_BUTTON_TAG = 102;
         CertificateView certificateView;
-        protected NachoTabBarController sendersTabBar;
 
         int theAccountId;
 
@@ -44,11 +43,6 @@ namespace NachoClient.iOS
             certificateView.SetOwner (this);
             certificateView.CreateView ();
             View.Add (certificateView);
-        }
-
-        public void SetTabBarController (NachoTabBarController tabBar)
-        {
-            this.sendersTabBar = tabBar;
         }
 
         public override void ViewDidAppear (bool animated)
