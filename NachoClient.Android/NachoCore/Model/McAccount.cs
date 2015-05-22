@@ -168,7 +168,7 @@ namespace NachoCore.Model
         }
 
         // This is set as a side effect of setting AccountService. 
-        public AccountCapabilityEnum AccountCapability { get; set; }
+        public AccountCapabilityEnum AccountCapability { get; private set; }
 
         // The protocol(s) - possibly more than one - required by this account.
         // This is set as a side effect of setting AccountService. 
