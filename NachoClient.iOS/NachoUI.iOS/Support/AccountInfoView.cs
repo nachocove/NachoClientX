@@ -24,6 +24,8 @@ namespace NachoClient.iOS
         {
             var accountInfoView = this;
 
+            BackgroundColor = A.Color_NachoBackgroundGray;
+
             accountInfoView.BackgroundColor = UIColor.White;
             accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
             accountInfoView.Layer.BorderColor = A.Card_Border_Color;

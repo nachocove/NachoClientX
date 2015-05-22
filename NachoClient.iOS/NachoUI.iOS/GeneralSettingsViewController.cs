@@ -14,12 +14,9 @@ namespace NachoClient.iOS
 {
     public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks, INachoAccountsTableDelegate
     {
-        protected nfloat yOffset;
-
         UITableView accountsTableView;
         AccountsTableViewSource accountsTableViewSource;
 
-        UIButton newAccountButton;
         SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
@@ -54,45 +51,23 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
+            // garf
+            scrollView.RemoveFromSuperview ();
+
             View.BackgroundColor = A.Color_NachoBackgroundGray;
-            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             Util.ConfigureNavBar (false, this.NavigationController);
 
-            yOffset = A.Card_Vertical_Indent;
-
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory:true);
+            accountsTableViewSource.Setup (this, showAccessory: true);
 
-            accountsTableView = new UITableView ();
+            accountsTableView = new UITableView (View.Frame);
+            accountsTableView.Source = accountsTableViewSource;
+            accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            accountsTableView.Source = accountsTableViewSource;
-
-            var n = accountsTableViewSource.RowsInSection (accountsTableView, 0);
-            var h = n * 80;
-
-            accountsTableView.Frame = new CGRect (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), h);
-            accountsTableView.Bounces = false;
-
-            contentView.AddSubview (accountsTableView);
-
-            yOffset = accountsTableView.Frame.Bottom + 30;
-
-            newAccountButton = UIButton.FromType (UIButtonType.System);
-            newAccountButton.SetTitle ("New Account", UIControlState.Normal);
-            newAccountButton.SizeToFit ();
-            ViewFramer.Create (newAccountButton).Center (View.Frame.Width / 2, yOffset + (newAccountButton.Frame.Height / 2));
-
-            newAccountButton.TouchUpInside += NewAccountButton_TouchUpInside;
-            contentView.AddSubview (newAccountButton);
-
-            yOffset = newAccountButton.Frame.Bottom;
-        }
-            
-        void NewAccountButton_TouchUpInside (object sender, EventArgs e)
-        {
-            PerformSegue ("SegueToLaunch", this);
+            View.AddSubview (accountsTableView);           
         }
 
         void SwitchAccountButtonPressed ()
@@ -108,23 +83,22 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
-            var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
-            contentView.Frame = contentFrame;
-            scrollView.ContentSize = contentFrame.Size;
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         protected override void Cleanup ()
         {
-            newAccountButton.TouchUpInside -= NewAccountButton_TouchUpInside;
-
         }
 
         public void AccountSelected (McAccount account)
         {
             View.EndEditing (true);
             PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
+        }
+
+        public void AddAccount ()
+        {
+            View.EndEditing (true);
+            PerformSegue ("SegueToLaunch", this);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)

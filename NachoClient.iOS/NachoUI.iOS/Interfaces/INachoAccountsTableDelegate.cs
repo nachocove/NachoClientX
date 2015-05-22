@@ -10,6 +10,7 @@ namespace NachoClient.iOS
 {
     public interface INachoAccountsTableDelegate
     {
+        void AddAccount();
         void AccountSelected(McAccount account);
     }
 }

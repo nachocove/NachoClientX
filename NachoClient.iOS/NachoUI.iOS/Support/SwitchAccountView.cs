@@ -16,7 +16,6 @@ namespace NachoClient.iOS
         }
 
         UIView coverView;
-        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         UITableView accountsTableView;
@@ -41,6 +40,7 @@ namespace NachoClient.iOS
 
             accountsTableView = new UITableView (coverView.Frame);
             ViewFramer.Create (accountsTableView).Y (switchAccountButton.Frame.Bottom);
+            accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             accountsTableViewSource = new AccountsTableViewSource ();
@@ -73,6 +73,11 @@ namespace NachoClient.iOS
         {
             NcApplication.Instance.Account = account;
             Deactivate (account);
+        }
+
+        public void AddAccount()
+        {
+            NachoCore.Utils.NcAssert.CaseError ();
         }
 
         private bool CoverShouldRecognizeSimultaneously (UIGestureRecognizer a, UIGestureRecognizer b)
