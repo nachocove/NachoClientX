@@ -129,7 +129,7 @@ namespace NachoCore.Model
         }
 
         // The service that the user picked when setting up the account
-        public AccountServiceEnum AccountService { get; private set; }
+        public AccountServiceEnum AccountService { get; set; }
 
         /// <summary>
         /// Set the <see cref="AccountService"/> for the McAccount object.
