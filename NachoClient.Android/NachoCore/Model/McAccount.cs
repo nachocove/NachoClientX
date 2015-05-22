@@ -90,7 +90,7 @@ namespace NachoCore.Model
         /// It is preferred to set it that way, rather than directly.
         public AccountTypeEnum AccountType { get; set; }
 
-        public void SetAccountCapabilities (AccountTypeEnum value)
+        public void SetAccountType (AccountTypeEnum value)
         {
             AccountType = value;
             switch (value) {
@@ -148,7 +148,7 @@ namespace NachoCore.Model
                 NcAssert.CaseError (value.ToString ());
                 break;
             }
-            SetAccountCapabilities (AccountType);
+            SetAccountType (AccountType);
         }
          
         // This is set as a side effect of setting AccountService. 

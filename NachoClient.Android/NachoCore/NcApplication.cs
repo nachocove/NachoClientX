@@ -675,7 +675,7 @@ namespace NachoCore
                 deviceAccount = McAccount.GetDeviceAccount ();
                 if (null == deviceAccount) {
                     deviceAccount = new McAccount ();
-                    deviceAccount.SetAccountCapabilities (McAccount.AccountTypeEnum.Device);
+                    deviceAccount.SetAccountType (McAccount.AccountTypeEnum.Device);
                     deviceAccount.Insert ();
                 }
             });
