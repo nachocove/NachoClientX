@@ -95,7 +95,6 @@ namespace NachoCore.Model
         /// </summary>
         /// <remarks>
         /// Sets the <see cref="AccountCapability"/> as a side-effect.
-        /// empty MIME message is returned.
         /// </remarks>
         /// <returns>Nothing</returns>
         /// <param name="value">The <see cref="AccountTypeEnum"/> to set.</param>
@@ -137,7 +136,6 @@ namespace NachoCore.Model
         /// </summary>
         /// <remarks>
         /// Sets the <see cref="AccountType"/>, <see cref="Protocols"/>, and <see cref="AccountType"/> as a side-effect.
-        /// empty MIME message is returned.
         /// </remarks>
         /// <returns>Nothing</returns>
         /// <param name="value">The <see cref="AccountServiceEnum"/> to set.</param>
