@@ -29,7 +29,6 @@ namespace NachoCore.Model
                     if (update) {
                         account.Update ();
                     }
-                    account.Update ();
                 }
             }
             UpdateProgress (1);
