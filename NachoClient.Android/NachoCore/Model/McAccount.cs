@@ -30,6 +30,7 @@ namespace NachoCore.Model
             IMAP_SMTP,
         };
 
+        [Flags]
         public enum AccountCapabilityEnum
         {
             EmailReaderWriter = (1 << 0),
@@ -59,6 +60,7 @@ namespace NachoCore.Model
             AccountCapabilityEnum.EmailSender);
         
         // This type is stored in the db; add to the end
+        [Flags]
         public enum NotificationConfigurationEnum : int
         {
             ALLOW_ALL_1 = 1,
@@ -146,6 +148,7 @@ namespace NachoCore.Model
                 NcAssert.CaseError (value.ToString ());
                 break;
             }
+            SetAccountType (AccountType);
         }
          
         // This is set as a side effect of setting AccountService. 
@@ -192,6 +195,18 @@ namespace NachoCore.Model
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == accountType);
+        }
+
+        public static IEnumerable<McAccount> QueryByAccountCapabilities (AccountCapabilityEnum accountCapabilities)
+        {
+            List<McAccount> result = new List<McAccount> ();
+            var accounts = NcModel.Instance.Db.Table<McAccount> ();
+            foreach (McAccount acc in accounts) {
+                if (accountCapabilities == (accountCapabilities & acc.AccountCapability)) {
+                    result.Add (acc);
+                }
+            }
+            return result;
         }
 
         public static McAccount GetDeviceAccount ()
