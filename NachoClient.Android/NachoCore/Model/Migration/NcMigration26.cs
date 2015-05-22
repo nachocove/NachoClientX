@@ -18,10 +18,10 @@ namespace NachoCore.Model
                 // Make sure AccountService is initialized
                 if (McAccount.AccountServiceEnum.None == account.AccountService) {
                     if (McAccount.AccountTypeEnum.Exchange == account.AccountType) {
-                        account.AccountService = McAccount.AccountServiceEnum.Exchange;
+                        account.SetAccountService(McAccount.AccountServiceEnum.Exchange);
                     }
                     if (McAccount.AccountTypeEnum.IMAP_SMTP == account.AccountType) {
-                        account.AccountService = McAccount.AccountServiceEnum.GoogleDefault;
+                        account.SetAccountService(McAccount.AccountServiceEnum.GoogleDefault);
                     }
                 }
             }
