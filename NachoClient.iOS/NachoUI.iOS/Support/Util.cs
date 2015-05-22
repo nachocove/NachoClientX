@@ -725,16 +725,18 @@ namespace NachoClient
             }
         }
 
-        public static void SetOriginalImagesForButton (UIButton button, string iconName, string activeIconName)
+        public static void SetOriginalImagesForButton (UIButton button, string iconName, string activeIconName = null)
         {
             using (var rawImage = UIImage.FromBundle (iconName)) {
                 using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     button.SetImage (originalImage, UIControlState.Normal);
                 }
             }
-            using (var rawImage = UIImage.FromBundle (activeIconName)) {
-                using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                    button.SetImage (originalImage, UIControlState.Selected);
+            if (null != activeIconName) {
+                using (var rawImage = UIImage.FromBundle (activeIconName)) {
+                    using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                        button.SetImage (originalImage, UIControlState.Selected);
+                    }
                 }
             }
         }
