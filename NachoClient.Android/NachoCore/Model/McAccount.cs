@@ -90,6 +90,14 @@ namespace NachoCore.Model
         /// It is preferred to set it that way, rather than directly.
         public AccountTypeEnum AccountType { get; set; }
 
+        /// <summary>
+        /// Set the <see cref="AccountType"/> for the McAccount object.
+        /// </summary>
+        /// <remarks>
+        /// Sets the <see cref="AccountCapability"/> as a side-effect.
+        /// </remarks>
+        /// <returns>Nothing</returns>
+        /// <param name="value">The <see cref="AccountTypeEnum"/> to set.</param>
         public void SetAccountType (AccountTypeEnum value)
         {
             AccountType = value;
@@ -123,6 +131,14 @@ namespace NachoCore.Model
         // The service that the user picked when setting up the account
         public AccountServiceEnum AccountService { get; set; }
 
+        /// <summary>
+        /// Set the <see cref="AccountService"/> for the McAccount object.
+        /// </summary>
+        /// <remarks>
+        /// Sets the <see cref="AccountType"/>, <see cref="Protocols"/>, and <see cref="AccountType"/> as a side-effect.
+        /// </remarks>
+        /// <returns>Nothing</returns>
+        /// <param name="value">The <see cref="AccountServiceEnum"/> to set.</param>
         public void SetAccountService (AccountServiceEnum value)
         {
             AccountService = value;
@@ -150,7 +166,7 @@ namespace NachoCore.Model
             }
             SetAccountType (AccountType);
         }
-         
+
         // This is set as a side effect of setting AccountService. 
         public AccountCapabilityEnum AccountCapability { get; private set; }
 
