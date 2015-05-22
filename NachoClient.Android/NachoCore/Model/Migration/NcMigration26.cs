@@ -23,6 +23,7 @@ namespace NachoCore.Model
                     if (McAccount.AccountTypeEnum.IMAP_SMTP == account.AccountType) {
                         account.AccountService = McAccount.AccountServiceEnum.GoogleDefault;
                     }
+                    account.Update ();
                 }
             }
             UpdateProgress (1);
