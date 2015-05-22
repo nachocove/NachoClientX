@@ -422,6 +422,7 @@ namespace NachoCore
                 UserId = CloudHandler.Instance.GetUserId (); 
             }
             Telemetry.StartService ();
+            // FIXME: What capabilities should we look for here?
             Account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).FirstOrDefault ();
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
