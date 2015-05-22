@@ -17,11 +17,17 @@ namespace NachoCore.Model
             foreach (var account in accounts) {
                 // Make sure AccountService is initialized
                 if (McAccount.AccountServiceEnum.None == account.AccountService) {
+                    bool update = false;
                     if (McAccount.AccountTypeEnum.Exchange == account.AccountType) {
                         account.AccountService = McAccount.AccountServiceEnum.Exchange;
+                        update = true;
                     }
                     if (McAccount.AccountTypeEnum.IMAP_SMTP == account.AccountType) {
                         account.AccountService = McAccount.AccountServiceEnum.GoogleDefault;
+                        update = true;
+                    }
+                    if (update) {
+                        account.Update ();
                     }
                     account.Update ();
                 }
