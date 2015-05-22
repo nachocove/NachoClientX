@@ -88,7 +88,7 @@ namespace NachoCore.Model
         }
         /// AccountType is set as a side effect of setting AccountService. 
         /// It is preferred to set it that way, rather than directly.
-        public AccountTypeEnum AccountType { get; private set; }
+        public AccountTypeEnum AccountType { get; set; }
 
         /// <summary>
         /// Set the <see cref="AccountType"/> for the McAccount object.
@@ -168,7 +168,7 @@ namespace NachoCore.Model
         }
 
         // This is set as a side effect of setting AccountService. 
-        public AccountCapabilityEnum AccountCapability { get; private set; }
+        public AccountCapabilityEnum AccountCapability { get; set; }
 
         // The protocol(s) - possibly more than one - required by this account.
         // This is set as a side effect of setting AccountService. 
