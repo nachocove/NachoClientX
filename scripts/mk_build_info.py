@@ -48,8 +48,11 @@ def create_buildinfo(options):
     aws_identity_pool_id = aws['identity_pool_id']
     aws_unauth_role_arn = aws['unauth_role_arn']
     aws_auth_role_arn = aws['auth_role_arn']
+    s3_bucket = aws['s3_bucket']
+    s3_root_folder = aws['s3_root_folder']
     pinger = projects[release]['pinger']
     pinger_hostname = pinger['hostname']
+
     # Get the pinger pinned root cert
     with open(os.path.join('..', 'Resources', pinger['root_cert'])) as f:
         pinger_cert = f.read()
@@ -86,6 +89,8 @@ def create_buildinfo(options):
         print >>f, '        public const string AwsAuthRoleArn = "%s";' % aws_auth_role_arn
         print >>f, '        public const string PingerHostname = "%s";' % pinger_hostname
         print >>f, '        public const string PingerCertPem = @"%s";' % pinger_cert
+        print >>f, '        public const string S3Bucket = "%s";' % s3_bucket
+        print >>f, '        public const string S3RootFolder = "%s";' % s3_root_folder
         print >>f, '    }'
         print >>f, '}'
 
