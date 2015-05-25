@@ -75,7 +75,11 @@ namespace NachoClient.iOS
             Deactivate (account);
         }
 
-        public void AddAccount()
+        public void SettingsSelected(McAccount account)
+        {
+        }
+
+        public void AddAccountSelected()
         {
             NachoCore.Utils.NcAssert.CaseError ();
         }

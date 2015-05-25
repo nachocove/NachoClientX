@@ -1417,6 +1417,7 @@
     <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

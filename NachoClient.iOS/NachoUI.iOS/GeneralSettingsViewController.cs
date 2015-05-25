@@ -89,16 +89,24 @@ namespace NachoClient.iOS
         {
         }
 
+        // INachoAccountsTableDelegate
         public void AccountSelected (McAccount account)
         {
             View.EndEditing (true);
             PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
         }
 
-        public void AddAccount ()
+        // INachoAccountsTableDelegate
+        public void AddAccountSelected ()
         {
             View.EndEditing (true);
             PerformSegue ("SegueToLaunch", this);
+        }
+
+        // INachoAccountsTableDelegate
+        public void SettingsSelected(McAccount account)
+        {
+            NcAssert.CaseError ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
