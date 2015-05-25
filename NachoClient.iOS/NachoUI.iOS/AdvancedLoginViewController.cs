@@ -219,7 +219,7 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom + 15;
 
-            emailView = new AdvancedTextField ("Email", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
+            emailView = new AdvancedTextField ("Email", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             contentView.AddSubview (emailView);
             yOffset += CELL_HEIGHT;
 
@@ -250,17 +250,17 @@ namespace NachoClient.iOS
 
             yOffset += 25;
 
-            serverView = new AdvancedTextField ("Server", "Server", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
+            serverView = new AdvancedTextField ("Server", "Server", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             contentView.AddSubview (serverView);
             yOffset += CELL_HEIGHT;
 
             yOffset += 25;
 
-            domainView = new AdvancedTextField ("Domain", "Domain", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
+            domainView = new AdvancedTextField ("Domain", "Domain", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             contentView.AddSubview (domainView);
             yOffset += CELL_HEIGHT;
 
-            usernameView = new AdvancedTextField ("Username", "Username", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
+            usernameView = new AdvancedTextField ("Username", "Username", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             contentView.AddSubview (usernameView);
             yOffset += CELL_HEIGHT;
 
@@ -1029,7 +1029,7 @@ namespace NachoClient.iOS
 
         public UITextField textField;
 
-        public AdvancedTextField (string labelText, string placeHolder, bool hasBorder, CGRect rect) : base (rect)
+        public AdvancedTextField (string labelText, string placeHolder, bool hasBorder, CGRect rect, UIKeyboardType keyboardType = UIKeyboardType.Default) : base (rect)
         {
             UIView inputBox = this;
 
@@ -1055,6 +1055,7 @@ namespace NachoClient.iOS
             textField.AutocapitalizationType = UITextAutocapitalizationType.None;
             textField.AutocorrectionType = UITextAutocorrectionType.No;
             textField.AccessibilityLabel = labelText;
+            textField.KeyboardType = keyboardType;
             inputBox.Add (textField);
 
             textField.ShouldReturn += (field) => {
