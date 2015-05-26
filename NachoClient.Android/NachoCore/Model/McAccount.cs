@@ -28,6 +28,9 @@ namespace NachoCore.Model
             HotmailDefault,
             Aol,
             IMAP_SMTP,
+            Device,
+            Yahoo,
+            iCloud,
         };
 
         [Flags]
@@ -44,20 +47,23 @@ namespace NachoCore.Model
         };
 
         public const AccountCapabilityEnum ActiveSyncCapabilities = (
-            AccountCapabilityEnum.EmailReaderWriter |
-            AccountCapabilityEnum.EmailSender |
-            AccountCapabilityEnum.CalReader |
-            AccountCapabilityEnum.CalWriter |
-            AccountCapabilityEnum.ContactReader |
-            AccountCapabilityEnum.ContactWriter |
-            AccountCapabilityEnum.TaskReader |
-            AccountCapabilityEnum.TaskWriter);
+                                                                        AccountCapabilityEnum.EmailReaderWriter |
+                                                                        AccountCapabilityEnum.EmailSender |
+                                                                        AccountCapabilityEnum.CalReader |
+                                                                        AccountCapabilityEnum.CalWriter |
+                                                                        AccountCapabilityEnum.ContactReader |
+                                                                        AccountCapabilityEnum.ContactWriter |
+                                                                        AccountCapabilityEnum.TaskReader |
+                                                                        AccountCapabilityEnum.TaskWriter
+                                                                    );
 
         public const AccountCapabilityEnum ImapCapabilities = (
-            AccountCapabilityEnum.EmailReaderWriter);
+                                                                  AccountCapabilityEnum.EmailReaderWriter
+                                                              );
 
         public const AccountCapabilityEnum SmtpCapabilities = (
-            AccountCapabilityEnum.EmailSender);
+                                                                  AccountCapabilityEnum.EmailSender
+                                                              );
         
         // This type is stored in the db; add to the end
         [Flags]
@@ -86,6 +92,7 @@ namespace NachoCore.Model
             NotificationConfiguration = DefaultNotificationConfiguration;
             FastNotificationEnabled = true;
         }
+
         /// AccountType is set as a side effect of setting AccountService. 
         /// It is preferred to set it that way, rather than directly.
         public AccountTypeEnum AccountType { get; set; }
@@ -147,6 +154,8 @@ namespace NachoCore.Model
             case AccountServiceEnum.GoogleDefault:
             case AccountServiceEnum.HotmailDefault:
             case AccountServiceEnum.Aol:
+            case AccountServiceEnum.Yahoo:
+            case AccountServiceEnum.iCloud:
             case AccountServiceEnum.IMAP_SMTP:
                 AccountType = AccountTypeEnum.IMAP_SMTP;
                 Protocols = (
@@ -160,6 +169,9 @@ namespace NachoCore.Model
                 AccountType = AccountTypeEnum.Exchange;
                 Protocols = McProtocolState.ProtocolEnum.ActiveSync;
                 break;
+            case AccountServiceEnum.Device:
+                // FIXME: Do we need anything here?
+                break;
             default:
                 NcAssert.CaseError (value.ToString ());
                 break;
@@ -167,11 +179,11 @@ namespace NachoCore.Model
             SetAccountType (AccountType);
         }
 
-        // This is set as a side effect of setting AccountService. 
+        // This is set as a side effect of setting AccountService.
         public AccountCapabilityEnum AccountCapability { get; set; }
 
         // The protocol(s) - possibly more than one - required by this account.
-        // This is set as a side effect of setting AccountService. 
+        // This is set as a side effect of setting AccountService.
         public McProtocolState.ProtocolEnum Protocols { get; set; }
 
         public string EmailAddr { get; set; }
@@ -256,6 +268,10 @@ namespace NachoCore.Model
                 return "Aol";
             case AccountServiceEnum.IMAP_SMTP:
                 return "IMAP";
+            case AccountServiceEnum.Yahoo:
+                return "Yahoo!";
+            case AccountServiceEnum.iCloud:
+                return "iCloud";
             default:
                 NcAssert.CaseError (String.Format ("AccountServiceName: unknown {0}", service));
                 return "";

@@ -137,7 +137,7 @@ namespace NachoClient.iOS
         // INachoAccountsTableDelegate
         public void AddAccountSelected ()
         {
-            NachoCore.Utils.NcAssert.CaseError ();
+            LaunchViewController.StartAccountSetup (this);
         }
 
         public void Deactivate (McAccount account, SwitchAccountCallback callback)

@@ -26,12 +26,22 @@ namespace NachoClient.iOS
         {
             this.owner = owner;
             this.showAccessory = showAccessory;
+
+            accounts = McAccount.GetAllAccounts ();
+
+            // FIXME: Support the device account
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+
+            // Remove the current account from the switcher view.
+            if (!showAccessory) {
+                accounts.RemoveAll ((McAccount account) => (account.Id == NcApplication.Instance.Account.Id));
+            }
         }
 
         public AccountsTableViewSource ()
         {
             ROW_HEIGHT = 80 + A.Card_Vertical_Indent;
-            accounts = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).ToList ();
         }
 
         CGRect ContentRectangle (UITableView tablView, nfloat height)
@@ -82,18 +92,11 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForFooter (UITableView tableView, nint section)
         {
-            if (!showAccessory) {
-                return 0;
-            }
             return 40;
         }
 
         public override UIView GetViewForFooter (UITableView tableView, nint section)
         {
-            if (!showAccessory) {
-                return new UIView ();
-            }
-
             var newAccountView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 40));
             newAccountView.BackgroundColor = A.Color_NachoBackgroundGray;
 

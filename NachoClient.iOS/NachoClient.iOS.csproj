@@ -2339,6 +2339,14 @@
     <BundleResource Include="Resources\gen-avatar-backarrow%403x.png" />
     <BundleResource Include="Resources\gen-avatar-backarrow%404x.png" />
     <BundleResource Include="Resources\gen-avatar-backarrow%406x.png" />
+    <BundleResource Include="Resources\avatar-icloud%402x.png" />
+    <BundleResource Include="Resources\avatar-icloud%403x.png" />
+    <BundleResource Include="Resources\avatar-icloud%404x.png" />
+    <BundleResource Include="Resources\avatar-icloud%406x.png" />
+    <BundleResource Include="Resources\avatar-iphone%402x.png" />
+    <BundleResource Include="Resources\avatar-iphone%403x.png" />
+    <BundleResource Include="Resources\avatar-iphone%404x.png" />
+    <BundleResource Include="Resources\avatar-iphone%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
