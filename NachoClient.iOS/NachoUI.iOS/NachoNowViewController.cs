@@ -30,7 +30,6 @@ namespace NachoClient.iOS
 
         McAccount currentAccount;
 
-        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
@@ -96,10 +95,7 @@ namespace NachoClient.iOS
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
-
-            switchAccountView = new SwitchAccountView ();
-            View.AddSubview (switchAccountView);
-
+                
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
 
@@ -145,7 +141,11 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            switchAccountView.Activate (SwitchToAccount);
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = (SwitchAccountViewController)storyboard.InstantiateViewController ("SwitchAccountViewController");
+            vc.SetCallback (SwitchToAccount);
+            var segue = new SwitchAccountCustomSegue ("", this, vc);
+            segue.Perform ();
         }
 
         public override void ViewWillAppear (bool animated)
