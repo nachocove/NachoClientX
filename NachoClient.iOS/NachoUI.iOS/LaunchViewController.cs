@@ -52,7 +52,7 @@ namespace NachoClient.iOS
         {
             var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             var toViewController = (LaunchViewController)storyboard.InstantiateViewController ("LaunchViewController");
-            var segue = new SwitchAccountCustomSegue ("", fromViewController, toViewController);
+            var segue = new FadeCustomSegue ("", fromViewController, toViewController);
             segue.Perform ();
         }
 
@@ -103,6 +103,12 @@ namespace NachoClient.iOS
                 this.NavigationController.SetNavigationBarHidden (false, false);
             }
             NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
+        }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
         }
 
         public void OnEmailServiceSelected (McAccount.AccountServiceEnum service, bool willExpand)
