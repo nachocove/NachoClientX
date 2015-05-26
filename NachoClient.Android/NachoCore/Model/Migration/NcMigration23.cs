@@ -14,8 +14,11 @@ namespace NachoCore.Model
         public override void Run (System.Threading.CancellationToken token)
         {
             foreach (var pstate in Db.Table<McProtocolState> ()) {
-                pstate.AsSyncLimit = McProtocolState.AsSyncLimit_Default;
-                pstate.Update ();
+                pstate.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncLimit = McProtocolState.AsSyncLimit_Default;
+                    return true;
+                });
             }
             UpdateProgress (Db.Table<McProtocolState> ().Count ());
         }
