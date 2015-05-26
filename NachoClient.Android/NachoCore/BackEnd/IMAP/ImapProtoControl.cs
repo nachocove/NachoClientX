@@ -420,7 +420,7 @@ namespace NachoCore.IMAP
             return new ImapClient (logger);
         }
 
-        private async void DoPick ()
+        private void DoPick ()
         {
             // Due to threading race condition we must clear any event possibly posted
             // by a non-cancelled-in-time await.
@@ -472,44 +472,6 @@ namespace NachoCore.IMAP
             }
             Owner.CredReq (this);
         }
-
-        public class ImapProtocolLogger : IProtocolLogger
-        {
-            public void LogConnect (Uri uri)
-            {
-                if (uri == null)
-                    throw new ArgumentNullException ("uri");
-
-                Log.Info (Log.LOG_IMAP, "Connected to {0}", uri);
-            }
-
-            private void logBuffer (string prefix, byte[] buffer, int offset, int count)
-            {
-                char[] delimiterChars = { '\n' };
-                var lines = Encoding.UTF8.GetString (buffer.Skip (offset).Take (count).ToArray ()).Split (delimiterChars);
-
-                Array.ForEach (lines, (line) => {
-                    if (line.Length > 0) {
-                        Log.Info (Log.LOG_IMAP, "{0}{1}", prefix, line);
-                    }
-                });
-            }
-
-            public void LogClient (byte[] buffer, int offset, int count)
-            {
-                logBuffer ("IMAP C: ", buffer, offset, count);
-            }
-
-            public void LogServer (byte[] buffer, int offset, int count)
-            {
-                logBuffer ("IMAP S: ", buffer, offset, count);
-            }
-
-            public void Dispose ()
-            {
-            }
-        }
-
     }
 }
 

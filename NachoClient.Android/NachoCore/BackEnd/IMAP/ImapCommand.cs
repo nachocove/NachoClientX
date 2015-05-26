@@ -17,11 +17,11 @@ namespace NachoCore.IMAP
         protected ImapClient Client { get; set; }
         public CancellationTokenSource cToken { get; protected set; }
 
-        public async virtual void Execute (NcStateMachine sm)
+        public virtual void Execute (NcStateMachine sm)
         {
         }
 
-        public async virtual void Cancel ()
+        public virtual void Cancel ()
         {
         }
 
@@ -68,7 +68,7 @@ namespace NachoCore.IMAP
             Client = imap;
         }
 
-        public async override void Execute (NcStateMachine sm)
+        public override void Execute (NcStateMachine sm)
         {
             // Right now, we rely on MailKit's FolderCache so access is synchronous.
             CreateOrUpdateDistinguished (Client.Inbox, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
@@ -93,13 +93,13 @@ namespace NachoCore.IMAP
                         break;
                     }
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "Could not find special folder {0}", special.ToString ());
+                    Log.Error (Log.LOG_IMAP, "Could not find special folder {0}: {1}", special.ToString (), ex);
                 }
                 sm.PostEvent ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
             }
         }
 
-        public async override void Cancel ()
+        public override void Cancel ()
         {
         }
     }
@@ -118,6 +118,7 @@ namespace NachoCore.IMAP
         {
             try {
                 if (Client.IsConnected) {
+                    // FIXME - lock sync root or use the sync calls.
                     await Client.DisconnectAsync (false, cToken.Token);
                 }
                 await Client.ConnectAsync (BEContext.Server.Host, BEContext.Server.Port, true, cToken.Token).ConfigureAwait (false);
