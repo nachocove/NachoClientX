@@ -1181,13 +1181,13 @@ namespace NachoClient
                 imageName = "avatar-iphone";
                 break;
             case McAccount.AccountServiceEnum.iCloud:
-                imageName = "avatar-iphone";
+                imageName = "avatar-iCloud";
                 break;
             case McAccount.AccountServiceEnum.Yahoo:
-                imageName = "avatar-iphone";
+                imageName = "Icon";
                 break;
             case McAccount.AccountServiceEnum.Aol:
-                imageName = "avatar-iphone";
+                imageName = "Icon";
                 break;
             default:
                 imageName = "Icon";
