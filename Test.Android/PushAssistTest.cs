@@ -28,7 +28,7 @@ namespace Test.Common
         public const int WaitBeforeUse = 60 * 1000;
 
         // IBEContext
-        public IProtoControlOwner Owner { set; get; }
+        public INcProtoControlOwner Owner { set; get; }
 
         public NcProtoControl ProtoControl { set; get; }
 

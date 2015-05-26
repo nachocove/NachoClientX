@@ -613,7 +613,7 @@ namespace Test.iOS
                     Assert.AreEqual (StateEnum.Deferred, retrieved.State, "Should set state to deferred");
 
                     System.Threading.Thread.Sleep ((int)(waitSeconds * 1000));
-                    McPending.MakeEligibleOnTime (defaultAccountId);
+                    McPending.MakeEligibleOnTime ();
                     retrieved = McPending.QueryById<McPending> (pending.Id);
                     Assert.AreEqual (StateEnum.Eligible, retrieved.State, "MakeEligibleOnTime should set state to eligible in DB");
                 }
@@ -648,7 +648,7 @@ namespace Test.iOS
                 // Find only the 1st using QueryDeferredSync (int accountId).
                 var firstPend = querySyncType ();
                 System.Threading.Thread.Sleep ((int)(waitTime * 1000));
-                var secondPend = McPending.QueryDeferredUntilNow (defaultAccountId);
+                var secondPend = McPending.QueryDeferredUntilNow ();
 
                 Assert.AreEqual (1, firstPend.Count, "Should return a single object");
                 Assert.AreEqual (reason, firstPend.FirstOrDefault ().DeferredReason, "Deferred reason (UntilSync) should be set to UntilSync");
@@ -670,7 +670,7 @@ namespace Test.iOS
                 firstRetr.MarkDispached ();
                 firstRetr.ResolveAsDeferred (protoControl, reason, onFail);
 
-                McPending.MakeEligibleOnTime (defaultAccountId);
+                McPending.MakeEligibleOnTime ();
 
                 // Verify only the 2nd is in Eligible state in DB.
                 firstRetr = McPending.QueryById<McPending> (pending.Id);
@@ -824,7 +824,7 @@ namespace Test.iOS
                 var pendPast = CreateDeferredWithSeconds (protoControl, -waitSeconds);
                 CreateDeferredWithSeconds (protoControl, waitSeconds, accountId: 5); // pendOtherAccount 
 
-                var retrieved = McPending.QueryDeferredUntilNow (defaultAccountId);
+                var retrieved = McPending.QueryDeferredUntilNow ();
                 Assert.AreEqual (1, retrieved.Count);
                 PendingsAreEqual (pendPast, retrieved.FirstOrDefault ());
             }

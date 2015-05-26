@@ -11,7 +11,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsFolderSyncCommand : AsCommand
     {
-        private class ApplyFolderDelete : AsApplyServerCommand
+        private class ApplyFolderDelete : NcApplyServerCommand
         {
             public string ServerId { set; get; }
 

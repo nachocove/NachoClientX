@@ -32,7 +32,7 @@ using NachoPlatform;
  * */
 namespace NachoCore
 {
-    public sealed class BackEnd : IBackEnd, IProtoControlOwner
+    public sealed class BackEnd : IBackEnd, INcProtoControlOwner
     {
         private static volatile BackEnd instance;
         private static object syncRoot = new Object ();
@@ -63,6 +63,7 @@ namespace NachoCore
         };
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
+        private NcTimer PendingOnTimeTimer = null;
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -152,6 +153,10 @@ namespace NachoCore
         public void Stop ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Stop() called");
+            if (null != PendingOnTimeTimer) {
+                PendingOnTimeTimer.Dispose ();
+                PendingOnTimeTimer = null;
+            }
             ApplyAcrossAccounts ("Stop", (accountId) => {
                 Stop (accountId);
             });
@@ -218,6 +223,12 @@ namespace NachoCore
             NcCommStatus.Instance.Refresh ();
             if (!AccountHasServices (accountId)) {
                 CreateServices (accountId);
+            }
+            if (null == PendingOnTimeTimer) {
+                PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => {
+                    McPending.MakeEligibleOnTime ();
+                }, null, 1000, 2000);
+                PendingOnTimeTimer.Stfu = true;
             }
             NcTask.Run (() => {
                 ApplyAcrossServices (accountId, "Start", (service) => {

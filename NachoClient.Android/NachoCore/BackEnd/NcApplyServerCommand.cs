@@ -5,14 +5,14 @@ using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Model;
 
-namespace NachoCore.ActiveSync
+namespace NachoCore
 {
-    public abstract class AsApplyServerCommand
+    public abstract class NcApplyServerCommand
     {
         protected int AccountId;
         protected List<McPending.ReWrite> ReWrites;
 
-        public AsApplyServerCommand (int accountId)
+        public NcApplyServerCommand (int accountId)
         {
             AccountId = accountId;
             ReWrites = new List<McPending.ReWrite> ();

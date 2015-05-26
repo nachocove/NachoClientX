@@ -842,9 +842,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcDistribution.cs">
       <Link>NachoCore\Utils\NcDistribution.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
     </Compile>
@@ -1362,9 +1359,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration23.cs">
       <Link>NachoCore\Model\Migration\NcMigration23.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapExample.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapExample.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\FileListViewController.cs" />
     <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
       <DependentUpon>FileListViewController.cs</DependentUpon>
@@ -1418,6 +1412,12 @@
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

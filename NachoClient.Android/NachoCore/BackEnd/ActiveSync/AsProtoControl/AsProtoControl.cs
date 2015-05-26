@@ -133,15 +133,13 @@ namespace NachoCore.ActiveSync
             };
         }
 
-        public IAsStrategy SyncStrategy { set; get; }
+        public IAsStrategy Strategy { set; get; }
 
         private PushAssist PushAssist { set; get; }
 
-        private NcTimer PendingOnTimeTimer { set; get; }
-
         private int ConcurrentExtraRequests = 0;
 
-        public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+        public AsProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = McAccount.ActiveSyncCapabilities;
@@ -837,9 +835,8 @@ namespace NachoCore.ActiveSync
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
-            SyncStrategy = new AsStrategy (this);
+            Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
-            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
@@ -860,17 +857,10 @@ namespace NachoCore.ActiveSync
         }
         // Methods callable by the owner.
         // Keep Execute() harmless if it is called while already executing.
-        public override void Execute ()
+        public override bool Execute ()
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
-                return;
-            }
-            if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("AsProtoControl:PendingOnTimeTimer", state => {
-                    McPending.MakeEligibleOnTime (Account.Id);
-                }, null, 1000, 2000);
-                PendingOnTimeTimer.Stfu = true;
+            if (!base.Execute ()) {
+                return false;
             }
             if (null == Server) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCEXECAUTOD");
@@ -878,6 +868,7 @@ namespace NachoCore.ActiveSync
                 // All states are required to handle the Launch event gracefully.
                 Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
             }
+            return true;
         }
 
         public override void CredResp ()
@@ -1054,7 +1045,7 @@ namespace NachoCore.ActiveSync
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
                 2 > ConcurrentExtraRequests) {
                 Interlocked.Increment (ref ConcurrentExtraRequests);
-                var pack = SyncStrategy.PickUserDemand ();
+                var pack = Strategy.PickUserDemand ();
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
@@ -1135,7 +1126,7 @@ namespace NachoCore.ActiveSync
                 Cmd.Cancel ();
             }
             Sm.ClearEventQueue ();
-            var pack = SyncStrategy.Pick ();
+            var pack = Strategy.Pick ();
             var transition = pack.Item1;
             var cmd = pack.Item2;
             switch (transition) {
@@ -1178,7 +1169,7 @@ namespace NachoCore.ActiveSync
             var cmd = Sm.Arg as AsCommand;
             if (null == cmd) {
                 Log.Info (Log.LOG_AS, "DoSync: not from Pick.");
-                var syncKit = SyncStrategy.GenSyncKit (AccountId, ProtocolState);
+                var syncKit = Strategy.GenSyncKit (AccountId, ProtocolState);
                 if (null != syncKit) {
                     cmd = new AsSyncCommand (this, syncKit);
                 } else {
@@ -1263,10 +1254,6 @@ namespace NachoCore.ActiveSync
                 PushAssist.Park ();
             }
             Sm.PostEvent ((uint)PcEvt.E.Park, "FORCESTOP");
-            if (null != PendingOnTimeTimer) {
-                PendingOnTimeTimer.Dispose ();
-                PendingOnTimeTimer = null;
-            }
         }
 
         public override void ValidateConfig (McServer server, McCred cred)
@@ -1319,7 +1306,7 @@ namespace NachoCore.ActiveSync
         // PushAssist support.
         public PushAssistParameters PushAssistParameters ()
         {
-            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
+            var pingKit = Strategy.GenPingKit (AccountId, ProtocolState, true, false, true);
             if (null == pingKit) {
                 return null; // should never happen
             }

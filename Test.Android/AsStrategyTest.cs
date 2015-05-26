@@ -264,7 +264,7 @@ namespace Test.iOS
 
         private class MockProtoControl : AsProtoControl
         {
-            public MockProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+            public MockProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
             {
             }
 

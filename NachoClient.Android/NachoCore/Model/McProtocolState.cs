@@ -106,10 +106,12 @@ namespace NachoCore.Model
         /*
          * "Imap" IMAP properties go here:
          */
-       
+        public uint ImapProtoControlState { get; set; }
+
         /*
          * "Smtp" SMTP properties go here:
          */
+        public uint SmtpProtoControlState { get; set; }
 
         /*
          * common methods go here:
