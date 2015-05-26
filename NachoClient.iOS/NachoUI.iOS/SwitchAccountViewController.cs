@@ -27,9 +27,13 @@ namespace NachoClient.iOS
 
         SwitchAccountCallback switchAccountCallback;
 
-        public void SetCallback (SwitchAccountCallback switchAccountCallback)
+        public static void ShowDropdown (UIViewController fromViewController, SwitchAccountCallback switchAccountCallback)
         {
-            this.switchAccountCallback = switchAccountCallback;
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var toViewController = (SwitchAccountViewController)storyboard.InstantiateViewController ("SwitchAccountViewController");
+            var segue = new SwitchAccountCustomSegue ("", fromViewController, toViewController);
+            toViewController.switchAccountCallback = switchAccountCallback;
+            segue.Perform ();
         }
 
         public override void ViewDidLoad ()
@@ -116,9 +120,9 @@ namespace NachoClient.iOS
             NcApplication.Instance.Account = account;
             switchAccountCallback (account);
             Deactivate (null, (McAccount acct) => {
-                UIView.Animate(0.75, () => {
-                    UIView.SetAnimationCurve(UIViewAnimationCurve.EaseInOut);
-                    UIView.SetAnimationTransition(UIViewAnimationTransition.FlipFromRight, NavigationController.View, false);
+                UIView.Animate (0.75, () => {
+                    UIView.SetAnimationCurve (UIViewAnimationCurve.EaseInOut);
+                    UIView.SetAnimationTransition (UIViewAnimationTransition.FlipFromRight, NavigationController.View, false);
                 });
                 NavigationController.PopViewController (false);
             });

@@ -17,7 +17,6 @@ namespace NachoClient.iOS
         UITableView accountsTableView;
         AccountsTableViewSource accountsTableViewSource;
 
-        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
@@ -27,9 +26,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            switchAccountView = new SwitchAccountView ();
-            View.AddSubview (switchAccountView);
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
@@ -72,7 +68,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            switchAccountView.Activate (SwitchToAccount);
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)

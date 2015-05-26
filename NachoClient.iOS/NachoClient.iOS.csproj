@@ -1414,7 +1414,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
       <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />

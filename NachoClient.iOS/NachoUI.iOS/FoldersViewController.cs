@@ -51,7 +51,6 @@ namespace NachoClient.iOS
         protected UIImage moreIconSelected;
         protected UIBarButtonItem composeButton;
 
-        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         public override void ViewDidLoad ()
@@ -206,9 +205,6 @@ namespace NachoClient.iOS
                 };
                 NavigationItem.RightBarButtonItem = composeButton;
 
-                switchAccountView = new SwitchAccountView ();
-                View.AddSubview (switchAccountView);
-
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton;
             }
@@ -288,7 +284,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            switchAccountView.Activate (SwitchToAccount);
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
         protected void ConfigureColors ()

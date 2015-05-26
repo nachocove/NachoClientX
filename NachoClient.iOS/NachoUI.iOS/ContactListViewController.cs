@@ -22,7 +22,6 @@ namespace NachoClient.iOS
         LettersSwipeViewDataSource swipeViewDateSource;
         UITableView TableView;
 
-        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         protected bool contactsNeedsRefresh;
@@ -98,9 +97,6 @@ namespace NachoClient.iOS
 
             NavigationController.NavigationBar.Translucent = false;
 
-            switchAccountView = new SwitchAccountView ();
-            View.AddSubview (switchAccountView);
-
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             NavigationItem.TitleView = switchAccountButton;
 
@@ -151,7 +147,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            switchAccountView.Activate (SwitchToAccount);
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)

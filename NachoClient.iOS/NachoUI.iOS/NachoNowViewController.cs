@@ -141,11 +141,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = (SwitchAccountViewController)storyboard.InstantiateViewController ("SwitchAccountViewController");
-            vc.SetCallback (SwitchToAccount);
-            var segue = new SwitchAccountCustomSegue ("", this, vc);
-            segue.Perform ();
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
         public override void ViewWillAppear (bool animated)
