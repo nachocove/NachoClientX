@@ -168,11 +168,11 @@ namespace NachoCore.Model
         }
 
         // This is set as a side effect of setting AccountService. 
-        public AccountCapabilityEnum AccountCapability { get; private set; }
+        public AccountCapabilityEnum AccountCapability { get; set; }
 
         // The protocol(s) - possibly more than one - required by this account.
         // This is set as a side effect of setting AccountService. 
-        public McProtocolState.ProtocolEnum Protocols { get; private set; }
+        public McProtocolState.ProtocolEnum Protocols { get; set; }
 
         public string EmailAddr { get; set; }
 

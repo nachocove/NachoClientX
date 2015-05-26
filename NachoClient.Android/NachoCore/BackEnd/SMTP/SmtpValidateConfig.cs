@@ -118,7 +118,7 @@ namespace NachoCore.SMTP
             }
         }
 
-        public IProtoControlOwner Owner {
+        public INcProtoControlOwner Owner {
             get { return BEContext.Owner; }
             set { BEContext.Owner = value; }
         }

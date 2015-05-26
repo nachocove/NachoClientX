@@ -877,7 +877,7 @@ namespace NachoCore.IMAPExample
             };
         }
 
-        public ImapProtoControl (IProtoControlOwner owner, NcImap imap_client) : base (owner, imap_client.AccountId)
+        public ImapProtoControl (INcProtoControlOwner owner, NcImap imap_client) : base (owner, imap_client.AccountId)
         {
             ProtoControl = this;
             EstablishService ();
@@ -1091,15 +1091,14 @@ namespace NachoCore.IMAPExample
         }
 
         private NcTimer PendingOnTimeTimer { set; get; }
-        public override void Execute ()
+        public override bool Execute ()
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
-                return;
+            if (!base.Execute ()) {
+                return false;
             }
             if (null == PendingOnTimeTimer) {
                 PendingOnTimeTimer = new NcTimer ("ImapProtoControl:PendingOnTimeTimer", state => {
-                    McPending.MakeEligibleOnTime (Account.Id);
+                    McPending.MakeEligibleOnTime ();
                 }, null, 1000, 2000);
                 PendingOnTimeTimer.Stfu = true;
             }
@@ -1109,6 +1108,7 @@ namespace NachoCore.IMAPExample
                 // All states are required to handle the Launch event gracefully.
                 Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
             }
+            return true;
         }
 
         IImapCommand Cmd;

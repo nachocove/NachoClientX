@@ -10,7 +10,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        private class ApplyItemChange : AsApplyServerCommand
+        private class ApplyItemChange : NcApplyServerCommand
         {
             public string ClassCode { get; set; }
 

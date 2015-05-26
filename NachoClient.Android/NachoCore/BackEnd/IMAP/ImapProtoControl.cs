@@ -1,11 +1,13 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Text;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
 using System.Linq;
+using MailKit;
 using MailKit.Net.Imap;
 using System.Security.Cryptography.X509Certificates;
 using MailKit.Security;
@@ -14,15 +16,15 @@ namespace NachoCore.IMAP
 {
     public class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
-        ImapClient m_imapClient;
+        ImapClient ImapClient;
 
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
-            UiDCrdW,
-            UiPCrdW,
-            UiCertOkW,
+            UiCrdW,
+            UiServConfW,
             ConnW,
+            FSyncW,
             Pick,
             Parked,
         };
@@ -41,16 +43,17 @@ namespace NachoCore.IMAP
                 case (uint)Lst.DiscW:
                     return BackEndStateEnum.Running;
 
-                case (uint)Lst.UiDCrdW:
-                case (uint)Lst.UiPCrdW:
+                case (uint)Lst.UiCrdW:
                     return BackEndStateEnum.CredWait;
 
-                case (uint)Lst.UiCertOkW:
-                    return BackEndStateEnum.CertAskWait;
+                case (uint)Lst.UiServConfW:
+                    return BackEndStateEnum.ServerConfWait;
 
                 case (uint)Lst.ConnW:
+                case (uint)Lst.FSyncW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
+                    // FIXME - need to consider ProtocolState.HasSyncedInbox.
                     return BackEndStateEnum.PostAutoDPostInboxSync;
 
                 default:
@@ -68,21 +71,19 @@ namespace NachoCore.IMAP
                 ReConn,
                 UiSetCred,
                 UiSetServConf,
-                GetCertOk,
-                UiCertOkYes,
-                UiCertOkNo,
                 PkQOp,
-                PkHotQOp,
                 AuthFail,
                 Last = AuthFail,
             };
         }
+        public ImapStrategy Strategy { set; get; }
 
-        public ImapProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+        public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
             SetupAccount ();
+            ImapClient = newClientWithLogger ();
 
             Sm = new NcStateMachine ("IMAPPC") { 
                 Name = string.Format ("IMAPPC({0})", AccountId),
@@ -95,55 +96,21 @@ namespace NachoCore.IMAP
                         Drop = new uint[] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
+                            (uint)ImapEvt.E.ReConn,
                             (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
-                            (uint)ImapEvt.E.UiCertOkNo,
-                            (uint)ImapEvt.E.UiCertOkYes,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.AuthFail,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
-                            (uint)ImapEvt.E.GetCertOk,
                         },
                         On = new Trans[] {
-//                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
-//                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-//                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
-//                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoPark, State = (uint)Lst.Parked },
-                        }
-                    },
-                    new Node {
-                        State = (uint)Lst.UiCertOkW,
-                        Drop = new [] {
-                            (uint)PcEvt.E.PendQ,
-                            (uint)PcEvt.E.PendQHot,
-                        },
-                        Invalid = new [] {
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.TempFail,
-                            (uint)ImapEvt.E.AuthFail,
-                            (uint)ImapEvt.E.GetCertOk,
-                            (uint)ImapEvt.E.UiSetCred, // TODO: should we re-consider?
-                            (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
-                        },
-                        On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)ImapEvt.E.UiCertOkYes, Act = DoCertOkYes, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.UiCertOkNo, Act = DoCertOkNo, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     },
                     new Node {
@@ -152,28 +119,24 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
-                            (uint)ImapEvt.E.UiCertOkNo,
-                            (uint)ImapEvt.E.UiCertOkYes,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReConn,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoConn, State = (uint)Lst.ConnW }, // TODO How do we keep from looping forever?
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoConn, State = (uint)Lst.ConnW }, // TODO Should go back to discovery, not connection.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)St.Start },
+                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.GetCertOk, Act = DoUiCertOkReq, State = (uint)Lst.UiCertOkW },
                         }
                     },
                     new Node {
-                        State = (uint)Lst.UiDCrdW,
+                        State = (uint)Lst.UiCrdW,
                         Drop = new uint[] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
@@ -182,17 +145,37 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReConn,
                             (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
-                            (uint)ImapEvt.E.GetCertOk,
-                            (uint)ImapEvt.E.UiCertOkNo,
-                            (uint)ImapEvt.E.UiCertOkYes,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            // If the creds are still bad, then disc will ask for new ones again.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
+                        }
+                    },
+                    new Node {
+                        State = (uint)Lst.UiServConfW,
+                        Drop = new uint[] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
+                        },
+                        Invalid = new uint[] {
+                            (uint)ImapEvt.E.ReDisc,
+                            (uint)ImapEvt.E.ReConn,
+                            (uint)ImapEvt.E.PkQOp,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)ImapEvt.E.AuthFail,
+                        },
+                        On = new Trans[] {
+                            // If the creds are still bad, then disc will ask for new ones again.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -204,25 +187,41 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReConn,
-                            (uint)ImapEvt.E.GetCertOk,
-                            (uint)ImapEvt.E.UiCertOkNo,
-                            (uint)ImapEvt.E.UiCertOkYes,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoConn, State = (uint)Lst.ConnW }, // TODO How do we keep from looping forever?
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoConn, State = (uint)Lst.ConnW  }, // TODO Should go back to discovery, not connection.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDisc, State = (uint)Lst.DiscW  },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiDCrdW },
+                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                         }
+                    },
+                    new Node {
+                        State = (uint)Lst.FSyncW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
+                            (uint)ImapEvt.E.PkQOp,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDisc, State = (uint)Lst.DiscW  },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
+                            new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
+                        },
                     },
                     new Node {
                         State = (uint)Lst.Pick,
@@ -230,57 +229,50 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
+                            (uint)ImapEvt.E.UiSetCred,
+                            (uint)ImapEvt.E.UiSetServConf,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
-                            (uint)ImapEvt.E.GetCertOk,
-                            (uint)ImapEvt.E.UiCertOkNo,
-                            (uint)ImapEvt.E.UiCertOkYes,
                         },
                         On = new [] {
+                            // FIXME - add states for doing operations - eg Qop, Sync, etc.
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                         }
                     },
                     new Node {
                         State = (uint)Lst.Parked,
                         Drop = new uint[] {
-                            (uint)ImapEvt.E.PkQOp,
-                            (uint)ImapEvt.E.PkHotQOp,
+                            (uint)PcEvt.E.PendQ,
+                            (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
+                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.UiSetCred,
+                            (uint)ImapEvt.E.UiSetServConf,
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
+                            (uint)ImapEvt.E.ReConn,
                             (uint)ImapEvt.E.AuthFail,
-                            (uint)ImapEvt.E.GetCertOk,
-                            (uint)ImapEvt.E.UiCertOkNo,
-                            (uint)ImapEvt.E.UiCertOkYes,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
-                            new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     }
                 }
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
-            //SyncStrategy = new ImapStrategy (this);
+            Strategy = new ImapStrategy ();
             //PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
@@ -294,7 +286,7 @@ namespace NachoCore.IMAP
             uint stateToSave = Sm.State;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                 var target = (McProtocolState)record;
-                target.ProtoControlState = stateToSave;
+                target.ImapProtoControlState = stateToSave;
                 return true;
             });
         }
@@ -326,7 +318,7 @@ namespace NachoCore.IMAP
                 Execute ();
             } else {
                 // The "Down" case.
-                Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
+                Sm.PostEvent ((uint)PcEvt.E.Park, "IMEHPARK");
             }
         }
 
@@ -346,27 +338,30 @@ namespace NachoCore.IMAP
             base.Remove ();
         }
 
-        public override void Execute ()
+        public override bool Execute ()
         {
-            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_IMAP, "Execute called while network is down.");
-                return;
+            if (!base.Execute ()) {
+                return false;
             }
             Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            return true;
         }
+
         private void DoDisc ()
         {
-            NcTask.Run (async delegate {
-                if (null != m_imapClient) {
-                    if (m_imapClient.IsConnected) {
-                        lock(m_imapClient.SyncRoot) {
-                            m_imapClient.Disconnect (true);
-                        }
-                        m_imapClient = null;
-                    }
-                }
-                Sm.PostEvent ((uint)SmEvt.E.Success, "IMAPAUTODDASC");
-            }, "ImapDoDisc");
+            DoConn (); // For now.
+        }
+
+        private void DoConn ()
+        {
+            SetCmd (new ImapAuthenticateCommand (this, ImapClient));
+            ExecuteCmd ();
+        }
+
+        private void DoFSync ()
+        {
+            SetCmd (new ImapFolderSyncCommand (this, ImapClient));
+            ExecuteCmd ();
         }
 
         private X509Certificate2 _ServerCertToBeExamined;
@@ -403,15 +398,6 @@ namespace NachoCore.IMAP
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
 
-        private void DoCertOkNo ()
-        {
-            DoDisc ();
-        }
-
-        private void DoCertOkYes ()
-        {
-            DoDisc ();
-        }
         public override void CredResp ()
         {
             NcTask.Run (delegate {
@@ -429,38 +415,13 @@ namespace NachoCore.IMAP
 
         public static ImapClient newClientWithLogger()
         {
+            // FIXME - redaction.
             MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP);
             return new ImapClient (logger);
         }
 
-        private ImapClient temp_client { get; set; }
-        private async void DoConn ()
+        private void DoPick ()
         {
-//            if (null == m_imapClient) {
-//                NcTask.Run (delegate {
-//                    try {
-//                        temp_client = newClientWithLogger();
-//                        var cmd = new ImapAuthenticateCommand(Server, Cred, temp_client);
-//                        SetCmd (cmd);
-//                        ExecuteCmd ();
-//                    } catch (ImapProtocolException e) {
-//                        Log.Error (Log.LOG_IMAP, "Could not set up authenticated client: {0}", e);
-//                        Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPROTOFAIL");
-//                    } catch (AuthenticationException e) {
-//                        Log.Error (Log.LOG_IMAP, "Authentication failed: {0}", e);
-//                        Sm.PostEvent ((uint)ImapEvt.E.AuthFail, "IMAPAUTHFAIL");
-//                    }
-//                }, "ImapDoConn");
-//            }
-        }
-
-        private async void DoPick ()
-        {
-            if (null != temp_client) {
-                m_imapClient = temp_client;
-                temp_client = null;
-            }
-
             // Due to threading race condition we must clear any event possibly posted
             // by a non-cancelled-in-time await.
             // TODO: find a way to detect already running op and log an error.
@@ -487,6 +448,7 @@ namespace NachoCore.IMAP
                 // Get a new one.
                 Sm.PostEvent ((uint)ImapEvt.E.PkQOp, "IMAPGETNEXT");
             } else {
+                // FIXME
                 Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPPARK");
             }
         }
@@ -497,8 +459,8 @@ namespace NachoCore.IMAP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            if (null != m_imapClient) {
-                await m_imapClient.DisconnectAsync (true).ConfigureAwait (false); // TODO Where does the Cancellation token come from?
+            if (null != ImapClient) {
+                await ImapClient.DisconnectAsync (true).ConfigureAwait (false); // TODO Where does the Cancellation token come from?
             }
         }
 
@@ -510,8 +472,6 @@ namespace NachoCore.IMAP
             }
             Owner.CredReq (this);
         }
-
-
     }
 }
 

@@ -82,7 +82,7 @@ namespace NachoCore.SMTP
             };
         }
 
-        public SmtpProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+        public SmtpProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = McAccount.SmtpCapabilities;
@@ -297,13 +297,13 @@ namespace NachoCore.SMTP
             base.Remove ();
         }
 
-        public override void Execute ()
+        public override bool Execute ()
         {
-            if (NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_IMAP, "Execute called while network is down.");
-                return;
+            if (!base.Execute ()) {
+                return false;
             }
             Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            return true;
         }
 
         private ISmtpCommand Cmd;
@@ -471,7 +471,7 @@ namespace NachoCore.SMTP
             uint stateToSave = Sm.State;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                 var target = (McProtocolState)record;
-                target.ProtoControlState = stateToSave;
+                target.SmtpProtoControlState = stateToSave;
                 return true;
             });
         }

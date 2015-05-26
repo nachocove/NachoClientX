@@ -90,7 +90,7 @@ namespace Test.iOS
 
             public static AsSyncCommand CreateSyncCmd (MockContext context)
             {
-                var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).SyncStrategy.GenSyncKit (
+                var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).Strategy.GenSyncKit (
                                   defaultAccountId, context.ProtocolState));
                 AsHttpOperation.HttpClientType = typeof(MockHttpClient);
                 return syncCmd;
@@ -99,7 +99,7 @@ namespace Test.iOS
             public void SetSyncStrategy (McFolder folder)
             {
                 var strategy = new MockStrategy (folder);
-                ((AsProtoControl)Context.ProtoControl).SyncStrategy = strategy;
+                ((AsProtoControl)Context.ProtoControl).Strategy = strategy;
             }
 
             // Generate mock AirSync response that has a "Commands" section (as opposed to a "Responses" section)

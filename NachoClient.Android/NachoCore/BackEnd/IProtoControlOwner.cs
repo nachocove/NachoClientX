@@ -5,7 +5,7 @@ using NachoCore.Utils;
 
 namespace NachoCore
 {
-    public interface IProtoControlOwner
+    public interface INcProtoControlOwner
     {
         void StatusInd (NcProtoControl sender, NcResult status);
         void StatusInd (NcProtoControl sender, NcResult status, string[] tokens);

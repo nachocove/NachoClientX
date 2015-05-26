@@ -891,7 +891,7 @@ namespace NachoCore.ActiveSync
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");
         }
         // IBEContext proxying.
-        public IProtoControlOwner Owner {
+        public INcProtoControlOwner Owner {
             get { return BEContext.Owner; }
             set { BEContext.Owner = value; }
         }

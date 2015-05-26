@@ -23,7 +23,7 @@ namespace NachoCore
 
         public int AccountId;
 
-        public IProtoControlOwner Owner { get; set; }
+        public INcProtoControlOwner Owner { get; set; }
 
         public NcProtoControl ProtoControl { set; get; }
 
@@ -83,10 +83,12 @@ namespace NachoCore
             }
         }
 
-        public NcProtoControl (IProtoControlOwner owner, int accountId)
+        public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
+            // TODO - change ResolveAllDispatchedAsDeferred to be per-controller (capabilities).
+            McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
         }
 
         protected void SetupAccount ()
@@ -269,8 +271,15 @@ namespace NachoCore
         }
 
         // Interface to owner.
-        public virtual void Execute ()
+        // Returns false if sub-class override should not continue.
+        public virtual bool Execute ()
         {
+            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
+                return false;
+            }
+            // TODO - extract more from the EAS class and stuff here.
+            return true;
         }
 
         public virtual void ForceStop ()

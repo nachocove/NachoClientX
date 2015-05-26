@@ -137,7 +137,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private class ApplyCreateFolder : AsApplyServerCommand
+        private class ApplyCreateFolder : NcApplyServerCommand
         {
             public string FinalServerId { set; get; }
 

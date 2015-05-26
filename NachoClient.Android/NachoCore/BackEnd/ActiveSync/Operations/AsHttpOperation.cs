@@ -166,7 +166,7 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).SyncStrategy.DefaultTimeoutSecs;
+            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
             Timeout = new TimeSpan (0, 0, timeoutSeconds);
             TimeoutExpander = KDefaultTimeoutExpander;
             MaxRetries = KDefaultRetries;
