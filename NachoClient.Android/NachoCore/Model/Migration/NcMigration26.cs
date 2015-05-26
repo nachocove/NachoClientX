@@ -26,6 +26,12 @@ namespace NachoCore.Model
                         account.AccountService = McAccount.AccountServiceEnum.GoogleDefault;
                         update = true;
                     }
+                    if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                        if (McAccount.AccountServiceEnum.Device != account.AccountService) {
+                            account.AccountService = McAccount.AccountServiceEnum.Device;
+                            update = true;
+                        }
+                    }
                     if (update) {
                         account.Update ();
                     }

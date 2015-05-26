@@ -1177,6 +1177,18 @@ namespace NachoClient
             case McAccount.AccountServiceEnum.OutlookExchange:
                 imageName = "avatar-outlook";
                 break;
+            case McAccount.AccountServiceEnum.Device:
+                imageName = "avatar-iphone";
+                break;
+            case McAccount.AccountServiceEnum.iCloud:
+                imageName = "avatar-iphone";
+                break;
+            case McAccount.AccountServiceEnum.Yahoo:
+                imageName = "avatar-iphone";
+                break;
+            case McAccount.AccountServiceEnum.Aol:
+                imageName = "avatar-iphone";
+                break;
             default:
                 imageName = "Icon";
                 break;
