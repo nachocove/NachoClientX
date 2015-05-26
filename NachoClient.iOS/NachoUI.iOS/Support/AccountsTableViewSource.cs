@@ -92,12 +92,12 @@ namespace NachoClient.iOS
 
         public override nfloat GetHeightForFooter (UITableView tableView, nint section)
         {
-            return 40;
+            return 60;
         }
 
         public override UIView GetViewForFooter (UITableView tableView, nint section)
         {
-            var newAccountView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 40));
+            var newAccountView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 60));
             newAccountView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             var newAccountButton = UIButton.FromType (UIButtonType.System);
@@ -118,7 +118,7 @@ namespace NachoClient.iOS
             newAccountButton.TouchUpInside += NewAccountButton_TouchUpInside;
 
             newAccountView.AddSubview (newAccountButton);
-            return newAccountView;
+            return  newAccountView;
         }
 
         void NewAccountButton_TouchUpInside (object sender, EventArgs e)
