@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7702" systemVersion="14D136" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7706" systemVersion="14D136" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7703"/>
     </dependencies>
     <scenes>
+        <!--Switch Account View Controller-->
+        <scene sceneID="40K-tw-a8J">
+            <objects>
+                <viewController storyboardIdentifier="SwitchAccountViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="dkC-Cd-pp9" customClass="SwitchAccountViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ZJ2-8h-kH9">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <connections>
+                        <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="STf-DG-2qn"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iq2-Qy-b8s" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-6985" y="-1680"/>
+        </scene>
         <!--Advanced Login View Controller-->
         <scene sceneID="82q-hP-OFu">
             <objects>
@@ -47,6 +64,7 @@
                         <segue destination="tAw-fh-hJX" kind="push" identifier="CalendarToEmailCompose" id="SxL-6k-kbd"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMailTo" id="LxT-Hd-cWn"/>
                         <segue destination="3s4-Wa-4oT" kind="push" identifier="SegueToMessageThreadView" id="wQh-Gq-11B"/>
+                        <segue destination="dkC-Cd-pp9" kind="modal" identifier="SegueToSwitchAccount" id="az5-Qj-HPm"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -127,7 +145,6 @@
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
                         <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
-                        <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="z0K-Fc-ato"/>
                         <segue destination="6rF-Ad-StO" kind="push" identifier="SegueToLaunch" id="ntd-BZ-hgR"/>
                     </connections>
                 </viewController>
@@ -1393,32 +1410,32 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Kfq-r2-VA6"/>
-        <segue reference="22b-Az-fdF"/>
+        <segue reference="Aba-pv-mzB"/>
         <segue reference="lbY-YF-b2b"/>
         <segue reference="XQg-JR-vxA"/>
+        <segue reference="tQS-oL-XNh"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="z10-H9-HYt"/>
+        <segue reference="v9F-jf-qe1"/>
+        <segue reference="ntd-BZ-hgR"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="yNo-Ue-PAG"/>
+        <segue reference="22b-Az-fdF"/>
+        <segue reference="Kfq-r2-VA6"/>
+        <segue reference="VR8-PG-xAi"/>
         <segue reference="RKu-FY-1IX"/>
         <segue reference="TEI-cG-N0R"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="VR8-PG-xAi"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="z8t-Er-kGd"/>
         <segue reference="DcC-EH-FAx"/>
-        <segue reference="ntd-BZ-hgR"/>
-        <segue reference="v9F-jf-qe1"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="tQS-oL-XNh"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="z10-H9-HYt"/>
-        <segue reference="yNo-Ue-PAG"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="k2t-Pj-AhS"/>
         <segue reference="od0-Sz-R9p"/>
         <segue reference="tzJ-j2-YOi"/>
     </inferredMetricsTieBreakers>

@@ -1408,7 +1408,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
       <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\SwitchAccountView.cs" />
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
@@ -1418,6 +1417,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
       <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
+    <Compile Include="NachoUI.iOS\SwitchAccountViewController.designer.cs">
+      <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

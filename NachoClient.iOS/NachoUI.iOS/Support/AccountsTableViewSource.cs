@@ -184,7 +184,7 @@ namespace NachoClient.iOS
             settingsButton.AccessibilityLabel = "Account Settings";
             settingsButton.SizeToFit ();
             ViewFramer.Create (settingsButton).AdjustWidth (A.Card_Horizontal_Indent);
-//            accountInfoView.AddSubview (settingsButton);
+            accountInfoView.AddSubview (settingsButton);
 
             Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 120, tableView.Frame.Width, A.Color_NachoBorderGray, accountInfoView);
             Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 160, tableView.Frame.Width, A.Color_NachoBorderGray, accountInfoView);
