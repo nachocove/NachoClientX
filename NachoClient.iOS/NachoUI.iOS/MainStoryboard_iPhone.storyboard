@@ -723,9 +723,7 @@
                     <navigationItem key="navigationItem" id="Hg4-Vj-sQl"/>
                     <connections>
                         <outlet property="contentView" destination="Gsy-wq-3TG" id="DxE-KR-TXr"/>
-                        <outlet property="endDatePicker" destination="g6j-ou-jtx" id="54k-NH-PdE"/>
                         <outlet property="scrollView" destination="ur7-bo-IIh" id="exr-dy-EXm"/>
-                        <outlet property="startDatePicker" destination="SN5-N4-3xJ" id="L24-7Y-NEp"/>
                         <segue destination="p7r-P8-BKK" kind="push" identifier="EditEventToAlert" id="m2D-2n-RiV"/>
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EditEventToCalendarChooser" id="7sK-rg-HQL"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
@@ -734,18 +732,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="O99-IW-kIW" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" id="SN5-N4-3xJ" userLabel="startDatePicker">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
-                    <date key="date" timeIntervalSinceReferenceDate="428449669.92554599">
-                        <!--2014-07-30 21:47:49 +0000-->
-                    </date>
-                </datePicker>
-                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" id="g6j-ou-jtx" userLabel="endDatePicker">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
-                    <date key="date" timeIntervalSinceReferenceDate="428449667.42975497">
-                        <!--2014-07-30 21:47:47 +0000-->
-                    </date>
-                </datePicker>
             </objects>
             <point key="canvasLocation" x="-3215" y="1372"/>
         </scene>
