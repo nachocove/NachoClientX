@@ -20,7 +20,7 @@ namespace NachoCore.Model
         public DateTime DeviceCreation { get; set; }
 
         /// Set only for Device calendars.
-        public DateTime DeviceLastUpdate { get; set; }
+        public DateTime? DeviceLastUpdate { get; set; }
 
         /// Name of the creator of the calendar item (optional). Calendar only.
         [MaxLength (256)]
