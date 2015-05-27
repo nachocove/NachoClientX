@@ -841,8 +841,8 @@ namespace Test.Common
 
             // Query a different account id and all accounts
             var emailMessageList4 = McEmailMessage.QueryNeedGleaning (-1, 2);
-            Assert.AreEqual (1, emailMessageList3.Count);
-            Assert.AreEqual (email2.Id, emailMessageList3 [0].Id);
+            Assert.AreEqual (1, emailMessageList4.Count);
+            Assert.AreEqual (email2.Id, emailMessageList4 [0].Id);
 
             var emailMessageList5 = McEmailMessage.QueryNeedGleaning (defaultAccountId + 1, 2);
             Assert.AreEqual (0, emailMessageList5.Count);

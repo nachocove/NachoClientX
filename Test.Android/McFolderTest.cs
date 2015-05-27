@@ -115,8 +115,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode1, parentId: parentId, name: name);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode1, parentId.ToInt (), name).First ();
-                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First ();
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode1, parentId, name).First ();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId, name).First ();
 
                 Assert.AreNotEqual (expected1.Type, expected2.Type, "Folders should be able to have the same name and parent as long as their typecodes are different");
             }
@@ -138,8 +138,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parent1.ServerId, name: name);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parent2.ServerId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode, serverId1.ToInt (), name).First ();
-                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode, serverId2.ToInt (), name).First ();
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode, serverId1, name).First ();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode, serverId2, name).First ();
 
                 Assert.AreNotEqual (expected1.ParentId, expected2.ParentId, "Folders with identical properties should be able to reside under different parents"); 
             }
@@ -158,8 +158,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name1);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name2);
 
-                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1).First ();
-                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2).First ();
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId, name: name1).First ();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId, name: name2).First ();
 
                 Assert.AreNotEqual (expected1.DisplayName, expected2.DisplayName, "Folders with different names should be considered separate folders");
             }
@@ -226,6 +226,61 @@ namespace Test.iOS
                 }
                 Assert.NotNull (expected1, "Folders count was 0; should retrieve folder with name: '{0}'", folder1.DisplayName);
                 FoldersAreEqual (expected1, folder1, message);
+            }
+        }
+
+        [TestFixture]
+        public class TestArchiveFolder : BaseMcFolderTest
+        {
+            const string Email = "bob@company.net";
+            const string Password = "Password";
+
+            private int accountId { get; set; }
+
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                Telemetry.ENABLED = false;
+                NcTask.StartService ();
+
+                // Set up credential
+                var account = new McAccount () {
+                    AccountType = McAccount.AccountTypeEnum.Exchange,
+                    AccountService = McAccount.AccountServiceEnum.Exchange,
+                    EmailAddr = Email,
+                };
+                account.Insert ();
+                var cred = new McCred () {
+                    AccountId = account.Id,
+                    Username = Email,
+                };
+                accountId = account.Id;
+
+                cred.Insert ();
+                cred.UpdatePassword (Password);
+                NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
+            }
+
+            [TearDown]
+            public void TearDown ()
+            {
+                NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
+                Telemetry.ENABLED = true;
+            }
+
+            [Test]
+            public void TestGetArchiveFolder ()
+            {
+                var archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", McFolder.ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
+                Assert.IsNull (archiveFolder);
+
+                archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
+                Assert.NotNull (archiveFolder);
+
+                // Do it again to test the code-path where the folder exists.
+                archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
+                Assert.NotNull (archiveFolder);
             }
         }
 

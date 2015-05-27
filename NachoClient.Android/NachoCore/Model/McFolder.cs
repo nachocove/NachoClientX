@@ -243,7 +243,7 @@ namespace NachoCore.Model
             return JunkFolderIds.ContainsKey (folderId);
         }
 
-        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
+        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, string parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " likelihood (f.AccountId = ?, 1.0) AND " +
@@ -252,9 +252,6 @@ namespace NachoCore.Model
                           " likelihood (f.ParentId = ?, 0.05) AND " +
                           " likelihood (f.DisplayName = ?, 0.05) ",
                               accountId, (uint)typeCode, parentId, name);
-            if (0 == folders.Count) {
-                return null;
-            }
             return folders.ToList ();
         }
 
@@ -310,13 +307,13 @@ namespace NachoCore.Model
 
         public static McFolder GetOrCreateArchiveFolder (int accountId)
         {
-            List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
-            if (null == archiveFolders) {
+            var archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
+            if (null == archiveFolder) {
                 BackEnd.Instance.CreateFolderCmd (accountId, ARCHIVE_DISPLAY_NAME, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
+                archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
             }
-            NcAssert.NotNull (archiveFolders);
-            return archiveFolders.First ();
+            NcAssert.NotNull (archiveFolder);
+            return archiveFolder;
         }
 
         public static int GetRicFolderId (int accountId)

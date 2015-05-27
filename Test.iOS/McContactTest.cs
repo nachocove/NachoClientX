@@ -50,7 +50,7 @@ namespace Test.Common
 
             FolderOps.CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
 
-            McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First ();
+            McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId, name).First ();
 
             var c = new McContact ();
             c.AccountId = accountId;
