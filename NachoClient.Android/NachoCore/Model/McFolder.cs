@@ -49,6 +49,10 @@ namespace NachoCore.Model
 
         public uint ImapUidValidity { get; set; }
 
+        public uint ImapLargestUid { get; set; }
+
+        public uint ImapUidNext { get; set; }
+
         [Indexed]
         public string DisplayName { get; set; }
 

@@ -10,6 +10,4 @@ namespace NachoCore.IMAP
         void Execute (NcStateMachine sm);
         void Cancel ();
     }
-
 }
-
