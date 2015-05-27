@@ -21,7 +21,6 @@ namespace NachoClient.iOS
         protected UITableView existingTableView;
         protected static NachoTabBarController instance;
 
-        SwitchAccountView switchAccountView;
         SwitchAccountButton switchAccountButton;
 
         public NachoTabBarController (IntPtr handle) : base (handle)
@@ -50,9 +49,6 @@ namespace NachoClient.iOS
 
             MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
             MoreNavigationController.NavigationBar.Translucent = false;
-
-            switchAccountView = new SwitchAccountView ();
-            View.AddSubview (switchAccountView);
 
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
 
@@ -361,7 +357,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            switchAccountView.Activate (SwitchToAccount);
+            SwitchAccountViewController.ShowDropdown (MoreNavigationController.ViewControllers[0], SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)

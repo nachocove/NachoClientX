@@ -248,10 +248,9 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private IBEContext BEContext;
         private Random CoinToss;
 
-        public AsStrategy (IBEContext beContext, LadderChoiceEnum ladder)
+        public AsStrategy (IBEContext beContext, LadderChoiceEnum ladder) : base (beContext)
         {
             BEContext = beContext;
             CoinToss = new Random ();
