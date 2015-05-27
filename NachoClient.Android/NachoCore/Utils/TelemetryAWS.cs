@@ -3,6 +3,7 @@
 //#define AWS_DEBUG
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
@@ -11,6 +12,8 @@ using System.Reflection;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
 using Amazon.Util;
@@ -28,6 +31,7 @@ namespace NachoCore.Utils
         private static bool Initialized = false;
 
         private static AmazonDynamoDBClient Client;
+        private static AmazonS3Client S3Client;
         private static Table DeviceInfoTable;
         private static Table LogTable;
         private static Table SupportTable;
@@ -39,6 +43,20 @@ namespace NachoCore.Utils
         private static string ClientId {
             get {
                 return Device.Instance.Identity ();
+            }
+        }
+
+        public static string _HashUserId;
+
+        private static string HashUserId {
+            get {
+                if (null == _HashUserId) {
+                    if (null == NcApplication.Instance.UserId) {
+                        return null;
+                    }
+                    _HashUserId = HashHelper.Sha256 (NcApplication.Instance.UserId).Substring (0, 8);
+                }
+                return _HashUserId;
             }
         }
 
@@ -62,13 +80,13 @@ namespace NachoCore.Utils
             // Disable exponential backoff to implement our own linear backoff scheme.
             config.MaxErrorRetry = 0;
 
-            CognitoAWSCredentials credentials = new CognitoAWSCredentials (
-                                                    BuildInfo.AwsAccountId,
-                                                    BuildInfo.AwsIdentityPoolId,
-                                                    BuildInfo.AwsUnauthRoleArn,
-                                                    BuildInfo.AwsAuthRoleArn,
-                                                    RegionEndpoint.USEast1
-                                                );
+            var credentials = new TelemetryAWSCredentials (
+                                  BuildInfo.AwsAccountId,
+                                  BuildInfo.AwsIdentityPoolId,
+                                  BuildInfo.AwsUnauthRoleArn,
+                                  BuildInfo.AwsAuthRoleArn,
+                                  RegionEndpoint.USEast1
+                              );
 
             // We get a different Cognito id each time it runs because unauthenticated
             // identities (that we use) are anonymous. But doing so would mean it is
@@ -96,6 +114,10 @@ namespace NachoCore.Utils
                 CaptureTable = Table.LoadTableAsync (Client, TableName ("capture"), NcTask.Cts.Token);
                 UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
                 WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
+            });
+
+            Retry (() => {
+                S3Client = new AmazonS3Client (credentials, RegionEndpoint.USWest2);
             });
         }
 
@@ -129,11 +151,6 @@ namespace NachoCore.Utils
                 Client.Dispose ();
             }
             InitializeTables ();
-        }
-
-        public bool IsUseable ()
-        {
-            return true;
         }
 
         public string GetUserName ()
@@ -177,14 +194,18 @@ namespace NachoCore.Utils
                     NcAssert.True (false);
                 }
 
-                // Get the table batch write. Create one if it doesn't exist
-                DocumentBatchWrite batchWrite;
-                if (!writeDict.TryGetValue (eventTable, out batchWrite)) {
-                    batchWrite = new DocumentBatchWrite (eventTable);
-                    writeDict.Add (eventTable, batchWrite);
+                if (null != eventItem) {
+                    NcAssert.True (null != eventTable);
+                    // To DynamoDB
+                    // Get the table batch write. Create one if it doesn't exist
+                    DocumentBatchWrite batchWrite;
+                    if (!writeDict.TryGetValue (eventTable, out batchWrite)) {
+                        batchWrite = new DocumentBatchWrite (eventTable);
+                        writeDict.Add (eventTable, batchWrite);
+                    }
+                    eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
+                    batchWrite.AddDocumentToPut (eventItem);
                 }
-                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
-                batchWrite.AddDocumentToPut (eventItem);
             }
 
             var multiBatchWrite = new MultiTableDocumentBatchWrite ();
@@ -264,12 +285,12 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private bool AwsSendEvent (Action action)
+        private bool AwsSendEvent (Action action, string description)
         {
             try {
                 action ();
             } catch (Exception e) {
-                if (!HandleAWSException (e, "AWS send event")) {
+                if (!HandleAWSException (e, description)) {
                     if (NcTask.Cts.Token.IsCancellationRequested) {
                         Client.Dispose ();
                         Client = null;
@@ -292,7 +313,7 @@ namespace NachoCore.Utils
                 eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait (NcTask.Cts.Token);
-            });
+            }, "AWS send one event");
         }
 
         private bool AwsSendBatchEvents (MultiTableDocumentBatchWrite multiBatchWrite)
@@ -300,7 +321,38 @@ namespace NachoCore.Utils
             return AwsSendEvent (() => {
                 var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
-            });
+            }, "AWS send batch events");
+        }
+
+        public bool UploadEvents (string jsonFilePath)
+        {
+            using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read)) {
+                using (var gzipStream = new GZipStream (jsonStream, CompressionMode.Compress)) {
+                    // Extract timestamps from the file path
+                    var startTimeStamp = jsonFilePath.Substring (0, 17);
+                    var jsonType = jsonFilePath.Substring (34);
+                    var year = startTimeStamp.Substring (0, 4);
+                    var month = startTimeStamp.Substring (4, 2);
+                    var day = startTimeStamp.Substring (6, 2);
+
+                    var s3Path = Path.Combine (
+                                     day + month + year,
+                                     HashUserId,
+                                     NcApplication.Instance.UserId,
+                                     NcApplication.Instance.ClientId,
+                                     "NachoMail",
+                                     jsonType + '-' + startTimeStamp + ".gz");
+                    var uploadRequest = new PutObjectRequest () {
+                        BucketName = BuildInfo.S3Bucket,
+                        Key = s3Path,
+                        InputStream = gzipStream,
+                    };
+                    return AwsSendEvent (() => {
+                        var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
+                        task.Wait (NcTask.Cts.Token);
+                    }, "AWS upload events");
+                }
+            }
         }
 
         private bool SendDeviceInfo ()
@@ -425,6 +477,20 @@ namespace NachoCore.Utils
             }
             anEvent ["wbxml"] = tEvent.Wbxml;
             return anEvent;
+        }
+    }
+
+    class TelemetryAWSCredentials : CognitoAWSCredentials
+    {
+        public TelemetryAWSCredentials (string accountId, string identityPoolId,
+                                        string unAuthRoleArn, string authRoleArn, RegionEndpoint region)
+            : base (accountId, identityPoolId, unAuthRoleArn, authRoleArn, region)
+        {
+        }
+
+        public override string GetCachedIdentityId ()
+        {
+            return NcApplication.Instance.UserId;
         }
     }
 }

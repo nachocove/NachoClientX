@@ -134,7 +134,7 @@ namespace NachoCore.Utils
 
             public void Report (string kind)
             {
-                Telemetry.RecordCapture (kind, Count, Min, Max, Total, Total2);
+                Telemetry.RecordCapture (kind, (int)Count, (int)Min, (int)Max, (long)Total, (long)Total2);
                 if (null != Xtra) {
                     foreach (var key in Xtra.Keys) {
                         Xtra [key].Report (key);

@@ -16,11 +16,14 @@ namespace NachoCore.Utils
     {
         public string id;
         public string client;
-        public DateTime timestamp;
+        public long timestamp;
         public string event_type;
 
         public TelemetryJsonEvent ()
         {
+            id = Guid.NewGuid ().ToString ().Replace ("-", "");
+            client = NcApplication.Instance.ClientId;
+            timestamp = DateTime.UtcNow.Ticks;
         }
 
         public string ToJson ()
@@ -33,25 +36,69 @@ namespace NachoCore.Utils
     {
         public int thread_id;
         public string message;
+
+        public TelemetryLogEvent (TelemetryEventType type)
+        {
+            switch (type) {
+            case TelemetryEventType.ERROR:
+                event_type = "ERROR";
+                break;
+            case TelemetryEventType.WARN:
+                event_type = "WARN";
+                break;
+            case TelemetryEventType.INFO:
+                event_type = "INFO";
+                break;
+            case TelemetryEventType.DEBUG:
+                event_type = "DEBUG";
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("RecordLogEvent: unexpected type {0}", type));
+            }
+        }
     }
 
     public class TelemetryWbxmlEvent : TelemetryJsonEvent
     {
         public byte[] wbxml;
+
+        public TelemetryWbxmlEvent (TelemetryEventType type)
+        {
+            switch (type) {
+            case TelemetryEventType.WBXML_REQUEST:
+                event_type = "WBXML_REQUEST";
+                break;
+            case TelemetryEventType.WBXML_RESPONSE:
+                event_type = "WBXML_RESPONSE";
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("RecordWbxmlEvent: unexpected type {0}", type));
+            }
+        }
     }
 
     public class TelemetryCounterEvent : TelemetryJsonEvent
     {
         public string counter_name;
-        public Int64 count;
-        public DateTime counter_start;
-        public DateTime counter_end;
+        public long count;
+        public long counter_start;
+        public long counter_end;
+
+        public TelemetryCounterEvent ()
+        {
+            event_type = "COUNTER";
+        }
     }
 
     public class TelemetrySamplesEvent : TelemetryJsonEvent
     {
         public string samples_name;
         public List<int> samples;
+
+        public TelemetrySamplesEvent ()
+        {
+            event_type = "SAMPLES";
+        }
     }
 
     public class TelemetryTimeSeriesSamplesEvent : TelemetryJsonEvent
@@ -75,6 +122,11 @@ namespace NachoCore.Utils
         public int max;
         public long sum;
         public long sum2;
+
+        public TelemetryStatistics2Event ()
+        {
+            event_type = "STATITSITCS2";
+        }
     }
 
     public class TelemetryUiEvent : TelemetryJsonEvent
@@ -83,67 +135,20 @@ namespace NachoCore.Utils
         public string ui_object;
         public string ui_string;
         public long ui_long;
+
+        public TelemetryUiEvent ()
+        {
+            event_type = "UI";
+        }
     }
 
     public class TelemetrySupportEvent : TelemetryJsonEvent
     {
         public string support;
-    }
 
-    public class TelemetryJsonFile
-    {
-        protected string FilePath;
-        protected FileStream JsonFile;
-
-        public int NumberOfEntries { get; protected set; }
-
-        public TelemetryJsonFile (string path)
+        public TelemetrySupportEvent ()
         {
-            FilePath = path;
-            if (File.Exists (FilePath)) {
-                JsonFile = File.Open (FilePath, FileMode.Create, FileAccess.Write);
-                Append ("[");
-            } else {
-                JsonFile = File.Open (FilePath, FileMode.Open, FileAccess.Write);
-                // Count how many lines;
-                using (var reader = new StreamReader (JsonFile)) {
-                    while (!String.IsNullOrEmpty (reader.ReadLine ())) {
-                        NumberOfEntries += 1;
-                    }
-                }
-                JsonFile.Seek (0, SeekOrigin.End);
-            }
-        }
-
-        protected void Append (string data)
-        {
-            byte[] bytes = Encoding.ASCII.GetBytes (data);
-            JsonFile.Write (bytes, 0, bytes.Length);
-        }
-
-        public bool Add (TelemetryJsonEvent tEvent)
-        {
-            bool succeeded;
-            try {
-                if (0 == NumberOfEntries) {
-                    Append (tEvent.ToJson ());
-                } else {
-                    Append (",\n" + tEvent.ToJson ());
-                }
-                NumberOfEntries += 1;
-                succeeded = true;
-                JsonFile.Flush ();
-            } catch (IOException e) {
-                Log.Warn (Log.LOG_UTILS, "fail to write a telemetry JSON event ({0})", e);
-                succeeded = false;
-            }
-            return succeeded;
-        }
-
-        public void Close ()
-        {
-            Append ("]");
-            JsonFile.Close ();
+            event_type = "SUPPORT";
         }
     }
 }

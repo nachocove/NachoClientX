@@ -407,6 +407,7 @@
     <Compile Include="NachoCore\Utils\TelemetryEvent.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
     <Compile Include="NachoCore\Utils\NcSamples.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
