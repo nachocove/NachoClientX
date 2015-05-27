@@ -6,5 +6,11 @@ namespace NachoCore
 {
     public class NcStrategy
     {
+        protected IBEContext BEContext;
+
+        public NcStrategy (IBEContext beContext)
+        {
+            BEContext = beContext;
+        }
     }
 }

@@ -413,6 +413,7 @@
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

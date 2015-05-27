@@ -371,6 +371,7 @@ namespace NachoClient.iOS
             if (freshAccount) {
                 Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                // FIXME STEVE value of None causes crash.
                 theAccount.Account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
                 RefreshTheAccount ();
             } 
@@ -681,7 +682,8 @@ namespace NachoClient.iOS
         private void RefreshTheServer ()
         {
             if (null != theAccount.Account) {
-                theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).SingleOrDefault ();
+                // FIXME STEVE
+                theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).FirstOrDefault ();
                 if (null != theAccount.Server) {
                     if (null == theAccount.Server.UserSpecifiedServerName) {
                         serverView.textField.Text = theAccount.Server.Host;

@@ -1422,6 +1422,9 @@
       <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\IImapStrategy.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

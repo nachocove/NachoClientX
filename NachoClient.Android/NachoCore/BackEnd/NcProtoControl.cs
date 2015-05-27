@@ -7,6 +7,8 @@ using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
 
 namespace NachoCore
 {
+    public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
+
     public class NcProtoControl
     {
         public class PcEvt : SmEvt
