@@ -70,12 +70,6 @@ namespace NachoCore.Model
             switch (service) {
             case McAccount.AccountServiceEnum.Exchange:
                 return false;
-            case McAccount.AccountServiceEnum.GoogleDefault:
-                imapServerPort = 993;
-                imapServerName = "imap.gmail.com";
-                smtpServerPort = 587;
-                smtpServerName = "smtp.gmail.com";
-                break;
             case McAccount.AccountServiceEnum.GoogleExchange:
                 return false;
             case McAccount.AccountServiceEnum.HotmailExchange:
@@ -84,10 +78,41 @@ namespace NachoCore.Model
                 return false;
             case McAccount.AccountServiceEnum.OutlookExchange:
                 return false;
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                imapServerPort = 993;
+                imapServerName = "imap.gmail.com";
+                smtpServerPort = 587;
+                smtpServerName = "smtp.gmail.com";
+                break;
+            case McAccount.AccountServiceEnum.HotmailDefault:
+                imapServerPort = 993;
+                imapServerName = "imap-mail.outlook.com";
+                smtpServerPort = 587;
+                smtpServerName = "smtp.live.com";
+                break;
+            case McAccount.AccountServiceEnum.Aol:
+                imapServerPort = 993;
+                imapServerName = "imap.aol.com";
+                smtpServerPort = 587;
+                smtpServerName = "smtp.aol.com";
+                break;
+            case McAccount.AccountServiceEnum.Yahoo:
+                imapServerPort = 993;
+                imapServerName = "imap.mail.yahoo.com";
+                smtpServerPort = 587;
+                smtpServerName = "smtp.mail.yahoo.com";
+                break;
+            case McAccount.AccountServiceEnum.iCloud:
+                imapServerPort = 993;
+                imapServerName = "imap.mail.me.com";
+                smtpServerPort = 587;
+                smtpServerName = "smtp.mail.me.com";
+                break;
             default:
                 NcAssert.CaseError ();
                 return false;
             }
+
             var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
             var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
             NcModel.Instance.RunInTransaction (() => {
