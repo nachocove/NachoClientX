@@ -52,7 +52,9 @@ namespace NachoClient.iOS
         UIView allDayView;
         UISwitch allDaySwitch;
         UIView startView;
+        UIDatePicker startDatePicker;
         UIView endView;
+        UIDatePicker endDatePicker;
 
         UIView locationView;
         UITextField locationField;
@@ -448,12 +450,8 @@ namespace NachoClient.iOS
             startDateLabel.TextColor = A.Color_808080;
             startView.AddSubview (startDateLabel);
 
-            startDatePicker.Frame = new CGRect (0, 44, SCREEN_WIDTH, START_PICKER_HEIGHT);
-            startDatePicker.Hidden = true;
-            startDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
-            startView.AddSubview (startDatePicker);
+            startDatePicker = null;
 
-            startDatePicker.ValueChanged += StartDatePickerValueChanged;
             startDivider = Util.AddHorizontalLine (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
             startDivider.Hidden = true;
             startView.AddSubview (startDivider);
@@ -479,12 +477,7 @@ namespace NachoClient.iOS
             endDateLabel.TextColor = A.Color_808080;
             endView.AddSubview (endDateLabel);
 
-            endDatePicker.Frame = new CGRect (0, CELL_HEIGHT, SCREEN_WIDTH, END_PICKER_HEIGHT);
-            endDatePicker.Hidden = true;
-            endDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
-            endView.AddSubview (endDatePicker);
-
-            endDatePicker.ValueChanged += EndDatePickerValueChanged;
+            endDatePicker = null;
 
             endDivider = Util.AddHorizontalLine (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
             startDivider.Hidden = true;
@@ -736,14 +729,10 @@ namespace NachoClient.iOS
             //start date
             if (c.AllDayEvent) {
                 startDateLabel.Text = Pretty.FullDateString (c.StartTime);
-                startDatePicker.Mode = UIDatePickerMode.Date;
             } else {
                 startDateLabel.Text = Pretty.FullDateTimeString (c.StartTime);
-                startDatePicker.Mode = UIDatePickerMode.DateAndTime;
             }
             startDate = c.StartTime;
-            startDatePicker.Date = c.StartTime.ToNSDate ();
-            Util.ConstrainDatePicker (startDatePicker, startDate);
             startDateLabel.SizeToFit ();
             startDateLabel.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -751,16 +740,11 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 var endDay = CalendarHelper.ReturnAllDayEventEndTime (c.EndTime);
                 endDateLabel.Text = Pretty.FullDateString (endDay);
-                endDatePicker.Mode = UIDatePickerMode.Date;
                 endDate = endDay;
-                endDatePicker.Date = endDay.ToNSDate ();
             } else {
                 endDateLabel.Text = Pretty.FullDateTimeString (c.EndTime);
-                endDatePicker.Mode = UIDatePickerMode.DateAndTime;
                 endDate = c.EndTime;
-                endDatePicker.Date = c.EndTime.ToNSDate ();
             }
-            Util.ConstrainDatePicker (endDatePicker, endDate);
             endDateLabel.SizeToFit ();
             endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -835,12 +819,17 @@ namespace NachoClient.iOS
             descriptionTextView.Changed -= DescriptionTextViewChanged;
             descriptionTextView.SelectionChanged -= DescriptionTextViewSelectionChanged;
             descriptionTextView.Ended -= DescriptionTextViewEnded;
-            startDatePicker.ValueChanged -= StartDatePickerValueChanged;
-            endDatePicker.ValueChanged -= EndDatePickerValueChanged;
             allDaySwitch.ValueChanged -= AllDaySwitchValueChanged;
             locationField.EditingDidBegin -= LocationEditingDidBegin;
             locationField.EditingDidEnd -= LocationEditingDidEnd;
             locationField.ShouldReturn -= TextFieldResignFirstResponder;
+
+            if (null != startDatePicker) {
+                startDatePicker.ValueChanged -= StartDatePickerValueChanged;
+            }
+            if (null != endDatePicker) {
+                endDatePicker.ValueChanged -= EndDatePickerValueChanged;
+            }
 
             // Gesture recognizers
 
@@ -865,7 +854,6 @@ namespace NachoClient.iOS
             deleteTapGesture.RemoveTarget (deleteTapGestureToken);
             deleteView.RemoveGestureRecognizer (deleteTapGesture);
 
-
             titleField = null;
             descriptionTextView = null;
             descriptionPlaceHolder = null;
@@ -876,7 +864,9 @@ namespace NachoClient.iOS
             allDayView = null;
             allDaySwitch = null;
             startView = null;
+            startDatePicker = null;
             endView = null;
+            endDatePicker = null;
             locationView = null;
             locationField = null;
             attachmentView = null;
@@ -914,6 +904,41 @@ namespace NachoClient.iOS
             strikethrough = null;
             endDivider = null;
             startDivider = null;
+        }
+
+        // UIDatePicker leaks memory.  Quite badly.  A couple of megabytes every time one is added to the
+        // view hierarchy.  I haven't found any way to avoid this leak.  The best we can do right now is to
+        // not create the UIDatePicker object until the user expands the date picker.  That will save us a
+        // few megabytes whenever the user edits an event without adjusting the start or end times.
+
+        protected void InitializeStartDatePicker ()
+        {
+            if (null != startDatePicker) {
+                return;
+            }
+            startDatePicker = new UIDatePicker (new CGRect (0, 44, SCREEN_WIDTH, START_PICKER_HEIGHT));
+            startDatePicker.Hidden = true;
+            startDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
+            startDatePicker.ValueChanged += StartDatePickerValueChanged;
+            startDatePicker.Mode = allDaySwitch.On ? UIDatePickerMode.Date : UIDatePickerMode.DateAndTime;
+            startDatePicker.Date = startDate.ToNSDate ();
+            Util.ConstrainDatePicker (startDatePicker, startDate);
+            startView.AddSubview (startDatePicker);
+        }
+
+        protected void InitializeEndDatePicker ()
+        {
+            if (null != endDatePicker) {
+                return;
+            }
+            endDatePicker = new UIDatePicker (new CGRect (0, CELL_HEIGHT, SCREEN_WIDTH, END_PICKER_HEIGHT));
+            endDatePicker.Hidden = true;
+            endDatePicker.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleBottomMargin;
+            endDatePicker.ValueChanged += EndDatePickerValueChanged;
+            endDatePicker.Mode = allDaySwitch.On ? UIDatePickerMode.Date : UIDatePickerMode.DateAndTime;
+            endDatePicker.Date = endDate.ToNSDate ();
+            Util.ConstrainDatePicker (endDatePicker, endDate);
+            endView.AddSubview (endDatePicker);
         }
 
         protected string ConvertToPlainText (string formattedText, NSDocumentType type)
@@ -1359,7 +1384,9 @@ namespace NachoClient.iOS
             startDate = date;
             if (!endChanged && !allDaySwitch.On) {
                 endDate = date.AddHours (1);
-                endDatePicker.Date = endDate.ToNSDate ();
+                if (null != endDatePicker) {
+                    endDatePicker.Date = endDate.ToNSDate ();
+                }
                 endDateLabel.Text = Pretty.FullTimeString (endDate);
                 endDateLabel.SizeToFit ();
                 endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
@@ -1368,7 +1395,7 @@ namespace NachoClient.iOS
             startDateLabel.SizeToFit ();
             startDateLabel.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
             startDateLabel.TextColor = A.Color_NachoTeal;
-            if (0 > endDate.CompareTo(startDate)) {
+            if (startDate > endDate) {
                 strikethrough.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                 strikethrough.Hidden = false;
                 endDateLabel.TextColor = A.Color_NachoRed;
@@ -1391,7 +1418,7 @@ namespace NachoClient.iOS
             endDate = date;
             endDateLabel.SizeToFit ();
             endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            if (0 > endDate.CompareTo (startDate)) {
+            if (startDate > endDate) {
                 strikethrough.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                 strikethrough.Hidden = false;
                 endDateLabel.TextColor = A.Color_NachoRed;
@@ -1412,8 +1439,12 @@ namespace NachoClient.iOS
                 endDateLabel.SizeToFit ();
                 endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
                 strikethrough.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-                startDatePicker.Mode = UIDatePickerMode.Date;
-                endDatePicker.Mode = UIDatePickerMode.Date;
+                if (null != startDatePicker) {
+                    startDatePicker.Mode = UIDatePickerMode.Date;
+                }
+                if (null != endDatePicker) {
+                    endDatePicker.Mode = UIDatePickerMode.Date;
+                }
             } else {
                 if (!timesAreSet) {
                     // Special case in which the user changes an all day event to an event with a start and end time
@@ -1422,13 +1453,17 @@ namespace NachoClient.iOS
                     endDate = tempC.EndTime;
                     timesAreSet = true;
                 }
-                startDatePicker.Date = startDate.ToNSDate ();
-                startDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                if (null != startDatePicker) {
+                    startDatePicker.Date = startDate.ToNSDate ();
+                    startDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                }
                 startDateLabel.Text = Pretty.FullDateTimeString (startDate);
                 startDateLabel.SizeToFit ();
                 startDateLabel.Frame = new CGRect (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                endDatePicker.Date = endDate.ToNSDate ();
-                endDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                if (null != endDatePicker) {
+                    endDatePicker.Date = endDate.ToNSDate ();
+                    endDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                }
                 endDateLabel.Text = Pretty.FullDateTimeString (endDate);
                 endDateLabel.SizeToFit ();
                 endDateLabel.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
@@ -1483,6 +1518,7 @@ namespace NachoClient.iOS
             } else {
                 // Open the start date picker and close the end date picker.  If the end date picker is already
                 // closed, closing it again will have no effect.
+                InitializeStartDatePicker ();
                 startDateOpen = true;
                 START_PICKER_HEIGHT = 216;
                 startDatePicker.Hidden = false;
@@ -1493,7 +1529,9 @@ namespace NachoClient.iOS
                 scrollView.ScrollRectToVisible (new CGRect (0, startView.Frame.Y, 1, CELL_HEIGHT + START_PICKER_HEIGHT), true);
                 LayoutWithAnimation (() => {
                     // The views can't be marked as hidden until after the animation has completed.
-                    endDatePicker.Hidden = true;
+                    if (null != endDatePicker) {
+                        endDatePicker.Hidden = true;
+                    }
                     endDivider.Hidden = true;
                 });
             }
@@ -1513,7 +1551,7 @@ namespace NachoClient.iOS
                     endDivider.Hidden = true;
                 });
                 endDate = endDatePicker.Date.ToDateTime ();
-                if (0 > endDate.CompareTo (startDate)) {
+                if (startDate > endDate) {
                     strikethrough.Frame = new CGRect (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                     strikethrough.Hidden = false;
                     endDateLabel.TextColor = A.Color_NachoRed;
@@ -1524,9 +1562,9 @@ namespace NachoClient.iOS
             } else {
                 // Open the end date picker and close the start date picker.  If the start date picker is already
                 // closed, closing it again will have no effect.
+                InitializeEndDatePicker ();
                 endDateOpen = true;
                 END_PICKER_HEIGHT = 216;
-                endDateOpen = true;
                 endDatePicker.Hidden = false;
                 endDivider.Hidden = false;
                 startDateOpen = false;
@@ -1538,7 +1576,9 @@ namespace NachoClient.iOS
                 scrollView.ScrollRectToVisible (new CGRect (0, startView.Frame.Y + CELL_HEIGHT, 1, CELL_HEIGHT + END_PICKER_HEIGHT), true);
                 LayoutWithAnimation (() => {
                     // The views can't be marked as hidden until after the animation has completed.
-                    startDatePicker.Hidden = true;
+                    if (null != startDatePicker) {
+                        startDatePicker.Hidden = true;
+                    }
                     startDivider.Hidden = true;
                 });
             }
