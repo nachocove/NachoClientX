@@ -445,7 +445,7 @@ namespace NachoCore.ActiveSync
         // TODO: replace this code with data that gets pushed to the app.
         private string KnownServer (string domain)
         {
-            switch (domain) {
+            switch (domain.ToLower ()) {
             case "outlook.com":
             case "live.com":
             case "hotmail.com":
