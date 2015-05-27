@@ -30,5 +30,7 @@ namespace NachoCore
         bool HasOutboxSemantics ();
 
         bool HasDraftsSemantics ();
+
+        bool IsCompatibleWithAccount (McAccount account);
     }
 }

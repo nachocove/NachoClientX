@@ -54,14 +54,17 @@ namespace NachoCore.ActiveSync
             foreach (var iterFolder in FoldersInRequest) {
                 iterFolder.UpdateSet_AsSyncLastPing (DateTime.UtcNow);
             }
-            var update = BEContext.ProtocolState;
-            update.LastPing = DateTime.UtcNow;
-            BEContext.ProtocolState = update;
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastPing = DateTime.UtcNow;
+                return true;
+            });
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
-            McProtocolState update;
+            McProtocolState protocolState;
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
             string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;
             switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
@@ -86,15 +89,21 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD0", null, "Xml.Ping.StatusCode.MissingParams/SyntaxError");
 
             case Xml.Ping.StatusCode.BadHeartbeat_5:
-                update = BEContext.ProtocolState;
-                update.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
-                BEContext.ProtocolState = update;
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "PINGBADH");
 
             case Xml.Ping.StatusCode.TooManyFolders_6:
-                update = BEContext.ProtocolState;
-                update.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
-                BEContext.ProtocolState = update;
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "PINGTMF");
 
             case Xml.Ping.StatusCode.NeedFolderSync_7:

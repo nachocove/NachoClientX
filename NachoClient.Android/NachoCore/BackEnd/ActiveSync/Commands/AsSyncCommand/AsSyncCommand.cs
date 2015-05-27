@@ -215,20 +215,13 @@ namespace NachoCore.ActiveSync
                     switch (classCodeEnum) {
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        // If the server supports previews, then ask for 0-sized MIME with a preview.
-                        // Otherwise, ask for 255 bytes of plain text.
-                        if (BEContext.Server.HostIsGMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "255")));
-                        } else {
-                            options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.AllMime_2));
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "0"),
-                                new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
-                        }
+                        options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
+                        // Some servers support a preview option, but that is limited by the spec to 255 bytes.
+                        // The app wants more than that, so it can have some useful text left after stripping
+                        // away all the junk.  For all servers, ask for a plain text body truncated to 500 bytes.
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "500")));
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
@@ -407,8 +400,11 @@ namespace NachoCore.ActiveSync
                     try {
                         var limit = uint.Parse (xmlLimit.Value);
                         var protocolState = BEContext.ProtoControl.ProtocolState;
-                        protocolState.AsSyncLimit = limit;
-                        protocolState.Update ();
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsSyncLimit = limit;
+                            return true;
+                        });
                     } catch (Exception ex) {
                         Log.Error (Log.LOG_AS, "AsSyncCommand: exception parsing Limit: {0}", ex.ToString ());
                     }
@@ -518,8 +514,11 @@ namespace NachoCore.ActiveSync
                         if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
                             var protocolState = BEContext.ProtocolState;
                             if (!protocolState.HasSyncedInbox) {
-                                protocolState.HasSyncedInbox = true;
-                                protocolState.Update ();
+                                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                                    var target = (McProtocolState)record;
+                                    target.HasSyncedInbox = true;
+                                    return true;
+                                });
                             }
                         }
                         // If we have been cancelled, this sync can't cause an epoch scrub.
@@ -689,8 +688,11 @@ namespace NachoCore.ActiveSync
         {
             if (IsNarrow) {
                 var protocolState = BEContext.ProtocolState;
-                protocolState.LastNarrowSync = DateTime.UtcNow;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.LastNarrowSync = DateTime.UtcNow;
+                    return true;
+                });
             }
             return Event.Create ((uint)SmEvt.E.Success, mnemonic);
         }
@@ -1038,7 +1040,11 @@ namespace NachoCore.ActiveSync
                     Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
                     var protocolState = BEContext.ProtoControl.ProtocolState;
                     if (null != Limit) {
-                        protocolState.AsSyncLimit = (uint)Limit;
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsSyncLimit = (uint)Limit;
+                            return true;
+                        });
                     }
                     PendingList.RemoveAll (x => x.Id == pending.Id);
                     pending.ResolveAsSuccess (BEContext.ProtoControl);
@@ -1166,8 +1172,11 @@ namespace NachoCore.ActiveSync
                             Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
                             var protocolState = BEContext.ProtoControl.ProtocolState;
                             if (null != Limit) {
-                                protocolState.AsSyncLimit = (uint)Limit;
-                                protocolState.Update ();
+                                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                                    var target = (McProtocolState)record;
+                                    target.AsSyncLimit = (uint)Limit;
+                                    return true;
+                                });
                             }
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsSuccess (BEContext.ProtoControl);

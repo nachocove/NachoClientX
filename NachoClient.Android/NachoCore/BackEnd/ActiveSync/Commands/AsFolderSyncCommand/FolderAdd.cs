@@ -10,7 +10,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsFolderSyncCommand : AsCommand
     {
-        private class ApplyFolderAdd : AsApplyServerCommand
+        private class ApplyFolderAdd : NcApplyServerCommand
         {
             public string ServerId { set; get; }
 

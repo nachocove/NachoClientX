@@ -8,7 +8,11 @@ using UIKit;
 public class FadeCustomSegue : UIStoryboardSegue
 {
 
-    public  FadeCustomSegue( IntPtr i) : base(i)
+    public FadeCustomSegue (IntPtr i) : base (i)
+    {
+    }
+
+    public FadeCustomSegue (string identifier, UIViewController source, UIViewController destination) : base (identifier, source, destination)
     {
     }
 

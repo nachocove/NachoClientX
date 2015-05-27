@@ -68,7 +68,6 @@ namespace NachoCore
             return "";
         }
 
-
         public bool HasOutboxSemantics ()
         {
             return folder.IsClientOwnedOutboxFolder ();
@@ -87,6 +86,11 @@ namespace NachoCore
         public INachoEmailMessages GetAdapterForThread (string threadId)
         {
             return null;
+        }
+
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == folder.AccountId;
         }
     }
 }

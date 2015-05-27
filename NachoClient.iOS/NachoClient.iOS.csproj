@@ -384,7 +384,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
       <Link>NachoCore\Adapters\INachoContacts.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Adapters\DeviceCalendar.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\BackEnd.cs">
       <Link>NachoCore\BackEnd\BackEnd.cs</Link>
     </Compile>
@@ -842,9 +841,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcDistribution.cs">
       <Link>NachoCore\Utils\NcDistribution.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
@@ -1399,6 +1395,45 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
       <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\ISmtpCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\ISmtpCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
+      <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MailKitProtocolLogger.cs">
+      <Link>NachoCore\Utils\MailKitProtocolLogger.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\IImapCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
+      <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
+    <Compile Include="NachoUI.iOS\SwitchAccountViewController.designer.cs">
+      <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2280,6 +2315,50 @@
     <BundleResource Include="Resources\more-policy%403x.png" />
     <BundleResource Include="Resources\more-policy%404x.png" />
     <BundleResource Include="Resources\more-policy%406x.png" />
+    <BundleResource Include="Resources\login-imap-min%402x.png" />
+    <BundleResource Include="Resources\login-imap%402x.png" />
+    <BundleResource Include="Resources\login-gmail%402x.png" />
+    <BundleResource Include="Resources\login-gmail-min%402x.png" />
+    <BundleResource Include="Resources\avatar-gmail%402x.png" />
+    <BundleResource Include="Resources\avatar-gmail%403x.png" />
+    <BundleResource Include="Resources\avatar-gmail%404x.png" />
+    <BundleResource Include="Resources\avatar-gmail%406x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%402x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%403x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%404x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%406x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%402x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%403x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%404x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%406x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%402x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%403x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%404x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%406x.png" />
+    <BundleResource Include="Resources\avatar-office365%402x.png" />
+    <BundleResource Include="Resources\avatar-office365%403x.png" />
+    <BundleResource Include="Resources\avatar-office365%404x.png" />
+    <BundleResource Include="Resources\avatar-office365%406x.png" />
+    <BundleResource Include="Resources\avatar-outlook%402x.png" />
+    <BundleResource Include="Resources\avatar-outlook%403x.png" />
+    <BundleResource Include="Resources\avatar-outlook%404x.png" />
+    <BundleResource Include="Resources\avatar-outlook%406x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%402x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%403x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%404x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%406x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%402x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%403x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%404x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%406x.png" />
+    <BundleResource Include="Resources\avatar-icloud%402x.png" />
+    <BundleResource Include="Resources\avatar-icloud%403x.png" />
+    <BundleResource Include="Resources\avatar-icloud%404x.png" />
+    <BundleResource Include="Resources\avatar-icloud%406x.png" />
+    <BundleResource Include="Resources\avatar-iphone%402x.png" />
+    <BundleResource Include="Resources\avatar-iphone%403x.png" />
+    <BundleResource Include="Resources\avatar-iphone%404x.png" />
+    <BundleResource Include="Resources\avatar-iphone%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

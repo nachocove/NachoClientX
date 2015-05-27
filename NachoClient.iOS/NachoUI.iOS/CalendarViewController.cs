@@ -17,6 +17,7 @@ namespace NachoClient.iOS
     {
         protected CalendarTableViewSource calendarSource;
         protected UITableView calendarTableView;
+        SwitchAccountButton switchAccountButton;
         public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
         public nint selectedDateTag = 0;
@@ -66,6 +67,12 @@ namespace NachoClient.iOS
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
+
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            NavigationItem.TitleView = switchAccountButton;
+
+            // Adjust the icon; calendar covers all account
+            SwitchToAccount (NcApplication.Instance.Account);
 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
@@ -270,8 +277,6 @@ namespace NachoClient.iOS
             calendarTableView.Source = calendarSource;
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
             calendarTableView.AccessibilityLabel = "Calendar";
-
-            NavigationItem.Title = "Calendar";
 
             DateDotView = new DateBarView (View, eventCalendarMap);
             DateDotView.SetOwner (this);
@@ -948,7 +953,16 @@ namespace NachoClient.iOS
         {
             calendarSource.MaybeExtendTableView (calendarTableView);
         }
-            
+
+        void SwitchAccountButtonPressed ()
+        {
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            switchAccountButton.SetAccountImage (account);
+        }
     }
 
 }

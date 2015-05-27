@@ -47,6 +47,8 @@ namespace NachoCore.Model
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
 
+        public uint ImapUidValidity { get; set; }
+
         [Indexed]
         public string DisplayName { get; set; }
 
@@ -256,7 +258,7 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
+        public static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " likelihood (f.AccountId = ?, 1.0) AND " +

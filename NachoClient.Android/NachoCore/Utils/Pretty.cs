@@ -705,6 +705,14 @@ namespace NachoCore.Utils
             }
         }
 
+        public static string MessageCount(string label, int count)
+        {
+            if (0 == count) {
+                return String.Format ("No {0}s", label);
+            } else {
+                return String.Format("{0} {1}{2}", count, label, (1 == count) ? "" : "s");
+            }
+        }
     }
 }
 

@@ -8,6 +8,7 @@ using Foundation;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.ActiveSync;
 
 namespace NachoPlatform
 {
@@ -118,10 +119,8 @@ namespace NachoPlatform
                     cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
                 }
 
-                if (null != Event.Notes) {
-                    var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Event.Notes);
-                    cal.BodyId = body.Id;
-                }
+                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Event.Notes ?? "");
+                cal.BodyId = body.Id;
 
                 cal.ResponseTypeIsSet = true;
                 switch (Event.Status) {
@@ -142,19 +141,37 @@ namespace NachoPlatform
                     break;
                 }
 
-                if (null != Event.TimeZone) {
-                    cal.StartTime = Event.StartDate.ShiftToUTC (Event.TimeZone).ToDateTime ();
-                    cal.EndTime = Event.EndDate.ShiftToUTC (Event.TimeZone).ToDateTime ();
-                } else {
-                    cal.StartTime = Event.StartDate.ToDateTime ();
-                    cal.EndTime = Event.EndDate.ToDateTime ();
+                cal.StartTime = Event.StartDate.ToDateTime ();
+                cal.EndTime = Event.EndDate.ToDateTime ();
+                if (Event.AllDay) {
+                    // iOS Calendar stores the end time for an all-day event at one second before midnight.
+                    // Nacho Mail wants the end time to be midnight at the end of the last day.  Adjust the
+                    // end time to be an integral number of days after the start time.
+                    cal.EndTime = cal.StartTime.AddDays (Math.Round ((cal.EndTime - cal.StartTime).TotalDays));
                 }
+
+                TimeZoneInfo timeZone = null;
+                if (null != Event.TimeZone) {
+                    // iOS's NSTimeZone does not expose the daylight saving transition rules, so there is no way
+                    // to construct a TimeZoneInfo object from the NSTimeZone object.  Instead we have to look
+                    // up the TimeZoneInfo by its ID.
+                    timeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                }
+                if (null == timeZone) {
+                    // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be
+                    // found, assume the local time zone.  Time zones only matter for all-day events and recurring
+                    // events, so getting the wrong time zone won't be a problem for most events.
+                    timeZone = TimeZoneInfo.Local;
+                }
+                cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (timeZone), cal.StartTime).toEncodedTimeZone ();
 
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
                 if (null != ekAttendees) {
                     foreach (var ekAttendee in ekAttendees) {
-                        var attendee = new McAttendee ();
+                        var attendee = new McAttendee () {
+                            AccountId = accountId,
+                        };
 
                         attendee.Name = ekAttendee.Name;
 
@@ -268,10 +285,22 @@ namespace NachoPlatform
             var end = DateTime.Now.AddMonths (1);
             var calendars = EventStore.GetCalendars (EKEntityType.Event);
             var retval = new List<PlatformCalendarRecordiOS> ();
-            calendars = calendars.Where (x => 
-                x.Source.SourceType != EKSourceType.Exchange &&
-            x.Source.SourceType != EKSourceType.Birthdays
-            ).ToArray ();
+            var ignoredSources = new List<string> ();
+            foreach (var calendar in calendars) {
+                var account = McAccount.QueryByEmailAddr (calendar.Title.Trim ()).FirstOrDefault ();
+                if (null != calendar.Title && null != account && 
+                    McAccount.AccountCapabilityEnum.CalReader == 
+                    (account.AccountCapability & McAccount.AccountCapabilityEnum.CalReader)) {
+                    // This is probably one of our accounts - note it as a source we want to ignore.
+                    if (null != calendar.Source && null != calendar.Source.Title) {
+                        ignoredSources.Add (calendar.Source.Title.Trim ());
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "GetCalendars: could not exclude calendar source.");
+                    }
+                }
+            }
+            calendars = calendars.Where (x => null == x.Source || null == x.Source.Title ||
+            !ignoredSources.Contains (x.Source.Title.Trim ())).ToArray ();
             var predicate = EventStore.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
             var calEvents = EventStore.EventsMatching (predicate);
             if (null != calEvents) {

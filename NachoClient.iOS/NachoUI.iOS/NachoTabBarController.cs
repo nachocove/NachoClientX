@@ -21,6 +21,8 @@ namespace NachoClient.iOS
         protected UITableView existingTableView;
         protected static NachoTabBarController instance;
 
+        SwitchAccountButton switchAccountButton;
+
         public NachoTabBarController (IntPtr handle) : base (handle)
         {
         }
@@ -47,6 +49,8 @@ namespace NachoClient.iOS
 
             MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
             MoreNavigationController.NavigationBar.Translucent = false;
+
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -97,6 +101,7 @@ namespace NachoClient.iOS
             UpdateNotificationBadge (NcApplication.Instance.Account.Id);
 
             var accountId = NcApplication.Instance.Account.Id;
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
 
             var emailMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey, accountId.ToString ());
             if (!String.IsNullOrEmpty (emailMessageIdString)) {
@@ -271,6 +276,8 @@ namespace NachoClient.iOS
         {
             var moreTabController = MoreNavigationController.TopViewController;
 
+            moreTabController.NavigationItem.TitleView = switchAccountButton;
+
             existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
             existingTableView.ScrollEnabled = false;
@@ -346,6 +353,16 @@ namespace NachoClient.iOS
                 MoreNavigationController.PopToRootViewController (false);
             }
             return true;
+        }
+
+        void SwitchAccountButtonPressed ()
+        {
+            SwitchAccountViewController.ShowDropdown (MoreNavigationController.ViewControllers[0], SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            switchAccountButton.SetAccountImage (account);
         }
     }
 }

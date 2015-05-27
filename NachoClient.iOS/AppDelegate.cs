@@ -933,7 +933,6 @@ namespace NachoClient.iOS
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
             cvc.SetAccountId (accountId);
-            cvc.SetTabBarController (Util.GetActiveTabBarOrNull ());
             this.Window.RootViewController.PresentViewController (cvc, true, null);
         }
 

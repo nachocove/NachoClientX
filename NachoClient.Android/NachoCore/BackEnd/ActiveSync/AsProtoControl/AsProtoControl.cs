@@ -133,21 +133,17 @@ namespace NachoCore.ActiveSync
             };
         }
 
-        public IAsStrategy SyncStrategy { set; get; }
+        public IAsStrategy Strategy { set; get; }
 
         private PushAssist PushAssist { set; get; }
 
-        private NcTimer PendingOnTimeTimer { set; get; }
-
         private int ConcurrentExtraRequests = 0;
 
-        public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+        public AsProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = McAccount.ActiveSyncCapabilities;
-
-            // TODO decouple disk setup from constructor.
-            EstablishService ();
+            SetupAccount ();
             /*
              * State Machine design:
              * * Events from the UI can come at ANY time. They are not always relevant, and should be dropped when not.
@@ -839,87 +835,13 @@ namespace NachoCore.ActiveSync
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
-            SyncStrategy = new AsStrategy (this);
+            Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
-            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
-        private void EstablishService ()
-        {
-            // Hang our records off Account.
-            NcModel.Instance.RunInTransaction (() => {
-                var account = Account;
-                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
-                if (null == policy) {
-                    policy = new McPolicy () {
-                        AccountId = account.Id,
-                    };
-                    policy.Insert ();
-                }
-                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
-                if (null == protocolState) {
-                    protocolState = new McProtocolState () {
-                        AccountId = account.Id,
-                    };
-                    protocolState.Insert ();
-                }
-            });
 
-            // Make the application-defined folders.
-            McFolder freshMade;
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetClientOwnedOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_Outbox, "On-Device Outbox",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetClientOwnedDraftsFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_EmailDrafts, "On-Device Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetCalDraftsFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetGalCacheFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_GalCache, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetGleanedFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_Gleaned, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
-                        McFolder.ClientOwned_LostAndFound, string.Empty,
-                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
-                    freshMade.Insert ();
-                }
-            });
-            // Create file directories.
-            NcModel.Instance.InitializeDirs (AccountId);
-        }
 
         public override void Remove ()
         {
@@ -935,17 +857,10 @@ namespace NachoCore.ActiveSync
         }
         // Methods callable by the owner.
         // Keep Execute() harmless if it is called while already executing.
-        public override void Execute ()
+        public override bool Execute ()
         {
-            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
-                Log.Warn (Log.LOG_AS, "Execute called while network is down.");
-                return;
-            }
-            if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("AsProtoControl:PendingOnTimeTimer", state => {
-                    McPending.MakeEligibleOnTime (Account.Id);
-                }, null, 1000, 2000);
-                PendingOnTimeTimer.Stfu = true;
+            if (!base.Execute ()) {
+                return false;
             }
             if (null == Server) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCEXECAUTOD");
@@ -953,6 +868,7 @@ namespace NachoCore.ActiveSync
                 // All states are required to handle the Launch event gracefully.
                 Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
             }
+            return true;
         }
 
         public override void CredResp ()
@@ -965,7 +881,6 @@ namespace NachoCore.ActiveSync
             if (forceAutodiscovery) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
             } else {
-                Server = McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
                 Sm.PostEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
             }
         }
@@ -993,8 +908,11 @@ namespace NachoCore.ActiveSync
                 // We never save Parked.
                 return;
             }
-            protocolState.ProtoControlState = stateToSave;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.ProtoControlState = stateToSave;
+                return true;
+            });
         }
         // State-machine action methods.
         private void DoNop ()
@@ -1127,7 +1045,7 @@ namespace NachoCore.ActiveSync
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
                 2 > ConcurrentExtraRequests) {
                 Interlocked.Increment (ref ConcurrentExtraRequests);
-                var pack = SyncStrategy.PickUserDemand ();
+                var pack = Strategy.PickUserDemand ();
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
@@ -1208,7 +1126,7 @@ namespace NachoCore.ActiveSync
                 Cmd.Cancel ();
             }
             Sm.ClearEventQueue ();
-            var pack = SyncStrategy.Pick ();
+            var pack = Strategy.Pick ();
             var transition = pack.Item1;
             var cmd = pack.Item2;
             switch (transition) {
@@ -1251,7 +1169,7 @@ namespace NachoCore.ActiveSync
             var cmd = Sm.Arg as AsCommand;
             if (null == cmd) {
                 Log.Info (Log.LOG_AS, "DoSync: not from Pick.");
-                var syncKit = SyncStrategy.GenSyncKit (AccountId, ProtocolState);
+                var syncKit = Strategy.GenSyncKit (AccountId, ProtocolState);
                 if (null != syncKit) {
                     cmd = new AsSyncCommand (this, syncKit);
                 } else {
@@ -1336,10 +1254,6 @@ namespace NachoCore.ActiveSync
                 PushAssist.Park ();
             }
             Sm.PostEvent ((uint)PcEvt.E.Park, "FORCESTOP");
-            if (null != PendingOnTimeTimer) {
-                PendingOnTimeTimer.Dispose ();
-                PendingOnTimeTimer = null;
-            }
         }
 
         public override void ValidateConfig (McServer server, McCred cred)
@@ -1392,7 +1306,7 @@ namespace NachoCore.ActiveSync
         // PushAssist support.
         public PushAssistParameters PushAssistParameters ()
         {
-            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false, true);
+            var pingKit = Strategy.GenPingKit (AccountId, ProtocolState, true, false, true);
             if (null == pingKit) {
                 return null; // should never happen
             }

@@ -991,7 +991,7 @@ namespace NachoClient.iOS
                 var theConference = McConference.QueryByAccountId <McConference> (theAccount.Id).FirstOrDefault ();
 
                 theAccount.DisplayName = accountNameTextField.Text;
-                theAccount.EmailAddr = emailTextField.Text;
+                theAccount.EmailAddr = emailTextField.Text.Trim ();
                 SetHostAndPort (theServer, mailserverTextField.Text);
                 theCred.Username = usernameTextField.Text;
                 theCred.UpdatePassword (passwordTextField.Text);
@@ -1080,7 +1080,6 @@ namespace NachoClient.iOS
                 UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
                 cvc.SetAccountId (theAccount.Id);
-                cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
                 this.PresentViewController (cvc, true, null);
             }
 

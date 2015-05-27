@@ -278,7 +278,6 @@
     <Compile Include="NachoCore\Utils\PlatformTimer.cs" />
     <Compile Include="NachoCore\Utils\NcPausableTimer.cs" />
     <Compile Include="NachoCore\Utils\NcDistribution.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs" />
@@ -408,6 +407,16 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
     <Compile Include="NachoCore\Utils\NcSamples.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\ISmtpCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
+    <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\IImapCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

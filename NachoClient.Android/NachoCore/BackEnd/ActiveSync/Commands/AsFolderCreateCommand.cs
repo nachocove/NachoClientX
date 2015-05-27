@@ -48,8 +48,11 @@ namespace NachoCore.ActiveSync
             var status = uint.Parse (xmlStatus.Value);
             switch ((Xml.FolderHierarchy.FolderCreateStatusCode)status) {
             case Xml.FolderHierarchy.FolderCreateStatusCode.Success_1:
-                protocolState.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                    return true;
+                });
                 var serverId = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                 var pathElem = new McPath (BEContext.Account.Id);
                 pathElem.ServerId = serverId;
@@ -115,8 +118,11 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
-                protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC2");
 
             default:
@@ -131,7 +137,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private class ApplyCreateFolder : AsApplyServerCommand
+        private class ApplyCreateFolder : NcApplyServerCommand
         {
             public string FinalServerId { set; get; }
 

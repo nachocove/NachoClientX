@@ -1245,8 +1245,22 @@ namespace NachoCore.Utils
         /// </remarks>
         public static TimeZoneInfo SimplifiedLocalTimeZone ()
         {
-            TimeZoneInfo local = TimeZoneInfo.Local;
+            return SimplifiedTimeZone (TimeZoneInfo.Local);
+        }
 
+        /// <summary>
+        /// Convert the given time zone information into a form that can be represented in
+        /// Exchange's time zone format.
+        /// </summary>
+        /// <remarks>
+        /// Exchange's time zone information has very limited flexability for specifying
+        /// daylight saving rules.  There is room for just one floating rule, e.g. second
+        /// Sunday in March.  Take the local time zone and simplify its rules to fit within
+        /// Exchange's limitations.  If the current year has a fixed date rule, deduce a
+        /// floating rule and assume that it applies to all years.
+        /// </remarks>
+        public static TimeZoneInfo SimplifiedTimeZone (TimeZoneInfo local)
+        {
             if (!local.SupportsDaylightSavingTime) {
                 // No problem.
                 return local;

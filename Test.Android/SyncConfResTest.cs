@@ -90,7 +90,7 @@ namespace Test.iOS
 
             public static AsSyncCommand CreateSyncCmd (MockContext context)
             {
-                var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).SyncStrategy.GenSyncKit (
+                var syncCmd = new AsSyncCommand (context, ((AsProtoControl)context.ProtoControl).Strategy.GenSyncKit (
                                   defaultAccountId, context.ProtocolState));
                 AsHttpOperation.HttpClientType = typeof(MockHttpClient);
                 return syncCmd;
@@ -99,7 +99,7 @@ namespace Test.iOS
             public void SetSyncStrategy (McFolder folder)
             {
                 var strategy = new MockStrategy (folder);
-                ((AsProtoControl)Context.ProtoControl).SyncStrategy = strategy;
+                ((AsProtoControl)Context.ProtoControl).Strategy = strategy;
             }
 
             // Generate mock AirSync response that has a "Commands" section (as opposed to a "Responses" section)
@@ -372,8 +372,11 @@ namespace Test.iOS
                     // will result in the item getting moved to LAF (and still findable.
                     // TODO - add test cases: !Inbox, < 14.1, email item.
                     var protocolState = Context.ProtoControl.ProtocolState;
-                    protocolState.AsProtocolVersion = "14.1";
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsProtocolVersion = "14.1";
+                        return true;
+                    });
                     token = Context.ProtoControl.RespondCalCmd (inbox.Item.Id, response).GetValue<string> ();
                 });
 
@@ -403,7 +406,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+                BackEnd.Instance.CreateServices (defaultAccountId);  // make L&F folder
             }
 
             private Inbox SetStateWithDestFolder<T> (string code, NcResult.SubKindEnum opSubKind, Func<int, int, string> clientOp) where T : McAbstrItem, new()
@@ -584,7 +587,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+                BackEnd.Instance.CreateServices (defaultAccountId);  // make L&F folder
             }
 
             [Test]

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using NachoCore.Utils;
 using MimeKit;
 using System.IO;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
@@ -258,19 +259,21 @@ namespace NachoCore.Model
                         cachedDescription = body.GetContentsString ();
                         cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
                         break;
+                    case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                        cachedDescription = AsHelpers.Base64CompressedRtfToNormalRtf (body.GetContentsString ());
+                        cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.RTF_3;
+                        break;
                     case McAbstrFileDesc.BodyTypeEnum.MIME_4:
                         if (!MimeHelpers.FindTextWithType (
-                            MimeHelpers.LoadMessage (body), out cachedDescription, out cachedDescriptionType,
-                            McAbstrFileDesc.BodyTypeEnum.PlainText_1, McAbstrFileDesc.BodyTypeEnum.HTML_2,
-                            McAbstrFileDesc.BodyTypeEnum.RTF_3))
-                        {
+                                MimeHelpers.LoadMessage (body), out cachedDescription, out cachedDescriptionType,
+                                McAbstrFileDesc.BodyTypeEnum.PlainText_1, McAbstrFileDesc.BodyTypeEnum.HTML_2,
+                                McAbstrFileDesc.BodyTypeEnum.RTF_3)) {
                             // Couldn't find anything in the message.  Set the description to empty plain text.
                             cachedDescription = "";
                             cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                         }
                         break;
                     default:
-                        // TODO Handle RTF correctly.
                         cachedDescription = body.GetContentsString ();
                         cachedDescriptionType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                         break;

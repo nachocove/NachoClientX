@@ -25,7 +25,7 @@ namespace Test.Common
     {
         public class MockDataSource : IBEContext
         {
-            public IProtoControlOwner Owner { set; get; }
+            public INcProtoControlOwner Owner { set; get; }
 
             public NcProtoControl ProtoControl { set; get; }
 
@@ -45,7 +45,7 @@ namespace Test.Common
             }
         }
 
-        public class MockProtoControlOwner : IProtoControlOwner
+        public class MockProtoControlOwner : INcProtoControlOwner
         {
             public string AttachmentsDir { set; get; }
 

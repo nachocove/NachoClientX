@@ -13,6 +13,7 @@ namespace NachoCore.Model
     public class McProtocolState : McAbstrObjectPerAcc
     {
         // Supported protocols. Bitfield for McAccount's benefit.
+        [Flags]
         public enum ProtocolEnum {
             ActiveSync = (1 << 0),
             IMAP = (1 << 1),
@@ -23,7 +24,7 @@ namespace NachoCore.Model
 
         public const string AsSyncKey_Initial = "0";
         public const string AsPolicyKey_Initial = "0";
-        public const uint KDefaultSyncLimit = 10;
+        public const uint AsSyncLimit_Default = 10;
 
         public enum AsThrottleReasons {
             Unknown,
@@ -33,16 +34,36 @@ namespace NachoCore.Model
 
         public McProtocolState ()
         {
+            /*
+             * common ctor inits here:
+             */
+
+            /*
+             * "As" ActiveSync ctor inits here:
+             */
             AsProtocolVersion = "12.0";
             AsPolicyKey = AsPolicyKey_Initial;
             AsSyncKey = AsSyncKey_Initial;
-            AsSyncLimit = KDefaultSyncLimit;
+            AsSyncLimit = AsSyncLimit_Default;
             AsFolderSyncEpoch = 1; // So that just-created McFolders aren't presumed from current epoch.
             HeartbeatInterval = 600;
             MaxFolders = 200;
             ProtoControlState = (uint)St.Start;
+            /*
+             * "Imap" IMAP ctor inits here:
+             */
+            /*
+             * "Smtp" SMTP ctor inits here:
+             */
         }
 
+        /*
+         * common properties go here:
+         */
+
+        /*
+         * "As" ActiveSync properties go here:
+         */
         public string AsProtocolVersion { get; set; }
 
         public string AsPolicyKey { get; set; }
@@ -82,7 +103,29 @@ namespace NachoCore.Model
         public bool DisableProvisionCommand { get; set; }
 
         public bool HasBeenRateLimited { get; set; }
+        /*
+         * "Imap" IMAP properties go here:
+         */
+        public uint ImapProtoControlState { get; set; }
 
+        /*
+         * "Smtp" SMTP properties go here:
+         */
+        public uint SmtpProtoControlState { get; set; }
+
+        /*
+         * common methods go here:
+         */
+
+        public override int Update ()
+        {
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
+        }
+
+        /*
+         * "As" ActiveSync methods go here:
+         */
         public void IncrementAsFolderSyncEpoch ()
         {
             ++AsFolderSyncEpoch;
@@ -104,6 +147,14 @@ namespace NachoCore.Model
             }
             Log.Info (Log.LOG_AS, "X-MS-ASThrottle value: {0}", AsThrottleReason);
         }
+
+        /*
+         * "Imap" IMAP methods go here:
+         */
+
+        /*
+         * "Smtp" SMTP methods go here:
+         */
     }
 }
 

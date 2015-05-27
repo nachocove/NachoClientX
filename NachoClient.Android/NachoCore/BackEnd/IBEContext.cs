@@ -7,7 +7,7 @@ namespace NachoCore
 {
     public interface IBEContext
     {
-        IProtoControlOwner Owner { set; get; }
+        INcProtoControlOwner Owner { set; get; }
         NcProtoControl ProtoControl { set; get; }
         McProtocolState ProtocolState { get; set; }
         McServer Server { get; set; }

@@ -22,8 +22,11 @@ namespace NachoCore.Model
                 var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).FirstOrDefault ();
                 if (null != protocolState) {
                     // to avoid a flood of soft deletes.
-                    protocolState.StrategyRung = 5;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.StrategyRung = 5;
+                        return true;
+                    });
                 }
                 UpdateProgress (1);
             }

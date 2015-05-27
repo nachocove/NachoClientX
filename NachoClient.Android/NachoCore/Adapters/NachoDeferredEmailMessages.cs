@@ -82,6 +82,11 @@ namespace NachoCore
         {
             return new NachoDeferredEmailThread (accountId, threadId);
         }
+
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == accountId;
+        }
     }
 
     public class NachoDeferredEmailThread : INachoEmailMessages
@@ -156,6 +161,11 @@ namespace NachoCore
         public INachoEmailMessages GetAdapterForThread (string threadId)
         {
             return null;
+        }
+
+        public bool IsCompatibleWithAccount (McAccount account)
+        {
+            return account.Id == accountId;
         }
     }
 }

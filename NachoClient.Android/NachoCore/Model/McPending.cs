@@ -887,9 +887,9 @@ namespace NachoCore.Model
             return (0 != makeEligible.Count);
         }
 
-        public static bool MakeEligibleOnTime (int accountId)
+        public static bool MakeEligibleOnTime ()
         {
-            var makeEligible = QueryDeferredUntilNow (accountId);
+            var makeEligible = QueryDeferredUntilNow ();
             foreach (var iter in makeEligible) {
                 var pending = iter.UpdateWithOCApply<McPending> ((record) => {
                     var target = (McPending)record;
@@ -1231,10 +1231,9 @@ namespace NachoCore.Model
             rec.DeferredReason == DeferredEnum.UntilSync).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static List<McPending> QueryDeferredUntilNow (int accountId)
+        public static List<McPending> QueryDeferredUntilNow ()
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
-                rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             rec.DeferredReason == DeferredEnum.UntilTime &&
             rec.DeferredUntilTime < DateTime.UtcNow

@@ -72,7 +72,10 @@ namespace NachoCore
                         // If missing, insert it.
                         inserter.Invoke (deviceCalendar);
                     } else {
-                        NcAssert.AreEqual (1, present.RemoveAll (x => x.FolderEntryId == existing.Id));
+                        var count = present.RemoveAll (x => x.FolderEntryId == existing.Id);
+                        if (1 != count) {
+                            Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.UniqueId, existing.Id);
+                        }
                         // If present and stale, update it.
                         if (deviceCalendar.LastUpdate > existing.DeviceLastUpdate) {
                             NcModel.Instance.RunInTransaction (() => {
@@ -83,6 +86,7 @@ namespace NachoCore
                             });
                         }
                     }
+                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
                 }, "NcDeviceCalendars:Process", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
@@ -95,6 +99,7 @@ namespace NachoCore
                         folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
                         McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
                     });
+                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
                 }, "NcDeviceCalendars:Delete", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();

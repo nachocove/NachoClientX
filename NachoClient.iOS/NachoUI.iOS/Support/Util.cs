@@ -725,16 +725,18 @@ namespace NachoClient
             }
         }
 
-        public static void SetOriginalImagesForButton (UIButton button, string iconName, string activeIconName)
+        public static void SetOriginalImagesForButton (UIButton button, string iconName, string activeIconName = null)
         {
             using (var rawImage = UIImage.FromBundle (iconName)) {
                 using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     button.SetImage (originalImage, UIControlState.Normal);
                 }
             }
-            using (var rawImage = UIImage.FromBundle (activeIconName)) {
-                using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                    button.SetImage (originalImage, UIControlState.Selected);
+            if (null != activeIconName) {
+                using (var rawImage = UIImage.FromBundle (activeIconName)) {
+                    using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                        button.SetImage (originalImage, UIControlState.Selected);
+                    }
                 }
             }
         }
@@ -1146,6 +1148,61 @@ namespace NachoClient
         public static string PrettySizeF (CGSize s)
         {
             return String.Format ("({0},{1})", s.Width, s.Height);
+        }
+
+        public static string GetAccountServiceImageName (McAccount.AccountServiceEnum service)
+        {
+            string imageName;
+
+            // FIXME
+            // imageName = "avatar-office365";
+
+            switch (service) {
+            case McAccount.AccountServiceEnum.Exchange:
+                imageName = "avatar-msexchange";
+                break;
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                imageName = "avatar-gmail";
+                break;
+            case McAccount.AccountServiceEnum.GoogleExchange:
+                imageName = "avatar-googleapps";
+                break;
+            case McAccount.AccountServiceEnum.HotmailExchange:
+                imageName = "avatar-hotmail";
+                break;
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
+                // FIXME
+                imageName = "avatar-yahoo";
+                break;
+            case McAccount.AccountServiceEnum.OutlookExchange:
+                imageName = "avatar-outlook";
+                break;
+            case McAccount.AccountServiceEnum.Device:
+                imageName = "avatar-iphone";
+                break;
+            case McAccount.AccountServiceEnum.iCloud:
+                imageName = "avatar-iCloud";
+                break;
+            case McAccount.AccountServiceEnum.Yahoo:
+                imageName = "Icon";
+                break;
+            case McAccount.AccountServiceEnum.Aol:
+                imageName = "Icon";
+                break;
+            default:
+                imageName = "Icon";
+                break;
+            }
+            return imageName;
+        }
+
+        public static UIImage ImageForAccount (McAccount account)
+        {
+            if (0 == account.DisplayPortraitId) {
+                return UIImage.FromBundle (GetAccountServiceImageName (account.AccountService));
+            } else {
+                return Util.PortraitToImage (account.DisplayPortraitId);
+            }
         }
 
         #endregion

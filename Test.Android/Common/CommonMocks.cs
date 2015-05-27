@@ -153,7 +153,7 @@ namespace Test.iOS
 
     public class MockContext : IBEContext
     {
-        public IProtoControlOwner Owner { set; get; }
+        public INcProtoControlOwner Owner { set; get; }
 
         public NcProtoControl ProtoControl { set; get; }
 
@@ -199,7 +199,7 @@ namespace Test.iOS
         }
     }
 
-    public class MockOwner : IProtoControlOwner
+    public class MockOwner : INcProtoControlOwner
     {
         // register a callback in order to track StatusInd notifications
         public delegate void ViewStatusIndMessageDelegate (NcResult result);

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
 
 namespace NachoCore
 {
@@ -22,7 +23,7 @@ namespace NachoCore
 
         public int AccountId;
 
-        public IProtoControlOwner Owner { get; set; }
+        public INcProtoControlOwner Owner { get; set; }
 
         public NcProtoControl ProtoControl { set; get; }
 
@@ -42,7 +43,7 @@ namespace NachoCore
 
         public McServer Server { 
             get {
-                return McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
+                return McServer.QueryByAccountIdAndCapabilities (Account.Id, Capabilities);
             }
             set {
                 var update = value;
@@ -82,10 +83,86 @@ namespace NachoCore
             }
         }
 
-        public NcProtoControl (IProtoControlOwner owner, int accountId)
+        public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
+            // TODO - change ResolveAllDispatchedAsDeferred to be per-controller (capabilities).
+            McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
+        }
+
+        protected void SetupAccount ()
+        {
+            // Hang our records off Account.
+            NcModel.Instance.RunInTransaction (() => {
+                var policy = McPolicy.QueryByAccountId<McPolicy> (AccountId).SingleOrDefault ();
+                if (null == policy) {
+                    policy = new McPolicy () {
+                        AccountId = AccountId,
+                    };
+                    policy.Insert ();
+                }
+                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (AccountId).SingleOrDefault ();
+                if (null == protocolState) {
+                    protocolState = new McProtocolState () {
+                        AccountId = AccountId,
+                    };
+                    protocolState.Insert ();
+                }
+            });
+
+            // Make the application-defined folders.
+            McFolder freshMade;
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetClientOwnedOutboxFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                        McFolder.ClientOwned_Outbox, "On-Device Outbox",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetClientOwnedDraftsFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
+                        McFolder.ClientOwned_EmailDrafts, "On-Device Drafts",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetCalDraftsFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
+                        Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetGalCacheFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_GalCache, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetGleanedFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_Gleaned, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+                    freshMade.Insert ();
+                }
+            });
+            NcModel.Instance.RunInTransaction (() => {
+                if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
+                        McFolder.ClientOwned_LostAndFound, string.Empty,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
+                    freshMade.Insert ();
+                }
+            });
+            // Create file directories.
+            NcModel.Instance.InitializeDirs (AccountId);
         }
 
         public NcStateMachine Sm { set; get; }
@@ -194,8 +271,15 @@ namespace NachoCore
         }
 
         // Interface to owner.
-        public virtual void Execute ()
+        // Returns false if sub-class override should not continue.
+        public virtual bool Execute ()
         {
+            if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
+                Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
+                return false;
+            }
+            // TODO - extract more from the EAS class and stuff here.
+            return true;
         }
 
         public virtual void ForceStop ()
@@ -271,7 +355,7 @@ namespace NachoCore
         public virtual NcResult SendEmailCmd (int emailMessageId)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0})", emailMessageId);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0})", emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
                 if (null == emailMessage) {
@@ -287,14 +371,14 @@ namespace NachoCore
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSEND");
             }, "SendEmailCmd");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
             return result;
         }
 
         public virtual NcResult SendEmailCmd (int emailMessageId, int calId)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1})", emailMessageId, calId);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0},{1})", emailMessageId, calId);
             NcModel.Instance.RunInTransaction (() => {
                 var cal = McCalendar.QueryById<McCalendar> (calId);
                 var emailMessage = McEmailMessage.QueryById<McEmailMessage> (emailMessageId);
@@ -341,7 +425,7 @@ namespace NachoCore
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCSENDCAL");
             }, "SendEmailCmd(cal)");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
+            Log.Info (Log.LOG_BACKEND, "SendEmailCmd({0},{1}) returning {2}", emailMessageId, calId, result.Value as string);
             return result;
         }
 
@@ -403,11 +487,11 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             if (null != emailMessage && result.isOK ()) {
-                Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
+                Log.Info (Log.LOG_BACKEND, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
                     emailMessage.Id, emailMessage.ServerId, result.GetValue<string> ());
                 if (lastInSeq) {
                     StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                    Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
+                    Log.Debug (Log.LOG_BACKEND, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
                     NcTask.Run (delegate {
                         Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCDELMSG");
                     }, "DeleteEmailCmd");
@@ -497,7 +581,7 @@ namespace NachoCore
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_AS, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
@@ -994,7 +1078,7 @@ namespace NachoCore
                 };
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
-                    Log.Info (Log.LOG_AS, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
                     result = NcResult.OK (dup.Token);
                     return;
                 }

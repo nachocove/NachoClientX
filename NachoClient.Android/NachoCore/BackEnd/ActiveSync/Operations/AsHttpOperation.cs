@@ -1,4 +1,4 @@
-// # Copyright (C) 2013, 2014 Nacho Cove, Inc. All rights reserved.
+// # Copyright (C) 2013, 2014, 2015 Nacho Cove, Inc. All rights reserved.
 //
 using DnDns.Enums;
 using DnDns.Query;
@@ -166,7 +166,7 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).SyncStrategy.DefaultTimeoutSecs;
+            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
             Timeout = new TimeSpan (0, 0, timeoutSeconds);
             TimeoutExpander = KDefaultTimeoutExpander;
             MaxRetries = KDefaultRetries;
@@ -578,8 +578,11 @@ namespace NachoCore.ActiveSync
             }
             if (HttpStatusCode.Unauthorized != response.StatusCode) {
                 var protocolState = BEContext.ProtocolState;
-                protocolState.Consec401Count = 0;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.Consec401Count = 0;
+                    return true;
+                });
             }
             if (Is2xx (response.StatusCode)) {
                 // 2xx is "This class of status code indicates that the client's request was successfully received, understood, and accepted."
@@ -753,12 +756,18 @@ namespace NachoCore.ActiveSync
                 var protocolState = BEContext.ProtocolState;
                 if (protocolState.LastAutoDSucceeded &&
                     KConsec401ThenReDisc < protocolState.Consec401Count + 1) {
-                    protocolState.Consec401Count = 0;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.Consec401Count = 0;
+                        return true;
+                    });
                     return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP401MAX");
                 } else {
-                    protocolState.Consec401Count++;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.Consec401Count++;
+                        return true;
+                    });
                     return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
                 }
             case HttpStatusCode.Forbidden:
@@ -883,14 +892,21 @@ namespace NachoCore.ActiveSync
                 if (response.Headers.Contains (HeaderXMsAsThrottle)) {
                     Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsAsThrottle);
                     protocolState = BEContext.ProtocolState;
-                    protocolState.HasBeenRateLimited = true;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.HasBeenRateLimited = true;
+                        return true;
+                    });
                     try {
                         value = response.Headers.GetValues (HeaderXMsAsThrottle).First ();
-                        protocolState.SetAsThrottleReason (value);
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.SetAsThrottleReason (value);
+                            return true;
+                        });
                     } catch {
                         Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
-                    protocolState.Update ();
 
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
                     configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);

@@ -20,14 +20,20 @@ namespace NachoCore.Model
         public string Host { get; set; }
 
         public const string Default_Path = "/Microsoft-Server-ActiveSync";
+        // Well known server/host values:
         public const string GMail_Host = "m.google.com";
+        public const string HotMail_Host = "s.outlook.com";
+        // Well known MX record values:
         public const string GMail_MX_Suffix = "aspmx.l.google.com";
         public const string GMail_MX_Suffix2 = "googlemail.com";
-        public const string HotMail_Host = "s.outlook.com";
+        // Well know email domain name suffixes:
         public const string HotMail_Suffix = "hotmail.com";
         public const string Outlook_Suffix = "outlook.com";
+        public const string GMail_Suffix = "gmail.com";
+        public const string GMail_Suffix2 = "googlemail.com";
 
         public string Path { get; set; }
+
 
         public string Scheme { get; set; }
 
@@ -47,7 +53,7 @@ namespace NachoCore.Model
             return new Uri (BaseUriString ());
         }
 
-        public string BaseUriString()
+        public string BaseUriString ()
         {
             string uriString;
             if (443 == Port && "https" == Scheme) {
@@ -93,7 +99,19 @@ namespace NachoCore.Model
                 Host = uri.Host,
                 Path = uri.AbsolutePath,
                 Scheme = uri.Scheme,
-                Port = uri.Port
+                Port = uri.Port,
+            };
+        }
+
+        public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, string host, int port)
+        {
+            return new McServer () {
+                AccountId = accountId,
+                Capabilities = capabilities,
+                Host = host,
+                Path = null,
+                Scheme = null,
+                Port = port,
             };
         }
 
@@ -106,7 +124,7 @@ namespace NachoCore.Model
             Port = src.Port;
         }
 
-        public bool IsSameServer(McServer match)
+        public bool IsSameServer (McServer match)
         {
             if (Capabilities != match.Capabilities) {
                 return false;
@@ -127,8 +145,19 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McServer> ().Where (x => 
                 accountId == x.AccountId &&
-                host == x.Host
+            host == x.Host
             ).SingleOrDefault ();
+        }
+
+        public static McServer QueryByAccountIdAndCapabilities (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var servers = McServer.QueryByAccountId<McServer> (accountId);
+            foreach (var server in servers) {
+                if (capabilities == (capabilities & server.Capabilities)) {
+                    return server;
+                }
+            }
+            return null;
         }
     }
 }

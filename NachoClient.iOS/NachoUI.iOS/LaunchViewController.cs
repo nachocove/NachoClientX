@@ -48,6 +48,14 @@ namespace NachoClient.iOS
         {
         }
 
+        public static void StartAccountSetup (UIViewController fromViewController)
+        {
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var toViewController = (LaunchViewController)storyboard.InstantiateViewController ("LaunchViewController");
+            var segue = new FadeCustomSegue ("", fromViewController, toViewController);
+            segue.Perform ();
+        }
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
@@ -95,6 +103,12 @@ namespace NachoClient.iOS
                 this.NavigationController.SetNavigationBarHidden (false, false);
             }
             NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
+        }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
         }
 
         public void OnEmailServiceSelected (McAccount.AccountServiceEnum service, bool willExpand)
@@ -436,8 +450,9 @@ namespace NachoClient.iOS
         private void StartLoginProcess ()
         {
             var account = NcAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
+            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, selectedEmailService);
             BackEnd.Instance.Start (account.Id);
-            PerformSegue ("SegueToAdvancedLogin", new SegueHolder(account));
+            PerformSegue ("SegueToAdvancedLogin", new SegueHolder (account));
         }
 
         public void maybeEnableConnect ()
@@ -491,7 +506,7 @@ namespace NachoClient.iOS
         protected void AdvancedLoginTouchUpInside (object sender, EventArgs e)
         {
             View.EndEditing (true);
-            PerformSegue ("SegueToAdvancedLogin", new SegueHolder(null));
+            PerformSegue ("SegueToAdvancedLogin", new SegueHolder (null));
         }
 
         protected void SupportButtonTouchUpInside (object sender, EventArgs e)

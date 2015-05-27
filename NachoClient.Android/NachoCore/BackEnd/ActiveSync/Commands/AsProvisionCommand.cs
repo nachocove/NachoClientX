@@ -188,8 +188,11 @@ namespace NachoCore.ActiveSync
                         ServerUri (Op).ToString (), BEContext.ProtocolState.AsProtocolVersion);
                     if (! BEContext.ProtocolState.IsWipeRequired) {
                     var protocolState = BEContext.ProtocolState;
-                        protocolState.IsWipeRequired = true;
-                        protocolState.Update ();
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.IsWipeRequired = true;
+                            return true;
+                        });
                         return Event.Create ((uint)ProvEvt.E.Wipe, "PROVWIPE", null, "RemoteWipe element in Provision.");
                     }
                 }
@@ -199,9 +202,12 @@ namespace NachoCore.ActiveSync
                     var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
 
                     // PolicyKey required element of Policy.
-                    McProtocolState update = BEContext.ProtocolState;
-                    update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
-                    update.Update ();
+                    McProtocolState protocolState = BEContext.ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
+                        return true;
+                    });
 
                     // PolicyType required element of Policy, but we don't care much.
                     var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
@@ -266,8 +272,11 @@ namespace NachoCore.ActiveSync
         {
             // Need to reset PolicyKey even when we are forced here via status code.
             var protocolState = BEContext.ProtocolState;
-            protocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                return true;
+            });
             base.Execute (Sm, ref GetOp);
         }
 

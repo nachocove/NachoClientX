@@ -10,6 +10,7 @@ using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
 using System.Text.RegularExpressions;
+using HtmlAgilityPack;
 
 namespace NachoClient.iOS
 {
@@ -645,11 +646,39 @@ namespace NachoClient.iOS
         /// </summary>
         protected string AdjustPreviewText (string raw)
         {
-            return Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
-                @"\[(http|image|cid).*\]", ""),
-                @"<http.*>", ""),
-                @"\s+", " "),
-                @"^\s", "");
+            string adjusted = null;
+            if (raw.StartsWith ("<") && (raw.Contains ("<body") || raw.Contains ("<BODY"))) {
+                // It looks like it might be HTML.  Parse it as such and see if the <body> tag can be found.
+                HtmlDocument html = new HtmlDocument ();
+                // Some tags, such as <p>, <br>, and <li>, become white space when rendered.  Since we are
+                // just pulling out the text, not rendering it, we want to convert those tags to white space
+                // right now.  If this is not done, then "<p>Call me Ishmael.</p><p>Some years ago" will
+                // display as "Call me Ishmael.Some years ago" instead of "Call me Ishmael. Some years ago".
+                html.LoadHtml (Regex.Replace (raw, @"<(/?[Pp]|/?[Ll][Ii]|[Bb][Rr]\s*/?)>", " "));
+                foreach (var bodyNode in html.DocumentNode.Descendants("body")) {
+                    adjusted = Regex.Replace (Regex.Replace (bodyNode.InnerText, @"\s+", " "), @"^\s", "");
+                    break;
+                }
+            }
+            if (null == adjusted) {
+                adjusted = Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
+                    @"\[(http|image|cid|img_).*?\]", " "),
+                    @"<(http|mailto)\S*?>", " "),
+                    @"https?:\S*", " "),
+                    @"\s+", " "),
+                    @"^\s", "");
+                if (adjusted.EndsWith ("< ") && !adjusted.EndsWith ("<< ")) {
+                    // The trailing '<' is probably left over from an incomplete "<http://...".  It is not useful
+                    // by itself, so strip it off.
+                    adjusted = adjusted.Substring (0, adjusted.Length - 2);
+                }
+            }
+            if (10 > adjusted.Length) {
+                // The adjustments stripped out almost everything.  What's left is probably not useful.
+                // Use the raw text, only collapsing the white space.
+                adjusted = Regex.Replace (raw, @"\s+", " ");
+            }
+            return adjusted;
         }
 
         protected void ConfigureDraftMessageCell (UITableView tableView, UITableViewCell cell, int messageThreadIndex)

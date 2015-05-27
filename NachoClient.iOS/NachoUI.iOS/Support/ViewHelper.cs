@@ -405,6 +405,12 @@ namespace NachoClient.iOS
             return MayUpdate ();
         }
 
+        public ViewFramer CenterX(nfloat x, nfloat sectionWidth)
+        {
+            Frame.X = x + (sectionWidth / 2) - (Frame.Width / 2);
+            return MayUpdate ();
+        }
+
         public ViewFramer CenterY(nfloat y, nfloat sectionHeight)
         {
             Frame.Y = y + (sectionHeight / 2) - (Frame.Height / 2);

@@ -28,6 +28,10 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        McAccount currentAccount;
+
+        SwitchAccountButton switchAccountButton;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -42,12 +46,9 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
-            priorityInbox = NcEmailManager.PriorityInbox (NcApplication.Instance.Account.Id);
-
             CreateView ();
 
-            hotListSource = new HotListTableViewSource (this, priorityInbox);
-            hotListView.Source = hotListSource;
+            SwitchToAccount (NcApplication.Instance.Account);
 
             refreshControl = new UIRefreshControl ();
             refreshControl.Hidden = true;
@@ -94,16 +95,10 @@ namespace NachoClient.iOS
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
-
-            // TEMP
-            var switchAccountButton = new NcUIBarButtonItem();
-            Util.SetAutomaticImageForButton (switchAccountButton, "more-nachomail");
-            switchAccountButton.AccessibilityLabel = "Switch Account";
-            switchAccountButton.Clicked += SwitchAccountButton_Clicked;
-
-            NavigationItem.Title = "Hot";
                 
-            NavigationItem.LeftBarButtonItem = switchAccountButton;
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            NavigationItem.TitleView = switchAccountButton;
+
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
             hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Grouped);
@@ -144,29 +139,9 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
 
-        void SwitchAccountButton_Clicked (object sender, EventArgs e)
+        void SwitchAccountButtonPressed ()
         {
-            var actions = new List<NcAlertAction> ();
-
-            var accounts = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange);
-
-            foreach (var account in accounts) {
-                var action = new NcAlertAction(account.DisplayName, () => {
-                    SwitchToAccount(account.Id);
-                });
-                actions.Add (action); 
-            }
-            actions.Add (new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-
-            NcActionSheet.Show (View, this, actions.ToArray ());
-        }
-
-        void SwitchToAccount(int accountId)
-        {
-            priorityInbox = NcEmailManager.PriorityInbox (accountId);
-            hotListSource = new HotListTableViewSource (this, priorityInbox);
-            hotListView.Source = hotListSource;
-            hotListView.ReloadData ();
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -340,25 +315,43 @@ namespace NachoClient.iOS
         protected void MaybeRefreshPriorityInbox ()
         {
             bool callReconfigure = true;
+            NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
+
+            if (NcApplication.Instance.Account.Id != currentAccount.Id) {
+                SwitchToAccount (NcApplication.Instance.Account);
+                return;
+            }
 
             if (priorityInboxNeedsRefresh) {
                 priorityInboxNeedsRefresh = false;
                 List<int> adds;
                 List<int> deletes;
-                NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
                 ReloadCapture.Start ();
                 if (priorityInbox.Refresh (out adds, out deletes)) {
                     Util.UpdateTable (hotListView, adds, deletes);
                     callReconfigure = false;
                 }
                 ReloadCapture.Stop ();
-                NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
             }
             if (callReconfigure) {
                 hotListSource.ReconfigureVisibleCells (hotListView);
             }
-
             hotListSource.ConfigureFooter (hotListView);
+            NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            currentAccount = account;
+            priorityInboxNeedsRefresh = false;
+            NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
+            priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
+            hotListSource = new HotListTableViewSource (this, priorityInbox);
+            hotListView.Source = hotListSource;
+            hotListView.ReloadData ();
+            hotListSource.ConfigureFooter (hotListView);
+            switchAccountButton.SetAccountImage (account);
+            NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
         }
 
         /// <summary>

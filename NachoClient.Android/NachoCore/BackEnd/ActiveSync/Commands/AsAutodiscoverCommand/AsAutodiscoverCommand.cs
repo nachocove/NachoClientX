@@ -866,8 +866,11 @@ namespace NachoCore.ActiveSync
         private void DoAcceptServerConf ()
         {
             var protocolState = BEContext.ProtocolState;
-            protocolState.LastAutoDSucceeded = AutoDSucceeded;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastAutoDSucceeded = AutoDSucceeded;
+                return true;
+            });
 
             // Save validated server config in DB.
             NcModel.Instance.RunInTransaction (() => {
@@ -888,7 +891,7 @@ namespace NachoCore.ActiveSync
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");
         }
         // IBEContext proxying.
-        public IProtoControlOwner Owner {
+        public INcProtoControlOwner Owner {
             get { return BEContext.Owner; }
             set { BEContext.Owner = value; }
         }

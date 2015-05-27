@@ -136,7 +136,7 @@ namespace NachoClient.iOS
             searchBar = new UISearchBar ();
             searchBar.Delegate = this;
             searchDisplayController = new UISearchDisplayController (searchBar, this);
-            searchResultsMessages = new NachoMessageSearchResults ();
+            searchResultsMessages = new NachoMessageSearchResults (NcApplication.Instance.Account.Id);
             searchResultsSource = new MessageTableViewSource (this);
             searchResultsSource.SetEmailMessages (searchResultsMessages, "");
             searchDisplayController.SearchResultsSource = searchResultsSource.GetTableViewSource ();
@@ -282,6 +282,16 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
+            // Account switched
+            if (!messageSource.GetNachoEmailMessages ().IsCompatibleWithAccount (NcApplication.Instance.Account)) {
+                if (searchDisplayController.Active) {
+                    searchDisplayController.Active = false;
+                }
+                CancelSearchIfActive ();
+                NavigationController.PopViewController (true);
+                return;
+            }
+
             if (!StatusIndCallbackIsSet) {
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
@@ -302,6 +312,11 @@ namespace NachoClient.iOS
             NavigationItem.Title = messageSource.GetNachoEmailMessages ().DisplayName ();
 
             MaybeRefreshThreads ();
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
         }
 
         public override void ViewWillDisappear (bool animated)

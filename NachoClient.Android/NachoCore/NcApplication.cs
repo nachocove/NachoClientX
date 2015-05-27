@@ -402,7 +402,7 @@ namespace NachoCore
             NcContactGleaner.Start ();
             EmailHelper.Setup ();
             BackEnd.Instance.Owner = this;
-            BackEnd.Instance.EstablishService ();
+            BackEnd.Instance.CreateServices ();
             BackEnd.Instance.Start ();
             ExecutionContext = _PlatformIndication; 
             ContinueOnActivation ();
@@ -422,7 +422,8 @@ namespace NachoCore
                 UserId = CloudHandler.Instance.GetUserId (); 
             }
             Telemetry.StartService ();
-            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            // FIXME: What capabilities should we look for here?
+            Account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).FirstOrDefault ();
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
