@@ -68,13 +68,18 @@ namespace NachoCore.IMAP
             }
             catch (InvalidOperationException e) {
                 Log.Error (Log.LOG_IMAP, "Could not refresh folder list: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD");
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD1");
+                return;
+            }
+            catch (Exception e) {
+                Log.Error (Log.LOG_IMAP, "GetFolders: Unexpected exception: {0}", e);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD2");
                 return;
             }
 
             if (null == folderList) {
                 Log.Error (Log.LOG_IMAP, "Could not refresh folder list");
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRDX");
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD3");
                 return;
             }
             List<string> foldernames = new List<string> ();
