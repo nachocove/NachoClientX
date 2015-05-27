@@ -168,20 +168,6 @@ namespace Test.iOS
         [TestFixture]
         public class TestDistFolders : BaseMcFolderTest
         {
-            [SetUp]
-            public new void SetUp ()
-            {
-                base.SetUp ();
-                NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
-                NcTask.StartService ();
-            }
-
-            [TearDown]
-            public void TearDown ()
-            {
-                NcTask.StopService ();
-            }
-
             [Test]
             public void TestGetRicContactFolder ()
             {
@@ -241,18 +227,59 @@ namespace Test.iOS
                 Assert.NotNull (expected1, "Folders count was 0; should retrieve folder with name: '{0}'", folder1.DisplayName);
                 FoldersAreEqual (expected1, folder1, message);
             }
+        }
+
+        [TestFixture]
+        public class TestArchiveFolder : BaseMcFolderTest
+        {
+            const string Email = "bob@company.net";
+            const string Password = "Password";
+
+            private int accountId { get; set; }
+
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                Telemetry.ENABLED = false;
+                NcTask.StartService ();
+
+                // Set up credential
+                var account = new McAccount () {
+                    AccountType = McAccount.AccountTypeEnum.Exchange,
+                    AccountService = McAccount.AccountServiceEnum.Exchange,
+                    EmailAddr = Email,
+                };
+                account.Insert ();
+                var cred = new McCred () {
+                    AccountId = account.Id,
+                    Username = Email,
+                };
+                accountId = account.Id;
+
+                cred.Insert ();
+                cred.UpdatePassword (Password);
+                NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
+            }
+
+            [TearDown]
+            public void TearDown ()
+            {
+                NcApplication.Instance.TestOnlyInvokeUseCurrentThread = false;
+                Telemetry.ENABLED = true;
+            }
 
             [Test]
             public void TestGetArchiveFolder ()
             {
-                var archiveFolder = McFolder.GetUserFolders (1, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", McFolder.ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
+                var archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", McFolder.ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
                 Assert.IsNull (archiveFolder);
 
-                archiveFolder = McFolder.GetOrCreateArchiveFolder (1);
+                archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
                 Assert.NotNull (archiveFolder);
 
                 // Do it again to test the code-path where the folder exists.
-                archiveFolder = McFolder.GetOrCreateArchiveFolder (1);
+                archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
                 Assert.NotNull (archiveFolder);
             }
         }
