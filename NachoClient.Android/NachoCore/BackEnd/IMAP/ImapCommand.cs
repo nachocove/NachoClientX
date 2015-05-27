@@ -16,8 +16,6 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using MailKit.Security;
 using System.Security.Cryptography.X509Certificates;
-using MailKit;
-using System.Collections.Generic;
 
 namespace NachoCore.IMAP
 {
@@ -42,77 +40,6 @@ namespace NachoCore.IMAP
         {
             Cts.Cancel ();
         }
-
-        protected void CreateOrUpdateDistinguished (MailKit.IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType)
-        {
-            // FIXME mailKitFolder == null should be considered a delete from the server.
-            if (null == mailKitFolder) {
-                return;
-            }
-            var existing = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
-            if (null == existing) {
-                // Just add it.
-                var created = new McFolder () {
-                    AccountId = BEContext.Account.Id,
-                    ServerId = mailKitFolder.FullName,
-                    ParentId = McFolder.AsRootServerId,
-                    DisplayName = mailKitFolder.Name,
-                    Type = folderType,
-                    ImapUidValidity = mailKitFolder.UidValidity,
-                };
-                created.Insert ();
-            } else {
-                // check & update.
-                if (existing.AsSyncEpoch != mailKitFolder.UidValidity) {
-                    // FIXME flush and re-sync folder contents.
-                }
-                existing = existing.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ServerId = mailKitFolder.FullName;
-                    target.DisplayName = mailKitFolder.Name;
-                    target.ImapUidValidity = mailKitFolder.UidValidity;
-                    return true;
-                });
-            }
-        }
-
-        protected void CreateOrUpdateNonDistinguished (MailKit.IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName)
-        {
-            // FIXME mailKitFolder == null should be considered a delete from the server.
-            if (null == mailKitFolder) {
-                return;
-            }
-            McFolder existing = McFolder.GetUserFolders (BEContext.Account.Id, folderType, mailKitFolder.ParentFolder.UidValidity.ToString (), mailKitFolder.Name).SingleOrDefault ();
-            if (null == existing) {
-                // Just add it.
-                var created = new McFolder () {
-                    AccountId = BEContext.Account.Id,
-                    ServerId = mailKitFolder.FullName,
-                    ParentId = mailKitFolder.ParentFolder.UidValidity.ToString (),
-                    DisplayName = folderDisplayName,
-                    Type = folderType,
-                    ImapUidValidity = mailKitFolder.UidValidity,
-                };
-                created.Insert ();
-            } else {
-                if (existing.IsDistinguished) {
-                    Log.Error (Log.LOG_IMAP, "Trying to update distinguished folder.");
-                    return;
-                }
-                // check & update.
-                if (existing.AsSyncEpoch != mailKitFolder.UidValidity) {
-                    // FIXME flush and re-sync folder contents.
-                }
-                existing = existing.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ServerId = mailKitFolder.FullName;
-                    target.DisplayName = folderDisplayName;
-                    target.ImapUidValidity = mailKitFolder.UidValidity;
-                    return true;
-                });
-                return;
-            }
-        }
     }
 
     public class ImapFolderSyncCommand : ImapCommand
@@ -124,7 +51,7 @@ namespace NachoCore.IMAP
         public override void Execute (NcStateMachine sm)
         {
             // Right now, we rely on MailKit's FolderCache so access is synchronous.
-            IEnumerable<IMailFolder> folderList = null;
+            IEnumerable<IMailFolder> folderList;
             try {
                 // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
                 // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
@@ -187,6 +114,68 @@ namespace NachoCore.IMAP
                 }
             }
             sm.PostEvent ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
+        }
+        protected void CreateOrUpdateDistinguished (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType)
+        {
+            var existing = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
+            if (null == existing) {
+                // Just add it.
+                var created = new McFolder () {
+                    AccountId = BEContext.Account.Id,
+                    ServerId = mailKitFolder.FullName,
+                    ParentId = McFolder.AsRootServerId,
+                    DisplayName = mailKitFolder.Name,
+                    Type = folderType,
+                    ImapUidValidity = mailKitFolder.UidValidity,
+                };
+                created.Insert ();
+            } else {
+                // check & update.
+                if (existing.AsSyncEpoch != mailKitFolder.UidValidity) {
+                    // FIXME flush and re-sync folder contents.
+                }
+                existing = existing.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ServerId = mailKitFolder.FullName;
+                    target.DisplayName = mailKitFolder.Name;
+                    target.ImapUidValidity = mailKitFolder.UidValidity;
+                    return true;
+                });
+            }
+        }
+
+        protected void CreateOrUpdateNonDistinguished (MailKit.IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName)
+        {
+            McFolder existing = McFolder.GetUserFolders (BEContext.Account.Id, folderType, mailKitFolder.ParentFolder.UidValidity.ToString (), mailKitFolder.Name).SingleOrDefault ();
+            if (null == existing) {
+                // Just add it.
+                var created = new McFolder () {
+                    AccountId = BEContext.Account.Id,
+                    ServerId = mailKitFolder.FullName,
+                    ParentId = mailKitFolder.ParentFolder.UidValidity.ToString (),
+                    DisplayName = folderDisplayName,
+                    Type = folderType,
+                    ImapUidValidity = mailKitFolder.UidValidity,
+                };
+                created.Insert ();
+            } else {
+                if (existing.IsDistinguished) {
+                    Log.Error (Log.LOG_IMAP, "Trying to update distinguished folder.");
+                    return;
+                }
+                // check & update.
+                if (existing.AsSyncEpoch != mailKitFolder.UidValidity) {
+                    // FIXME flush and re-sync folder contents.
+                }
+                existing = existing.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ServerId = mailKitFolder.FullName;
+                    target.DisplayName = folderDisplayName;
+                    target.ImapUidValidity = mailKitFolder.UidValidity;
+                    return true;
+                });
+                return;
+            }
         }
     }
 
