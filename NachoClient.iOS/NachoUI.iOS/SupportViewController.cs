@@ -15,7 +15,7 @@ namespace NachoClient.iOS
     {
         protected static readonly nfloat INDENT = 18;
 
-        SwitchAccountButton switchAccountButton;
+        // SwitchAccountButton switchAccountButton;
 
         protected UITapGestureRecognizer messageTapGesture;
         protected UITapGestureRecognizer.Token messageTapGestureHandlerToken;
@@ -34,8 +34,11 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             Util.ConfigureNavBar (false, this.NavigationController);
 
-            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
-            NavigationItem.TitleView = switchAccountButton;
+            // Looks better without switch account button.
+            // If added back, because of crash when called at start up.
+            // switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+            // NavigationItem.TitleView = switchAccountButton;
+            NavigationItem.TitleView = new UIView();
 
             UIView supportView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
@@ -150,7 +153,7 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            // switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
         }
 
         private void MessageSingleTapHandler (NSObject sender)
@@ -176,7 +179,7 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
-            switchAccountButton.SetAccountImage (account);
+            // switchAccountButton.SetAccountImage (account);
         }
 
         protected override void Cleanup ()

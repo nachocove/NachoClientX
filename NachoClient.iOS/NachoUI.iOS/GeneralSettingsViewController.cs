@@ -96,11 +96,11 @@ namespace NachoClient.iOS
         public void AddAccountSelected ()
         {
             View.EndEditing (true);
-            PerformSegue ("SegueToLaunch", this);
+            LaunchViewController.StartAccountSetup (this);
         }
 
         // INachoAccountsTableDelegate
-        public void SettingsSelected(McAccount account)
+        public void SettingsSelected (McAccount account)
         {
             NcAssert.CaseError ();
         }

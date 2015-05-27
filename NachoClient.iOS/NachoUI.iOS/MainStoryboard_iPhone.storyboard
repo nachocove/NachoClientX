@@ -46,7 +46,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
@@ -143,9 +143,9 @@
                     <connections>
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
-                        <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
                         <segue destination="6rF-Ad-StO" kind="push" identifier="SegueToLaunch" id="ntd-BZ-hgR"/>
+                        <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="nJv-0g-ewn"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -247,10 +247,10 @@
             <objects>
                 <viewController storyboardIdentifier="LaunchViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="6rF-Ad-StO" customClass="LaunchViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="RIJ-2d-dqb">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="568"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="otx-5M-4eP">
-                                <rect key="frame" x="0.0" y="-57" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Nxw-gv-RGA" userLabel="View - ContentView">
                                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
@@ -571,7 +571,7 @@
             <objects>
                 <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
                                 <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
@@ -723,9 +723,7 @@
                     <navigationItem key="navigationItem" id="Hg4-Vj-sQl"/>
                     <connections>
                         <outlet property="contentView" destination="Gsy-wq-3TG" id="DxE-KR-TXr"/>
-                        <outlet property="endDatePicker" destination="g6j-ou-jtx" id="54k-NH-PdE"/>
                         <outlet property="scrollView" destination="ur7-bo-IIh" id="exr-dy-EXm"/>
-                        <outlet property="startDatePicker" destination="SN5-N4-3xJ" id="L24-7Y-NEp"/>
                         <segue destination="p7r-P8-BKK" kind="push" identifier="EditEventToAlert" id="m2D-2n-RiV"/>
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EditEventToCalendarChooser" id="7sK-rg-HQL"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
@@ -734,18 +732,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="O99-IW-kIW" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" id="SN5-N4-3xJ" userLabel="startDatePicker">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
-                    <date key="date" timeIntervalSinceReferenceDate="428449669.92554599">
-                        <!--2014-07-30 21:47:49 +0000-->
-                    </date>
-                </datePicker>
-                <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" id="g6j-ou-jtx" userLabel="endDatePicker">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
-                    <date key="date" timeIntervalSinceReferenceDate="428449667.42975497">
-                        <!--2014-07-30 21:47:47 +0000-->
-                    </date>
-                </datePicker>
             </objects>
             <point key="canvasLocation" x="-3215" y="1372"/>
         </scene>
@@ -1410,34 +1396,35 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Aba-pv-mzB"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="RKu-FY-1IX"/>
         <segue reference="lbY-YF-b2b"/>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="tQS-oL-XNh"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="z10-H9-HYt"/>
-        <segue reference="v9F-jf-qe1"/>
-        <segue reference="ntd-BZ-hgR"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="A0a-NV-skH"/>
+        <segue reference="sa2-Em-8sH"/>
+        <segue reference="emO-35-rbd"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="k2t-Pj-AhS"/>
         <segue reference="tdu-G2-PEp"/>
         <segue reference="HCr-Oa-UHV"/>
         <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="XQg-JR-vxA"/>
+        <segue reference="nJv-0g-ewn"/>
         <segue reference="yNo-Ue-PAG"/>
         <segue reference="22b-Az-fdF"/>
         <segue reference="Kfq-r2-VA6"/>
-        <segue reference="VR8-PG-xAi"/>
-        <segue reference="RKu-FY-1IX"/>
+        <segue reference="tQS-oL-XNh"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="z10-H9-HYt"/>
+        <segue reference="Aba-pv-mzB"/>
         <segue reference="TEI-cG-N0R"/>
-        <segue reference="xrp-ey-B0j"/>
+        <segue reference="VR8-PG-xAi"/>
+        <segue reference="DcC-EH-FAx"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="z8t-Er-kGd"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="od0-Sz-R9p"/>
-        <segue reference="tzJ-j2-YOi"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

@@ -16,14 +16,8 @@ namespace NachoClient.iOS
 		UIKit.UIView contentView { get; set; }
 
 		[Outlet]
-		UIKit.UIDatePicker endDatePicker { get; set; }
-
-		[Outlet]
 		UIKit.UIScrollView scrollView { get; set; }
 
-		[Outlet]
-		UIKit.UIDatePicker startDatePicker { get; set; }
-		
 		void ReleaseDesignerOutlets ()
 		{
 			if (contentView != null) {
@@ -31,19 +25,9 @@ namespace NachoClient.iOS
 				contentView = null;
 			}
 
-			if (endDatePicker != null) {
-				endDatePicker.Dispose ();
-				endDatePicker = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
-			}
-
-			if (startDatePicker != null) {
-				startDatePicker.Dispose ();
-				startDatePicker = null;
 			}
 		}
 	}
