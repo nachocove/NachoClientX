@@ -138,6 +138,7 @@
     <Compile Include="McTelemetryEventTest.cs" />
     <Compile Include="NcEmailAddressTest.cs" />
     <Compile Include="ErrorHelperTest.cs" />
+    <Compile Include="TelemetryJsonEventTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

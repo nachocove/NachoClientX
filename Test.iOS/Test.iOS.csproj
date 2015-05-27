@@ -306,6 +306,9 @@
       <Link>ErrorHelperTest.cs</Link>
     </Compile>
     <Compile Include="ImapOperationTest.cs" />
+    <Compile Include="..\Test.Android\TelemetryJsonEventTest.cs">
+      <Link>TelemetryJsonEventTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

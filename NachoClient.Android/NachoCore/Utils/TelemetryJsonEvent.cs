@@ -37,6 +37,10 @@ namespace NachoCore.Utils
         public int thread_id;
         public string message;
 
+        public TelemetryLogEvent () : this (TelemetryEventType.ERROR)
+        {
+        }
+
         public TelemetryLogEvent (TelemetryEventType type)
         {
             switch (type) {
@@ -61,6 +65,10 @@ namespace NachoCore.Utils
     public class TelemetryWbxmlEvent : TelemetryJsonEvent
     {
         public byte[] wbxml;
+
+        public TelemetryWbxmlEvent () : this (TelemetryEventType.WBXML_REQUEST)
+        {
+        }
 
         public TelemetryWbxmlEvent (TelemetryEventType type)
         {

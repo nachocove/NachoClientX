@@ -24,6 +24,9 @@ namespace NachoCore.Utils
         // redacted WBXML to 120 KB to leave some headroom for other fields.
         private const int MAX_PARSE_LEN = 120 * 1024;
 
+        // AWS Redshift has a limit of 65,535 for varchar.
+        private const int MAX_AWS_LEN = 65535;
+
         // Maximnum number of events to query per write to telemetry server
         private const int MAX_QUERY_ITEMS = 10;
 
@@ -159,6 +162,10 @@ namespace NachoCore.Utils
                 thread_id = threadId,
                 message = String.Format (fmt, list)
             };
+            if (MAX_AWS_LEN < jsonEvent.message.Length) {
+                jsonEvent.message = jsonEvent.message.Substring (0, MAX_AWS_LEN - 4);
+                jsonEvent.message += " ...";
+            }
             JsonFileTable.Add (jsonEvent);
             #else
             TelemetryEvent tEvent = new TelemetryEvent (type);
