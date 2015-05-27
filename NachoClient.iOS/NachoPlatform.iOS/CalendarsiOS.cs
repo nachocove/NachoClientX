@@ -84,7 +84,7 @@ namespace NachoPlatform
                 };
 
                 cal.AllDayEvent = Event.AllDay;
-                cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? null : Event.LastModifiedDate.ToDateTime ();
+                cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? null : (DateTime?)Event.LastModifiedDate.ToDateTime ();
                 cal.DeviceCreation = (null == Event.CreationDate) ? cal.DeviceLastUpdate : Event.CreationDate.ToDateTime ();
                 cal.DeviceUniqueId = UniqueId;
 

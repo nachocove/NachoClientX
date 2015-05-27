@@ -17,7 +17,7 @@ namespace NachoCore.Model
         public string DeviceUniqueId { get; set; }
 
         /// Set only for Device calendars.
-        public DateTime DeviceCreation { get; set; }
+        public DateTime? DeviceCreation { get; set; }
 
         /// Set only for Device calendars.
         public DateTime? DeviceLastUpdate { get; set; }
