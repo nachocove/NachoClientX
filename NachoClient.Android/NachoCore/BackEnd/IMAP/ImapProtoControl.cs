@@ -445,7 +445,7 @@ namespace NachoCore.IMAP
             if (forceAutodiscovery) {
                 Log.Error (Log.LOG_IMAP, "Wy a forceautodiscovery?");
             }
-            Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "ASPCUSSC");
+            Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "IMAPPCUSSC");
         }
 
         public static ImapClient newClientWithLogger()
