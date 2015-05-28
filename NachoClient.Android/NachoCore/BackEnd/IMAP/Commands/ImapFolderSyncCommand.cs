@@ -97,7 +97,7 @@ namespace NachoCore.IMAP
             }
 
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
-            foreach (var folder in McFolder.QueryByAccountId<McFolder> (BEContext.Account.Id)) {
+            foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
                 if (!foldernames.Contains (folder.ServerId)) {
                     folder.Delete ();
                 }
