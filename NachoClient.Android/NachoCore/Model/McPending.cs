@@ -23,12 +23,13 @@ namespace NachoCore.Model
             Token = Guid.NewGuid ().ToString ("N");
         }
 
-        public McPending (int accountId) : this ()
+        public McPending (int accountId, McAccount.AccountCapabilityEnum capability) : this ()
         {
             AccountId = accountId;
+            Capability = capability;
         }
 
-        public McPending (int accountId, McAbstrItem item) : this (accountId)
+        public McPending (int accountId, McAccount.AccountCapabilityEnum capability, McAbstrItem item) : this (accountId, capability)
         {
             Item = item;
         }
@@ -143,6 +144,8 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
+        [Indexed]
+        public McAccount.AccountCapabilityEnum Capability { set; get; }
         // Valid when in Deferred state.
         [Indexed]
         public DeferredEnum DeferredReason { set; get; }

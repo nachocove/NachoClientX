@@ -533,7 +533,7 @@ namespace NachoCore.SMTP
                     result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-                var pending = new McPending (Account.Id, emailMessage) {
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, emailMessage) {
                     Operation = McPending.Operations.EmailSend,
                 };
                 pending.Insert ();

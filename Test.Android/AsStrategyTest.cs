@@ -249,7 +249,7 @@ namespace Test.iOS
             Account.DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
             Account.Update ();
             // Add a McPending.
-            var pending = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter) {
                 Operation = McPending.Operations.ContactDelete,
                 ParentId = conFolder.ServerId,
                 ServerId = "bogus",
@@ -803,7 +803,7 @@ namespace Test.iOS
                 target.AsSyncLimit = 5;
                 return true;
             });
-            var dummy = new McPending (account.Id) {
+            var dummy = new McPending (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                 Operation = McPending.Operations.Sync,
                 ServerId = "bogus",
             };
