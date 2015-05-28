@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
     {
         public enum MethodEnum {
             Range,
-            OpenEnded,
+            OpenOnly,
         };
         public MethodEnum Method;
         public IMailFolder MailKitFolder;
@@ -21,8 +21,14 @@ namespace NachoCore.IMAP
         public uint Span;
     }
 
+    public class PingKit
+    {
+        public IMailFolder MailKitFolder;
+    }
+
     public interface IImapStrategy
     {
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, ImapClient imapClient);
+        PingKit GenPingKit (ImapClient imapClient);
     }
 }

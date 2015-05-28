@@ -122,14 +122,16 @@ namespace NachoCore.IMAP
         {
             NcTask.Run (() => {
                 try {
-                    if (Client.IsConnected) {
-                        Client.Disconnect (false, Cts.Token);
+                    lock (Client.SyncRoot) {
+                        if (Client.IsConnected) {
+                            Client.Disconnect (false, Cts.Token);
+                        }
+                        Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
+                        // FIXME - add support for OAUTH2.
+                        Client.AuthenticationMechanisms.Remove ("XOAUTH");
+                        Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                     }
-                    Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
-                    // FIXME - add support for OAUTH2.
-                    Client.AuthenticationMechanisms.Remove ("XOAUTH");
-                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                     sm.PostEvent ((uint)SmEvt.E.Success, "IMAPAUTHSUC");
                 } catch (InvalidOperationException ex) {
                     Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: InvalidOperationException: {0}", ex.ToString ());
@@ -149,6 +151,60 @@ namespace NachoCore.IMAP
         }
     }
 
+    public class ImapIdleCommand : ImapCommand
+    {
+        PingKit PingKit;
+
+        public ImapIdleCommand (IBEContext beContext, ImapClient imap, PingKit pingKit) : base (beContext, imap)
+        {
+            PingKit = pingKit;
+        }
+
+        public override void Execute (NcStateMachine sm)
+        {
+            var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
+            NcTask.Run (() => {
+                EventHandler<MessagesArrivedEventArgs> messageHandler = (sender, maea) => {
+                    done.Cancel ();
+                };
+                IList<IMessageSummary> summaries = null;
+                try {
+                    if (!Client.IsConnected) {
+                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCCONN");
+                        return;
+                    }
+                    if (!PingKit.MailKitFolder.IsOpen) {
+                        FolderAccess access;
+                        lock (Client.SyncRoot) {
+                            access = PingKit.MailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                        }
+                        if (FolderAccess.None == access) {
+                            sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                            return;
+                        }
+                    }
+                    PingKit.MailKitFolder.MessagesArrived += messageHandler;
+                    lock (Client.SyncRoot) {
+                        Client.Idle (done.Token, CancellationToken.None);
+                        PingKit.MailKitFolder.Status (
+                            StatusItems.UidNext |
+                            StatusItems.UidValidity, Cts.Token);
+                    }
+                    sm.PostEvent ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
+                } catch (OperationCanceledException) {
+                    // Not going to happen until we nix CancellationToken.None.
+                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: Cancelled");
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_IMAP, "ImapIdleCommand: Unexpected exception: {0}", ex.ToString ());
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPIDLEHARDX"); 
+                } finally {
+                    PingKit.MailKitFolder.MessagesArrived -= messageHandler;
+                    done.Dispose ();
+                }
+            }, "ImapIdleCommand");
+        }
+    }
+
     public class ImapSyncCommand : ImapCommand
     {
         SyncKit SyncKit;
@@ -163,24 +219,34 @@ namespace NachoCore.IMAP
             NcTask.Run (() => {
                 IList<IMessageSummary> summaries = null;
                 try {
+                    // TODO - put inside a function that returns Event.
+                    if (!Client.IsConnected) {
+                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCCONN");
+                        return;
+                    }
                     if (!SyncKit.MailKitFolder.IsOpen) {
-                        if (FolderAccess.None == SyncKit.MailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
+                        FolderAccess access;
+                        lock (Client.SyncRoot) {
+                            access = SyncKit.MailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                        }
+                        if (FolderAccess.None == access) {
                             sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
                             return;
                         }
                     }
                     switch (SyncKit.Method) {
                     case SyncKit.MethodEnum.Range:
-                        summaries = SyncKit.MailKitFolder.Fetch (
-                            new UniqueIdRange (new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start),
-                                new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start + SyncKit.Span)),
-                            SyncKit.Flags, Cts.Token);
+                        lock (Client.SyncRoot) {
+                            summaries = SyncKit.MailKitFolder.Fetch (
+                                new UniqueIdRange (new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start),
+                                    new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start + SyncKit.Span)),
+                                SyncKit.Flags, Cts.Token);
+                        }
                         break;
-                    case SyncKit.MethodEnum.OpenEnded:
-                        summaries = SyncKit.MailKitFolder.Fetch (
-                            new UniqueIdRange (new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start),
-                                UniqueId.MaxValue), SyncKit.Flags, Cts.Token);
-                        break;
+                    case SyncKit.MethodEnum.OpenOnly:
+                        // Just load UID with SELECT.
+                        sm.PostEvent ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
+                        return;
                     }
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Unexpected exception: {0}", ex.ToString ());
@@ -190,10 +256,12 @@ namespace NachoCore.IMAP
                     foreach (var summary in summaries) {
                         // FIXME use NcApplyServerCommand framework.
                         ServerSaysAddOrChangeEmail (summary, SyncKit.Folder);
-                        if (summary.UniqueId.Value.Id > SyncKit.Folder.ImapLargestUid) {
+                        if (summary.UniqueId.Value.Id > SyncKit.Folder.ImapUidHighestUidSynced ||
+                            summary.UniqueId.Value.Id < SyncKit.Folder.ImapUidLowestUidSynced) {
                             SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                                 var target = (McFolder)record;
-                                target.ImapLargestUid = summary.UniqueId.Value.Id;
+                                target.ImapUidHighestUidSynced = Math.Max (summary.UniqueId.Value.Id, target.ImapUidHighestUidSynced);
+                                target.ImapUidLowestUidSynced = Math.Min (summary.UniqueId.Value.Id, target.ImapUidLowestUidSynced);
                                 return true;
                             });
                         }
@@ -214,6 +282,7 @@ namespace NachoCore.IMAP
                 sm.PostEvent ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
             }, "ImapSyncCommand");
         }
+
 
         public McEmailMessage ServerSaysAddOrChangeEmail (IMessageSummary summary, McFolder folder)
         {
