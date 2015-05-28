@@ -22,8 +22,7 @@ projects = {
             'identity_pool_id': 'us-east-1:b3323849-deda-440a-a225-03043e591ec7',
             'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_dev_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': '0e41bc59-4258-47f9-b602-ff0b51af1cad',
-            's3_root_folder': 'NachoMail'
+            's3_bucket': 'c6ae00d0-e259-4bfc-903d-5b6bc62cd651-dev-telemetry',
         },
         'pinger': {
             'hostname': 'pinger.officetaco.com',
@@ -46,8 +45,7 @@ projects = {
             'identity_pool_id': 'us-east-1:667b2a39-05d8-4035-a078-2f5afb82a6b8',
             'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_alpha_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': '0e41bc59-4258-47f9-b602-ff0b51af1cad',
-            's3_root_folder': 'NachoMail'
+            's3_bucket': 'd3daf3ef-2391-41e6-ba37-3b297191751a-alpha-telemetry',
         },
         'pinger': {
             'hostname': 'alphapinger.officetaco.com',
@@ -70,8 +68,7 @@ projects = {
             'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
             'unauth_role_arn': 'arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': '460be238-6811-4527-90c2-82c46ee8a0f7',
-            's3_root_folder': 'NachoMail'
+            's3_bucket': '',
         },
         'pinger': {
             'hostname': 'dk65t.pxs001.com',
@@ -93,8 +90,7 @@ projects = {
             'identity_pool_id': 'us-east-1:2e5f8d44-3f75-4f94-9539-696849b9bca5',
             'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_prod_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': 'a4e0c353-acba-4e1b-a339-4a8ea2820e17',
-            's3_root_folder': 'NachoMail'
+            's3_bucket': '',
         },
         'pinger': {
             'hostname': 'p745x.pxs001.com',
