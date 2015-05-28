@@ -77,9 +77,10 @@ namespace NachoCore
                             Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.UniqueId, existing.Id);
                         }
                         // If present and stale, update it.
-                        if (null == deviceCalendar.LastUpdate || 
-                            null == existing.DeviceLastUpdate ||
-                            deviceCalendar.LastUpdate > existing.DeviceLastUpdate) {
+                        if (default(DateTime) == deviceCalendar.LastUpdate ||
+                            default(DateTime) == existing.DeviceLastUpdate ||
+                            deviceCalendar.LastUpdate > existing.DeviceLastUpdate)
+                        {
                             NcModel.Instance.RunInTransaction (() => {
                                 if (null != inserter.Invoke (deviceCalendar)) {
                                     folder.Unlink (existing);

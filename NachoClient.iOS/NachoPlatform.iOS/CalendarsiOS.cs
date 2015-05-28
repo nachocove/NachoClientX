@@ -42,7 +42,11 @@ namespace NachoPlatform
 
             public override string UniqueId { get { return Event.EventIdentifier + Event.StartDate.ToString (); } }
 
-            public override DateTime? LastUpdate { get { return (null == Event.LastModifiedDate) ? null : (DateTime?)Event.LastModifiedDate.ToDateTime (); } }
+            public override DateTime LastUpdate {
+                get {
+                    return (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
+                }
+            }
 
             private string TryExtractEmailAddress (EKParticipant who)
             {
@@ -84,7 +88,7 @@ namespace NachoPlatform
                 };
 
                 cal.AllDayEvent = Event.AllDay;
-                cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? null : (DateTime?)Event.LastModifiedDate.ToDateTime ();
+                cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
                 cal.DeviceCreation = (null == Event.CreationDate) ? cal.DeviceLastUpdate : Event.CreationDate.ToDateTime ();
                 cal.DeviceUniqueId = UniqueId;
 
