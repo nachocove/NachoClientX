@@ -889,13 +889,12 @@ namespace NachoCore.Model
         {
             // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
             string[] tags = {
-                "Junk",
                 "junk",
-                "Spam",
                 "spam"
             };
+            var folderLower = folderName.ToLower ();
             for (int n = 0; n < tags.Length; n++) {
-                if (folderName.Contains (tags [n])) {
+                if (folderLower.Contains (tags [n])) {
                     return true;
                 }
             }
