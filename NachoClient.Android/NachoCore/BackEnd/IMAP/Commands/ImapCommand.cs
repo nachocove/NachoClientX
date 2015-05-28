@@ -39,38 +39,5 @@ namespace NachoCore.IMAP
         {
             Cts.Cancel ();
         }
-
-        protected void CreateOrUpdateDistinguished (MailKit.IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType)
-        {
-            // FIXME mailKitFolder == null should be considered a delete from the server.
-            if (null == mailKitFolder) {
-                return;
-            }
-            var existing = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
-            if (null == existing) {
-                // Just add it.
-                var created = new McFolder () {
-                    AccountId = BEContext.Account.Id,
-                    ServerId = mailKitFolder.FullName,
-                    ParentId = McFolder.AsRootServerId,
-                    DisplayName = mailKitFolder.Name,
-                    Type = folderType,
-                    ImapUidValidity = mailKitFolder.UidValidity,
-                };
-                created.Insert ();
-            } else {
-                // check & update.
-                if (existing.AsSyncEpoch != mailKitFolder.UidValidity) {
-                    // FIXME flush and re-sync folder contents.
-                }
-                existing = existing.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ServerId = mailKitFolder.FullName;
-                    target.DisplayName = mailKitFolder.Name;
-                    target.ImapUidValidity = mailKitFolder.UidValidity;
-                    return true;
-                });
-            }
-        }
     }
 }
