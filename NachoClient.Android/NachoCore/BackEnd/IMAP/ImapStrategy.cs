@@ -1,6 +1,8 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
+using System.Xml.Linq;
 using MailKit;
 using MailKit.Net.Imap;
 using NachoCore;
@@ -86,6 +88,14 @@ namespace NachoCore.IMAP
             if (NcApplication.ExecutionContextEnum.Initializing == exeCtxt) {
                 // ExecutionContext is not set until after BE is started.
                 exeCtxt = NcApplication.Instance.PlatformIndication;
+            }
+            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
+                    Where (x => McPending.Operations.EmailBodyDownload == x.Operation ).FirstOrDefault ();
+                if (null != fetch) {
+                    return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
+                        new ImapFetchBodyCommand (BEContext, ImapClient, fetch));
+                }
             }
             // TODO add McPending operations, non-Inbox folders, etc.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||

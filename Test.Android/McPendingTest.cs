@@ -763,7 +763,7 @@ namespace Test.iOS
                 var pendElig = CreatePending ();
                 CreatePending (); // pending but not eligible
                 CreatePending (accountId: 5); // pending in other account
-                var retrieved = McPending.QueryEligible (defaultAccountId);
+                var retrieved = McPending.QueryEligible (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 PendingsAreEqual (pendElig, retrieved.FirstOrDefault ());
             }
 
@@ -1195,15 +1195,27 @@ namespace Test.iOS
                 var first = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: firstSId);
                 var second = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: secondSId);
                 second.Prioritize ();
-                var seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                var shouldBeNone = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.AccountCapabilityEnum.CalReader);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                Assert.AreEqual (2, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligible (defaultAccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligible (defaultAccountId, McAccount.AccountCapabilityEnum.CalReader);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligible (defaultAccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                Assert.AreEqual (2, shouldBeNone.Count ());
+                var seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 Assert.AreEqual (2, seq.Count ());
                 Assert.AreEqual (secondSId, seq.First ().ServerId);
                 first.Prioritize ();
-                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 Assert.AreEqual (firstSId, seq.First ().ServerId);
                 Assert.AreEqual (2, seq.Count ());
                 second.Prioritize ();
-                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 Assert.AreEqual (2, seq.Count ());
                 Assert.AreEqual (secondSId, seq.First ().ServerId);
             }

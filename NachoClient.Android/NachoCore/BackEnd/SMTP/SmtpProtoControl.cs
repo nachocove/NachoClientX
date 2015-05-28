@@ -410,7 +410,7 @@ namespace NachoCore.SMTP
             // TODO: find a way to detect already running op and log an error.
             // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
             Sm.ClearEventQueue ();
-            var send = McPending.QueryEligible (AccountId).
+            var send = McPending.QueryEligible (AccountId, McAccount.SmtpCapabilities).
                 Where (x => 
                     McPending.Operations.EmailSend == x.Operation ||
                        McPending.Operations.EmailForward == x.Operation ||

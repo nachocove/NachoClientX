@@ -1180,19 +1180,21 @@ namespace NachoCore.Model
                     StateEnum.Deleted != x.State).ToList ();
         }
 
-        public static IEnumerable<McPending> QueryEligible (int accountId)
+        public static IEnumerable<McPending> QueryEligible (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-            rec.State == StateEnum.Eligible
+                rec.State == StateEnum.Eligible &&
+                rec.Capability == (rec.Capability & capabilities)
             ).OrderBy (x => x.Priority);
         }
 
-        public static IEnumerable<McPending> QueryEligibleOrderByPriorityStamp (int accountId)
+        public static IEnumerable<McPending> QueryEligibleOrderByPriorityStamp (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.State == StateEnum.Eligible
+                rec.State == StateEnum.Eligible &&
+                rec.Capability == (rec.Capability & capabilities)
             ).OrderByDescending (x => x.PriorityStamp);
         }
 

@@ -62,6 +62,8 @@ namespace NachoCore.IMAP
                         sm.PostEvent ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
                         return;
                     }
+                } catch (OperationCanceledException) {
+                    return;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Unexpected exception: {0}", ex.ToString ());
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDX"); 
