@@ -34,7 +34,7 @@ namespace NachoCore.IMAP
             get {
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
-                    state = ProtocolState.ProtoControlState;
+                    state = ProtocolState.ImapProtoControlState;
                 }
                 // Every state above must be mapped here.
                 switch (state) {
@@ -366,7 +366,7 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }
 

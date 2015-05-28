@@ -91,7 +91,7 @@ namespace NachoCore.IMAP
             }
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
-                    Where (x => McPending.Operations.EmailBodyDownload == x.Operation ).FirstOrDefault ();
+                    Where (x => McPending.Operations.EmailBodyDownload == x.Operation).FirstOrDefault ();
                 if (null != fetch) {
                     return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
                         new ImapFetchBodyCommand (BEContext, ImapClient, fetch));

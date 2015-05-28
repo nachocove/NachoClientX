@@ -22,8 +22,7 @@ namespace NachoCore.SMTP
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
-            UiDCrdW,
-            UiPCrdW,
+            UiCrdW,
             UiCertOkW,
             ConnW,
             Pick,
@@ -34,7 +33,7 @@ namespace NachoCore.SMTP
             get {
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
-                    state = ProtocolState.ProtoControlState;
+                    state = ProtocolState.SmtpProtoControlState;
                 }
                 // Every state above must be mapped here.
                 switch (state) {
@@ -44,8 +43,7 @@ namespace NachoCore.SMTP
                 case (uint)Lst.DiscW:
                     return BackEndStateEnum.Running;
 
-                case (uint)Lst.UiDCrdW:
-                case (uint)Lst.UiPCrdW:
+                case (uint)Lst.UiCrdW:
                     return BackEndStateEnum.CredWait;
 
                 case (uint)Lst.UiCertOkW:
@@ -166,14 +164,14 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoConn, State = (uint)Lst.ConnW }, // TODO How do we keep from looping forever?
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoConn, State = (uint)Lst.ConnW }, // TODO Should go back to discovery, not connection.
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)St.Start },
+                            new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.GetCertOk, Act = DoUiCertOkReq, State = (uint)Lst.UiCertOkW },
                         }
                     },
                     new Node {
-                        State = (uint)Lst.UiDCrdW,
+                        State = (uint)Lst.UiCrdW,
                         Drop = new uint[] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
@@ -216,7 +214,7 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoConn, State = (uint)Lst.ConnW }, // TODO How do we keep from looping forever?
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoConn, State = (uint)Lst.ConnW  }, // TODO Should go back to discovery, not connection.
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiDCrdW },
+                            new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, State = (uint)Lst.Pick },
@@ -302,7 +300,7 @@ namespace NachoCore.SMTP
             if (!base.Execute ()) {
                 return false;
             }
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
             return true;
         }
 
