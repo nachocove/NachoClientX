@@ -79,16 +79,20 @@ namespace NachoCore.IMAP
                     CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4, mailKitFolder.Name, true);
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, true);
+                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Archive)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, McFolder.ARCHIVE_DISPLAY_NAME, true);
+                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, McFolder.ARCHIVE_DISPLAY_NAME, false);
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.All)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, true);
+                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
                 }
                 else {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    if ("notes" == mailKitFolder.Name.ToLower ()) {
+                        CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10, mailKitFolder.Name, true);
+                    } else {
+                        CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    }
                 }
             }
 
@@ -111,7 +115,8 @@ namespace NachoCore.IMAP
             }
             if (null == existing) {
                 // Just add it.
-                string parentId = null == mailKitFolder.ParentFolder ? McFolder.AsRootServerId : mailKitFolder.ParentFolder.FullName;
+                string parentId = (null != mailKitFolder.ParentFolder) && (mailKitFolder.ParentFolder.FullName != "") ? 
+                    mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
                 var created = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, parentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 created.ImapUidValidity = mailKitFolder.UidValidity;
                 created.Insert ();
