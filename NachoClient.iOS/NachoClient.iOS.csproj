@@ -238,6 +238,7 @@
     <Folder Include="NachoCore\Model\Migration\" />
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1399,12 +1400,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\MailKitProtocolLogger.cs">
       <Link>NachoCore\Utils\MailKitProtocolLogger.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\IImapCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
       <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>
@@ -1431,6 +1426,24 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AdvancedTextField.cs" />
     <Compile Include="NachoUI.iOS\Support\ExchangeFields.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\IImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\IImapCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
