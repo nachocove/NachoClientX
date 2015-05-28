@@ -47,9 +47,11 @@ namespace NachoCore.Model
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
 
-        public uint ImapUidValidity { get; set; }
+        public uint ImapUidLowestUidSynced { get; set; }
 
-        public uint ImapLargestUid { get; set; }
+        public uint ImapUidHighestUidSynced { get; set; }
+
+        public uint ImapUidValidity { get; set; }
 
         public uint ImapUidNext { get; set; }
 
@@ -84,6 +86,12 @@ namespace NachoCore.Model
 
         // A dictionary mapping account id to the RIC folder id of the account. (-1 if there is none locally)
         private static ConcurrentDictionary<int, int> RicFolderIds = new ConcurrentDictionary<int, int> ();
+
+        public McFolder ()
+        {
+            ImapUidLowestUidSynced = uint.MaxValue;
+            ImapUidHighestUidSynced = uint.MinValue;
+        }
 
         public override string ToString ()
         {

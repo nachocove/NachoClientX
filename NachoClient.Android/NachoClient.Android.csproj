@@ -408,12 +408,17 @@
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\IImapCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\ImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\IImapCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -580,6 +585,7 @@
     <Folder Include="NachoCore\Model\Migration\" />
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

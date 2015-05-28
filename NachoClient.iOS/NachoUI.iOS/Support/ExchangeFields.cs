@@ -187,7 +187,8 @@ namespace NachoClient.iOS
         public void RefreshTheServer (ref AdvancedLoginViewController.AccountSettings theAccount)
         {
             if (null != theAccount.Account) {
-                theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).SingleOrDefault ();
+                // FIXME STEVE
+                theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).FirstOrDefault ();
                 if (null != theAccount.Server) {
                     if (null == theAccount.Server.UserSpecifiedServerName) {
                         serverView.textField.Text = theAccount.Server.Host;
