@@ -468,6 +468,9 @@ namespace NachoCore.IMAP
             case PickActionEnum.Sync:
                 Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKSYNC", cmd);
                 break;
+            case PickActionEnum.Ping:
+                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKPING", cmd);
+                break;
             }
         }
 

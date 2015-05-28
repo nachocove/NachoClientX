@@ -180,7 +180,7 @@ namespace NachoPlatform
     {
         public abstract string UniqueId { get; }
 
-        public abstract DateTime LastUpdate { get; }
+        public abstract DateTime? LastUpdate { get; }
 
         public abstract NcResult ToMcCalendar ();
     }
