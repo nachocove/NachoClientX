@@ -1444,6 +1444,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
