@@ -309,6 +309,9 @@
     <Compile Include="..\Test.Android\TelemetryJsonEventTest.cs">
       <Link>TelemetryJsonEventTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\TelemetryJsonFileTest.cs">
+      <Link>TelemetryJsonFileTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

@@ -1,5 +1,7 @@
 //  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
+#define USE_T3
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -157,7 +159,7 @@ namespace NachoCore.Utils
 
             NcAssert.True (TelemetryEvent.IsLogEvent (type));
 
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryLogEvent (type) {
                 thread_id = threadId,
                 message = String.Format (fmt, list)
@@ -194,7 +196,7 @@ namespace NachoCore.Utils
             } else {
                 type = TelemetryEventType.WBXML_RESPONSE;
             }
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryWbxmlEvent (type) {
                 wbxml = wbxml
             };
@@ -222,7 +224,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryCounterEvent () {
                 counter_name = name,
                 count = count,
@@ -248,7 +250,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryStatistics2Event () {
                 stat2_name = name,
                 count = count,
@@ -293,7 +295,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryUiEvent () {
                 ui_type = uiType,
                 ui_object = uiObject,
@@ -311,7 +313,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryUiEvent () {
                 ui_type = uiType,
                 ui_object = uiObject,
@@ -332,7 +334,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if !USE_T3
+            #if USE_T3
             var jsonEvent = new TelemetryUiEvent () {
                 ui_type = uiType,
                 ui_object = uiObject,

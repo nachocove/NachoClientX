@@ -29,12 +29,12 @@ namespace NachoCore.Utils
             FirstTimestamp = DateTime.MinValue;
             LatestTimestamp = DateTime.MinValue;
 
-            if (File.Exists (FilePath)) {
+            if (!File.Exists (FilePath)) {
                 JsonFile = File.Open (FilePath, FileMode.Create | FileMode.Append, FileAccess.Write);
             } else {
-                JsonFile = File.Open (FilePath, FileMode.Open | FileMode.Append, FileAccess.Write);
-                // Count how many lines;
-                using (var reader = new StreamReader (JsonFile)) {
+                // Open the JSON file for read and count how many entries. Also, extract the time stamp
+                var tmpFile = File.Open (FilePath, FileMode.Open, FileAccess.Read);
+                using (var reader = new StreamReader (tmpFile)) {
                     string lastLine = null;
                     var line = reader.ReadLine ();
                     while (!String.IsNullOrEmpty (line)) {
@@ -45,10 +45,12 @@ namespace NachoCore.Utils
                         lastLine = line;
                         line = reader.ReadLine ();
                     }
-                    if (null == lastLine) {
-                        LatestTimestamp = ExtractTimestamp (line);
+                    if (null != lastLine) {
+                        LatestTimestamp = ExtractTimestamp (lastLine);
                     }
                 }
+                tmpFile.Close ();
+                JsonFile = File.Open (FilePath, FileMode.Append, FileAccess.Write);
                 JsonFile.Seek (0, SeekOrigin.End);
             }
         }
@@ -58,12 +60,12 @@ namespace NachoCore.Utils
             // Extract the timestamp. Since they can be different type of JSON object,
             // just use regex to grab the tick value.
             if (null == TimestampRegex) {
-                TimestampRegex = new Regex (@"timestamp=([0-9])+");
+                TimestampRegex = new Regex (@"""timestamp""\s*:\s*([0-9]+)");
             }
             var match = TimestampRegex.Match (line);
             NcAssert.True (match.Success);
-            NcAssert.True (1 == match.Groups.Count);
-            return DateTime.MinValue.AddTicks (long.Parse (match.Groups [0].Value));
+            NcAssert.True (2 == match.Groups.Count);
+            return DateTime.MinValue.AddTicks (long.Parse (match.Groups [1].Value));
         }
 
         public bool Add (TelemetryJsonEvent jsonEvent)
@@ -71,15 +73,19 @@ namespace NachoCore.Utils
             if (null == jsonEvent) {
                 return false;
             }
-            LatestTimestamp = DateTime.MinValue.AddTicks (jsonEvent.timestamp);
+            var timestamp = DateTime.MinValue.AddTicks (jsonEvent.timestamp);
+            if (0 == NumberOfEntries) {
+                FirstTimestamp = timestamp;
+            }
+            LatestTimestamp = timestamp;
 
             bool succeeded;
             try {
-                byte[] bytes = Encoding.ASCII.GetBytes (jsonEvent.ToJson ());
+                byte[] bytes = Encoding.ASCII.GetBytes (jsonEvent.ToJson () + "\n");
                 JsonFile.Write (bytes, 0, bytes.Length);
                 NumberOfEntries += 1;
                 succeeded = true;
-                JsonFile.Flush ();
+                JsonFile.Flush (true);
             } catch (IOException e) {
                 Log.Warn (Log.LOG_UTILS, "fail to write a telemetry JSON event ({0})", e);
                 succeeded = false;
@@ -91,79 +97,90 @@ namespace NachoCore.Utils
         {
             if (null != JsonFile) {
                 JsonFile.Close ();
+                JsonFile = null;
             }
         }
     }
 
+    /// <summary>
+    /// TelemetryEventType are mapped into TelemetryEventClass. Event types with the same parameters
+    /// can (and are) mapped into the same event class. This is done to aggregate different types of
+    /// events into the same JSON file in order to reduce the number of S3 API calls (and hence
+    /// reducing cost).
+    /// 
+    /// Event types 
+    /// </summary>
+    public enum TelemetryEventClass
+    {
+        None,
+        // ERROR, WARN, INFO, DEBUG
+        Log,
+        // WBXML_REQUEST, WBXML_RESPONSE
+        Wbxml,
+        // UI
+        Ui,
+        // SUPPORT
+        Support,
+        // SAMPLES
+        Samples,
+        // STATISTICS2
+        Statistics2,
+        // DISTRIBUTION
+        Distribution,
+    };
+
     public class TelemetryJsonFileTable
     {
-        /// <summary>
-        /// TelemetryEventType are mapped into TelemetryEventClass. Event types with the same parameters
-        /// can (and are) mapped into the same event class. This is done to aggregate different types of
-        /// events into the same JSON file in order to reduce the number of S3 API calls (and hence
-        /// reducing cost).
-        /// 
-        /// Event types 
-        /// </summary>
-        protected enum TelemetryEventClass
-        {
-            None,
-            // ERROR, WARN
-            Error,
-            // INFO, DEBUG
-            Info,
-            // WBXML_REQUEST, WBXML_RESPONSE
-            Wbxml,
-            // UI
-            Ui,
-            // SUPPORT
-            Support,
-            // SAMPLES
-            Samples,
-            // STATISTICS2
-            Statistics2,
-        };
+        public delegate DateTime TelemetryJsonFileTableDateTimeFunc ();
 
         public const long MAX_DURATION = 60 * TimeSpan.TicksPerSecond;
 
         public const int MAX_EVENTS = 1000000;
 
+        protected static TelemetryJsonFileTableDateTimeFunc GetNowUtc = DefaultGetUtcNow;
+
         protected Dictionary<TelemetryEventClass, TelemetryJsonFile> WriteFiles;
         protected SortedSet<string> ReadFiles;
         protected object LockObj;
 
+        protected static DateTime DefaultGetUtcNow ()
+        {
+            return DateTime.UtcNow;
+        }
+
         protected static string GetFilePath (TelemetryEventClass eventClass)
         {
-            return Path.Combine (NcApplication.GetDataDirPath (), eventClass.ToString ());
+            return Path.Combine (NcApplication.GetDataDirPath (), eventClass.ToString ().ToLower ());
         }
 
         protected static TelemetryEventClass GetEventClass (string eventType)
         {
             TelemetryEventClass eventClass = TelemetryEventClass.None;
             switch (eventType) {
-            case "ERROR":
-            case "WARN":
-                eventClass = TelemetryEventClass.Error;
+            case TelemetryLogEvent.ERROR:
+            case TelemetryLogEvent.WARN:
+            case TelemetryLogEvent.INFO:
+            case TelemetryLogEvent.DEBUG:
+                eventClass = TelemetryEventClass.Log;
                 break;
-            case "INFO":
-            case "DEBUG":
-                eventClass = TelemetryEventClass.Info;
-                break;
-            case "WBXML_REQUEST":
-            case "WBXML_RESPONSE":
+            case TelemetryWbxmlEvent.REQUEST:
+            case TelemetryWbxmlEvent.RESPONSE:
                 eventClass = TelemetryEventClass.Wbxml;
                 break;
-            case "UI":
+            case TelemetryUiEvent.UI:
                 eventClass = TelemetryEventClass.Ui;
                 break;
-            case "SUPPORT":
+            case TelemetrySupportEvent.SUPPORT:
                 eventClass = TelemetryEventClass.Support;
                 break;
-            case "SAMPLES":
+            case TelemetrySamplesEvent.SAMPLES:
                 eventClass = TelemetryEventClass.Samples;
                 break;
-            case "STATISTICS2":
+            case TelemetryStatistics2Event.STATISTICS2:
                 eventClass = TelemetryEventClass.Statistics2;
+                break;
+            case TelemetryDistributionEvent.DISTRIBUTION:
+                eventClass = TelemetryEventClass.Distribution;
                 break;
             }
             return eventClass;
@@ -222,23 +239,24 @@ namespace NachoCore.Utils
             }
         }
 
-        protected IEnumerable<TelemetryEventClass> AllEventClasses ()
+        public static IEnumerable<TelemetryEventClass> AllEventClasses ()
         {
             return Enum.GetValues (typeof(TelemetryEventClass)).Cast<TelemetryEventClass> ();
         }
 
-        public void Add (TelemetryJsonEvent jsonEvent)
+        public bool Add (TelemetryJsonEvent jsonEvent)
         {
             lock (LockObj) {
                 TelemetryJsonFile writeFile;
                 var eventClass = GetEventClass (jsonEvent.event_type);
                 if (!WriteFiles.TryGetValue (eventClass, out writeFile)) {
-                    WriteFiles.Add (eventClass, new TelemetryJsonFile (GetFilePath (eventClass)));
+                    writeFile = new TelemetryJsonFile (GetFilePath (eventClass));
+                    WriteFiles.Add (eventClass, writeFile);
                 }
 
                 bool doFinalize = false;
-                var now = DateTime.UtcNow;
-                if (writeFile.LatestTimestamp.Day != now.Day) {
+                var now = GetNowUtc ();
+                if ((0 < writeFile.NumberOfEntries) && (writeFile.LatestTimestamp.Day != now.Day)) {
                     doFinalize = true; // do not allow JSON file to span more than one day
                 }
                 if ((now.Ticks - jsonEvent.timestamp) > MAX_DURATION) {
@@ -249,15 +267,19 @@ namespace NachoCore.Utils
                 }
                 if (doFinalize) {
                     Finalize (eventClass);
+                    writeFile = new TelemetryJsonFile (GetFilePath (eventClass));
+                    WriteFiles.Add (eventClass, writeFile);
                 }
 
                 if (!writeFile.Add (jsonEvent)) {
                     // TODO - Probably need to reset the file
+                    return false;
                 } else {
                     if (TelemetryEventClass.Support == eventClass) {
                         Finalize (eventClass); // always finalize support files after each write
                     }
                 }
+                return true;
             }
         }
 
