@@ -632,24 +632,22 @@ namespace NachoCore
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
             }
-            Log.Info (Log.LOG_SYS, "Monitor: Process Memory {0} MB", (int)PlatformProcess.GetUsedMemory () / (1024 * 1024));
-            Log.Info (Log.LOG_SYS, "Monitor: GC Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
-            int workerThreads, completionPortThreads;
-            ThreadPool.GetMinThreads (out workerThreads, out completionPortThreads);
-            Log.Info (Log.LOG_SYS, "Monitor: Min Threads {0}/{1}", workerThreads, completionPortThreads);
-            ThreadPool.GetMaxThreads (out workerThreads, out completionPortThreads);
-            Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
-            var numThreads = PlatformProcess.GetNumberOfSystemThreads ();
-            var message = String.Format ("Monitor: System Threads {0}", numThreads);
-            if (50 > numThreads) {
+            Log.Info (Log.LOG_SYS, "Monitor: Memory: Process {0} MB, GC {1} MB",
+                PlatformProcess.GetUsedMemory () / (1024 * 1024), GC.GetTotalMemory (true) / (1024 * 1024));
+            int minWorker, maxWorker, minCompletion, maxCompletion;
+            ThreadPool.GetMinThreads (out minWorker, out minCompletion);
+            ThreadPool.GetMaxThreads (out maxWorker, out maxCompletion);
+            int systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
+            string message = string.Format ("Monitor: Threads: Min {0}/{1}, Max {2}/{3}, System {4}",
+                minWorker, minCompletion, maxWorker, maxCompletion, systemThreads);
+            if (50 > systemThreads) {
                 Log.Info (Log.LOG_SYS, message);
             } else {
                 Log.Warn (Log.LOG_SYS, message);
             }
-            Log.Info (Log.LOG_SYS, "Monitor: Comm Status {0}, Speed {1}", 
-                NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
-            Log.Info (Log.LOG_SYS, "Monitor: Battery Level {0}, Plugged Status {1}",
-                NachoPlatform.Power.Instance.BatteryLevel, NachoPlatform.Power.Instance.PowerState);
+            Log.Info (Log.LOG_SYS, "Monitor: Status: Comm {0}, Speed {1}, Battery {2:00}% {3}",
+                NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
+                NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
