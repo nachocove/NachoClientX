@@ -22,28 +22,26 @@ namespace NachoCore.IMAP
     {
         List<McPending> PendingList;
         ImapFolder _folder { get; set; }
-        public ImapFetchBodyCommand (IBEContext beContext, ImapClient imap, List<McPending> pendings) : base (beContext, imap)
+        public ImapFetchBodyCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
-            PendingList = pendings;
+            PendingSingle = pending;
             _folder = null;
         }
 
         public override void Execute (NcStateMachine sm)
         {
-            foreach (var pending in PendingList) {
-                try {
-                    lock (Client.SyncRoot) {
-                        ProcessPending (pending);
-                    }
-                } catch (InvalidOperationException e) {
-                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: {0}", e);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD1");
-                    return;
-                } catch (Exception e) {
-                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Unexpected exception: {0}", e);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD2");
-                    return;
+            try {
+                lock (Client.SyncRoot) {
+                    ProcessPending (sm, PendingSingle);
                 }
+            } catch (InvalidOperationException e) {
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: {0}", e);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD1");
+                return;
+            } catch (Exception e) {
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Unexpected exception: {0}", e);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD3");
+                return;
             }
         }
 
@@ -64,7 +62,7 @@ namespace NachoCore.IMAP
             return _folder;
         }
 
-        private void ProcessPending(McPending pending)
+        private void ProcessPending(NcStateMachine sm, McPending pending)
         {
             McPending.Operations op;
             if (null == pending) {
@@ -75,7 +73,7 @@ namespace NachoCore.IMAP
             }
             switch (op) {
             case McPending.Operations.EmailBodyDownload:
-                FetchOneBody (pending);
+                FetchOneBody (sm, pending);
                 break;
             case McPending.Operations.AttachmentDownload:
                 break;
@@ -85,7 +83,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private void FetchOneBody(McPending pending)
+        private void FetchOneBody(NcStateMachine sm, McPending pending)
         {
             pending.MarkDispached ();
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
@@ -102,15 +100,25 @@ namespace NachoCore.IMAP
                 //   Perhaps use the WriteTo method on the Body, write to a file,
                 //   then open the file and pass that stream to UpdateData/InsertFile?
                 string bodyAsString;
-                if (null != imapbody.TextBody) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                    bodyAsString = imapbody.TextBody;
-                } else if (null != imapbody.HtmlBody) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                    bodyAsString = imapbody.HtmlBody;
-                } else {
+                if (imapbody.Body.ContentType.Matches ("multipart", "*")) {
                     bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
                     bodyAsString = imapbody.Body.ToString ();
+                } else if (imapbody.Body.ContentType.Matches ("text", "*")) {
+                    if (imapbody.Body.ContentType.Matches ("text", "html")) {
+                        bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                        bodyAsString = imapbody.HtmlBody;
+                    } else if (imapbody.Body.ContentType.Matches ("text", "plain")) {
+                        bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                        bodyAsString = imapbody.TextBody;
+                    } else {
+                        Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
+                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYPLAIN");
+                        return;
+                    }
+                } else {
+                    Log.Error (Log.LOG_IMAP, "Unhandled multipart subtype {0}", imapbody.Body.ContentType.MediaSubtype);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYMULT");
+                    return;
                 }
 
                 McBody body;
