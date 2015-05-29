@@ -96,6 +96,7 @@ namespace NachoCore.Utils
     public class TelemetryCounterEvent : TelemetryJsonEvent
     {
         public const string COUNTER = "COUNTER";
+
         public string counter_name;
         public long count;
         public long counter_start;
@@ -125,7 +126,7 @@ namespace NachoCore.Utils
         public const string TIME_SERIES = "TIME_SERIES";
 
         public string time_series_name;
-        public List<DateTime> time_series_timestamp;
+        public List<long> time_series_timestamp;
         public List<int> time_series_samples;
 
         public TelemetryTimeSeriesSamplesEvent ()
@@ -189,6 +190,18 @@ namespace NachoCore.Utils
         {
             event_type = SUPPORT;
         }
+    }
+
+    public class TelemetryDeviceInfoEvent : TelemetryJsonEvent
+    {
+        public string os_type;
+        public string os_version;
+        public string device_model;
+        public string build_version;
+        public string build_number;
+        public string device_id;
+        public bool fresh_install;
+        public string user_id;
     }
 }
 

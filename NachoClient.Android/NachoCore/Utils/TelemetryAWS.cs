@@ -19,6 +19,7 @@ using Amazon.SecurityToken;
 using Amazon.Util;
 using Amazon.CognitoIdentity;
 using Amazon;
+using Newtonsoft.Json;
 
 using NachoPlatform;
 using NachoClient.Build;
@@ -32,7 +33,6 @@ namespace NachoCore.Utils
 
         private static AmazonDynamoDBClient Client;
         private static AmazonS3Client S3Client;
-        private static Table DeviceInfoTable;
         private static Table LogTable;
         private static Table SupportTable;
         private static Table CounterTable;
@@ -107,7 +107,6 @@ namespace NachoCore.Utils
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);
 
-                DeviceInfoTable = Table.LoadTableAsync (Client, TableName ("device_info"), NcTask.Cts.Token);
                 LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);
                 SupportTable = Table.LoadTableAsync (Client, TableName ("support"), NcTask.Cts.Token);
                 CounterTable = Table.LoadTableAsync (Client, TableName ("counter"), NcTask.Cts.Token);
@@ -134,6 +133,8 @@ namespace NachoCore.Utils
                             if (null != Client) {
                                 Client.Dispose ();
                                 Client = null;
+                                S3Client.Dispose ();
+                                S3Client = null;
                             }
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
@@ -160,13 +161,6 @@ namespace NachoCore.Utils
 
         public bool SendEvents (List<TelemetryEvent> tEvents)
         {
-            if (!Initialized) {
-                if (!SendDeviceInfo ()) {
-                    return false;
-                }
-                Initialized = true;
-            }
-
             var writeDict = new Dictionary<Table, DocumentBatchWrite> ();
             foreach (var tEvent in tEvents) {
                 Table eventTable = null;
@@ -337,17 +331,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public bool UploadEvents (string jsonFilePath)
+        protected string GetS3Path (string filePath)
         {
-            var gzJsonFilePath = jsonFilePath + ".gz";
-            using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read))
-            using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
-            using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress)) {
-                jsonStream.CopyTo (gzipStream);
-            }
-
-            // Extract timestamps from the file path
-            var fileName = Path.GetFileName (jsonFilePath);
+            var fileName = Path.GetFileName (filePath);
             var startTimeStamp = fileName.Substring (0, 17);
             var jsonType = fileName.Substring (36);
             var date = startTimeStamp.Substring (0, 8);
@@ -359,41 +345,79 @@ namespace NachoCore.Utils
                              NcApplication.Instance.ClientId,
                              "NachoMail",
                              jsonType + '-' + startTimeStamp + ".gz");
+            return s3Path;
+        }
 
-
+        protected bool UploadFileToS3 (string filePath, string s3Key)
+        {
             var uploadRequest = new PutObjectRequest () {
                 BucketName = BuildInfo.S3Bucket,
-                Key = s3Path,
-                FilePath = gzJsonFilePath,
+                Key = s3Key,
+                FilePath = filePath,
             };
             var succeeded = AwsSendEvent (() => {
                 var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
             }, "AWS upload events", () => {
-                SafeFileDelete (gzJsonFilePath);
+                SafeFileDelete (filePath);
             });
 
-            SafeFileDelete (gzJsonFilePath);
+            SafeFileDelete (filePath);
 
             return succeeded;
         }
 
+        public bool UploadEvents (string jsonFilePath)
+        {
+            if (!Initialized) {
+                if (!SendDeviceInfo ()) {
+                    return false;
+                }
+                Initialized = true;
+            }
+
+            var gzJsonFilePath = jsonFilePath + ".gz";
+            using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read))
+            using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
+            using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress)) {
+                jsonStream.CopyTo (gzipStream);
+            }
+
+            // Extract timestamps from the file path
+            var s3Path = GetS3Path (jsonFilePath);
+            return UploadFileToS3 (gzJsonFilePath, s3Path);
+        }
+
         private bool SendDeviceInfo ()
         {
-            var anEvent = new Document ();
-            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
-            anEvent ["client"] = ClientId;
-            anEvent ["timestamp"] = DateTime.UtcNow.Ticks;
-            anEvent ["os_type"] = Device.Instance.OsType ();
-            anEvent ["os_version"] = Device.Instance.OsVersion ();
-            anEvent ["device_model"] = Device.Instance.Model ();
-            anEvent ["build_version"] = BuildInfo.Version;
-            anEvent ["build_number"] = BuildInfo.BuildNumber;
-            anEvent ["device_id"] = Device.Instance.Identity ();
-            anEvent ["fresh_install"] = FreshInstall;
-            FreshInstall = false;
+            // Create the JSON
+            var jsonEvent = new TelemetryDeviceInfoEvent () {
+                os_type = Device.Instance.OsType (),
+                os_version = Device.Instance.OsVersion (),
+                device_model = Device.Instance.Model (),
+                build_version = BuildInfo.Version,
+                build_number = BuildInfo.BuildNumber,
+                device_id = Device.Instance.Identity (),
+                fresh_install = FreshInstall,
+            };
+            var json = JsonConvert.SerializeObject (
+                           jsonEvent, Newtonsoft.Json.Formatting.None,
+                           new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-            return AwsSendOneEvent (DeviceInfoTable, anEvent);
+            // Create the temporary JSON .gz file
+            var timestamp = DateTime.MinValue.AddTicks (jsonEvent.timestamp);
+            var readFilePath = TelemetryJsonFileTable.GetReadFilePath (
+                                   Path.Combine (NcApplication.GetDataDirPath (), "device_info"),
+                                   timestamp, timestamp);
+            var s3Path = GetS3Path (readFilePath);
+            var gzJsonFilePath = readFilePath + ".gz";
+            using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
+            using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress))
+            using (var streamWriter = new StreamWriter (gzipStream)) {
+                streamWriter.Write (json);
+            }
+
+            return UploadFileToS3 (gzJsonFilePath, s3Path);
         }
 
         private Document LogEvent (TelemetryEvent tEvent)

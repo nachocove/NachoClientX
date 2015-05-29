@@ -129,6 +129,8 @@ namespace NachoCore.Utils
         Distribution,
         // COUNTER
         Counter,
+        // TIME_SERIES
+        Time_Series,
     };
 
     public class TelemetryJsonFileTable
@@ -137,10 +139,10 @@ namespace NachoCore.Utils
 
         // TODO - The long-term value of this should be one day. Keep it small for now
         //        to get T3 to upload more frequently. Will re-adjust when T3 stabilizes.
-        public const long MAX_DURATION = 60 * TimeSpan.TicksPerSecond;
+        public const long MAX_DURATION = 1 * TimeSpan.TicksPerMinute;
 
         // TODO - The long-term value of this should be like 100,000.
-        public const int MAX_EVENTS = 100;
+        public const int MAX_EVENTS = 500;
 
         protected static TelemetryJsonFileTableDateTimeFunc GetNowUtc = DefaultGetUtcNow;
 
@@ -191,7 +193,8 @@ namespace NachoCore.Utils
                 eventClass = TelemetryEventClass.Counter;
                 break;
             default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("GetEventClass: unknown type {0}", eventType));
+                var msg = String.Format ("GetEventClass: unknown type {0}", eventType);
+                throw new NcAssert.NachoDefaultCaseFailure (msg);
             }
             return eventClass;
         }
@@ -212,7 +215,7 @@ namespace NachoCore.Utils
             return readFilePaths;
         }
 
-        protected string FormatTimestamp (DateTime timestamp)
+        protected static string FormatTimestamp (DateTime timestamp)
         {
             return String.Format ("{0:D04}{1:D2}{2:D2}{3:D2}{4:D2}{5:D2}{6:D3}",
                 timestamp.Year, timestamp.Month, timestamp.Day,
@@ -293,6 +296,17 @@ namespace NachoCore.Utils
             }
         }
 
+        public static string GetReadFilePath (string filePath, DateTime start, DateTime end)
+        {
+            var startTimestamp = FormatTimestamp (start);
+            var endTimestamp = FormatTimestamp (end);
+            var dirName = Path.GetDirectoryName (filePath);
+            var fileName = Path.GetFileName (filePath);
+
+            var newFileName = startTimestamp + "." + endTimestamp + "." + fileName;
+            return Path.Combine (dirName, newFileName);
+        }
+
         protected void Finalize (TelemetryEventClass eventClass)
         {
             lock (LockObj) {
@@ -309,12 +323,7 @@ namespace NachoCore.Utils
                 WriteFiles.Remove (eventClass);
                 writeFile.Close ();
 
-                var startTimestamp = FormatTimestamp (writeFile.FirstTimestamp);
-                var endTimestamp = FormatTimestamp (writeFile.LatestTimestamp);
-                var dirName = Path.GetDirectoryName (writeFile.FilePath);
-                var fileName = Path.GetFileName (writeFile.FilePath);
-                var newFileName = startTimestamp + "." + endTimestamp + "." + fileName;
-                var newFilePath = Path.Combine (dirName, newFileName);
+                var newFilePath = GetReadFilePath (writeFile.FilePath, writeFile.FirstTimestamp, writeFile.LatestTimestamp);
                 File.Move (writeFile.FilePath, newFilePath);
 
                 ReadFiles.Add (newFilePath);
