@@ -1,7 +1,5 @@
 //  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
-#define USE_T3
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -20,11 +18,6 @@ namespace NachoCore.Utils
     public class Telemetry
     {
         public static bool ENABLED = true;
-        // Parse has a maximum data size of 128K for PFObject. But the
-        // exact definition of data size of an object with multiple
-        // fields is not clear. So, we just limit the log messages and
-        // redacted WBXML to 120 KB to leave some headroom for other fields.
-        private const int MAX_PARSE_LEN = 120 * 1024;
 
         // AWS Redshift has a limit of 65,535 for varchar.
         private const int MAX_AWS_LEN = 65535;
@@ -133,21 +126,14 @@ namespace NachoCore.Utils
             if (0 != PurgeCounter) {
                 return;
             }
-            McTelemetryEvent.Purge<McTelemetryEvent> (limit);
-            McTelemetrySupportEvent.Purge<McTelemetrySupportEvent> (limit);
+            // TODO - Add purging mechanism if the backlog exceeds some threshold
         }
 
-        private static void RecordRawEvent (TelemetryEvent tEvent)
+        private static void RecordJsonEvent (TelemetryEventType eventType, TelemetryJsonEvent jsonEvent)
         {
-            SharedInstance.Counters [(int)tEvent.Type].Click ();
-            if (tEvent.IsSupportEvent ()) {
-                McTelemetrySupportEvent dbEvent = new McTelemetrySupportEvent (tEvent);
-                dbEvent.Insert ();
-            } else {
-                McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
-                dbEvent.Insert ();
-            }
-            MayPurgeEvents (200000);
+            SharedInstance.Counters [(int)eventType].Click ();
+            JsonFileTable.Add (jsonEvent);
+            MayPurgeEvents (2000000);
             Telemetry.SharedInstance.DbUpdated.Set ();
         }
 
@@ -159,7 +145,6 @@ namespace NachoCore.Utils
 
             NcAssert.True (TelemetryEvent.IsLogEvent (type));
 
-            #if USE_T3
             var jsonEvent = new TelemetryLogEvent (type) {
                 thread_id = threadId,
                 message = String.Format (fmt, list)
@@ -168,20 +153,7 @@ namespace NachoCore.Utils
                 jsonEvent.message = jsonEvent.message.Substring (0, MAX_AWS_LEN - 4);
                 jsonEvent.message += " ...";
             }
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = new TelemetryEvent (type);
-            tEvent.Message = String.Format (fmt, list);
-
-            if (MAX_PARSE_LEN < tEvent.Message.Length) {
-                // Truncate the message
-                tEvent.Message = tEvent.Message.Substring (0, MAX_PARSE_LEN - 4);
-                tEvent.Message += " ...";
-            }
-            tEvent.ThreadId = threadId;
-
-            RecordRawEvent (tEvent);
-            #endif
+            RecordJsonEvent (type, jsonEvent);
         }
 
         public static void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
@@ -196,26 +168,11 @@ namespace NachoCore.Utils
             } else {
                 type = TelemetryEventType.WBXML_RESPONSE;
             }
-            #if USE_T3
+            // TODO - Add check for the limit of wbxml. But we need to limit the base64 encode no the binary bytes.
             var jsonEvent = new TelemetryWbxmlEvent (type) {
                 wbxml = wbxml
             };
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = new TelemetryEvent (type);
-
-            if (MAX_PARSE_LEN < wbxml.Length) {
-                Console.WriteLine ("Redacted WBXML too long (length={0})", wbxml.Length);
-                StackTrace st = new StackTrace ();
-                Console.WriteLine ("{0}", st.ToString ());
-                // Can't truncate the WBXML and still have it remain valid.
-                // TODO - Need to think of a better solution
-            }
-
-            tEvent.Wbxml = wbxml;
-
-            RecordRawEvent (tEvent);
-            #endif
+            RecordJsonEvent (type, jsonEvent);
         }
 
         public static void RecordCounter (string name, Int64 count, DateTime start, DateTime end)
@@ -224,24 +181,13 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if USE_T3
             var jsonEvent = new TelemetryCounterEvent () {
                 counter_name = name,
                 count = count,
                 counter_start = start.Ticks,
                 counter_end = end.Ticks
             };
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.COUNTER);
-
-            tEvent.CounterName = name;
-            tEvent.Count = count;
-            tEvent.CounterStart = start;
-            tEvent.CounterEnd = end;
-
-            RecordRawEvent (tEvent);
-            #endif
+            RecordJsonEvent (TelemetryEventType.COUNTER, jsonEvent);
         }
 
         public static void RecordCapture (string name, int count, int min, int max, long sum, long sum2)
@@ -250,7 +196,6 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if USE_T3
             var jsonEvent = new TelemetryStatistics2Event () {
                 stat2_name = name,
                 count = count,
@@ -259,34 +204,22 @@ namespace NachoCore.Utils
                 sum = sum,
                 sum2 = sum2,
             };
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.CAPTURE);
-
-            tEvent.CaptureName = name;
-            tEvent.Count = count;
-            tEvent.Min = min;
-            tEvent.Max = max;
-            tEvent.Sum = sum;
-            tEvent.Sum2 = sum2;
-
-            RecordRawEvent (tEvent);
-            #endif
+            RecordJsonEvent (TelemetryEventType.CAPTURE, jsonEvent);
         }
 
-        private static TelemetryEvent GetTelemetryEvent (string uiType, string uiObject)
+        private static TelemetryUiEvent GetTelemetryUiEvent (string uiType, string uiObject)
         {
-            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.UI);
+            TelemetryUiEvent uiEvent = new TelemetryUiEvent ();
             if (null == uiType) {
-                tEvent.UiType = "(unknown)";
+                uiEvent.ui_type = "(unknown)";
             } else {
-                tEvent.UiType = uiType;
+                uiEvent.ui_type = uiType;
             }
-            tEvent.UiObject = uiObject;
-            if (null == tEvent.UiObject) {
+            uiEvent.ui_object = uiObject;
+            if (String.IsNullOrEmpty (uiEvent.ui_object)) {
                 Log.Warn (Log.LOG_UI, "UI {0} object without accessibility label", uiType);
             }
-            return tEvent;
+            return uiEvent;
         }
 
         private static void RecordUi (string uiType, string uiObject)
@@ -295,16 +228,8 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if USE_T3
-            var jsonEvent = new TelemetryUiEvent () {
-                ui_type = uiType,
-                ui_object = uiObject,
-            };
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = GetTelemetryEvent (uiType, uiObject);
-            RecordRawEvent (tEvent);
-            #endif
+            var jsonEvent = GetTelemetryUiEvent (uiType, uiObject);
+            RecordJsonEvent (TelemetryEventType.UI, jsonEvent);
         }
 
         private static void RecordUiWithLong (string uiType, string uiObject, long value)
@@ -313,19 +238,9 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if USE_T3
-            var jsonEvent = new TelemetryUiEvent () {
-                ui_type = uiType,
-                ui_object = uiObject,
-                ui_long = value
-            };
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = GetTelemetryEvent (uiType, uiObject);
-            tEvent.UiLong = value;
-
-            RecordRawEvent (tEvent);
-            #endif
+            var jsonEvent = GetTelemetryUiEvent (uiType, uiObject);
+            jsonEvent.ui_long = value;
+            RecordJsonEvent (TelemetryEventType.UI, jsonEvent);
         }
 
         private static void RecordUiWithString (string uiType, string uiObject, string value)
@@ -334,19 +249,9 @@ namespace NachoCore.Utils
                 return;
             }
 
-            #if USE_T3
-            var jsonEvent = new TelemetryUiEvent () {
-                ui_type = uiType,
-                ui_object = uiObject,
-                ui_string = value,
-            };
-            JsonFileTable.Add (jsonEvent);
-            #else
-            TelemetryEvent tEvent = GetTelemetryEvent (uiType, uiObject);
-            tEvent.UiString = value;
-
-            RecordRawEvent (tEvent);
-            #endif
+            var jsonEvent = GetTelemetryUiEvent (uiType, uiObject);
+            jsonEvent.ui_string = value;
+            RecordJsonEvent (TelemetryEventType.UI, jsonEvent);
         }
 
         public static void RecordUiBarButtonItem (string uiObject)
@@ -415,16 +320,16 @@ namespace NachoCore.Utils
                 return;
             }
 
-            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.SUPPORT);
-            tEvent.Support = JsonConvert.SerializeObject (info);
-            tEvent.Callback = callback;
-            RecordRawEvent (tEvent);
+            var jsonEvent = new TelemetrySupportEvent () {
+                support = JsonConvert.SerializeObject (info)
+            };
+            RecordJsonEvent (TelemetryEventType.SUPPORT, jsonEvent);
         }
 
         public static void RecordAccountEmailAddress (McAccount account)
         {
             string emailAddress = account.EmailAddr;
-            if ((null == emailAddress) || ("" == emailAddress)) {
+            if (String.IsNullOrEmpty (emailAddress)) {
                 return;
             }
 
@@ -452,7 +357,7 @@ namespace NachoCore.Utils
                 samples_name = samplesName,
                 samples = samplesValues
             };
-            JsonFileTable.Add (jsonEvent);
+            RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
         }
 
         public static void RecordStatistics2 (string name, int count, int min, int max, long sum, long sum2)
@@ -468,7 +373,7 @@ namespace NachoCore.Utils
                 sum = sum,
                 sum2 = sum2,
             };
-            JsonFileTable.Add (jsonEvent);
+            RecordJsonEvent (TelemetryEventType.STATISTICS2, jsonEvent);
         }
 
         public static void StartService ()
@@ -566,21 +471,6 @@ namespace NachoCore.Utils
                     }
 
                     bool succeed = false;
-                    var readFile = JsonFileTable.GetNextReadFile ();
-                    if (null != readFile) {
-                        // New log file-based telemetry
-                        succeed = BackEnd.UploadEvents (readFile);
-                        if (succeed) {
-                            JsonFileTable.Remove (readFile);
-                            continue;
-                        } else {
-                            FailToSend.Click ();
-                            if (FailToSendLogLimiter.TakeToken ()) {
-                                Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
-                            }
-                        }
-                    }
-
                     // Old teledb-based telemetry
                     NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
                     List<TelemetryEvent> tEvents = null;
@@ -592,14 +482,28 @@ namespace NachoCore.Utils
                         dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
                     }
                     if (0 == dbEvents.Count) {
-                        // No pending event. Wait for one.
-                        DateTime then = DateTime.Now;
-                        while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
-                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                            if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
-                                Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
-                                    MAX_IDLE_PERIOD);
-                                then = DateTime.Now;
+                        var readFile = JsonFileTable.GetNextReadFile ();
+                        if (null != readFile) {
+                            // New log file-based telemetry
+                            succeed = BackEnd.UploadEvents (readFile);
+                            if (succeed) {
+                                JsonFileTable.Remove (readFile);
+                            } else {
+                                FailToSend.Click ();
+                                if (FailToSendLogLimiter.TakeToken ()) {
+                                    Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
+                                }
+                            }
+                        } else {
+                            // No pending event. Wait for one.
+                            DateTime then = DateTime.Now;
+                            while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
+                                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                                if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
+                                    Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
+                                        MAX_IDLE_PERIOD);
+                                    then = DateTime.Now;
+                                }
                             }
                         }
                         continue;

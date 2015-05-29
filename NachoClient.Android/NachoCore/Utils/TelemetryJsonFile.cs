@@ -127,15 +127,20 @@ namespace NachoCore.Utils
         Statistics2,
         // DISTRIBUTION
         Distribution,
+        // COUNTER
+        Counter,
     };
 
     public class TelemetryJsonFileTable
     {
         public delegate DateTime TelemetryJsonFileTableDateTimeFunc ();
 
+        // TODO - The long-term value of this should be one day. Keep it small for now
+        //        to get T3 to upload more frequently. Will re-adjust when T3 stabilizes.
         public const long MAX_DURATION = 60 * TimeSpan.TicksPerSecond;
 
-        public const int MAX_EVENTS = 1000000;
+        // TODO - The long-term value of this should be like 100,000.
+        public const int MAX_EVENTS = 100;
 
         protected static TelemetryJsonFileTableDateTimeFunc GetNowUtc = DefaultGetUtcNow;
 
@@ -182,6 +187,11 @@ namespace NachoCore.Utils
             case TelemetryDistributionEvent.DISTRIBUTION:
                 eventClass = TelemetryEventClass.Distribution;
                 break;
+            case TelemetryCounterEvent.COUNTER:
+                eventClass = TelemetryEventClass.Counter;
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("GetEventClass: unknown type {0}", eventType));
             }
             return eventClass;
         }
@@ -189,7 +199,7 @@ namespace NachoCore.Utils
         public static List<string> GetReadFile (string prefix)
         {
             var dirName = Path.GetDirectoryName (prefix);
-            var regex = new Regex (@"\.([0-9]+)\.([0-9]+)$");
+            var regex = new Regex (@"^([0-9]+)\.([0-9]+)\.");
             var readFilePaths = new List<string> ();
             foreach (var fileName in Directory.GetFiles(dirName)) {
                 if (!fileName.StartsWith (prefix)) {

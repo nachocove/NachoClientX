@@ -285,15 +285,20 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private bool AwsSendEvent (Action action, string description)
+        private bool AwsSendEvent (Action action, string description, Action cleanup = null)
         {
             try {
                 action ();
             } catch (Exception e) {
                 if (!HandleAWSException (e, description)) {
+                    if (null != cleanup) {
+                        cleanup ();
+                    }
                     if (NcTask.Cts.Token.IsCancellationRequested) {
                         Client.Dispose ();
                         Client = null;
+                        S3Client.Dispose ();
+                        S3Client = null;
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     }
                     throw;
@@ -324,35 +329,53 @@ namespace NachoCore.Utils
             }, "AWS send batch events");
         }
 
+        protected void SafeFileDelete (string path)
+        {
+            try {
+                File.Delete (path);
+            } catch (IOException) {
+            }
+        }
+
         public bool UploadEvents (string jsonFilePath)
         {
-            using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read)) {
-                using (var gzipStream = new GZipStream (jsonStream, CompressionMode.Compress)) {
-                    // Extract timestamps from the file path
-                    var startTimeStamp = jsonFilePath.Substring (0, 17);
-                    var jsonType = jsonFilePath.Substring (34);
-                    var year = startTimeStamp.Substring (0, 4);
-                    var month = startTimeStamp.Substring (4, 2);
-                    var day = startTimeStamp.Substring (6, 2);
-
-                    var s3Path = Path.Combine (
-                                     day + month + year,
-                                     HashUserId,
-                                     NcApplication.Instance.UserId,
-                                     NcApplication.Instance.ClientId,
-                                     "NachoMail",
-                                     jsonType + '-' + startTimeStamp + ".gz");
-                    var uploadRequest = new PutObjectRequest () {
-                        BucketName = BuildInfo.S3Bucket,
-                        Key = s3Path,
-                        InputStream = gzipStream,
-                    };
-                    return AwsSendEvent (() => {
-                        var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
-                        task.Wait (NcTask.Cts.Token);
-                    }, "AWS upload events");
-                }
+            var gzJsonFilePath = jsonFilePath + ".gz";
+            using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read))
+            using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
+            using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress)) {
+                jsonStream.CopyTo (gzipStream);
             }
+
+            // Extract timestamps from the file path
+            var fileName = Path.GetFileName (jsonFilePath);
+            var startTimeStamp = fileName.Substring (0, 17);
+            var jsonType = fileName.Substring (36);
+            var date = startTimeStamp.Substring (0, 8);
+
+            var s3Path = Path.Combine (
+                             date,
+                             HashUserId,
+                             NcApplication.Instance.UserId,
+                             NcApplication.Instance.ClientId,
+                             "NachoMail",
+                             jsonType + '-' + startTimeStamp + ".gz");
+
+
+            var uploadRequest = new PutObjectRequest () {
+                BucketName = BuildInfo.S3Bucket,
+                Key = s3Path,
+                FilePath = gzJsonFilePath,
+            };
+            var succeeded = AwsSendEvent (() => {
+                var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
+                task.Wait (NcTask.Cts.Token);
+            }, "AWS upload events", () => {
+                SafeFileDelete (gzJsonFilePath);
+            });
+
+            SafeFileDelete (gzJsonFilePath);
+
+            return succeeded;
         }
 
         private bool SendDeviceInfo ()
