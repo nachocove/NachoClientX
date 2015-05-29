@@ -1465,6 +1465,9 @@
     <Compile Include="NachoUI.iOS\Interfaces\INachoCredentials.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
     <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommand.cs">
+      <Link>NachoCore\BackEnd\NcCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

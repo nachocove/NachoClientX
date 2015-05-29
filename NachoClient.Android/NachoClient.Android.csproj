@@ -423,6 +423,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration27.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration28.cs" />
+    <Compile Include="NachoCore\BackEnd\NcCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
