@@ -1384,6 +1384,18 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryEvent.cs">
+      <Link>NachoCore\Utils\TelemetryEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonEvent.cs">
+      <Link>NachoCore\Utils\TelemetryJsonEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcSamples.cs">
+      <Link>NachoCore\Utils\NcSamples.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
+      <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\ISmtpCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\ISmtpCommand.cs</Link>
     </Compile>

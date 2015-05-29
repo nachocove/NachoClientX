@@ -254,6 +254,8 @@ namespace NachoCore
 
         private bool serviceHasBeenEstablished = false;
 
+        private NcSamples ProcessMemory;
+
         private bool IsXammit (Exception ex)
         {
             var message = ex.ToString ();
@@ -354,6 +356,11 @@ namespace NachoCore
                     NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                 }
             };
+            ProcessMemory = new NcSamples ("Monitor.ProcessMemory");
+            ProcessMemory.MinInput = 0;
+            ProcessMemory.MaxInput = 100000;
+            ProcessMemory.LimitInput = true;
+            ProcessMemory.ReportThreshold = 4;
         }
 
         private static volatile NcApplication instance;
@@ -589,7 +596,7 @@ namespace NachoCore
             if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId (),
                     // FIXME STEVE
-                McAccount.AccountCapabilityEnum.EmailSender);
+                                                    McAccount.AccountCapabilityEnum.EmailSender);
 
                 int accountId = LoginHelpers.GetCurrentAccountId ();
                 switch (backEndState) {
@@ -632,14 +639,16 @@ namespace NachoCore
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
             }
+            var processMemory = PlatformProcess.GetUsedMemory () / (1024 * 1024);
+            ProcessMemory.AddSample ((int)processMemory);
             Log.Info (Log.LOG_SYS, "Monitor: Memory: Process {0} MB, GC {1} MB",
-                PlatformProcess.GetUsedMemory () / (1024 * 1024), GC.GetTotalMemory (true) / (1024 * 1024));
+                processMemory, GC.GetTotalMemory (true) / (1024 * 1024));
             int minWorker, maxWorker, minCompletion, maxCompletion;
             ThreadPool.GetMinThreads (out minWorker, out minCompletion);
             ThreadPool.GetMaxThreads (out maxWorker, out maxCompletion);
             int systemThreads = PlatformProcess.GetNumberOfSystemThreads ();
             string message = string.Format ("Monitor: Threads: Min {0}/{1}, Max {2}/{3}, System {4}",
-                minWorker, minCompletion, maxWorker, maxCompletion, systemThreads);
+                                 minWorker, minCompletion, maxWorker, maxCompletion, systemThreads);
             if (50 > systemThreads) {
                 Log.Info (Log.LOG_SYS, message);
             } else {

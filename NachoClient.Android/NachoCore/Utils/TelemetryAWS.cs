@@ -3,6 +3,7 @@
 //#define AWS_DEBUG
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
@@ -11,11 +12,14 @@ using System.Reflection;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
+using Amazon.S3;
+using Amazon.S3.Model;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
 using Amazon.Util;
 using Amazon.CognitoIdentity;
 using Amazon;
+using Newtonsoft.Json;
 
 using NachoPlatform;
 using NachoClient.Build;
@@ -28,7 +32,7 @@ namespace NachoCore.Utils
         private static bool Initialized = false;
 
         private static AmazonDynamoDBClient Client;
-        private static Table DeviceInfoTable;
+        private static AmazonS3Client S3Client;
         private static Table LogTable;
         private static Table SupportTable;
         private static Table CounterTable;
@@ -39,6 +43,20 @@ namespace NachoCore.Utils
         private static string ClientId {
             get {
                 return Device.Instance.Identity ();
+            }
+        }
+
+        public static string _HashUserId;
+
+        private static string HashUserId {
+            get {
+                if (null == _HashUserId) {
+                    if (null == NcApplication.Instance.UserId) {
+                        return null;
+                    }
+                    _HashUserId = HashHelper.Sha256 (NcApplication.Instance.UserId).Substring (0, 8);
+                }
+                return _HashUserId;
             }
         }
 
@@ -62,13 +80,13 @@ namespace NachoCore.Utils
             // Disable exponential backoff to implement our own linear backoff scheme.
             config.MaxErrorRetry = 0;
 
-            CognitoAWSCredentials credentials = new CognitoAWSCredentials (
-                                                    BuildInfo.AwsAccountId,
-                                                    BuildInfo.AwsIdentityPoolId,
-                                                    BuildInfo.AwsUnauthRoleArn,
-                                                    BuildInfo.AwsAuthRoleArn,
-                                                    RegionEndpoint.USEast1
-                                                );
+            var credentials = new TelemetryAWSCredentials (
+                                  BuildInfo.AwsAccountId,
+                                  BuildInfo.AwsIdentityPoolId,
+                                  BuildInfo.AwsUnauthRoleArn,
+                                  BuildInfo.AwsAuthRoleArn,
+                                  RegionEndpoint.USEast1
+                              );
 
             // We get a different Cognito id each time it runs because unauthenticated
             // identities (that we use) are anonymous. But doing so would mean it is
@@ -89,13 +107,16 @@ namespace NachoCore.Utils
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);
 
-                DeviceInfoTable = Table.LoadTableAsync (Client, TableName ("device_info"), NcTask.Cts.Token);
                 LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);
                 SupportTable = Table.LoadTableAsync (Client, TableName ("support"), NcTask.Cts.Token);
                 CounterTable = Table.LoadTableAsync (Client, TableName ("counter"), NcTask.Cts.Token);
                 CaptureTable = Table.LoadTableAsync (Client, TableName ("capture"), NcTask.Cts.Token);
                 UiTable = Table.LoadTableAsync (Client, TableName ("ui"), NcTask.Cts.Token);
                 WbxmlTable = Table.LoadTableAsync (Client, TableName ("wbxml"), NcTask.Cts.Token);
+            });
+
+            Retry (() => {
+                S3Client = new AmazonS3Client (credentials, RegionEndpoint.USWest2);
             });
         }
 
@@ -112,6 +133,8 @@ namespace NachoCore.Utils
                             if (null != Client) {
                                 Client.Dispose ();
                                 Client = null;
+                                S3Client.Dispose ();
+                                S3Client = null;
                             }
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
@@ -131,11 +154,6 @@ namespace NachoCore.Utils
             InitializeTables ();
         }
 
-        public bool IsUseable ()
-        {
-            return true;
-        }
-
         public string GetUserName ()
         {
             return ClientId;
@@ -143,13 +161,6 @@ namespace NachoCore.Utils
 
         public bool SendEvents (List<TelemetryEvent> tEvents)
         {
-            if (!Initialized) {
-                if (!SendDeviceInfo ()) {
-                    return false;
-                }
-                Initialized = true;
-            }
-
             var writeDict = new Dictionary<Table, DocumentBatchWrite> ();
             foreach (var tEvent in tEvents) {
                 Table eventTable = null;
@@ -177,14 +188,18 @@ namespace NachoCore.Utils
                     NcAssert.True (false);
                 }
 
-                // Get the table batch write. Create one if it doesn't exist
-                DocumentBatchWrite batchWrite;
-                if (!writeDict.TryGetValue (eventTable, out batchWrite)) {
-                    batchWrite = new DocumentBatchWrite (eventTable);
-                    writeDict.Add (eventTable, batchWrite);
+                if (null != eventItem) {
+                    NcAssert.True (null != eventTable);
+                    // To DynamoDB
+                    // Get the table batch write. Create one if it doesn't exist
+                    DocumentBatchWrite batchWrite;
+                    if (!writeDict.TryGetValue (eventTable, out batchWrite)) {
+                        batchWrite = new DocumentBatchWrite (eventTable);
+                        writeDict.Add (eventTable, batchWrite);
+                    }
+                    eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
+                    batchWrite.AddDocumentToPut (eventItem);
                 }
-                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
-                batchWrite.AddDocumentToPut (eventItem);
             }
 
             var multiBatchWrite = new MultiTableDocumentBatchWrite ();
@@ -264,15 +279,20 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private bool AwsSendEvent (Action action)
+        private bool AwsSendEvent (Action action, string description, Action cleanup = null)
         {
             try {
                 action ();
             } catch (Exception e) {
-                if (!HandleAWSException (e, "AWS send event")) {
+                if (!HandleAWSException (e, description)) {
+                    if (null != cleanup) {
+                        cleanup ();
+                    }
                     if (NcTask.Cts.Token.IsCancellationRequested) {
                         Client.Dispose ();
                         Client = null;
+                        S3Client.Dispose ();
+                        S3Client = null;
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     }
                     throw;
@@ -292,7 +312,7 @@ namespace NachoCore.Utils
                 eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait (NcTask.Cts.Token);
-            });
+            }, "AWS send one event");
         }
 
         private bool AwsSendBatchEvents (MultiTableDocumentBatchWrite multiBatchWrite)
@@ -300,25 +320,104 @@ namespace NachoCore.Utils
             return AwsSendEvent (() => {
                 var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
+            }, "AWS send batch events");
+        }
+
+        protected void SafeFileDelete (string path)
+        {
+            try {
+                File.Delete (path);
+            } catch (IOException) {
+            }
+        }
+
+        protected string GetS3Path (string filePath)
+        {
+            var fileName = Path.GetFileName (filePath);
+            var startTimeStamp = fileName.Substring (0, 17);
+            var jsonType = fileName.Substring (36);
+            var date = startTimeStamp.Substring (0, 8);
+
+            var s3Path = Path.Combine (
+                             date,
+                             HashUserId,
+                             NcApplication.Instance.UserId,
+                             NcApplication.Instance.ClientId,
+                             "NachoMail",
+                             jsonType + '-' + startTimeStamp + ".gz");
+            return s3Path;
+        }
+
+        protected bool UploadFileToS3 (string filePath, string s3Key)
+        {
+            var uploadRequest = new PutObjectRequest () {
+                BucketName = BuildInfo.S3Bucket,
+                Key = s3Key,
+                FilePath = filePath,
+            };
+            var succeeded = AwsSendEvent (() => {
+                var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
+                task.Wait (NcTask.Cts.Token);
+            }, "AWS upload events", () => {
+                SafeFileDelete (filePath);
             });
+
+            SafeFileDelete (filePath);
+
+            return succeeded;
+        }
+
+        public bool UploadEvents (string jsonFilePath)
+        {
+            if (!Initialized) {
+                if (!SendDeviceInfo ()) {
+                    return false;
+                }
+                Initialized = true;
+            }
+
+            var gzJsonFilePath = jsonFilePath + ".gz";
+            using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read))
+            using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
+            using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress)) {
+                jsonStream.CopyTo (gzipStream);
+            }
+
+            // Extract timestamps from the file path
+            var s3Path = GetS3Path (jsonFilePath);
+            return UploadFileToS3 (gzJsonFilePath, s3Path);
         }
 
         private bool SendDeviceInfo ()
         {
-            var anEvent = new Document ();
-            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
-            anEvent ["client"] = ClientId;
-            anEvent ["timestamp"] = DateTime.UtcNow.Ticks;
-            anEvent ["os_type"] = Device.Instance.OsType ();
-            anEvent ["os_version"] = Device.Instance.OsVersion ();
-            anEvent ["device_model"] = Device.Instance.Model ();
-            anEvent ["build_version"] = BuildInfo.Version;
-            anEvent ["build_number"] = BuildInfo.BuildNumber;
-            anEvent ["device_id"] = Device.Instance.Identity ();
-            anEvent ["fresh_install"] = FreshInstall;
-            FreshInstall = false;
+            // Create the JSON
+            var jsonEvent = new TelemetryDeviceInfoEvent () {
+                os_type = Device.Instance.OsType (),
+                os_version = Device.Instance.OsVersion (),
+                device_model = Device.Instance.Model (),
+                build_version = BuildInfo.Version,
+                build_number = BuildInfo.BuildNumber,
+                device_id = Device.Instance.Identity (),
+                fresh_install = FreshInstall,
+            };
+            var json = JsonConvert.SerializeObject (
+                           jsonEvent, Newtonsoft.Json.Formatting.None,
+                           new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
-            return AwsSendOneEvent (DeviceInfoTable, anEvent);
+            // Create the temporary JSON .gz file
+            var timestamp = new DateTime (jsonEvent.timestamp, DateTimeKind.Utc);
+            var readFilePath = TelemetryJsonFileTable.GetReadFilePath (
+                                   Path.Combine (NcApplication.GetDataDirPath (), "device_info"),
+                                   timestamp, timestamp);
+            var s3Path = GetS3Path (readFilePath);
+            var gzJsonFilePath = readFilePath + ".gz";
+            using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
+            using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress))
+            using (var streamWriter = new StreamWriter (gzipStream)) {
+                streamWriter.Write (json);
+            }
+
+            return UploadFileToS3 (gzJsonFilePath, s3Path);
         }
 
         private Document LogEvent (TelemetryEvent tEvent)
@@ -425,6 +524,20 @@ namespace NachoCore.Utils
             }
             anEvent ["wbxml"] = tEvent.Wbxml;
             return anEvent;
+        }
+    }
+
+    class TelemetryAWSCredentials : CognitoAWSCredentials
+    {
+        public TelemetryAWSCredentials (string accountId, string identityPoolId,
+                                        string unAuthRoleArn, string authRoleArn, RegionEndpoint region)
+            : base (accountId, identityPoolId, unAuthRoleArn, authRoleArn, region)
+        {
+        }
+
+        public override string GetCachedIdentityId ()
+        {
+            return NcApplication.Instance.UserId;
         }
     }
 }

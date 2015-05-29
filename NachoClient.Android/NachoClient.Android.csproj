@@ -403,6 +403,10 @@
     <Compile Include="NachoCore\Utils\PermissionManager.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControl.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpProtoControl.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryEvent.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
+    <Compile Include="NachoCore\Utils\NcSamples.cs" />
+    <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\ISmtpCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
