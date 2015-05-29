@@ -17,21 +17,14 @@ namespace NachoClient.iOS
     {
         protected nfloat CELL_HEIGHT = 44;
 
-        List<AdvancedTextField> inputViews = new List<AdvancedTextField> ();
-
         UILabel errorMessage;
 
-        AdvancedTextField emailView;
-        AdvancedTextField serverView;
-        AdvancedTextField domainView;
-        AdvancedTextField usernameView;
-        AdvancedTextField passwordView;
-        UIView emailWhiteInset;
-        UIView domainWhiteInset;
         UIButton connectButton;
         UIButton customerSupportButton;
         UIButton advancedButton;
         UIButton restartButton;
+
+        ExchangeFields exchangeFields;
 
         UIScrollView scrollView;
         UIView contentView;
@@ -94,6 +87,7 @@ namespace NachoClient.iOS
                
             CreateView ();
 
+
             waitScreen = new WaitingScreen (View.Frame);
             waitScreen.SetOwner (this);
             waitScreen.CreateView ();
@@ -108,14 +102,14 @@ namespace NachoClient.iOS
             RefreshUI ();
 
             // Preset only if we haven't got an account set up yet
-            if (String.IsNullOrEmpty (emailView.textField.Text)) {
+            if (String.IsNullOrEmpty (exchangeFields.emailText)) {
                 if (null == theAccount.Account) {
-                    emailView.textField.Text = presetEmailAddress;
+                    exchangeFields.emailText = presetEmailAddress;
                 }
             }
-            if (String.IsNullOrEmpty (passwordView.textField.Text)) {
+            if (String.IsNullOrEmpty (exchangeFields.passwordText)) {
                 if (null == theAccount.Account) {
-                    passwordView.textField.Text = presetPassword;
+                    exchangeFields.passwordText = presetPassword;
                     gOriginalPassword = presetPassword;
                 }
             }
@@ -219,54 +213,10 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom + 15;
 
-            emailView = new AdvancedTextField ("Email", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
-            contentView.AddSubview (emailView);
-            yOffset += CELL_HEIGHT;
+            exchangeFields = new ExchangeFields (new CGRect (0, yOffset, View.Frame.Width, 0), EmailOrPasswordChanged);
+            contentView.AddSubview (exchangeFields);
 
-            emailView.textField.EditingChanged += (object sender, EventArgs e) => {
-                haveEnteredEmailAndPass ();
-            };
-
-            passwordView = new AdvancedTextField ("Password", "******", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
-            passwordView.textField.SecureTextEntry = true;
-            contentView.AddSubview (passwordView);
-            yOffset += CELL_HEIGHT;
-
-            passwordView.textField.EditingChanged += (object sender, EventArgs e) => {
-                haveEnteredEmailAndPass ();
-            };
-
-            // Jeff prefers that we override iOS's removal of a secure string when editing begins.
-            passwordView.textField.ShouldChangeCharacters += delegate(UITextField textField, NSRange range, string replacementString) {
-                var updatedString = textField.Text.Substring (0, (int)range.Location) + replacementString + textField.Text.Substring ((int)(range.Location + range.Length));
-                textField.Text = updatedString;
-                haveEnteredEmailAndPass ();
-                return false;
-            };
-
-            emailWhiteInset = new UIView (new CGRect (0, emailView.Frame.Top + (CELL_HEIGHT / 2), 15, CELL_HEIGHT));
-            emailWhiteInset.BackgroundColor = UIColor.White;
-            contentView.AddSubview (emailWhiteInset);
-
-            yOffset += 25;
-
-            serverView = new AdvancedTextField ("Server", "Server", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
-            contentView.AddSubview (serverView);
-            yOffset += CELL_HEIGHT;
-
-            yOffset += 25;
-
-            domainView = new AdvancedTextField ("Domain", "Domain", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
-            contentView.AddSubview (domainView);
-            yOffset += CELL_HEIGHT;
-
-            usernameView = new AdvancedTextField ("Username", "Username", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
-            contentView.AddSubview (usernameView);
-            yOffset += CELL_HEIGHT;
-
-            domainWhiteInset = new UIView (new CGRect (0, domainView.Frame.Top + (CELL_HEIGHT / 2), 15, CELL_HEIGHT));
-            domainWhiteInset.BackgroundColor = UIColor.White;
-            contentView.AddSubview (domainWhiteInset);
+            yOffset += exchangeFields.Frame.Height;
 
             yOffset += 25;
 
@@ -332,11 +282,6 @@ namespace NachoClient.iOS
             loadingCover.BackgroundColor = A.Color_NachoGreen;
             contentView.Add (loadingCover);
 
-            inputViews.Add (emailView);
-            inputViews.Add (serverView);
-            inputViews.Add (domainView);
-            inputViews.Add (usernameView);
-            inputViews.Add (passwordView);
         }
 
         void onStartOver ()
@@ -371,16 +316,17 @@ namespace NachoClient.iOS
             if (freshAccount) {
                 Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                theAccount.Account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
+                // FIXME STEVE value of None causes crash.
+                theAccount.Account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, exchangeFields.emailText, exchangeFields.passwordText);
                 RefreshTheAccount ();
             } 
 
             // Save the stuff on the screen (pre-validated by canUserConnect())
-            SaveUserSettings ();
+            exchangeFields.SaveUserSettings (ref theAccount);
 
             // If only password has changed & backend is in CredWait, do cred resp
             if (!freshAccount) {
-                if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.Ordinal)) {
+                if (!String.Equals (gOriginalPassword, exchangeFields.passwordText, StringComparison.Ordinal)) {
                     Log.Info (Log.LOG_UI, "avl: onConnect retry password");
                     // FIXME STEVE
                     BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
@@ -398,7 +344,7 @@ namespace NachoClient.iOS
             // A null server record will re-start auto-d on Backend.Start()
             // Delete the server record if the user didn't enter the server name
             if ((null != theAccount.Server) && (null == theAccount.Server.UserSpecifiedServerName)) {
-                DeleteTheServer ("onConnect");
+                exchangeFields.DeleteTheServer (ref theAccount, "onConnect");
             }
             waitScreen.SetLoadingText ("Verifying Your Server...");
             BackEnd.Instance.Start (theAccount.Account.Id);
@@ -408,21 +354,16 @@ namespace NachoClient.iOS
         protected void ConfigureView (LoginStatus currentStatus, string nuance = "")
         {
             haveEnteredEmailAndPass ();
-            RefreshTheServer ();
+            exchangeFields.RefreshTheServer (ref theAccount);
 
             switch (currentStatus) {
             case LoginStatus.BadCredentials:
                 errorMessage.Text = "There seems to be a problem with your credentials.";
                 errorMessage.TextColor = A.Color_NachoRed;
-                setTextToRed (new AdvancedTextField[] {
-                    emailView,
-                    domainView,
-                    usernameView,
-                    passwordView
-                });
+                exchangeFields.HighlightEverything ();
                 break;
             case LoginStatus.ValidateSuccessful:
-                setTextToRed (new AdvancedTextField[] { });
+                exchangeFields.ClearHighlights ();
                 break;
             case LoginStatus.InvalidEmail:
                 if (String.IsNullOrEmpty (nuance)) {
@@ -431,7 +372,7 @@ namespace NachoClient.iOS
                     errorMessage.Text = nuance;
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
-                setTextToRed (new AdvancedTextField[] { emailView });
+                exchangeFields.HighlightEmailError ();
                 break;
             case LoginStatus.AcceptCertificate:
                 errorMessage.Text = "Accept Certificate?";
@@ -440,7 +381,7 @@ namespace NachoClient.iOS
             case LoginStatus.BadServer:
                 errorMessage.Text = "The server name you entered is not valid. Please fix and try again.";
                 errorMessage.TextColor = A.Color_NachoRed;
-                setTextToRed (new AdvancedTextField[] { serverView });
+                exchangeFields.HighlightServerError ();
                 break;
             case LoginStatus.ServerConf:
                 string messagePrefix = null;
@@ -457,37 +398,37 @@ namespace NachoClient.iOS
                     errorMessage.Text = messagePrefix + "'" + theAccount.Server.UserSpecifiedServerName + "'.";
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
-                if (!String.IsNullOrEmpty (serverView.textField.Text)) {
-                    setTextToRed (new AdvancedTextField[] { serverView });
+                if (!String.IsNullOrEmpty (exchangeFields.serverText)) {
+                    exchangeFields.HighlightServerError ();
                 } else {
-                    setTextToRed (new AdvancedTextField[] { emailView });
+                    exchangeFields.HighlightEmailError ();
                 }
                 showAdvanced = true;
                 break;
             case LoginStatus.EnterInfo:
                 errorMessage.Text = "Please fill out the required credentials.";
                 errorMessage.TextColor = A.Color_NachoGreen;
-                setTextToRed (new AdvancedTextField[] { });
+                exchangeFields.ClearHighlights ();
                 break;
             case LoginStatus.TouchConnect:
                 errorMessage.Text = "Touch Connect to continue";
                 errorMessage.TextColor = A.Color_NachoGreen;
-                setTextToRed (new AdvancedTextField[] { });
+                exchangeFields.ClearHighlights ();
                 break;
             case LoginStatus.BadUsername:
                 errorMessage.TextColor = A.Color_NachoRed;
-                if (!String.IsNullOrEmpty (usernameView.textField.Text)) {
-                    setTextToRed (new AdvancedTextField[] { domainView, usernameView });
+                if (!String.IsNullOrEmpty (exchangeFields.usernameText)) {
+                    exchangeFields.HighlightUsernameError ();
                     errorMessage.Text = "There seems to be a problem with your user name.";
                 } else {
-                    setTextToRed (new AdvancedTextField[] { emailView });
+                    exchangeFields.HighlightEmailError ();
                     errorMessage.Text = "There seems to be a problem with your email.";
                 }
                 break;
             case LoginStatus.NoNetwork:
                 errorMessage.Text = "No network connection. Please check that you have internet access.";
                 errorMessage.TextColor = A.Color_NachoRed;
-                setTextToRed (new AdvancedTextField[] { });
+                exchangeFields.ClearHighlights ();
                 break;
             case LoginStatus.InvalidServerName:
                 if (String.IsNullOrEmpty (nuance)) {
@@ -496,7 +437,7 @@ namespace NachoClient.iOS
                     errorMessage.Text = nuance;
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
-                setTextToRed (new AdvancedTextField[] { serverView });
+                exchangeFields.HighlightServerError ();
                 break;
             }
 
@@ -529,34 +470,8 @@ namespace NachoClient.iOS
             ViewFramer.Create (errorMessage).Y (yOffset);
             yOffset = errorMessage.Frame.Bottom + 15;
 
-            ViewFramer.Create (emailView).Y (yOffset);
-            yOffset += CELL_HEIGHT;
-
-            ViewFramer.Create (passwordView).Y (yOffset);
-            yOffset += CELL_HEIGHT;
-
-            ViewFramer.Create (emailWhiteInset).Y (emailView.Frame.Top + (CELL_HEIGHT / 2));
-            yOffset += 20;
-
-            if (showAdvanced) {
-                ViewFramer.Create (serverView).Y (yOffset);
-                yOffset += CELL_HEIGHT;
-
-                yOffset += 20;
-
-                ViewFramer.Create (domainView).Y (yOffset);
-                yOffset += CELL_HEIGHT;
-
-                ViewFramer.Create (usernameView).Y (yOffset);
-                yOffset += CELL_HEIGHT;
-
-                ViewFramer.Create (domainWhiteInset).Y (domainView.Frame.Top + (CELL_HEIGHT / 2));
-                yOffset += 20;
-            }
-            serverView.Hidden = !showAdvanced;
-            domainView.Hidden = !showAdvanced;
-            usernameView.Hidden = !showAdvanced;
-            domainWhiteInset.Hidden = !showAdvanced;
+            exchangeFields.Layout ();
+            yOffset += exchangeFields.Frame.Height;
 
             ViewFramer.Create (connectButton).Y (yOffset);
             yOffset = connectButton.Frame.Bottom + 20;
@@ -581,9 +496,14 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
+        private void EmailOrPasswordChanged (UITextField textField)
+        {
+            haveEnteredEmailAndPass ();
+        }
+
         private bool haveEnteredEmailAndPass ()
         {
-            if (0 == emailView.textField.Text.Length || 0 == passwordView.textField.Text.Length) {
+            if (0 == exchangeFields.emailText.Length || 0 == exchangeFields.passwordText.Length) {
                 connectButton.Enabled = false;
                 connectButton.Alpha = .5f;
                 return false;
@@ -675,156 +595,10 @@ namespace NachoClient.iOS
             }
         }
 
-        /// <summary>
-        /// Refreshs the server.  The server potentially changes
-        /// </summary>
-        private void RefreshTheServer ()
+        void RefreshUI ()
         {
-            if (null != theAccount.Account) {
-                theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).SingleOrDefault ();
-                if (null != theAccount.Server) {
-                    if (null == theAccount.Server.UserSpecifiedServerName) {
-                        serverView.textField.Text = theAccount.Server.Host;
-                        Log.Info (Log.LOG_UI, "avl: refresh server {0}", serverView.textField.Text);
-                    } else {
-                        serverView.textField.Text = theAccount.Server.UserSpecifiedServerName;
-                        Log.Info (Log.LOG_UI, "avl: refresh user defined server {0}", serverView.textField.Text);
-                    }
-                    return;
-                }
-            }
-            Log.Info (Log.LOG_UI, "avl: refresh no server");
-            serverView.textField.Text = "";
-        }
-
-        private void RefreshUI ()
-        {
-            foreach (var v in inputViews) {
-                v.textField.Text = "";
-                v.textField.TextColor = UIColor.Black;
-            }
             errorMessage.Text = "";
             gOriginalPassword = "";
-
-            if (null != theAccount.Account) {
-                emailView.textField.Text = theAccount.Account.EmailAddr;
-            }
-
-            if (null != theAccount.Credentials) {
-                if (theAccount.Credentials.UserSpecifiedUsername) {
-                    string domain, username;
-                    McCred.Split (theAccount.Credentials.Username, out domain, out username);
-                    usernameView.textField.Text = username;
-                    domainView.textField.Text = domain;
-                   
-                }
-                passwordView.textField.Text = theAccount.Credentials.GetPassword ();
-            }
-
-            if (null != theAccount.Server) {
-                if (null == theAccount.Server.UserSpecifiedServerName) {
-                    serverView.textField.Text = theAccount.Server.Host;
-                } else {
-                    serverView.textField.Text = theAccount.Server.UserSpecifiedServerName;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Updates McCred and McAccount from the UI
-        /// in both theAccount and the database.
-        /// </summary>
-        private void SaveUserSettings ()
-        {
-            NcAssert.NotNull (theAccount.Account);
-            NcAssert.NotNull (theAccount.Credentials);
-
-            // Save email & password
-            theAccount.Account.EmailAddr = emailView.textField.Text.Trim ();
-            theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
-
-            // If the user clears the username, we'll let them start over
-            if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
-                theAccount.Credentials.UserSpecifiedUsername = false;
-                theAccount.Credentials.Username = theAccount.Account.EmailAddr;
-            } else {
-                // Otherwise, we'll use what they've entered
-                theAccount.Credentials.UserSpecifiedUsername = true;
-                theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
-            }
-
-            // Update the database
-            theAccount.Account.Update ();
-            theAccount.Credentials.Update ();
-            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", theAccount.Account.Id, theAccount.Credentials.Id, theAccount.Credentials.UserSpecifiedUsername);
-
-            SaveServerSettings ();
-        }
-
-        /// <summary>
-        /// Saves the server settings.
-        /// </summary>
-        private void SaveServerSettings ()
-        {
-            // if there is a server record and the text is empty, delete the server record. Let the user start over.
-            if (String.IsNullOrEmpty (serverView.textField.Text)) {
-                DeleteTheServer ("user cleared server");
-                return;
-            }
-
-            // did the server came from the back end, we're done
-            if (null != theAccount.Server) {
-                if (null == theAccount.Server.UserSpecifiedServerName) {
-                    if (String.Equals (theAccount.Server.Host, serverView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
-                        Log.Info (Log.LOG_UI, "avl: user did not enter server name");
-                        return;
-                    }
-                }
-            }
-
-            // the user specified the host name, save it
-            if (null == theAccount.Server) {
-                theAccount.Server = new McServer () { 
-                    AccountId = theAccount.Account.Id,
-                    // FIXME STEVE
-                    Capabilities = McAccount.ActiveSyncCapabilities,
-                };
-                theAccount.Server.Insert ();
-            }
-            var temp = new McServer ();
-            var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
-            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
-            if (!theAccount.Server.IsSameServer (temp)) {
-                theAccount.Server.CopyFrom (temp);
-                theAccount.Server.UserSpecifiedServerName = serverView.textField.Text;
-                theAccount.Server.UsedBefore = false;
-                theAccount.Server.Update ();
-                Log.Info (Log.LOG_UI, "avl: update server {0}", theAccount.Server.UserSpecifiedServerName);
-            }
-        }
-
-        private void DeleteTheServer (string message)
-        {
-            if (null != theAccount.Server) {
-                if (null == theAccount.Server.UserSpecifiedServerName) {
-                    Log.Info (Log.LOG_UI, "avl: delete server {0} {1}", message, theAccount.Server.BaseUriString ());
-                } else {
-                    Log.Info (Log.LOG_UI, "avl: delete user defined server {0} {1}", message, theAccount.Server.UserSpecifiedServerName);
-                }
-                theAccount.Server.Delete ();
-                theAccount.Server = null;
-            }
-        }
-
-        private void setTextToRed (AdvancedTextField[] whichViews)
-        {
-            foreach (var textView in inputViews) {
-                if (whichViews.Contains (textView)) {
-                    textView.textField.TextColor = A.Color_NachoRed;
-                } else {
-                    textView.textField.TextColor = UIColor.Black;
-                }
-            }
         }
 
         private bool canUserConnect ()
@@ -833,14 +607,14 @@ namespace NachoClient.iOS
                 return false;
             }
             string serviceName;
-            var emailAddress = emailView.textField.Text;
+            var emailAddress = exchangeFields.emailText;
             if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
                 var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
                 ConfigureView (LoginStatus.InvalidEmail, nuance);
                 return false;
             }
-            if (!String.IsNullOrEmpty (serverView.textField.Text)) {
-                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverView.textField.Text)) {
+            if (!String.IsNullOrEmpty (exchangeFields.serverText)) {
+                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (exchangeFields.serverText)) {
                     ConfigureView (LoginStatus.InvalidServerName);
                     return false;
                 }
@@ -963,7 +737,7 @@ namespace NachoClient.iOS
 
         private void certificateCallbackHandler (int accountId)
         {
-            setTextToRed (new AdvancedTextField[]{ });
+            exchangeFields.ClearHighlights ();
             certificateView.SetCertificateInformation (accountId);
             certificateView.ShowView ();
         }
@@ -1013,7 +787,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private class AccountSettings
+        public class AccountSettings
         {
             public McAccount Account { get; set; }
 
@@ -1023,51 +797,6 @@ namespace NachoClient.iOS
         }
     }
 
-    public class AdvancedTextField : UIView
-    {
-        protected nfloat INSET = 15;
-
-        public UITextField textField;
-
-        public AdvancedTextField (string labelText, string placeHolder, bool hasBorder, CGRect rect, UIKeyboardType keyboardType = UIKeyboardType.Default) : base (rect)
-        {
-            UIView inputBox = this;
-
-            inputBox.BackgroundColor = UIColor.White;
-            if (hasBorder) {
-                inputBox.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                inputBox.Layer.BorderWidth = .4f;
-            }
-
-            UILabel cellLefthandLabel = new UILabel (new CGRect (INSET, 0, 80, rect.Height));
-            cellLefthandLabel.Text = labelText;
-            cellLefthandLabel.BackgroundColor = UIColor.White;
-            cellLefthandLabel.TextColor = A.Color_NachoGreen;
-            cellLefthandLabel.Font = A.Font_AvenirNextMedium14;
-            inputBox.Add (cellLefthandLabel);
-
-            textField = new UITextField ();
-            textField.Frame = new CGRect (120, 0, inputBox.Frame.Width - 120 - 1, rect.Height);
-            textField.ClearButtonMode = UITextFieldViewMode.WhileEditing;
-            textField.BackgroundColor = UIColor.White;
-            textField.Placeholder = placeHolder;
-            textField.Font = A.Font_AvenirNextRegular14;
-            textField.AutocapitalizationType = UITextAutocapitalizationType.None;
-            textField.AutocorrectionType = UITextAutocorrectionType.No;
-            textField.AccessibilityLabel = labelText;
-            textField.KeyboardType = keyboardType;
-            inputBox.Add (textField);
-
-            textField.ShouldReturn += (field) => {
-                field.TextColor = UIColor.Black;
-                inputBox.EndEditing (true);
-                return true;
-            };
-            textField.EditingDidEnd += (object sender, EventArgs e) => {
-                // Dummy event for triggering UI monitoring
-            };
-        }
-    }
 
 }
 

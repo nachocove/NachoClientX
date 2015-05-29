@@ -47,7 +47,13 @@ namespace NachoCore.Model
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
 
+        public uint ImapUidLowestUidSynced { get; set; }
+
+        public uint ImapUidHighestUidSynced { get; set; }
+
         public uint ImapUidValidity { get; set; }
+
+        public uint ImapUidNext { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -80,6 +86,12 @@ namespace NachoCore.Model
 
         // A dictionary mapping account id to the RIC folder id of the account. (-1 if there is none locally)
         private static ConcurrentDictionary<int, int> RicFolderIds = new ConcurrentDictionary<int, int> ();
+
+        public McFolder ()
+        {
+            ImapUidLowestUidSynced = uint.MaxValue;
+            ImapUidHighestUidSynced = uint.MinValue;
+        }
 
         public override string ToString ()
         {
@@ -243,7 +255,7 @@ namespace NachoCore.Model
             return JunkFolderIds.ContainsKey (folderId);
         }
 
-        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
+        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, string parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " likelihood (f.AccountId = ?, 1.0) AND " +
@@ -252,9 +264,6 @@ namespace NachoCore.Model
                           " likelihood (f.ParentId = ?, 0.05) AND " +
                           " likelihood (f.DisplayName = ?, 0.05) ",
                               accountId, (uint)typeCode, parentId, name);
-            if (0 == folders.Count) {
-                return null;
-            }
             return folders.ToList ();
         }
 
@@ -310,13 +319,13 @@ namespace NachoCore.Model
 
         public static McFolder GetOrCreateArchiveFolder (int accountId)
         {
-            List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
-            if (null == archiveFolders) {
+            var archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
+            if (null == archiveFolder) {
                 BackEnd.Instance.CreateFolderCmd (accountId, ARCHIVE_DISPLAY_NAME, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
+                archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
             }
-            NcAssert.NotNull (archiveFolders);
-            return archiveFolders.First ();
+            NcAssert.NotNull (archiveFolder);
+            return archiveFolder;
         }
 
         public static int GetRicFolderId (int accountId)
@@ -880,13 +889,12 @@ namespace NachoCore.Model
         {
             // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
             string[] tags = {
-                "Junk",
                 "junk",
-                "Spam",
                 "spam"
             };
+            var folderLower = folderName.ToLower ();
             for (int n = 0; n < tags.Length; n++) {
-                if (folderName.Contains (tags [n])) {
+                if (folderLower.Contains (tags [n])) {
                     return true;
                 }
             }

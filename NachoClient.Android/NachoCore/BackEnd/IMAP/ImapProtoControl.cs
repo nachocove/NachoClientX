@@ -16,7 +16,7 @@ namespace NachoCore.IMAP
 {
     public class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
-        ImapClient ImapClient;
+        private ImapClient ImapClient;
 
         public enum Lst : uint
         {
@@ -26,6 +26,7 @@ namespace NachoCore.IMAP
             ConnW,
             FSyncW,
             Pick,
+            CmdW,
             Parked,
         };
 
@@ -33,7 +34,7 @@ namespace NachoCore.IMAP
             get {
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
-                    state = ProtocolState.ProtoControlState;
+                    state = ProtocolState.ImapProtoControlState;
                 }
                 // Every state above must be mapped here.
                 switch (state) {
@@ -71,7 +72,7 @@ namespace NachoCore.IMAP
                 ReConn,
                 UiSetCred,
                 UiSetServConf,
-                PkQOp,
+                FromStrat,
                 AuthFail,
                 Last = AuthFail,
             };
@@ -97,7 +98,7 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.ReConn,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -118,7 +119,7 @@ namespace NachoCore.IMAP
                         Drop = new uint[] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
@@ -144,7 +145,7 @@ namespace NachoCore.IMAP
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReConn,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -167,7 +168,7 @@ namespace NachoCore.IMAP
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.ReConn,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -186,7 +187,7 @@ namespace NachoCore.IMAP
                         Drop = new uint[] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
@@ -208,7 +209,7 @@ namespace NachoCore.IMAP
                         Drop = new [] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
@@ -228,7 +229,6 @@ namespace NachoCore.IMAP
                         Drop = new [] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
-                            (uint)ImapEvt.E.PkQOp,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -240,19 +240,42 @@ namespace NachoCore.IMAP
                         },
                         On = new [] {
                             // FIXME - add states for doing operations - eg Qop, Sync, etc.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)ImapEvt.E.FromStrat, Act = DoArg, State = (uint)Lst.CmdW },
                         }
                     },
                     new Node {
+                        State = (uint)Lst.CmdW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)ImapEvt.E.UiSetCred,
+                            (uint)ImapEvt.E.UiSetServConf,
+                        },
+                        Invalid = new [] {
+                            (uint)ImapEvt.E.FromStrat,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
+                        },
+                    },
+                    new Node {
                         State = (uint)Lst.Parked,
-                        Drop = new uint[] {
+                        Drop = new [] {
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
-                            (uint)ImapEvt.E.PkQOp,
+                            (uint)ImapEvt.E.FromStrat,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -272,7 +295,7 @@ namespace NachoCore.IMAP
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
-            Strategy = new ImapStrategy ();
+            Strategy = new ImapStrategy (this, ImapClient);
             //PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
@@ -343,7 +366,7 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }
 
@@ -361,6 +384,18 @@ namespace NachoCore.IMAP
         private void DoFSync ()
         {
             SetCmd (new ImapFolderSyncCommand (this, ImapClient));
+            ExecuteCmd ();
+        }
+
+        private void DoArg ()
+        {
+            var cmd = Sm.Arg as ImapCommand;
+            /* FIXME
+            if (null != cmd as AsPingCommand && null != PushAssist) {
+                PushAssist.Execute ();
+            }
+            */
+            SetCmd (cmd);
             ExecuteCmd ();
         }
 
@@ -410,7 +445,7 @@ namespace NachoCore.IMAP
             if (forceAutodiscovery) {
                 Log.Error (Log.LOG_IMAP, "Wy a forceautodiscovery?");
             }
-            Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "ASPCUSSC");
+            Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "IMAPPCUSSC");
         }
 
         public static ImapClient newClientWithLogger()
@@ -422,34 +457,23 @@ namespace NachoCore.IMAP
 
         private void DoPick ()
         {
-            // Due to threading race condition we must clear any event possibly posted
-            // by a non-cancelled-in-time await.
-            // TODO: find a way to detect already running op and log an error.
-            // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
             if (null != Cmd) {
                 Cmd.Cancel ();
             }
             Sm.ClearEventQueue ();
-            var send = McPending.QueryEligible (AccountId).
-                Where (x => 
-                    McPending.Operations.EmailSend == x.Operation ||
-                    McPending.Operations.EmailForward == x.Operation ||
-                    McPending.Operations.EmailReply == x.Operation ||
-                    McPending.Operations.CalRespond == x.Operation ||
-                    McPending.Operations.CalForward == x.Operation
-                ).FirstOrDefault ();
-            if (null != send) {
-                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Send");
-                switch (send.Operation) {
-                default:
-                    NcAssert.CaseError (send.Operation.ToString ());
-                    break;
-                }
-                // Get a new one.
-                Sm.PostEvent ((uint)ImapEvt.E.PkQOp, "IMAPGETNEXT");
-            } else {
-                // FIXME
-                Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPPARK");
+            var pack = Strategy.Pick ();
+            var transition = pack.Item1;
+            var cmd = pack.Item2;
+            switch (transition) {
+            case PickActionEnum.Sync:
+                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKSYNC", cmd);
+                break;
+            case PickActionEnum.Ping:
+                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKPING", cmd);
+                break;
+            case PickActionEnum.HotQOp:
+                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKHOTOP", cmd);
+                break;
             }
         }
 

@@ -2,12 +2,11 @@
 //
 using System;
 using System.Collections.Generic;
+using NachoCore;
 using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
-    public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
-
     public class PingKit
     {
         public uint MaxHeartbeatInterval { get; set; }
