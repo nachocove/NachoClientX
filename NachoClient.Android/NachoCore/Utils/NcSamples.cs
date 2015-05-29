@@ -6,7 +6,7 @@ using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
-    public class NcSamplesInput
+    public abstract class NcSamplesInput
     {
         public bool LimitInput { get; set; }
 
@@ -95,27 +95,18 @@ namespace NachoCore.Utils
         /// The internal function for processing of a sample. Must be overridden.
         /// </summary>
         /// <param name="value">Value.</param>
-        protected virtual void ProcessSample (int value)
-        {
-            throw new NotImplementedException ();
-        }
+        protected abstract void ProcessSample (int value);
 
         /// <summary>
         /// The internal function for clearing all states (back to a 0-sample state). Mst be overridden.
         /// </summary>
-        protected virtual void ClearSamples ()
-        {
-            throw new NotImplementedException ();
-        }
+        protected abstract void ClearSamples ();
 
         /// <summary>
         /// The internal function for recording the telemetry event from the internal states. Must be overridden.
         /// </summary>
         /// <returns>The telemetry event.</returns>
-        protected virtual void RecordSamples ()
-        {
-            throw new NotImplementedException ();
-        }
+        protected abstract void RecordSamples ();
     }
 
     public class NcSamples : NcSamplesInput
