@@ -87,6 +87,7 @@ namespace NachoCore.IMAP
 
         private void FetchOneBody(McPending pending)
         {
+            pending.MarkDispached ();
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
 
             var folder = GetOpenedFolder (pending.ParentId);
@@ -133,7 +134,8 @@ namespace NachoCore.IMAP
         private void FetchOneAttachment(McPending pending)
         {
             // FIXME implement me
-            //var attachment = McAbstrObject.QueryById<McAttachment> (pending.AttachmentId);
+            // pending.MarkDispached ();
+            // var attachment = McAbstrObject.QueryById<McAttachment> (pending.AttachmentId);
         }
 
     }

@@ -943,7 +943,7 @@ namespace NachoCore.ActiveSync
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
-                var search = McPending.QueryEligible (accountId).
+                var search = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).
                     Where (x => McPending.Operations.ContactSearch == x.Operation ||
                         McPending.Operations.EmailSearch == x.Operation).FirstOrDefault ();
                 if (null != search) {
@@ -952,7 +952,7 @@ namespace NachoCore.ActiveSync
                         new AsSearchCommand (BEContext, search));
                 }
                 // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
-                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId).
+                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ActiveSyncCapabilities).
                     Where (x => 
                         McPending.Operations.AttachmentDownload == x.Operation ||
                         McPending.Operations.EmailBodyDownload == x.Operation ||
@@ -995,7 +995,7 @@ namespace NachoCore.ActiveSync
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                var send = McPending.QueryEligible (accountId).
+                var send = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).
                     Where (x => 
                         McPending.Operations.EmailSend == x.Operation ||
                            McPending.Operations.EmailForward == x.Operation ||
@@ -1061,7 +1061,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
-                var next = McPending.QueryEligible (accountId).FirstOrDefault ();
+                var next = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());

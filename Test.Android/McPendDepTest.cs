@@ -17,7 +17,7 @@ namespace Test.Common
         public void DepThenIndep ()
         {
             List<int> depPendIdList = new List<int> ();
-            var createFolder = new McPending (1) {
+            var createFolder = new McPending (1, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                 Operation = McPending.Operations.FolderCreate,
                 ServerId = "parent",
                 ParentId = "0",
@@ -26,7 +26,7 @@ namespace Test.Common
             };
             createFolder.Insert ();
             for (int iter = 0; iter < 10; ++iter) {
-                var pending = new McPending (1) {
+                var pending = new McPending (1, McAccount.AccountCapabilityEnum.ContactWriter) {
                     Operation = McPending.Operations.ContactCreate,
                     ItemId = iter,
                     ParentId = "guid",

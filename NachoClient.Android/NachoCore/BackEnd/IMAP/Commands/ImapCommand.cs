@@ -22,6 +22,9 @@ namespace NachoCore.IMAP
     {
         protected IBEContext BEContext;
         protected ImapClient Client { get; set; }
+        protected McPending PendingSingle;
+        protected List<McPending> PendingList;
+
         public CancellationTokenSource Cts { get; protected set; }
 
         public ImapCommand (IBEContext beContext, ImapClient imap)
