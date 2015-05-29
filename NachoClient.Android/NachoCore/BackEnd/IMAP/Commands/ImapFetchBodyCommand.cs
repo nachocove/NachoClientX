@@ -38,6 +38,8 @@ namespace NachoCore.IMAP
                         PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, result);
                     }
                 }
+            } catch (OperationCanceledException) {
+                return;
             } catch (InvalidOperationException e) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: {0}", e);
                 PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed));
