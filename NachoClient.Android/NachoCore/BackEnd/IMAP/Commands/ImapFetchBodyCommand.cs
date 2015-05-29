@@ -32,8 +32,8 @@ namespace NachoCore.IMAP
             try {
                 lock (Client.SyncRoot) {
                     var result = ProcessPending (sm, PendingSingle);
-                    if (result.isOK ()) {
-                        PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (result.SubKind));
+                    if (result.isInfo ()) {
+                        PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, result);
                     } else if (result.isError ()) {
                         PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, result);
                     }
@@ -142,7 +142,7 @@ namespace NachoCore.IMAP
                 body.FileSize = bodyAsString.Length;
                 body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
                 body.Update ();
-                result = NcResult.OK (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+                result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             }
             email.Update ();
             return result;
