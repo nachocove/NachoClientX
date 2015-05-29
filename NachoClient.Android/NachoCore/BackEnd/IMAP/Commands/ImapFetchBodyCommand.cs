@@ -23,6 +23,7 @@ namespace NachoCore.IMAP
         ImapFolder _folder { get; set; }
         public ImapFetchBodyCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
+            pending.MarkDispached ();
             PendingSingle = pending;
             _folder = null;
         }
@@ -34,8 +35,10 @@ namespace NachoCore.IMAP
                     var result = ProcessPending (sm, PendingSingle);
                     if (result.isInfo ()) {
                         PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, result);
+                        sm.PostEvent ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
                     } else if (result.isError ()) {
                         PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, result);
+                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
                     }
                 }
             } catch (OperationCanceledException) {
@@ -48,7 +51,7 @@ namespace NachoCore.IMAP
             } catch (Exception e) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Unexpected exception: {0}", e);
                 PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed));
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD3");
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD2");
                 return;
             }
         }
@@ -92,7 +95,6 @@ namespace NachoCore.IMAP
 
         private NcResult FetchOneBody(NcStateMachine sm, McPending pending)
         {
-            pending.MarkDispached ();
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             NcResult result;
 
