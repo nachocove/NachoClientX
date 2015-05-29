@@ -87,9 +87,7 @@ namespace NachoCore.Utils
         /// </summary>
         public void Report ()
         {
-            var tEvent = GenerateTelemetryEvent ();
-            var dbEvent = new McTelemetryEvent (tEvent);
-            dbEvent.Insert ();
+            RecordSamples ();
             Clear ();
         }
 
@@ -111,10 +109,10 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// The internal function for generating the telemetry event from the internal states. Must be overridden.
+        /// The internal function for recording the telemetry event from the internal states. Must be overridden.
         /// </summary>
         /// <returns>The telemetry event.</returns>
-        protected virtual TelemetryEvent GenerateTelemetryEvent ()
+        protected virtual void RecordSamples ()
         {
             throw new NotImplementedException ();
         }
@@ -122,10 +120,13 @@ namespace NachoCore.Utils
 
     public class NcSamples : NcSamplesInput
     {
+        public string Name { get; protected set; }
+
         protected List<int> Samples;
 
-        public NcSamples ()
+        public NcSamples (string name)
         {
+            Name = name;
             Samples = new List<int> ();
         }
 
@@ -139,11 +140,9 @@ namespace NachoCore.Utils
             Samples.Clear ();
         }
 
-        protected override TelemetryEvent GenerateTelemetryEvent ()
+        protected override void RecordSamples ()
         {
-            return new TelemetryEvent (TelemetryEventType.SAMPLES) {
-                Samples = this.Samples
-            };
+            Telemetry.RecordSamples (Name, Samples);
         }
     }
 }
