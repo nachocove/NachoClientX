@@ -292,8 +292,8 @@ namespace Test.Common
             CheckWriteFilesCount (0);
             CheckReadFilesCount (6);
 
-            // Read and remove all read files
-            string[] readFiles = new string[] {
+            // Check all read files
+            string[] expectedReadFiles = new string[] {
                 "20150526010203456.20150526125500101.log",
                 "20150526020203456.20150526020203456.ui",
                 "20150526030000001.20150526030000001.wbxml",
@@ -301,8 +301,26 @@ namespace Test.Common
                 "20150526110000022.20150526110000022.statistics2",
                 "20150526125047000.20150526125047000.support",
             };
+            var readFiles = FileTable.GetReadFiles ();
+            Assert.AreEqual (expectedReadFiles.Length, readFiles.Count);
+            int n = 0;
+            foreach (var rf in readFiles) {
+                Assert.AreEqual (expectedReadFiles [n], Path.GetFileName (rf));
+                n += 1;
+            }
 
-            foreach (var expected in readFiles) {
+            // Get a new file table. Make sure the ctor recovers all read files
+            FileTable = new WrappedTelemetryJsonFileTable ();
+            readFiles = FileTable.GetReadFiles ();
+            Assert.AreEqual (expectedReadFiles.Length, readFiles.Count);
+            n = 0;
+            foreach (var rf in readFiles) {
+                Assert.AreEqual (expectedReadFiles [n], Path.GetFileName (rf));
+                n += 1;
+            }
+
+            // Read each read file.
+            foreach (var expected in expectedReadFiles) {
                 readFile = FileTable.GetNextReadFile ();
                 Assert.AreEqual (expected, Path.GetFileName (readFile));
                 Assert.True (File.Exists (readFile));

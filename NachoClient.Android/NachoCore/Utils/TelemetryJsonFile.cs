@@ -199,16 +199,17 @@ namespace NachoCore.Utils
             return eventClass;
         }
 
-        public static List<string> GetReadFile (string prefix)
+        public static List<string> GetReadFile (string filePath)
         {
-            var dirName = Path.GetDirectoryName (prefix);
+            var dirName = Path.GetDirectoryName (filePath);
+            var suffix = Path.GetFileName (filePath);
             var regex = new Regex (@"^([0-9]+)\.([0-9]+)\.");
             var readFilePaths = new List<string> ();
             foreach (var fileName in Directory.GetFiles(dirName)) {
-                if (!fileName.StartsWith (prefix)) {
+                if (!fileName.EndsWith (suffix)) {
                     continue;
                 }
-                if (regex.Match (fileName).Success) {
+                if (regex.Match (Path.GetFileName (fileName)).Success) {
                     readFilePaths.Add (fileName);
                 }
             }
