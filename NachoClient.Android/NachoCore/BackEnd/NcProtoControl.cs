@@ -1089,7 +1089,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSYNC");
             }, "SyncCmd");
             return result;
         }

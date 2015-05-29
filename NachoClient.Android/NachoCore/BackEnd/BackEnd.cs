@@ -64,6 +64,7 @@ namespace NachoCore
 
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
+        private Dictionary<int, bool> CredReqActive;
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -127,6 +128,7 @@ namespace NachoCore
             ServicePointManager.DefaultConnectionLimit = 25;
 
             Services = new ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> ();
+            CredReqActive = new Dictionary<int, bool> ();
         }
 
         public void CreateServices ()
@@ -268,6 +270,9 @@ namespace NachoCore
                     service.CredResp ();
                     return NcResult.OK ();
                 });
+                lock (CredReqActive) {
+                    CredReqActive.Remove (accountId);
+                }
             }, "CredResp");
         }
 
@@ -660,6 +665,13 @@ namespace NachoCore
 
         public void CredReq (NcProtoControl sender)
         {
+            // If we don't already have a request from this account, record it and send it up.
+            lock (CredReqActive) {
+                if (CredReqActive.ContainsKey (sender.Account.Id)) {
+                    return;
+                }
+                CredReqActive.Add (sender.Account.Id, true);
+            }
             InvokeOnUIThread.Instance.Invoke (delegate () {
                 Owner.CredReq (sender.AccountId);
             });
