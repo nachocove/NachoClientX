@@ -65,13 +65,11 @@ namespace NachoCore.Utils
         // optionally purge them
         protected static int PurgeCounter = 0;
 
-        private static TelemetryJsonFileTable _JsonFileTable;
+        private static TelemetryJsonFileTable _JsonFileTable = new TelemetryJsonFileTable ();
 
         public static TelemetryJsonFileTable JsonFileTable {
             get {
-                if (null == _JsonFileTable) {
-                    _JsonFileTable = new TelemetryJsonFileTable ();
-                }
+                NcAssert.True (null != _JsonFileTable);
                 return _JsonFileTable;
             }
         }

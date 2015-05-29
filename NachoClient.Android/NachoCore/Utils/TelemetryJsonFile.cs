@@ -65,7 +65,7 @@ namespace NachoCore.Utils
             var match = TimestampRegex.Match (line);
             NcAssert.True (match.Success);
             NcAssert.True (2 == match.Groups.Count);
-            return DateTime.MinValue.AddTicks (long.Parse (match.Groups [1].Value));
+            return new DateTime (long.Parse (match.Groups [1].Value), DateTimeKind.Utc);
         }
 
         public bool Add (TelemetryJsonEvent jsonEvent)
@@ -73,7 +73,7 @@ namespace NachoCore.Utils
             if (null == jsonEvent) {
                 return false;
             }
-            var timestamp = DateTime.MinValue.AddTicks (jsonEvent.timestamp);
+            var timestamp = new DateTime (jsonEvent.timestamp, DateTimeKind.Utc);
             if (0 == NumberOfEntries) {
                 FirstTimestamp = timestamp;
             }
@@ -81,7 +81,7 @@ namespace NachoCore.Utils
 
             bool succeeded;
             try {
-                byte[] bytes = Encoding.ASCII.GetBytes (jsonEvent.ToJson () + "\n");
+                byte[] bytes = Encoding.UTF8.GetBytes (jsonEvent.ToJson () + "\n");
                 JsonFile.Write (bytes, 0, bytes.Length);
                 NumberOfEntries += 1;
                 succeeded = true;
