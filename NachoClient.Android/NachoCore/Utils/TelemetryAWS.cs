@@ -399,6 +399,7 @@ namespace NachoCore.Utils
                 build_number = BuildInfo.BuildNumber,
                 device_id = Device.Instance.Identity (),
                 fresh_install = FreshInstall,
+                user_id = NcApplication.Instance.UserId,
             };
             var json = JsonConvert.SerializeObject (
                            jsonEvent, Newtonsoft.Json.Formatting.None,
