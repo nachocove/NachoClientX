@@ -67,28 +67,37 @@ namespace NachoCore.Utils
         }
     }
 
-    public class TelemetryWbxmlEvent : TelemetryJsonEvent
+    public class TelemetryProtocolEvent : TelemetryJsonEvent
     {
-        public const string REQUEST = "WBXML_REQUEST";
-        public const string RESPONSE = "WBXML_RESPONSE";
+        public const string WBXML_REQUEST = "WBXML_REQUEST";
+        public const string WBXML_RESPONSE = "WBXML_RESPONSE";
+        public const string IMAP_REQUEST = "IMAP_REQUEST";
+        public const string IMAP_RESPONSE = "IMAP_RESPONSE";
 
-        public byte[] wbxml;
+        public byte[] payload;
 
-        public TelemetryWbxmlEvent () : this (TelemetryEventType.WBXML_REQUEST)
+        public TelemetryProtocolEvent () : this (TelemetryEventType.WBXML_REQUEST)
         {
         }
 
-        public TelemetryWbxmlEvent (TelemetryEventType type)
+        public TelemetryProtocolEvent (TelemetryEventType type)
         {
             switch (type) {
             case TelemetryEventType.WBXML_REQUEST:
-                event_type = REQUEST;
+                event_type = WBXML_REQUEST;
                 break;
             case TelemetryEventType.WBXML_RESPONSE:
-                event_type = RESPONSE;
+                event_type = WBXML_RESPONSE;
+                break;
+            case TelemetryEventType.IMAP_REQUEST:
+                event_type = IMAP_REQUEST;
+                break;
+            case TelemetryEventType.IMAP_RESPONSE:
+                event_type = IMAP_RESPONSE;
                 break;
             default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("RecordWbxmlEvent: unexpected type {0}", type));
+                var msg = String.Format ("TelemetryProtocolEvent: unexpected type {0}", type);
+                throw new NcAssert.NachoDefaultCaseFailure (msg);
             }
         }
     }
