@@ -461,19 +461,28 @@ namespace NachoCore.IMAP
                 Cmd.Cancel ();
             }
             Sm.ClearEventQueue ();
-            var pack = Strategy.Pick ();
-            var transition = pack.Item1;
-            var cmd = pack.Item2;
-            switch (transition) {
-            case PickActionEnum.Sync:
-                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKSYNC", cmd);
-                break;
-            case PickActionEnum.Ping:
-                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKPING", cmd);
-                break;
-            case PickActionEnum.HotQOp:
-                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKHOTOP", cmd);
-                break;
+            try {
+                var pack = Strategy.Pick ();
+                var transition = pack.Item1;
+                var cmd = pack.Item2;
+                switch (transition) {
+                case PickActionEnum.Sync:
+                    Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKSYNC", cmd);
+                    break;
+                case PickActionEnum.Ping:
+                    Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKPING", cmd);
+                    break;
+                case PickActionEnum.HotQOp:
+                    Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKHOTOP", cmd);
+                    break;
+                }
+            }
+            catch (InvalidOperationException e) {
+                if (!ImapClient.IsConnected) {
+                    Log.Error (Log.LOG_IMAP, "Client is not connected");
+                    Sm.PostEvent ((uint)ImapEvt.E.ReConn, "IMAPPCKRECONN");
+                    return;
+                }
             }
         }
 

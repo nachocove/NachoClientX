@@ -102,10 +102,17 @@ namespace NachoCore.IMAP
                 NcApplication.ExecutionContextEnum.Background == exeCtxt ||
                 NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 // (FG,BG,QS) if there is syncing to do, then get it done.
-                var syncKit = GenSyncKit (BEContext.Account.Id, protocolState, ImapClient);
-                if (null != syncKit) {
-                    return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                        new ImapSyncCommand (BEContext, ImapClient, syncKit));
+                try {
+                    var syncKit = GenSyncKit (BEContext.Account.Id, protocolState, ImapClient);
+                    if (null != syncKit) {
+                        return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, ImapClient, syncKit));
+                    }
+                }
+                catch (InvalidOperationException e) {
+                    if (!ImapClient.IsConnected) {
+                        
+                    }
                 }
             }
             // TODO FG/BG only.

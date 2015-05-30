@@ -60,6 +60,15 @@ namespace NachoCore.IMAP
                 } catch (OperationCanceledException) {
                     // Not going to happen until we nix CancellationToken.None.
                     Log.Info (Log.LOG_IMAP, "ImapIdleCommand: Cancelled");
+                } catch (InvalidOperationException e) {
+                    if (!Client.IsConnected) {
+                        Log.Error (Log.LOG_IMAP, "ImapIdleCommand: Client is not connected.");
+                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPIDLERECONN");
+                    } else {
+                        Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
+                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPIDLEHARD0");
+                    }
+                    return;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ImapIdleCommand: Unexpected exception: {0}", ex.ToString ());
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPIDLEHARDX"); 

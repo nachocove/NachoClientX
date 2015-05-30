@@ -42,10 +42,18 @@ namespace NachoCore.IMAP
                     // TODO Should we loop over all namespaces here? Typically there appears to be only one.
                     folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
                 }
-            }
-            catch (InvalidOperationException e) {
-                Log.Error (Log.LOG_IMAP, "Could not refresh folder list: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD1");
+            } catch (OperationCanceledException) {
+                // Not going to happen until we nix CancellationToken.None.
+                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Cancelled");
+                return;
+            } catch (InvalidOperationException e) {
+                if (!Client.IsConnected) {
+                    Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: Client is not connected.");
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPFSYNCRECONN");
+                } else {
+                    Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: {0}", e);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD1");
+                }
                 return;
             }
             catch (Exception e) {
@@ -99,10 +107,17 @@ namespace NachoCore.IMAP
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
             foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
                 if (!foldernames.Contains (folder.ServerId)) {
+                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server");
                     folder.Delete ();
                 }
             }
             sm.PostEvent ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
+        }
+
+        private string parentId(IMailFolder mailKitFolder)
+        {
+            return null != mailKitFolder.ParentFolder && string.Empty != mailKitFolder.ParentFolder.FullName ?
+                mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
         }
 
         protected void CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished)
@@ -111,24 +126,24 @@ namespace NachoCore.IMAP
             if (isDisinguished) {
                 existing = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
             } else {
-                existing = McFolder.GetUserFolders (BEContext.Account.Id, folderType, mailKitFolder.ParentFolder.UidValidity.ToString (), mailKitFolder.Name).SingleOrDefault ();
+                existing = McFolder.GetUserFolders (BEContext.Account.Id, folderType, parentId(mailKitFolder), mailKitFolder.Name).SingleOrDefault ();
             }
+
+            if ((null != existing) && (existing.ImapUidValidity < mailKitFolder.UidValidity)) {
+                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} < {2})", mailKitFolder.FullName, existing.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
+                existing.Delete ();
+                existing = null;
+            }
+
             if (null == existing) {
-                // Just add it.
-                string parentId = (null != mailKitFolder.ParentFolder) && (mailKitFolder.ParentFolder.FullName != "") ? 
-                    mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
-                var created = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, parentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
+                // Add it
+                var created = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, parentId(mailKitFolder), mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 created.ImapUidValidity = mailKitFolder.UidValidity;
                 created.Insert ();
-            } else {
-                if (existing.IsDistinguished) {
-                    Log.Error (Log.LOG_IMAP, "Trying to update distinguished folder.");
-                    return;
-                }
-                // check & update.
-                if (existing.ImapUidValidity != mailKitFolder.UidValidity) {
-                    // FIXME flush and re-sync folder contents.
-                }
+            } else if (existing.ServerId != mailKitFolder.FullName ||
+                       existing.DisplayName != folderDisplayName ||
+                       existing.ImapUidValidity != mailKitFolder.UidValidity) {
+                // update.
                 existing = existing.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ServerId = mailKitFolder.FullName;
