@@ -390,6 +390,10 @@ namespace NachoCore.Utils
 
         private bool SendDeviceInfo ()
         {
+            if (null == NcApplication.Instance.UserId) {
+                // During 1st launch after a fresh install, there is a small window when we don't have a user id.
+                return false;
+            }
             // Create the JSON
             var jsonEvent = new TelemetryDeviceInfoEvent () {
                 os_type = Device.Instance.OsType (),
@@ -399,6 +403,7 @@ namespace NachoCore.Utils
                 build_number = BuildInfo.BuildNumber,
                 device_id = Device.Instance.Identity (),
                 fresh_install = FreshInstall,
+                user_id = NcApplication.Instance.UserId,
             };
             var json = JsonConvert.SerializeObject (
                            jsonEvent, Newtonsoft.Json.Formatting.None,
