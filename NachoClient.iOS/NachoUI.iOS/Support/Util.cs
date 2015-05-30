@@ -772,26 +772,10 @@ namespace NachoClient
 
         public static string GetVersionNumber ()
         {
-            var devBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail");
-            var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
-            var alphaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.alpha");
-
-            if (devBundleId != null) {
-                var build = devBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-                return String.Format ("{0} ({1})", version, build);
-            } 
-            if (betaBundleId != null) {
-                var build = betaBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-                return String.Format ("{0} ({1})", version, build);
-            } 
-            if (alphaBundleId != null) {
-                var build = alphaBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = alphaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-                return String.Format ("{0} ({1})", version, build);
-            } 
-            return "Unknown version";
+            var bundle = NSBundle.MainBundle;
+            var build = bundle.InfoDictionary ["CFBundleVersion"].ToString ();
+            var version = bundle.InfoDictionary ["CFBundleShortVersionString"].ToString ();
+            return String.Format ("{0} ({1})", version, build);
         }
 
         public static UITableView FindEnclosingTableView (UIView view)
