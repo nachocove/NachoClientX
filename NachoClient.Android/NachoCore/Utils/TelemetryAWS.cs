@@ -390,6 +390,10 @@ namespace NachoCore.Utils
 
         private bool SendDeviceInfo ()
         {
+            if (null == NcApplication.Instance.UserId) {
+                // During 1st launch after a fresh install, there is a small window when we don't have a user id.
+                return false;
+            }
             // Create the JSON
             var jsonEvent = new TelemetryDeviceInfoEvent () {
                 os_type = Device.Instance.OsType (),
