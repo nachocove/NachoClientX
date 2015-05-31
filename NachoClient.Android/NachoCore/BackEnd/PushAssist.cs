@@ -646,7 +646,7 @@ namespace NachoCore
 
         private void FillOutIdentInfo (BaseRequest request)
         {
-            request.ClientId = NcApplication.Instance.ClientId;
+            request.ClientId = NcApplication.Instance.UserId;
             request.DeviceId = NachoPlatform.Device.Instance.Identity ();
             request.ClientContext = ClientContext;
             request.OSVersion = NachoPlatform.Device.Instance.OsVersion ();
