@@ -6,21 +6,23 @@ using System.Threading;
 
 namespace NachoCore.Model
 {
+    // This migration is no longer valid because the old sync info tables are deprecated.
     public class NcMigration12 : NcMigration
     {
         public override int GetNumberOfObjects ()
         {
-            return Db.Table<McEmailMessageScoreSyncInfo> ().Count ();
+            return 0;
+            ////return Db.Table<McEmailMessageScoreSyncInfo> ().Count ();
         }
 
         public override void Run (CancellationToken token)
         {
-            McAccount ExchangeAccount =  McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).SingleOrDefault ();
-
-            if (ExchangeAccount != null) {
-                int rowsUpdated = NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScoreSyncInfo WHERE AccountId = ?", ExchangeAccount.Id);
-                UpdateProgress (rowsUpdated);
-            }
+            ////McAccount ExchangeAccount =  McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).SingleOrDefault ();
+            ////
+            ////if (ExchangeAccount != null) {
+            ////    int rowsUpdated = NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScoreSyncInfo WHERE AccountId = ?", ExchangeAccount.Id);
+            ////    UpdateProgress (rowsUpdated);
+            ////}
         }
     }
 }
