@@ -351,6 +351,11 @@ namespace NachoCore.IMAP
             return null;
         }
 
+        public override void ForceStop ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPFORCESTOP");
+        }
+
         public override void Remove ()
         {
             // TODO Move to base

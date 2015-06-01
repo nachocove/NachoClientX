@@ -285,6 +285,11 @@ namespace NachoCore.SMTP
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
+        public override void ForceStop ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPFORCESTOP");
+        }
+
         public override void Remove ()
         {
             // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
