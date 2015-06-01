@@ -64,12 +64,6 @@ namespace NachoCore.IMAP
             }
         }
 
-        private UniqueId AsUniqueId(string serverId)
-        {
-            uint x = UInt32.Parse (serverId);
-            return new UniqueId(x);
-        }
-
         private ImapFolder GetOpenedFolder(string serverId)
         {
             if (null == _folder || _folder.FullName != serverId) {
@@ -108,7 +102,7 @@ namespace NachoCore.IMAP
 
             var folder = GetOpenedFolder (pending.ParentId);
 
-            MimeMessage imapbody = folder.GetMessage (AsUniqueId(pending.ServerId), Cts.Token);
+            MimeMessage imapbody = folder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
             if (null == imapbody) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
                 email.BodyId = 0;
