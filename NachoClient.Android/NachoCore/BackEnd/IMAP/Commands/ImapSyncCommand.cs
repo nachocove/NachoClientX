@@ -89,14 +89,13 @@ namespace NachoCore.IMAP
                 } catch (OperationCanceledException) {
                     Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Cancelled");
                     return;
+                } catch (ServiceNotConnectedException) {
+                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Client is not connected.");
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCRECONN");
+                    return;
                 } catch (InvalidOperationException e) {
-                    if (!Client.IsConnected) {
-                        Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Client is not connected.");
-                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCRECONN");
-                    } else {
-                        Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
-                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARD0");
-                    }
+                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARD0");
                     return;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Unexpected exception: {0}", ex.ToString ());
@@ -394,10 +393,17 @@ namespace NachoCore.IMAP
                         previewBytes = isPlain ? PreviewSizeBytes : PreviewSizeBytes*4;
                     }
                     Stream stream;
-                    try {
-                        stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier+".TEXT", 0, previewBytes, Cts.Token);
+                    string partSpecifier = text.PartSpecifier;
+                    if (string.Empty == partSpecifier) {
+                        partSpecifier = "TEXT";
+                    } else {
+                        partSpecifier += ".TEXT";
                     }
-                    catch (ImapCommandException) {
+                    try {
+                        stream = folder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
+                    }
+                    catch (ImapCommandException e) {
+                        Log.Warn (Log.LOG_IMAP, "Need to adjust partSpecifier for part {0} {1} {2}", text.PartSpecifier, text.ContentTransferEncoding, e);
                         stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
                     }
                     preview = getTextFromStream (stream, text.ContentType, encoding(text.ContentTransferEncoding));
