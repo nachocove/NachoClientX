@@ -349,7 +349,7 @@ namespace NachoCore.ActiveSync
                 xmlAppData.Add (xmlExceptions);
             }
 
-            if (cal.ResponseRequestedIsSet && 14.0 <= Convert.ToDouble (beContext.ProtocolState.AsProtocolVersion)) {
+            if (cal.ResponseRequestedIsSet && 14.0 <= Convert.ToDouble (beContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
             }
             if (cal.DisallowNewTimeProposalIsSet) {
