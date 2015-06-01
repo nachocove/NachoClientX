@@ -377,6 +377,9 @@ namespace NachoCore.Utils
             }
 
             var gzJsonFilePath = jsonFilePath + ".gz";
+            if (File.Exists (gzJsonFilePath)) {
+                File.Delete (gzJsonFilePath); // last upload could be aborted.
+            }
             using (var jsonStream = File.Open (jsonFilePath, FileMode.Open, FileAccess.Read))
             using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
             using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress)) {
