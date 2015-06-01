@@ -483,6 +483,9 @@ namespace NachoCore.IMAP
                     Sm.PostEvent ((uint)ImapEvt.E.ReConn, "IMAPPCKRECONN");
                     return;
                 }
+                Log.Error (Log.LOG_IMAP, "Unexpected error DoPick: {0}", e);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPICKHRDX");
+                return;
             }
         }
 
