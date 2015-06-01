@@ -395,10 +395,10 @@ namespace NachoCore.IMAP
                     }
                     Stream stream;
                     try {
-                        stream = folder.GetStream (summary.UniqueId.Value, text, true, 0, previewBytes);
+                        stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier+".TEXT", 0, previewBytes, Cts.Token);
                     }
-                    catch (ImapCommandException e) {
-                        stream = folder.GetStream (summary.UniqueId.Value, text, false, 0, previewBytes);
+                    catch (ImapCommandException) {
+                        stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
                     }
                     preview = getTextFromStream (stream, text.ContentType, encoding(text.ContentTransferEncoding));
                     if (text.Octets <= 4096) {
