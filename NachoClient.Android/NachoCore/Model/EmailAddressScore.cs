@@ -26,7 +26,7 @@ namespace NachoCore.Model
         public double Score { get; set; }
 
         [Indexed]
-        public bool NeedUpdate { get; set; }
+        public int NeedUpdate { get; set; }
 
         // DO NOT update these fields directly. Use IncrementXXX methods instead.
         // Otherwise, the delta will not be saved correctly. ORM does not allow
@@ -54,6 +54,11 @@ namespace NachoCore.Model
         // If there is update that is not uploaded to the synchronization server,
         // this object is non-null and holds the update.
         private McEmailAddressScoreSyncInfo SyncInfo { get; set; }
+
+        public bool ShouldUpdate ()
+        {
+            return (0 < NeedUpdate);
+        }
 
         public double GetScore ()
         {
@@ -177,7 +182,7 @@ namespace NachoCore.Model
         {
             NcModel.Instance.RunInLock (() => {
                 NcModel.Instance.Db.Execute (
-                    "UPDATE McEmailMessage SET NeedUpdate = 1 WHERE " +
+                    "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + 1 WHERE " +
                     " Id IN (SELECT EmailMessageId FROM McEmailMessageDependency AS d WHERE d.EmailAddressId = ?)", Id);
             });
         }
@@ -218,7 +223,7 @@ namespace NachoCore.Model
         public static McEmailAddress QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.NeedUpdate && x.ScoreVersion == Scoring.Version)
+                .Where (x => x.ShouldUpdate () && x.ScoreVersion == Scoring.Version)
                 .FirstOrDefault ();
         }
 

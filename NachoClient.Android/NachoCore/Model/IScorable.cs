@@ -19,7 +19,7 @@ namespace NachoCore.Utils
 
         /// Need to update. Set when statistics that affects this score is updated
         /// Brain will recompute scores in the background task.
-        bool NeedUpdate { get; set; }
+        int NeedUpdate { get; set; }
 
         /// Time variance state machine type
         int TimeVarianceType { get; set; }
@@ -36,7 +36,7 @@ namespace NachoCore.Utils
         //   2. Adjustment of collected statistics
         //   3. Recompute the score using a new function.
         // Each version may introduce new actions. This method will perform all
-        // actions from the object current version to the (score) version of 
+        // actions from the object current version to the (score) version of
         // NachoClient software.
         //
         // Note that this method may affect other objects. For example, scoring

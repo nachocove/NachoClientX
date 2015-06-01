@@ -78,11 +78,11 @@ namespace NachoCore.Brain
             }
             var newScore = emailAddress.GetScore ();
             bool scoreUpdated = newScore != emailAddress.Score;
-            if (emailAddress.NeedUpdate || scoreUpdated) {
+            if (emailAddress.ShouldUpdate () || scoreUpdated) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
                     emailAddress.Id, emailAddress.Score);
                 emailAddress.Score = newScore;
-                emailAddress.NeedUpdate = false;
+                emailAddress.NeedUpdate += 1;
                 emailAddress.UpdateByBrain ();
             }
             if (updateDependencies && scoreUpdated) {
@@ -101,11 +101,11 @@ namespace NachoCore.Brain
                 return true;
             }
             var newScore = emailMessage.GetScore ();
-            if (emailMessage.NeedUpdate || (newScore != emailMessage.Score)) {
+            if (emailMessage.ShouldUpdate () || (newScore != emailMessage.Score)) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
                     emailMessage.Id, emailMessage.Score);
                 emailMessage.Score = newScore;
-                emailMessage.NeedUpdate = false;
+                emailMessage.NeedUpdate += 1;
                 emailMessage.UpdateScoreAndNeedUpdate ();
             }
             return true;

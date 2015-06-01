@@ -41,7 +41,7 @@ namespace NachoCore.Model
         public double Score { get; set; }
 
         [Indexed]
-        public bool NeedUpdate { get; set; }
+        public int NeedUpdate { get; set; }
 
         [Indexed]
         public bool ScoreIsRead { get; set; }
@@ -54,6 +54,11 @@ namespace NachoCore.Model
         private McEmailMessageScoreSyncInfo SyncInfo { get; set; }
 
         public const double VipScore = 1.0;
+
+        public bool ShouldUpdate ()
+        {
+            return (0 < NeedUpdate);
+        }
 
         public double GetScore ()
         {
@@ -184,7 +189,7 @@ namespace NachoCore.Model
             NcAssert.True (Scoring.Version == ScoreVersion);
             InitializeTimeVariance ();
             Score = GetScore ();
-            NeedUpdate = false;
+            NeedUpdate = 0;
             UpdateByBrain ();
         }
 
@@ -287,7 +292,7 @@ namespace NachoCore.Model
         public static McEmailMessage QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.NeedUpdate)
+                .Where (x => x.ShouldUpdate ())
                 .FirstOrDefault ();
         }
 
@@ -508,7 +513,7 @@ namespace NachoCore.Model
                 scoreChanged = true;
             }
             if (fullUpdateNeeded || scoreChanged) {
-                emailMessage.NeedUpdate = false;
+                emailMessage.NeedUpdate = 0;
                 if (fullUpdateNeeded) {
                     emailMessage.UpdateByBrain ();
                 } else {
