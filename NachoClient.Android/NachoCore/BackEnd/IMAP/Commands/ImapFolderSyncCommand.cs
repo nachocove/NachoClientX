@@ -46,14 +46,13 @@ namespace NachoCore.IMAP
                 // Not going to happen until we nix CancellationToken.None.
                 Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Cancelled");
                 return;
+            } catch (ServiceNotConnectedException) {
+                Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: Client is not connected.");
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPFSYNCRECONN");
+                return;
             } catch (InvalidOperationException e) {
-                if (!Client.IsConnected) {
-                    Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: Client is not connected.");
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPFSYNCRECONN");
-                } else {
-                    Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: {0}", e);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD1");
-                }
+                Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: {0}", e);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD1");
                 return;
             }
             catch (Exception e) {

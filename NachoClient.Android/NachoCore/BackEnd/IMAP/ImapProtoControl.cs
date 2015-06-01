@@ -477,12 +477,12 @@ namespace NachoCore.IMAP
                     break;
                 }
             }
+            catch (ServiceNotConnectedException) {
+                Log.Error (Log.LOG_IMAP, "DoPick: Client is not connected");
+                Sm.PostEvent ((uint)ImapEvt.E.ReConn, "IMAPPCKRECONN");
+                return;
+            }
             catch (InvalidOperationException e) {
-                if (!ImapClient.IsConnected) {
-                    Log.Error (Log.LOG_IMAP, "Client is not connected");
-                    Sm.PostEvent ((uint)ImapEvt.E.ReConn, "IMAPPCKRECONN");
-                    return;
-                }
                 Log.Error (Log.LOG_IMAP, "Unexpected error DoPick: {0}", e);
                 Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPICKHRDX");
                 return;
