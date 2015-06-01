@@ -397,7 +397,7 @@ namespace NachoCore.IMAP
                     try {
                         stream = folder.GetStream (summary.UniqueId.Value, text, true, 0, previewBytes);
                     }
-                    catch (ImapCommandException e) {
+                    catch (ImapCommandException) {
                         stream = folder.GetStream (summary.UniqueId.Value, text, false, 0, previewBytes);
                     }
                     preview = getTextFromStream (stream, text.ContentType, encoding(text.ContentTransferEncoding));
