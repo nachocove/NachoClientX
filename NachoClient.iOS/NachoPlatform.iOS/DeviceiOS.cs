@@ -130,11 +130,7 @@ namespace NachoPlatform
             }
             var ident = Keychain.Instance.GetIdentifierForVendor ();
             if (null == ident) {
-                Log.Info (Log.LOG_SYS, "Identity: saving IdentifierForVendor {0} in KeyChain.", ident);
                 ident = UIDevice.CurrentDevice.IdentifierForVendor.AsString ();
-                if (!Keychain.Instance.SetIdentifierForVendor (ident)) {
-                    Log.Error (Log.LOG_SYS, "Identity: unable to save IdentifierForVendor in KeyChain.");
-                }
             }
             _IdentityMemoize = "Ncho" + ident.Replace ('-', 'X').Substring (0, IdForVendorChars) + suffix;
             return _IdentityMemoize;
