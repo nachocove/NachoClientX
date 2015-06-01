@@ -29,7 +29,7 @@ namespace NachoCore.SMTP
             }
             if (checkConnected) {
                 if (!smtp.IsConnected) {
-                    throw new SmtpCommandFailure ("Client is not connected");
+                    throw new SmtpCommandFailure ("SmtpCommand: Client is not connected");
                 }
             }
             cToken = new CancellationTokenSource ();
