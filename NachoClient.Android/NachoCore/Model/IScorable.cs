@@ -36,21 +36,12 @@ namespace NachoCore.Utils
         //   2. Adjustment of collected statistics
         //   3. Recompute the score using a new function.
         // Each version may introduce new actions. This method will perform all
-        // actions from the object current version to the (score) version of 
+        // actions from the object current version to the (score) version of
         // NachoClient software.
         //
         // Note that this method may affect other objects. For example, scoring
         // an email message affects contacts.
         void ScoreObject ();
-
-        // Upload new delta to synchronization server. When an object's score
-        // states are updated, the delta is maintained. Periodically, the
-        // delta is uploaded to the synchronization server.
-        void UploadScore ();
-
-        // Look for a previously uploaded score in the synchronization server and
-        // download and use it for this object.
-        bool DownloadScore ();
     }
 }
 

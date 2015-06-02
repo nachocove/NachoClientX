@@ -51,10 +51,6 @@ namespace NachoCore.Model
         // Number of emails deleted without being read
         public int EmailsDeleted { get; set; }
 
-        // If there is update that is not uploaded to the synchronization server,
-        // this object is non-null and holds the update.
-        private McEmailAddressScoreSyncInfo SyncInfo { get; set; }
-
         public double GetScore ()
         {
             int total = EmailsReceived + EmailsSent + EmailsDeleted;
@@ -67,9 +63,6 @@ namespace NachoCore.Model
         public void ScoreObject ()
         {
             if (0 == ScoreVersion) {
-                if (!DownloadScore ()) {
-                    // Version 1 statistics are updated by emails. Nothing to do here
-                }
                 ScoreVersion++;
             }
             if (1 == ScoreVersion) {
@@ -86,32 +79,6 @@ namespace NachoCore.Model
             UpdateByBrain ();
         }
 
-        private void GetScoreSyncInfo ()
-        {
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = NcModel.Instance.Db.Table<McEmailAddressScoreSyncInfo> ()
-                .Where (x => x.EmailAddressId == Id)
-                .FirstOrDefault ();
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = new McEmailAddressScoreSyncInfo ();
-            SyncInfo.AccountId = AccountId;
-            SyncInfo.EmailAddressId = Id;
-            SyncInfo.InsertByBrain ();
-        }
-
-        private void ClearScoreSyncInfo ()
-        {
-            if (null == SyncInfo) {
-                return;
-            }
-            SyncInfo.DeleteByBrain ();
-            SyncInfo = null;
-        }
-
         public void MarkDependencies ()
         {
             MarkDependentEmailMessages ();
@@ -121,56 +88,31 @@ namespace NachoCore.Model
         public void IncrementEmailsReceived (int count = 1)
         {
             EmailsReceived += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsReceived += count;
             MarkDependencies ();
         }
 
         public void IncrementEmailsRead (int count = 1)
         {
             EmailsRead += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsRead += count;
             MarkDependencies ();
         }
 
         public void IncrementEmailsReplied (int count = 1)
         {
             EmailsReplied += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsReplied += count;
             MarkDependencies ();
         }
 
         public void IncrementEmailsArchived (int count = 1)
         {
             EmailsArchived += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsArchived += count;
             MarkDependencies ();
         }
 
         public void IncrementEmailsDeleted (int count = 1)
         {
             EmailsDeleted += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsDeleted += count;
             MarkDependencies ();
-        }
-
-        public void UploadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "contact id = {0}", Id);
-            if (null != SyncInfo) {
-                // TODO - Add real implementation. Currently, just clear the delta
-                ClearScoreSyncInfo ();
-            }
-        }
-
-        public bool DownloadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "contact id = {0}", Id);
-            return false;
         }
 
         public void MarkDependentEmailMessages ()
@@ -199,9 +141,6 @@ namespace NachoCore.Model
                 NcBrain brain = NcBrain.SharedInstance;
                 brain.McEmailAddressCounters.Update.Click ();
                 brain.NotifyEmailAddressUpdates ();
-                if (null != SyncInfo) {
-                    SyncInfo.Update ();
-                }
             }
         }
 
