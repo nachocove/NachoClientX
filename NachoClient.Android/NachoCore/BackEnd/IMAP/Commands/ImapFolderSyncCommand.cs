@@ -21,52 +21,30 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderSyncCommand : ImapCommand
     {
-        public ImapFolderSyncCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapFolderSyncCommand (IBEContext beContext) : base (beContext)
         {
         }
 
-        public override void Execute (NcStateMachine sm)
+        protected override Event ExecuteCommand ()
         {
             // Right now, we rely on MailKit's FolderCache so access is synchronous.
             IEnumerable<IMailFolder> folderList;
-            try {
-                // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
-                // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
-                // skip the GetFolders if it's semi-recent (seconds).
-                lock(Client.SyncRoot) {
-                    if (Client.PersonalNamespaces.Count == 0) {
-                        Log.Error (Log.LOG_IMAP, "No personal namespaces");
-                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
-                        return;
-                    }
-                    // TODO Should we loop over all namespaces here? Typically there appears to be only one.
-                    folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
+            // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
+            // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
+            // skip the GetFolders if it's semi-recent (seconds).
+            lock (Client.SyncRoot) {
+                if (Client.PersonalNamespaces.Count == 0) {
+                    Log.Error (Log.LOG_IMAP, "No personal namespaces");
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
                 }
-            } catch (OperationCanceledException) {
-                // Not going to happen until we nix CancellationToken.None.
-                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Cancelled");
-                return;
-            } catch (ServiceNotConnectedException) {
-                Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: Client is not connected.");
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPFSYNCRECONN");
-                return;
-            } catch (InvalidOperationException e) {
-                Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD1");
-                return;
-            }
-            catch (Exception e) {
-                Log.Error (Log.LOG_IMAP, "GetFolders: Unexpected exception: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD2");
-                return;
+                // TODO Should we loop over all namespaces here? Typically there appears to be only one.
+                folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
             }
 
             if (null == folderList) {
                 Log.Error (Log.LOG_IMAP, "Could not refresh folder list");
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD3");
-                return;
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD3");
             }
-
 
             // Process all incoming folders. Create or update them
             List<string> foldernames = new List<string> (); // Keep track of folder names, so we can compare later.
@@ -110,7 +88,7 @@ namespace NachoCore.IMAP
                     folder.Delete ();
                 }
             }
-            sm.PostEvent ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
 
         private string parentId(IMailFolder mailKitFolder)

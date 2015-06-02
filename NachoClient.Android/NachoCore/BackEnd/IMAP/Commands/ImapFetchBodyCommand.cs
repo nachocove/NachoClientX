@@ -21,46 +21,30 @@ namespace NachoCore.IMAP
     public class ImapFetchBodyCommand : ImapCommand
     {
         ImapFolder _folder { get; set; }
-        public ImapFetchBodyCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFetchBodyCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             pending.MarkDispached ();
             PendingSingle = pending;
             _folder = null;
         }
 
-        public override void Execute (NcStateMachine sm)
+        protected override Event ExecuteCommand ()
         {
-            try {
-                lock (Client.SyncRoot) {
-                    var result = ProcessPending (sm, PendingSingle);
-                    if (result.isInfo ()) {
-                        PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, result);
-                        sm.PostEvent ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
-                    } else if (result.isError ()) {
-                        PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, result);
-                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
-                    }
-                }
-            } catch (OperationCanceledException) {
-                PendingSingle.ResolveAsCancelled ();
-                return;
-            } catch (ServiceNotConnectedException) {
-                PendingSingle.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow,
-                    NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError,
-                        NcResult.WhyEnum.ServerError));
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Client is not connected.");
-                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPBDYRECONN");
-                return;
-            } catch (InvalidOperationException e) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: {0}", e);
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed));
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD1");
-                return;
-            } catch (Exception e) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Unexpected exception: {0}", e);
-                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed));
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD2");
-                return;
+            NcResult result = null;
+            lock (Client.SyncRoot) {
+                result = ProcessPending (PendingSingle);
+            }
+            if (result.isInfo ()) {
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                });
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
+            } else {
+                NcAssert.True (result.isError ());
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
+                });
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
             }
         }
 
@@ -75,7 +59,7 @@ namespace NachoCore.IMAP
             return _folder;
         }
 
-        private NcResult ProcessPending(NcStateMachine sm, McPending pending)
+        private NcResult ProcessPending (McPending pending)
         {
             McPending.Operations op;
             if (null == pending) {
@@ -86,7 +70,7 @@ namespace NachoCore.IMAP
             }
             switch (op) {
             case McPending.Operations.EmailBodyDownload:
-                return FetchOneBody (sm, pending);
+                return FetchOneBody (pending);
 
             default:
                 NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
@@ -95,7 +79,7 @@ namespace NachoCore.IMAP
             return NcResult.Error ("Unknown operation");
         }
 
-        private NcResult FetchOneBody(NcStateMachine sm, McPending pending)
+        private NcResult FetchOneBody (McPending pending)
         {
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             NcResult result;
@@ -125,12 +109,10 @@ namespace NachoCore.IMAP
                         bodyAsString = imapbody.TextBody;
                     } else {
                         Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
-                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYPLAIN");
                         return NcResult.Error ("Unhandled text subtype");
                     }
                 } else {
                     Log.Error (Log.LOG_IMAP, "Unhandled mime subtype {0}", imapbody.Body.ContentType.ToString ());
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYMIME");
                     return NcResult.Error ("Unhandled mimetype subtype");
                 }
 

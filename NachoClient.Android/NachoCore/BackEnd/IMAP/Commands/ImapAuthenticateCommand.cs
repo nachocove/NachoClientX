@@ -20,49 +20,35 @@ namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
-        public ImapAuthenticateCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapAuthenticateCommand (IBEContext beContext) : base (beContext)
         {
         }
 
-        public override void Execute (NcStateMachine sm)
+        public void ConnectAndAuthenticate ()
         {
-            NcTask.Run (() => {
-                try {
-                    lock (Client.SyncRoot) {
-                        if (Client.IsConnected) {
-                            Client.Disconnect (false, Cts.Token);
-                        }
-                        Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
-                        // FIXME - add support for OAUTH2.
-                        Client.AuthenticationMechanisms.Remove ("XOAUTH");
-                        Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+            if (!Client.IsConnected) {
+                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
+            }
+            // FIXME - add support for OAUTH2.
+            Client.AuthenticationMechanisms.Remove ("XOAUTH");
+            Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+            Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+        }
+
+        protected override Event ExecuteCommand ()
+        {
+            try {
+                lock (Client.SyncRoot) {
+                    if (Client.IsConnected) {
+                        Client.Disconnect (false, Cts.Token);
                     }
-                    sm.PostEvent ((uint)SmEvt.E.Success, "IMAPAUTHSUC");
-                } catch (OperationCanceledException) {
-                    // Not going to happen until we nix CancellationToken.None.
-                    Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: Cancelled");
-                } catch (IOException) {
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPAUTHTEMP1");
-                } catch (AuthenticationException) {
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTHFAIL");
-                } catch (NotSupportedException ex) {
-                    Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPAUTHHARD0");
-                } catch (InvalidOperationException ex) {
-                    if (!Client.IsConnected) {
-                        Log.Error (Log.LOG_IMAP, "ImapAuthenticateCommand: Client is not connected.");
-                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPAUTHRECONN");
-                    } else {
-                        Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: InvalidOperationException: {0}", ex.ToString ());
-                        sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPAUTHTEMP0");
-                    }
-                    return;
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "ImapAuthenticateCommand: Unexpected exception: {0}", ex.ToString ());
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPAUTHHARDX");
+                    ConnectAndAuthenticate ();
                 }
-            }, "ImapAuthenticateCommand");
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPAUTHSUC");
+            } catch (NotSupportedException ex) {
+                Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPAUTHHARD0");
+            }
         }
     }
 }

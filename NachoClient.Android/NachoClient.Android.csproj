@@ -147,7 +147,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncContactCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEmailCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncEventCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\IAsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Operations\AsDnsOperation.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Operations\AsHttpOperation.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Operations\IAsDnsOperationOwner.cs" />
@@ -414,7 +413,6 @@
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\IImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs" />
@@ -423,6 +421,8 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration27.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration28.cs" />
+    <Compile Include="NachoCore\BackEnd\NcCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\INcCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

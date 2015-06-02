@@ -31,114 +31,98 @@ namespace NachoCore.IMAP
         public class MailSummary
         {
             public MessageSummary imapSummary { get; set; }
+
             public string preview { get; set; }
+
             public string body { get; set; }
+
             public McAbstrFileDesc.BodyTypeEnum bodyType { get; set; }
         }
 
-        public ImapSyncCommand (IBEContext beContext, ImapClient imap, SyncKit syncKit) : base (beContext, imap)
+        public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
         {
             SyncKit = syncKit;
         }
 
-        public override void Execute (NcStateMachine sm)
+        protected override Event ExecuteCommand ()
         {
-            NcTask.Run (() => {
-                List<MailSummary> summaries = new List<MailSummary>();
-                try {
-                    // TODO - put inside a function that returns Event.
-                    if (!Client.IsConnected) {
-                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCCONN");
-                        return;
-                    }
-                    if (!SyncKit.MailKitFolder.IsOpen) {
-                        FolderAccess access;
-                        lock (Client.SyncRoot) {
-                            access = SyncKit.MailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-                        }
-                        if (FolderAccess.None == access) {
-                            sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
-                            return;
-                        }
-                    }
-                    switch (SyncKit.Method) {
-                    case SyncKit.MethodEnum.Range:
-                        lock (Client.SyncRoot) {
-                            IList<IMessageSummary> imapSummaries = SyncKit.MailKitFolder.Fetch (
-                                new UniqueIdRange (new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start),
-                                    new UniqueId (SyncKit.MailKitFolder.UidValidity, SyncKit.Start + SyncKit.Span)),
-                                SyncKit.Flags, Cts.Token);
-                            foreach (var imapSummary in imapSummaries) {
-                                string body;
-                                McAbstrFileDesc.BodyTypeEnum bodyType;
-                                var preview = getPreviewFromSummary(imapSummary as MessageSummary, SyncKit.MailKitFolder, out body, out bodyType);
-                                summaries.Add (new MailSummary() {
-                                    imapSummary = imapSummary as MessageSummary,
-                                    preview = preview,
-                                    body = body,
-                                    bodyType = bodyType,
-                                });
-                            }
-                        }
-                        break;
-                    case SyncKit.MethodEnum.OpenOnly:
-                        // Just load UID with SELECT.
-                        sm.PostEvent ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
-                        return;
-                    }
-                } catch (OperationCanceledException) {
-                    Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Cancelled");
-                    return;
-                } catch (ServiceNotConnectedException) {
-                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Client is not connected.");
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCRECONN");
-                    return;
-                } catch (InvalidOperationException e) {
-                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARD0");
-                    return;
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Unexpected exception: {0}", ex.ToString ());
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDX"); 
+            // FIXME - need map from McFolder to MailKit folder.
+            List<MailSummary> summaries = new List<MailSummary> ();
+            if (!Client.Inbox.IsOpen) {
+                FolderAccess access;
+                lock (Client.SyncRoot) {
+                    access = Client.Inbox.Open (FolderAccess.ReadOnly, Cts.Token);
                 }
-                if (null != summaries && 0 < summaries.Count) {
-                    foreach (var summary in summaries) {
-                        // FIXME use NcApplyServerCommand framework.
-                        var uniqueId = summary.imapSummary.UniqueId.Value.Id;
-                        ServerSaysAddOrChangeEmail (summary, SyncKit.Folder);
-                        if (uniqueId > SyncKit.Folder.ImapUidHighestUidSynced ||
+                if (FolderAccess.None == access) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                }
+            }
+            switch (SyncKit.Method) {
+            case SyncKit.MethodEnum.Range:
+                lock (Client.SyncRoot) {
+                    IList<IMessageSummary> imapSummaries = Client.Inbox.Fetch (
+                        new UniqueIdRange (new UniqueId (Client.Inbox.UidValidity, SyncKit.Start),
+                            new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
+                                                                   SyncKit.Flags, Cts.Token);
+                    foreach (var imapSummary in imapSummaries) {
+                        string body;
+                        McAbstrFileDesc.BodyTypeEnum bodyType;
+                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox, out body, out bodyType);
+                        summaries.Add (new MailSummary () {
+                            imapSummary = imapSummary as MessageSummary,
+                            preview = preview,
+                            body = body,
+                            bodyType = bodyType,
+                        });
+                    }
+                }
+                break;
+            case SyncKit.MethodEnum.OpenOnly:
+                // Just load UID with SELECT.
+                SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ImapUidNext = Client.Inbox.UidNext.Value.Id;
+                    target.ImapUidValidity = Client.Inbox.UidValidity;
+                    return true;
+                });
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
+            }
+            if (null != summaries && 0 < summaries.Count) {
+                foreach (var summary in summaries) {
+                    // FIXME use NcApplyServerCommand framework.
+                    var uniqueId = summary.imapSummary.UniqueId.Value.Id;
+                    ServerSaysAddOrChangeEmail (summary, SyncKit.Folder);
+                    if (uniqueId > SyncKit.Folder.ImapUidHighestUidSynced ||
                             uniqueId < SyncKit.Folder.ImapUidLowestUidSynced) {
-                            SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                                var target = (McFolder)record;
-                                target.ImapUidHighestUidSynced = Math.Max (uniqueId, target.ImapUidHighestUidSynced);
-                                target.ImapUidLowestUidSynced = Math.Min (uniqueId, target.ImapUidLowestUidSynced);
-                                return true;
-                            });
-                        }
-                    }
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                } else {
-                    // All the messages could be deleted on the server. Record UIDs of the dead spot to keep from looping.
-                    SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                        var target = (McFolder)record;
-                        target.ImapUidHighestUidSynced = Math.Max (SyncKit.Start + SyncKit.Span, target.ImapUidHighestUidSynced);
-                        target.ImapUidLowestUidSynced = Math.Min (SyncKit.Start, target.ImapUidLowestUidSynced);
-                        return true;
-                    });
-                }
-                if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == SyncKit.Folder.Type)
-                {
-                    var protocolState = BEContext.ProtocolState;
-                    if (!protocolState.HasSyncedInbox) {
-                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                            var target = (McProtocolState)record;
-                            target.HasSyncedInbox = true;
+                        SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                            var target = (McFolder)record;
+                            target.ImapUidHighestUidSynced = Math.Max (uniqueId, target.ImapUidHighestUidSynced);
+                            target.ImapUidLowestUidSynced = Math.Min (uniqueId, target.ImapUidLowestUidSynced);
                             return true;
                         });
                     }
                 }
-                sm.PostEvent ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
-            }, "ImapSyncCommand");
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            } else {
+                // All the messages could be deleted on the server. Record UIDs of the dead spot to keep from looping.
+                SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ImapUidHighestUidSynced = Math.Max (SyncKit.Start + SyncKit.Span, target.ImapUidHighestUidSynced);
+                    target.ImapUidLowestUidSynced = Math.Min (SyncKit.Start, target.ImapUidLowestUidSynced);
+                    return true;
+                });
+            }
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == SyncKit.Folder.Type) {
+                var protocolState = BEContext.ProtocolState;
+                if (!protocolState.HasSyncedInbox) {
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.HasSyncedInbox = true;
+                        return true;
+                    });
+                }
+            }
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
         public McEmailMessage ServerSaysAddOrChangeEmail (MailSummary summary, McFolder folder)
@@ -174,7 +158,7 @@ namespace NachoCore.IMAP
 
             // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
             NcModel.Instance.RunInTransaction (() => {
-                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty(emailMessage.To)) {
+                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty (emailMessage.To)) {
                     if (!folder.IsJunkFolder ()) {
                         NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
                     }
@@ -361,7 +345,7 @@ namespace NachoCore.IMAP
             return NcResult.OK (emailMessage);
         }
 
-        private string getPreviewFromSummary(MessageSummary summary, IMailFolder folder, out string body, out McAbstrFileDesc.BodyTypeEnum bodyType)
+        private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder, out string body, out McAbstrFileDesc.BodyTypeEnum bodyType)
         {
             string preview;
 
@@ -392,7 +376,7 @@ namespace NachoCore.IMAP
                     if (text.Octets <= 4096) {
                         previewBytes = (int)text.Octets;
                     } else {
-                        previewBytes = isPlain ? PreviewSizeBytes : PreviewSizeBytes*4;
+                        previewBytes = isPlain ? PreviewSizeBytes : PreviewSizeBytes * 4;
                     }
                     Stream stream;
                     string partSpecifier = text.PartSpecifier;
@@ -403,8 +387,7 @@ namespace NachoCore.IMAP
                     }
                     try {
                         stream = folder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
-                    }
-                    catch (ImapCommandException e) {
+                    } catch (ImapCommandException e) {
                         Log.Warn (Log.LOG_IMAP, "Need to adjust partSpecifier for part {0} {1} {2}", text.PartSpecifier, text.ContentTransferEncoding, e);
                         stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
                     }
@@ -416,11 +399,11 @@ namespace NachoCore.IMAP
                     preview = getTextFromStream (stream, text.ContentType, encoding);
                     if (text.Octets <= 4096) {
                         body = preview;
-                        preview = body.Substring (0, Math.Min(PreviewSizeBytes, body.Length));
+                        preview = body.Substring (0, Math.Min (PreviewSizeBytes, body.Length));
                         bodyType = isPlain ? McAbstrFileDesc.BodyTypeEnum.PlainText_1 : McAbstrFileDesc.BodyTypeEnum.HTML_2;
                     }
                     if (!isPlain) {
-                        var p = Html2Text(preview);
+                        var p = Html2Text (preview);
                         if (string.Empty == p) {
                             Log.Warn (Log.LOG_IMAP, "Html-converted preview is empty. Source {0}", preview);
                             preview = "(No Preview available)";
@@ -437,7 +420,7 @@ namespace NachoCore.IMAP
             return preview;
         }
 
-        private BodyPartText findPreviewablePart(MessageSummary summary, out bool isPlaintext)
+        private BodyPartText findPreviewablePart (MessageSummary summary, out bool isPlaintext)
         {
             Log.Info (Log.LOG_IMAP, "Finding text bodypart for uid {0}", summary.UniqueId.Value.Id);
             BodyPartText text;
@@ -462,7 +445,7 @@ namespace NachoCore.IMAP
             return text;
         }
 
-        private string getTextFromStream(Stream stream, ContentType type, ContentEncoding enc)
+        private string getTextFromStream (Stream stream, ContentType type, ContentEncoding enc)
         {
             using (var decoded = new MemoryStream ()) {
                 using (var filtered = new FilteredStream (decoded)) {
@@ -472,12 +455,12 @@ namespace NachoCore.IMAP
                     stream.CopyTo (filtered);
                 }
                 var buffer = decoded.GetBuffer ();
-                var length = (int) decoded.Length;
+                var length = (int)decoded.Length;
                 return Encoding.UTF8.GetString (buffer, 0, length);
             }
         }
 
-        private string Html2Text(string html)
+        private string Html2Text (string html)
         {
             HtmlDocument doc = new HtmlDocument ();
             doc.LoadHtml (html);
@@ -488,17 +471,16 @@ namespace NachoCore.IMAP
             return sw.ToString ();
         }
 
-        public void ConvertTo(HtmlNode node, TextWriter outText)
+        public void ConvertTo (HtmlNode node, TextWriter outText)
         {
             string html;
-            switch(node.NodeType)
-            {
+            switch (node.NodeType) {
             case HtmlNodeType.Comment:
                 // don't output comments
                 break;
 
             case HtmlNodeType.Document:
-                ConvertContentTo(node, outText);
+                ConvertContentTo (node, outText);
                 break;
 
             case HtmlNodeType.Text:
@@ -511,38 +493,34 @@ namespace NachoCore.IMAP
                 html = ((HtmlTextNode)node).Text;
 
                 // is it in fact a special closing node output as text?
-                if (HtmlNode.IsOverlappedClosingElement(html))
+                if (HtmlNode.IsOverlappedClosingElement (html))
                     break;
 
                 // check the text is meaningful and not a bunch of whitespaces
-                if (html.Trim().Length > 0)
-                {
-                    outText.Write(HtmlEntity.DeEntitize(html));
+                if (html.Trim ().Length > 0) {
+                    outText.Write (HtmlEntity.DeEntitize (html));
                 }
                 break;
 
             case HtmlNodeType.Element:
-                switch(node.Name)
-                {
+                switch (node.Name) {
                 case "p":
                     // treat paragraphs as crlf
-                    outText.Write("\r\n");
+                    outText.Write ("\r\n");
                     break;
                 }
 
-                if (node.HasChildNodes)
-                {
-                    ConvertContentTo(node, outText);
+                if (node.HasChildNodes) {
+                    ConvertContentTo (node, outText);
                 }
                 break;
             }
         }
 
-        private void ConvertContentTo(HtmlNode node, TextWriter outText)
+        private void ConvertContentTo (HtmlNode node, TextWriter outText)
         {
-            foreach(HtmlNode subnode in node.ChildNodes)
-            {
-                ConvertTo(subnode, outText);
+            foreach (HtmlNode subnode in node.ChildNodes) {
+                ConvertTo (subnode, outText);
             }
         }
 
