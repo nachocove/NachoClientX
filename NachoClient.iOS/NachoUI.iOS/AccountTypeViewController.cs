@@ -14,12 +14,13 @@ namespace NachoClient.iOS
 {
     public partial class AccountTypeViewController : NcUIViewControllerNoLeaks
     {
-        const float BUTTON_SIZE = 64;
+        const float BUTTON_SIZE = 60;
         const float BUTTON_LABEL_HEIGHT = 40;
         const float BUTTON_PADDING_HEIGHT = 15;
         const float BUTTON_PADDING_WIDTH = 35;
 
         public delegate void ServiceSelectedCallback (McAccount.AccountServiceEnum service);
+
         public ServiceSelectedCallback ServiceSelected;
 
         public AccountTypeViewController (IntPtr handle) : base (handle)
@@ -56,24 +57,21 @@ namespace NachoClient.iOS
 
             yOffset = sectionSeparator.Frame.Bottom + 20;
 
-            List<ButtonInfo> buttonInfoList;
+            McAccount.AccountServiceEnum[] buttonInfoList = new McAccount.AccountServiceEnum[] {
+                McAccount.AccountServiceEnum.Exchange,
+                McAccount.AccountServiceEnum.GoogleDefault,
+                McAccount.AccountServiceEnum.GoogleExchange,
+                McAccount.AccountServiceEnum.None,    
+                McAccount.AccountServiceEnum.HotmailExchange,
+                McAccount.AccountServiceEnum.iCloud,
+                McAccount.AccountServiceEnum.IMAP_SMTP,
+                McAccount.AccountServiceEnum.None,
+                McAccount.AccountServiceEnum.Office365Exchange,
+                McAccount.AccountServiceEnum.OutlookExchange,
+                McAccount.AccountServiceEnum.Yahoo,
+                McAccount.AccountServiceEnum.None,
+            };
 
-            buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Exchange", "modal-exchange", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("Gmail", "modal-gmail", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.GoogleDefault)),
-                new ButtonInfo ("Google Apps", "modal-googleapps", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.GoogleExchange)),
-                new ButtonInfo (null, null, null),
-                new ButtonInfo ("Office 365", "modal-office365", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("Outlook", "modal-outlook", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.OutlookExchange)),
-                new ButtonInfo ("Hotmail", "modal-hotmail", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.HotmailExchange)),
-                new ButtonInfo (null, null, null),
-                new ButtonInfo ("Yahoo!", "modal-yahoo", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.Yahoo)),
-                new ButtonInfo ("iCloud", "modal-icloud", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.iCloud)),
-                new ButtonInfo ("IMAP", "modal-imap", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.IMAP_SMTP)),
-                new ButtonInfo (null, null, null),
-                null,
-            });
-              
             var center = View.Center;
             center.X = (View.Frame.Width / 2);
             center.Y = center.Y;
@@ -82,12 +80,8 @@ namespace NachoClient.iOS
 
             yOffset += (BUTTON_SIZE / 2);
 
-            foreach (var buttonInfo in buttonInfoList) {
-                if (null == buttonInfo) {
-                    xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
-                    continue;
-                }
-                if (null == buttonInfo.buttonLabel) {
+            foreach (var service in buttonInfoList) {
+                if (McAccount.AccountServiceEnum.None == service) {
                     xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
                     yOffset += BUTTON_SIZE + BUTTON_LABEL_HEIGHT + BUTTON_PADDING_HEIGHT;
                     continue;
@@ -100,22 +94,23 @@ namespace NachoClient.iOS
                 buttonRect.Layer.BorderWidth = .5f;                 
                 buttonRect.Frame = new CGRect (0, 0, BUTTON_SIZE, BUTTON_SIZE);
                 buttonRect.Center = new CGPoint (xOffset, yOffset);
-                using (var image = UIImage.FromBundle (buttonInfo.buttonIcon).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                var imageName = Util.GetAccountServiceImageName (service);
+                using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     buttonRect.SetImage (image, UIControlState.Normal);
                 }
-                buttonRect.AccessibilityLabel = buttonInfo.buttonLabel;
+                buttonRect.AccessibilityLabel = McAccount.AccountServiceName (service);
                 buttonRect.TouchUpInside += (object sender, EventArgs e) => {
-                    buttonInfo.buttonAction ();
+                    ServiceSelected_Clicked (service);
                 };
                 View.Add (buttonRect);
 
                 var label = new UILabel ();
                 label.TextColor = UIColor.White;
-                label.Text = buttonInfo.buttonLabel;
+                label.Text = McAccount.AccountServiceName (service);
                 label.Font = A.Font_AvenirNextMedium14;
                 label.TextAlignment = UITextAlignment.Center;
                 label.SizeToFit ();
-                label.Center = new CGPoint (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
+                label.Center = new CGPoint (xOffset, yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
                 View.Add (label);
 
                 xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
@@ -145,20 +140,5 @@ namespace NachoClient.iOS
             DismissModalViewController (true);
         }
 
-        protected class ButtonInfo
-        {
-            public string buttonLabel { get; set; }
-
-            public string buttonIcon { get; set; }
-
-            public Action buttonAction { get; set; }
-
-            public ButtonInfo (string bl, string bi, Action ba)
-            {
-                buttonLabel = bl;
-                buttonIcon = bi;
-                buttonAction = ba;
-            }
-        }
     }
 }

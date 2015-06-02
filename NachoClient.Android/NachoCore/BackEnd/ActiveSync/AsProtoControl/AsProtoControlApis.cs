@@ -20,7 +20,7 @@ namespace NachoCore.ActiveSync
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4})", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
-            if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
+            if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return SendEmailCmd (newEmailMessageId);
             }
             McFolder folder;
@@ -489,7 +489,7 @@ namespace NachoCore.ActiveSync
                 // In this (these?) scenarios, update the Cal item in the DB, and Sync the change to the server.
                 //
                 if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 != folder.Type &&
-                14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
+                    14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                     var cal = item as McCalendar;
                     if (null == cal) {
                         result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
