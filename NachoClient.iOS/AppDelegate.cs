@@ -380,7 +380,7 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if(LoginHelpers.ReadyToStart()) {
+            if (LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -803,13 +803,12 @@ namespace NachoClient.iOS
             if (hasFirstSyncCompleted == false) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
-                    Account = McAccount.QueryById<McAccount>(accountId),
+                    Account = McAccount.QueryById<McAccount> (accountId),
                 });
             } else {
                 DisplayCredentialsFixView (accountId);
             }
         }
-
 
         public void ServConfReqCallback (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg = null)
         {
@@ -836,7 +835,7 @@ namespace NachoClient.iOS
                 status.Value = capabilities;
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = status,
-                    Account = ConstMcAccount.NotAccountSpecific,
+                    Account = McAccount.QueryById<McAccount> (accountId),
                 });
             } else {
 
@@ -918,7 +917,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
-                    Account = McAccount.QueryById<McAccount>(accountId),
+                    Account = McAccount.QueryById<McAccount> (accountId),
                 });
             } else {
                 // UI FIXME - ask user and call CertAskResp async'ly.
