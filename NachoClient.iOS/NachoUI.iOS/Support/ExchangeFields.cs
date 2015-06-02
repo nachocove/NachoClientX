@@ -326,23 +326,6 @@ namespace NachoClient.iOS
             theAccount.Account.EmailAddr = emailView.textField.Text.Trim ();
             theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
 
-            if (showAdvanced) {
-                SaveAdvancedSettings (ref theAccount);
-                SaveServerSettings (ref theAccount);
-            } else {
-                theAccount.Credentials.UserSpecifiedUsername = true;
-                theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
-            }
-
-            // Update the database
-            theAccount.Account.Update ();
-            theAccount.Credentials.Update ();
-            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", theAccount.Account.Id, theAccount.Credentials.Id, theAccount.Credentials.UserSpecifiedUsername);
-
-        }
-
-        void SaveAdvancedSettings (ref AdvancedLoginViewController.AccountSettings theAccount)
-        {
             // If the user clears the username, we'll let them start over
             if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
                 theAccount.Credentials.UserSpecifiedUsername = false;
@@ -352,6 +335,15 @@ namespace NachoClient.iOS
                 theAccount.Credentials.UserSpecifiedUsername = true;
                 theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
             }
+                
+            if (showAdvanced) {
+                SaveServerSettings (ref theAccount);
+            }
+
+            // Update the database
+            theAccount.Account.Update ();
+            theAccount.Credentials.Update ();
+            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", theAccount.Account.Id, theAccount.Credentials.Id, theAccount.Credentials.UserSpecifiedUsername);
         }
 
         /// <summary>
