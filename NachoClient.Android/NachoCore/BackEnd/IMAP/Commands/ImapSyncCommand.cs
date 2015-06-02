@@ -299,7 +299,7 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
                         emailMessage.IsRead = true;
                     }
-                    // TODO Where do we set these flags?
+                    // FIXME Where do we set these flags?
                     if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
                     }
                     if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
@@ -311,12 +311,12 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
                     }
                     if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
-                        // TODO See if these are handled by the summary.UserFlags
+                        // FIXME See if these are handled by the summary.UserFlags
                     }
                 }
             }
             if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
-                // TODO Where do we set these flags?
+                // FIXME Where do we set these flags?
             }
 
             if (null != summary.Headers) {
@@ -408,7 +408,12 @@ namespace NachoCore.IMAP
                         Log.Warn (Log.LOG_IMAP, "Need to adjust partSpecifier for part {0} {1} {2}", text.PartSpecifier, text.ContentTransferEncoding, e);
                         stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
                     }
-                    preview = getTextFromStream (stream, text.ContentType, encoding(text.ContentTransferEncoding));
+                    ContentEncoding encoding;
+                    if (!MimeKit.Utils.MimeUtils.TryParse(text.ContentTransferEncoding, out encoding)) {
+                        Log.Error (Log.LOG_IMAP, "findPreviewText: Could not parse ContentTransferEncoding {0}", text.ContentTransferEncoding);
+                        encoding = ContentEncoding.Default;
+                    }
+                    preview = getTextFromStream (stream, text.ContentType, encoding);
                     if (text.Octets <= 4096) {
                         body = preview;
                         preview = body.Substring (0, Math.Min(PreviewSizeBytes, body.Length));
@@ -455,22 +460,6 @@ namespace NachoCore.IMAP
                 isPlaintext = true;
             }
             return text;
-        }
-
-        private ContentEncoding encoding(string contentEncoding)
-        {
-            ContentEncoding enc;
-            switch (contentEncoding.ToLower ()) {
-            case "7bit":             enc = ContentEncoding.SevenBit; break;
-            case "8bit":             enc = ContentEncoding.EightBit; break;
-            case "binary":           enc = ContentEncoding.Binary; break;
-            case "base64":           enc = ContentEncoding.Base64; break;
-            case "quoted-printable": enc = ContentEncoding.QuotedPrintable; break;
-            case "x-uuencode":       enc = ContentEncoding.UUEncode; break;
-            case "uuencode":         enc = ContentEncoding.UUEncode; break;
-            default:                 enc = ContentEncoding.Default; break;
-            }
-            return enc;
         }
 
         private string getTextFromStream(Stream stream, ContentType type, ContentEncoding enc)
