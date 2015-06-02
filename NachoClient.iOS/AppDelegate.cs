@@ -287,6 +287,10 @@ namespace NachoClient.iOS
                 PushAssist.Initialize ();
                 ServerCertificatePeek.Initialize ();
                 StartUIMonitor ();
+
+                NcApplication.Instance.CredReqCallback = CredReqCallback;
+                NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
+                NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
             }
 
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
@@ -342,12 +346,6 @@ namespace NachoClient.iOS
             NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(CidImageProtocol)));
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
-
-            NcApplication.Instance.CredReqCallback = CredReqCallback;
-            NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
-            NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
-
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
                 Telemetry.SharedInstance.Throttling = false;
