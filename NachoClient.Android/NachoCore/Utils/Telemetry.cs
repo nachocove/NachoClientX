@@ -154,23 +154,29 @@ namespace NachoCore.Utils
             RecordJsonEvent (type, jsonEvent);
         }
 
-        public static void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
+        protected static void RecordProtocolEvent (TelemetryEventType type, byte[] payload)
         {
             if (!ENABLED) {
                 return;
             }
 
-            TelemetryEventType type;
-            if (isRequest) {
-                type = TelemetryEventType.WBXML_REQUEST;
-            } else {
-                type = TelemetryEventType.WBXML_RESPONSE;
-            }
             // TODO - Add check for the limit of wbxml. But we need to limit the base64 encode no the binary bytes.
-            var jsonEvent = new TelemetryWbxmlEvent (type) {
-                wbxml = wbxml
+            var jsonEvent = new TelemetryProtocolEvent (type) {
+                payload = payload,
             };
             RecordJsonEvent (type, jsonEvent);
+        }
+
+        public static void RecordWbxmlEvent (bool isRequest, byte[] wbxml)
+        {
+            var type = isRequest ? TelemetryEventType.WBXML_REQUEST : TelemetryEventType.WBXML_RESPONSE;
+            RecordProtocolEvent (type, wbxml);
+        }
+
+        public static void RecordImapEvent (bool isRequest, byte[] payload)
+        {
+            var type = isRequest ? TelemetryEventType.IMAP_REQUEST : TelemetryEventType.IMAP_RESPONSE;
+            RecordProtocolEvent (type, payload);
         }
 
         public static void RecordCounter (string name, Int64 count, DateTime start, DateTime end)
