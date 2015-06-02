@@ -24,7 +24,6 @@ namespace NachoCore.IMAP
 
         public ImapCommand (IBEContext beContext) : base (beContext)
         {
-            BEContext = beContext;
             Client = ((ImapProtoControl)BEContext.ProtoControl).ImapClient;
         }
 
