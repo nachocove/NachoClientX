@@ -55,36 +55,46 @@ namespace NachoCore.ActiveSync
             });
         }
 
+        // The ActiveSync protocol versions that are supported by this app, from newest to oldest
+        // (or from most preferred to least preferred).
+        private static string[] SupportedVersions = new string[] { "14.1", "14.0", "12.1", "12.0" };
+
         internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
         {
             IEnumerable<string> values = null;
             McProtocolState protocolState = beContext.ProtocolState;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
             if (retval && null != values && 0 < values.Count ()) {
-                // numerically sort and pick the highest version.
                 if (1 != values.Count ()) {
                     Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
                 }
                 var value = values.First ();
                 Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions: {0}", value);
-                float[] float_versions;
-                try {
-                    float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x, System.Globalization.CultureInfo.InvariantCulture));
-                } catch (FormatException e) {
-                    Log.Error (Log.LOG_AS, "FormatException \"{0}\" while parsing MS-ASProtocolVersions. Defaulting to version 12.1", e.Message);
-                    float_versions = new float[] { 12.1f };
-                } catch (OverflowException e) {
-                    Log.Error (Log.LOG_AS, "OverflowException \"{0}\" while parsing MS-ASProtocolVersions. Defaulting to version 12.1", e.Message);
-                    float_versions = new float[] { 12.1f };
+                // Loop through the protocol versions that the app understands, in the preferred order.
+                bool foundMatch = false;
+                foreach (var supportedVersion in SupportedVersions) {
+                    if (value == supportedVersion ||
+                        value.StartsWith (supportedVersion + ",") ||
+                        value.EndsWith ("," + supportedVersion) ||
+                        value.Contains ("," + supportedVersion + ","))
+                    {
+                        foundMatch = true;
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsProtocolVersion = supportedVersion;
+                            return true;
+                        });
+                        break;
+                    }
                 }
-                Array.Sort (float_versions);
-                Array.Reverse (float_versions);
-                string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0", System.Globalization.CultureInfo.InvariantCulture));
-                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                    var target = (McProtocolState)record;
-                    target.AsProtocolVersion = versions [0];
-                    return true;
-                });
+                if (!foundMatch) {
+                    Log.Error (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions does not contain a version supported by this client. Defaulting to version 12.0.");
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsProtocolVersion = "12.0";
+                        return true;
+                    });
+                }
             } else {
                 Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
