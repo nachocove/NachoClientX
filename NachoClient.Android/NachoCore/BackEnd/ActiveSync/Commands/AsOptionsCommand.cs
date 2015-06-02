@@ -64,10 +64,19 @@ namespace NachoCore.ActiveSync
                 }
                 var value = values.First ();
                 Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions: {0}", value);
-                float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
+                float[] float_versions;
+                try {
+                    float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x, System.Globalization.CultureInfo.InvariantCulture));
+                } catch (FormatException e) {
+                    Log.Error (Log.LOG_AS, "FormatException \"{0}\" while parsing MS-ASProtocolVersions. Defaulting to version 12.1", e.Message);
+                    float_versions = new float[] { 12.1f };
+                } catch (OverflowException e) {
+                    Log.Error (Log.LOG_AS, "OverflowException \"{0}\" while parsing MS-ASProtocolVersions. Defaulting to version 12.1", e.Message);
+                    float_versions = new float[] { 12.1f };
+                }
                 Array.Sort (float_versions);
                 Array.Reverse (float_versions);
-                string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
+                string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0", System.Globalization.CultureInfo.InvariantCulture));
                 protocolState.AsProtocolVersion = versions [0];
             } else {
                 Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
