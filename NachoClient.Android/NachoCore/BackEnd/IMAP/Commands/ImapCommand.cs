@@ -34,6 +34,14 @@ namespace NachoCore.IMAP
             return null;
         }
 
+        public override void Cancel ()
+        {
+            base.Cancel ();
+            // FIXME - not a long term soln. There are issues with MailKit and cancellation.
+            lock (Client.SyncRoot) {
+            }
+        }
+
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
