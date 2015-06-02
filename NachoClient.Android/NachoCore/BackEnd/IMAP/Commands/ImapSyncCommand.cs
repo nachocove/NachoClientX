@@ -299,7 +299,7 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
                         emailMessage.IsRead = true;
                     }
-                    // TODO Where do we set these flags?
+                    // FIXME Where do we set these flags?
                     if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
                     }
                     if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
@@ -311,12 +311,12 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
                     }
                     if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
-                        // TODO See if these are handled by the summary.UserFlags
+                        // FIXME See if these are handled by the summary.UserFlags
                     }
                 }
             }
             if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
-                // TODO Where do we set these flags?
+                // FIXME Where do we set these flags?
             }
 
             if (null != summary.Headers) {
@@ -411,6 +411,7 @@ namespace NachoCore.IMAP
                     ContentEncoding encoding;
                     if (!MimeKit.Utils.MimeUtils.TryParse(text.ContentTransferEncoding, out encoding)) {
                         Log.Error (Log.LOG_IMAP, "findPreviewText: Could not parse ContentTransferEncoding {0}", text.ContentTransferEncoding);
+                        encoding = ContentEncoding.Default;
                     }
                     preview = getTextFromStream (stream, text.ContentType, encoding);
                     if (text.Octets <= 4096) {
