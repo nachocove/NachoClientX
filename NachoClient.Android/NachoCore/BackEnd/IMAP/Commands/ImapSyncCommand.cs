@@ -143,13 +143,15 @@ namespace NachoCore.IMAP
 
         public McEmailMessage ServerSaysAddOrChangeEmail (MailSummary summary, McFolder folder)
         {
-            var ServerId = summary.imapSummary.UniqueId; // FIXME
-            if (null == ServerId || string.Empty == ServerId.Value.ToString ()) {
-                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No ServerId present.");
+            if (null == summary.imapSummary.UniqueId || string.Empty == summary.imapSummary.UniqueId.Value.ToString ()) {
+                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
                 return null;
             }
+
+            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, summary.imapSummary.UniqueId.Value.ToString ());
+
             // If the server attempts to overwrite, delete the pre-existing record first.
-            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, ServerId.Value.ToString ());
+            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != eMsg) {
                 eMsg.Delete ();
                 eMsg = null;
@@ -157,14 +159,14 @@ namespace NachoCore.IMAP
 
             McEmailMessage emailMessage = null;
             try {
-                var r = ParseEmail (summary.imapSummary);
+                var r = ParseEmail (McEmailMessageServerId, summary.imapSummary);
                 emailMessage = r.GetValue<McEmailMessage> ();
                 emailMessage.BodyPreview = summary.preview;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
                 if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
                     emailMessage = new McEmailMessage () {
-                        ServerId = ServerId.ToString (),
+                        ServerId = McEmailMessageServerId,
                     };
                 }
                 emailMessage.IsIncomplete = true;
@@ -221,10 +223,10 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        public NcResult ParseEmail (IMessageSummary summary)
+        public NcResult ParseEmail (string ServerId, IMessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
-                ServerId = summary.UniqueId.Value.Id.ToString (),
+                ServerId = ServerId,
                 AccountId = BEContext.Account.Id,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,
