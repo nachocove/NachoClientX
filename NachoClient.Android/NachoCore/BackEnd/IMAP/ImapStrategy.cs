@@ -58,8 +58,8 @@ namespace NachoCore.IMAP
             }
             if (1 < inbox.ImapUidLowestUidSynced) {
                 // If there is nothing new to grab, then pull down older mail.
-                syncKit.Start = 
-                    (syncKit.Span >= inbox.ImapUidLowestUidSynced) ? 1 : 
+                syncKit.Start =
+                    (syncKit.Span + 1 >= inbox.ImapUidLowestUidSynced) ? 1 : 
                     inbox.ImapUidLowestUidSynced - syncKit.Span - 1;
                 syncKit.Span = 
                     (syncKit.Start >= inbox.ImapUidLowestUidSynced) ? 1 : 

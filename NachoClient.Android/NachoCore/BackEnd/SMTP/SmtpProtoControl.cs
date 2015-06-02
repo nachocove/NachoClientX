@@ -329,21 +329,21 @@ namespace NachoCore.SMTP
             Cmd.Execute (Sm);
         }
 
-        private SmtpClient m_smtpClient;
+        public SmtpClient SmtpClient;
 
         private void DoDisc ()
         {
             NcTask.Run (delegate {
-                if (null != m_smtpClient) {
-                    if (m_smtpClient.IsConnected) {
-                        lock(m_smtpClient.SyncRoot) {
-                            m_smtpClient.Disconnect (true);
+                if (null != SmtpClient) {
+                    if (SmtpClient.IsConnected) {
+                        lock(SmtpClient.SyncRoot) {
+                            SmtpClient.Disconnect (true);
                         }
-                        m_smtpClient = null;
+                        SmtpClient = null;
                     }
                 }
-                SmtpClient client = newClientWithLogger();
-                var cmd = new SmtpAuthenticateCommand(this, client);
+                SmtpClient = newClientWithLogger();
+                var cmd = new SmtpAuthenticateCommand(this);
                 cmd.Execute (Sm);
             }, "SmtpDoDisc");
         }
@@ -394,13 +394,13 @@ namespace NachoCore.SMTP
 
         private void DoConn ()
         {
-            if (null != m_smtpClient && m_smtpClient.IsConnected) {
-                m_smtpClient = null;
+            if (null != SmtpClient && SmtpClient.IsConnected) {
+                SmtpClient = null;
             }
-            if (null == m_smtpClient) {
+            if (null == SmtpClient) {
                 NcTask.Run (delegate {
-                    m_smtpClient = newClientWithLogger();
-                    var cmd = new SmtpAuthenticateCommand(this, m_smtpClient);
+                    SmtpClient = newClientWithLogger();
+                    var cmd = new SmtpAuthenticateCommand(this);
                     cmd.Execute (Sm);
                 }, "SmtpDoConn");
             }
@@ -425,7 +425,7 @@ namespace NachoCore.SMTP
                 case McPending.Operations.EmailSend:
                 case McPending.Operations.EmailForward:
                 case McPending.Operations.EmailReply:
-                    var cmd = new SmtpSendMailCommand (this, m_smtpClient, send);
+                    var cmd = new SmtpSendMailCommand (this, send);
                     cmd.Execute (Sm);
                     NcTask.Run (delegate {
                         Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT");
@@ -447,13 +447,13 @@ namespace NachoCore.SMTP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            if (null != m_smtpClient) {
-                if (m_smtpClient.IsConnected) {
-                    lock (m_smtpClient.SyncRoot) {
-                        m_smtpClient.Disconnect (true);
+            if (null != SmtpClient) {
+                if (SmtpClient.IsConnected) {
+                    lock (SmtpClient.SyncRoot) {
+                        SmtpClient.Disconnect (true);
                     }
                 }
-                m_smtpClient = null;
+                SmtpClient = null;
             }
         }
 
@@ -478,11 +478,14 @@ namespace NachoCore.SMTP
         {
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
-            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)record;
-                target.SmtpProtoControlState = stateToSave;
-                return true;
-            });
+            if ((uint)Lst.Parked != stateToSave) {
+                // We never save Parked.
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.SmtpProtoControlState = stateToSave;
+                    return true;
+                });
+            }
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
