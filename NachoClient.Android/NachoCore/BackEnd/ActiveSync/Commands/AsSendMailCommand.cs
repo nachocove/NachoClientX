@@ -26,7 +26,7 @@ namespace NachoCore.ActiveSync
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
         {
-            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return null;
             }
             return new Dictionary<string, string> () {
@@ -41,7 +41,7 @@ namespace NachoCore.ActiveSync
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return null;
             }
             var mimePath = EmailMessage.MimePath ();
@@ -59,7 +59,7 @@ namespace NachoCore.ActiveSync
 
         protected override Stream ToMime (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 long length;
                 var stream = EmailMessage.ToMime (out length);
                 Timeout = new TimeSpan (0, 0, ((AsProtoControl)BEContext.ProtoControl).Strategy.UploadTimeoutSecs (length));
