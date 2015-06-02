@@ -69,7 +69,7 @@ namespace NachoCore.SMTP
         {
             var client = SmtpProtoControl.newClientWithLogger ();
             try {
-                Cmd = new SmtpAuthenticateCommand (this, client);
+                Cmd = new SmtpAuthenticateCommand (this);
                 Cmd.Execute (Sm);
             }
             finally {
