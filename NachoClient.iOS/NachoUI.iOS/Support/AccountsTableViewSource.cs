@@ -27,11 +27,13 @@ namespace NachoClient.iOS
             this.owner = owner;
             this.showAccessory = showAccessory;
 
-            accounts = McAccount.GetAllAccounts ();
+            accounts = new List<McAccount> ();
 
-            // FIXME: Support the device account
-            var deviceAccount = McAccount.GetDeviceAccount ();
-            accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
+            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
+                if (LoginHelpers.AccountIsConfigured (account)) {
+                    accounts.Add (account);
+                }
+            }
 
             // Remove the current account from the switcher view.
             if (!showAccessory) {

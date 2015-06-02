@@ -4,6 +4,7 @@ using System;
 using Foundation;
 using UIKit;
 using CoreGraphics;
+using CoreAnimation;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
@@ -13,18 +14,16 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public partial class AdvancedLoginViewController : NcUIViewController, INachoCertificateResponderParent
+    public partial class AdvancedLoginViewController : NcUIViewController, INachoCredentialsDelegate, INachoCertificateResponderParent
     {
         protected nfloat CELL_HEIGHT = 44;
 
         UILabel errorMessage;
 
-        UIButton connectButton;
         UIButton customerSupportButton;
-        UIButton advancedButton;
         UIButton restartButton;
 
-        ExchangeFields exchangeFields;
+        ILoginFields loginFields;
 
         UIScrollView scrollView;
         UIView contentView;
@@ -36,87 +35,51 @@ namespace NachoClient.iOS
 
         AccountSettings theAccount;
 
-        public UIView loadingCover;
         private WaitingScreen waitScreen;
         private CertificateView certificateView;
 
+        public delegate void onConnectCallback ();
+
         public enum LoginStatus
         {
-            ValidateSuccessful,
-            BadServer,
-            InvalidEmail,
+            OK,
+            InvalidEmailAddress,
             InvalidServerName,
-            BadUsername,
+            InvalidPortNumber,
             BadCredentials,
             AcceptCertificate,
             ServerConf,
             NoNetwork,
             EnterInfo,
-            TouchConnect,
         };
 
-        McAccount presetAccount = null;
-        string presetEmailAddress = "";
-        string presetPassword = "";
-
-        bool showAdvanced = false;
         bool stayInAdvanced = false;
 
-        public void SetAdvanced (string emailAddress, string password)
-        {
-            presetEmailAddress = emailAddress;
-            presetPassword = password;
-            showAdvanced = true;
-        }
-
-        public void SetAccount (McAccount account)
-        {
-            presetAccount = account;
-        }
+        McAccount.AccountServiceEnum service;
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
+            service = McAccount.AccountServiceEnum.None;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            theAccount = new AccountSettings ();
-            theAccount.Account = presetAccount;
-               
-            CreateView ();
-
-
-            waitScreen = new WaitingScreen (View.Frame);
-            waitScreen.SetOwner (this);
-            waitScreen.CreateView ();
+            waitScreen = new WaitingScreen (View.Frame, this);
+            waitScreen.Hidden = true;
             View.Add (waitScreen);
 
-            certificateView = new CertificateView (View.Frame);
-            certificateView.SetOwner (this);
-            certificateView.CreateView ();
+            certificateView = new CertificateView (View.Frame, this);
             View.Add (certificateView);
 
-            RefreshTheAccount ();
-            RefreshUI ();
-
-            // Preset only if we haven't got an account set up yet
-            if (String.IsNullOrEmpty (exchangeFields.emailText)) {
-                if (null == theAccount.Account) {
-                    exchangeFields.emailText = presetEmailAddress;
-                }
-            }
-            if (String.IsNullOrEmpty (exchangeFields.passwordText)) {
-                if (null == theAccount.Account) {
-                    exchangeFields.passwordText = presetPassword;
-                    gOriginalPassword = presetPassword;
-                }
-            }
+            View.BackgroundColor = A.Color_NachoGreen;
         }
 
         public override void ViewWillAppear (bool animated)
         {
+            base.ViewWillAppear (animated);
+
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
                 if (this.NavigationController.NavigationBarHidden == true) {
@@ -125,7 +88,10 @@ namespace NachoClient.iOS
                 NavigationItem.SetHidesBackButton (true, false);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            base.ViewWillAppear (animated);
+
+            if (HaveServiceAndAccount ()) {
+                ConfigurePostServiceChoice ();
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -139,38 +105,536 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
-            if (null != theAccount.Credentials) {
-                showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
-            }
-            if (null != theAccount.Server) {
-                showAdvanced |= (null != theAccount.Server.UserSpecifiedServerName);
-            }
- 
-            // Layout before waitScreen.ShowView() hides the nav bar
-            LayoutView ();
-
-            if (!stayInAdvanced && IsBackEndRunning ()) {
-                if (IsAutoDComplete ()) {
-                    handleStatusEnums ();
-                } else {
-                    waitScreen.ShowView ();
-                }
-            } else {
-                NavigationItem.Title = "Account Setup";
-                loadingCover.Hidden = true;
-                handleStatusEnums ();
-            }
-
             base.ViewDidAppear (animated);
+            PromptUserForServiceAndAccount ();
         }
 
-        public override bool ShouldAutorotate ()
+        bool HaveServiceAndAccount ()
         {
-            return false;
+            if (McAccount.AccountServiceEnum.None == service) {
+                return false;
+            }
+            return (null != theAccount);
+        }
+
+        // ConfigureServiceChoice is pushing other views,
+        // which we want to happen after the view is visible
+        // so we don't get overlapping animations and crashes.
+        void PromptUserForServiceAndAccount ()
+        {
+            // Step 1, make sure we have a service
+            if (McAccount.AccountServiceEnum.None == service) {
+                Log.Info (Log.LOG_UI, "avl: configure account type");
+                PerformSegue ("SegueToAccountType", this);
+                return;
+            }
+
+            // Step 2, get email & password, and/or advanced selection
+            if (null == theAccount) {
+                PerformSegue ("SegueToAccountCredentials", this);
+                return;
+            }
+        }
+
+        protected void ConfigurePostServiceChoice ()
+        {
+            Log.Info (Log.LOG_UI, "avl: configure");
+
+            NavigationItem.Title = "Account Setup";
+
+            handleStatusEnums ();
+        }
+
+        // Step 1 callback
+        // AccountTypeViewController ServiceSelectedCallback ("SegueToAccountType")
+        protected void ServiceSelected (McAccount.AccountServiceEnum service)
+        {
+            this.service = service;
+        }
+
+        // Step 2 callback
+        // INachoCredentialsDelegate might just be asking to show advanced without any credentials.
+        public void CredentialsDismissed (UIViewController vc, bool startInAdvanced, string email, string password)
+        {
+            CreateView ();
+
+            theAccount = new AccountSettings ();
+
+            loginFields.emailText = email;
+            loginFields.passwordText = password;
+            loginFields.showAdvanced = startInAdvanced;
+
+            LayoutView ();
+
+            if (!startInAdvanced) {
+                // Start the process
+                onConnect ();
+            }
+        }
+
+        void onConnect ()
+        {
+            View.EndEditing (true);
+
+            stayInAdvanced = false;
+
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                UpdateErrorMessage (LoginStatus.NoNetwork);
+                return;
+            }
+
+            // Checks for valid user, password, and server
+            string nuance;
+            var loginStatus = loginFields.CanUserConnect (out nuance);
+            if (LoginStatus.OK != loginStatus) {
+                UpdateErrorMessage (loginStatus, nuance);
+                return;
+            }
+
+            // Setup the account is there isn't one yet
+            var freshAccount = (null == theAccount.Account);
+
+            if (freshAccount) {
+                Log.Info (Log.LOG_UI, "avl: onConnect new account");
+                theAccount.Account = loginFields.CreateAccount ();
+                RefreshTheAccount ();
+            } 
+
+            // Save the stuff on the screen (pre-validated by canUserConnect())
+            loginFields.SaveUserSettings (ref theAccount);
+
+            // If only password has changed & backend is in CredWait, do cred resp
+            if (!freshAccount) {
+                if (!String.Equals (gOriginalPassword, loginFields.passwordText, StringComparison.Ordinal)) {
+                    Log.Info (Log.LOG_UI, "avl: onConnect retry password");
+                    // FIXME STEVE
+                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                    if (BackEndStateEnum.CredWait == backEndState) {
+                        BackEnd.Instance.CredResp (theAccount.Account.Id);
+                        waitScreen.ShowView ("Verifying Your Credentials...");
+                        return;
+                    }
+                }
+            }
+                
+            BackEnd.Instance.Stop (theAccount.Account.Id);
+
+            // A null server record will re-start auto-d on Backend.Start()
+            // Delete the server record if the user didn't enter the server name
+            loginFields.MaybeDeleteTheServer ();
+
+            BackEnd.Instance.Start (theAccount.Account.Id);
+
+            waitScreen.ShowView ("Verifying Your Server...");
+        }
+
+        void onStartOver ()
+        {
+            if (null == theAccount.Account) {
+                StartOver ();
+                return;
+            }
+
+            Action action = () => {
+                NcAccountHandler.Instance.RemoveAccount (theAccount.Account.Id);
+                InvokeOnMainThread (() => {
+                    StartOver ();                       
+                });
+            };
+            NcTask.Run (action, "RemoveAccount");
+        }
+
+        protected void StartOver ()
+        {
+            stayInAdvanced = false;
+            loginFields = null;
+            theAccount = null;
+            service = McAccount.AccountServiceEnum.None;
+            scrollView.RemoveFromSuperview ();
+            NavigationItem.Title = "Account Setup";
+            PromptUserForServiceAndAccount ();
+        }
+
+        protected void UpdateErrorMessage (LoginStatus currentStatus, string nuance = "")
+        {
+            switch (currentStatus) {
+            case LoginStatus.BadCredentials:
+                errorMessage.Text = "There seems to be a problem with your credentials.";
+                errorMessage.TextColor = A.Color_NachoRed;
+                loginFields.HighlightCredentials ();
+                break;
+            case LoginStatus.InvalidEmailAddress:
+                if (String.IsNullOrEmpty (nuance)) {
+                    errorMessage.Text = "The email address you entered is not formatted correctly.";
+                } else {
+                    errorMessage.Text = nuance;
+                }
+                errorMessage.TextColor = A.Color_NachoRed;
+                loginFields.HighlightEmailError ();
+                break;
+            case LoginStatus.AcceptCertificate:
+                errorMessage.Text = "Accept Certificate?";
+                errorMessage.TextColor = A.Color_NachoGreen;
+                break;
+            case LoginStatus.ServerConf:
+                string messagePrefix = null;
+                if (nuance == "ServerError") {
+                    messagePrefix = "We had a problem connecting to the server";
+                } else {
+                    messagePrefix = "We had a problem finding the server";
+                }
+                errorMessage.Text = loginFields.GetServerConfMessage (theAccount, messagePrefix);
+                errorMessage.TextColor = A.Color_NachoRed;
+                loginFields.HighlightServerConfError ();
+                loginFields.showAdvanced = true;
+                LayoutView ();
+                break;
+            case LoginStatus.EnterInfo:
+                errorMessage.Text = "Please fill out the required credentials.";
+                errorMessage.TextColor = A.Color_NachoGreen;
+                loginFields.ClearHighlights ();
+                break;
+            case LoginStatus.OK:
+                errorMessage.Text = "Touch Connect to continue";
+                errorMessage.TextColor = A.Color_NachoGreen;
+                loginFields.ClearHighlights ();
+                break;
+            case LoginStatus.NoNetwork:
+                errorMessage.Text = "No network connection. Please check that you have internet access.";
+                errorMessage.TextColor = A.Color_NachoRed;
+                loginFields.ClearHighlights ();
+                break;
+            case LoginStatus.InvalidServerName:
+                if (String.IsNullOrEmpty (nuance)) {
+                    errorMessage.Text = "Invalid server name. Please check that you typed it in correctly.";
+                } else {
+                    errorMessage.Text = nuance;
+                }
+                errorMessage.TextColor = A.Color_NachoRed;
+                break;
+            case LoginStatus.InvalidPortNumber:
+                if (String.IsNullOrEmpty (nuance)) {
+                    errorMessage.Text = "Invalid port number. It must be a number.";
+                } else {
+                    errorMessage.Text = nuance;
+                }
+                errorMessage.TextColor = A.Color_NachoRed;
+                break;
+            }
+            Log.Info (Log.LOG_UI, "avl: status={0} {1}", currentStatus, errorMessage.Text);
+        }
+
+        /// <summary>
+        /// The user hits the Advanced Login button on the wait screen
+        /// </summary>
+        public void ReturnToAdvanceView ()
+        {
+            stayInAdvanced = true;
+            LayoutView ();
+            handleStatusEnums ();
+            waitScreen.DismissView ();
+        }
+
+        public void SegueToSupport ()
+        {
+            waitScreen.DismissView ();
+            PerformSegue ("SegueToSupport", this);
+        }
+
+        private void handleStatusEnums ()
+        {
+            if (!IsTheAccountSet ()) {
+                Log.Info (Log.LOG_UI, "avl: handleStatusEnums account not set");
+                UpdateErrorMessage (LoginStatus.EnterInfo);
+                waitScreen.DismissView ();
+                return;
+            }
+
+            var accountId = theAccount.Account.Id;
+
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                Log.Info (Log.LOG_UI, "avl: handleStatusEnums no network connection");
+                UpdateErrorMessage (LoginStatus.NoNetwork);
+                waitScreen.DismissView ();
+                stopBeIfRunning (accountId);
+                return;
+            }
+
+            var senderState = BackEnd.Instance.BackEndState (accountId, McAccount.AccountCapabilityEnum.EmailSender);
+            var readerState = BackEnd.Instance.BackEndState (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+
+            Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0} sender={1} reader={2}", accountId, senderState, readerState);
+
+            if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
+                Log.Info (Log.LOG_UI, "avl: status enums server conf wait");
+                stopBeIfRunning (accountId);
+                UpdateErrorMessage (LoginStatus.ServerConf);
+                waitScreen.DismissView ();
+                return;
+            }
+
+            if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
+                Log.Info (Log.LOG_UI, "avl: status enums cred wait");
+                stopBeIfRunning (accountId);
+                UpdateErrorMessage (LoginStatus.BadCredentials);
+                waitScreen.DismissView ();
+                return;
+            }
+
+            if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
+                Log.Info (Log.LOG_UI, "avl: status enums cert ask wait");
+                UpdateErrorMessage (LoginStatus.AcceptCertificate);
+                certificateCallbackHandler (accountId);
+                return;
+            }
+
+            if ((BackEndStateEnum.PostAutoDPreInboxSync == senderState) || (BackEndStateEnum.PostAutoDPreInboxSync == readerState)) {
+                Log.Info (Log.LOG_UI, "avl: status enums PostAutoDPreInboxSync");
+                UpdateErrorMessage (LoginStatus.OK);
+                if (!stayInAdvanced) {
+                    waitScreen.ShowView ("Syncing Your Inbox...");
+                } else {
+                    waitScreen.DismissView ();
+                }
+                return;
+            }
+
+            if ((BackEndStateEnum.PostAutoDPostInboxSync == senderState) || (BackEndStateEnum.PostAutoDPostInboxSync == readerState)) {
+                Log.Info (Log.LOG_UI, "avl: status enums PostAutoDPostInboxSync");
+                if ((BackEndStateEnum.PostAutoDPostInboxSync == senderState) && (BackEndStateEnum.PostAutoDPostInboxSync == readerState)) {
+                    LoginHelpers.SetFirstSyncCompleted (accountId, true);
+                    TryToFinishUp ();
+                }
+                return;
+            }
+
+            if ((BackEndStateEnum.Running == senderState) || (BackEndStateEnum.Running == readerState)) {
+                Log.Info (Log.LOG_UI, "avl: status enums running");
+                UpdateErrorMessage (LoginStatus.OK);
+                if (!stayInAdvanced) {
+                    waitScreen.ShowView ();
+                } else {
+                    waitScreen.DismissView ();
+                }
+                return;
+            }
+
+            if ((BackEndStateEnum.NotYetStarted == senderState) || (BackEndStateEnum.NotYetStarted == readerState)) {
+                // Trust that things will start soon.
+                Log.Info (Log.LOG_UI, "avl: status enums notyetstarted");
+                waitScreen.ShowView ();
+                return;
+            }
+                
+            Log.Info (Log.LOG_UI, "avl: status enums default");
+            UpdateErrorMessage (LoginStatus.EnterInfo);
+            waitScreen.DismissView ();
+        }
+
+        /// <summary>
+        /// Refreshs the account.  These are static for the life of this view
+        /// </summary>
+        private void RefreshTheAccount ()
+        {
+            if (null != theAccount.Account) {
+                // Reload the currently active account record
+                var accountId = theAccount.Account.Id;
+                theAccount.Account = McAccount.QueryById<McAccount> (accountId);
+                theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
+                gOriginalPassword = theAccount.Credentials.GetPassword ();
+                Log.Info (Log.LOG_UI, "avl: refresh the account");
+            }
+        }
+
+
+        private void stopBeIfRunning (int accountId)
+        {
+            BackEnd.Instance.Stop (accountId);
+        }
+
+        bool IsBackEndRunning ()
+        {
+            if (null == theAccount) {
+                return false;
+            }
+            if (null == theAccount.Account) {
+                return false;
+            }
+            NcAssert.True (IsTheAccountSet ());
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+            Log.Info (Log.LOG_UI, "avl:  isrunning state {0}", backEndState);
+            if (BackEndStateEnum.NotYetStarted == backEndState) {
+                return true;
+            }
+            if (BackEndStateEnum.Running == backEndState) {
+                return true;
+            }
+            return IsAutoDComplete ();
+        }
+
+        bool IsAutoDComplete (McAccount account, McAccount.AccountCapabilityEnum capability)
+        {
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (account.Id, capability);
+            return (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) && (BackEndStateEnum.PostAutoDPreInboxSync == backEndState);
+        }
+
+        bool IsAutoDComplete ()
+        {
+            if (null == theAccount) {
+                return false;
+            }
+            var account = theAccount.Account;
+            return IsAutoDComplete (account, McAccount.AccountCapabilityEnum.EmailSender) && IsAutoDComplete (account, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+        }
+
+        bool IsTheAccountSet ()
+        {
+            return (null != theAccount.Account);
+        }
+
+        int GetTheAccountId ()
+        {
+            NcAssert.True (IsTheAccountSet ());
+            return theAccount.Account.Id;
+        }
+
+        protected override void OnKeyboardChanged ()
+        {
+            // Maybe called from keyboard handler because
+            // the notification is still alive when account
+            // information is being gathered.  Avoid crash!
+            if (null == scrollView) {
+                return;
+            }
+
+            LayoutView ();
+            scrollView.SetContentOffset (new CGPoint (0, -scrollView.ContentInset.Top), false);
+        }
+
+        private void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            // Can't do anything without an account
+            if ((null == theAccount) || (null == theAccount.Account)) {
+                return;
+            }
+
+            // Won't do anything if this isn't our account
+            if ((null != s.Account) && (s.Account.Id != theAccount.Account.Id)) {
+                return;
+            }
+
+            int accountId = theAccount.Account.Id;
+
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Info_EmailMessageSetChanged Status Ind (AdvancedView)");
+                SyncCompleted (accountId);
+                return;
+            }
+            if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Info_InboxPingStarted Status Ind (AdvancedView)");
+                SyncCompleted (accountId);
+                return;
+            }
+            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
+                handleStatusEnums ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Error_NetworkUnavailable");
+                handleStatusEnums ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
+                handleStatusEnums ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: CredReqCallback Status Ind (Adv. View)");
+                handleStatusEnums ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
+                handleStatusEnums ();
+                return;
+            }
+            if (NcResult.SubKindEnum.Info_NetworkStatus == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Info_NetworkStatus");
+                handleStatusEnums ();
+                return;
+            }
+        }
+
+        private void certificateCallbackHandler (int accountId)
+        {
+            loginFields.ClearHighlights ();
+            certificateView.SetCertificateInformation (accountId);
+            View.BringSubviewToFront (certificateView);
+            certificateView.ShowView ();
+        }
+
+        // INachoCertificateResponderParent
+        public void DontAcceptCertificate (int accountId)
+        {
+            UpdateErrorMessage (LoginStatus.EnterInfo);
+            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
+            waitScreen.DismissView ();
+        }
+
+        // INachoCertificateResponderParent
+        public void AcceptCertificate (int accountId)
+        {
+            UpdateErrorMessage (LoginStatus.AcceptCertificate);
+            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
+        }
+
+        private void SyncCompleted (int accountId)
+        {
+            LoginHelpers.SetFirstSyncCompleted (accountId, true);
+            if (!hasSyncedEmail) {
+                waitScreen.Layer.RemoveAllAnimations ();
+                waitScreen.StartSyncedEmailAnimation (accountId);
+                hasSyncedEmail = true;
+            }
+        }
+
+        public void FinishedSyncedEmailAnimation (int accountId)
+        {
+            handleStatusEnums ();
+        }
+
+        void TryToFinishUp ()
+        {
+            if (LoginHelpers.HasViewedTutorial ()) {
+                if (null == NcApplication.Instance.Account) {
+                    // FIXME: There ought to be a better way
+                    NcApplication.Instance.Account = theAccount.Account;
+                }
+                PerformSegue ("SegueToTabController", this);
+            } else {
+                PerformSegue ("SegueToHome", this);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            if (segue.Identifier.Equals ("SegueToAccountType")) {
+                var vc = (AccountTypeViewController)segue.DestinationViewController;
+                vc.ServiceSelected = ServiceSelected;
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToAccountCredentials")) {
+                var vc = (AccountCredentialsViewController)segue.DestinationViewController;
+                vc.Setup (this, service);
+                return;
+            }
             if (segue.Identifier.Equals ("SegueToSupport")) {
                 // On return, don't automatically
                 // restart the waiting cover view.
@@ -213,42 +677,25 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom + 15;
 
-            exchangeFields = new ExchangeFields (new CGRect (0, yOffset, View.Frame.Width, 0), EmailOrPasswordChanged);
-            contentView.AddSubview (exchangeFields);
+            switch (McAccount.GetAccountType (service)) {
+            case McAccount.AccountTypeEnum.IMAP_SMTP:
+                loginFields = new IMapFields (new CGRect (0, yOffset, View.Frame.Width, 0), service, onConnect);
+                break;
+            case McAccount.AccountTypeEnum.Exchange:
+                loginFields = new ExchangeFields (new CGRect (0, yOffset, View.Frame.Width, 0), service, onConnect);
+                break;
+            case McAccount.AccountTypeEnum.Device:
+                // FIXME: Do we need anything here?
+                break;
+            default:
+                NcAssert.CaseError (service.ToString ());
+                break;
+            }
+            contentView.AddSubview (loginFields.View);
 
-            yOffset += exchangeFields.Frame.Height;
+            yOffset += loginFields.View.Frame.Height;
 
             yOffset += 25;
-
-            connectButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
-            connectButton.AccessibilityLabel = "Connect";
-            connectButton.BackgroundColor = A.Color_NachoTeal;
-            connectButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            connectButton.SetTitle ("Connect", UIControlState.Normal);
-            connectButton.TitleLabel.TextColor = UIColor.White;
-            connectButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-            connectButton.Layer.CornerRadius = 4f;
-            connectButton.Layer.MasksToBounds = true;
-            connectButton.TouchUpInside += onConnect;
-
-            contentView.AddSubview (connectButton);
-
-            yOffset = connectButton.Frame.Bottom + 15;
-
-            advancedButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
-            advancedButton.AccessibilityLabel = "Advanced Sign In";
-            advancedButton.BackgroundColor = A.Color_NachoNowBackground;
-            advancedButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
-            advancedButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-            advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            advancedButton.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                showAdvanced = true;
-                handleStatusEnums ();
-            };
-            contentView.AddSubview (advancedButton);
-            yOffset = advancedButton.Frame.Bottom + 20;
 
             customerSupportButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
             customerSupportButton.AccessibilityLabel = "Customer Support";
@@ -277,190 +724,6 @@ namespace NachoClient.iOS
             };
             contentView.AddSubview (restartButton);
             yOffset = restartButton.Frame.Bottom + 20;
-
-            loadingCover = new UIView (View.Frame);
-            loadingCover.BackgroundColor = A.Color_NachoGreen;
-            contentView.Add (loadingCover);
-
-        }
-
-        void onStartOver ()
-        {
-            stayInAdvanced = false;
-            if (null != theAccount.Account) {
-                Action action = () => {
-                    NcAccountHandler.Instance.RemoveAccount (theAccount.Account.Id);
-                    InvokeOnMainThread (() => {
-                        // go back to main screen
-                        NcUIRedirector.Instance.GoBackToMainScreen ();                        
-                    });
-                };
-                NcTask.Run (action, "RemoveAccount");
-            }
-        }
-
-        void onConnect (object sender, EventArgs e)
-        {
-            View.EndEditing (true);
-
-            stayInAdvanced = false;
-
-            // Checks for valid user, password, and server
-            if (!canUserConnect ()) {
-                return; // error has been displayed
-            }
-
-            // Setup the account is there isn't one yet
-            var freshAccount = (null == theAccount.Account);
-
-            if (freshAccount) {
-                Log.Info (Log.LOG_UI, "avl: onConnect new account");
-                var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                // FIXME STEVE value of None causes crash.
-                theAccount.Account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.None, exchangeFields.emailText, exchangeFields.passwordText);
-                RefreshTheAccount ();
-            } 
-
-            // Save the stuff on the screen (pre-validated by canUserConnect())
-            exchangeFields.SaveUserSettings (ref theAccount);
-
-            // If only password has changed & backend is in CredWait, do cred resp
-            if (!freshAccount) {
-                if (!String.Equals (gOriginalPassword, exchangeFields.passwordText, StringComparison.Ordinal)) {
-                    Log.Info (Log.LOG_UI, "avl: onConnect retry password");
-                    // FIXME STEVE
-                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-                    if (BackEndStateEnum.CredWait == backEndState) {
-                        BackEnd.Instance.CredResp (theAccount.Account.Id);
-                        waitScreen.SetLoadingText ("Verifying Your Credentials...");
-                        waitScreen.ShowView ();
-                        return;
-                    }
-                }
-            }
-
-            BackEnd.Instance.Stop (theAccount.Account.Id);
-
-            // A null server record will re-start auto-d on Backend.Start()
-            // Delete the server record if the user didn't enter the server name
-            if ((null != theAccount.Server) && (null == theAccount.Server.UserSpecifiedServerName)) {
-                exchangeFields.DeleteTheServer (ref theAccount, "onConnect");
-            }
-            waitScreen.SetLoadingText ("Verifying Your Server...");
-            BackEnd.Instance.Start (theAccount.Account.Id);
-            waitScreen.ShowView ();
-        }
-
-        protected void ConfigureView (LoginStatus currentStatus, string nuance = "")
-        {
-            haveEnteredEmailAndPass ();
-            exchangeFields.RefreshTheServer (ref theAccount);
-
-            switch (currentStatus) {
-            case LoginStatus.BadCredentials:
-                errorMessage.Text = "There seems to be a problem with your credentials.";
-                errorMessage.TextColor = A.Color_NachoRed;
-                exchangeFields.HighlightEverything ();
-                break;
-            case LoginStatus.ValidateSuccessful:
-                exchangeFields.ClearHighlights ();
-                break;
-            case LoginStatus.InvalidEmail:
-                if (String.IsNullOrEmpty (nuance)) {
-                    errorMessage.Text = "The email address you entered is not formatted correctly.";
-                } else {
-                    errorMessage.Text = nuance;
-                }
-                errorMessage.TextColor = A.Color_NachoRed;
-                exchangeFields.HighlightEmailError ();
-                break;
-            case LoginStatus.AcceptCertificate:
-                errorMessage.Text = "Accept Certificate?";
-                errorMessage.TextColor = A.Color_NachoGreen;
-                break;
-            case LoginStatus.BadServer:
-                errorMessage.Text = "The server name you entered is not valid. Please fix and try again.";
-                errorMessage.TextColor = A.Color_NachoRed;
-                exchangeFields.HighlightServerError ();
-                break;
-            case LoginStatus.ServerConf:
-                string messagePrefix = null;
-                if (nuance == "ServerError") {
-                    messagePrefix = "We had a problem connecting to the server";
-                } else {
-                    messagePrefix = "We had a problem finding the server";
-                }
-                if (null == theAccount.Server) {
-                    errorMessage.Text = messagePrefix + " for '" + theAccount.Account.EmailAddr + "'.";
-                } else if (null == theAccount.Server.UserSpecifiedServerName) {
-                    errorMessage.Text = messagePrefix + "'" + theAccount.Server.Host + "'.";
-                } else {
-                    errorMessage.Text = messagePrefix + "'" + theAccount.Server.UserSpecifiedServerName + "'.";
-                }
-                errorMessage.TextColor = A.Color_NachoRed;
-                if (!String.IsNullOrEmpty (exchangeFields.serverText)) {
-                    exchangeFields.HighlightServerError ();
-                } else {
-                    exchangeFields.HighlightEmailError ();
-                }
-                showAdvanced = true;
-                break;
-            case LoginStatus.EnterInfo:
-                errorMessage.Text = "Please fill out the required credentials.";
-                errorMessage.TextColor = A.Color_NachoGreen;
-                exchangeFields.ClearHighlights ();
-                break;
-            case LoginStatus.TouchConnect:
-                errorMessage.Text = "Touch Connect to continue";
-                errorMessage.TextColor = A.Color_NachoGreen;
-                exchangeFields.ClearHighlights ();
-                break;
-            case LoginStatus.BadUsername:
-                errorMessage.TextColor = A.Color_NachoRed;
-                if (!String.IsNullOrEmpty (exchangeFields.usernameText)) {
-                    exchangeFields.HighlightUsernameError ();
-                    errorMessage.Text = "There seems to be a problem with your user name.";
-                } else {
-                    exchangeFields.HighlightEmailError ();
-                    errorMessage.Text = "There seems to be a problem with your email.";
-                }
-                break;
-            case LoginStatus.NoNetwork:
-                errorMessage.Text = "No network connection. Please check that you have internet access.";
-                errorMessage.TextColor = A.Color_NachoRed;
-                exchangeFields.ClearHighlights ();
-                break;
-            case LoginStatus.InvalidServerName:
-                if (String.IsNullOrEmpty (nuance)) {
-                    errorMessage.Text = "Invalid server name. Please check that you typed it in correctly.";
-                } else {
-                    errorMessage.Text = nuance;
-                }
-                errorMessage.TextColor = A.Color_NachoRed;
-                exchangeFields.HighlightServerError ();
-                break;
-            }
-
-            Log.Info (Log.LOG_UI, "avl: status={0} {1}", currentStatus, errorMessage.Text);
-
-            LayoutView ();
-        }
-
-        /// <summary>
-        /// The user hits the Advanced Login button on the wait screen
-        /// </summary>
-        public void ReturnToAdvanceView ()
-        {
-            showAdvanced = true;
-            stayInAdvanced = true;
-            handleStatusEnums ();
-            waitScreen.DismissView ();
-        }
-
-        public void SegueToSupport ()
-        {
-            waitScreen.DismissView ();
-            PerformSegue ("SegueToSupport", this);
         }
 
         void LayoutView ()
@@ -470,18 +733,9 @@ namespace NachoClient.iOS
             ViewFramer.Create (errorMessage).Y (yOffset);
             yOffset = errorMessage.Frame.Bottom + 15;
 
-            exchangeFields.Layout ();
-            yOffset += exchangeFields.Frame.Height;
-
-            ViewFramer.Create (connectButton).Y (yOffset);
-            yOffset = connectButton.Frame.Bottom + 20;
-
-            if (showAdvanced) {
-                advancedButton.Hidden = true;
-            } else {
-                advancedButton.Hidden = false;
-                ViewFramer.Create (advancedButton).Y (yOffset);
-                yOffset = advancedButton.Frame.Bottom + 20;
+            if (null != loginFields) {
+                loginFields.Layout ();
+                yOffset += loginFields.View.Frame.Height;
             }
 
             ViewFramer.Create (customerSupportButton).Y (yOffset);
@@ -496,295 +750,21 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        private void EmailOrPasswordChanged (UITextField textField)
+        public override bool ShouldAutorotate ()
         {
-            haveEnteredEmailAndPass ();
-        }
-
-        private bool haveEnteredEmailAndPass ()
-        {
-            if (0 == exchangeFields.emailText.Length || 0 == exchangeFields.passwordText.Length) {
-                connectButton.Enabled = false;
-                connectButton.Alpha = .5f;
-                return false;
-            } else {
-                connectButton.Enabled = true;
-                connectButton.Alpha = 1.0f;
-                return true;
-            }
-        }
-
-        private void handleStatusEnums ()
-        {
-            if (!IsTheAccountSet ()) {
-                Log.Info (Log.LOG_UI, "avl: handleStatusEnums account not set");
-                ConfigureView (LoginStatus.EnterInfo);
-                haveEnteredEmailAndPass ();
-                return;
-            }
-
-            var accountId = theAccount.Account.Id;
-            // FIXME STEVE
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (accountId, McAccount.AccountCapabilityEnum.EmailSender);
-            Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0}={1}", accountId, backEndState);
-
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                Log.Info (Log.LOG_UI, "avl: handleStatusEnums no network connection");
-                ConfigureView (LoginStatus.NoNetwork);
-                waitScreen.DismissView ();
-                stopBeIfRunning (accountId);
-            }
-
-            switch (backEndState) {
-            case BackEndStateEnum.ServerConfWait:
-                Log.Info (Log.LOG_UI, "avl: ServerConfWait Auto-D-State-Enum On Page Load");
-                stopBeIfRunning (accountId);
-                ConfigureView (LoginStatus.ServerConf);
-                waitScreen.DismissView ();
-                break;
-            case BackEndStateEnum.CredWait:
-                Log.Info (Log.LOG_UI, "avl: CredWait Auto-D-State-Enum On Page Load");
-                ConfigureView (LoginStatus.BadCredentials);
-                waitScreen.DismissView ();
-                break;
-            case BackEndStateEnum.CertAskWait:
-                Log.Info (Log.LOG_UI, "avl: CertAskWait Auto-D-State-Enum On Page Load");
-                ConfigureView (LoginStatus.AcceptCertificate);
-                certificateCallbackHandler (accountId);
-                waitScreen.ShowView ();
-                break;
-            case BackEndStateEnum.PostAutoDPreInboxSync:
-                Log.Info (Log.LOG_UI, "avl: PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
-                ConfigureView (LoginStatus.TouchConnect);
-                if (!stayInAdvanced) {
-                    waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                    waitScreen.ShowView ();
-                }
-                break;
-            case BackEndStateEnum.PostAutoDPostInboxSync:
-                Log.Info (Log.LOG_UI, "avl: PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
-                LoginHelpers.SetFirstSyncCompleted (accountId, true);
-                TryToFinishUp ();
-                break;
-            case BackEndStateEnum.Running:
-                Log.Info (Log.LOG_UI, "avl: Running Auto-D-State-Enum On Page Load");
-                ConfigureView (LoginStatus.TouchConnect);
-                if (!stayInAdvanced) {
-                    waitScreen.ShowView ();
-                }
-                break;
-            default:
-                ConfigureView (LoginStatus.EnterInfo);
-                waitScreen.DismissView ();
-                break;
-            }
-        }
-
-        /// <summary>
-        /// Refreshs the account.  These are static for the life of this view
-        /// </summary>
-        private void RefreshTheAccount ()
-        {
-            if (null != theAccount.Account) {
-                // Reload the currently active account record
-                var accountId = theAccount.Account.Id;
-                theAccount.Account = McAccount.QueryById<McAccount> (accountId);
-                theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
-                gOriginalPassword = theAccount.Credentials.GetPassword ();
-                Log.Info (Log.LOG_UI, "avl: refresh the account");
-            }
-        }
-
-        void RefreshUI ()
-        {
-            errorMessage.Text = "";
-            gOriginalPassword = "";
-        }
-
-        private bool canUserConnect ()
-        {
-            if (!haveEnteredEmailAndPass ()) {
-                return false;
-            }
-            string serviceName;
-            var emailAddress = exchangeFields.emailText;
-            if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                ConfigureView (LoginStatus.InvalidEmail, nuance);
-                return false;
-            }
-            if (!String.IsNullOrEmpty (exchangeFields.serverText)) {
-                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (exchangeFields.serverText)) {
-                    ConfigureView (LoginStatus.InvalidServerName);
-                    return false;
-                }
-            }
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                ConfigureView (LoginStatus.NoNetwork);
-                return false;
-            }
-            return true;
-        }
-
-        private void stopBeIfRunning (int accountId)
-        {
-            BackEnd.Instance.Stop (accountId);
-        }
-
-        bool IsBackEndRunning ()
-        {
-            if (null == theAccount.Account) {
-                return false;
-            }
-            NcAssert.True (IsTheAccountSet ());
-            // FIXME STEVE
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-            Log.Info (Log.LOG_UI, "avl:  isrunning state {0}", backEndState);
-            if (BackEndStateEnum.NotYetStarted == backEndState) {
-                return true;
-            }
-            if (BackEndStateEnum.Running == backEndState) {
-                return true;
-            }
-            return IsAutoDComplete ();
-        }
-
-        bool IsAutoDComplete ()
-        {
-            if (null == theAccount.Account) {
-                return false;
-            }
-            NcAssert.True (IsTheAccountSet ());
-            // FIXME STEVE
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-            if (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) {
-                return true;
-            }
-            if (BackEndStateEnum.PostAutoDPreInboxSync == backEndState) {
-                return true;
-            }
             return false;
         }
 
-        bool IsTheAccountSet ()
+        [Action ("UnwindAccountCredentialsViewController:")]
+        public void UnwindAccountCredentialsViewController (UIStoryboardSegue segue)
         {
-            return (null != theAccount.Account);
-        }
+            var transition = CATransition.CreateAnimation ();
 
-        int GetTheAccountId ()
-        {
-            NcAssert.True (IsTheAccountSet ());
-            return theAccount.Account.Id;
-        }
+            transition.Duration = 0.3;
+            transition.Type = CATransition.TransitionFade;
 
-        protected override void OnKeyboardChanged ()
-        {
-            LayoutView ();
-            scrollView.SetContentOffset (new CGPoint (0, -scrollView.ContentInset.Top), false);
-        }
-
-        private void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            // Can't do anything without an account
-            if ((null == theAccount) || (null == theAccount.Account)) {
-                return;
-            }
-
-            // Won't do anything if this isn't our account
-            if ((null != s.Account) && (s.Account.Id != theAccount.Account.Id)) {
-                return;
-            }
-
-            int accountId = theAccount.Account.Id;
-
-            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Info_EmailMessageSetChanged Status Ind (AdvancedView)");
-                handleStatusEnums ();
-            }
-            if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Info_InboxPingStarted Status Ind (AdvancedView)");
-                handleStatusEnums ();
-            }
-            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
-                handleStatusEnums ();
-            }
-            if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Error_NetworkUnavailable");
-                handleStatusEnums ();
-            }
-            if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
-                ConfigureView (LoginStatus.ServerConf, nuance: s.Status.Why.ToString ());
-                waitScreen.DismissView ();
-                stopBeIfRunning (accountId);
-            }
-            if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: CredReqCallback Status Ind (Adv. View)");
-                handleStatusEnums ();
-            }
-            if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
-                handleStatusEnums ();
-            }
-            if (NcResult.SubKindEnum.Info_NetworkStatus == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Info_NetworkStatus");
-                handleStatusEnums ();
-            }
-        }
-
-        private void certificateCallbackHandler (int accountId)
-        {
-            exchangeFields.ClearHighlights ();
-            certificateView.SetCertificateInformation (accountId);
-            certificateView.ShowView ();
-        }
-
-        // INachoCertificateResponderParent
-        public void DontAcceptCertificate (int accountId)
-        {
-            ConfigureView (LoginStatus.EnterInfo);
-            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
-            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
-            waitScreen.DismissView ();
-        }
-
-        // INachoCertificateResponderParent
-        public void AcceptCertificate (int accountId)
-        {
-            ConfigureView (LoginStatus.AcceptCertificate);
-            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
-            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
-        }
-
-        private void SyncCompleted (int accountId)
-        {
-            LoginHelpers.SetFirstSyncCompleted (accountId, true);
-            if (!hasSyncedEmail) {
-                waitScreen.Layer.RemoveAllAnimations ();
-                waitScreen.StartSyncedEmailAnimation (accountId);
-                hasSyncedEmail = true;
-            }
-        }
-
-        public void FinishedSyncedEmailAnimation (int accountId)
-        {
-            TryToFinishUp ();
-        }
-
-        void TryToFinishUp ()
-        {
-            if (LoginHelpers.HasViewedTutorial ()) {
-                if (null == NcApplication.Instance.Account) {
-                    // FIXME: There ought to be a better way
-                    NcApplication.Instance.Account = theAccount.Account;
-                }
-                PerformSegue ("SegueToTabController", this);
-            } else {
-                PerformSegue ("SegueToHome", this);
-            }
+            segue.SourceViewController.NavigationController.View.Layer.AddAnimation (transition, CALayer.Transition);
+            segue.SourceViewController.NavigationController.PopViewController (false);
         }
 
         public class AccountSettings
@@ -792,8 +772,7 @@ namespace NachoClient.iOS
             public McAccount Account { get; set; }
 
             public McCred Credentials { get; set; }
-
-            public McServer Server { get; set; }
+           
         }
     }
 

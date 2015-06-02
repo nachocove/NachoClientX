@@ -75,22 +75,22 @@ namespace Test.Common
         public void TelemetryWbxmlEvent ()
         {
             var now = DateTime.UtcNow;
-            var jsonEvent1 = new TelemetryWbxmlEvent (TelemetryEventType.WBXML_REQUEST) {
-                wbxml = new byte[3] { 0x1, 0x2, 0x3 },
+            var jsonEvent1 = new TelemetryProtocolEvent (TelemetryEventType.WBXML_REQUEST) {
+                payload = new byte[3] { 0x1, 0x2, 0x3 },
             };
             var json1 = jsonEvent1.ToJson ();
-            var decode1 = JsonConvert.DeserializeObject<TelemetryWbxmlEvent> (json1);
+            var decode1 = JsonConvert.DeserializeObject<TelemetryProtocolEvent> (json1);
             CheckCommonHeader (now, decode1);
-            Assert.AreEqual (jsonEvent1.wbxml, decode1.wbxml);
+            Assert.AreEqual (jsonEvent1.payload, decode1.payload);
 
             now = DateTime.UtcNow;
-            var jsonEvent2 = new TelemetryWbxmlEvent (TelemetryEventType.WBXML_RESPONSE) {
-                wbxml = new byte[4] { 0x9, 0x8, 0x7, 0x6 },
+            var jsonEvent2 = new TelemetryProtocolEvent (TelemetryEventType.WBXML_RESPONSE) {
+                payload = new byte[4] { 0x9, 0x8, 0x7, 0x6 },
             };
             var json2 = jsonEvent2.ToJson ();
-            var decode2 = JsonConvert.DeserializeObject<TelemetryWbxmlEvent> (json2);
+            var decode2 = JsonConvert.DeserializeObject<TelemetryProtocolEvent> (json2);
             CheckCommonHeader (now, decode2);
-            Assert.AreEqual (jsonEvent2.wbxml, decode2.wbxml);
+            Assert.AreEqual (jsonEvent2.payload, decode2.payload);
         }
 
         [Test]

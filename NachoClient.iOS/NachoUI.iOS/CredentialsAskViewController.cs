@@ -39,9 +39,7 @@ namespace NachoClient.iOS
             LayoutView ();
             ConfigureView ();
 
-            certificateView = new CertificateView (View.Frame);
-            certificateView.SetOwner (this);
-            certificateView.CreateView ();
+            certificateView = new CertificateView (View.Frame, this);
             View.Add (certificateView);
         }
 
