@@ -406,7 +406,11 @@ namespace NachoCore.IMAP
                         Log.Warn (Log.LOG_IMAP, "Need to adjust partSpecifier for part {0} {1} {2}", text.PartSpecifier, text.ContentTransferEncoding, e);
                         stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
                     }
-                    preview = getTextFromStream (stream, text.ContentType, encoding(text.ContentTransferEncoding));
+                    ContentEncoding encoding;
+                    if (!MimeKit.Utils.MimeUtils.TryParse(text.ContentTransferEncoding, out encoding)) {
+                        Log.Error (Log.LOG_IMAP, "findPreviewText: Could not parse ContentTransferEncoding {0}", text.ContentTransferEncoding);
+                    }
+                    preview = getTextFromStream (stream, text.ContentType, encoding);
                     if (text.Octets <= 4096) {
                         body = preview;
                         preview = body.Substring (0, Math.Min(PreviewSizeBytes, body.Length));
@@ -453,22 +457,6 @@ namespace NachoCore.IMAP
                 isPlaintext = true;
             }
             return text;
-        }
-
-        private ContentEncoding encoding(string contentEncoding)
-        {
-            ContentEncoding enc;
-            switch (contentEncoding.ToLower ()) {
-            case "7bit":             enc = ContentEncoding.SevenBit; break;
-            case "8bit":             enc = ContentEncoding.EightBit; break;
-            case "binary":           enc = ContentEncoding.Binary; break;
-            case "base64":           enc = ContentEncoding.Base64; break;
-            case "quoted-printable": enc = ContentEncoding.QuotedPrintable; break;
-            case "x-uuencode":       enc = ContentEncoding.UUEncode; break;
-            case "uuencode":         enc = ContentEncoding.UUEncode; break;
-            default:                 enc = ContentEncoding.Default; break;
-            }
-            return enc;
         }
 
         private string getTextFromStream(Stream stream, ContentType type, ContentEncoding enc)
