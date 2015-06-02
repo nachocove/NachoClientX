@@ -1164,7 +1164,7 @@ namespace NachoClient
                 imageName = "avatar-iphone";
                 break;
             case McAccount.AccountServiceEnum.iCloud:
-                imageName = "avatar-iCloud";
+                imageName = "avatar-icloud";
                 break;
             case McAccount.AccountServiceEnum.Yahoo:
                 imageName = "avatar-yahoo";

@@ -2348,6 +2348,9 @@
     <BundleResource Include="Resources\avatar-iphone%404x.png" />
     <BundleResource Include="Resources\avatar-iphone%406x.png" />
     <BundleResource Include="Resources\avatar-imap%402x.png" />
+    <BundleResource Include="Resources\avatar-imap%403x.png" />
+    <BundleResource Include="Resources\avatar-imap%404x.png" />
+    <BundleResource Include="Resources\avatar-imap%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
