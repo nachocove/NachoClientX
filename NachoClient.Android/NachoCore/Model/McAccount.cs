@@ -149,27 +149,18 @@ namespace NachoCore.Model
         public void SetAccountService (AccountServiceEnum value)
         {
             AccountService = value;
+            AccountType = GetAccountType (value);
 
-            switch (value) {
-            case AccountServiceEnum.GoogleDefault:
-            case AccountServiceEnum.HotmailDefault:
-            case AccountServiceEnum.Aol:
-            case AccountServiceEnum.Yahoo:
-            case AccountServiceEnum.iCloud:
-            case AccountServiceEnum.IMAP_SMTP:
-                AccountType = AccountTypeEnum.IMAP_SMTP;
+            switch (AccountType) {
+            case AccountTypeEnum.IMAP_SMTP:
                 Protocols = (
                     McProtocolState.ProtocolEnum.IMAP |
                     McProtocolState.ProtocolEnum.SMTP);
                 break;
-            case AccountServiceEnum.Exchange:
-            case AccountServiceEnum.GoogleExchange:
-            case AccountServiceEnum.HotmailExchange:
-            case AccountServiceEnum.OutlookExchange:
-                AccountType = AccountTypeEnum.Exchange;
+            case AccountTypeEnum.Exchange:
                 Protocols = McProtocolState.ProtocolEnum.ActiveSync;
                 break;
-            case AccountServiceEnum.Device:
+            case AccountTypeEnum.Device:
                 // FIXME: Do we need anything here?
                 break;
             default:
@@ -177,6 +168,31 @@ namespace NachoCore.Model
                 break;
             }
             SetAccountType (AccountType);
+        }
+
+        public static AccountTypeEnum GetAccountType (AccountServiceEnum value)
+        {
+            switch (value) {
+            case AccountServiceEnum.GoogleDefault:
+            case AccountServiceEnum.HotmailDefault:
+            case AccountServiceEnum.Aol:
+            case AccountServiceEnum.Yahoo:
+            case AccountServiceEnum.iCloud:
+            case AccountServiceEnum.IMAP_SMTP:
+                return AccountTypeEnum.IMAP_SMTP;
+
+            case AccountServiceEnum.Exchange:
+            case AccountServiceEnum.GoogleExchange:
+            case AccountServiceEnum.HotmailExchange:
+            case AccountServiceEnum.OutlookExchange:
+                return AccountTypeEnum.Exchange;
+            case AccountServiceEnum.Device:
+                // FIXME: Do we need anything here?
+                return AccountTypeEnum.Device;
+            default:
+                NcAssert.CaseError (value.ToString ());
+                return AccountTypeEnum.Device;
+            }
         }
 
         // This is set as a side effect of setting AccountService.

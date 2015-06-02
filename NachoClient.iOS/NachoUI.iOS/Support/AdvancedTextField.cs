@@ -50,6 +50,11 @@ namespace NachoClient.iOS
             textField.EditingChanged += TextField_EditingChanged;
         }
 
+        public bool IsNullOrEmpty()
+        {
+            return String.IsNullOrEmpty (textField.Text);
+        }
+
         void TextField_EditingChanged (object sender, EventArgs e)
         {
             if (null != EditingChangedCallback) {

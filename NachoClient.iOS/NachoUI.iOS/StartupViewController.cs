@@ -58,7 +58,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (!LoginHelpers.ReadyToStart ()) {
+            if (!LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
                 PerformSegue ("SegueToAdvancedLogin", this);
                 return;
             }

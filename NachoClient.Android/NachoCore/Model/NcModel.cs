@@ -274,7 +274,6 @@ namespace NachoCore.Model
                 Db.CreateTable<McEmailAddress> ();
                 Db.CreateTable<McEmailMessage> ();
                 Db.CreateTable<McEmailMessageCategory> ();
-                Db.CreateTable<McEmailMessageScoreSyncInfo> ();
                 Db.CreateTable<McEmailMessageDependency> ();
                 Db.CreateTable<McMeetingRequest> ();
                 Db.CreateTable<McAttachment> ();
@@ -283,7 +282,6 @@ namespace NachoCore.Model
                 Db.CreateTable<McContactStringAttribute> ();
                 Db.CreateTable<McContactAddressAttribute> ();
                 Db.CreateTable<McContactEmailAddressAttribute> ();
-                Db.CreateTable<McEmailAddressScoreSyncInfo> ();
                 Db.CreateTable<McPolicy> ();
                 Db.CreateTable<McProtocolState> ();
                 Db.CreateTable<McServer> ();

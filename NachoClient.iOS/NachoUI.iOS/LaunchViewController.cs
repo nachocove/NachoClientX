@@ -13,34 +13,13 @@ namespace NachoClient.iOS
 {
     public partial class LaunchViewController : NcUIViewControllerNoLeaks
     {
-        nfloat yOffset;
-
         bool shortScreen;
         bool largeScreen;
 
-        protected UIImageView circleMail;
         protected UILabel startLabel;
-        protected UIView emailBox;
-        protected UIView passwordBox;
-        protected UITextField emailField;
-        protected UITextField passwordField;
+        protected UIImageView circleMail;
         protected UIButton submitButton;
-        protected UIButton advancedButton;
-        protected UIButton supportButton;
-        protected UITableView emailServiceTableView;
-
-        protected bool serviceTableExpanded;
-        protected EmailServiceTableViewSource emailServices;
-        protected McAccount.AccountServiceEnum selectedEmailService;
-
         protected UIImageView loginTriangles;
-        protected CGPoint originalStartLabelCenter;
-
-        protected const int EMAIL_TEXTFIELD_TAG = 101;
-        protected const int PASSWORD_TEXTFIELD_TAG = 102;
-        protected const int SUBMIT_BUTTON_TAG = 103;
-        protected const int ADVANCED_SIGNIN_BUTTON_TAG = 104;
-        protected const int CUSTOMER_SUPPORT_BUTTON_TAG = 105;
 
         protected bool hasCompletedInitialAnimation = false;
 
@@ -68,7 +47,6 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
 
             if (!hasCompletedInitialAnimation) {
                 UIView.AnimateKeyframes (1.6, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
@@ -84,13 +62,12 @@ namespace NachoClient.iOS
 
                     UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
                         startLabel.Alpha = 1.0f;
-                        emailServiceTableView.Alpha = 1.0f;
-                        advancedButton.Alpha = 1.0f;
-                        supportButton.Alpha = 1.0f;
+                        submitButton.Alpha = 1.0f;
                     });
 
                 }, ((bool finished) => {
                     hasCompletedInitialAnimation = true;
+                    Console.WriteLine("s: {0} l: {1} circle: {2}", shortScreen, largeScreen, circleMail);
                 }));
             }
         }
@@ -107,33 +84,7 @@ namespace NachoClient.iOS
 
         public override bool HidesBottomBarWhenPushed {
             get {
-                return this.NavigationController.TopViewController == this;
-            }
-        }
-
-        public void OnEmailServiceSelected (McAccount.AccountServiceEnum service, bool willExpand)
-        {
-            if (willExpand) {
-                emailServices.Grow (emailServiceTableView);
-                View.EndEditing (true);
-            } else {
-                emailServices.Shrink (emailServiceTableView);
-            }
-
-            // Gotta keep global state :(
-            selectedEmailService = service;
-            serviceTableExpanded = willExpand;
-            ConfigureAndLayoutInternal ();
-
-            // Hide email/password/submit before they've selected a service.
-            // Show email/password/submit after they've selected a service.
-            if (McAccount.AccountServiceEnum.None == service) {
-                ;
-            } else {
-                emailBox.Alpha = 1.0f;
-                passwordBox.Alpha = 1.0f;
-                submitButton.Alpha = 1.0f;
-                startLabel.Text = "Enter your account information to get started.";
+                return true;
             }
         }
 
@@ -141,7 +92,6 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoGreen;
             scrollView.BackgroundColor = A.Color_NachoGreen;
-            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             contentView.BackgroundColor = A.Color_NachoGreen;
 
             shortScreen = (500 > View.Frame.Height);
@@ -154,11 +104,9 @@ namespace NachoClient.iOS
             circleMail.Frame = new CGRect (View.Frame.Width / 2 - (circleMail.Image.Size.Width / 2), (shortScreen ? 155 : 200) + (largeScreen ? 74 : 0), circleMail.Image.Size.Width, circleMail.Image.Size.Height);
             contentView.AddSubview (circleMail);
 
-            yOffset = View.Frame.Height - 343;
-            yOffset -= (shortScreen ? 20 : 40);
+            var yOffset = View.Frame.Height - 343 - (shortScreen ? 20 : 40);
 
             startLabel = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 50));
-            originalStartLabelCenter = startLabel.Center;
             startLabel.Text = "Start by choosing your email service provider.";
             startLabel.Lines = 2;
             startLabel.BackgroundColor = A.Color_NachoGreen;
@@ -170,135 +118,21 @@ namespace NachoClient.iOS
 
             yOffset = startLabel.Frame.Bottom + 20;
 
-            emailServices = new EmailServiceTableViewSource ();
-            emailServices.SetSelectedItem (McAccount.AccountServiceEnum.None);
-            emailServices.OnSelected = OnEmailServiceSelected;
-
-            emailServiceTableView = new UITableView (new CGRect (25, yOffset, View.Frame.Width - 50, emailServices.GetTableHeight ()));
-            emailServiceTableView.BackgroundColor = UIColor.White;
-            emailServiceTableView.ScrollEnabled = false;
-            emailServiceTableView.AccessibilityLabel = "Email Service Chooser";
-            emailServiceTableView.AccessibilityIdentifier = "EmailServicesDropdown";
-            emailServiceTableView.Alpha = 0f;
-            emailServiceTableView.AccessibilityLabel = "Email services";
-            contentView.AddSubview (emailServiceTableView);
-
-            emailServiceTableView.Source = emailServices;
-
-            yOffset = emailServiceTableView.Frame.Bottom + 4f;
-
-            emailBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
-            emailBox.BackgroundColor = UIColor.White;
-
-            emailBox.Alpha = 0.0f;
-
-            emailField = new UITextField (new CGRect (45, 0, emailBox.Frame.Width - 50, emailBox.Frame.Height));
-            emailField.BackgroundColor = UIColor.White;
-            emailField.Placeholder = "Email Address";
-            emailField.Font = A.Font_AvenirNextRegular17;
-            emailField.BorderStyle = UITextBorderStyle.None;
-            emailField.TextAlignment = UITextAlignment.Left;
-            emailField.KeyboardType = UIKeyboardType.EmailAddress;
-            emailField.AutocapitalizationType = UITextAutocapitalizationType.None;
-            emailField.AutocorrectionType = UITextAutocorrectionType.No;
-            emailField.Tag = EMAIL_TEXTFIELD_TAG;
-            emailField.ShouldReturn += TextFieldShouldReturn;
-            emailField.EditingDidEnd += TextFieldEditingEnded;
-            emailField.AccessibilityLabel = "Email Address";
-            emailBox.AddSubview (emailField);
-
-            UIImageView mailImage = new UIImageView ();
-            using (var loginImageTwo = UIImage.FromBundle ("Loginscreen-2")) {
-                mailImage.Image = loginImageTwo;
-            }
-            mailImage.Frame = new CGRect (15, 15, 16, 11);
-            emailBox.AddSubview (mailImage);
-
-            contentView.AddSubview (emailBox);
-
-            yOffset = emailBox.Frame.Bottom + 4f;
-
-            passwordBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
-            passwordBox.BackgroundColor = UIColor.White;
-            passwordBox.Alpha = 0.0f;
-
-            passwordField = new UITextField (new CGRect (45, 0, passwordBox.Frame.Width - 50, passwordBox.Frame.Height));
-            passwordField.BackgroundColor = UIColor.White;
-            passwordField.Placeholder = "Password";
-            passwordField.Font = A.Font_AvenirNextRegular17;
-            passwordField.BorderStyle = UITextBorderStyle.None;
-            passwordField.TextAlignment = UITextAlignment.Left;
-            passwordField.SecureTextEntry = true;
-            passwordField.KeyboardType = UIKeyboardType.Default;
-            passwordField.AutocapitalizationType = UITextAutocapitalizationType.None;
-            passwordField.AutocorrectionType = UITextAutocorrectionType.No;
-            passwordField.Tag = PASSWORD_TEXTFIELD_TAG;
-            passwordField.ShouldReturn += TextFieldShouldReturn;
-            passwordField.EditingDidEnd += TextFieldEditingEnded;
-            passwordField.AccessibilityLabel = "Password";
-            passwordBox.AddSubview (passwordField);
-            passwordBox.UserInteractionEnabled = true;
-
-            UIImageView lockImage = new UIImageView ();
-            using (var loginImageThree = UIImage.FromBundle ("Loginscreen-3")) {
-                lockImage.Image = loginImageThree;
-            }
-            lockImage.Frame = new CGRect (15, 15, 14, 15);
-            passwordBox.AddSubview (lockImage);
-
-            contentView.AddSubview (passwordBox);
-
-            yOffset = passwordBox.Frame.Bottom + 20f;
-
-            submitButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
-            submitButton.BackgroundColor = A.Color_NachoSubmitButton;
-            submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            submitButton.SetTitle ("Submit", UIControlState.Normal);
-            submitButton.TitleLabel.TextColor = UIColor.White;
-            submitButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-            submitButton.Layer.CornerRadius = 4f;
-            submitButton.Layer.MasksToBounds = true;
-            submitButton.Tag = SUBMIT_BUTTON_TAG;
-            submitButton.Alpha = 0.0f;
+            submitButton = Util.BlueButton ("Get Started", View.Frame.Width);
+            ViewFramer.Create (submitButton).Y (yOffset);
             submitButton.TouchUpInside += SubmitButtonTouchUpInside;
-            submitButton.AccessibilityLabel = "Submit";
+            submitButton.Alpha = 0.0f;
             contentView.AddSubview (submitButton);
 
             yOffset = submitButton.Frame.Bottom + 20f;
 
-            advancedButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, 20));
-            advancedButton.BackgroundColor = A.Color_NachoGreen;
-            advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
-            advancedButton.TitleLabel.TextColor = A.Color_NachoYellow;
-            advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            advancedButton.Tag = ADVANCED_SIGNIN_BUTTON_TAG;
-            advancedButton.Alpha = 0.0f;
-            advancedButton.AccessibilityLabel = "Advanced Sign In";
-            contentView.AddSubview (advancedButton);
-            advancedButton.TouchUpInside += AdvancedLoginTouchUpInside;
-
-            yOffset = advancedButton.Frame.Bottom + 20;
-
-            supportButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, 20));
-            supportButton.BackgroundColor = A.Color_NachoGreen;
-            supportButton.SetTitle ("Customer Support", UIControlState.Normal);
-            supportButton.TitleLabel.TextColor = A.Color_NachoYellow;
-            supportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            supportButton.Tag = CUSTOMER_SUPPORT_BUTTON_TAG;
-            supportButton.Alpha = 0.0f;
-            supportButton.AccessibilityLabel = "Customer Support";
-            contentView.AddSubview (supportButton);
-            supportButton.TouchUpInside += SupportButtonTouchUpInside;
-
-            yOffset = supportButton.Frame.Bottom;
-
-            // bottom padding
-            yOffset += 20;
-
-            contentView.BringSubviewToFront (emailServiceTableView);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height );
+            CGRect contentFrame;
+            contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
+            contentView.Frame = contentFrame;
+            scrollView.ContentSize = contentFrame.Size;
 
             // Anchor loginTriangles on the bottom
-
             loginTriangles = new UIImageView ();
             using (var bootImage = UIImage.FromBundle (Util.GetImage ("Bootscreen-5"))) {
                 loginTriangles.Image = bootImage;
@@ -310,10 +144,6 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: starting fresh");
-            emailField.Text = "";
-            passwordField.Text = "";
-            emailServices.SetSelectedItem (McAccount.AccountServiceEnum.None);
-            emailServiceTableView.ReloadData ();
             ConfigureAndLayoutInternal ();
         }
 
@@ -322,221 +152,24 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureAndLayoutInternal ()
         {
-            ViewFramer.Create (emailServiceTableView).Height (emailServices.GetTableHeight ());
-
             UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                 UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                    circleMail.Alpha = (keyboardHeight == 0 ? 1.0f : 0.0f);
-                    supportButton.Alpha = (serviceTableExpanded ? 0.0f : 1.0f);
-                    advancedButton.Alpha = (serviceTableExpanded ? 0.0f : 1.0f);
-                    scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-                    CGRect contentFrame;
-                    contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
-                    contentView.Frame = contentFrame;
-                    scrollView.ContentSize = contentFrame.Size;
-
-                    if (startLabel.Center == originalStartLabelCenter) {
-                        //Raise Keyboard
-                        if (keyboardHeight > 0) {
-                            if (!shortScreen) {
-                                KeyboardRaisedLarge ();
-                            } else {
-                                KeyboardRaisedSmall ();
-                            }
-                        }
-                    } else {
-                        //Dismiss Keyboard
-                        if (!shortScreen) {
-                            KeyboardDismissedLarge ();
-                        } else {
-                            KeyboardDismissedSmall ();
-                        }
-                    }
+                    circleMail.Alpha = 1;
                 });
             }, ((bool finished) => {
                 ;
             }));
         }
 
-        protected void KeyboardRaisedLarge ()
-        {
-            startLabel.Center = new CGPoint (startLabel.Center.X, startLabel.Center.Y - 40);
-        }
-
-        protected void KeyboardDismissedLarge ()
-        {
-            startLabel.Center = new CGPoint (startLabel.Center.X, startLabel.Center.Y + 40);
-        }
-
-        protected void KeyboardRaisedSmall ()
-        {
-            startLabel.Center = new CGPoint (startLabel.Center.X, startLabel.Center.Y - 40);
-            submitButton.Center = new CGPoint (submitButton.Center.X, submitButton.Center.Y - 15);
-        }
-
-        protected void KeyboardDismissedSmall ()
-        {
-            startLabel.Center = new CGPoint (startLabel.Center.X, startLabel.Center.Y + 40);
-            submitButton.Center = new CGPoint (submitButton.Center.X, submitButton.Center.Y + 15);
-        }
-
-        private void MaybeStartLogin ()
-        {
-            var emailAddress = emailField.Text.Trim ();
-
-            string serviceName;
-            if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                if (emailServices.IsHotmailServiceSelected ()) {
-                    Complain ("Nacho Mail", "Please use your Hotmail or Outlook email address instead.");
-                } else {
-                    var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                    Complain ("Nacho Mail", nuance);
-                }
-                return;
-            }
-
-            if (!emailAddress.Contains ("@")) {
-                emailField.TextColor = A.Color_NachoRed;
-                Complain ("Nacho Mail", "Your email address must contain an '@'.\nFor example, username@company.com");
-                return;
-            }
-
-            if (!EmailHelper.IsValidEmail (emailField.Text)) {
-                emailField.TextColor = A.Color_NachoRed;
-                Complain ("Nacho Mail", "Your email address is not valid.\nFor example, username@company.com");
-                return;
-            }
-
-
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
-                Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
-                return;
-            }
-
-            if (EmailHelper.IsHotmailServiceAddress (emailAddress)) {
-                if (!emailServices.IsHotmailServiceSelected ()) {
-                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
-                    return;
-                }
-            } else {
-                if (emailServices.IsHotmailServiceSelected ()) {
-                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse your Hotmail or Outlook email address?");
-                    return;
-                }
-            }
-
-            StartLoginProcess ();
-        }
-
-        private void Complain (string title, string message)
-        {
-            Log.Info (Log.LOG_UI, "LaunchViewController: Complain {0}", message);
-            NcAlertView.ShowMessage (this, title, message);
-        }
-
-        /// <summary>
-        /// Confirms something the before starting the login process
-        /// </summary>
-        private void ConfirmBeforeStarting (string title, string message)
-        {
-            Log.Info (Log.LOG_UI, "LaunchViewController: Confirm {0}", message);
-            NcAlertView.Show (this, title, message,
-                new NcAlertAction ("OK", () => {
-                    StartLoginProcess ();
-                }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-        }
-
-        private void StartLoginProcess ()
-        {
-            var account = NcAccountHandler.Instance.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
-            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, selectedEmailService);
-            BackEnd.Instance.Start (account.Id);
-            PerformSegue ("SegueToAdvancedLogin", new SegueHolder (account));
-        }
-
-        public void maybeEnableConnect ()
-        {
-            var shouldWe = ((0 < emailField.Text.Length) && (0 < passwordField.Text.Length));
-
-            var submitButton = (UIButton)contentView.ViewWithTag (SUBMIT_BUTTON_TAG);
-            submitButton.Enabled = shouldWe;
-            submitButton.Alpha = (shouldWe ? 1.0f : 0.5f);
-        }
-
-        private void OnTextFieldChanged (NSNotification notification)
-        {
-            maybeEnableConnect ();
-        }
-
-        protected override void OnKeyboardChanged ()
-        {
-            ConfigureAndLayoutInternal ();
-
-            if (!shortScreen) {
-                scrollView.ScrollRectToVisible (new CGRect (supportButton.Frame.X, supportButton.Frame.Y + 10, supportButton.Frame.Width, supportButton.Frame.Height), false);
-            } else {
-                scrollView.ScrollRectToVisible (new CGRect (submitButton.Frame.X, submitButton.Frame.Y + 10, submitButton.Frame.Width, submitButton.Frame.Height), false);
-            }
-        }
-
-        public bool TextFieldShouldReturn (UITextField whatField)
-        {
-            switch (whatField.Tag) {
-            case EMAIL_TEXTFIELD_TAG:
-                passwordField.BecomeFirstResponder ();
-                break;
-            case PASSWORD_TEXTFIELD_TAG:
-                View.EndEditing (true);
-                break;
-            }
-            return true;
-        }
-
-        public void TextFieldEditingEnded (object obj, EventArgs args)
-        {
-            // This is not needed except for triggering UI monitoring
-        }
-
         protected void SubmitButtonTouchUpInside (object sender, EventArgs e)
         {
-            MaybeStartLogin ();
-        }
-
-        protected void AdvancedLoginTouchUpInside (object sender, EventArgs e)
-        {
-            View.EndEditing (true);
-            PerformSegue ("SegueToAdvancedLogin", new SegueHolder (null));
-        }
-
-        protected void SupportButtonTouchUpInside (object sender, EventArgs e)
-        {
-            View.EndEditing (true);
-            PerformSegue ("SegueToSupport", this);
-        }
-
-        protected void OnKeyboardChangeCompleted ()
-        {
-
+            PerformSegue ("SegueToAdvancedLogin", this);
         }
 
         protected override void Cleanup ()
         {
             submitButton.TouchUpInside -= SubmitButtonTouchUpInside;
-            advancedButton.TouchUpInside -= AdvancedLoginTouchUpInside;
-            supportButton.TouchUpInside -= SupportButtonTouchUpInside;
-
             submitButton = null;
-            advancedButton = null;
-            supportButton = null;
-
-            emailField.ShouldReturn -= TextFieldShouldReturn;
-            emailField.EditingDidEnd -= TextFieldEditingEnded;
-            passwordField.ShouldReturn -= TextFieldShouldReturn;
-            passwordField.EditingDidEnd -= TextFieldEditingEnded;
-
-            emailField = null;
-            passwordField = null;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -544,23 +177,11 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToSupport")) {
                 return;
             }
-
             if (segue.Identifier.Equals ("SegueToAdvancedLogin")) {
-                var h = (SegueHolder)sender;
-                var account = (McAccount)h.value;
-                var vc = (AdvancedLoginViewController)segue.DestinationViewController;
-                if (null == account) {
-                    // Save the user's work in progress.
-                    vc.SetAdvanced (emailField.Text, passwordField.Text);
-                } else {
-                    vc.SetAccount (account);
-                }
                 return;
             }
-
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
-
     }
 }

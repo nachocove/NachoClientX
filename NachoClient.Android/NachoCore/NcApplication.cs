@@ -429,8 +429,15 @@ namespace NachoCore
                 UserId = CloudHandler.Instance.GetUserId (); 
             }
             Telemetry.StartService ();
-            // FIXME: What capabilities should we look for here?
-            Account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.EmailSender).FirstOrDefault ();
+
+            // Pick a configured account or default to device account
+            Account = McAccount.GetDeviceAccount ();
+            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
+                if (LoginHelpers.AccountIsConfigured (account)) {
+                    Account = account;
+                    break;
+                }
+            }
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,

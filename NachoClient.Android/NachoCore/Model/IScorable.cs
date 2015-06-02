@@ -42,15 +42,6 @@ namespace NachoCore.Utils
         // Note that this method may affect other objects. For example, scoring
         // an email message affects contacts.
         void ScoreObject ();
-
-        // Upload new delta to synchronization server. When an object's score
-        // states are updated, the delta is maintained. Periodically, the
-        // delta is uploaded to the synchronization server.
-        void UploadScore ();
-
-        // Look for a previously uploaded score in the synchronization server and
-        // download and use it for this object.
-        bool DownloadScore ();
     }
 }
 

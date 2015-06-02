@@ -310,8 +310,6 @@
     <Compile Include="NachoCore\Model\McContactEmailAddressAttribute.cs" />
     <Compile Include="NachoPlatform.Android\ContactsAndroid.cs" />
     <Compile Include="NachoCore\Model\EmailAddressScore.cs" />
-    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs" />
-    <Compile Include="NachoCore\Model\McEmailAddressScoreSyncInfo.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceContacts.cs" />
     <Compile Include="NachoCore\Adapters\NcDeviceCalendars.cs" />
     <Compile Include="NachoPlatform.Android\CalendarsAndroid.cs" />
@@ -424,6 +422,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration27.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration28.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

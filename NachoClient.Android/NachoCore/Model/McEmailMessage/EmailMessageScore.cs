@@ -49,10 +49,6 @@ namespace NachoCore.Model
         [Indexed]
         public bool ScoreIsReplied { get; set; }
 
-        /// If there is update that is not uploaded to the synchronization server,
-        /// this object is non-null and holds the update.
-        private McEmailMessageScoreSyncInfo SyncInfo { get; set; }
-
         public const double VipScore = 1.0;
 
         public bool ShouldUpdate ()
@@ -193,42 +189,14 @@ namespace NachoCore.Model
             UpdateByBrain ();
         }
 
-        private void GetScoreSyncInfo ()
-        {
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = NcModel.Instance.Db.Table<McEmailMessageScoreSyncInfo> ().Where (x => x.EmailMessageId == Id).FirstOrDefault ();
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = new McEmailMessageScoreSyncInfo ();
-            SyncInfo.AccountId = AccountId;
-            SyncInfo.EmailMessageId = Id;
-            SyncInfo.InsertByBrain ();
-        }
-
-        private void ClearScoreSyncInfo ()
-        {
-            if (null == SyncInfo) {
-                return;
-            }
-            SyncInfo.DeleteByBrain ();
-            SyncInfo = null;
-        }
-
         public void IncrementTimesRead (int count = 1)
         {
             TimesRead += count;
-            GetScoreSyncInfo ();
-            SyncInfo.TimesRead += count;
         }
 
         public void IncrementSecondsRead (int seconds)
         {
             SecondsRead += seconds;
-            GetScoreSyncInfo ();
-            SyncInfo.SecondsRead += seconds;
         }
 
         public void SetScoreIsRead (bool value)
@@ -237,8 +205,6 @@ namespace NachoCore.Model
                 return;
             }
             ScoreIsRead = value;
-            GetScoreSyncInfo ();
-            SyncInfo.ScoreIsRead = value;
         }
 
         public void SetScoreIsReplied (bool value)
@@ -247,23 +213,6 @@ namespace NachoCore.Model
                 return;
             }
             ScoreIsReplied = value;
-            GetScoreSyncInfo ();
-            SyncInfo.ScoreIsReplied = value;
-        }
-
-        public void UploadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "email message id = {0}", Id);
-            if (null != SyncInfo) {
-                // TODO - Add real implementation. Currently, just clear the delta
-                ClearScoreSyncInfo ();
-            }
-        }
-
-        public bool DownloadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "email message id = {0}", Id);
-            return false;
         }
 
         private string TimeVarianceDescription ()

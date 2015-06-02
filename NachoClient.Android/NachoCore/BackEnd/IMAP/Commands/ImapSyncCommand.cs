@@ -89,14 +89,13 @@ namespace NachoCore.IMAP
                 } catch (OperationCanceledException) {
                     Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Cancelled");
                     return;
+                } catch (ServiceNotConnectedException) {
+                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Client is not connected.");
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCRECONN");
+                    return;
                 } catch (InvalidOperationException e) {
-                    if (!Client.IsConnected) {
-                        Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Client is not connected.");
-                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCRECONN");
-                    } else {
-                        Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
-                        sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARD0");
-                    }
+                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCHARD0");
                     return;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ImapSyncCommand: Unexpected exception: {0}", ex.ToString ());
@@ -144,13 +143,15 @@ namespace NachoCore.IMAP
 
         public McEmailMessage ServerSaysAddOrChangeEmail (MailSummary summary, McFolder folder)
         {
-            var ServerId = summary.imapSummary.UniqueId; // FIXME
-            if (null == ServerId || string.Empty == ServerId.Value.ToString ()) {
-                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No ServerId present.");
+            if (null == summary.imapSummary.UniqueId || string.Empty == summary.imapSummary.UniqueId.Value.ToString ()) {
+                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
                 return null;
             }
+
+            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, summary.imapSummary.UniqueId.Value.ToString ());
+
             // If the server attempts to overwrite, delete the pre-existing record first.
-            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, ServerId.Value.ToString ());
+            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != eMsg) {
                 eMsg.Delete ();
                 eMsg = null;
@@ -158,14 +159,14 @@ namespace NachoCore.IMAP
 
             McEmailMessage emailMessage = null;
             try {
-                var r = ParseEmail (summary.imapSummary);
+                var r = ParseEmail (McEmailMessageServerId, summary.imapSummary);
                 emailMessage = r.GetValue<McEmailMessage> ();
                 emailMessage.BodyPreview = summary.preview;
             } catch (Exception ex) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
                 if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
                     emailMessage = new McEmailMessage () {
-                        ServerId = ServerId.ToString (),
+                        ServerId = McEmailMessageServerId,
                     };
                 }
                 emailMessage.IsIncomplete = true;
@@ -222,10 +223,10 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        public NcResult ParseEmail (IMessageSummary summary)
+        public NcResult ParseEmail (string ServerId, IMessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
-                ServerId = summary.UniqueId.Value.Id.ToString (),
+                ServerId = ServerId,
                 AccountId = BEContext.Account.Id,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,
@@ -298,7 +299,7 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
                         emailMessage.IsRead = true;
                     }
-                    // TODO Where do we set these flags?
+                    // FIXME Where do we set these flags?
                     if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
                     }
                     if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
@@ -310,12 +311,12 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
                     }
                     if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
-                        // TODO See if these are handled by the summary.UserFlags
+                        // FIXME See if these are handled by the summary.UserFlags
                     }
                 }
             }
             if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
-                // TODO Where do we set these flags?
+                // FIXME Where do we set these flags?
             }
 
             if (null != summary.Headers) {
@@ -394,13 +395,25 @@ namespace NachoCore.IMAP
                         previewBytes = isPlain ? PreviewSizeBytes : PreviewSizeBytes*4;
                     }
                     Stream stream;
-                    try {
-                        stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier+".TEXT", 0, previewBytes, Cts.Token);
+                    string partSpecifier = text.PartSpecifier;
+                    if (string.Empty == partSpecifier) {
+                        partSpecifier = "TEXT";
+                    } else {
+                        partSpecifier += ".TEXT";
                     }
-                    catch (ImapCommandException) {
+                    try {
+                        stream = folder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
+                    }
+                    catch (ImapCommandException e) {
+                        Log.Warn (Log.LOG_IMAP, "Need to adjust partSpecifier for part {0} {1} {2}", text.PartSpecifier, text.ContentTransferEncoding, e);
                         stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
                     }
-                    preview = getTextFromStream (stream, text.ContentType, encoding(text.ContentTransferEncoding));
+                    ContentEncoding encoding;
+                    if (!MimeKit.Utils.MimeUtils.TryParse(text.ContentTransferEncoding, out encoding)) {
+                        Log.Error (Log.LOG_IMAP, "findPreviewText: Could not parse ContentTransferEncoding {0}", text.ContentTransferEncoding);
+                        encoding = ContentEncoding.Default;
+                    }
+                    preview = getTextFromStream (stream, text.ContentType, encoding);
                     if (text.Octets <= 4096) {
                         body = preview;
                         preview = body.Substring (0, Math.Min(PreviewSizeBytes, body.Length));
@@ -447,22 +460,6 @@ namespace NachoCore.IMAP
                 isPlaintext = true;
             }
             return text;
-        }
-
-        private ContentEncoding encoding(string contentEncoding)
-        {
-            ContentEncoding enc;
-            switch (contentEncoding.ToLower ()) {
-            case "7bit":             enc = ContentEncoding.SevenBit; break;
-            case "8bit":             enc = ContentEncoding.EightBit; break;
-            case "binary":           enc = ContentEncoding.Binary; break;
-            case "base64":           enc = ContentEncoding.Base64; break;
-            case "quoted-printable": enc = ContentEncoding.QuotedPrintable; break;
-            case "x-uuencode":       enc = ContentEncoding.UUEncode; break;
-            case "uuencode":         enc = ContentEncoding.UUEncode; break;
-            default:                 enc = ContentEncoding.Default; break;
-            }
-            return enc;
         }
 
         private string getTextFromStream(Stream stream, ContentType type, ContentEncoding enc)
