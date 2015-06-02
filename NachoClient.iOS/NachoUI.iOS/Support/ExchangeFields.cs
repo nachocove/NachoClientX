@@ -386,6 +386,7 @@ namespace NachoClient.iOS
             var temp = new McServer ();
             var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
             NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
+            temp.Capabilities = McAccount.ActiveSyncCapabilities;
             if (!Server.IsSameServer (temp)) {
                 Server.CopyFrom (temp);
                 Server.UserSpecifiedServerName = serverView.textField.Text;
