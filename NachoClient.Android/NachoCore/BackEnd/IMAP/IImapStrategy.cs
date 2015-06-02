@@ -14,7 +14,6 @@ namespace NachoCore.IMAP
             OpenOnly,
         };
         public MethodEnum Method;
-        public IMailFolder MailKitFolder;
         public McFolder Folder;
         public MessageSummaryItems Flags;
         public uint Start;
@@ -23,12 +22,12 @@ namespace NachoCore.IMAP
 
     public class PingKit
     {
-        public IMailFolder MailKitFolder;
+        public McFolder Folder;
     }
 
     public interface IImapStrategy
     {
-        SyncKit GenSyncKit (int accountId, McProtocolState protocolState, ImapClient imapClient);
-        PingKit GenPingKit (ImapClient imapClient);
+        SyncKit GenSyncKit (int accountId, McProtocolState protocolState);
+        PingKit GenPingKit ();
     }
 }

@@ -277,7 +277,7 @@ namespace NachoCore.SMTP
                 }
             };
             Sm.Validate ();
-            Sm.State = ProtocolState.ProtoControlState;
+            Sm.State = ProtocolState.SmtpProtoControlState;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
@@ -309,14 +309,14 @@ namespace NachoCore.SMTP
             return true;
         }
 
-        private ISmtpCommand Cmd;
+        private SmtpCommand Cmd;
 
         private bool CmdIs (Type cmdType)
         {
             return (null != Cmd && Cmd.GetType () == cmdType);
         }
 
-        private void SetCmd (ISmtpCommand nextCmd)
+        private void SetCmd (SmtpCommand nextCmd)
         {
             if (null != Cmd) {
                 Cmd.Cancel ();
@@ -343,7 +343,7 @@ namespace NachoCore.SMTP
                     }
                 }
                 SmtpClient client = newClientWithLogger();
-                var cmd = new SmtpAuthenticateCommand(client, Server, Cred);
+                var cmd = new SmtpAuthenticateCommand(this, client);
                 cmd.Execute (Sm);
             }, "SmtpDoDisc");
         }
@@ -400,7 +400,7 @@ namespace NachoCore.SMTP
             if (null == m_smtpClient) {
                 NcTask.Run (delegate {
                     m_smtpClient = newClientWithLogger();
-                    var cmd = new SmtpAuthenticateCommand(m_smtpClient, Server, Cred);
+                    var cmd = new SmtpAuthenticateCommand(this, m_smtpClient);
                     cmd.Execute (Sm);
                 }, "SmtpDoConn");
             }
@@ -425,7 +425,7 @@ namespace NachoCore.SMTP
                 case McPending.Operations.EmailSend:
                 case McPending.Operations.EmailForward:
                 case McPending.Operations.EmailReply:
-                    var cmd = new SmtpSendMailCommand (m_smtpClient, send);
+                    var cmd = new SmtpSendMailCommand (this, m_smtpClient, send);
                     cmd.Execute (Sm);
                     NcTask.Run (delegate {
                         Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT");
@@ -455,6 +455,12 @@ namespace NachoCore.SMTP
                 }
                 m_smtpClient = null;
             }
+        }
+
+        private void DoDrive ()
+        {
+            Sm.State = ProtocolState.SmtpProtoControlState;
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "DRIVE");
         }
 
         private void DoUiCredReq ()

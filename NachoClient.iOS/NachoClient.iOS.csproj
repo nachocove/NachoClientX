@@ -436,9 +436,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSettingsCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSettingsCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\IAsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\IAsCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs</Link>
     </Compile>
@@ -1389,9 +1386,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
       <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\ISmtpCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\ISmtpCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
     </Compile>
@@ -1431,9 +1425,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AdvancedTextField.cs" />
     <Compile Include="NachoUI.iOS\Support\ExchangeFields.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\IImapCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\IImapCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs</Link>
     </Compile>
@@ -1467,6 +1458,9 @@
     <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommand.cs">
       <Link>NachoCore\BackEnd\NcCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\INcCommand.cs">
+      <Link>NachoCore\BackEnd\INcCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -10,9 +10,8 @@ using MimeKit;
 
 namespace NachoCore.SMTP
 {
-    public abstract class SmtpCommand : ISmtpCommand
+    public abstract class SmtpCommand : NcCommand
     {
-        public CancellationTokenSource cToken { get; protected set; }
         public SmtpClient client { get; set; }
 
         public class SmtpCommandFailure : Exception {
@@ -22,7 +21,7 @@ namespace NachoCore.SMTP
 
         }
 
-        public SmtpCommand(SmtpClient smtp, bool checkConnected = true)
+        public SmtpCommand (IBEContext beContext, SmtpClient smtp, bool checkConnected = true) : base (beContext)
         {
             if (null == smtp) {
                 throw new SmtpCommandFailure("No client passed in");
@@ -32,17 +31,12 @@ namespace NachoCore.SMTP
                     throw new SmtpCommandFailure ("SmtpCommand: Client is not connected");
                 }
             }
-            cToken = new CancellationTokenSource ();
             client = smtp;
         }
 
-        public virtual void Execute (NcStateMachine sm)
+        public override void Cancel ()
         {
-        }
-
-        public virtual void Cancel ()
-        {
-            cToken.Cancel ();
+            base.Cancel ();
             lock (client.SyncRoot) {
                 if (client.IsConnected) {
                     client.Disconnect (false);
@@ -54,13 +48,8 @@ namespace NachoCore.SMTP
 
     public class SmtpAuthenticateCommand : SmtpCommand
     {
-        McServer Server { get; set; }
-        McCred Creds { get; set; }
-
-        public SmtpAuthenticateCommand(SmtpClient smtp, McServer server, McCred creds) : base(smtp, false)
+        public SmtpAuthenticateCommand(IBEContext beContext, SmtpClient smtp) : base(beContext, smtp, false)
         {
-            Server = server;
-            Creds = creds;
         }
 
         public override void Execute (NcStateMachine sm)
@@ -69,13 +58,13 @@ namespace NachoCore.SMTP
                 lock(client.SyncRoot) {
                     //client.ClientCertificates = new X509CertificateCollection ();
                     // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
-                    client.Connect (Server.Host, Server.Port, false, cToken.Token);
+                    client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
 
                     // Note: since we don't have an OAuth2 token, disable
                     // the XOAUTH2 authentication mechanism.
                     client.AuthenticationMechanisms.Remove ("XOAUTH2");
 
-                    client.Authenticate (Creds.Username, Creds.GetPassword (), cToken.Token);
+                    client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                 }
                 sm.PostEvent ((uint)SmEvt.E.Success, "SMTPCONNSUC");
             }
@@ -92,18 +81,17 @@ namespace NachoCore.SMTP
 
     public class SmtpSendMailCommand : SmtpCommand
     {
-        protected McPending Pending;
-
-        public SmtpSendMailCommand(SmtpClient smtp, McPending pending) : base(smtp)  // TODO Do I need the base here to get the base initializer to run?
+        public SmtpSendMailCommand(IBEContext beContext, SmtpClient smtp, McPending pending) : base(beContext, smtp)  // TODO Do I need the base here to get the base initializer to run?
         {
-            Pending = pending;
+            PendingSingle = pending;
         }
 
         public override void Execute (NcStateMachine sm)
         {
-            Pending.MarkDispached ();
+            // FIXME JAN - PendingSingle needs to be resolved when handling success/failure.
+            PendingSingle.MarkDispached ();
 
-            McEmailMessage EmailMessage = McAbstrObject.QueryById<McEmailMessage> (Pending.ItemId);
+            McEmailMessage EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
             McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
             MimeMessage mimeMessage = MimeHelpers.LoadMessage (body);
             var attachments = McAttachment.QueryByItemId (EmailMessage);
@@ -113,9 +101,9 @@ namespace NachoCore.SMTP
 
             try {
                 lock(client.SyncRoot) {
-                    client.Send (mimeMessage, cToken.Token);
+                    client.Send (mimeMessage, Cts.Token);
                 }
-                if (cToken.IsCancellationRequested) {
+                if (Cts.IsCancellationRequested) {
                     sm.PostEvent ((uint)SmEvt.E.TempFail, "SMTPRETRYFAIL");
                 } else {
                     sm.PostEvent ((uint)SmEvt.E.Success, "SMTPCONNSUC");

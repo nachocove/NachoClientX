@@ -14,14 +14,11 @@ namespace NachoCore.IMAP
 {
     public class ImapStrategy : NcStrategy
     {
-        private ImapClient ImapClient;
-
-        public ImapStrategy (IBEContext becontext, ImapClient imapClient) : base (becontext)
+        public ImapStrategy (IBEContext becontext) : base (becontext)
         {
-            ImapClient = imapClient;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, ImapClient imapClient)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState)
         {
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure
                 | MessageSummaryItems.Envelope
@@ -35,29 +32,28 @@ namespace NachoCore.IMAP
             var inbox = McFolder.GetDefaultInboxFolder (accountId);
             var syncKit = new SyncKit () {
                 Method = SyncKit.MethodEnum.Range,
-                MailKitFolder = imapClient.Inbox,
                 Folder = inbox,
                 Flags = flags,
                 // Span value here indicates preferred chunk size.
                 // FIXME - dynamic size.
-                Span = 100,
+                Span = 5,
             };
-            if (null == ImapClient.Inbox.UidNext || 0 == ImapClient.Inbox.UidNext.Value.Id) {
+            if (null == inbox || 0 == inbox.ImapUidNext) {
                 // We really need to do an Open/SELECT to get UidNext before we start.
                 syncKit.Method = SyncKit.MethodEnum.OpenOnly;
                 return syncKit;
-                }
-            if (ImapClient.Inbox.UidNext.Value.Id - 1 > inbox.ImapUidHighestUidSynced) {
+            }
+            if (inbox.ImapUidNext - 1 > inbox.ImapUidHighestUidSynced) {
                 // Prefer to sync from latest toward oldest.
                 // Start as high as we can, guard against the scenario where Span > UidNext.
                 syncKit.Start =
                     Math.Max (inbox.ImapUidHighestUidSynced, 
-                    (syncKit.Span + 1) >= ImapClient.Inbox.UidNext.Value.Id ? 1 : 
-                        ImapClient.Inbox.UidNext.Value.Id - 1 - syncKit.Span);
+                        (syncKit.Span + 1) >= inbox.ImapUidNext ? 1 : 
+                        inbox.ImapUidNext - 1 - syncKit.Span);
                 syncKit.Span =
                     Math.Min (syncKit.Span, 
-                    (inbox.ImapUidHighestUidSynced >= ImapClient.Inbox.UidNext.Value.Id) ? 1 :
-                        ImapClient.Inbox.UidNext.Value.Id - inbox.ImapUidHighestUidSynced);
+                        (inbox.ImapUidHighestUidSynced >= inbox.ImapUidNext) ? 1 :
+                        inbox.ImapUidNext - inbox.ImapUidHighestUidSynced);
                 return syncKit;
             }
             if (1 < inbox.ImapUidLowestUidSynced) {
@@ -73,10 +69,9 @@ namespace NachoCore.IMAP
             return null;
         }
 
-        public PingKit GenPingKit (ImapClient imapClient)
+        public PingKit GenPingKit ()
         {
             return new PingKit () {
-                MailKitFolder = imapClient.Inbox,
             };
         }
 
@@ -94,7 +89,7 @@ namespace NachoCore.IMAP
                     Where (x => McPending.Operations.EmailBodyDownload == x.Operation).FirstOrDefault ();
                 if (null != fetch) {
                     return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
-                        new ImapFetchBodyCommand (BEContext, ImapClient, fetch));
+                        new ImapFetchBodyCommand (BEContext, fetch));
                 }
             }
             // TODO add McPending operations, non-Inbox folders, etc.
@@ -102,15 +97,15 @@ namespace NachoCore.IMAP
                 NcApplication.ExecutionContextEnum.Background == exeCtxt ||
                 NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 // (FG,BG,QS) if there is syncing to do, then get it done.
-                var syncKit = GenSyncKit (BEContext.Account.Id, protocolState, ImapClient);
+                var syncKit = GenSyncKit (BEContext.Account.Id, protocolState);
                 if (null != syncKit) {
                     return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                        new ImapSyncCommand (BEContext, ImapClient, syncKit));
+                        new ImapSyncCommand (BEContext, syncKit));
                 }
             }
             // TODO FG/BG only.
             return new Tuple<PickActionEnum, ImapCommand> (PickActionEnum.Ping, 
-                new ImapIdleCommand (BEContext, ImapClient, GenPingKit (ImapClient)));
+                new ImapIdleCommand (BEContext, GenPingKit ()));
         }
     }
 }

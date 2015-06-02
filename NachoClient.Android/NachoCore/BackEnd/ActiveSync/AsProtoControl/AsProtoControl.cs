@@ -16,7 +16,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsProtoControl : NcProtoControl, IPushAssistOwner
     {
-        private IAsCommand Cmd;
+        private INcCommand Cmd;
         private AsValidateConfig Validator;
 
         public enum Lst : uint
@@ -1230,7 +1230,7 @@ namespace NachoCore.ActiveSync
             return (null != Cmd && Cmd.GetType () == cmdType);
         }
 
-        private void SetCmd (IAsCommand nextCmd)
+        private void SetCmd (INcCommand nextCmd)
         {
             if (null != Cmd) {
                 Cmd.Cancel ();

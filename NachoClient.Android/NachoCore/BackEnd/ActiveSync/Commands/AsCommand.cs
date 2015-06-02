@@ -9,6 +9,7 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Wbxml;
@@ -17,7 +18,7 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public abstract class AsCommand : IAsCommand, IAsHttpOperationOwner
+    public abstract class AsCommand : NcCommand, IAsHttpOperationOwner
     {
         // Constants.
         private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
@@ -32,20 +33,7 @@ namespace NachoCore.ActiveSync
         public XNamespace m_ns;
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
         protected NcStateMachine OwnerSm;
-        protected IBEContext BEContext;
         protected AsHttpOperation Op;
-        // PendingSingle is for commands that process 1-at-a-time. Pending list is for N-at-a-time commands.
-        // Both get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
-        // The sublass is responsible for re-writing each from dispatched to something else.
-        // This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
-        // is responsible for clearing PendingSingle/PendingList. 
-        // Because of threading, the PendingResolveLockObj must be locked before resolving.
-        // Any resolved pending objects must be removed from PendingSingle/PendingList before unlock.
-        protected McPending PendingSingle;
-        protected List<McPending> PendingList;
-        protected object PendingResolveLockObj;
-        protected NcResult SuccessInd;
-        protected NcResult FailureInd;
         protected Object LockObj = new Object ();
         private bool Cancelled = false;
         private bool ProcessResponseOwnsPendingCleanup = false;
@@ -69,13 +57,10 @@ namespace NachoCore.ActiveSync
             m_ns = nsName;
         }
 
-        public AsCommand (string commandName, IBEContext beContext)
+        public AsCommand (string commandName, IBEContext beContext) : base (beContext)
         {
             Timeout = TimeSpan.Zero;
             CommandName = commandName;
-            BEContext = beContext;
-            PendingList = new List<McPending> ();
-            PendingResolveLockObj = new object ();
         }
         // Virtual Methods.
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
@@ -94,13 +79,13 @@ namespace NachoCore.ActiveSync
             Op.Execute (sm);
         }
 
-        public virtual void Execute (NcStateMachine sm)
+        public override void Execute (NcStateMachine sm)
         {
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
         }
         // Cancel() must be safe to call even when the command has already completed.
-        public virtual void Cancel ()
+        public override void Cancel ()
         {
             if (null != Op) {
                 Op.Cancel ();
@@ -249,24 +234,6 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public virtual void StatusInd (NcResult result)
-        {
-            BEContext.Owner.StatusInd (BEContext.ProtoControl, result);
-        }
-
-        public virtual void StatusInd (bool didSucceed)
-        {
-            if (didSucceed) {
-                if (null != SuccessInd) {
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, SuccessInd);
-                }
-            } else {
-                if (null != FailureInd) {
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, FailureInd);
-                }
-            }
-        }
-
         protected bool SiezePendingCleanup ()
         {
             lock (LockObj) {
@@ -329,38 +296,6 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public virtual void ResolveAllFailed (NcResult.WhyEnum why)
-        {
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, why);
-                }
-                PendingList.Clear ();
-            }
-        }
-
-        public virtual void ResolveAllDeferred ()
-        {
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
-                }
-                PendingList.Clear ();
-            }
-        }
-
-        protected void ConsolidatePending ()
-        {
-            if (null != PendingSingle) {
-                PendingList.Add (PendingSingle);
-                PendingSingle = null;
-            }
-        }
-
-        protected delegate void PendingAction (McPending pending);
-
         protected void PendingNonResolveApply (PendingAction action)
         {
             lock (PendingResolveLockObj) {
@@ -370,17 +305,6 @@ namespace NachoCore.ActiveSync
                 foreach (var pending in PendingList) {
                     action (pending);
                 }
-            }
-        }
-
-        protected void PendingResolveApply (PendingAction action)
-        {
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                    action (pending);
-                }
-                PendingList.Clear ();
             }
         }
 

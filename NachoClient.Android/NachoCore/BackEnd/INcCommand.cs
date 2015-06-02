@@ -3,9 +3,9 @@
 using System;
 using NachoCore.Utils;
 
-namespace NachoCore.ActiveSync
+namespace NachoCore
 {
-    public interface IAsCommand
+    public interface INcCommand
     {
         void Execute (NcStateMachine sm);
         void Cancel ();
