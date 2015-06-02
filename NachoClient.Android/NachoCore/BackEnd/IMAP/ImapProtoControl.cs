@@ -50,6 +50,7 @@ namespace NachoCore.IMAP
                     return BackEndStateEnum.ServerConfWait;
 
                 case (uint)Lst.FSyncW:
+                case (uint)Lst.CmdW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
                     // FIXME - need to consider ProtocolState.HasSyncedInbox.
@@ -403,6 +404,7 @@ namespace NachoCore.IMAP
         private void CancelCmd ()
         {
             if (null != Cmd) {
+                // FIXME - not a long term soln. There are issues with MailKit and cancellation.
                 lock (ImapClient.SyncRoot) {
                     Cmd = null;
                 }
