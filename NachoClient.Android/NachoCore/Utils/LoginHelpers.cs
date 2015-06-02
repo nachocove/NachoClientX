@@ -103,17 +103,23 @@ namespace NachoCore.Utils
             return (DateTime.MaxValue != gonnaExpireOn);
         }
 
-        static public bool ReadyToStart ()
+        static public bool ReadyToStart (McAccount account)
         {
             if (!NcApplication.Instance.IsUp ()) {
                 return false;
             }
-            if (null == NcApplication.Instance.Account) {
+            if (!LoginHelpers.HasViewedTutorial ()) {
                 return false;
             }
-            // FIXME STEVE
-            var backendState = BackEnd.Instance.BackEndState (NcApplication.Instance.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
-            return LoginHelpers.HasViewedTutorial () && (BackEndStateEnum.PostAutoDPostInboxSync == backendState);
+            if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                return false;
+            }
+            return AccountIsConfigured (account);
+        }
+
+        public static bool AccountIsConfigured (McAccount account)
+        {
+            return HasFirstSyncCompleted (account.Id);
         }
 
         static public int GlobalAccountId {

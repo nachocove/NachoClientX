@@ -41,26 +41,16 @@ namespace NachoClient.iOS
 
         public WaitingScreen ()
         {
-
-        }
-
-        public void SetOwner (AdvancedLoginViewController owner)
-        {
-            this.owner = owner;
-        }
-
-        public WaitingScreen (CGRect frame)
-        {
-            this.Frame = frame;
         }
 
         public WaitingScreen (IntPtr handle) : base (handle)
         {
-
         }
 
-        public void CreateView ()
+        public WaitingScreen (CGRect rect, AdvancedLoginViewController owner) : base (rect)
         {
+            this.owner = owner;
+
             this.BackgroundColor = A.Color_NachoGreen;
             LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64 + 64;
 
@@ -162,9 +152,6 @@ namespace NachoClient.iOS
             dismissButton.SizeToFit ();
             ViewFramer.Create (dismissButton).Center (this.Frame.Width / 2, this.Frame.Bottom - 40);
             this.AddSubview (dismissButton);
-
-
-            this.Hidden = true;
         }
 
         protected UIImage maskImage (UIImage maskImage)
@@ -181,30 +168,30 @@ namespace NachoClient.iOS
             return new UIImage (imageMask);
         }
 
-        public void SetLoadingText (string loadingMessage)
+        public void ShowView (string loadingMessage = null)
         {
-            UIView.AnimateKeyframes (.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+            if (this.Hidden) {
+                this.Hidden = false;
+                this.Superview.BringSubviewToFront (this);
+                owner.NavigationItem.Title = "";
+                Util.ConfigureNavBar (true, owner.NavigationController);
+                ResetLoadingItems ();
+                StartLoadingAnimation ();
+            }
+            // Does the loading message need to change?
+            if (!String.IsNullOrEmpty (loadingMessage) && !syncStatusLabel.Text.Equals (loadingMessage)) {
+                UIView.AnimateKeyframes (.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        syncStatusLabel.Alpha = 0.0f;
+                    });
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        syncStatusLabel.Text = loadingMessage;
+                        syncStatusLabel.Alpha = 1.0f;
+                    });
 
-                UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                    syncStatusLabel.Alpha = 0.0f;
-                });
-
-                UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                    syncStatusLabel.Text = loadingMessage;
-                    syncStatusLabel.Alpha = 1.0f;
-                });
-
-            }, ((bool finished) => {
-            }));
-        }
-
-        public void ShowView ()
-        {
-            this.Hidden = false;
-            owner.NavigationItem.Title = "";
-            Util.ConfigureNavBar (true, owner.NavigationController);
-            ResetLoadingItems ();
-            StartLoadingAnimation ();
+                }, ((bool finished) => {
+                }));
+            }
         }
 
         public void DismissView ()
@@ -213,7 +200,6 @@ namespace NachoClient.iOS
             topHalfSpinner.Layer.RemoveAllAnimations ();
             owner.NavigationItem.Title = "Account Setup";
             Util.ConfigureNavBar (false, owner.NavigationController);
-            owner.loadingCover.Hidden = true;
             this.Hidden = true;
         }
 
@@ -291,7 +277,7 @@ namespace NachoClient.iOS
                 });
 
             }, ((bool finished) => {
-                owner.FinishedSyncedEmailAnimation(accountId);
+                owner.FinishedSyncedEmailAnimation (accountId);
             }));
         }
     }

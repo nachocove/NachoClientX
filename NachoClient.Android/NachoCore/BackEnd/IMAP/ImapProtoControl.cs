@@ -345,10 +345,26 @@ namespace NachoCore.IMAP
             }
         }
 
+        public static string MessageServerId(McFolder folder, string ImapMessageUid)
+        {
+            return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
+        }
+
+        public static UniqueId ImapMessageUid(string MessageServerId)
+        {
+            uint x = UInt32.Parse (MessageServerId.Split (':') [1]);
+            return new UniqueId(x);
+        }
+        
         public PushAssistParameters PushAssistParameters ()
         {
             NcAssert.True (false);
             return null;
+        }
+
+        public override void ForceStop ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPFORCESTOP");
         }
 
         public override void Remove ()
@@ -477,12 +493,15 @@ namespace NachoCore.IMAP
                     break;
                 }
             }
+            catch (ServiceNotConnectedException) {
+                Log.Error (Log.LOG_IMAP, "DoPick: Client is not connected");
+                Sm.PostEvent ((uint)ImapEvt.E.ReConn, "IMAPPCKRECONN");
+                return;
+            }
             catch (InvalidOperationException e) {
-                if (!ImapClient.IsConnected) {
-                    Log.Error (Log.LOG_IMAP, "Client is not connected");
-                    Sm.PostEvent ((uint)ImapEvt.E.ReConn, "IMAPPCKRECONN");
-                    return;
-                }
+                Log.Error (Log.LOG_IMAP, "Unexpected error DoPick: {0}", e);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPPICKHRDX");
+                return;
             }
         }
 

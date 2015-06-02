@@ -1158,7 +1158,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
-    <Compile Include="NachoUI.iOS\Support\EmailServiceTableViewSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailHelper.cs">
       <Link>NachoCore\Utils\EmailHelper.cs</Link>
     </Compile>
@@ -1459,6 +1458,13 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration28.cs">
       <Link>NachoCore\Model\Migration\NcMigration28.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.designer.cs">
+      <DependentUpon>AccountCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoCredentials.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
+    <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

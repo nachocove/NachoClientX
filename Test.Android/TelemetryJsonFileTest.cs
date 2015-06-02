@@ -19,6 +19,15 @@ namespace Test.Common
             return WriteFiles;
         }
 
+        public TelemetryJsonFile GetWriteFile (TelemetryEventClass eventClass)
+        {
+            TelemetryJsonFile jsonFile;
+            if (WriteFiles.TryGetValue (eventClass, out jsonFile)) {
+                return jsonFile;
+            }
+            return null;
+        }
+
         public SortedSet<string> GetReadFiles ()
         {
             return ReadFiles;
@@ -48,6 +57,10 @@ namespace Test.Common
     {
         protected WrappedTelemetryJsonFileTable FileTable;
 
+        protected int OriginalMaxEvents;
+
+        protected long OriginalMaxDuration;
+
         protected void DeleteFiles ()
         {
             // Delete all JSON files
@@ -66,6 +79,9 @@ namespace Test.Common
         [SetUp]
         public void Setup ()
         {
+            OriginalMaxEvents = TelemetryJsonFileTable.MAX_EVENTS;
+            OriginalMaxDuration = TelemetryJsonFileTable.MAX_DURATION;
+
             DeleteFiles ();
             WrappedTelemetryJsonFileTable.SetMockUtcNow (true);
         }
@@ -73,6 +89,9 @@ namespace Test.Common
         [TearDown]
         public void Teardown ()
         {
+            TelemetryJsonFileTable.MAX_EVENTS = OriginalMaxEvents;
+            TelemetryJsonFileTable.MAX_DURATION = OriginalMaxDuration;
+
             DeleteFiles ();
             if (null != FileTable) {
                 foreach (var jsonFile in FileTable.GetWriteFiles().Values) {
@@ -204,6 +223,7 @@ namespace Test.Common
             FileTable = new WrappedTelemetryJsonFileTable ();
             CheckWriteFilesCount (0);
             CheckReadFilesCount (0);
+            TelemetryJsonFileTable.MAX_DURATION = long.MaxValue; // disable duration check temporarily
 
             // Add a log event. This should create the log file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 1, 2, 3, 456);
@@ -229,9 +249,9 @@ namespace Test.Common
 
             // Add a WBXML event. This should create the WBXML JSON file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 3, 0, 0, 001);
-            var event3 = new TelemetryWbxmlEvent () {
+            var event3 = new TelemetryProtocolEvent () {
                 timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
-                wbxml = new byte[3] { 0x11, 0x22, 0x33 },
+                payload = new byte[3] { 0x11, 0x22, 0x33 },
             };
             AddEventAndCheck (event3);
             CheckWriteFilesCount (3);
@@ -296,7 +316,7 @@ namespace Test.Common
             string[] expectedReadFiles = new string[] {
                 "20150526010203456.20150526125500101.log",
                 "20150526020203456.20150526020203456.ui",
-                "20150526030000001.20150526030000001.wbxml",
+                "20150526030000001.20150526030000001.protocol",
                 "20150526040000000.20150526040000000.samples",
                 "20150526110000022.20150526110000022.statistics2",
                 "20150526125047000.20150526125047000.support",
@@ -327,6 +347,85 @@ namespace Test.Common
                 FileTable.Remove (readFile);
                 Assert.False (File.Exists (readFile));
             }
+
+            // Set the max entries to 3. Write 4 entries and expect a new read file
+            CheckReadFilesCount (0);
+            CheckWriteFilesCount (0);
+            WrappedTelemetryJsonFileTable.MAX_EVENTS = 4;
+
+            WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 1, 0, 0, DateTimeKind.Utc);
+            bool added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
+                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                thread_id = 10,
+                message = "This message should not generate a read file",
+            });
+            Assert.True (added);
+            CheckReadFilesCount (0);
+            CheckWriteFilesCount (1);
+            Assert.AreEqual (1, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+
+            WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 2, 0, 0, DateTimeKind.Utc);
+            added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
+                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                thread_id = 11,
+                message = "This message should not generate a read file",
+            });
+            Assert.True (added);
+            CheckReadFilesCount (0);
+            CheckWriteFilesCount (1);
+            Assert.AreEqual (2, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+
+            WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 3, 0, 0);
+            added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
+                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                thread_id = 12,
+                message = "This message should not generate a read file",
+            });
+            Assert.True (added);
+            CheckReadFilesCount (0);
+            CheckWriteFilesCount (1);
+            Assert.AreEqual (3, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+
+            WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 4, 0, 0);
+            added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
+                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                thread_id = 13,
+                message = "This message should generate a read file",
+            });
+            Assert.True (added);
+            CheckReadFilesCount (1);
+            CheckWriteFilesCount (0);
+            readFile = FileTable.GetNextReadFile ();
+            Assert.AreEqual ("20150526130100000.20150526130400000.log", Path.GetFileName (readFile));
+            FileTable.Remove (readFile);
+
+            // Set the max duration to 5 mins. Write 2 entries 5m0.001s apart and expect a new read file
+            CheckReadFilesCount (0);
+            CheckWriteFilesCount (0);
+
+            TelemetryJsonFileTable.MAX_DURATION = 5 * TimeSpan.TicksPerMinute;
+            WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 5, 0, 0);
+            added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
+                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                thread_id = 14,
+                message = "This message should not generate a read file",
+            });
+            Assert.True (added);
+            CheckReadFilesCount (0);
+            CheckWriteFilesCount (1);
+            Assert.AreEqual (1, FileTable.GetWriteFile (TelemetryEventClass.Log).NumberOfEntries);
+
+            WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 10, 0, 1);
+            added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
+                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                thread_id = 15,
+                message = "This message should generate a read file",
+            });
+            Assert.True (added);
+            CheckReadFilesCount (1);
+            CheckWriteFilesCount (1);
+            readFile = FileTable.GetNextReadFile ();
+            Assert.AreEqual ("20150526130500000.20150526130500000.log", Path.GetFileName (readFile));
         }
     }
 }

@@ -12,34 +12,31 @@ using CoreGraphics;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountTypeViewController : NcUIViewController
+    public partial class AccountTypeViewController : NcUIViewControllerNoLeaks
     {
         const float BUTTON_SIZE = 64;
         const float BUTTON_LABEL_HEIGHT = 40;
         const float BUTTON_PADDING_HEIGHT = 15;
         const float BUTTON_PADDING_WIDTH = 35;
 
+        public delegate void ServiceSelectedCallback (McAccount.AccountServiceEnum service);
+        public ServiceSelectedCallback ServiceSelected;
+
         public AccountTypeViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            CreateView ();
-        }
-
-        public void CreateView ()
+        protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoGreen;
 
             var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
             navBar.BarStyle = UIBarStyle.Default;
-            navBar.Opaque = true;
             navBar.Translucent = false;
+            navBar.Opaque = true;
 
             var navItem = new UINavigationItem ();
-            navItem.Title = "Email Server";
+            navItem.Title = "Choose Service";
 
             using (var image = UIImage.FromBundle ("modal-close")) {
                 var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
@@ -62,17 +59,17 @@ namespace NachoClient.iOS
             List<ButtonInfo> buttonInfoList;
 
             buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Exchange", "modal-exchange", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("Gmail", "modal-gmail", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("Google Apps", "modal-googleapps", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
+                new ButtonInfo ("Exchange", "modal-exchange", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.Exchange)),
+                new ButtonInfo ("Gmail", "modal-gmail", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.GoogleDefault)),
+                new ButtonInfo ("Google Apps", "modal-googleapps", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.GoogleExchange)),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Office 365", "modal-office365", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("Outlook", "modal-outlook", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("Hotmail", "modal-hotmail", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
+                new ButtonInfo ("Office 365", "modal-office365", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.Exchange)),
+                new ButtonInfo ("Outlook", "modal-outlook", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.OutlookExchange)),
+                new ButtonInfo ("Hotmail", "modal-hotmail", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.HotmailExchange)),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Yahoo!", "modal-yahoo", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("iCloud", "modal-icloud", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
-                new ButtonInfo ("IMAP", "modal-imap", () => ServiceSelected (McAccount.AccountServiceEnum.Exchange)),
+                new ButtonInfo ("Yahoo!", "modal-yahoo", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.Yahoo)),
+                new ButtonInfo ("iCloud", "modal-icloud", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.iCloud)),
+                new ButtonInfo ("IMAP", "modal-imap", () => ServiceSelected_Clicked (McAccount.AccountServiceEnum.IMAP_SMTP)),
                 new ButtonInfo (null, null, null),
                 null,
             });
@@ -125,13 +122,27 @@ namespace NachoClient.iOS
             }
         }
 
+        protected override void ConfigureAndLayout ()
+        {
+            // Static view doesn't need layout
+        }
+
+        protected override void Cleanup ()
+        {
+            ServiceSelected = null;
+        }
+
         void DismissButton_Clicked (object sender, EventArgs e)
         {
             DismissModalViewController (true);
         }
 
-        void ServiceSelected (McAccount.AccountServiceEnum service)
+        void ServiceSelected_Clicked (McAccount.AccountServiceEnum service)
         {
+            if (null != ServiceSelected) {
+                ServiceSelected (service);
+            }
+            DismissModalViewController (true);
         }
 
         protected class ButtonInfo

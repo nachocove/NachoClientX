@@ -55,6 +55,8 @@ namespace NachoCore.Model
 
         public uint ImapUidNext { get; set; }
 
+        public string ImapGuid { get; set; }
+
         [Indexed]
         public string DisplayName { get; set; }
 
@@ -91,6 +93,7 @@ namespace NachoCore.Model
         {
             ImapUidLowestUidSynced = uint.MaxValue;
             ImapUidHighestUidSynced = uint.MinValue;
+            ImapGuid = Guid.NewGuid ().ToString ("N");
         }
 
         public override string ToString ()

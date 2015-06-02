@@ -26,6 +26,8 @@ namespace NachoCore.Utils
         SAMPLES,
         DISTRIBUTION,
         STATISTICS2,
+        IMAP_REQUEST,
+        IMAP_RESPONSE,
         MAX_TELEMETRY_EVENT_TYPE,
     };
 

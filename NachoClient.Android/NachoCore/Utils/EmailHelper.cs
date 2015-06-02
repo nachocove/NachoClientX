@@ -338,18 +338,6 @@ namespace NachoCore.Utils
 
         public static bool IsServiceUnsupported (string emailAddress, out string serviceName)
         {
-            if (emailAddress.EndsWith ("@yahoo.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Yahoo!";
-                return true;
-            }
-            if (emailAddress.EndsWith ("@aol.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "AOL";
-                return true;
-            }
-            if (emailAddress.EndsWith ("@mail.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Mail.com";
-                return true;
-            }
             serviceName = "";
             return false;
         }
@@ -368,6 +356,20 @@ namespace NachoCore.Utils
                 return true;
             }
             if (emailAddress.EndsWith ("@live.com", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsHotmailService(McAccount.AccountServiceEnum service)
+        {
+            if (McAccount.AccountServiceEnum.HotmailDefault == service) {
+                return true;
+            }
+            if (McAccount.AccountServiceEnum.HotmailExchange == service) {
+                return true;
+            }
+            if (McAccount.AccountServiceEnum.OutlookExchange == service) {
                 return true;
             }
             return false;

@@ -115,8 +115,8 @@ namespace NachoCore.Utils
         None,
         // ERROR, WARN, INFO, DEBUG
         Log,
-        // WBXML_REQUEST, WBXML_RESPONSE
-        Wbxml,
+        // WBXML_REQUEST, WBXML_RESPONSE, IMAP_REQUEST, IMAP_RESPONSE
+        Protocol,
         // UI
         Ui,
         // SUPPORT
@@ -139,10 +139,10 @@ namespace NachoCore.Utils
 
         // TODO - The long-term value of this should be one day. Keep it small for now
         //        to get T3 to upload more frequently. Will re-adjust when T3 stabilizes.
-        public const long MAX_DURATION = 1 * TimeSpan.TicksPerMinute;
+        public static long MAX_DURATION = 1 * TimeSpan.TicksPerMinute;
 
         // TODO - The long-term value of this should be like 100,000.
-        public const int MAX_EVENTS = 500;
+        public static int MAX_EVENTS = 500;
 
         protected static TelemetryJsonFileTableDateTimeFunc GetNowUtc = DefaultGetUtcNow;
 
@@ -170,9 +170,11 @@ namespace NachoCore.Utils
             case TelemetryLogEvent.DEBUG:
                 eventClass = TelemetryEventClass.Log;
                 break;
-            case TelemetryWbxmlEvent.REQUEST:
-            case TelemetryWbxmlEvent.RESPONSE:
-                eventClass = TelemetryEventClass.Wbxml;
+            case TelemetryProtocolEvent.WBXML_REQUEST:
+            case TelemetryProtocolEvent.WBXML_RESPONSE:
+            case TelemetryProtocolEvent.IMAP_REQUEST:
+            case TelemetryProtocolEvent.IMAP_RESPONSE:
+                eventClass = TelemetryEventClass.Protocol;
                 break;
             case TelemetryUiEvent.UI:
                 eventClass = TelemetryEventClass.Ui;
@@ -270,14 +272,13 @@ namespace NachoCore.Utils
 
                 bool doFinalize = false;
                 var now = GetNowUtc ();
-                if ((0 < writeFile.NumberOfEntries) && (writeFile.LatestTimestamp.Day != now.Day)) {
-                    doFinalize = true; // do not allow JSON file to span more than one day
-                }
-                if ((now.Ticks - jsonEvent.timestamp) > MAX_DURATION) {
-                    doFinalize = true; // larger than max duration
-                }
-                if (writeFile.NumberOfEntries > MAX_EVENTS) {
-                    doFinalize = true; // large than max # of events
+                if (0 < writeFile.NumberOfEntries) {
+                    if (writeFile.LatestTimestamp.Day != now.Day) {
+                        doFinalize = true; // do not allow JSON file to span more than one day
+                    }
+                    if ((jsonEvent.timestamp - writeFile.FirstTimestamp.Ticks) > MAX_DURATION) {
+                        doFinalize = true; // larger than max duration
+                    }
                 }
                 if (doFinalize) {
                     Finalize (eventClass);
@@ -289,8 +290,15 @@ namespace NachoCore.Utils
                     // TODO - Probably need to reset the file
                     return false;
                 } else {
+                    doFinalize = false;
                     if (TelemetryEventClass.Support == eventClass) {
-                        Finalize (eventClass); // always finalize support files after each write
+                        doFinalize = true; // always finalize AdSupport FileShare after each write
+                    }
+                    if (writeFile.NumberOfEntries >= MAX_EVENTS) {
+                        doFinalize = true;
+                    }
+                    if (doFinalize) {
+                        Finalize (eventClass);
                     }
                 }
                 return true;

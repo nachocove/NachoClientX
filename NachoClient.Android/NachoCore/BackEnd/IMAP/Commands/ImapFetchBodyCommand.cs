@@ -44,18 +44,17 @@ namespace NachoCore.IMAP
             } catch (OperationCanceledException) {
                 PendingSingle.ResolveAsCancelled ();
                 return;
+            } catch (ServiceNotConnectedException) {
+                PendingSingle.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow,
+                    NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError,
+                        NcResult.WhyEnum.ServerError));
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Client is not connected.");
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPBDYRECONN");
+                return;
             } catch (InvalidOperationException e) {
-                if (!Client.IsConnected) {
-                    PendingSingle.ResolveAsDeferred (BEContext.ProtoControl, DateTime.UtcNow,
-                        NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError,
-                            NcResult.WhyEnum.ServerError));
-                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Client is not connected.");
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPBDYRECONN");
-                } else {
-                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: {0}", e);
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed));
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD1");
-                }
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: {0}", e);
+                PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed));
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD1");
                 return;
             } catch (Exception e) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Unexpected exception: {0}", e);
@@ -63,12 +62,6 @@ namespace NachoCore.IMAP
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPBDYHRD2");
                 return;
             }
-        }
-
-        private UniqueId AsUniqueId(string serverId)
-        {
-            uint x = UInt32.Parse (serverId);
-            return new UniqueId(x);
         }
 
         private ImapFolder GetOpenedFolder(string serverId)
@@ -109,7 +102,7 @@ namespace NachoCore.IMAP
 
             var folder = GetOpenedFolder (pending.ParentId);
 
-            MimeMessage imapbody = folder.GetMessage (AsUniqueId(pending.ServerId), Cts.Token);
+            MimeMessage imapbody = folder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
             if (null == imapbody) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
                 email.BodyId = 0;

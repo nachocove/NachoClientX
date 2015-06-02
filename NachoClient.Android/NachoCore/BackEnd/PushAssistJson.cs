@@ -13,6 +13,7 @@ namespace NachoCore
 
     public class BaseRequest
     {
+        public string UserId;
         public string ClientId;
         public string DeviceId;
         public string ClientContext;

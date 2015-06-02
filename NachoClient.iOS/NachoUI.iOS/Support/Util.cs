@@ -1189,6 +1189,21 @@ namespace NachoClient
             }
         }
 
+        public static UIButton BlueButton (string title, nfloat frameWidth)
+        {
+            var rect = new CGRect (25, 0, frameWidth - 50, 46);
+            var blueButton = new UIButton (rect);
+            blueButton.BackgroundColor = A.Color_NachoSubmitButton;
+            blueButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            blueButton.SetTitle (title, UIControlState.Normal);
+            blueButton.TitleLabel.TextColor = UIColor.White;
+            blueButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            blueButton.Layer.CornerRadius = 4f;
+            blueButton.Layer.MasksToBounds = true;
+            blueButton.AccessibilityLabel = title;
+            return blueButton;
+        }
+
         #endregion
     }
 }
