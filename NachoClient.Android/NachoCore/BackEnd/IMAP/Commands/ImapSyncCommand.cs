@@ -33,10 +33,6 @@ namespace NachoCore.IMAP
             public MessageSummary imapSummary { get; set; }
 
             public string preview { get; set; }
-
-            public string body { get; set; }
-
-            public McAbstrFileDesc.BodyTypeEnum bodyType { get; set; }
         }
 
         public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
@@ -59,20 +55,17 @@ namespace NachoCore.IMAP
             }
             switch (SyncKit.Method) {
             case SyncKit.MethodEnum.Range:
+
                 lock (Client.SyncRoot) {
                     IList<IMessageSummary> imapSummaries = Client.Inbox.Fetch (
                         new UniqueIdRange (new UniqueId (Client.Inbox.UidValidity, SyncKit.Start),
                             new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
                                                                    SyncKit.Flags, Cts.Token);
                     foreach (var imapSummary in imapSummaries) {
-                        string body;
-                        McAbstrFileDesc.BodyTypeEnum bodyType;
-                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox, out body, out bodyType);
+                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox);
                         summaries.Add (new MailSummary () {
                             imapSummary = imapSummary as MessageSummary,
                             preview = preview,
-                            body = body,
-                            bodyType = bodyType,
                         });
                     }
                 }
@@ -193,24 +186,6 @@ namespace NachoCore.IMAP
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
             }
-
-//            if (null != summary.body) {
-//                McBody body;
-//                if (0 == emailMessage.BodyId) {
-//                    body = McBody.InsertFile (folder.AccountId, summary.bodyType, summary.body); 
-//                    emailMessage.BodyId = body.Id;
-//                } else {
-//                    body = McBody.QueryById<McBody> (emailMessage.BodyId);
-//                    body.UpdateData (summary.body);
-//                }
-//                body.BodyType = summary.bodyType;
-//                body.Truncated = false;
-//                body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
-//                body.FileSize = summary.body.Length;
-//                body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
-//                body.Update ();
-//
-//            }
 
             return emailMessage;
         }
@@ -353,64 +328,48 @@ namespace NachoCore.IMAP
             return NcResult.OK (emailMessage);
         }
 
-        private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder, out string body, out McAbstrFileDesc.BodyTypeEnum bodyType)
-        {
-            string preview;
-
-            preview = findPreviewText (summary, folder, out body, out bodyType);
-            if (string.Empty != preview) {
-                return preview;
-            }
-
-            if (string.Empty != preview) {
-                Log.Info (Log.LOG_IMAP, "IMAP uid {0} preview <{1}>", summary.UniqueId.Value, preview);
-            } else {
-                Log.Error (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
-            }
-            return preview;
-        }
-
-        private string findPreviewText (MessageSummary summary, IMailFolder folder, out string body, out McAbstrFileDesc.BodyTypeEnum bodyType)
+        private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder)
         {
             string preview = string.Empty;
-            body = null;
-            bodyType = McAbstrFileDesc.BodyTypeEnum.None;
 
-            bool isPlain;
-            var text = findPreviewablePart (summary, out isPlain);
-            if (null != text) {
+            var part = findPreviewablePart (summary);
+            if (null != part) {
                 try {
-                    int previewBytes;
-                    if (text.Octets <= 4096) {
-                        previewBytes = (int)text.Octets;
+                    int previewBytes = PreviewSizeBytes;
+                    string partSpecifier = part.PartSpecifier;
+                    ContentEncoding encoding = ContentEncoding.Default;
+                    BodyPartBasic m = part as BodyPartBasic;
+                    bool isPlainText = false; // when in doubt, run the http decode, just in case.
+                    if (null != m) {
+                        if (!MimeKit.Utils.MimeUtils.TryParse(m.ContentTransferEncoding, out encoding)) {
+                            Log.Error (Log.LOG_IMAP, "Could not parse ContentTransferEncoding {0}", m.ContentTransferEncoding);
+                            encoding = ContentEncoding.Default;
+                        }
+                        if (previewBytes >= m.Octets) {
+                            previewBytes = (int)m.Octets;
+                        }
+                        if (string.Empty == m.PartSpecifier) {
+                            partSpecifier = "TEXT";
+                        } else if (m is BodyPartMessage) {
+                            partSpecifier = m.PartSpecifier + ".TEXT";
+                        }
                     } else {
-                        previewBytes = isPlain ? PreviewSizeBytes : PreviewSizeBytes * 4;
+                        Log.Warn (Log.LOG_IMAP, "BodyPart is not BodyPartBasic: {0}", part);
+                    }
+                    BodyPartText t = part as BodyPartText;
+                    if (null != t) {
+                        isPlainText = t.IsPlain;
                     }
                     Stream stream;
-                    string partSpecifier = text.PartSpecifier;
-                    if (string.Empty == partSpecifier) {
-                        partSpecifier = "TEXT";
-                    } else {
-                        partSpecifier += ".TEXT";
-                    }
                     try {
                         stream = folder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
                     } catch (ImapCommandException e) {
-                        Log.Warn (Log.LOG_IMAP, "Need to adjust partSpecifier for part {0} {1} {2}", text.PartSpecifier, text.ContentTransferEncoding, e);
-                        stream = folder.GetStream (summary.UniqueId.Value, text.PartSpecifier, 0, previewBytes, Cts.Token);
+                        Log.Error (Log.LOG_IMAP, "Could not fetch stream: {0}", e);
+                        return null;
                     }
-                    ContentEncoding encoding;
-                    if (!MimeKit.Utils.MimeUtils.TryParse(text.ContentTransferEncoding, out encoding)) {
-                        Log.Error (Log.LOG_IMAP, "findPreviewText: Could not parse ContentTransferEncoding {0}", text.ContentTransferEncoding);
-                        encoding = ContentEncoding.Default;
-                    }
-                    preview = getTextFromStream (stream, text.ContentType, encoding);
-                    if (text.Octets <= 4096) {
-                        body = preview;
-                        preview = body.Substring (0, Math.Min (PreviewSizeBytes, body.Length));
-                        bodyType = isPlain ? McAbstrFileDesc.BodyTypeEnum.PlainText_1 : McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                    }
-                    if (!isPlain) {
+
+                    preview = getTextFromStream (stream, part, encoding);
+                    if (!isPlainText) {
                         var p = Html2Text (preview);
                         if (string.Empty == p) {
                             Log.Warn (Log.LOG_IMAP, "Html-converted preview is empty. Source {0}", preview);
@@ -425,41 +384,39 @@ namespace NachoCore.IMAP
             } else {
                 Log.Error (Log.LOG_IMAP, "Could not find any previewable segments");
             }
+
+            if (string.Empty != preview) {
+                Log.Info (Log.LOG_IMAP, "IMAP uid {0} preview <{1}>", summary.UniqueId.Value, preview);
+            } else {
+                Log.Error (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
+            }
             return preview;
         }
 
-        private BodyPartText findPreviewablePart (MessageSummary summary, out bool isPlaintext)
+        private BodyPart findPreviewablePart (MessageSummary summary)
         {
             Log.Info (Log.LOG_IMAP, "Finding text bodypart for uid {0}", summary.UniqueId.Value.Id);
-            BodyPartText text;
-            text = summary.TextBody;
-            if (null == text) {
-                text = summary.HtmlBody;
-            }
-            if (null == text) {
-                text = summary.Body as BodyPartText;
-            }
+            BodyPart text;
+            text = summary.BodyParts.OfType<BodyPartMessage> ().FirstOrDefault ();
             if (null == text) {
                 var multipart = summary.Body as BodyPartMultipart;
                 if (null != multipart) {
-                    text = multipart.BodyParts.OfType<BodyPartText> ().FirstOrDefault ();
+                    text = multipart.BodyParts.OfType<BodyPartMessage> ().FirstOrDefault ();
                 }
             }
-            if (null != text) {
-                isPlaintext = text.IsPlain;
-            } else {
-                isPlaintext = true;
+            if (null == text) {
+                text = summary.TextBody ?? summary.HtmlBody;
             }
             return text;
         }
 
-        private string getTextFromStream (Stream stream, ContentType type, ContentEncoding enc)
+        private string getTextFromStream (Stream stream, BodyPart part, ContentEncoding enc)
         {
             using (var decoded = new MemoryStream ()) {
                 using (var filtered = new FilteredStream (decoded)) {
                     filtered.Add (DecoderFilter.Create (enc));
-                    if (type.Charset != null)
-                        filtered.Add (new CharsetFilter (type.Charset, "utf-8"));
+                    if (part.ContentType.Charset != null)
+                        filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
                     stream.CopyTo (filtered);
                 }
                 var buffer = decoded.GetBuffer ();
