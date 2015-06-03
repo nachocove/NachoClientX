@@ -18,7 +18,6 @@ namespace NachoClient.iOS
 
         AdvancedTextField emailView;
         AdvancedTextField passwordView;
-        AdvancedTextField displayNameView;
 
         AdvancedTextField imapServerView;
         AdvancedTextField imapPortNumberView;
