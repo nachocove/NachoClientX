@@ -57,6 +57,7 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
+            var sw = new PlatformStopwatch ();
             IMailFolder mailKitFolder;
             List<MailSummary> summaries = new List<MailSummary> ();
             switch (SyncKit.Method) {
@@ -66,14 +67,17 @@ namespace NachoCore.IMAP
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
                     }
+                    sw.Start ();
                     imapSummaries = Client.Inbox.Fetch (
                         new UniqueIdRange (new UniqueId (Client.Inbox.UidValidity, SyncKit.Start),
                             new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
                         SyncKit.Flags, Cts.Token);
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries", summaries.Count);
+                    sw.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", summaries.Count, sw.ElapsedMilliseconds);
                 }
+                sw.Start ();
                 foreach (var imapSummary in imapSummaries) {
                     var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox);
                     summaries.Add (new MailSummary () {
@@ -81,15 +85,16 @@ namespace NachoCore.IMAP
                         preview = preview,
                     });
                 }
+                sw.Stop ();
+                Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, sw.ElapsedMilliseconds);
                 break;
             case SyncKit.MethodEnum.OpenOnly:
                 // Just load UID with SELECT.
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
                     }
-                    var sw = new PlatformStopwatch ();
                     sw.Start ();
                     var query = SearchQuery.NotDeleted;
                     var uids = mailKitFolder.Search (query);
