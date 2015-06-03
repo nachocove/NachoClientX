@@ -404,10 +404,8 @@ namespace NachoCore.IMAP
         private void CancelCmd ()
         {
             if (null != Cmd) {
-                // FIXME - not a long term soln. There are issues with MailKit and cancellation.
-                lock (ImapClient.SyncRoot) {
-                    Cmd = null;
-                }
+                Cmd.Cancel ();
+                Cmd = null;
             }
         }
 
@@ -466,6 +464,9 @@ namespace NachoCore.IMAP
                 break;
             case PickActionEnum.HotQOp:
                 Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKHOTOP", cmd);
+                break;
+            case PickActionEnum.FSync:
+                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKFSYNC", cmd);
                 break;
             }
         }

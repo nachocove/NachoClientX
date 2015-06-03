@@ -1405,9 +1405,6 @@
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy.cs">
-      <Link>NachoCore\BackEnd\IMAP\ImapStrategy.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
       <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
     </Compile>
@@ -1461,6 +1458,36 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\INcCommand.cs">
       <Link>NachoCore\BackEnd\INcCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchAttachmentCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchAttachmentCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2348,6 +2375,9 @@
     <BundleResource Include="Resources\avatar-iphone%404x.png" />
     <BundleResource Include="Resources\avatar-iphone%406x.png" />
     <BundleResource Include="Resources\avatar-imap%402x.png" />
+    <BundleResource Include="Resources\avatar-imap%403x.png" />
+    <BundleResource Include="Resources\avatar-imap%404x.png" />
+    <BundleResource Include="Resources\avatar-imap%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

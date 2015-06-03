@@ -20,11 +20,8 @@ namespace NachoCore.IMAP
 {
     public class ImapIdleCommand : ImapCommand
     {
-        PingKit PingKit;
-
-        public ImapIdleCommand (IBEContext beContext, PingKit pingKit) : base (beContext)
+        public ImapIdleCommand (IBEContext beContext) : base (beContext)
         {
-            PingKit = pingKit;
         }
 
         protected override Event ExecuteCommand ()
@@ -47,9 +44,11 @@ namespace NachoCore.IMAP
                 Client.Inbox.MessagesArrived += messageHandler;
                 lock (Client.SyncRoot) {
                     Client.Idle (done.Token, CancellationToken.None);
-                    Client.Inbox.Status (
-                        StatusItems.UidNext |
-                        StatusItems.UidValidity, Cts.Token);
+                    if (!Cts.IsCancellationRequested) {
+                        Client.Inbox.Status (
+                            StatusItems.UidNext |
+                            StatusItems.UidValidity, Cts.Token);
+                    }
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
             } catch {
