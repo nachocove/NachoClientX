@@ -40,42 +40,60 @@ namespace NachoCore.IMAP
             SyncKit = syncKit;
         }
 
+        private IMailFolder GetOpenMailkitFolder(McFolder folder)
+        {
+            IMailFolder mailKitFolder;
+            FolderAccess access;
+            mailKitFolder = Client.GetFolder (folder.ServerId);
+            if (null == mailKitFolder) {
+                return null;
+            }
+            access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+            if (FolderAccess.None == access) {
+                return null;
+            }
+            return mailKitFolder;
+        }
+
         protected override Event ExecuteCommand ()
         {
-            // FIXME - need map from McFolder to MailKit folder.
+            IMailFolder mailKitFolder;
             List<MailSummary> summaries = new List<MailSummary> ();
-            if (!Client.Inbox.IsOpen) {
-                FolderAccess access;
-                lock (Client.SyncRoot) {
-                    access = Client.Inbox.Open (FolderAccess.ReadOnly, Cts.Token);
-                }
-                if (FolderAccess.None == access) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
-                }
-            }
             switch (SyncKit.Method) {
             case SyncKit.MethodEnum.Range:
+                IList<IMessageSummary> imapSummaries = null;
 
                 lock (Client.SyncRoot) {
-                    IList<IMessageSummary> imapSummaries = Client.Inbox.Fetch (
+                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                    if (null == mailKitFolder) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                    }
+                    imapSummaries = Client.Inbox.Fetch (
                         new UniqueIdRange (new UniqueId (Client.Inbox.UidValidity, SyncKit.Start),
                             new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
-                                                                   SyncKit.Flags, Cts.Token);
-                    foreach (var imapSummary in imapSummaries) {
-                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox);
-                        summaries.Add (new MailSummary () {
-                            imapSummary = imapSummary as MessageSummary,
-                            preview = preview,
-                        });
-                    }
+                        SyncKit.Flags, Cts.Token);
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries", summaries.Count);
+                }
+                foreach (var imapSummary in imapSummaries) {
+                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox);
+                    summaries.Add (new MailSummary () {
+                        imapSummary = imapSummary as MessageSummary,
+                        preview = preview,
+                    });
                 }
                 break;
             case SyncKit.MethodEnum.OpenOnly:
                 // Just load UID with SELECT.
+                lock (Client.SyncRoot) {
+                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                    if (null == mailKitFolder) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                    }
+                }
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
-                    target.ImapUidNext = Client.Inbox.UidNext.Value.Id;
-                    target.ImapUidValidity = Client.Inbox.UidValidity;
+                    target.ImapUidNext = mailKitFolder.UidNext.Value.Id;
+                    target.ImapUidValidity = mailKitFolder.UidValidity;
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
