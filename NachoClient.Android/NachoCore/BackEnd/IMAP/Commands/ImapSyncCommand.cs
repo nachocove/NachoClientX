@@ -94,7 +94,7 @@ namespace NachoCore.IMAP
                     var query = SearchQuery.NotDeleted;
                     var uids = mailKitFolder.Search (query);
                     sw.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Searching for all non-deleted messages took {0}", sw.ElapsedMilliseconds);
+                    Log.Info (Log.LOG_IMAP, "Searching for all non-deleted messages took {0}. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
                 }
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
