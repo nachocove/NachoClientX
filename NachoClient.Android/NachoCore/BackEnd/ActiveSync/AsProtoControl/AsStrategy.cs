@@ -880,7 +880,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public bool ANarrowFolderHasToClientExpected (int accountId)
+        public override bool ANarrowFolderHasToClientExpected (int accountId)
         {
             var defInbox = McFolder.GetDefaultInboxFolder (accountId);
             var defCal = McFolder.GetDefaultCalendarFolder (accountId);
@@ -931,12 +931,6 @@ namespace NachoCore.ActiveSync
             return stillHaveUnsyncedFolders;
         }
 
-        public bool PowerPermitsSpeculation ()
-        {
-            return (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
-            (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
-        }
-
         public Tuple<PickActionEnum, AsCommand> PickUserDemand ()
         {
             var accountId = BEContext.Account.Id;
@@ -962,8 +956,6 @@ namespace NachoCore.ActiveSync
                     ).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
-                    // TODO: aggregate more than one hot fetch into this command, keeping in mind the
-                    // total expected size.
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp,
                         new AsItemOperationsCommand (BEContext,
                             new FetchKit () {
