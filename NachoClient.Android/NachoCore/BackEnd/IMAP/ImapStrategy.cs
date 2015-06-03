@@ -70,7 +70,7 @@ namespace NachoCore.IMAP
             if (1 < folder.ImapUidLowestUidSynced) {
                 // If there is nothing new to grab, then pull down older mail.
                 syncKit.Start = 
-                    (syncKit.Span >= folder.ImapUidLowestUidSynced) ? 1 : 
+                    (syncKit.Span + 1 >= folder.ImapUidLowestUidSynced) ? 1 : 
                     folder.ImapUidLowestUidSynced - syncKit.Span - 1;
                 syncKit.Span = 
                     (syncKit.Start >= folder.ImapUidLowestUidSynced) ? 1 : 
@@ -136,6 +136,9 @@ namespace NachoCore.IMAP
             if (null != userDemand) {
                 return userDemand;
             }
+
+            // FIXME Investigate removing the narrow-sync stuff.
+
             // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
@@ -160,6 +163,7 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Narrow Sync...");
                     var nSyncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
                     if (null != nSyncKit) {
+                        nSyncKit.isNarrow = true;
                         Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
                             new ImapSyncCommand (BEContext, nSyncKit));

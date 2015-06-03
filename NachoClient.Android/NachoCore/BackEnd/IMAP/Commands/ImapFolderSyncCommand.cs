@@ -88,6 +88,13 @@ namespace NachoCore.IMAP
                     folder.Delete ();
                 }
             }
+
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsLastFolderSync = DateTime.UtcNow;
+                return true;
+            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
 
