@@ -136,6 +136,9 @@ namespace NachoCore.IMAP
             if (null != userDemand) {
                 return userDemand;
             }
+
+            // FIXME Investigate removing the narrow-sync stuff.
+
             // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
