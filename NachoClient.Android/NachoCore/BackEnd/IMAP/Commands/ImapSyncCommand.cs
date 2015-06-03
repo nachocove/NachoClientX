@@ -75,7 +75,7 @@ namespace NachoCore.IMAP
                             new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
                         SyncKit.Flags, Cts.Token);
                     sw.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", summaries.Count, sw.ElapsedMilliseconds);
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, sw.ElapsedMilliseconds);
                 }
                 sw.Start ();
                 foreach (var imapSummary in imapSummaries) {
@@ -99,7 +99,7 @@ namespace NachoCore.IMAP
                     var query = SearchQuery.NotDeleted;
                     var uids = mailKitFolder.Search (query);
                     sw.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Searching for all non-deleted messages took {0}. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
+                    Log.Info (Log.LOG_IMAP, "Retrieved search all non-deleted messages in {0}. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
                 }
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
