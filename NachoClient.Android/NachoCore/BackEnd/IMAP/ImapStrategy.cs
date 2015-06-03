@@ -160,6 +160,7 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Narrow Sync...");
                     var nSyncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
                     if (null != nSyncKit) {
+                        nSyncKit.isNarrow = true;
                         Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
                             new ImapSyncCommand (BEContext, nSyncKit));
