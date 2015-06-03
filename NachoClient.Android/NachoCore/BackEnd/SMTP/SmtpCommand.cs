@@ -7,103 +7,133 @@ using NachoCore.Model;
 using System.Threading;
 using MailKit.Security;
 using MimeKit;
+using MailKit;
+using System.IO;
 
 namespace NachoCore.SMTP
 {
-    public abstract class SmtpCommand : ISmtpCommand
+    public abstract class SmtpCommand : NcCommand
     {
-        public CancellationTokenSource cToken { get; protected set; }
-        public SmtpClient client { get; set; }
+        public SmtpClient Client { get; set; }
 
         public class SmtpCommandFailure : Exception {
             public SmtpCommandFailure (string message) : base (message)
             {
             }
-
         }
 
-        public SmtpCommand(SmtpClient smtp, bool checkConnected = true)
+        public SmtpCommand (IBEContext beContext) : base (beContext)
         {
-            if (null == smtp) {
-                throw new SmtpCommandFailure("No client passed in");
-            }
-            if (checkConnected) {
-                if (!smtp.IsConnected) {
-                    throw new SmtpCommandFailure ("SmtpCommand: Client is not connected");
+            Client = ((SmtpProtoControl)BEContext.ProtoControl).SmtpClient;
+        }
+
+        // MUST be overridden by subclass.
+        protected virtual Event ExecuteCommand ()
+        {
+            NcAssert.True (false);
+            return null;
+        }
+
+        public override void Execute (NcStateMachine sm)
+        {
+            NcTask.Run (() => {
+                try {
+                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                        var authy = new SmtpAuthenticateCommand(BEContext);
+                        authy.ConnectAndAuthenticate ();
+                    }
+                    var evt = ExecuteCommand ();
+                    // In the no-exception case, ExecuteCommand is resolving McPending.
+                    sm.PostEvent (evt);
+                } catch (OperationCanceledException) {
+                    Log.Info (Log.LOG_SMTP, "OperationCanceledException");
+                    ResolveAllDeferred ();
+                    // No event posted to SM if cancelled.
+                } catch (ServiceNotConnectedException) {
+                    // FIXME - this needs to feed into NcCommStatus, not loop forever.
+                    Log.Info (Log.LOG_SMTP, "ServiceNotConnectedException");
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.ReDisc, "SMTPCONN");
+                } catch (ServiceNotAuthenticatedException) {
+                    Log.Info (Log.LOG_SMTP, "ServiceNotAuthenticatedException");
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH");
+                } catch (IOException ex) {
+                    Log.Info (Log.LOG_SMTP, "IOException: {0}", ex.ToString ());
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)SmEvt.E.TempFail, "SMTPIO");
+                } catch (InvalidOperationException ex) {
+                    Log.Error (Log.LOG_SMTP, "InvalidOperationException: {0}", ex.ToString ());
+                    ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD1");
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_SMTP, "Exception : {0}", ex.ToString ());
+                    ResolveAllFailed (NcResult.WhyEnum.Unknown);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD2");
+                }
+            }, "SmtpCommand");
+        }
+
+        public override void Cancel ()
+        {
+            base.Cancel ();
+            lock (Client.SyncRoot) {
+                if (Client.IsConnected) {
+                    Client.Disconnect (false);
                 }
             }
-            cToken = new CancellationTokenSource ();
-            client = smtp;
-        }
-
-        public virtual void Execute (NcStateMachine sm)
-        {
-        }
-
-        public virtual void Cancel ()
-        {
-            cToken.Cancel ();
-            lock (client.SyncRoot) {
-                if (client.IsConnected) {
-                    client.Disconnect (false);
-                }
-            }
-
         }
     }
 
     public class SmtpAuthenticateCommand : SmtpCommand
     {
-        McServer Server { get; set; }
-        McCred Creds { get; set; }
-
-        public SmtpAuthenticateCommand(SmtpClient smtp, McServer server, McCred creds) : base(smtp, false)
+        public SmtpAuthenticateCommand(IBEContext beContext) : base(beContext)
         {
-            Server = server;
-            Creds = creds;
         }
 
-        public override void Execute (NcStateMachine sm)
+        public void ConnectAndAuthenticate()
+        {
+            lock(Client.SyncRoot) {
+                //client.ClientCertificates = new X509CertificateCollection ();
+                // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
+                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+
+                // Note: since we don't have an OAuth2 token, disable
+                // the XOAUTH2 authentication mechanism.
+                Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+
+                Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+            }
+        }
+
+        protected override Event ExecuteCommand ()
         {
             try {
-                lock(client.SyncRoot) {
-                    //client.ClientCertificates = new X509CertificateCollection ();
-                    // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
-                    client.Connect (Server.Host, Server.Port, false, cToken.Token);
-
-                    // Note: since we don't have an OAuth2 token, disable
-                    // the XOAUTH2 authentication mechanism.
-                    client.AuthenticationMechanisms.Remove ("XOAUTH2");
-
-                    client.Authenticate (Creds.Username, Creds.GetPassword (), cToken.Token);
+                lock (Client.SyncRoot) {
+                    if (Client.IsConnected) {
+                        Client.Disconnect (false, Cts.Token);
+                    }
+                    ConnectAndAuthenticate ();
                 }
-                sm.PostEvent ((uint)SmEvt.E.Success, "SMTPCONNSUC");
-            }
-            catch (SmtpProtocolException e) {
-                Log.Error (Log.LOG_SMTP, "Could not set up authenticated client: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPPROTOFAIL");
-            }
-            catch (AuthenticationException e) {
-                Log.Error (Log.LOG_SMTP, "Authentication failed: {0}", e);
-                sm.PostEvent ((uint)NachoCore.SMTP.SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL");
+                return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+            } catch (NotSupportedException ex) {
+                Log.Info (Log.LOG_SMTP, "SmtpAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());
+                return Event.Create ((uint)SmEvt.E.HardFail, "SMTPAUTHHARD0");
             }
         }
     }
 
     public class SmtpSendMailCommand : SmtpCommand
     {
-        protected McPending Pending;
-
-        public SmtpSendMailCommand(SmtpClient smtp, McPending pending) : base(smtp)  // TODO Do I need the base here to get the base initializer to run?
+        public SmtpSendMailCommand(IBEContext beContext, McPending pending) : base(beContext)
         {
-            Pending = pending;
+            PendingSingle = pending;
+            PendingSingle.MarkDispached ();
         }
 
-        public override void Execute (NcStateMachine sm)
+        protected override Event ExecuteCommand ()
         {
-            Pending.MarkDispached ();
-
-            McEmailMessage EmailMessage = McAbstrObject.QueryById<McEmailMessage> (Pending.ItemId);
+            McEmailMessage EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
             McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
             MimeMessage mimeMessage = MimeHelpers.LoadMessage (body);
             var attachments = McAttachment.QueryByItemId (EmailMessage);
@@ -111,21 +141,15 @@ namespace NachoCore.SMTP
                 MimeHelpers.AddAttachments (mimeMessage, attachments);
             }
 
-            try {
-                lock(client.SyncRoot) {
-                    client.Send (mimeMessage, cToken.Token);
-                }
-                if (cToken.IsCancellationRequested) {
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, "SMTPRETRYFAIL");
-                } else {
-                    sm.PostEvent ((uint)SmEvt.E.Success, "SMTPCONNSUC");
-                }
+            lock(Client.SyncRoot) {
+                Client.Send (mimeMessage, Cts.Token);
             }
-            catch (SmtpProtocolException e) {
-                Log.Error (Log.LOG_SMTP, "Could not set up authenticated client: {0}", e);
-                sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPPROTOFAIL");
-            }
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (
+                    BEContext.ProtoControl,
+                    NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
+            });
+            return Event.Create ((uint)SmEvt.E.Success, "SMTPCONNSUC");
         }
     }
 }
-

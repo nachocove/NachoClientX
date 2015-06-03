@@ -78,6 +78,8 @@ namespace NachoCore.Model
                 return false;
             case McAccount.AccountServiceEnum.OutlookExchange:
                 return false;
+            case McAccount.AccountServiceEnum.Office365Exchange:
+                return false;
             case McAccount.AccountServiceEnum.GoogleDefault:
                 imapServerPort = 993;
                 imapServerName = "imap.gmail.com";

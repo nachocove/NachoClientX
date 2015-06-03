@@ -1138,9 +1138,6 @@ namespace NachoClient
         {
             string imageName;
 
-            // FIXME
-            // imageName = "avatar-office365";
-
             switch (service) {
             case McAccount.AccountServiceEnum.Exchange:
                 imageName = "avatar-msexchange";
@@ -1155,20 +1152,22 @@ namespace NachoClient
                 imageName = "avatar-hotmail";
                 break;
             case McAccount.AccountServiceEnum.IMAP_SMTP:
-                // FIXME
-                imageName = "avatar-yahoo";
+                imageName = "avatar-imap";
                 break;
             case McAccount.AccountServiceEnum.OutlookExchange:
                 imageName = "avatar-outlook";
+                break;
+            case McAccount.AccountServiceEnum.Office365Exchange:
+                imageName = "avatar-office365";
                 break;
             case McAccount.AccountServiceEnum.Device:
                 imageName = "avatar-iphone";
                 break;
             case McAccount.AccountServiceEnum.iCloud:
-                imageName = "avatar-iCloud";
+                imageName = "avatar-icloud";
                 break;
             case McAccount.AccountServiceEnum.Yahoo:
-                imageName = "Icon";
+                imageName = "avatar-yahoo";
                 break;
             case McAccount.AccountServiceEnum.Aol:
                 imageName = "Icon";

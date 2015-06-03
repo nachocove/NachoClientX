@@ -232,7 +232,7 @@ namespace NachoCore.ActiveSync
                             // will be unformatted.  So we may as well just ask for plain text.
                             options.Add (MimeSupportElement (Xml.AirSync.MimeSupportCode.NoMime_0));
                             options.Add (BodyPreferenceElement (Xml.AirSync.TypeCode.PlainText_1));
-                        } else if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                        } else if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                             // Exchange 2007 will fail if we ask for MIME.  But it can handle
                             // any other format.  So ask for either HTML or plain text, with a
                             // preference for HTML
@@ -250,7 +250,7 @@ namespace NachoCore.ActiveSync
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
                         if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
                             // Expressing BodyPreference for RIC gets Protocol Error.
-                            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                                 options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
                             }
                         } else {

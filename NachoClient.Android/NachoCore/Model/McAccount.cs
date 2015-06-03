@@ -31,6 +31,7 @@ namespace NachoCore.Model
             Device,
             Yahoo,
             iCloud,
+            Office365Exchange,
         };
 
         [Flags]
@@ -185,6 +186,7 @@ namespace NachoCore.Model
             case AccountServiceEnum.GoogleExchange:
             case AccountServiceEnum.HotmailExchange:
             case AccountServiceEnum.OutlookExchange:
+            case AccountServiceEnum.Office365Exchange:
                 return AccountTypeEnum.Exchange;
             case AccountServiceEnum.Device:
                 // FIXME: Do we need anything here?
@@ -273,9 +275,11 @@ namespace NachoCore.Model
             case AccountServiceEnum.HotmailExchange:
                 return "Hotmail";
             case AccountServiceEnum.OutlookExchange:
-                return "Outlook.com";
+                return "Outlook";
+            case AccountServiceEnum.Office365Exchange:
+                return "Office 365";
             case AccountServiceEnum.GoogleExchange:
-                return "Google Apps for Work";
+                return "Google Apps";
             case AccountServiceEnum.GoogleDefault:
                 return "GMail";
             case AccountServiceEnum.HotmailDefault:

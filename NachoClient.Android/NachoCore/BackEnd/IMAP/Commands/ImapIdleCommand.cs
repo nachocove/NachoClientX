@@ -20,62 +20,43 @@ namespace NachoCore.IMAP
 {
     public class ImapIdleCommand : ImapCommand
     {
-        PingKit PingKit;
-
-        public ImapIdleCommand (IBEContext beContext, ImapClient imap, PingKit pingKit) : base (beContext, imap)
+        public ImapIdleCommand (IBEContext beContext) : base (beContext)
         {
-            PingKit = pingKit;
         }
 
-        public override void Execute (NcStateMachine sm)
+        protected override Event ExecuteCommand ()
         {
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
-            NcTask.Run (() => {
-                EventHandler<MessagesArrivedEventArgs> messageHandler = (sender, maea) => {
-                    done.Cancel ();
-                };
-                try {
-                    if (!Client.IsConnected) {
-                        sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPSYNCCONN");
-                        return;
-                    }
-                    if (!PingKit.MailKitFolder.IsOpen) {
-                        FolderAccess access;
-                        lock (Client.SyncRoot) {
-                            access = PingKit.MailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-                        }
-                        if (FolderAccess.None == access) {
-                            sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
-                            return;
-                        }
-                    }
-                    PingKit.MailKitFolder.MessagesArrived += messageHandler;
+            EventHandler<MessagesArrivedEventArgs> messageHandler = (sender, maea) => {
+                done.Cancel ();
+            };
+            try {
+                // FIXME - need map from McFolder to MailKit folder.
+                if (!Client.Inbox.IsOpen) {
+                    FolderAccess access;
                     lock (Client.SyncRoot) {
-                        Client.Idle (done.Token, CancellationToken.None);
-                        PingKit.MailKitFolder.Status (
+                        access = Client.Inbox.Open (FolderAccess.ReadOnly, Cts.Token);
+                    }
+                    if (FolderAccess.None == access) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                    }
+                }
+                Client.Inbox.MessagesArrived += messageHandler;
+                lock (Client.SyncRoot) {
+                    Client.Idle (done.Token, CancellationToken.None);
+                    if (!Cts.IsCancellationRequested) {
+                        Client.Inbox.Status (
                             StatusItems.UidNext |
                             StatusItems.UidValidity, Cts.Token);
                     }
-                    sm.PostEvent ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
-                } catch (OperationCanceledException) {
-                    // Not going to happen until we nix CancellationToken.None.
-                    Log.Info (Log.LOG_IMAP, "ImapIdleCommand: Cancelled");
-                } catch (ServiceNotConnectedException) {
-                    Log.Error (Log.LOG_IMAP, "ImapIdleCommand: Client is not connected.");
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReConn, "IMAPIDLERECONN");
-                    return;
-                } catch (InvalidOperationException e) {
-                    Log.Error (Log.LOG_IMAP, "ImapSyncCommand: {0}", e);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPIDLEHARD0");
-                    return;
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "ImapIdleCommand: Unexpected exception: {0}", ex.ToString ());
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPIDLEHARDX"); 
-                } finally {
-                    PingKit.MailKitFolder.MessagesArrived -= messageHandler;
-                    done.Dispose ();
                 }
-            }, "ImapIdleCommand");
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
+            } catch {
+                throw;
+            } finally {
+                Client.Inbox.MessagesArrived -= messageHandler;
+                done.Dispose ();
+            }
         }
     }
 }
