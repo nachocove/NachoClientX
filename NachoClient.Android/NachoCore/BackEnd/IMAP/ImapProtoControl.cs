@@ -467,6 +467,9 @@ namespace NachoCore.IMAP
             case PickActionEnum.HotQOp:
                 Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKHOTOP", cmd);
                 break;
+            case PickActionEnum.FSync:
+                Sm.PostEvent ((uint)ImapEvt.E.FromStrat, "PCKFSYNC", cmd);
+                break;
             }
         }
 

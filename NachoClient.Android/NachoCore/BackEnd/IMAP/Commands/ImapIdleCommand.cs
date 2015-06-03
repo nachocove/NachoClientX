@@ -20,11 +20,8 @@ namespace NachoCore.IMAP
 {
     public class ImapIdleCommand : ImapCommand
     {
-        PingKit PingKit;
-
-        public ImapIdleCommand (IBEContext beContext, PingKit pingKit) : base (beContext)
+        public ImapIdleCommand (IBEContext beContext) : base (beContext)
         {
-            PingKit = pingKit;
         }
 
         protected override Event ExecuteCommand ()

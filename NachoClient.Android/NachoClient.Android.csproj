@@ -422,6 +422,15 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration28.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommand.cs" />
     <Compile Include="NachoCore\BackEnd\INcCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchAttachmentCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
