@@ -47,9 +47,11 @@ namespace NachoCore.IMAP
                 Client.Inbox.MessagesArrived += messageHandler;
                 lock (Client.SyncRoot) {
                     Client.Idle (done.Token, CancellationToken.None);
-                    Client.Inbox.Status (
-                        StatusItems.UidNext |
-                        StatusItems.UidValidity, Cts.Token);
+                    if (!Cts.IsCancellationRequested) {
+                        Client.Inbox.Status (
+                            StatusItems.UidNext |
+                            StatusItems.UidValidity, Cts.Token);
+                    }
                 }
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
             } catch {
