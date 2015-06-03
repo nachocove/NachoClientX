@@ -20,7 +20,6 @@ using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using HtmlAgilityPack;
-using System.Diagnostics;
 
 namespace NachoCore.IMAP
 {
@@ -56,17 +55,12 @@ namespace NachoCore.IMAP
             }
             switch (SyncKit.Method) {
             case SyncKit.MethodEnum.Range:
-                Stopwatch sw = new Stopwatch();
 
                 lock (Client.SyncRoot) {
-                    sw.Start();
                     IList<IMessageSummary> imapSummaries = Client.Inbox.Fetch (
                         new UniqueIdRange (new UniqueId (Client.Inbox.UidValidity, SyncKit.Start),
                             new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
                                                                    SyncKit.Flags, Cts.Token);
-                    sw.Stop();
-                    Log.Info (Log.LOG_IMAP, "Fetching {1} summaries took {0}", sw.Elapsed, imapSummaries.Count);
-                    sw.Start();
                     foreach (var imapSummary in imapSummaries) {
                         var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox);
                         summaries.Add (new MailSummary () {
@@ -74,8 +68,6 @@ namespace NachoCore.IMAP
                             preview = preview,
                         });
                     }
-                    sw.Stop();
-                    Log.Info (Log.LOG_IMAP, "Fetching {1} previews took {0}", sw.Elapsed, imapSummaries.Count);
                 }
                 break;
             case SyncKit.MethodEnum.OpenOnly:
