@@ -369,12 +369,14 @@ namespace NachoCore.IMAP
                     }
 
                     preview = getTextFromStream (stream, part, encoding);
-                    var p = Html2Text (preview);
-                    if (string.Empty == p) {
-                        Log.Warn (Log.LOG_IMAP, "Html-converted preview is empty. Source {0}", preview);
-                        preview = "(No Preview available)";
-                    } else {
-                        preview = p;
+                    if (!isPlainText) {
+                        var p = Html2Text (preview);
+                        if (string.Empty == p) {
+                            Log.Warn (Log.LOG_IMAP, "Html-converted preview is empty. Source {0}", preview);
+                            preview = "(No Preview available)";
+                        } else {
+                            preview = p;
+                        }
                     }
                 } catch (ImapCommandException e) {
                     Log.Error (Log.LOG_IMAP, "{0}", e);
