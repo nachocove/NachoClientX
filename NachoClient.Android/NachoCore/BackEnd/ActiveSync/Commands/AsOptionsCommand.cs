@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using NachoCore.Model;
 using NachoCore.Utils;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.ActiveSync
 {
@@ -69,15 +70,12 @@ namespace NachoCore.ActiveSync
                     Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
                 }
                 var value = values.First ();
-                Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions: {0}", value);
-                // Loop through the protocol versions that the app understands, in the preferred order.
+                string[] serverVersions = Regex.Split (value, @"\s*,\s*");
+                // Loop through the protocol versions that the app understands, in the preferred order, until
+                // we find one that the server also supports.
                 bool foundMatch = false;
                 foreach (var supportedVersion in SupportedVersions) {
-                    if (value == supportedVersion ||
-                        value.StartsWith (supportedVersion + ",") ||
-                        value.EndsWith ("," + supportedVersion) ||
-                        value.Contains ("," + supportedVersion + ","))
-                    {
+                    if (serverVersions.Contains (supportedVersion)) {
                         foundMatch = true;
                         protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                             var target = (McProtocolState)record;
@@ -95,6 +93,7 @@ namespace NachoCore.ActiveSync
                         return true;
                     });
                 }
+                Log.Info (Log.LOG_AS, "AsOptionsCommand: Selected version {0} from MS-ASProtocolVersions: {1}", protocolState.AsProtocolVersion, value);
             } else {
                 Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
