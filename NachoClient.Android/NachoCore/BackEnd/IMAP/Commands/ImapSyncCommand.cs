@@ -89,6 +89,12 @@ namespace NachoCore.IMAP
                     if (null == mailKitFolder) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
                     }
+                    var sw = new PlatformStopwatch ();
+                    sw.Start ();
+                    var query = SearchQuery.NotDeleted;
+                    var uids = mailKitFolder.Search (query);
+                    sw.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Searching for all non-deleted messages took {0}", sw.ElapsedMilliseconds);
                 }
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
