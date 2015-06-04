@@ -95,4 +95,22 @@ namespace NachoCore.IMAP
             return mailKitFolder;
         }
     }
+
+    public class ImapWaitCommand : ImapCommand
+    {
+        NcCommand WaitCommand;
+        public ImapWaitCommand (IBEContext dataSource, int duration, bool earlyOnECChange) : base (dataSource)
+        {
+            WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
+        }
+        public override void Execute (NcStateMachine sm)
+        {
+            WaitCommand.Execute (sm);
+        }
+        public override void Cancel ()
+        {
+            WaitCommand.Cancel ();
+        }
+    }
+
 }
