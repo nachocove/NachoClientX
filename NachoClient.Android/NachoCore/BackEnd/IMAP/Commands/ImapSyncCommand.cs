@@ -299,7 +299,7 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
                     }
                     if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
-                        emailMessage.UserAction = true;
+                        emailMessage.UserAction = 1;
                     }
                     if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
                     }
