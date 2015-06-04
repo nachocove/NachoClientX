@@ -32,6 +32,20 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
+        private uint SpanSizeWithCommStatus()
+        {
+            uint overallWindowSize = KBaseOverallWindowSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast_1:
+                overallWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi_0:
+                overallWindowSize *= 3;
+                break;
+            }
+            return overallWindowSize;
+        }
+
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
         {
             if (folder.ImapNoSelect) {
@@ -51,17 +65,8 @@ namespace NachoCore.IMAP
                 Method = SyncKit.MethodEnum.Range,
                 Folder = folder,
                 Flags = flags,
+                Span = SpanSizeWithCommStatus(),
             };
-            uint overallWindowSize = KBaseOverallWindowSize;
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast_1:
-                overallWindowSize *= 2;
-                break;
-            case NetStatusSpeedEnum.WiFi_0:
-                overallWindowSize *= 3;
-                break;
-            }
-            syncKit.Span = overallWindowSize;
 
             if (null == folder || 0 == folder.ImapUidNext) {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
@@ -71,6 +76,7 @@ namespace NachoCore.IMAP
             if (folder.ImapUidNext - 1 > folder.ImapUidHighestUidSynced) {
                 // Prefer to sync from latest toward oldest.
                 // Start as high as we can, guard against the scenario where Span > UidNext.
+                syncKit.Span = 5; // use a very small window for the first sync, so we quickly get stuff back to display
                 syncKit.Start =
                     Math.Max (folder.ImapUidHighestUidSynced, 
                         (syncKit.Span + 1) >= folder.ImapUidNext ? 1 : 
