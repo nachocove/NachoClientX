@@ -102,15 +102,6 @@ namespace NachoCore.IMAP
             return null;
         }
 
-        public override bool ANarrowFolderHasToClientExpected (int accountId)
-        {
-            var defInbox = McFolder.GetDefaultInboxFolder (accountId);
-            if (defInbox.ImapUidLowestUidSynced > 1 ||
-                defInbox.ImapUidHighestUidSynced + 1 < defInbox.ImapUidNext) {
-                return true;
-            }
-            return false;
-        }
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand ()
         {
@@ -236,7 +227,6 @@ namespace NachoCore.IMAP
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (PowerPermitsSpeculation () ||
                     NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                    // FIXME JAN once ImapSyncCommand can do other folders, we need to sync all the folders.
                     // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
                     // for speculatively pre-fetching bodies and attachments.
                     foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
@@ -248,14 +238,9 @@ namespace NachoCore.IMAP
                         }
                     }
                 }
-                if (!ANarrowFolderHasToClientExpected (accountId)) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                        new ImapIdleCommand (BEContext));
-                }
-                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Wait");
-                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
-                    new ImapWaitCommand (BEContext, 120, false));
+                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
+                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                    new ImapIdleCommand (BEContext));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
