@@ -123,18 +123,15 @@ namespace NachoCore.IMAP
                 // Add it
                 var created = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, parentId(mailKitFolder), mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 created.ImapUidValidity = mailKitFolder.UidValidity;
-                created.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                 created.Insert ();
             } else if (existing.ServerId != mailKitFolder.FullName ||
                        existing.DisplayName != folderDisplayName ||
-                       existing.ImapNoSelect != mailKitFolder.Attributes.HasFlag(FolderAttributes.NoSelect) ||
                        existing.ImapUidValidity != mailKitFolder.UidValidity) {
                 // update.
                 existing = existing.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ServerId = mailKitFolder.FullName;
                     target.DisplayName = folderDisplayName;
-                    target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.ImapUidValidity = mailKitFolder.UidValidity;
                     return true;
                 });

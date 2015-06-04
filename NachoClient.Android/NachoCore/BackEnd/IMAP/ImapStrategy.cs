@@ -32,26 +32,8 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
-        private uint SpanWithCommStatus()
-        {
-            uint overallWindowSize = KBaseOverallWindowSize;
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast_1:
-                overallWindowSize *= 2;
-                break;
-            case NetStatusSpeedEnum.WiFi_0:
-                overallWindowSize *= 3;
-                break;
-            }
-            return overallWindowSize;
-        }
-
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
         {
-            if (folder.ImapNoSelect) {
-                return null;
-            }
-
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure
                 | MessageSummaryItems.Envelope
                 | MessageSummaryItems.Flags
@@ -62,27 +44,50 @@ namespace NachoCore.IMAP
                 | MessageSummaryItems.GMailThreadId;
 
             var syncKit = new SyncKit () {
-                Method = SyncKit.MethodEnum.List,
+                Method = SyncKit.MethodEnum.Range,
                 Folder = folder,
                 Flags = flags,
             };
+            uint overallWindowSize = KBaseOverallWindowSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast_1:
+                overallWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi_0:
+                overallWindowSize *= 3;
+                break;
+            }
+            syncKit.Span = overallWindowSize;
 
-            if (null == folder || null == folder.ImapSyncUids) {
+            if (null == folder || 0 == folder.ImapUidNext) {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
                 syncKit.Method = SyncKit.MethodEnum.OpenOnly;
                 return syncKit;
             }
-            if (string.Empty == folder.ImapSyncUids) {
-                return null;
-            } else {
-                var uids = folder.ImapSyncUids.Split (',');
-                var span = SpanWithCommStatus();
-                syncKit.Uids = new List<string>();
-                foreach (var uid in uids.Skip((int)(uids.Count ()-span)).Take((int)span)) {
-                    syncKit.Uids.Add (uid);
-                }
+            if (folder.ImapUidNext - 1 > folder.ImapUidHighestUidSynced) {
+                // Prefer to sync from latest toward oldest.
+                // Start as high as we can, guard against the scenario where Span > UidNext.
+                syncKit.Start =
+                    Math.Max (folder.ImapUidHighestUidSynced, 
+                        (syncKit.Span + 1) >= folder.ImapUidNext ? 1 : 
+                        folder.ImapUidNext - 1 - syncKit.Span);
+                syncKit.Span =
+                    Math.Min (syncKit.Span, 
+                        (folder.ImapUidHighestUidSynced >= folder.ImapUidNext) ? 1 :
+                        folder.ImapUidNext - folder.ImapUidHighestUidSynced);
                 return syncKit;
             }
+            if (1 < folder.ImapUidLowestUidSynced) {
+                // If there is nothing new to grab, then pull down older mail.
+                syncKit.Start = 
+                    (syncKit.Span + 1 >= folder.ImapUidLowestUidSynced) ? 1 : 
+                    folder.ImapUidLowestUidSynced - syncKit.Span - 1;
+                syncKit.Span = 
+                    (syncKit.Start >= folder.ImapUidLowestUidSynced) ? 1 : 
+                    Math.Min (syncKit.Span, folder.ImapUidLowestUidSynced - syncKit.Start);
+                return syncKit;
+            }
+            return null;
         }
 
         public override bool ANarrowFolderHasToClientExpected (int accountId)
@@ -225,7 +230,7 @@ namespace NachoCore.IMAP
                     foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
                         SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
                         if (null != syncKit) {
-                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ServerId);
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
                             return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
                                 new ImapSyncCommand (BEContext, syncKit));
                         }

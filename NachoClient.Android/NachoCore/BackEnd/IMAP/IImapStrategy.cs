@@ -13,12 +13,12 @@ namespace NachoCore.IMAP
         public enum MethodEnum {
             Range,
             OpenOnly,
-            List,
         };
         public MethodEnum Method;
         public McFolder Folder;
         public MessageSummaryItems Flags;
-        public List<string> Uids;
+        public uint Start;
+        public uint Span;
         // PendingSingle is null if Strategy decided to Sync.
         public McPending PendingSingle;
     }
