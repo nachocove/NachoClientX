@@ -528,7 +528,9 @@ namespace NachoCore.IMAP
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
             if (null != ImapClient) {
-                ImapClient.Disconnect (true); // TODO Where does the Cancellation token come from?
+                lock(ImapClient.SyncRoot) {
+                    ImapClient.Disconnect (true); // TODO Where does the Cancellation token come from?
+                }
             }
         }
 
