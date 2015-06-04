@@ -1681,7 +1681,7 @@ namespace NachoCore.Model
                 if (null != emailAddress) {
                     emailAddress.IsVip = this.IsVip;
                     emailAddress.Update ();
-                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.Id, true);
+                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
                 }
             }
         }

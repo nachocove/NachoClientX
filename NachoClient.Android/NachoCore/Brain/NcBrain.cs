@@ -304,6 +304,16 @@ namespace NachoCore.Brain
                     var contactEvent = brainEvent as NcCBrainUnindexContactEvent;
                     UnindexContact ((int)contactEvent.AccountId, (int)contactEvent.ContactId);
                     break;
+                case NcBrainEventType.UPDATE_ADDRESS_SCORE:
+                    var updateAddressEvent = brainEvent as NcBrainUpdateAddressScoreEvent;
+                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> ((int)updateAddressEvent.EmailAddressId);
+                    UpdateEmailAddressScore (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_SCORE:
+                    var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
+                    var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)updatedMessageEvent.EmailMessageId);
+                    UpdateEmailMessageScore (emailMessage);
+                    break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
                     break;

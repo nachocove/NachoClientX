@@ -16,6 +16,22 @@ namespace NachoCore.Model
         [Indexed]
         public int ScoreVersion { get; set; }
 
+        private AnalysisFunctionsTable _AnalysisFunctions;
+
+        [Ignore]
+        public AnalysisFunctionsTable AnalysisFunctions {
+            get {
+                if (null == _AnalysisFunctions) {
+                    _AnalysisFunctions = new AnalysisFunctionsTable () {
+                    };
+                }
+                return _AnalysisFunctions;
+            }
+            set {
+                _AnalysisFunctions = value;
+            }
+        }
+
         /// Time variance state machine type
         public int TimeVarianceType { get; set; }
 
@@ -56,7 +72,7 @@ namespace NachoCore.Model
             return (0 < NeedUpdate);
         }
 
-        public double GetScore ()
+        public double Classify ()
         {
             int total = EmailsReceived + EmailsSent + EmailsDeleted;
             if (0 == total) {
@@ -65,22 +81,10 @@ namespace NachoCore.Model
             return (double)(EmailsRead + EmailsReplied + EmailsSent) / (double)total;
         }
 
-        public void ScoreObject ()
+        public void Analyze ()
         {
-            if (0 == ScoreVersion) {
-                ScoreVersion++;
-            }
-            if (1 == ScoreVersion) {
-                // Version 2 statistics are updated by emails. Nothing to do here
-                ScoreVersion++;
-            }
-            if (2 == ScoreVersion) {
-                // No statisitcs are updated in v3. Just need to recompute the score
-                // using the new function.
-                ScoreVersion++;
-            }
-            NcAssert.True (Scoring.Version == ScoreVersion);
-            Score = GetScore ();
+            ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            Score = Classify ();
             UpdateByBrain ();
         }
 
@@ -162,7 +166,7 @@ namespace NachoCore.Model
         public static McEmailAddress QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.ShouldUpdate () && x.ScoreVersion == Scoring.Version)
+                .Where (x => x.NeedUpdate > 0 && x.ScoreVersion == Scoring.Version)
                 .FirstOrDefault ();
         }
 

@@ -53,7 +53,7 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
-            emailAddress.ScoreObject ();
+            emailAddress.Analyze ();
             return true;
         }
 
@@ -63,7 +63,7 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
-            emailMessage.ScoreObject ();
+            emailMessage.Analyze ();
             return true;
         }
 
@@ -76,7 +76,7 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailAddress.ScoreVersion);
                 return true;
             }
-            var newScore = emailAddress.GetScore ();
+            var newScore = emailAddress.Classify ();
             bool scoreUpdated = newScore != emailAddress.Score;
             if (emailAddress.ShouldUpdate () || scoreUpdated) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
@@ -100,7 +100,7 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailMessage.ScoreVersion);
                 return true;
             }
-            var newScore = emailMessage.GetScore ();
+            var newScore = emailMessage.Classify ();
             if (emailMessage.ShouldUpdate () || (newScore != emailMessage.Score)) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
                     emailMessage.Id, emailMessage.Score);

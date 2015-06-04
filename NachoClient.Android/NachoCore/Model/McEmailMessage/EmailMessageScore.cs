@@ -22,6 +22,26 @@ namespace NachoCore.Model
         [Indexed]
         public int ScoreVersion { get; set; }
 
+        private AnalysisFunctionsTable _AnalysisFunctions;
+
+        [Ignore]
+        public AnalysisFunctionsTable AnalysisFunctions {
+            get {
+                if (null == _AnalysisFunctions) {
+                    _AnalysisFunctions = new AnalysisFunctionsTable () {
+                        { 1, AnalyzeFromAddress },
+                        { 2, AnalyzeReplyStatistics },
+                        // Version 3 - No statistics is updated. Just need to re-compute the score which
+                        // will be done at the end of Analyze().
+                    };
+                }
+                return _AnalysisFunctions;
+            }
+            set {
+                _AnalysisFunctions = value;
+            }
+        }
+
         /// Did the user take explicit action?
         public int UserAction { get; set; }
 
@@ -56,7 +76,7 @@ namespace NachoCore.Model
             return (0 < NeedUpdate);
         }
 
-        public double GetScore ()
+        public double Classify ()
         {
             double score = 0.0;
 
@@ -78,7 +98,7 @@ namespace NachoCore.Model
             } else if (0 < UserAction) {
                 score = VipScore;
             } else {
-                score = emailAddress.GetScore ();
+                score = emailAddress.Classify ();
                 NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
                 if (0 < tvList.Count) {
                     DateTime now = DateTime.UtcNow;
@@ -96,7 +116,7 @@ namespace NachoCore.Model
             return score;
         }
 
-        private void ScoreObject_V1 ()
+        private void AnalyzeFromAddress ()
         {
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -108,7 +128,7 @@ namespace NachoCore.Model
                     if (IsRead) {
                         emailAddress.IncrementEmailsRead ();
                     }
-                    emailAddress.Score = emailAddress.GetScore ();
+                    emailAddress.Score = emailAddress.Classify ();
                     emailAddress.UpdateByBrain ();
 
                     // Add Sender dependency
@@ -133,7 +153,7 @@ namespace NachoCore.Model
             ((int)AsLastVerbExecutedType.REPLYTOSENDER == LastVerbExecuted));
         }
 
-        private void ScoreObject_V2 ()
+        private void AnalyzeReplyStatistics ()
         {
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -146,7 +166,7 @@ namespace NachoCore.Model
                             emailAddress.IncrementEmailsRead (-1);
                         }
                         emailAddress.IncrementEmailsReplied ();
-                        emailAddress.Score = emailAddress.GetScore ();
+                        emailAddress.Score = emailAddress.Classify ();
                         emailAddress.UpdateByBrain ();
                     }
 
@@ -162,29 +182,11 @@ namespace NachoCore.Model
             ScoreVersion++;
         }
 
-        private void ScoreObject_V3 ()
+        public void Analyze ()
         {
-            // No statistics is updated. Just need to re-compute the score which
-            // will be done at the end of ScoreObject().
-            ScoreVersion++;
-            NcAssert.True (3 == ScoreVersion);
-        }
-
-        public void ScoreObject ()
-        {
-            NcAssert.True (Scoring.Version > ScoreVersion);
-            if (0 == ScoreVersion) {
-                ScoreObject_V1 ();
-            }
-            if (1 == ScoreVersion) {
-                ScoreObject_V2 ();
-            }
-            if (2 == ScoreVersion) {
-                ScoreObject_V3 ();
-            }
-            NcAssert.True (Scoring.Version == ScoreVersion);
+            ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
             InitializeTimeVariance ();
-            Score = GetScore ();
+            Score = Classify ();
             NeedUpdate = 0;
             UpdateByBrain ();
         }
@@ -241,7 +243,7 @@ namespace NachoCore.Model
         public static McEmailMessage QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.ShouldUpdate ())
+                .Where (x => x.NeedUpdate > 0)
                 .FirstOrDefault ();
         }
 
@@ -374,7 +376,7 @@ namespace NachoCore.Model
                     tv.Start ();
                 }
             } else {
-                Score = GetScore ();
+                Score = Classify ();
             }
 
             if (UpdateTimeVarianceStates (tvList, now)) {
@@ -456,7 +458,7 @@ namespace NachoCore.Model
 
             // Recompute a new score and update it in the cache
             bool scoreChanged = false;
-            double newScore = emailMessage.GetScore ();
+            double newScore = emailMessage.Classify ();
             if (newScore != emailMessage.Score) {
                 emailMessage.Score = newScore;
                 scoreChanged = true;

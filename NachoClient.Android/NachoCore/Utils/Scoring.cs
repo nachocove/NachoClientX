@@ -16,6 +16,19 @@ namespace NachoCore.Utils
         //             ScoreIsReplied.
         // Version 3 - Implement VIP email addresses and hot email messages.
         public const int Version = 3;
+
+        public static int ApplyAnalysisFunctions (AnalysisFunctionsTable analysisFunctions, int scoreVersion)
+        {
+            for (int ver = scoreVersion + 1; ver <= Version; ver++) {
+                Action func = null;
+                if (analysisFunctions.TryGetValue (ver, out func)) {
+                    func ();
+                }
+                scoreVersion++;
+                NcAssert.True (scoreVersion == ver);
+            }
+            return scoreVersion;
+        }
     }
 }
 
