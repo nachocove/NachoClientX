@@ -48,7 +48,9 @@ namespace NachoCore.IMAP
                 try {
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
                         var authy = new ImapAuthenticateCommand (BEContext);
-                        authy.ConnectAndAuthenticate ();
+                        lock(Client.SyncRoot) {
+                            authy.ConnectAndAuthenticate ();
+                        }
                     }
                     var evt = ExecuteCommand ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
