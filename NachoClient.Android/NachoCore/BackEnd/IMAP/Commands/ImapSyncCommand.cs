@@ -98,7 +98,7 @@ namespace NachoCore.IMAP
                     }
                     sw.Start ();
                     var query = SearchQuery.NotDeleted;
-                    uids = mailKitFolder.Search (query);
+                    uids = mailKitFolder.Search (query);  // FIXME This does a 1:* search. We'll need to narrow that down in case the mailbox is huge.
                     sw.Stop ();
                     Log.Info (Log.LOG_IMAP, "Retrieved search all non-deleted messages in {0}ms. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
                 }
@@ -299,6 +299,7 @@ namespace NachoCore.IMAP
                     if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
                     }
                     if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
+                        emailMessage.UserAction = true;
                     }
                     if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
                     }
