@@ -70,16 +70,16 @@ namespace NachoCore.IMAP
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
                     }
                     sw.Start ();
-                    imapSummaries = Client.Inbox.Fetch (
-                        new UniqueIdRange (new UniqueId (Client.Inbox.UidValidity, SyncKit.Start),
-                            new UniqueId (Client.Inbox.UidValidity, SyncKit.Start + SyncKit.Span)),
+                    imapSummaries = mailKitFolder.Fetch (
+                        new UniqueIdRange (new UniqueId (mailKitFolder.UidValidity, SyncKit.Start),
+                            new UniqueId (mailKitFolder.UidValidity, SyncKit.Start + SyncKit.Span)),
                         SyncKit.Flags, Cts.Token);
                     sw.Stop ();
                     Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, sw.ElapsedMilliseconds);
                 }
                 sw.Start ();
                 foreach (var imapSummary in imapSummaries) {
-                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, Client.Inbox);
+                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                     summaries.Add (new MailSummary () {
                         imapSummary = imapSummary as MessageSummary,
                         preview = preview,
