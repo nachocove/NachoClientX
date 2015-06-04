@@ -1,14 +1,8 @@
-This release updates the current beta release with:
+This release updates includes the following updates:
 
-. Support for fast notifications for new email messages.
+. ActiveSync Protocol 16 support.
 
-. Better manage instances of recurring meetings.
-
-. General performance improvements.
-
-. Faster 'hot' analysis.
-
-. Bug fixes
+. Support ActiveSync in more locals.
 
 Known issues:
 
