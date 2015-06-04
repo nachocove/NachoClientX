@@ -134,8 +134,8 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
+            var protocolState = BEContext.ProtocolState;
             if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == SyncKit.Folder.Type) {
-                var protocolState = BEContext.ProtocolState;
                 if (!protocolState.HasSyncedInbox) {
                     protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                         var target = (McProtocolState)record;
@@ -144,14 +144,11 @@ namespace NachoCore.IMAP
                     });
                 }
             }
-            if (SyncKit.isNarrow) {
-                var protocolState = BEContext.ProtocolState;
-                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                    var target = (McProtocolState)record;
-                    target.LastNarrowSync = DateTime.UtcNow;
-                    return true;
-                });
-            }
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastNarrowSync = DateTime.UtcNow;
+                return true;
+            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 

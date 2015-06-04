@@ -21,7 +21,6 @@ namespace NachoCore.IMAP
         public uint Span;
         // PendingSingle is null if Strategy decided to Sync.
         public McPending PendingSingle;
-        public bool isNarrow;
     }
 
     public interface IImapStrategy
