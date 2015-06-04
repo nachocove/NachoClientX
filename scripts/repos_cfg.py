@@ -19,6 +19,7 @@ repos = (
     'ModernHttpClient',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
+    'Google.iOS',
     # This is always the last one
     'NachoClientX'
 )
