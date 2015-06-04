@@ -51,11 +51,15 @@ namespace NachoCore.Model
 
         public uint ImapUidHighestUidSynced { get; set; }
 
+        public bool ImapNoSelect { get; set; }
+
         public uint ImapUidValidity { get; set; }
 
         public uint ImapUidNext { get; set; }
 
         public string ImapGuid { get; set; }
+
+        public string ImapSyncUids { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -91,6 +95,7 @@ namespace NachoCore.Model
 
         public McFolder ()
         {
+            ImapSyncUids = null;
             ImapUidLowestUidSynced = uint.MaxValue;
             ImapUidHighestUidSynced = uint.MinValue;
             ImapGuid = Guid.NewGuid ().ToString ("N");
