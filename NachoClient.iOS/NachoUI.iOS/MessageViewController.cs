@@ -343,9 +343,8 @@ namespace NachoClient.iOS
             yOffset += 1;
 
             // Message body, which is added to the scroll view, not the header view.
-            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, LayoutView, onLinkSelected);
+            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, BodyViewLayoutCallback, onLinkSelected);
             scrollView.AddSubview (bodyView);
-
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
                 new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
@@ -565,6 +564,15 @@ namespace NachoClient.iOS
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
             #endif
+        }
+
+        protected void BodyViewLayoutCallback ()
+        {
+            // BodyView calls its layout delegate after the download of the body has finished.
+            // Downloading the body can result in a status change for attachments.  So we refresh
+            // the attachments in addition to laying out the view.
+            attachmentListView.Refresh ();
+            LayoutView ();
         }
 
         protected void LayoutBody ()
