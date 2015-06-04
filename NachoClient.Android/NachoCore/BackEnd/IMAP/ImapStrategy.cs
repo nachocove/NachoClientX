@@ -34,6 +34,10 @@ namespace NachoCore.IMAP
 
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
         {
+            if (folder.ImapNoSelect) {
+                return null;
+            }
+
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure
                 | MessageSummaryItems.Envelope
                 | MessageSummaryItems.Flags
@@ -230,7 +234,7 @@ namespace NachoCore.IMAP
                     foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
                         SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
                         if (null != syncKit) {
-                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ServerId);
                             return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
                                 new ImapSyncCommand (BEContext, syncKit));
                         }

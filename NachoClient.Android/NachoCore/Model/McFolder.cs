@@ -47,6 +47,8 @@ namespace NachoCore.Model
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
 
+        public bool ImapNoSelect { get; set; }
+
         public uint ImapUidLowestUidSynced { get; set; }
 
         public uint ImapUidHighestUidSynced { get; set; }
