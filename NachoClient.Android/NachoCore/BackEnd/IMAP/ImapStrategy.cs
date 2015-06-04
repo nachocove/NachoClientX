@@ -32,8 +32,26 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
+        private uint SpanSizeWithCommStatus()
+        {
+            uint overallWindowSize = KBaseOverallWindowSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast_1:
+                overallWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi_0:
+                overallWindowSize *= 3;
+                break;
+            }
+            return overallWindowSize;
+        }
+
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
         {
+            if (folder.ImapNoSelect) {
+                return null;
+            }
+
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure
                 | MessageSummaryItems.Envelope
                 | MessageSummaryItems.Flags
@@ -47,17 +65,8 @@ namespace NachoCore.IMAP
                 Method = SyncKit.MethodEnum.Range,
                 Folder = folder,
                 Flags = flags,
+                Span = SpanSizeWithCommStatus(),
             };
-            uint overallWindowSize = KBaseOverallWindowSize;
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast_1:
-                overallWindowSize *= 2;
-                break;
-            case NetStatusSpeedEnum.WiFi_0:
-                overallWindowSize *= 3;
-                break;
-            }
-            syncKit.Span = overallWindowSize;
 
             if (null == folder || 0 == folder.ImapUidNext) {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
@@ -67,6 +76,7 @@ namespace NachoCore.IMAP
             if (folder.ImapUidNext - 1 > folder.ImapUidHighestUidSynced) {
                 // Prefer to sync from latest toward oldest.
                 // Start as high as we can, guard against the scenario where Span > UidNext.
+                syncKit.Span = 5; // use a very small window for the first sync, so we quickly get stuff back to display
                 syncKit.Start =
                     Math.Max (folder.ImapUidHighestUidSynced, 
                         (syncKit.Span + 1) >= folder.ImapUidNext ? 1 : 
@@ -77,7 +87,9 @@ namespace NachoCore.IMAP
                         folder.ImapUidNext - folder.ImapUidHighestUidSynced);
                 return syncKit;
             }
-            if (1 < folder.ImapUidLowestUidSynced) {
+            if (folder.ImapUidNext - 1 > 0 && // are there any messages at all?
+                folder.ImapLowestUid < folder.ImapUidLowestUidSynced)
+            {
                 // If there is nothing new to grab, then pull down older mail.
                 syncKit.Start = 
                     (syncKit.Span + 1 >= folder.ImapUidLowestUidSynced) ? 1 : 
@@ -90,15 +102,6 @@ namespace NachoCore.IMAP
             return null;
         }
 
-        public override bool ANarrowFolderHasToClientExpected (int accountId)
-        {
-            var defInbox = McFolder.GetDefaultInboxFolder (accountId);
-            if (defInbox.ImapUidLowestUidSynced > 1 ||
-                defInbox.ImapUidHighestUidSynced + 1 < defInbox.ImapUidNext) {
-                return true;
-            }
-            return false;
-        }
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand ()
         {
@@ -147,38 +150,9 @@ namespace NachoCore.IMAP
                 return userDemand;
             }
 
-            // FIXME Investigate removing the narrow-sync stuff.
-
-            // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
-            // perform a narrow Sync Command.
-            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
-                    var nSyncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
-                    Log.Info (Log.LOG_IMAP, "Strategy:QS:Inbox...");
-                    if (null != nSyncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:QS:...SyncKit");
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, nSyncKit));
-                    }
-                }
-            }
             // TODO move user-directed Sync up to this priority level in FG.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
-                // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
-                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
-                if (protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
-                    if (null != nSyncKit) {
-                        nSyncKit.isNarrow = true;
-                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:...SyncKit");
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, nSyncKit));
-                    }
-                }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
@@ -253,25 +227,20 @@ namespace NachoCore.IMAP
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (PowerPermitsSpeculation () ||
                     NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                    SyncKit syncKit = null;
-                    // FIXME JAN once ImapSyncCommand can do other folders, we need to sync all the folders.
                     // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
                     // for speculatively pre-fetching bodies and attachments.
-                    syncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
-                    if (null != syncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, syncKit));
+                    foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
+                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                        if (null != syncKit) {
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ServerId);
+                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                                new ImapSyncCommand (BEContext, syncKit));
+                        }
                     }
                 }
-                if (!ANarrowFolderHasToClientExpected (accountId)) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                        new ImapIdleCommand (BEContext));
-                }
-                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Wait");
-                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
-                    new ImapWaitCommand (BEContext, 120, false));
+                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
+                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                    new ImapIdleCommand (BEContext));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {

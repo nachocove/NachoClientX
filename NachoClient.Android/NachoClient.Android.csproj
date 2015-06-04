@@ -325,7 +325,6 @@
     <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
     <Compile Include="NachoCore\Adapters\UserInteractionEmailMessages.cs" />
     <Compile Include="NachoCore\Utils\CalendarHelper.cs" />
-    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs" />
     <Compile Include="NachoCore\Model\McAbstrFileDesc.cs" />
     <Compile Include="NachoCore\Brain\NcQuickResponse.cs" />
     <Compile Include="NachoCore\Brain\NcMessageIntent.cs" />
@@ -430,7 +429,6 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
