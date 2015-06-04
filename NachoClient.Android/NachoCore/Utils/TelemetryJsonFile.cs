@@ -140,7 +140,7 @@ namespace NachoCore.Utils
 
         // TODO - The long-term value of this should be one day. Keep it small for now
         //        to get T3 to upload more frequently. Will re-adjust when T3 stabilizes.
-        public static long MAX_DURATION = 1 * TimeSpan.TicksPerMinute;
+        public static long MAX_DURATION = 5 * TimeSpan.TicksPerMinute;
 
         // TODO - The long-term value of this should be like 100,000.
         public static int MAX_EVENTS = 500;
