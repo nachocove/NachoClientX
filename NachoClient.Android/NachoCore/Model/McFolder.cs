@@ -49,6 +49,8 @@ namespace NachoCore.Model
 
         public bool ImapNoSelect { get; set; }
 
+        public uint ImapLowestUid { get; set; }
+
         public uint ImapUidLowestUidSynced { get; set; }
 
         public uint ImapUidHighestUidSynced { get; set; }

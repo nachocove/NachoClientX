@@ -81,7 +81,9 @@ namespace NachoCore.IMAP
                         folder.ImapUidNext - folder.ImapUidHighestUidSynced);
                 return syncKit;
             }
-            if (folder.ImapUidNext -1 > 0 && 1 < folder.ImapUidLowestUidSynced) {
+            if (folder.ImapUidNext - 1 > 0 && // are there any messages at all?
+                folder.ImapLowestUid < folder.ImapUidLowestUidSynced)
+            {
                 // If there is nothing new to grab, then pull down older mail.
                 syncKit.Start = 
                     (syncKit.Span + 1 >= folder.ImapUidLowestUidSynced) ? 1 : 

@@ -90,6 +90,7 @@ namespace NachoCore.IMAP
                 break;
             case SyncKit.MethodEnum.OpenOnly:
                 // Just load UID with SELECT.
+                IList<UniqueId> uids;
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
@@ -97,33 +98,35 @@ namespace NachoCore.IMAP
                     }
                     sw.Start ();
                     var query = SearchQuery.NotDeleted;
-                    var uids = mailKitFolder.Search (query);
+                    uids = mailKitFolder.Search (query);
                     sw.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved search all non-deleted messages in {0}. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
+                    Log.Info (Log.LOG_IMAP, "Retrieved search all non-deleted messages in {0}ms. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
                 }
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapUidNext = mailKitFolder.UidNext.Value.Id;
                     target.ImapUidValidity = mailKitFolder.UidValidity;
+                    target.ImapLowestUid = (0 == uids.Count) ? 1 : uids.Min ().Id;
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
             }
             if (null != summaries && 0 < summaries.Count) {
+                uint maxUid = UInt32.MinValue;
+                uint minUid = UInt32.MaxValue;
                 foreach (var summary in summaries) {
                     // FIXME use NcApplyServerCommand framework.
-                    var uniqueId = summary.imapSummary.UniqueId.Value.Id;
                     ServerSaysAddOrChangeEmail (summary, SyncKit.Folder);
-                    if (uniqueId > SyncKit.Folder.ImapUidHighestUidSynced ||
-                            uniqueId < SyncKit.Folder.ImapUidLowestUidSynced) {
-                        SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                            var target = (McFolder)record;
-                            target.ImapUidHighestUidSynced = Math.Max (uniqueId, target.ImapUidHighestUidSynced);
-                            target.ImapUidLowestUidSynced = Math.Min (uniqueId, target.ImapUidLowestUidSynced);
-                            return true;
-                        });
-                    }
+                    var uniqueId = summary.imapSummary.UniqueId.Value.Id;
+                    maxUid = Math.Max (maxUid, uniqueId);
+                    minUid = Math.Min (minUid, uniqueId);
                 }
+                SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ImapUidHighestUidSynced = Math.Max (maxUid, target.ImapUidHighestUidSynced);
+                    target.ImapUidLowestUidSynced = Math.Min (minUid, target.ImapUidLowestUidSynced);
+                    return true;
+                });
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             } else {
                 // All the messages could be deleted on the server. Record UIDs of the dead spot to keep from looping.
