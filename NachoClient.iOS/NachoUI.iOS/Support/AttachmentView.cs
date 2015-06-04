@@ -257,7 +257,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void RefreshStatus ()
+        public void RefreshStatus ()
         {
             if (null == attachment) {
                 return;

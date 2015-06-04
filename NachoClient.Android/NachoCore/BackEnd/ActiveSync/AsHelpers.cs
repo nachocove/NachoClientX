@@ -65,6 +65,62 @@ namespace NachoCore.ActiveSync
                     body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate;
                 }
                 body.Update ();
+
+                // Now that we have a body, see if it is possible to fill in the contents of any attachments.
+                if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
+                    var bodyAttachments = MimeHelpers.AllAttachments (MimeHelpers.LoadMessage (body));
+                    if (0 < bodyAttachments.Count) {
+
+                        foreach (var ba in bodyAttachments) {
+                            Log.Info (Log.LOG_AS, "ATB: MIME attachment: Name {0}, FileName {1}, ContentID {2}", ba.ContentType.Name, ba.ContentDisposition.FileName, ba.ContentId);
+                        }
+
+                        foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
+                            if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
+                                // Attachment already downloaded.
+                                continue;
+                            }
+
+                            // There isn't a field that is guaranteed to be in both places and is guaranteed to be
+                            // unique.  Match on content ID or display name, but make sure the match is unique.
+                            // Any attachment that isn't matched will just be downloaded later, which is just a
+                            // performance issue, not a correctness issue.
+                            bool duplicateContentId = false;
+                            bool duplicateDisplayName = false;
+                            MimeKit.MimeEntity contentIdMatch = null;
+                            MimeKit.MimeEntity displayNameMatch = null;
+                            foreach (var bodyAttachment in bodyAttachments) {
+                                if (null != bodyAttachment.ContentId && null != itemAttachment.ContentId &&
+                                    bodyAttachment.ContentId == itemAttachment.ContentId)
+                                {
+                                    if (null == contentIdMatch) {
+                                        contentIdMatch = bodyAttachment;
+                                    } else {
+                                        duplicateContentId = true;
+                                    }
+                                }
+                                if (null != itemAttachment.DisplayName && null != bodyAttachment.ContentDisposition.FileName &&
+                                    itemAttachment.DisplayName == bodyAttachment.ContentDisposition.FileName)
+                                {
+                                    if (null == displayNameMatch) {
+                                        displayNameMatch = bodyAttachment;
+                                    } else {
+                                        duplicateDisplayName = true;
+                                    }
+                                }
+                            }
+                            MimeKit.MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
+                            if (null != match) {
+                                itemAttachment.UpdateData ((stream) => {
+                                    ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
+                                });
+                                itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
+                                itemAttachment.Truncated = false;
+                                itemAttachment.Update ();
+                            }
+                        }
+                    }
+                }
             } else {
                 item.BodyId = 0;
             }
@@ -1153,45 +1209,42 @@ namespace NachoCore.ActiveSync
         {
             XNamespace email2Ns = Xml.Email2.Ns;
             if (null != msg.xmlAttachments) {
-
-                if (null != msg.xmlAttachments) {
-                    foreach (XElement xmlAttachment in msg.xmlAttachments) {
-                        // Create & save the attachment record.
-                        var attachment = new McAttachment {
-                            AccountId = msg.AccountId,
-                            ItemId = msg.Id,
-                            ClassCode = msg.GetClassCode (),
-                            FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
-                            FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
-                            FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
-                            Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
-                        };
-                        var displayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName);
-                        if (null != displayName) {
-                            attachment.SetDisplayName (displayName.Value);
-                        }
-                        var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
-                        if (null != contentLocation) {
-                            attachment.ContentLocation = contentLocation.Value;
-                        }
-                        var contentId = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentId);
-                        if (null != contentId) {
-                            attachment.ContentId = contentId.Value;
-                        }
-                        var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
-                        if (null != isInline) {
-                            attachment.IsInline = ParseXmlBoolean (isInline);
-                        }
-                        var xmlUmAttDuration = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttDuration);
-                        if (null != xmlUmAttDuration) {
-                            attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
-                        }
-                        var xmlUmAttOrder = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttOrder);
-                        if (null != xmlUmAttOrder) {
-                            attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
-                        }
-                        attachment.Insert ();
+                foreach (XElement xmlAttachment in msg.xmlAttachments) {
+                    // Create & save the attachment record.
+                    var attachment = new McAttachment {
+                        AccountId = msg.AccountId,
+                        ItemId = msg.Id,
+                        ClassCode = msg.GetClassCode (),
+                        FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
+                        FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                        FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
+                        Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
+                    };
+                    var displayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName);
+                    if (null != displayName) {
+                        attachment.SetDisplayName (displayName.Value);
                     }
+                    var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
+                    if (null != contentLocation) {
+                        attachment.ContentLocation = contentLocation.Value;
+                    }
+                    var contentId = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentId);
+                    if (null != contentId) {
+                        attachment.ContentId = contentId.Value;
+                    }
+                    var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
+                    if (null != isInline) {
+                        attachment.IsInline = ParseXmlBoolean (isInline);
+                    }
+                    var xmlUmAttDuration = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttDuration);
+                    if (null != xmlUmAttDuration) {
+                        attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
+                    }
+                    var xmlUmAttOrder = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttOrder);
+                    if (null != xmlUmAttOrder) {
+                        attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
+                    }
+                    attachment.Insert ();
                 }
             }
         }
