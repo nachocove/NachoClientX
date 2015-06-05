@@ -21,7 +21,7 @@ namespace NachoCore.IMAP
             NcAssert.NotNull (emailMessage);
             var folderGuid = ImapProtoControl.ImapMessageFolderGuid (PendingSingle.ServerId);
             var emailUid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
-            McFolder src = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id,PendingSingle.ParentId);
+            McFolder src = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ParentId);
             NcAssert.Equals (folderGuid, src.ImapGuid);
             var srcFolder = Client.GetFolder (src.ServerId, Cts.Token);
             NcAssert.NotNull (srcFolder);
