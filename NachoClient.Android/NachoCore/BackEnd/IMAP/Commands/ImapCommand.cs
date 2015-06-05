@@ -64,10 +64,14 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
                     ResolveAllDeferred ();
                     sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+                } catch (AuthenticationException) {
+                    Log.Info (Log.LOG_IMAP, "AuthenticationException");
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
                 } catch (ServiceNotAuthenticatedException) {
                     Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
                     ResolveAllDeferred ();
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH");
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
                 } catch (IOException ex) {
                     Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                     ResolveAllDeferred ();
