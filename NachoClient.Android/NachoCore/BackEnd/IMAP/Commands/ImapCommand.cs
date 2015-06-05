@@ -101,8 +101,9 @@ namespace NachoCore.IMAP
                 mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
         }
 
-        protected void CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished)
+        protected bool CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished)
         {
+            bool added_or_changed = false;
             McFolder existing;
             if (isDisinguished) {
                 existing = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
@@ -122,6 +123,7 @@ namespace NachoCore.IMAP
                 created.ImapUidValidity = mailKitFolder.UidValidity;
                 created.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                 created.Insert ();
+                added_or_changed = true;
             } else if (existing.ServerId != mailKitFolder.FullName ||
                 existing.DisplayName != folderDisplayName ||
                 existing.ImapNoSelect != mailKitFolder.Attributes.HasFlag(FolderAttributes.NoSelect) ||
@@ -135,8 +137,9 @@ namespace NachoCore.IMAP
                     target.ImapUidValidity = mailKitFolder.UidValidity;
                     return true;
                 });
-                return;
+                added_or_changed = true;
             }
+            return added_or_changed;
         }
     }
 

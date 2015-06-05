@@ -38,35 +38,54 @@ namespace NachoCore.IMAP
 
             // Process all incoming folders. Create or update them
             List<string> foldernames = new List<string> (); // Keep track of folder names, so we can compare later.
+            bool added_or_changed = false;
             foreach (var mailKitFolder in folderList) {
                 foldernames.Add (mailKitFolder.FullName);
 
                 if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2, mailKitFolder.Name, true);
+                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2, mailKitFolder.Name, true)) {
+                        added_or_changed = true;
+                    }
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Sent)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5, mailKitFolder.Name, true);
+                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5, mailKitFolder.Name, true)) {
+                        added_or_changed = true;
+                    }
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Drafts)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, mailKitFolder.Name, true);
+                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, mailKitFolder.Name, true)) {
+                        added_or_changed = true;
+                    }
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Trash)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4, mailKitFolder.Name, true);
+                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4, mailKitFolder.Name, true)) {
+                        added_or_changed = true;
+                    }
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false)) {
+                        added_or_changed = true;
+                    }
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Archive)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, McFolder.ARCHIVE_DISPLAY_NAME, false);
+                    if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, McFolder.ARCHIVE_DISPLAY_NAME, false)) {
+                        added_or_changed = true;
+                    }
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.All)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false)) {
+                        added_or_changed = true;
+                    }
                 }
                 else {
                     if ("notes" == mailKitFolder.Name.ToLower ()) {
-                        CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10, mailKitFolder.Name, true);
+                        if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10, mailKitFolder.Name, true)) {
+                            added_or_changed = true;
+                        }
                     } else {
-                        CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                        if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false)) {
+                            added_or_changed = true;
+                        }
                     }
                 }
             }
@@ -76,7 +95,12 @@ namespace NachoCore.IMAP
                 if (!foldernames.Contains (folder.ServerId)) {
                     Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server");
                     folder.Delete ();
+                    added_or_changed = true;
                 }
+            }
+
+            if (added_or_changed) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
             }
 
             var protocolState = BEContext.ProtocolState;
