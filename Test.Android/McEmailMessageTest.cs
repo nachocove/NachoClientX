@@ -436,12 +436,12 @@ namespace Test.Common
             message.UpdateScoreAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 1.0, false);
 
-            message.NeedUpdate = true;
+            message.NeedUpdate = 1;
             message.UpdateScoreAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 1.0, true);
 
             message.Score = 0.5;
-            message.NeedUpdate = false;
+            message.NeedUpdate = 0;
             message.UpdateScoreAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 0.5, false);
         }

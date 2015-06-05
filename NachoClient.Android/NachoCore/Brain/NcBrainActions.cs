@@ -86,7 +86,7 @@ namespace NachoCore.Brain
                 emailAddress.UpdateByBrain ();
             }
             if (updateDependencies && scoreUpdated) {
-                emailAddress.MarkDependencies ();
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
             }
             return true;
         }

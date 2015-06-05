@@ -92,7 +92,7 @@ namespace Test.Common
             Address.Update ();
 
             long origCount = NcBrain.SharedInstance.McEmailAddressCounters.Update.Count;
-            NcBrain.UpdateAddressScore (Address.Id);
+            NcBrain.UpdateAddressScore (Address.AccountId, Address.Id);
             WaitForBrain ();
 
             // The new score should be 0.5 with one update
@@ -101,7 +101,7 @@ namespace Test.Common
             Assert.AreEqual (origCount + 1, NcBrain.SharedInstance.McEmailAddressCounters.Update.Count);
 
             // Update again. Should get the same score with no update
-            NcBrain.UpdateAddressScore (Address.Id);
+            NcBrain.UpdateAddressScore (Address.AccountId, Address.Id);
             WaitForBrain ();
         }
 

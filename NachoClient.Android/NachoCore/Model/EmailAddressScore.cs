@@ -88,48 +88,63 @@ namespace NachoCore.Model
             UpdateByBrain ();
         }
 
-        public void MarkDependencies ()
+        public void MarkDependencies (NcEmailAddress.Kind addressType, int delta = 1)
         {
-            MarkDependentEmailMessages ();
-            // TODO - mark dependent meetings later
+            switch (addressType) {
+            case NcEmailAddress.Kind.From:
+            case NcEmailAddress.Kind.To:
+            case NcEmailAddress.Kind.Cc:
+            case NcEmailAddress.Kind.Bcc:
+            case NcEmailAddress.Kind.Sender:
+                MarkDependentEmailMessages (addressType, delta);
+                break;
+            default:
+                break;
+            }
+
         }
 
         public void IncrementEmailsReceived (int count = 1)
         {
             EmailsReceived += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsRead (int count = 1)
         {
             EmailsRead += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsReplied (int count = 1)
         {
             EmailsReplied += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsArchived (int count = 1)
         {
             EmailsArchived += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsDeleted (int count = 1)
         {
             EmailsDeleted += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void MarkDependentEmailMessages ()
+        public void MarkDependentEmailMessages (NcEmailAddress.Kind addressKind, int delta)
         {
+            if (1 > delta) {
+                delta = 1;
+            }
+            var queryString = String.Format (
+                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0} WHERE Id IN " +
+                                  " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
+                                  "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta, (int)addressKind);
             NcModel.Instance.RunInLock (() => {
-                NcModel.Instance.Db.Execute (
-                    "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + 1 WHERE " +
-                    " Id IN (SELECT EmailMessageId FROM McEmailMessageDependency AS d WHERE d.EmailAddressId = ?)", Id);
+                NcModel.Instance.Db.Execute (queryString, Id);
             });
         }
 

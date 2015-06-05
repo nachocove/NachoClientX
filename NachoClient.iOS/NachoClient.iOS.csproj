@@ -1489,6 +1489,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainSchedule.cs">
+      <Link>NachoCore\Brain\NcBrainSchedule.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
