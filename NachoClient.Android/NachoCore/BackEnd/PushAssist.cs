@@ -196,7 +196,7 @@ namespace NachoCore
             return null;
         }
 
-        public static void ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
+        public static bool ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
         {
             bool ranOnce = false;
             DateTime timestamp;
@@ -241,6 +241,7 @@ namespace NachoCore
                     continue;
                 }
             }
+            return ranOnce;
         }
 
         public static void RemovePAObjectByContext (string context)
