@@ -33,6 +33,26 @@ namespace NachoCore.Model
             RecentCommands,
         };
 
+        [Flags]
+        public enum NcImapCapabilities {
+            /// <summary>
+            /// The server does not support any additional extensions.
+            /// </summary>
+            None             = 0,
+            /// <summary>
+            /// The server supports the IDLE extension defined in rfc2177.
+            /// </summary>
+            Idle             = 1 << 0,
+            /// <summary>
+            /// The server supports the UIDPLUS extension defined in rfc4315.
+            /// </summary>
+            UidPlus          = 1 << 1,
+            /// <summary>
+            /// The server supports the CONDSTORE extension defined in rfc4551.
+            /// </summary>
+            CondStore        = 1 << 2,
+        }
+
         public McProtocolState ()
         {
             /*
@@ -109,7 +129,7 @@ namespace NachoCore.Model
          */
         public uint ImapProtoControlState { get; set; }
 
-        public ImapCapabilities ImapCapabilities { get; set; }
+        public NcImapCapabilities ImapServerCapabilities { get; set; }
 
         /*
          * "Smtp" SMTP properties go here:
@@ -154,6 +174,20 @@ namespace NachoCore.Model
         /*
          * "Imap" IMAP methods go here:
          */
+        public static NcImapCapabilities FromImapCapabilities(ImapCapabilities capabilities)
+        {
+            NcImapCapabilities cap = NcImapCapabilities.None;
+            if (capabilities.HasFlag (ImapCapabilities.Idle)) {
+                cap |= NcImapCapabilities.Idle;
+            }
+                if (capabilities.HasFlag (ImapCapabilities.UidPlus)) {
+                cap |= NcImapCapabilities.UidPlus;
+            }
+            if (capabilities.HasFlag (ImapCapabilities.CondStore)) {
+                cap |= NcImapCapabilities.CondStore;
+            }
+            return cap;
+        }
 
         /*
          * "Smtp" SMTP methods go here:

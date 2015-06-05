@@ -35,10 +35,11 @@ namespace NachoCore.IMAP
                 Client.AuthenticationMechanisms.Remove ("XOAUTH2");
                 Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
             }
-            if (BEContext.ProtocolState.ImapCapabilities != Client.Capabilities) {
+            var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
+            if (cap != BEContext.ProtocolState.ImapServerCapabilities) {
                 BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
-                    target.ImapCapabilities = Client.Capabilities;
+                    target.ImapServerCapabilities = cap;
                     return true;
                 });
             }

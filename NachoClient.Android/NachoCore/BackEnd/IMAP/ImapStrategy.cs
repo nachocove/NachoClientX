@@ -235,7 +235,7 @@ namespace NachoCore.IMAP
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext));
                 }
                 // (FG, BG) if the IMAP server doesn't support IDLE, we need to poll
-                if (!BEContext.ProtocolState.ImapCapabilities.HasFlag (ImapCapabilities.Idle)) {
+                if (!BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
                     var defInbox = McFolder.GetDefaultInboxFolder (accountId);
                     if (defInbox.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime())) {
                         SyncKit syncKit = GenSyncKit (accountId, protocolState, defInbox);
@@ -260,7 +260,7 @@ namespace NachoCore.IMAP
                         }
                     }
                 }
-                if (BEContext.ProtocolState.ImapCapabilities.HasFlag (ImapCapabilities.Idle)) {
+                if (BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
                         new ImapIdleCommand (BEContext));
