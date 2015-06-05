@@ -11,10 +11,11 @@ using NachoCore;
 using System.Linq;
 using System.Collections.Generic;
 using NachoPlatform;
+using Google.iOS;
 
 namespace NachoClient.iOS
 {
-    public partial class AdvancedLoginViewController : NcUIViewController, INachoCredentialsDelegate, INachoCertificateResponderParent
+    public partial class AdvancedLoginViewController : NcUIViewController, INachoCredentialsDelegate, INachoCertificateResponderParent, IGIDSignInDelegate, IGIDSignInUIDelegate
     {
         protected nfloat CELL_HEIGHT = 44;
 
@@ -126,6 +127,12 @@ namespace NachoClient.iOS
             if (McAccount.AccountServiceEnum.None == service) {
                 Log.Info (Log.LOG_UI, "avl: configure account type");
                 PerformSegue ("SegueToAccountType", this);
+                return;
+            }
+
+            // Step 2, for GMail
+            if (McAccount.AccountServiceEnum.GoogleDefault == service) {
+                StartGoogleSignIn ();
                 return;
             }
 
@@ -774,8 +781,77 @@ namespace NachoClient.iOS
             public McCred Credentials { get; set; }
            
         }
-    }
 
+        void StartGoogleSignIn ()
+        {
+            // KLUDGE Alert
+            // Set the service to none in case the
+            // user cancels; so we pop back to the
+            // chooser screen.
+            service = McAccount.AccountServiceEnum.None;
+            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.SignIn ();
+        }
+
+        // GIDSignInDelegate
+        public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
+        {
+            // TODO: Handle errors
+            if (null != error) {
+                if (error.Code == (int) GIDSignInErrorCode.CodeCanceled) {
+                    return;
+                }
+            }
+
+            GoogleDumper (user);
+
+            service = McAccount.AccountServiceEnum.GoogleDefault;
+            CredentialsDismissed (null, false, user.Profile.Email, "wrongsville");
+
+
+            // TODO:
+            // 1. Check for dup account
+            // 2. Create account & servers
+            // 3. Save auth related materials
+            // 4. Call silent sign-on somewhere
+            // 5. Handle token expiration and renewal
+            // 6. Figure out what to do in perform fetch
+        }
+
+        public static void GoogleDumper (GIDGoogleUser user)
+        {
+            if (null == user) {
+                Console.WriteLine ("user is null");
+                return;
+            }
+            Console.WriteLine ("user.AccessibleScopes,Length: {0}", user.AccessibleScopes.Length);
+            Console.WriteLine ("user.Authentication: {0}", user.Authentication);
+            Console.WriteLine ("user.HostedDomain: {0}", user.HostedDomain);
+            Console.WriteLine ("user.Profile: {0}", user.Profile);
+            Console.WriteLine ("user.ServerAuthCode: {0}", user.ServerAuthCode);
+            Console.WriteLine ("user.UserId: {0}", user.UserId);
+            var profile = user.Profile;
+            if (null == profile) {
+                Console.WriteLine ("user.Profile is null");
+            } else {
+                Console.WriteLine ("profile.Email: {0}", profile.Email);
+                Console.WriteLine ("profile.HasImage: {0}", profile.HasImage);
+                Console.WriteLine ("profile.ImageURL {0}", profile.ImageURL (20));
+                Console.WriteLine ("profile.Name: {0}", profile.Name);
+            }
+            var auth = user.Authentication;
+            if (null == auth) {
+                Console.WriteLine ("user.Authentication is null");
+            } else {
+                Console.WriteLine ("auth.AccessToken: {0}", auth.AccessToken);
+                Console.WriteLine ("auth.AccessTokenExpirationDate: {0}", auth.AccessTokenExpirationDate);
+                Console.WriteLine ("auth.IdToken: {0}", auth.IdToken);
+                Console.WriteLine ("auth.RefreshToken: {0}", auth.RefreshToken);
+            }
+        }
+
+    }
 
 }
 

@@ -376,6 +376,15 @@ namespace NachoClient.iOS
                 }
             }
 
+            // Initialize Google
+            var gglError = new NSError ();
+            var gglInstance = Google.iOS.GGLContext.SharedInstance;
+            gglInstance.ConfigureWithError (ref gglError);
+            if (null != gglError) {
+                // FIXME: Always reporting error
+                Log.Error (Log.LOG_UI, "Google GGLContext initialize has error: {0}", gglError);
+            }
+
             NcKeyboardSpy.Instance.Init ();
 
             if (LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
@@ -396,6 +405,10 @@ namespace NachoClient.iOS
         /// </summary>
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
+            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
+                return true;
+            }
+
             if (!url.IsFileUrl) {
                 return false;
             }

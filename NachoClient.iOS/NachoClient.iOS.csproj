@@ -2434,6 +2434,10 @@
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Google.iOS\GoogleAPIs\Google.iOS.csproj">
+      <Project>{C6741CA8-619D-4FF3-8CBA-108CFC3447A0}</Project>
+      <Name>Google.iOS</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />
@@ -2445,6 +2449,9 @@
     <Content Include="Content\PageFive.png" />
     <Content Include="Content\PageSix.png" />
     <Content Include="Content\PageSeven.png" />
+    <Content Include="GoogleService-Info.plist">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ITunesArtwork Include="iTunesArtwork" />
