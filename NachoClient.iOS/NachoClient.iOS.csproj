@@ -239,6 +239,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
+    <Folder Include="NachoCore\BackEnd\NcApplyServerCommand\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -444,15 +445,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderDelete.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderDelete.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderUpdate.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderUpdate.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncCommand.cs</Link>
@@ -1402,9 +1394,6 @@
     <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
-      <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
     <Compile Include="NachoUI.iOS\SwitchAccountViewController.designer.cs">
       <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
@@ -1482,6 +1471,18 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderAddCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderAddCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderDeleteCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderUpdateCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderUpdateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand\NcApplyServerCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand\NcApplyServerCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
