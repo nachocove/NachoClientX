@@ -1,6 +1,7 @@
 using System;
 using SQLite;
 using NachoCore.Utils;
+using MailKit.Net.Imap;
 
 namespace NachoCore.Model
 {
@@ -107,6 +108,8 @@ namespace NachoCore.Model
          * "Imap" IMAP properties go here:
          */
         public uint ImapProtoControlState { get; set; }
+
+        public ImapCapabilities ImapCapabilities { get; set; }
 
         /*
          * "Smtp" SMTP properties go here:
