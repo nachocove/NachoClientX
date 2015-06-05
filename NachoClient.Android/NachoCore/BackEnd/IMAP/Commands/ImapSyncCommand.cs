@@ -38,6 +38,10 @@ namespace NachoCore.IMAP
         public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
         {
             SyncKit = syncKit;
+            PendingSingle = SyncKit.PendingSingle;
+            if (null != PendingSingle) {
+                PendingSingle.MarkDispached ();
+            }
         }
 
         private IMailFolder GetOpenMailkitFolder(McFolder folder)
@@ -107,6 +111,7 @@ namespace NachoCore.IMAP
                     target.ImapUidNext = mailKitFolder.UidNext.Value.Id;
                     target.ImapUidValidity = mailKitFolder.UidValidity;
                     target.ImapLowestUid = (0 == uids.Count) ? 1 : uids.Min ().Id;
+                    target.ImapLastExamine = DateTime.UtcNow;
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
@@ -147,10 +152,15 @@ namespace NachoCore.IMAP
                     });
                 }
             }
-            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)record;
-                target.LastNarrowSync = DateTime.UtcNow;
+            SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.SyncAttemptCount += 1;
+                target.LastSyncAttempt = DateTime.UtcNow;
                 return true;
+            });
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (BEContext.ProtoControl, 
+                    NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }

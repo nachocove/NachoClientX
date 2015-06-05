@@ -16,6 +16,7 @@ namespace NachoCore.IMAP
     public class ImapStrategy : NcStrategy
     {
         public const uint KBaseOverallWindowSize = 25;
+        public const int KBaseNoIdlePollTime = 60; // seconds
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
@@ -25,7 +26,7 @@ namespace NachoCore.IMAP
         {
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (accountId, pending.ServerId);
-            var syncKit = GenSyncKit (accountId, protocolState, folder);
+            var syncKit = GenSyncKit (accountId, protocolState, folder, true);
             if (null != syncKit) {
                 syncKit.PendingSingle = pending;
             }
@@ -46,7 +47,13 @@ namespace NachoCore.IMAP
             return overallWindowSize;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
+        private int NoIdlePollTime()
+        {
+            // customize the PollTime here, depending on circumstances.
+            return KBaseNoIdlePollTime;
+        }
+
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder, bool UserRequested = false)
         {
             if (folder.ImapNoSelect) {
                 return null;
@@ -67,8 +74,11 @@ namespace NachoCore.IMAP
                 Flags = flags,
                 Span = SpanSizeWithCommStatus(),
             };
-
-            if (null == folder || 0 == folder.ImapUidNext) {
+            if (null == folder ||
+                0 == folder.ImapUidNext ||
+                UserRequested ||
+                folder.ImapLastExamine < DateTime.UtcNow.AddSeconds(-NoIdlePollTime())) // perhaps this should be passed in by the caller?
+            {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
                 syncKit.Method = SyncKit.MethodEnum.OpenOnly;
                 return syncKit;
@@ -224,6 +234,18 @@ namespace NachoCore.IMAP
                 if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext));
                 }
+                // (FG, BG) if the IMAP server doesn't support IDLE, we need to poll
+                if (!BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
+                    var defInbox = McFolder.GetDefaultInboxFolder (accountId);
+                    if (defInbox.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime())) {
+                        SyncKit syncKit = GenSyncKit (accountId, protocolState, defInbox);
+                        if (null != syncKit) {
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:PollSync {0}", defInbox.ServerId);
+                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                                new ImapSyncCommand (BEContext, syncKit));
+                        }
+                    }
+                }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (PowerPermitsSpeculation () ||
                     NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
@@ -238,9 +260,15 @@ namespace NachoCore.IMAP
                         }
                     }
                 }
-                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                    new ImapIdleCommand (BEContext));
+                if (BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
+                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
+                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                        new ImapIdleCommand (BEContext));
+                } else {
+                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:WaitPing");
+                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                        new ImapWaitCommand (BEContext, NoIdlePollTime(), true));
+                }
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {

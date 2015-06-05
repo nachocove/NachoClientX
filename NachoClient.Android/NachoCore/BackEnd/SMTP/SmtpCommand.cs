@@ -54,10 +54,14 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "ServiceNotConnectedException");
                     ResolveAllDeferred ();
                     sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.ReDisc, "SMTPCONN");
+                } catch (AuthenticationException) {
+                    Log.Info (Log.LOG_SMTP, "AuthenticationException");
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
                 } catch (ServiceNotAuthenticatedException) {
                     Log.Info (Log.LOG_SMTP, "ServiceNotAuthenticatedException");
                     ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH");
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
                 } catch (IOException ex) {
                     Log.Info (Log.LOG_SMTP, "IOException: {0}", ex.ToString ());
                     ResolveAllDeferred ();
