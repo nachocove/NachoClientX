@@ -38,8 +38,9 @@ namespace NachoCore.IMAP
         public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
         {
             SyncKit = syncKit;
-            if (null != SyncKit.PendingSingle) {
-                SyncKit.PendingSingle.MarkDispached ();
+            PendingSingle = SyncKit.PendingSingle;
+            if (null != PendingSingle) {
+                PendingSingle.MarkDispached ();
             }
         }
 
@@ -157,12 +158,10 @@ namespace NachoCore.IMAP
                 target.LastSyncAttempt = DateTime.UtcNow;
                 return true;
             });
-            if (null != PendingSingle) {
-                PendingResolveApply ((PendingSingle) => {
-                    PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, 
-                        NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
-                });
-            }
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (BEContext.ProtoControl, 
+                    NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
