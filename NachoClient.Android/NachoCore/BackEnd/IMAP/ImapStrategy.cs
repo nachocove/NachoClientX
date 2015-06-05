@@ -26,7 +26,7 @@ namespace NachoCore.IMAP
         {
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (accountId, pending.ServerId);
-            var syncKit = GenSyncKit (accountId, protocolState, folder);
+            var syncKit = GenSyncKit (accountId, protocolState, folder, true);
             if (null != syncKit) {
                 syncKit.PendingSingle = pending;
             }
@@ -53,7 +53,7 @@ namespace NachoCore.IMAP
             return KBaseNoIdlePollTime;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder, bool UserRequested = false)
         {
             if (folder.ImapNoSelect) {
                 return null;
@@ -76,6 +76,7 @@ namespace NachoCore.IMAP
             };
             if (null == folder ||
                 0 == folder.ImapUidNext ||
+                UserRequested ||
                 folder.ImapLastExamine < DateTime.UtcNow.AddSeconds(-NoIdlePollTime())) // perhaps this should be passed in by the caller?
             {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
