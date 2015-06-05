@@ -29,15 +29,36 @@ namespace NachoCore.ActiveSync
 
         private XElement ToEmailFetch (string parentId, string serverId)
         {
-            // TODO: we should let strategy determine the BodyPref.
+            // TODO: Strategy should decide the body preference.  I am planning to make that change
+            // in the near future, but I want to get this code working first.
+            var bodyPreferenceType = Xml.AirSync.TypeCode.Mime_4;
+            var message = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
+            if (null != message && 0 != message.NativeBodyType) {
+                bool inlineAttachment = false;
+                long attachmentsSize = 0;
+                foreach (var attachment in McAttachment.QueryByItemId (message)) {
+                    if (attachment.IsInline) {
+                        inlineAttachment = true;
+                    }
+                    attachmentsSize += attachment.FileSize;
+                }
+                // The choice of 1 MB for the cutoff was chosen because that is the maximum size
+                // for the speculative download of an attachment.  That value should be reevaluated
+                // when this code is moved to strategy.
+                if (!inlineAttachment && 1024 * 1024 < attachmentsSize) {
+                    bodyPreferenceType = (Xml.AirSync.TypeCode)message.NativeBodyType;
+                }
+            }
             return new XElement (m_ns + Xml.ItemOperations.Fetch,
                 new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
                 new XElement (AirSyncNs + Xml.AirSync.CollectionId, parentId),
                 new XElement (AirSyncNs + Xml.AirSync.ServerId, serverId),
                 new XElement (m_ns + Xml.ItemOperations.Options,
-                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
+                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport,
+                        Xml.AirSync.TypeCode.Mime_4 == bodyPreferenceType ?
+                        (uint)Xml.AirSync.MimeSupportCode.AllMime_2 : (uint)Xml.AirSync.MimeSupportCode.NoMime_0),
                     new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)bodyPreferenceType),
                         new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"),
                         new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"))));
         }
