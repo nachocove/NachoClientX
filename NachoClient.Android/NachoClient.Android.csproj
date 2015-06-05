@@ -132,6 +132,9 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\StepRobot.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\AsFolderSyncCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderAdd.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderDelete.cs" />
+    <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsFolderSyncCommand\FolderUpdate.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsItemOperationsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsMoveItemsCommand.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsOptionsCommand.cs" />
@@ -406,6 +409,7 @@
     <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs" />
@@ -425,10 +429,6 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\NcApplyServerCommand\NcApplyServerCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderUpdateCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderDeleteCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\NcApplyServerCommand\NcApplyFolderAddCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -596,7 +596,6 @@
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
-    <Folder Include="NachoCore\BackEnd\NcApplyServerCommand\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

@@ -28,17 +28,7 @@ namespace NachoCore.IMAP
             } else {
                 folderPath = PendingSingle.DisplayName;
             }
-            var newFolder = CreateFolderInNamespace (imapNameSpace, folderPath);
-
-            CreateOrUpdateFolder (newFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, newFolder.Name, false);
-            var applyAdd = new NcApplyFolderAdd (BEContext.Account.Id) {
-                ServerId = newFolder.Name, 
-                ParentId = parentId(newFolder),
-                DisplayName = PendingSingle.DisplayName,
-                FolderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
-            };
-            applyAdd.ProcessServerCommand ();
-
+            CreateFolderInNamespace (imapNameSpace, folderPath);
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
             });

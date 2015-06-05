@@ -6,7 +6,6 @@ using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoCore;
 
 namespace NachoCore.ActiveSync
 {
@@ -71,7 +70,7 @@ namespace NachoCore.ActiveSync
                             pathElem.ParentId = parentId;
                             pathElem.IsFolder = true;
                             pathElem.Insert ();
-                            var applyAdd = new NcApplyFolderAdd (BEContext.Account.Id) {
+                            var applyAdd = new ApplyFolderAdd (BEContext.Account.Id) {
                                 ServerId = serverId, 
                                 ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
@@ -86,7 +85,7 @@ namespace NachoCore.ActiveSync
                             pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
                             pathElem.ParentId = parentId;
                             pathElem.Update ();
-                            var applyUpdate = new NcApplyFolderUpdate (BEContext.Account.Id) {
+                            var applyUpdate = new ApplyFolderUpdate (BEContext.Account.Id) {
                                 ServerId = serverId,
                                 ParentId = parentId,
                                 DisplayName = change.Element (m_ns + Xml.FolderHierarchy.DisplayName).Value,
@@ -97,7 +96,7 @@ namespace NachoCore.ActiveSync
                         case Xml.FolderHierarchy.Delete:
                             HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
-                            var applyDelete = new NcApplyFolderDelete (BEContext.Account.Id) {
+                            var applyDelete = new ApplyFolderDelete (BEContext.Account.Id) {
                                 ServerId = serverId,
                             };
                             applyDelete.ProcessServerCommand ();
