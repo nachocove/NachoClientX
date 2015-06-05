@@ -28,7 +28,13 @@ namespace NachoCore.IMAP
             } else {
                 folderPath = PendingSingle.DisplayName;
             }
-            CreateFolderInNamespace (imapNameSpace, folderPath);
+            var newFolder = CreateFolderInNamespace (imapNameSpace, folderPath);
+
+            if (CreateOrUpdateFolder (newFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, newFolder.Name, false)) {
+                // TODO do some ApplyCommand stuff here
+                Log.Info (Log.LOG_IMAP, "Created folder {0}", newFolder.FullName);
+            }
+
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
             });
