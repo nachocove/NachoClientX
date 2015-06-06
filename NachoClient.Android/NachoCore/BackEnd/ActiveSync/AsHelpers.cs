@@ -68,7 +68,7 @@ namespace NachoCore.ActiveSync
 
                 // Now that we have a body, see if it is possible to fill in the contents of any attachments.
                 if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
-                    var bodyAttachments = MimeHelpers.AllAttachments (MimeHelpers.LoadMessage (body));
+                    var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
                     if (0 < bodyAttachments.Count) {
 
                         foreach (var ba in bodyAttachments) {
