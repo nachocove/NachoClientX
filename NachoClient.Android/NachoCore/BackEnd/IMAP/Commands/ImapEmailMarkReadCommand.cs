@@ -28,8 +28,8 @@ namespace NachoCore.IMAP
                 }
                 mailKitFolder.SetFlags (uid, MessageFlags.Seen, true, Cts.Token);
             }
-            PendingResolveApply ((PendingSingle) => {
-                PendingSingle.ResolveAsSuccess (BEContext.ProtoControl, 
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (BEContext.ProtoControl, 
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
