@@ -130,9 +130,21 @@ namespace NachoCore
             }
         }
 
+        public bool IsBackground {
+            get {
+                return (ExecutionContextEnum.Background == ExecutionContext);
+            }
+        }
+
         public bool IsForeground {
             get {
                 return (ExecutionContextEnum.Foreground == ExecutionContext);
+            }
+        }
+
+        public bool IsForegroundOrBackground {
+            get {
+                return IsBackground || IsForeground;
             }
         }
 

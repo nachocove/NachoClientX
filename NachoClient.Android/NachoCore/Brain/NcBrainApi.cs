@@ -15,15 +15,6 @@ namespace NachoCore.Brain
             dbEvent.Insert ();
         }
 
-        public static void NewEmailMessageSynced (object sender, EventArgs args)
-        {
-            StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
-            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged != eventArgs.Status.SubKind) {
-                return;
-            }
-            NcBrain.SharedInstance.Enqueue (new NcBrainStateMachineEvent (eventArgs.Account.Id));
-        }
-
         public static void UpdateAddressScore (int accountId, int emailAddressId, bool forcedUpdateDependentMessages = false)
         {
             if ((0 == accountId) || (0 == emailAddressId)) {

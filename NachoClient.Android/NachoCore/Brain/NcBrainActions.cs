@@ -140,12 +140,16 @@ namespace NachoCore.Brain
             return filePath;
         }
 
-        protected bool IndexEmailMessage (NcIndex index, McEmailMessage emailMessage, ref long bytesIndexed)
+        protected bool IndexEmailMessage (McEmailMessage emailMessage)
         {
-            if (null == emailMessage) {
+            if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
                 return false;
             }
             Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
+            var index = OpenedIndexes.Get (emailMessage.AccountId);
+            if (null == index) {
+                return false;
+            }
 
             // Make sure the body is there
             McBody body;
@@ -167,7 +171,7 @@ namespace NachoCore.Brain
                 var indexDoc = new EmailMessageIndexDocument (emailMessage.Id.ToString (), content, message);
 
                 // Index the document
-                bytesIndexed += index.BatchAdd (indexDoc);
+                BytesIndexed += index.BatchAdd (indexDoc);
             } catch (NullReferenceException e) {
                 Log.Error (Log.LOG_BRAIN, "IndexEmailmessage: caught null exception - {0}", e);
             }
@@ -179,9 +183,13 @@ namespace NachoCore.Brain
             return true;
         }
 
-        protected bool IndexContact (NcIndex index, McContact contact, ref long bytesIndex)
+        protected bool IndexContact (McContact contact)
         {
-            if ((null == index) || (null == contact)) {
+            if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+                return false;
+            }
+            var index = OpenedIndexes.Get (contact.AccountId);
+            if (null == index) {
                 return false;
             }
 
@@ -232,7 +240,7 @@ namespace NachoCore.Brain
                     index.Remove ("contact", id);
                 }
                 var indexDoc = new ContactIndexDocument (id, contactParams);
-                bytesIndex += index.BatchAdd (indexDoc);
+                BytesIndexed += index.BatchAdd (indexDoc);
             } catch (NullReferenceException e) {
                 Log.Error (Log.LOG_BRAIN, "IndexContact: caught null exception - {0}", e);
             }

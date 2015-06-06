@@ -9,6 +9,60 @@ namespace NachoCore.Brain
 {
     public partial class NcBrain
     {
+        private NcQueue<NcBrainEvent> EventQueue;
+        private OpenedIndexSet OpenedIndexes;
+        private long BytesIndexed;
+        private RoundRobinList Scheduler;
+
+        private void InitializeEventHandler ()
+        {
+            EventQueue = new NcQueue<NcBrainEvent> ();
+            OpenedIndexes = new OpenedIndexSet (this);
+            Scheduler = new RoundRobinList ();
+            Scheduler.Add (
+                new RoundRobinSource (
+                    (count) => {
+                        return new List<object> (McEmailMessage.QueryNeedAnalysis (count, Scoring.Version));
+                    },
+                    (obj) => {
+                        var emailMessage = (McEmailMessage)obj;
+                        return AnalyzeEmailMessage (emailMessage);
+                    }, 5), 1);
+            Scheduler.Add (
+                new RoundRobinSource (
+                    (count) => {
+                        return new List<object> (McEmailMessage.QueryNeedsIndexing (count));
+                    },
+                    (obj) => {
+                        var emailMessage = (McEmailMessage)obj;
+                        return IndexEmailMessage (emailMessage);
+                    }, 5), 1);
+            Scheduler.Add (
+                new RoundRobinSource (
+                    (count) => {
+                        return new List<object> (McContact.QueryNeedIndexing (count));
+                    },
+                    (obj) => {
+                        var contact = (McContact)obj;
+                        return IndexContact (contact);
+                    }, 5), 2);
+        }
+
+        public void Enqueue (NcBrainEvent brainEvent)
+        {
+            EventQueue.Enqueue (brainEvent);
+        }
+
+        public bool IsQueueEmpty ()
+        {
+            return EventQueue.IsEmpty ();
+        }
+
+        private bool IsInterrupted ()
+        {
+            return EventQueue.Token.IsCancellationRequested || NcApplication.Instance.IsBackgroundAbateRequired;
+        }
+
         private void ProcessEvent (NcBrainEvent brainEvent)
         {
             Log.Info (Log.LOG_BRAIN, "event type = {0}", Enum.GetName (typeof(NcBrainEventType), brainEvent.Type));
@@ -18,24 +72,10 @@ namespace NachoCore.Brain
                 if (!NcApplication.Instance.IsBackgroundAbateRequired) {
                     LastPeriodicGlean = DateTime.Now;
                 }
-                EvaluateRunRate ();
-                int num_entries = WorkCredits;
-                NotificationRateLimiter.Enabled = false;
-                num_entries -= ProcessPersistedRequests (num_entries);
-                num_entries -= AnalyzeEmailAddresses (num_entries);
-                num_entries -= AnalyzeEmails (num_entries);
-                num_entries -= GleanContacts (num_entries);
-                num_entries -= UpdateEmailAddressScores (num_entries);
-                // We need to index email message before updating the score because score update
-                // always leads to hot view to flap the abatement signal and we never
-                // get to index any message. What we do is to split the remaining allowed
-                // entries into two halves. 1st half goes to indexing and the leftover goes to
-                // score update.
-                num_entries -= IndexContacts (num_entries);
-                num_entries -= IndexEmailMessages (Math.Max (1, num_entries / 2));
-                // This must be the last action. See comment above.
-                num_entries -= UpdateEmailMessageScores (num_entries);
-                NotificationRateLimiter.Enabled = true;
+                NotificationRateLimiter.Running = false;
+                var runTill = EvaluateRunTime (NcContactGleaner.GLEAN_PERIOD);
+                ProcessPeriodic (runTill);
+                NotificationRateLimiter.Running = true;
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
@@ -81,124 +121,17 @@ namespace NachoCore.Brain
 
         private void ProcessPeriodic (DateTime runTill)
         {
-            while (DateTime.UtcNow < runTill) {
-                // Process all events in the persistent queue first
-                if (0 < ProcessPersistedRequests (1)) {
-                    continue;
+            try {
+                while (DateTime.UtcNow < runTill) {
+                    // Process all events in the persistent queue first
+                    if (0 < ProcessPersistedRequests (1)) {
+                        continue;
+                    }
+                    Scheduler.Run ();
                 }
-
-                // Email addresses analysis is trivial. It just updates all versions to the current version.
-                //McEmailAdddress.AnalyzeAll ();
-
-                // Look for all unindexed & unanalyzed emails within the last two weeks
-                var unanalyzedEmails = McEmailMessage.QueryNeedAnalysis ();
-                // Look for all unindex contacts
-
-                // Round robins them.
+            } finally {
+                OpenedIndexes.Cleanup ();
             }
-        }
-
-        private int AnalyzeEmailAddresses (int count)
-        {
-            return ProcessLoop (count, "email addresses analyzed", () => {
-                McEmailAddress emailAddress = McEmailAddress.QueryNeedAnalysis ();
-                return AnalyzeEmailAddress (emailAddress);
-            });
-        }
-
-        private int AnalyzeEmails (int count)
-        {
-            return ProcessLoop (count, "email messages analyzed", () => {
-                McEmailMessage emailMessage = McEmailMessage.QueryNeedAnalysis ();
-                return AnalyzeEmailMessage (emailMessage);
-            });
-        }
-
-        private int UpdateEmailAddressScores (int count)
-        {
-            return ProcessLoop (count, "email address scores updated", () => {
-                McEmailAddress emailAddress = McEmailAddress.QueryNeedUpdate ();
-                return UpdateEmailAddressScore (emailAddress, false);
-            });
-        }
-
-        private int UpdateEmailMessageScores (int count)
-        {
-            return ProcessLoop (count, "email message scores updated", () => {
-                McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
-                return UpdateEmailMessageScore (emailMessage);
-            });
-        }
-
-        private int IndexEmailMessages (int count)
-        {
-            if (0 == count) {
-                return 0;
-            }
-
-            int numIndexed = 0;
-            long bytesIndexed = 0;
-            List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
-            var indexes = new OpenedIndexSet (this);
-            foreach (var emailMessage in emailMessages) {
-                if (IsInterrupted ()) {
-                    break;
-                }
-
-                var index = indexes.Get (emailMessage.AccountId);
-                if (null == index) {
-                    break;
-                }
-                if (IndexEmailMessage (index, emailMessage, ref bytesIndexed)) {
-                    numIndexed += 1;
-                }
-            }
-
-            indexes.Cleanup ();
-            if (0 != numIndexed) {
-                Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);
-            }
-            if (0 != bytesIndexed) {
-                Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
-            }
-            return numIndexed;
-        }
-
-        private int IndexContacts (int count)
-        {
-            if (0 == count) {
-                return 0;
-            }
-
-            int numIndexed = 0;
-            long bytesIndexed = 0;
-            List<McContact> contacts = McContact.QueryNeedIndexing (count);
-            if (0 == contacts.Count) {
-                return 0;
-            }
-            var indexes = new OpenedIndexSet (this);
-            foreach (var contact in contacts) {
-                if (IsInterrupted ()) {
-                    break;
-                }
-
-                var index = indexes.Get (contact.AccountId);
-                if (null == index) {
-                    break;
-                }
-                if (IndexContact (index, contact, ref bytesIndexed)) {
-                    numIndexed += 1;
-                }
-            }
-
-            indexes.Cleanup ();
-            if (0 != numIndexed) {
-                Log.Info (Log.LOG_BRAIN, "{0} contacts indexed", numIndexed);
-            }
-            if (0 != bytesIndexed) {
-                Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
-            }
-            return numIndexed;
         }
 
         private int ProcessPersistedRequests (int count)
@@ -313,13 +246,33 @@ namespace NachoCore.Brain
                 McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
             UpdateEmailMessageScore (emailMessage);
         }
-    }
 
-    /// <summary>
-    /// This class takes muliptle lists 
-    /// </summary>
-    public class RoundRobinList
-    {
+        private int GleanContacts (int count, Int64 accountId = -1)
+        {
+            int numGleaned = 0;
+            bool quickGlean = false;
+            string accountAddress = null;
+            if (0 < accountId) {
+                var account = McAccount.QueryById<McAccount> ((int)accountId);
+                if ((null != account) && (!String.IsNullOrEmpty (account.EmailAddr))) {
+                    accountAddress = account.EmailAddr;
+                    quickGlean = true;
+                }
+            }
+            var emailMessages = McEmailMessage.QueryNeedGleaning (accountId, count);
+            count = emailMessages.Count;
+            while (numGleaned < count && !IsInterrupted ()) {
+                if (!GleanEmailMessage (emailMessages [numGleaned], accountAddress, quickGlean)) {
+                    break;
+                }
+                numGleaned++;
+            }
+            if (0 != numGleaned) {
+                Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
+                NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
+            }
+            return numGleaned;
+        }
     }
 }
 

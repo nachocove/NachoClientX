@@ -10,7 +10,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable
+    public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable<McEmailAddress>
     {
         // Score version of this object
         [Indexed]
@@ -185,11 +185,12 @@ namespace NachoCore.Model
                 .FirstOrDefault ();
         }
 
-        public static McEmailAddress QueryNeedAnalysis ()
+        public static List<McEmailAddress> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
-            return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.ScoreVersion < Scoring.Version)
-                .FirstOrDefault ();
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " WHERE a.ScoreVersion < ? " +
+                " LIMIT ?", version, count);
         }
     }
 }

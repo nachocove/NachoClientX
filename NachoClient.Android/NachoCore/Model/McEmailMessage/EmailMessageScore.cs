@@ -10,7 +10,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public partial class McEmailMessage : McAbstrItem, IScorable
+    public partial class McEmailMessage : McAbstrItem, IScorable<McEmailMessage>
     {
         public enum GleanPhaseEnum
         {
@@ -247,12 +247,13 @@ namespace NachoCore.Model
                 .FirstOrDefault ();
         }
 
-        public static McEmailMessage QueryNeedAnalysis ()
+        public static List<McEmailMessage> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned > 0)
-                .OrderByDescending (x => x.Id)
-                .FirstOrDefault ();
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " WHERE e.ScoreVersion < ? AND e.HasBeenGleaned > 0 " +
+                " ORDER BY Id DESC " +
+                " LIMIT ?", version, count);
         }
 
         public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
