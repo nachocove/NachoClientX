@@ -10,7 +10,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public partial class McEmailMessage : McAbstrItem, IScorable<McEmailMessage>
+    public partial class McEmailMessage : McAbstrItem, IScorable
     {
         public enum GleanPhaseEnum
         {

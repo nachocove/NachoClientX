@@ -10,7 +10,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable<McEmailAddress>
+    public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable
     {
         // Score version of this object
         [Indexed]

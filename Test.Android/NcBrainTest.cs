@@ -178,7 +178,7 @@ namespace Test.Common
             NcBrainNotification notif = new NcBrainNotification ();
             notif.Action = NotificationAction;
 
-            Assert.True (notif.Enabled); // enabled by default
+            Assert.True (notif.Running); // enabled by default
 
             // Send 1st notification - must receive
             notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
@@ -215,11 +215,11 @@ namespace Test.Common
             NotificationsReceived.Clear ();
 
             // Disable, send two notifications, enable
-            notif.Enabled = false;
+            notif.Running = false;
             notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
             notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
             Assert.AreEqual (0, NotificationsReceived.Count);
-            notif.Enabled = true;
+            notif.Running = true;
             Assert.AreEqual (2, NotificationsReceived.Count);
             if (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated == NotificationsReceived [0]) {
                 Assert.AreEqual (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated, NotificationsReceived [1]);

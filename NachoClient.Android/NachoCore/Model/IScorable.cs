@@ -10,7 +10,7 @@ namespace NachoCore.Utils
     }
 
     // All objects that have a score must implement this interface.
-    public interface IScorable<T>
+    public interface IScorable
     {
         /// Score version of this object. When an object is created, this value
         /// is set to 0. UpgradeScoreVersion() will perform all processing to
