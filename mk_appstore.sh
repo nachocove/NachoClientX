@@ -25,8 +25,8 @@ die () {
 
 # Fetch all git repos and check out the tag
 source repos.sh
-./fetch.py $repos
-./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
+# ./fetch.py $repos
+# ./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
 
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`

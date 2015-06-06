@@ -78,7 +78,8 @@ projects = {
     'appstore': {
         'ios': {
             'bundle_id': 'com.nachocove.mail',
-            'display_name': 'Nacho Mail'
+            'display_name': 'Nacho Mail',
+            'icon_script': 'appstore/copy.sh'
         },
         'hockeyapp': {
             'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa',
