@@ -19,8 +19,6 @@ namespace Test.Common
 
         McEmailMessageDependency Dependency;
 
-        List<NcResult.SubKindEnum> NotificationsReceived;
-
         [SetUp]
         public new void SetUp ()
         {
@@ -46,8 +44,6 @@ namespace Test.Common
             Dependency.EmailAddressId = Address.Id;
             Dependency.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Dependency.Insert ();
-
-            NotificationsReceived = new List<NcResult.SubKindEnum> ();
         }
 
         [TearDown]
@@ -165,68 +161,6 @@ namespace Test.Common
             WaitForBrain ();
 
             Assert.AreEqual (origCount, brain.McEmailAddressCounters.Update.Count);
-        }
-
-        private void NotificationAction (NcResult.SubKindEnum type)
-        {
-            NotificationsReceived.Add (type);
-        }
-
-        [Test]
-        public void NotificationRateLimiter ()
-        {
-            NcBrainNotification notif = new NcBrainNotification ();
-            notif.Action = NotificationAction;
-
-            Assert.True (notif.Running); // enabled by default
-
-            // Send 1st notification - must receive
-            notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
-            Assert.AreEqual (1, NotificationsReceived.Count);
-            Assert.AreEqual (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated, NotificationsReceived [0]);
-            NotificationsReceived.Clear ();
-
-            // Wait KMinDurationMSec and send again - must received
-            Thread.Sleep (NcBrainNotification.KMinDurationMsec + 200);
-            var now = DateTime.Now;
-            notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
-            Assert.AreEqual (1, NotificationsReceived.Count);
-            Assert.AreEqual (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated, NotificationsReceived [0]);
-            NotificationsReceived.Clear ();
-
-            // Keep sending within the next KMinDurationMSec
-            int count = 0;
-            Assert.True (100 < NcBrainNotification.KMinDurationMsec);
-            while ((DateTime.Now - now).TotalMilliseconds < (NcBrainNotification.KMinDurationMsec - 100)) {
-                notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
-                count++;
-            }
-            Assert.True (0 < count); // should send at least one
-            Assert.AreEqual (0, NotificationsReceived.Count); // must not get any
-            NotificationsReceived.Clear ();
-            Thread.Sleep (500); // make sure we are passed the KMinDurationMsec
-
-            // Send two different types of notifications
-            notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
-            notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
-            Assert.AreEqual (2, NotificationsReceived.Count);
-            Assert.AreEqual (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated, NotificationsReceived [0]);
-            Assert.AreEqual (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated, NotificationsReceived [1]);
-            NotificationsReceived.Clear ();
-
-            // Disable, send two notifications, enable
-            notif.Running = false;
-            notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
-            notif.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
-            Assert.AreEqual (0, NotificationsReceived.Count);
-            notif.Running = true;
-            Assert.AreEqual (2, NotificationsReceived.Count);
-            if (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated == NotificationsReceived [0]) {
-                Assert.AreEqual (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated, NotificationsReceived [1]);
-            } else {
-                Assert.AreEqual (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated, NotificationsReceived [0]);
-                Assert.AreEqual (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated, NotificationsReceived [0]);
-            }
         }
     }
 }

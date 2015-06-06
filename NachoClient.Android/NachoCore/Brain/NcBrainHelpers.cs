@@ -52,6 +52,12 @@ namespace NachoCore.Brain
 
         public int ChunkSize { get; set; }
 
+        public int NumberOfObjects {
+            get {
+                return Objects.Count;
+            }
+        }
+
         protected List<object> Objects;
 
         protected QuerySourceFunction QueryFunction;
