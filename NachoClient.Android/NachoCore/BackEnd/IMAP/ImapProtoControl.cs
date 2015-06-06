@@ -27,6 +27,7 @@ namespace NachoCore.IMAP
             Pick,
             CmdW,
             Wait,
+            Idle,
             Parked,
         };
 
@@ -73,6 +74,7 @@ namespace NachoCore.IMAP
                 UiSetCred,
                 UiSetServConf,
                 FromStrat,
+                FromIdle,
                 Wait,
                 AuthFail,
                 Last = AuthFail,
@@ -99,6 +101,7 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -121,6 +124,7 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
@@ -146,6 +150,7 @@ namespace NachoCore.IMAP
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -169,6 +174,7 @@ namespace NachoCore.IMAP
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -189,6 +195,7 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                         },
                         Invalid = new [] {
                             (uint)ImapEvt.E.Wait,
@@ -225,6 +232,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.FromStrat, Act = DoArg, State = (uint)Lst.CmdW },
+                            new Trans { Event = (uint)ImapEvt.E.FromIdle, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
                         }
                     },
@@ -248,12 +256,14 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
+                            new Trans { Event = (uint)ImapEvt.E.FromIdle, Act = DoPick, State = (uint)Lst.Pick },
                         },
                     },
                     new Node {
                         State = (uint)Lst.Wait,
                         Drop = new [] {
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -279,6 +289,7 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQHot,
                             (uint)PcEvt.E.Park,
                             (uint)ImapEvt.E.FromStrat,
+                            (uint)ImapEvt.E.FromIdle,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },

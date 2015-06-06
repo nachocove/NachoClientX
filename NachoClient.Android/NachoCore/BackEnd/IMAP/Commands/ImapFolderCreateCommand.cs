@@ -30,11 +30,17 @@ namespace NachoCore.IMAP
             }
             var newFolder = CreateFolderInNamespace (imapNameSpace, folderPath);
 
-            if (CreateOrUpdateFolder (newFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, newFolder.Name, false)) {
+            McFolder folder;
+            if (CreateOrUpdateFolder (newFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, newFolder.Name, false, out folder)) {
                 // TODO do some ApplyCommand stuff here
+                // FIXME This is especially needed the first time you archive an email: there will be two
+                //   pendings in the queue. One to create the folder and one to move the message. The second one will
+                //   not have the right destId, because that folder doesn't yet exist, so we fail in the Move Command.
                 Log.Info (Log.LOG_IMAP, "Created folder {0}", newFolder.FullName);
             }
+            UpdateImapSetting (newFolder, folder);
 
+            BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_FolderCreateSucceeded));
             });

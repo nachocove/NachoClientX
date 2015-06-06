@@ -42,60 +42,66 @@ namespace NachoCore.IMAP
             foreach (var mailKitFolder in folderList) {
                 foldernames.Add (mailKitFolder.FullName);
 
+                ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
+                bool isDistinguished;
+
                 if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2, mailKitFolder.Name, true)) {
-                        added_or_changed = true;
-                    }
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Sent)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5, mailKitFolder.Name, true)) {
-                        added_or_changed = true;
-                    }
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Drafts)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, mailKitFolder.Name, true)) {
-                        added_or_changed = true;
-                    }
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Trash)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4, mailKitFolder.Name, true)) {
-                        added_or_changed = true;
-                    }
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false)) {
-                        added_or_changed = true;
-                    }
+                    folderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Archive)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, McFolder.ARCHIVE_DISPLAY_NAME, false)) {
-                        added_or_changed = true;
-                    }
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.All)) {
-                    if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false)) {
-                        added_or_changed = true;
-                    }
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
                 }
                 else {
                     if ("notes" == mailKitFolder.Name.ToLower ()) {
-                        if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10, mailKitFolder.Name, true)) {
-                            added_or_changed = true;
-                        }
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
+                        isDistinguished = true;
                     } else {
-                        if (CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false)) {
-                            added_or_changed = true;
-                        }
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                        isDistinguished = false;
                     }
+                }
+                McFolder folder;
+                if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
+                    added_or_changed = true;
+                    // TODO do ApplyCommand stuff here
+                }
+                NcAssert.NotNull (folder);
+                if (UpdateImapSetting(mailKitFolder, folder)) {
+                    // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
+                    // Strategy will notice that modseq and/or noselect etc has changed, and resync.
+                    Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ServerId);
                 }
             }
 
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
             foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
                 if (!foldernames.Contains (folder.ServerId)) {
-                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server");
+                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server", folder.ServerId);
+                    // TODO Do applyCommand stuff here
+                    // Delete folder and everything in and under it.
                     folder.Delete ();
-                    added_or_changed = true;
                 }
             }
 

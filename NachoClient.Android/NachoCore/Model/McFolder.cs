@@ -62,6 +62,9 @@ namespace NachoCore.Model
         public string ImapGuid { get; set; }
         // DateTime we last examined the folder.
         public DateTime ImapLastExamine { get; set; }
+        // Highest Modification Sequence Numbers.
+        public long CurImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
+        public long LastImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
 
         [Indexed]
         public string DisplayName { get; set; }
