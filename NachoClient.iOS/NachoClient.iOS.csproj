@@ -1492,7 +1492,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainHelpers.cs">
       <Link>NachoCore\Brain\NcBrainHelpers.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainEventHandlers.cs">
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainEventHandler.cs">
       <Link>NachoCore\Brain\NcBrainEventHandler.cs</Link>
     </Compile>
   </ItemGroup>

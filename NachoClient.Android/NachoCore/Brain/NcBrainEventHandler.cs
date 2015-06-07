@@ -122,12 +122,21 @@ namespace NachoCore.Brain
         private void ProcessPeriodic (DateTime runTill)
         {
             try {
+                bool ranOnce = false;
                 while (DateTime.UtcNow < runTill) {
                     // Process all events in the persistent queue first
                     if (0 < ProcessPersistedRequests (1)) {
                         continue;
                     }
-                    Scheduler.Run ();
+                    // Handle all other events
+                    if (!ranOnce) {
+                        Scheduler.Initialize ();
+                        ranOnce = true;
+                    }
+                    bool result;
+                    if (!Scheduler.Run (out result)) {
+                        break;
+                    }
                 }
             } finally {
                 OpenedIndexes.Cleanup ();

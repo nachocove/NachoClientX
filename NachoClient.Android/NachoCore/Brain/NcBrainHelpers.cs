@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Index;
@@ -72,6 +73,12 @@ namespace NachoCore.Brain
             Objects = new List<object> ();
         }
 
+        public bool Initialize ()
+        {
+            Objects = QueryFunction (ChunkSize);
+            return (0 < Objects.Count);
+        }
+
         public bool Process (out bool processResult)
         {
             if (0 == Objects.Count) {
@@ -90,9 +97,50 @@ namespace NachoCore.Brain
 
     public class RoundRobinList
     {
+        public class ScheduleOrder : IComparable
+        {
+            public double Order { get; protected set; }
+
+            public int Id {
+                get {
+                    return Record.Id;
+                }
+            }
+
+            public RoundRobinListRecord Record;
+
+            public ScheduleOrder (double order, RoundRobinListRecord record)
+            {
+                Order = order;
+                Record = record;
+            }
+
+            public int CompareTo (object obj)
+            {
+                ScheduleOrder other = (ScheduleOrder)obj;
+                if (this.Order < other.Order) {
+                    return -1;
+                }
+                if (this.Order > other.Order) {
+                    return +1;
+                }
+                if (this.Id < other.Id) {
+                    return -1;
+                }
+                if (this.Id > other.Id) {
+                    return +1;
+                }
+                return 0;
+            }
+        }
+
         public class RoundRobinListRecord
         {
+            protected static int NextId = 0;
+
             // Configuration
+            public int Id { get; protected set; }
+
             protected RoundRobinSource Source;
             protected int Weight;
 
@@ -103,34 +151,56 @@ namespace NachoCore.Brain
 
             public RoundRobinListRecord (RoundRobinSource source, int weight)
             {
+                Id = NextId++;
                 NcAssert.True ((null != source) && (0 < weight));
                 Source = source;
                 Weight = weight;
+                IsEmpty = false;
             }
 
-            public bool Run (out bool shouldSwitch)
+            public void AddToSchedule (List<ScheduleOrder> schedule)
             {
-                bool processResult;
-                shouldSwitch = false;
-                if (!Source.Process (out processResult)) {
-                    return false;
+                if (!IsEmpty) {
+                    for (int n = 0; n < Weight; n++) {
+                        schedule.Add (new ScheduleOrder ((double)n / (double)Weight, this));
+                    }
                 }
-                Count = (Count + 1) % Weight;
-                if (0 == Count) {
-                    shouldSwitch = true;
+            }
+
+            public void Initialize ()
+            {
+                IsEmpty = !Source.Initialize ();
+            }
+
+            public bool Run (out bool processResult)
+            {
+                processResult = false;
+                if (!Source.Process (out processResult)) {
+                    IsEmpty = true;
+                    return false;
                 }
                 return true;
             }
         }
 
-        protected List<RoundRobinSource> Sources;
-        protected List<RoundRobinSource> EmptySources;
+        protected List<RoundRobinListRecord> Sources;
+        protected List<ScheduleOrder> Schedule;
         protected int CurrentSourceIndex;
 
         public RoundRobinList ()
         {
-            Sources = new List<RoundRobinSource> ();
-            EmptySources = new List<RoundRobinSource> ();
+            Sources = new List<RoundRobinListRecord> ();
+            Schedule = new List<ScheduleOrder> ();
+        }
+
+        public void Initialize ()
+        {
+            Schedule.Clear ();
+            foreach (var source in Sources) {
+                source.Initialize ();
+                source.AddToSchedule (Schedule);
+            }
+            Schedule.Sort ();
             CurrentSourceIndex = 0;
         }
 
@@ -139,27 +209,24 @@ namespace NachoCore.Brain
             if (int.MaxValue == Sources.Count) {
                 throw new IndexOutOfRangeException ();
             }
-            Sources.Add (source);
+            Sources.Add (new RoundRobinListRecord (source, weight));
         }
 
-        public bool Run ()
+        public bool Run (out bool processResult)
         {
-            while (0 < Sources.Count) {
-                bool processResult;
-                if (!Sources [CurrentSourceIndex].Process (out processResult)) {
+            processResult = false;
+            while (0 < Schedule.Count) {
+                if (!Schedule [CurrentSourceIndex].Record.Run (out processResult)) {
                     // This source has no more object to process. Remove this and try the next one
-                    var emptySource = Sources [CurrentSourceIndex];
-                    Sources.RemoveAt (CurrentSourceIndex);
-                    EmptySources.Add (emptySource);
+                    Schedule.RemoveAt (CurrentSourceIndex);
                     if (0 == Sources.Count) {
-                        // There is no next source.
                         CurrentSourceIndex = 0;
                         break;
                     } else {
-                        CurrentSourceIndex = CurrentSourceIndex % Sources.Count;
+                        CurrentSourceIndex = CurrentSourceIndex % Schedule.Count;
                     }
                 } else {
-                    CurrentSourceIndex = (CurrentSourceIndex + 1) % Sources.Count;
+                    CurrentSourceIndex = (CurrentSourceIndex + 1) % Schedule.Count;
                     return true;
                 }
             }

@@ -2,6 +2,7 @@
 //
 using System;
 using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using NUnit.Framework;
@@ -10,6 +11,43 @@ using NachoCore.Utils;
 
 namespace Test.Common
 {
+    public class TestSource<T> : List<T>
+    {
+        public static T Current { get; protected set; }
+
+        public List<object> Query (int count)
+        {
+            var objects = new List<object> ();
+            for (int n = 0; n < count; n++) {
+                if (0 == Count) {
+                    break;
+                }
+                objects.Add (this [0]);
+                RemoveAt (0);
+            }
+            return objects;
+        }
+
+        public bool Process (object obj)
+        {
+            Current = (T)obj;
+            return true;
+        }
+    }
+
+    public class WrappedRoundRobinList : RoundRobinList
+    {
+        public List<RoundRobinList.ScheduleOrder> GetSchedule ()
+        {
+            return Schedule;
+        }
+
+        public List<RoundRobinList.RoundRobinListRecord> GetRecords ()
+        {
+            return Sources;
+        }
+    }
+
     public class NcBrainHelpersTest
     {
         int OriginalStartupDelayMsec;
@@ -143,6 +181,99 @@ namespace Test.Common
         [Test]
         public void TestRoundRobinList ()
         {
+            // Test RoundRobinList.RoundRobinListRecord
+            var numberSource = new TestSource<int> () { 1, 2 };
+            int currentNumber = -1;
+            var source = new RoundRobinSource (numberSource.Query, numberSource.Process, 5);
+            var record = new RoundRobinList.RoundRobinListRecord (source, 4);
+            record.Initialize ();
+            Assert.False (record.IsEmpty);
+
+            // Verify the schedule
+            var objects = new List<RoundRobinList.ScheduleOrder> ();
+            record.AddToSchedule (objects);
+            Assert.AreEqual (4, objects.Count);
+            Assert.AreEqual (0.0, objects [0].Order);
+            Assert.AreEqual (0.25, objects [1].Order);
+            Assert.AreEqual (0.5, objects [2].Order);
+            Assert.AreEqual (0.75, objects [3].Order);
+
+            // Process 1st object
+            bool processResult, ran;
+            processResult = false;
+            ran = record.Run (out processResult);
+            Assert.True (ran && processResult);
+
+            // Process 2nd object
+            processResult = false;
+            ran = record.Run (out processResult);
+            Assert.True (ran && processResult);
+
+            // Should not have more object to process
+            processResult = false;
+            ran = record.Run (out processResult);
+            Assert.True (!ran && !processResult);
+
+            // Verify that empty source produces empty schedule
+            objects = new List<RoundRobinList.ScheduleOrder> ();
+            record.Initialize ();
+            Assert.True (record.IsEmpty);
+            record.AddToSchedule (objects);
+            Assert.AreEqual (0, objects.Count);
+
+            // Test RoundRobinList
+            var list2 = new TestSource<int> () { 100, 200 };
+            var list3 = new TestSource<int> () { 10, 20, 30 };
+            var list6 = new TestSource<int> () { 1, 2, 3, 4, 5, 6 };
+            var source2 = new RoundRobinSource (list2.Query, list2.Process, 5);
+            var source3 = new RoundRobinSource (list3.Query, list3.Process, 5);
+            var source6 = new RoundRobinSource (list6.Query, list6.Process, 5);
+
+            var rrList = new WrappedRoundRobinList ();
+            rrList.Add (source2, 2);
+            rrList.Add (source3, 3);
+            rrList.Add (source6, 6);
+
+            // Initialize and verify the schedule
+            rrList.Initialize ();
+            var schedule = rrList.GetSchedule ();
+            var records = rrList.GetRecords ();
+            var id2 = records [0].Id;
+            var id3 = records [1].Id;
+            var id6 = records [2].Id;
+            var expectedSchedule = new List<KeyValuePair<double,int>> () {
+                new KeyValuePair<double,int> (0.0 / 6.0, id2),
+                new KeyValuePair<double,int> (0.0 / 6.0, id3),
+                new KeyValuePair<double,int> (0.0 / 6.0, id6),
+                new KeyValuePair<double,int> (1.0 / 6.0, id6),
+                new KeyValuePair<double,int> (2.0 / 6.0, id3),
+                new KeyValuePair<double,int> (2.0 / 6.0, id6),
+                new KeyValuePair<double,int> (3.0 / 6.0, id2),
+                new KeyValuePair<double,int> (3.0 / 6.0, id6),
+                new KeyValuePair<double,int> (4.0 / 6.0, id3),
+                new KeyValuePair<double,int> (4.0 / 6.0, id6),
+                new KeyValuePair<double,int> (5.0 / 6.0, id6),
+            };
+            Assert.AreEqual (expectedSchedule.Count, schedule.Count);
+            for (int n = 0; n < expectedSchedule.Count; n++) {
+                Assert.AreEqual (expectedSchedule [n].Key, schedule [n].Order);
+                Assert.AreEqual (expectedSchedule [n].Value, schedule [n].Id);
+            }
+
+            List<int> expectedList = new List<int> () {
+                100, 10, 1, // 0
+                2, // 1/6
+                20, 3, // 2/6
+                200, 4, // 3/6
+                30, 5, // 4/6
+                6, // 5/6
+            };
+            foreach (var expected in expectedList) {
+                processResult = false;
+                ran = rrList.Run (out processResult);
+                Assert.True (ran && processResult);
+                Assert.AreEqual (expected, TestSource<int>.Current);
+            }
         }
 
         private void NotificationAction (NcResult.SubKindEnum type)
