@@ -48,7 +48,9 @@ namespace NachoCore.IMAP
                 try {
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
                         var authy = new ImapAuthenticateCommand (BEContext);
-                        authy.ConnectAndAuthenticate ();
+                        lock(Client.SyncRoot) {
+                            authy.ConnectAndAuthenticate ();
+                        }
                     }
                     var evt = ExecuteCommand ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
@@ -62,10 +64,14 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
                     ResolveAllDeferred ();
                     sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+                } catch (AuthenticationException) {
+                    Log.Info (Log.LOG_IMAP, "AuthenticationException");
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
                 } catch (ServiceNotAuthenticatedException) {
                     Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
                     ResolveAllDeferred ();
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH");
+                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
                 } catch (IOException ex) {
                     Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                     ResolveAllDeferred ();
@@ -81,5 +87,36 @@ namespace NachoCore.IMAP
                 }
             }, "ImapCommand");
         }
+
+        protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
+        {
+            IMailFolder mailKitFolder;
+            mailKitFolder = Client.GetFolder (folder.ServerId);
+            if (null == mailKitFolder) {
+                return null;
+            }
+            if (FolderAccess.None == mailKitFolder.Open (access, Cts.Token)) {
+                return null;
+            }
+            return mailKitFolder;
+        }
     }
+
+    public class ImapWaitCommand : ImapCommand
+    {
+        NcCommand WaitCommand;
+        public ImapWaitCommand (IBEContext dataSource, int duration, bool earlyOnECChange) : base (dataSource)
+        {
+            WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
+        }
+        public override void Execute (NcStateMachine sm)
+        {
+            WaitCommand.Execute (sm);
+        }
+        public override void Cancel ()
+        {
+            WaitCommand.Cancel ();
+        }
+    }
+
 }

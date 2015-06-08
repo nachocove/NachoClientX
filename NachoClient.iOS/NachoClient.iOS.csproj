@@ -1042,9 +1042,6 @@
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
       <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>

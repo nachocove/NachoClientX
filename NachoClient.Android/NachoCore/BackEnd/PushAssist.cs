@@ -196,7 +196,7 @@ namespace NachoCore
             return null;
         }
 
-        public static void ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
+        public static bool ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
         {
             bool ranOnce = false;
             DateTime timestamp;
@@ -241,6 +241,7 @@ namespace NachoCore
                     continue;
                 }
             }
+            return ranOnce;
         }
 
         public static void RemovePAObjectByContext (string context)
@@ -541,9 +542,7 @@ namespace NachoCore
             }
             // Cancel any HTTP request to pinger. Otherwise, the task that makes the HTTP request
             // may delay the PA SM from going to Park state immediately.
-            if (null != Cts) {
-                Cts.Cancel ();
-            }
+            MayCancelHttpRequest ();
             PostEvent (PAEvt.E.Park, "PAPARK");
         }
 
@@ -1097,9 +1096,11 @@ namespace NachoCore
 
         private void DisposeCts ()
         {
-            if (null != Cts) {
-                Cts.Dispose ();
-                Cts = null;
+            lock (LockObj) {
+                if (null != Cts) {
+                    Cts.Dispose ();
+                    Cts = null;
+                }
             }
         }
 
@@ -1109,7 +1110,7 @@ namespace NachoCore
             DisposeCts ();
             Cts = new CancellationTokenSource ();
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
-                Cts.Cancel ();
+                MayCancelHttpRequest ();
             }, null, new TimeSpan (0, 0, 0, 0, MaxTimeoutMsec), TimeSpan.Zero);
         }
 
@@ -1119,6 +1120,15 @@ namespace NachoCore
             DeferTimer = new NcTimer ("PADefer", (state) => {
                 Defer ();
             }, null, DeferPeriodMsec, Timeout.Infinite);
+        }
+
+        private void MayCancelHttpRequest ()
+        {
+            lock (LockObj) {
+                if (null != Cts) {
+                    Cts.Cancel ();
+                }
+            }
         }
     }
 }

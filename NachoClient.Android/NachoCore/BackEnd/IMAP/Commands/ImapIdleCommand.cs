@@ -26,35 +26,42 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
+            IMailFolder mailKitFolder = Client.Inbox;
+
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
             EventHandler<MessagesArrivedEventArgs> messageHandler = (sender, maea) => {
                 done.Cancel ();
             };
             try {
-                // FIXME - need map from McFolder to MailKit folder.
-                if (!Client.Inbox.IsOpen) {
+                if (!mailKitFolder.IsOpen) {
                     FolderAccess access;
                     lock (Client.SyncRoot) {
-                        access = Client.Inbox.Open (FolderAccess.ReadOnly, Cts.Token);
+                        access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
                     }
                     if (FolderAccess.None == access) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
                     }
                 }
-                Client.Inbox.MessagesArrived += messageHandler;
+                mailKitFolder.MessagesArrived += messageHandler;
                 lock (Client.SyncRoot) {
                     Client.Idle (done.Token, CancellationToken.None);
                     if (!Cts.IsCancellationRequested) {
-                        Client.Inbox.Status (
+                        mailKitFolder.Status (
                             StatusItems.UidNext |
                             StatusItems.UidValidity, Cts.Token);
                     }
                 }
+                var protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.LastPing = DateTime.UtcNow;
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
             } catch {
                 throw;
             } finally {
-                Client.Inbox.MessagesArrived -= messageHandler;
+                mailKitFolder.MessagesArrived -= messageHandler;
                 done.Dispose ();
             }
         }

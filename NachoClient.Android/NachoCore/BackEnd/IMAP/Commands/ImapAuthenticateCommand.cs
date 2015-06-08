@@ -29,10 +29,20 @@ namespace NachoCore.IMAP
             if (!Client.IsConnected) {
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
             }
-            // FIXME - add support for OAUTH2.
-            Client.AuthenticationMechanisms.Remove ("XOAUTH");
-            Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-            Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+            if (!Client.IsAuthenticated) {
+                // FIXME - add support for OAUTH2.
+                Client.AuthenticationMechanisms.Remove ("XOAUTH");
+                Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+            }
+            var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
+            if (cap != BEContext.ProtocolState.ImapServerCapabilities) {
+                BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.ImapServerCapabilities = cap;
+                    return true;
+                });
+            }
         }
 
         protected override Event ExecuteCommand ()

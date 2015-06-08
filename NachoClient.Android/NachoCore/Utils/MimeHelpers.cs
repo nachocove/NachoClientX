@@ -664,17 +664,32 @@ namespace NachoCore.Utils
         public static List<MimeEntity> AllAttachments (MimeMessage message)
         {
             List<MimeEntity> result = new List<MimeEntity> ();
-            FindAttachments (message.Body, result, false);
+            FindAttachments (message.Body, result, false, false);
             return result;
         }
 
-        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result, bool insideTnef)
+        /// <summary>
+        /// Find all the attachments in the given MIME message, including those nested inside a TNEF part and
+        /// those that are marked as inline.
+        /// </summary>
+        /// <param name="message">The MIME message to be searched.</param>
+        public static List<MimeEntity> AllAttachmentsIncludingInline (MimeMessage message)
+        {
+            List<MimeEntity> result = new List<MimeEntity> ();
+            FindAttachments (message.Body, result, true, false);
+            return result;
+        }
+
+        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result, bool includeInline, bool insideTnef)
         {
             // If this entity originally came from TNEF, then ignore attachments named winmail.dat
             // with type application/vnd.ms-tnef.  Those are an internal artifact of how some servers
             // represent recurring meetings with exceptions, and are of no interest to the user.
-            if (null != entity.ContentDisposition && entity.ContentDisposition.IsAttachment &&
-                    (!insideTnef || !entity.ContentType.Matches("application", "vnd.ms-tnef") || entity.ContentType.Name != "winmail.dat")) {
+            if (null != entity.ContentDisposition &&
+                ((includeInline && ContentDisposition.Inline == entity.ContentDisposition.Disposition) ||
+                    entity.ContentDisposition.IsAttachment) &&
+                (!insideTnef || !entity.ContentType.Matches ("application", "vnd.ms-tnef") || entity.ContentType.Name != "winmail.dat"))
+            {
                 // It's an attachment that we are interested in.
                 result.Add (entity);
             } else if (!insideTnef && entity is MimeKit.Tnef.TnefPart) {
@@ -683,10 +698,10 @@ namespace NachoCore.Utils
                 // meeting, not the meeting series that we are interested in.)
                 var tnef = entity as MimeKit.Tnef.TnefPart;
                 var mimeMessage = ConvertTnefToMessage (tnef);
-                FindAttachments (mimeMessage.Body, result, true);
+                FindAttachments (mimeMessage.Body, result, includeInline, true);
             } else if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {
-                    FindAttachments (subpart, result, insideTnef);
+                    FindAttachments (subpart, result, includeInline, insideTnef);
                 }
             }
         }

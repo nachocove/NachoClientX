@@ -881,6 +881,7 @@ namespace NachoCore
                 if ('\n' == bytes [n]) {
                     numTimestamps += 1;
                     if (numTimestamps > 2) {
+                        Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
                         return true;
                     }
                 }
@@ -925,8 +926,8 @@ namespace NachoCore
 
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
-                    numTelemetryEvents = McTelemetryEvent.QueryCount ();
-                    if (0 == numTelemetryEvents) {
+                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
+                    if ((0 == numTelemetryEvents) && (null == Telemetry.JsonFileTable.GetNextReadFile ())) {
                         telemetryDone = true;
                     }
                 }

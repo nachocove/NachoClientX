@@ -116,6 +116,13 @@ namespace NachoClient.iOS
             ExpandedHeight += AttachmentView.VIEW_HEIGHT;
         }
 
+        public void Refresh ()
+        {
+            foreach (var attachmentView in attachmentViews) {
+                attachmentView.RefreshStatus ();
+            }
+        }
+
         protected new void Cleanup ()
         {
             base.Cleanup ();
