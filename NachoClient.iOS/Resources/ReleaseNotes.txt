@@ -1,7 +1,5 @@
 This release updates includes the following updates:
 
-. ActiveSync Protocol 16 support.
-
 . Support ActiveSync in more locals.
 
 Known issues:
