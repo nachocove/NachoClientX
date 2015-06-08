@@ -67,6 +67,46 @@ namespace NachoClient.iOS
                 switchButton.SetImage (image, UIControlState.Highlighted);
             }
         }
+    }
+
+    public class AddAccountCell : UIView
+    {
+        public delegate void AddAccountCallback ();
+
+        AddAccountCallback callback;
+
+        public AddAccountCell (CGRect rect, AddAccountCallback addAccountCallback) : base (rect)
+        {
+            callback = addAccountCallback;
+
+            this.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            var newAccountButton = UIButton.FromType (UIButtonType.System);
+            newAccountButton.Layer.CornerRadius = A.Card_Corner_Radius;
+            newAccountButton.Frame = Util.CardContentRectangle (rect.Width, 40);
+            newAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+
+            newAccountButton.BackgroundColor = UIColor.White;
+            newAccountButton.Font = A.Font_AvenirNextRegular14;
+            newAccountButton.SetTitle ("Add Account", UIControlState.Normal);
+            newAccountButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+
+            Util.SetOriginalImagesForButton (newAccountButton, "email-add");
+            newAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 12, 0, 36);
+            newAccountButton.ImageEdgeInsets = new UIEdgeInsets (0, newAccountButton.Frame.Width - 36, 0, 0);
+            newAccountButton.ContentEdgeInsets = new UIEdgeInsets ();
+
+            newAccountButton.TouchUpInside += NewAccountButton_TouchUpInside;
+
+            this.AddSubview (newAccountButton);
+        }
+
+        void NewAccountButton_TouchUpInside (object sender, EventArgs e)
+        {
+            if (null != callback) {
+                callback ();
+            }
+        }
 
     }
 }

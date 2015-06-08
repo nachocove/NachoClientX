@@ -1203,6 +1203,12 @@ namespace NachoClient
             return blueButton;
         }
 
+        // Rectangle for contents inside of rectangle at (0,0)
+        public static CGRect CardContentRectangle (nfloat width, nfloat height)
+        {
+            return new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, width - (2 * A.Card_Horizontal_Indent), height);
+        }
+
         #endregion
     }
 }
