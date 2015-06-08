@@ -34,10 +34,16 @@ namespace NachoCore.ActiveSync
         {
             public string ParentId { get; set; }
             public string ServerId { get; set; }
+            public Xml.AirSync.TypeCode BodyPref { get; set; }
+        }
+        public class FetchPending
+        {
+            public McPending Pending { get; set; }
+            public Xml.AirSync.TypeCode BodyPref { get; set; }
         }
         public List<FetchBody> FetchBodies { get; set; }
         public List<McAttachment> FetchAttachments { get; set; }
-        public List<McPending> Pendings { get; set; }
+        public List<FetchPending> Pendings { get; set; }
     }
 
     public class MoveKit
