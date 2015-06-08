@@ -1483,9 +1483,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainHelpers.cs">
       <Link>NachoCore\Brain\NcBrainHelpers.cs</Link>
     </Compile>

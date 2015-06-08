@@ -429,7 +429,6 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs" />
     <Compile Include="NachoCore\Brain\NcBrainHelpers.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEventHandler.cs" />
   </ItemGroup>
