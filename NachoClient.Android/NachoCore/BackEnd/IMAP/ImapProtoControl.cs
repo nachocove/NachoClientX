@@ -27,7 +27,6 @@ namespace NachoCore.IMAP
             Pick,
             CmdW,
             Wait,
-            Idle,
             Parked,
         };
 
