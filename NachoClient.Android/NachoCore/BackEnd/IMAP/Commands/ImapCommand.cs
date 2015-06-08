@@ -39,47 +39,52 @@ namespace NachoCore.IMAP
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
-                try {
-                    if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new ImapAuthenticateCommand (BEContext);
-                        lock(Client.SyncRoot) {
-                            authy.ConnectAndAuthenticate ();
-                        }
-                    }
-                    var evt = ExecuteCommand ();
-                    // In the no-exception case, ExecuteCommand is resolving McPending.
-                    sm.PostEvent (evt);
-                } catch (OperationCanceledException) {
-                    Log.Info (Log.LOG_IMAP, "OperationCanceledException");
-                    ResolveAllDeferred ();
-                    // No event posted to SM if cancelled.
-                } catch (ServiceNotConnectedException) {
-                    // FIXME - this needs to feed into NcCommStatus, not loop forever.
-                    Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
-                } catch (AuthenticationException) {
-                    Log.Info (Log.LOG_IMAP, "AuthenticationException");
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
-                } catch (ServiceNotAuthenticatedException) {
-                    Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
-                } catch (IOException ex) {
-                    Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
-                    ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
-                } catch (InvalidOperationException ex) {
-                    Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
-                    ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD1");
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
-                    ResolveAllFailed (NcResult.WhyEnum.Unknown);
-                    sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
-                }
+                ExecuteNoTask(sm);
             }, "ImapCommand");
+        }
+
+        public void ExecuteNoTask(NcStateMachine sm)
+        {
+            try {
+                if (!Client.IsConnected || !Client.IsAuthenticated) {
+                    var authy = new ImapAuthenticateCommand (BEContext);
+                    lock(Client.SyncRoot) {
+                        authy.ConnectAndAuthenticate ();
+                    }
+                }
+                var evt = ExecuteCommand ();
+                // In the no-exception case, ExecuteCommand is resolving McPending.
+                sm.PostEvent (evt);
+            } catch (OperationCanceledException) {
+                Log.Info (Log.LOG_IMAP, "OperationCanceledException");
+                ResolveAllDeferred ();
+                // No event posted to SM if cancelled.
+            } catch (ServiceNotConnectedException) {
+                // FIXME - this needs to feed into NcCommStatus, not loop forever.
+                Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
+            } catch (AuthenticationException) {
+                Log.Info (Log.LOG_IMAP, "AuthenticationException");
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+            } catch (ServiceNotAuthenticatedException) {
+                Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+            } catch (IOException ex) {
+                Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+            } catch (InvalidOperationException ex) {
+                Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
+                ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD1");
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
+                ResolveAllFailed (NcResult.WhyEnum.Unknown);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
+            }
         }
 
         protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
