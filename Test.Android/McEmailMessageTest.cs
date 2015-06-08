@@ -411,7 +411,7 @@ namespace Test.Common
             Assert.AreEqual (1, deferred.Count);
         }
 
-        private void CheckScoreAndUpdate (int id, double expectedScore, bool expectedNeedUpdate)
+        private void CheckScoreAndUpdate (int id, double expectedScore, int expectedNeedUpdate)
         {
             McEmailMessage message = McEmailMessage.QueryById<McEmailMessage> (id);
             Assert.True (null != message);
@@ -430,20 +430,20 @@ namespace Test.Common
             NcAssert.True (0 < message.Id);
 
             Assert.AreEqual (0.0, message.Score);
-            Assert.AreEqual (false, message.NeedUpdate);
+            Assert.AreEqual (0, message.NeedUpdate);
 
             message.Score = 1.0;
             message.UpdateScoreAndNeedUpdate ();
-            CheckScoreAndUpdate (message.Id, 1.0, false);
+            CheckScoreAndUpdate (message.Id, 1.0, 0);
 
             message.NeedUpdate = 1;
             message.UpdateScoreAndNeedUpdate ();
-            CheckScoreAndUpdate (message.Id, 1.0, true);
+            CheckScoreAndUpdate (message.Id, 1.0, 1);
 
             message.Score = 0.5;
             message.NeedUpdate = 0;
             message.UpdateScoreAndNeedUpdate ();
-            CheckScoreAndUpdate (message.Id, 0.5, false);
+            CheckScoreAndUpdate (message.Id, 0.5, 0);
         }
 
         protected void InsertAndCheckBody (McBody body)

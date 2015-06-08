@@ -69,12 +69,16 @@ namespace NachoCore.Brain
             case NcBrainEventType.INITIAL_RIC:
                 ProcessInitialRicEvent (brainEvent as NcBrainInitialRicEvent);
                 break;
+            case NcBrainEventType.PERSISTENT_QUEUE:
+                var persistentQueueVent = (NcBrainPersistentQueueEvent)brainEvent;
+                ProcessPersistedRequests (persistentQueueVent.EventCount);
+                break;
+            case NcBrainEventType.UNINDEX_CONTACT:
+            case NcBrainEventType.UNINDEX_MESSAGE:
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
-                ProcessUpdateAddressEvent (brainEvent as NcBrainUpdateAddressScoreEvent);
-                break;
             case NcBrainEventType.UPDATE_MESSAGE_SCORE:
-                ProcessUpdateMessageEvent (brainEvent as NcBrainUpdateMessageScoreEvent);
-                break;
+                var errMesg = String.Format ("Event type {0} should go to persistent queue instead", brainEvent.Type);
+                throw new NotSupportedException (errMesg);
             case NcBrainEventType.TEST:
                 // This is a no op. Serve as a synchronization barrier.
                 break;

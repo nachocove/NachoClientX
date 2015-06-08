@@ -22,6 +22,7 @@ namespace NachoCore.Brain
             }
             var brainEvent = new NcBrainUpdateAddressScoreEvent (emailAddressId, forcedUpdateDependentMessages);
             PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
 
         public static void UpdateMessageScore (int accountId, int emailMessageId)
@@ -31,6 +32,7 @@ namespace NachoCore.Brain
             }
             var brainEvent = new NcBrainUpdateMessageScoreEvent (accountId, emailMessageId);
             PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
 
         public static void UnindexEmailMessage (McEmailMessage emailMessage)
