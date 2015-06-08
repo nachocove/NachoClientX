@@ -232,7 +232,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.FromStrat, Act = DoArg, State = (uint)Lst.CmdW },
-                            new Trans { Event = (uint)ImapEvt.E.FromIdle, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)ImapEvt.E.FromIdle, Act = DoIdleResponse, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
                         }
                     },
@@ -256,7 +256,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
-                            new Trans { Event = (uint)ImapEvt.E.FromIdle, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)ImapEvt.E.FromIdle, Act = DoIdleResponse, State = (uint)Lst.Pick },
                         },
                     },
                     new Node {
@@ -532,6 +532,15 @@ namespace NachoCore.IMAP
             }
         }
 
+        private void DoIdleResponse()
+        {
+            var idleResponse = Sm.Arg as IdleResponse;
+            // If Idle returned because new mailArrived, then DoPick. Otehrwise, do nothing as
+            // we were most likely interrupted by a local command that is now already queued.
+            if (idleResponse.mailarrived) {
+                DoPick ();
+            }
+        }
         private void DoPark ()
         {
             SetCmd (null);

@@ -70,13 +70,21 @@ namespace NachoCore.IMAP
                 if (mailArrived) {
                     Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
                 }
-                return Event.Create ((uint)ImapProtoControl.ImapEvt.E.FromIdle, "IMAPIDLEDONE");
+                return Event.Create ((uint)ImapProtoControl.ImapEvt.E.FromIdle, "IMAPIDLEDONE", new IdleResponse(mailArrived));
             } catch {
                 throw;
             } finally {
                 mailKitFolder.MessagesArrived -= messageHandler;
                 done.Dispose ();
             }
+        }
+    }
+
+    public class IdleResponse {
+        public bool mailarrived { get; set; }
+        public IdleResponse(bool mailHasArrived)
+        {
+            mailarrived = mailHasArrived;
         }
     }
 }
