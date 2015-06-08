@@ -761,12 +761,6 @@ namespace NachoClient
             }
         }
 
-        public static void HideBlackNavigationControllerLine (UINavigationBar navBar)
-        {
-            navBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-            navBar.ShadowImage = new UIImage ();
-        }
-
         public static bool IsVisible (this UIViewController vc)
         {
             return(vc.IsViewLoaded && (null != vc.View.Window));

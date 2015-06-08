@@ -60,6 +60,7 @@ namespace NachoClient.iOS
         nfloat HEADER_TOP_MARGIN = 0;
         
 
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -110,11 +111,11 @@ namespace NachoClient.iOS
             var message = thread.FirstMessageSpecialCase ();
             NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
         }
-            
+
         protected override void CreateViewHierarchy ()
         {
             scrollView.Frame = View.Frame;
-            ViewFramer.Create (scrollView).AdjustHeight (- 64);
+            ViewFramer.Create (scrollView).AdjustHeight (-64);
 
             // Turn on zooming
             scrollView.MinimumZoomScale = 0.2f;
@@ -379,9 +380,7 @@ namespace NachoClient.iOS
                 NavigationController.PopViewController (true);
                 return;
             }
-
-            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
-
+                
             attachments = McAttachment.QueryByItemId (message);
 
             var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
