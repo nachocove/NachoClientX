@@ -283,11 +283,23 @@ namespace NachoCore.Model
             }
         }
 
-        public static McEmailMessage QueryNeedUpdate ()
+        public static List<McEmailMessage> QueryNeedUpdate (int count, bool above, int threshold = 20)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.NeedUpdate > 0)
-                .FirstOrDefault ();
+            var query = String.Format (
+                            "SELECT e.* FROM McEmailMessage AS e " +
+                            " WHERE e.NeedUpdate {0} ? AND e.ScoreVersion = ?" +
+                            " LIMIT ?", above ? ">" : "<=");
+            return NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
+        }
+
+        public static List<object> QueryNeedUpdateObjectsAbove (int count)
+        {
+            return new List<object> (QueryNeedUpdate (count, above: true));
+        }
+
+        public static List<object> QueryNeedUpdateObjectsBelow (int count)
+        {
+            return new List<object> (QueryNeedUpdate (count, above: false));
         }
 
         public static List<McEmailMessage> QueryNeedAnalysis (int count, int version = Scoring.Version)

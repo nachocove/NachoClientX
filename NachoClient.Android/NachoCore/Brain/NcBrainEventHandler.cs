@@ -19,6 +19,7 @@ namespace NachoCore.Brain
             EventQueue = new NcQueue<NcBrainEvent> ();
             OpenedIndexes = new OpenedIndexSet (this);
             Scheduler = new RoundRobinList ();
+            Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScore, 5), 3);
             Scheduler.Add (new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5), 10);
             Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
             Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
@@ -119,6 +120,15 @@ namespace NachoCore.Brain
                     bool result;
                     if (!Scheduler.Run (out result)) {
                         break;
+                    }
+                }
+                while (DateTime.UtcNow < runTill) {
+                    var emailMessages = McEmailMessage.QueryNeedUpdate (5, above: false);
+                    foreach (var emailMessage in emailMessages) {
+                        if (IsInterrupted ()) {
+                            break;
+                        }
+                        UpdateEmailMessageScore (emailMessage);
                     }
                 }
             } finally {

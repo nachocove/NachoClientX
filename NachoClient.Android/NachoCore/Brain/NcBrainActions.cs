@@ -101,6 +101,11 @@ namespace NachoCore.Brain
             return true;
         }
 
+        protected bool UpdateEmailMessageScore (object obj)
+        {
+            return UpdateEmailMessageScore ((McEmailMessage)obj);
+        }
+
         // Try to get the file path of the body of an McAbstrItem (or its derived classes)
         private string GetValidBodypath (McAbstrItem item, string caller, out McBody outBody)
         {
