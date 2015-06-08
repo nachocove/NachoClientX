@@ -47,7 +47,7 @@ namespace NachoClient.iOS
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
             accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
-            accountsTableView.TableFooterView = GetViewForFooter (accountsTableView);
+            accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
 
             accountsTableViewSource = new AccountsTableViewSource ();
             accountsTableViewSource.Setup (this, showAccessory: false);
@@ -259,43 +259,6 @@ namespace NachoClient.iOS
         {
             SettingsSelected (NcApplication.Instance.Account);
         }
-
-        CGRect ContentRectangle (UITableView tablView, nfloat height)
-        {
-            return new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, tablView.Frame.Width - 2 * A.Card_Horizontal_Indent, height);
-        }
-
-        UIView GetViewForFooter (UITableView tableView)
-        {
-            var newAccountView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 80));
-            newAccountView.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            var newAccountButton = UIButton.FromType (UIButtonType.System);
-            newAccountButton.Layer.CornerRadius = A.Card_Corner_Radius;
-            newAccountButton.Frame = ContentRectangle (tableView, 40);
-            newAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-
-            newAccountButton.BackgroundColor = UIColor.White;
-            newAccountButton.Font = A.Font_AvenirNextRegular14;
-            newAccountButton.SetTitle ("Add Account", UIControlState.Normal);
-            newAccountButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
-
-            Util.SetOriginalImagesForButton (newAccountButton, "email-add");
-            newAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 12, 0, 36);
-            newAccountButton.ImageEdgeInsets = new UIEdgeInsets (0, newAccountButton.Frame.Width - 36, 0, 0);
-            newAccountButton.ContentEdgeInsets = new UIEdgeInsets ();
-
-            newAccountButton.TouchUpInside += NewAccountButton_TouchUpInside;
-
-            newAccountView.AddSubview (newAccountButton);
-            return  newAccountView;
-        }
-
-        void NewAccountButton_TouchUpInside (object sender, EventArgs e)
-        {
-            AddAccountSelected ();
-        }
-       
     }
 
 }
