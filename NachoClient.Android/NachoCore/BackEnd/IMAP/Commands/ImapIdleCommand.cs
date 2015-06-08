@@ -48,18 +48,15 @@ namespace NachoCore.IMAP
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
                     }
                     Client.Idle (done.Token, CancellationToken.None);
-                    if (!Cts.IsCancellationRequested) {
-                        mailKitFolder.Close (false, Cts.Token);
-                        StatusItems statusItems =
-                            StatusItems.UidNext |
-                            StatusItems.UidValidity |
-                            StatusItems.HighestModSeq;
-                        mailKitFolder.Status (statusItems, Cts.Token);
-                    }
+                    Cts.Token.ThrowIfCancellationRequested ();
+                    mailKitFolder.Close (false, Cts.Token);
+                    StatusItems statusItems =
+                        StatusItems.UidNext |
+                        StatusItems.UidValidity |
+                        StatusItems.HighestModSeq;
+                    mailKitFolder.Status (statusItems, Cts.Token);
                 }
-                if (!Cts.IsCancellationRequested) {
-                    UpdateImapSetting (mailKitFolder, IdleFolder);
-                }
+                UpdateImapSetting (mailKitFolder, IdleFolder);
 
                 var protocolState = BEContext.ProtocolState;
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -70,21 +67,13 @@ namespace NachoCore.IMAP
                 if (mailArrived) {
                     Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
                 }
-                return Event.Create ((uint)ImapProtoControl.ImapEvt.E.FromIdle, "IMAPIDLEDONE", new IdleResponse(mailArrived));
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } catch {
                 throw;
             } finally {
                 mailKitFolder.MessagesArrived -= messageHandler;
                 done.Dispose ();
             }
-        }
-    }
-
-    public class IdleResponse {
-        public bool mailarrived { get; set; }
-        public IdleResponse(bool mailHasArrived)
-        {
-            mailarrived = mailHasArrived;
         }
     }
 }
