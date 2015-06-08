@@ -1576,6 +1576,11 @@ namespace NachoCore.Model
             );
         }
 
+        public static List<object> QueryNeedIndexingObjects (int maxContacts)
+        {
+            return new List<object> (QueryNeedIndexing (maxContacts));
+        }
+
         public string GetDisplayName ()
         {
             if (!String.IsNullOrEmpty (DisplayName)) {

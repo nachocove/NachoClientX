@@ -13,7 +13,7 @@ namespace NachoCore.Brain
     // The goal is to separate the actions from the scheduling of actions.
     public partial class NcBrain
     {
-        protected bool GleanEmailMessage (McEmailMessage emailMessage, string accountAddress, bool quickScore)
+        protected bool GleanEmailMessage (McEmailMessage emailMessage)
         {
             if (null == emailMessage) {
                 return false;
@@ -27,21 +27,6 @@ namespace NachoCore.Brain
             if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2 > emailMessage.HasBeenGleaned) {
                 if (!NcContactGleaner.GleanContactsHeaderPart2 (emailMessage)) {
                     return false;
-                }
-            }
-
-            if (quickScore && (0 == emailMessage.ScoreVersion) && (0.0 == emailMessage.Score)) {
-                // Assign a version 0 score by checking if our address is in the to list
-                InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
-                foreach (var address in addressList) {
-                    if (!(address is MailboxAddress)) {
-                        continue;
-                    }
-                    if (((MailboxAddress)address).Address == accountAddress) {
-                        emailMessage.Score = McEmailMessage.minHotScore;
-                        emailMessage.UpdateByBrain ();
-                        break;
-                    }
                 }
             }
             return true;
@@ -65,6 +50,11 @@ namespace NachoCore.Brain
             Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
             emailMessage.Analyze ();
             return true;
+        }
+
+        protected bool AnalyzeEmailMessage (object obj)
+        {
+            return AnalyzeEmailMessage ((McEmailMessage)obj);
         }
 
         protected bool UpdateEmailAddressScore (McEmailAddress emailAddress, bool updateDependencies)
@@ -183,6 +173,11 @@ namespace NachoCore.Brain
             return true;
         }
 
+        protected bool IndexEmailMessage (object obj)
+        {
+            return IndexEmailMessage ((McEmailMessage)obj);
+        }
+
         protected bool IndexContact (McContact contact)
         {
             if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
@@ -249,6 +244,11 @@ namespace NachoCore.Brain
             contact.UpdateIndexVersion ();
 
             return true;
+        }
+
+        protected bool IndexContact (object obj)
+        {
+            return IndexContact ((McContact)obj);
         }
 
         protected void UnindexEmailMessage (int accountId, int emailMessageId)

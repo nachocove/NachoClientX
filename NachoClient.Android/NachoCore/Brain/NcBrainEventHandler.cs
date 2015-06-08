@@ -19,33 +19,9 @@ namespace NachoCore.Brain
             EventQueue = new NcQueue<NcBrainEvent> ();
             OpenedIndexes = new OpenedIndexSet (this);
             Scheduler = new RoundRobinList ();
-            Scheduler.Add (
-                new RoundRobinSource (
-                    (count) => {
-                        return new List<object> (McEmailMessage.QueryNeedAnalysis (count, Scoring.Version));
-                    },
-                    (obj) => {
-                        var emailMessage = (McEmailMessage)obj;
-                        return AnalyzeEmailMessage (emailMessage);
-                    }, 5), 1);
-            Scheduler.Add (
-                new RoundRobinSource (
-                    (count) => {
-                        return new List<object> (McEmailMessage.QueryNeedsIndexing (count));
-                    },
-                    (obj) => {
-                        var emailMessage = (McEmailMessage)obj;
-                        return IndexEmailMessage (emailMessage);
-                    }, 5), 1);
-            Scheduler.Add (
-                new RoundRobinSource (
-                    (count) => {
-                        return new List<object> (McContact.QueryNeedIndexing (count));
-                    },
-                    (obj) => {
-                        var contact = (McContact)obj;
-                        return IndexContact (contact);
-                    }, 5), 2);
+            Scheduler.Add (new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5), 10);
+            Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
+            Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
@@ -79,7 +55,10 @@ namespace NachoCore.Brain
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
-                GleanContacts (100, stateMachineEvent.AccountId); /// FIXME - Should get the number from the event arg
+                /// FIXME - Should get the number from the event arg
+                var accountId = (int)stateMachineEvent.AccountId;
+                QuickScoreEmailMessages (accountId, 100);
+                GleanEmailMessages (100, stateMachineEvent.AccountId);
                 break;
             case NcBrainEventType.UI:
                 ProcessUIEvent (brainEvent as NcBrainUIEvent);
@@ -256,22 +235,34 @@ namespace NachoCore.Brain
             UpdateEmailMessageScore (emailMessage);
         }
 
-        private int GleanContacts (int count, Int64 accountId = -1)
+        private int QuickScoreEmailMessages (int accountId, int count)
+        {
+            int numScored = 0;
+            var emailMessages = McEmailMessage.QueryNeedQuickScoring (accountId, count);
+            foreach (var emailMessage in emailMessages) {
+                if (IsInterrupted ()) {
+                    break;
+                }
+                emailMessage.Score = emailMessage.Classify ();
+                emailMessage.UpdateByBrain ();
+                numScored++;
+            }
+            if (0 != numScored) {
+                Log.Info (Log.LOG_BRAIN, "{0} email message quick scored", numScored);
+                NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
+            }
+            return numScored;
+        }
+
+        private int GleanEmailMessages (int count, Int64 accountId)
         {
             int numGleaned = 0;
-            bool quickGlean = false;
-            string accountAddress = null;
-            if (0 < accountId) {
-                var account = McAccount.QueryById<McAccount> ((int)accountId);
-                if ((null != account) && (!String.IsNullOrEmpty (account.EmailAddr))) {
-                    accountAddress = account.EmailAddr;
-                    quickGlean = true;
-                }
-            }
             var emailMessages = McEmailMessage.QueryNeedGleaning (accountId, count);
-            count = emailMessages.Count;
-            while (numGleaned < count && !IsInterrupted ()) {
-                if (!GleanEmailMessage (emailMessages [numGleaned], accountAddress, quickGlean)) {
+            foreach (var emailMessage in emailMessages) {
+                if (IsInterrupted ()) {
+                    break;
+                }
+                if (!GleanEmailMessage (emailMessages [numGleaned])) {
                     break;
                 }
                 numGleaned++;

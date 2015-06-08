@@ -216,10 +216,11 @@ namespace NachoCore.Brain
         {
             processResult = false;
             while (0 < Schedule.Count) {
-                if (!Schedule [CurrentSourceIndex].Record.Run (out processResult)) {
+                var record = Schedule [CurrentSourceIndex].Record;
+                if (!record.Run (out processResult)) {
                     // This source has no more object to process. Remove this and try the next one
                     Schedule.RemoveAt (CurrentSourceIndex);
-                    if (0 == Sources.Count) {
+                    if (0 == Schedule.Count) {
                         CurrentSourceIndex = 0;
                         break;
                     } else {

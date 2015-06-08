@@ -3,8 +3,10 @@
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
 
@@ -71,6 +73,26 @@ namespace NachoCore.Model
 
         public const double VipScore = 1.0;
 
+        private ConcurrentDictionary<int, string> _AccountAddresses = new ConcurrentDictionary<int, string> ();
+
+        private string AccountAddress (int accountId)
+        {
+            string accountAddress = null;
+            if (_AccountAddresses.TryGetValue (accountId, out accountAddress)) {
+                return accountAddress;
+            }
+            // This account's address is not in the cache yet. Look it up
+            var account = McAccount.QueryById<McAccount> (accountId);
+            if (null == account) {
+                return null;
+            }
+            if (!_AccountAddresses.TryAdd (accountId, account.EmailAddr)) {
+                _AccountAddresses.TryGetValue (accountId, out accountAddress);
+                return accountAddress;
+            }
+            return accountAddress;
+        }
+
         public bool ShouldUpdate ()
         {
             return (0 < NeedUpdate);
@@ -79,6 +101,27 @@ namespace NachoCore.Model
         public double Classify ()
         {
             double score = 0.0;
+
+            if ((0 == ScoreVersion) && (0.0 == Score)) {
+                // Version 0 quick scoring
+                var accountAddress = AccountAddress (AccountId);
+                if (null != accountAddress) {
+                    InternetAddressList addressList = NcEmailAddress.ParseAddressListString (To);
+                    foreach (var addr in addressList) {
+                        if (!(addr is MailboxAddress)) {
+                            continue;
+                        }
+                        if (((MailboxAddress)addr).Address == accountAddress) {
+                            return McEmailMessage.minHotScore;
+                        }
+                    }
+                }
+                // Assign a non-zero value that it is effectively 0 but it prevents
+                // the same items to quanlify for quick score again.
+                Score = 0.00000001;
+                UpdateByBrain ();
+                return Score;
+            }
 
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -256,6 +299,11 @@ namespace NachoCore.Model
                 " LIMIT ?", version, count);
         }
 
+        public static List<object> QueryNeedAnalysisObjects (int count)
+        {
+            return new List<object> (QueryNeedAnalysis (count));
+        }
+
         public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
         {
             var query = "SELECT e.* FROM McEmailMessage AS e " +
@@ -272,6 +320,14 @@ namespace NachoCore.Model
                 query += " LIMIT ?";
                 return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, count);
             }
+        }
+
+        public static List<McEmailMessage> QueryNeedQuickScoring (int accountId, int count)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.AccountId = ? " +
+                " LIMIT ?", accountId, count);
         }
 
         public static int CountByVersion (int version)
