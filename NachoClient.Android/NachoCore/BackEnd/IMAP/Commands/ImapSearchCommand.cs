@@ -29,6 +29,9 @@ namespace NachoCore.IMAP
             var folderList = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false);
             var emailList = new List<NcEmailMessageIndex> ();
             foreach (var folder in folderList) {
+                if (folder.ImapNoSelect) {
+                    continue;
+                }
                 var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
                 mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
                 if (mailKitFolder.Count > 0) {
@@ -47,7 +50,7 @@ namespace NachoCore.IMAP
                             emailList.Add (new NcEmailMessageIndex (email.Id));
                         }
                     }
-                    Log.Info (Log.LOG_IMAP, "Found {0} items in folder {1}", emailList.Count, folder.ServerId);
+                    Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ServerId);
                 }
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);
