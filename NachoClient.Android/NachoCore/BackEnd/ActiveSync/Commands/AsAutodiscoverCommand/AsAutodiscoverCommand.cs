@@ -159,7 +159,11 @@ namespace NachoCore.ActiveSync
                                 State = (uint)Lst.CredW1
                             },
                             // Stop robots and start over.
-                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            new Trans {
+                                Event = (uint)SharedEvt.E.ReStart,
+                                Act = RestartDoStepsPll,
+                                State = (uint)Lst.RobotW
+                            },
                             // Stop and re-start robots, then wait.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // Stop robots, test, and wait for test results.
@@ -477,17 +481,17 @@ namespace NachoCore.ActiveSync
             }
         }
         // UTILITY METHODS.
-        private void AddAndStartRobot (StepRobot.Steps step, string domain)
+        private void AddAndStartRobot (StepRobot.Steps step, string domain, bool isUserSpecifiedDomain)
         {
-            Log.Info(Log.LOG_AS, "AUTOD:{0}:BEGIN:Starting discovery for {1}/step {2}", step, domain, step);
-            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain);
+            Log.Info (Log.LOG_AS, "AUTOD:{0}:BEGIN:Starting discovery for {1}/step {2}", step, domain, step);
+            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain, isUserSpecifiedDomain);
             Robots.Add (robot);
             robot.Execute ();
         }
 
         private void KillAllRobots ()
         {
-            Log.Info(Log.LOG_AS, "AUTOD::END:Stopping all robots.");
+            Log.Info (Log.LOG_AS, "AUTOD::END:Stopping all robots.");
             if (null != Robots) {
                 foreach (var robot in Robots) {
                     robot.Cancel ();
@@ -562,6 +566,30 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private void UpdateEmailAddressToAccount (string newEmailAddr)
+        {
+            McAccount Account = McAccount.QueryById<McAccount> (BEContext.Account.Id);
+            McCred Credential = McCred.QueryByAccountId<McCred> (BEContext.Account.Id).SingleOrDefault ();
+            Account.EmailAddr = newEmailAddr;
+            Account.Update ();
+            Credential.Username = newEmailAddr;
+            Credential.Update ();
+        }
+
+        private void RestartDoStepsPll ()
+        {
+            if (Sm.Arg != null) {
+                StepRobot robot = (StepRobot)Sm.Arg;
+                if (!robot.SrEmailAddr.Equals (BEContext.Account.EmailAddr, StringComparison.Ordinal)) {
+                    Log.Info (Log.LOG_AS, "AUTOD::Will restart Auto Discovery with new email address {0}", robot.SrEmailAddr);                   
+                    UpdateEmailAddressToAccount (robot.SrEmailAddr);
+                    Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
+                    BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
+                }
+            }
+            DoStepsPll ();
+        }
+
         private void DoStepsPll ()
         {
             // If we have a queued success, just try testing that 1st!
@@ -576,18 +604,18 @@ namespace NachoCore.ActiveSync
             SuccessfulRobotQ = new Queue<StepRobot> ();
             RobotEventsQ = new ConcurrentQueue<Event> ();
             SubdomainComplete = false;
-            Log.Info(Log.LOG_AS, "AUTOD::BEGIN:Starting all robots...");
-            AddAndStartRobot (StepRobot.Steps.S1, Domain);
-            AddAndStartRobot (StepRobot.Steps.S2, Domain);
-            AddAndStartRobot (StepRobot.Steps.S3, Domain);
-            AddAndStartRobot (StepRobot.Steps.S4, Domain);
-            AddAndStartRobot (StepRobot.Steps.S5, Domain);
+            Log.Info (Log.LOG_AS, "AUTOD::BEGIN:Starting all robots for email {0}...", BEContext.Account.EmailAddr);
+            AddAndStartRobot (StepRobot.Steps.S1, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S2, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S3, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S4, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S5, Domain, true);
             if (BaseDomain != Domain) {
-                AddAndStartRobot (StepRobot.Steps.S1, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S2, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S3, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S4, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S5, BaseDomain);
+                AddAndStartRobot (StepRobot.Steps.S1, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S2, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S3, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S4, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S5, BaseDomain, false);
             }
         }
 
@@ -629,7 +657,7 @@ namespace NachoCore.ActiveSync
         // check if robots are still doing subdomain discovery
         private bool AreSubDomainRobotsDone ()
         {
-            return((Robots.Where(x => x.SrDomain.Equals (Domain, StringComparison.Ordinal))).Count()==0);
+            return((Robots.Where (x => x.SrDomain.Equals (Domain, StringComparison.Ordinal))).Count () == 0);
         }
 
         // DeQueue all queued events that the base domain robots may have sent
@@ -660,7 +688,7 @@ namespace NachoCore.ActiveSync
             // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
             // enqueue base domain robot events only if subdomain robots are not done 
             // enqueue all events from base domain
-            return !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !SubdomainComplete;
+            return !Robot.IsUserSpecifiedDomain && !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !SubdomainComplete;
         }
 
         private void DoQueueSuccess ()

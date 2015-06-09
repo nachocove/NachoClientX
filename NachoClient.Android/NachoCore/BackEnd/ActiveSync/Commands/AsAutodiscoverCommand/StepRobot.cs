@@ -82,6 +82,7 @@ namespace NachoCore.ActiveSync
             public uint RetriesLeft;
             public bool IsReDir;
             public Uri ReDirUri;
+            public bool IsUserSpecifiedDomain;
 
 
             private TimeSpan CertTimeout;
@@ -94,7 +95,7 @@ namespace NachoCore.ActiveSync
             private List<Uri> ReDirSource = new List<Uri> ();
             private Uri LastUri;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -126,6 +127,7 @@ namespace NachoCore.ActiveSync
 
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
+                IsUserSpecifiedDomain = isUerSpecifiedDomain;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {
                     /* NOTE: There are three start states:
@@ -922,39 +924,39 @@ namespace NachoCore.ActiveSync
                 var xmlStatus = xmlError.ElementAnyNs (Xml.Autodisco.Status);
                 var xmlAttrId = xmlError.Attribute (Xml.Autodisco.Error_Attr_Id);
                 if (null != xmlAttrId) {
-                    Log.Error (Log.LOG_AS, "ProcessXmlError: Id = {0}.", xmlAttrId.Value);
+                    Log.Error (Log.LOG_AS, "ProcessXmlError: Id = {0}. Step = {1}.", xmlAttrId.Value, Step);
                 }
                 var xmlAttrTime = xmlError.Attribute (Xml.Autodisco.Error_Attr_Time);
                 if (null != xmlAttrTime) {
-                    Log.Error (Log.LOG_AS, "ProcessXmlError: Time = {0}.", xmlAttrTime.Value);
+                    Log.Error (Log.LOG_AS, "ProcessXmlError: Time = {0}. Step = {1}.", xmlAttrTime.Value, Step);
                 }
                 if (null != xmlStatus) {
                     // ProtocolError is the only valid value, but MSFT does not always obey! See
                     // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
                     switch (uint.Parse (xmlStatus.Value)) {
                     case (uint)Xml.Autodisco.StatusCode.Success_1:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}", Xml.Autodisco.StatusCode.Success_1);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}. Step = {1}.", Xml.Autodisco.StatusCode.Success_1, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDStatus1));
                         break;
                     case (uint)Xml.Autodisco.StatusCode.ProtocolError_2:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}", Xml.Autodisco.StatusCode.ProtocolError_2);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}. Step = {1}.", Xml.Autodisco.StatusCode.ProtocolError_2, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDStatus2));
                         break;
                     default:
-                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Status code {0}", xmlStatus.Value);
+                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Status code {0}. Step = {1}.", xmlStatus.Value, Step);
                         break;
                     }
                 }
                 var xmlMessage = xmlError.ElementAnyNs (Xml.Autodisco.Message);
                 if (null != xmlMessage) {
-                    Log.Error (Log.LOG_AS, "Rx of Message: {0}", xmlMessage.Value);
+                    Log.Error (Log.LOG_AS, "Rx of Message: {0}. Step = {1}.", xmlMessage.Value, Step);
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
                     result.Message = xmlMessage.Value;
                     StatusInd (result);
                 }
                 var xmlDebugData = xmlError.ElementAnyNs (Xml.Autodisco.DebugData);
                 if (null != xmlDebugData) {
-                    Log.Error (Log.LOG_AS, "Rx of DebugData: {0}", xmlDebugData.Value);
+                    Log.Error (Log.LOG_AS, "Rx of DebugData: {0}. Step = {1}.", xmlDebugData.Value, Step);
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_AutoDAdminMessage);
                     result.Message = xmlMessage.Value;
                     StatusInd (result); 
@@ -963,15 +965,15 @@ namespace NachoCore.ActiveSync
                 if (null != xmlErrorCode) {
                     switch (uint.Parse (xmlErrorCode.Value)) {
                     case (uint)Xml.Autodisco.ErrorCodeCode.InvalidRequest_600:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}", Xml.Autodisco.ErrorCodeCode.InvalidRequest_600);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}. Step = {1}.", Xml.Autodisco.ErrorCodeCode.InvalidRequest_600, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDError600));
                         break;
                     case (uint)Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}", Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}. Step = {1}.", Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDError601));
                         break;
                     default:
-                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Error code {0}", xmlErrorCode.Value);
+                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Error code {0}. Step = {1}.", xmlErrorCode.Value, Step);
                         break;
                     }
                 }
