@@ -18,10 +18,12 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
-            var imapFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-            NcAssert.NotNull (imapFolder);
-            imapFolder.Open (FolderAccess.ReadWrite, Cts.Token);
-            imapFolder.Delete (Cts.Token);
+            var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
+            NcAssert.NotNull (mailKitFolder);
+            if (mailKitFolder.IsOpen) {
+                mailKitFolder.Close (Cts.Token); // rfc4549: If the action is to delete a mailbox (DELETE), make sure that the mailbox is closed first
+            }
+            mailKitFolder.Delete (Cts.Token);
 
             NcModel.Instance.RunInTransaction (() => {
                 // TODO Do some ApplyCommand stuff here
