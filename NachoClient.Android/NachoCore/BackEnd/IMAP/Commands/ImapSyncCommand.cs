@@ -48,13 +48,15 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
             FolderAccess access;
-            mailKitFolder = Client.GetFolder (folder.ServerId);
-            if (null == mailKitFolder) {
-                return null;
-            }
-            access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-            if (FolderAccess.None == access) {
-                return null;
+            lock (Client.SyncRoot) {
+                mailKitFolder = Client.GetFolder (folder.ServerId);
+                if (null == mailKitFolder) {
+                    return null;
+                }
+                access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                if (FolderAccess.None == access) {
+                    return null;
+                }
             }
             return mailKitFolder;
         }
@@ -120,17 +122,17 @@ namespace NachoCore.IMAP
                     Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                     MaxSynced = range.Max ().Id;
                     MinSynced = range.Min ().Id;
+                    cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
+                    foreach (var imapSummary in imapSummaries) {
+                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                        summaries.Add (new MailSummary () {
+                            imapSummary = imapSummary as MessageSummary,
+                            preview = preview,
+                        });
+                    }
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                 }
-                cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
-                foreach (var imapSummary in imapSummaries) {
-                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                    summaries.Add (new MailSummary () {
-                        imapSummary = imapSummary as MessageSummary,
-                        preview = preview,
-                    });
-                }
-                cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                 break;
             }
 
