@@ -21,7 +21,7 @@ namespace NachoCore.IMAP
             var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
             NcAssert.NotNull (mailKitFolder);
             if (mailKitFolder.IsOpen) {
-                mailKitFolder.Close (Cts.Token); // rfc4549: If the action is to delete a mailbox (DELETE), make sure that the mailbox is closed first
+                mailKitFolder.Close (false, Cts.Token); // rfc4549 Sec 3.c.2: If the action is to delete a mailbox (DELETE), make sure that the mailbox is closed first
             }
             mailKitFolder.Delete (Cts.Token);
 
