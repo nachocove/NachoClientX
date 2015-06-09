@@ -847,7 +847,19 @@ namespace NachoCore.ActiveSync
         // Returns null if nothing to do.
         public FetchKit GenFetchKit (int accountId)
         {
-            // TODO take into account network status and total data in the fetch request.
+            // The maximum attachment size to fetch depends on the quality of the network connection.
+            long maxAttachmentSize = 0;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.WiFi_0:
+                maxAttachmentSize = 1024 * 1024;
+                break;
+            case NetStatusSpeedEnum.CellFast_1:
+                maxAttachmentSize = 200 * 1024;
+                break;
+            case NetStatusSpeedEnum.CellSlow_2:
+                maxAttachmentSize = 50 * 1024;
+                break;
+            }
             var remaining = KBaseFetchSize;
             var fetchBodies = new List<FetchKit.FetchBody> ();
             var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, McEmailMessage.minHotScore).ToList ();
@@ -861,23 +873,64 @@ namespace NachoCore.ActiveSync
                 fetchBodies.Add (new FetchKit.FetchBody () {
                     ServerId = email.ServerId,
                     ParentId = folders [0].ServerId,
+                    BodyPref = BodyPref (email, maxAttachmentSize),
                 });
             }
             remaining -= fetchBodies.Count;
             List<McAttachment> fetchAtts = new List<McAttachment> ();
             if (0 < remaining) {
-                fetchAtts = McAttachment.QueryNeedsFetch (accountId, remaining, 0.9, 1024 * 1024).ToList ();
+                fetchAtts = McAttachment.QueryNeedsFetch (accountId, remaining, 0.9, (int)maxAttachmentSize).ToList ();
             }
             if (0 < fetchBodies.Count || 0 < fetchAtts.Count) {
                 Log.Info (Log.LOG_AS, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
                 return new FetchKit () {
                     FetchBodies = fetchBodies,
                     FetchAttachments = fetchAtts,
-                    Pendings = new List<McPending> (),
+                    Pendings = new List<FetchKit.FetchPending> (),
                 };
             }
             Log.Info (Log.LOG_AS, "GenFetchKit: nothing to do.");
             return null;
+        }
+
+        private Xml.AirSync.TypeCode BodyPref (McEmailMessage message, long maxAttachmentSize)
+        {
+            if (0 == message.NativeBodyType) {
+                // Even if there are large attachments, we don't know what body type to request to avoid
+                // downloading them.
+                Log.Warn (Log.LOG_AS, "McEmailMessage with an unknown native body type.");
+                return Xml.AirSync.TypeCode.Mime_4;
+            }
+            long totalAttachmentSize = 0;
+            foreach (var attachment in McAttachment.QueryByItemId (message)) {
+                if (attachment.IsInline) {
+                    // If there are any inline attachments, then the attachments need to be downloaded with the body.
+                    return Xml.AirSync.TypeCode.Mime_4;
+                }
+                totalAttachmentSize += attachment.FileSize;
+            }
+            if (totalAttachmentSize > maxAttachmentSize) {
+                // Download the body without the attachments.  The attachments can be downloaded separately later.
+                return (Xml.AirSync.TypeCode)message.NativeBodyType;
+            }
+            return Xml.AirSync.TypeCode.Mime_4;
+        }
+
+        private Xml.AirSync.TypeCode BodyPref (McPending pending)
+        {
+            if (McPending.Operations.EmailBodyDownload != pending.Operation) {
+                // Downloading something other than an e-mail message.  The return value will be ignored,
+                // so we really could return anything here.
+                return Xml.AirSync.TypeCode.PlainText_1;
+            }
+            var message = McEmailMessage.QueryByServerId<McEmailMessage> (pending.AccountId, pending.ServerId);
+            if (null == message) {
+                return Xml.AirSync.TypeCode.Mime_4;
+            }
+            // The maximum attachment size to download is relatively low, because this download was initiated by
+            // the UI, and we don't want anything to delay the showing the body to the user.  When the user is
+            // on a slow network connection, the limit is even lower.
+            return BodyPref (message, NetStatusSpeedEnum.CellSlow_2 == NcCommStatus.Instance.Speed ? 50 * 1024 : 100 * 1024);
         }
 
         public override bool ANarrowFolderHasToClientExpected (int accountId)
@@ -961,7 +1014,12 @@ namespace NachoCore.ActiveSync
                             new FetchKit () {
                                 FetchBodies = new List<FetchKit.FetchBody> (),
                                 FetchAttachments = new List<McAttachment> (),
-                                Pendings = new List<McPending> { fetch },
+                                Pendings = new List<FetchKit.FetchPending> {
+                                    new FetchKit.FetchPending () {
+                                        Pending = fetch,
+                                        BodyPref = BodyPref (fetch),
+                                    },
+                                },
                             }));
                 }
             }
@@ -1104,7 +1162,12 @@ namespace NachoCore.ActiveSync
                             new FetchKit () {
                                 FetchBodies = new List<FetchKit.FetchBody> (),
                                 FetchAttachments = new List<McAttachment> (),
-                                Pendings = new List<McPending> { next },
+                                Pendings = new List<FetchKit.FetchPending> {
+                                    new FetchKit.FetchPending () {
+                                        Pending = next,
+                                        BodyPref = BodyPref (next),
+                                    },
+                                },
                             });
                         break;
                     case McPending.Operations.Sync:

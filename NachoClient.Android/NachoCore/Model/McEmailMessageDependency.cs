@@ -15,7 +15,8 @@ namespace NachoCore.Model
     /// 
     public class McEmailMessageDependency : McAbstrObjectPerAcc
     {
-        public enum AddressType {
+        public enum AddressType
+        {
             UNKNOWN = 0,
             SENDER = 1,
             TO = 2,
@@ -102,26 +103,17 @@ namespace NachoCore.Model
 
         public void InsertByBrain ()
         {
-            int rc = Insert ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageDependencyCounters.Insert.Click ();
-            }
+            Insert ();
         }
 
         public void UpdateByBrain ()
         {
-            int rc = Update ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageDependencyCounters.Update.Click ();
-            }
+            Update ();
         }
 
         public void DeleteByBrain ()
         {
-            int rc = Delete ();
-            if (0 < rc) {
-                NcBrain.SharedInstance.McEmailMessageDependencyCounters.Delete.Click ();
-            }
+            Delete ();
         }
     }
 

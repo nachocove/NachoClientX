@@ -63,6 +63,8 @@ namespace NachoClient.iOS
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
+            accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
+
             View.AddSubview (accountsTableView);           
         }
 

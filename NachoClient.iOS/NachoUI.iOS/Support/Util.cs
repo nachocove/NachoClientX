@@ -761,12 +761,6 @@ namespace NachoClient
             }
         }
 
-        public static void HideBlackNavigationControllerLine (UINavigationBar navBar)
-        {
-            navBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-            navBar.ShadowImage = new UIImage ();
-        }
-
         public static bool IsVisible (this UIViewController vc)
         {
             return(vc.IsViewLoaded && (null != vc.View.Window));
@@ -1201,6 +1195,12 @@ namespace NachoClient
             blueButton.Layer.MasksToBounds = true;
             blueButton.AccessibilityLabel = title;
             return blueButton;
+        }
+
+        // Rectangle for contents inside of rectangle at (0,0)
+        public static CGRect CardContentRectangle (nfloat width, nfloat height)
+        {
+            return new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, width - (2 * A.Card_Horizontal_Indent), height);
         }
 
         #endregion

@@ -140,6 +140,7 @@
     <Compile Include="ErrorHelperTest.cs" />
     <Compile Include="TelemetryJsonEventTest.cs" />
     <Compile Include="TelemetryJsonFileTest.cs" />
+    <Compile Include="NcBrainHelpersTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

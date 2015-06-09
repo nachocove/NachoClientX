@@ -20,7 +20,7 @@ namespace Test.Common
             for (int n = 1; n <= 2; n++) {
                 McEmailAddress address = new McEmailAddress ();
                 address.AccountId = 1;
-                address.NeedUpdate = (0 == (n % 2)); // even id already marked for update
+                address.NeedUpdate = (0 == (n % 2) ? 1 : 0); // even id already marked for update
                 address.Insert ();
                 NcAssert.True (address.Id == n);
             }
@@ -28,7 +28,7 @@ namespace Test.Common
             for (int n = 1; n <= 15; n++) {
                 McEmailMessage emailMessage = new McEmailMessage ();
                 emailMessage.AccountId = 1;
-                emailMessage.NeedUpdate = (0 == (n % 2)); // even id already marked for update
+                emailMessage.NeedUpdate = (0 == (n % 2) ? 1 : 0); // even id already marked for update
                 emailMessage.Insert ();
                 NcAssert.True (emailMessage.Id == n);
             }
@@ -179,12 +179,12 @@ namespace Test.Common
             TestDeleteOneEmailMessage (14);
         }
 
-        public void VerifyListIds<T> (List<T> list, params int [] ids) where T: McAbstrObject, new()
+        public void VerifyListIds<T> (List<T> list, params int[] ids) where T: McAbstrObject, new()
         {
             Assert.NotNull (list);
             Assert.AreEqual (ids.Length, list.Count);
             for (int n = 0; n < ids.Length; n++) {
-                Assert.AreEqual (ids[n], list[n].Id);
+                Assert.AreEqual (ids [n], list [n].Id);
             }
         }
 

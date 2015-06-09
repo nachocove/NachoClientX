@@ -13,7 +13,7 @@ namespace NachoCore.Brain
     // The goal is to separate the actions from the scheduling of actions.
     public partial class NcBrain
     {
-        protected bool GleanEmailMessage (McEmailMessage emailMessage, string accountAddress, bool quickScore)
+        protected bool GleanEmailMessage (McEmailMessage emailMessage)
         {
             if (null == emailMessage) {
                 return false;
@@ -29,21 +29,6 @@ namespace NachoCore.Brain
                     return false;
                 }
             }
-
-            if (quickScore && (0 == emailMessage.ScoreVersion) && (0.0 == emailMessage.Score)) {
-                // Assign a version 0 score by checking if our address is in the to list
-                InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
-                foreach (var address in addressList) {
-                    if (!(address is MailboxAddress)) {
-                        continue;
-                    }
-                    if (((MailboxAddress)address).Address == accountAddress) {
-                        emailMessage.Score = McEmailMessage.minHotScore;
-                        emailMessage.UpdateByBrain ();
-                        break;
-                    }
-                }
-            }
             return true;
         }
 
@@ -53,7 +38,7 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
-            emailAddress.ScoreObject ();
+            emailAddress.Analyze ();
             return true;
         }
 
@@ -63,8 +48,13 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
-            emailMessage.ScoreObject ();
+            emailMessage.Analyze ();
             return true;
+        }
+
+        protected bool AnalyzeEmailMessage (object obj)
+        {
+            return AnalyzeEmailMessage ((McEmailMessage)obj);
         }
 
         protected bool UpdateEmailAddressScore (McEmailAddress emailAddress, bool updateDependencies)
@@ -76,17 +66,17 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailAddress.ScoreVersion);
                 return true;
             }
-            var newScore = emailAddress.GetScore ();
+            var newScore = emailAddress.Classify ();
             bool scoreUpdated = newScore != emailAddress.Score;
-            if (emailAddress.NeedUpdate || scoreUpdated) {
+            if (emailAddress.ShouldUpdate () || scoreUpdated) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
                     emailAddress.Id, emailAddress.Score);
                 emailAddress.Score = newScore;
-                emailAddress.NeedUpdate = false;
+                emailAddress.NeedUpdate += 1;
                 emailAddress.UpdateByBrain ();
             }
             if (updateDependencies && scoreUpdated) {
-                emailAddress.MarkDependencies ();
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
             }
             return true;
         }
@@ -100,15 +90,20 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailMessage.ScoreVersion);
                 return true;
             }
-            var newScore = emailMessage.GetScore ();
-            if (emailMessage.NeedUpdate || (newScore != emailMessage.Score)) {
+            var newScore = emailMessage.Classify ();
+            if (emailMessage.ShouldUpdate () || (newScore != emailMessage.Score)) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
                     emailMessage.Id, emailMessage.Score);
                 emailMessage.Score = newScore;
-                emailMessage.NeedUpdate = false;
+                emailMessage.NeedUpdate += 1;
                 emailMessage.UpdateScoreAndNeedUpdate ();
             }
             return true;
+        }
+
+        protected bool UpdateEmailMessageScore (object obj)
+        {
+            return UpdateEmailMessageScore ((McEmailMessage)obj);
         }
 
         // Try to get the file path of the body of an McAbstrItem (or its derived classes)
@@ -140,12 +135,16 @@ namespace NachoCore.Brain
             return filePath;
         }
 
-        protected bool IndexEmailMessage (NcIndex index, McEmailMessage emailMessage, ref long bytesIndexed)
+        protected bool IndexEmailMessage (McEmailMessage emailMessage)
         {
-            if (null == emailMessage) {
+            if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
                 return false;
             }
             Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
+            var index = OpenedIndexes.Get (emailMessage.AccountId);
+            if (null == index) {
+                return false;
+            }
 
             // Make sure the body is there
             McBody body;
@@ -167,7 +166,7 @@ namespace NachoCore.Brain
                 var indexDoc = new EmailMessageIndexDocument (emailMessage.Id.ToString (), content, message);
 
                 // Index the document
-                bytesIndexed += index.BatchAdd (indexDoc);
+                BytesIndexed += index.BatchAdd (indexDoc);
             } catch (NullReferenceException e) {
                 Log.Error (Log.LOG_BRAIN, "IndexEmailmessage: caught null exception - {0}", e);
             }
@@ -179,9 +178,18 @@ namespace NachoCore.Brain
             return true;
         }
 
-        protected bool IndexContact (NcIndex index, McContact contact, ref long bytesIndex)
+        protected bool IndexEmailMessage (object obj)
         {
-            if ((null == index) || (null == contact)) {
+            return IndexEmailMessage ((McEmailMessage)obj);
+        }
+
+        protected bool IndexContact (McContact contact)
+        {
+            if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+                return false;
+            }
+            var index = OpenedIndexes.Get (contact.AccountId);
+            if (null == index) {
                 return false;
             }
 
@@ -232,7 +240,7 @@ namespace NachoCore.Brain
                     index.Remove ("contact", id);
                 }
                 var indexDoc = new ContactIndexDocument (id, contactParams);
-                bytesIndex += index.BatchAdd (indexDoc);
+                BytesIndexed += index.BatchAdd (indexDoc);
             } catch (NullReferenceException e) {
                 Log.Error (Log.LOG_BRAIN, "IndexContact: caught null exception - {0}", e);
             }
@@ -241,6 +249,11 @@ namespace NachoCore.Brain
             contact.UpdateIndexVersion ();
 
             return true;
+        }
+
+        protected bool IndexContact (object obj)
+        {
+            return IndexContact ((McContact)obj);
         }
 
         protected void UnindexEmailMessage (int accountId, int emailMessageId)

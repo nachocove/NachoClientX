@@ -33,6 +33,8 @@ namespace NachoClient.iOS
         protected UISearchBar searchBar;
         protected UISearchDisplayController searchDisplayController;
 
+        SwitchAccountButton switchAccountButton;
+
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
 
@@ -55,6 +57,14 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            NavigationController.NavigationBar.Translucent = false;
+
+            if (ThisIsSpecialInboxView ()) {
+                switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+                NavigationItem.TitleView = switchAccountButton;
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            }
 
             TableView.AccessibilityLabel = "Message list";
 
@@ -110,8 +120,6 @@ namespace NachoClient.iOS
             searchButton.Clicked += onClickSearchButton;
 
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            NavigationController.NavigationBar.Translucent = false;
-            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -278,6 +286,11 @@ namespace NachoClient.iOS
             return false;
         }
 
+        public virtual bool ThisIsSpecialInboxView()
+        {
+            return false;
+        }
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
@@ -288,7 +301,11 @@ namespace NachoClient.iOS
                     searchDisplayController.Active = false;
                 }
                 CancelSearchIfActive ();
-                NavigationController.PopViewController (true);
+                if (ThisIsSpecialInboxView ()) {
+                    SwitchToAccount (NcApplication.Instance.Account);
+                } else {
+                    NavigationController.PopViewController (true);
+                }
                 return;
             }
 
@@ -668,6 +685,24 @@ namespace NachoClient.iOS
                 McPending.Cancel (NcApplication.Instance.Account.Id, searchToken);
                 searchToken = null;
             }
+        }
+
+        void SwitchAccountButtonPressed ()
+        {
+            SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            if (searchDisplayController.Active) {
+                searchDisplayController.Active = false;
+            }
+            messageSource.MultiSelectCancel (TableView);
+            MultiSelectToggle (messageSource, false);
+            switchAccountButton.SetAccountImage (account);
+            SetEmailMessages (NcEmailManager.Inbox (account.Id));
+            threadsNeedsRefresh = true;
+            MaybeRefreshThreads ();
         }
     }
 

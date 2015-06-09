@@ -1576,6 +1576,11 @@ namespace NachoCore.Model
             );
         }
 
+        public static List<object> QueryNeedIndexingObjects (int maxContacts)
+        {
+            return new List<object> (QueryNeedIndexing (maxContacts));
+        }
+
         public string GetDisplayName ()
         {
             if (!String.IsNullOrEmpty (DisplayName)) {
@@ -1681,7 +1686,7 @@ namespace NachoCore.Model
                 if (null != emailAddress) {
                     emailAddress.IsVip = this.IsVip;
                     emailAddress.Update ();
-                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.Id, true);
+                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
                 }
             }
         }
