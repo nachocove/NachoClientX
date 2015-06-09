@@ -22,6 +22,7 @@ namespace NachoClient.iOS
         protected McAbstrCalendarRoot c;
         protected bool editing;
         protected bool organizer;
+        protected bool recurring;
         protected string organizerName;
         protected string organizerEmail;
 
@@ -52,7 +53,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void Setup (INachoAttendeeListChooserDelegate owner, McAccount account, IList<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
+        public void Setup (INachoAttendeeListChooserDelegate owner, McAccount account, IList<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer, bool recurring)
         {
             this.owner = owner;
             this.account = account;
@@ -60,6 +61,7 @@ namespace NachoClient.iOS
             this.c = c;
             this.editing = editing;
             this.organizer = organizer;
+            this.recurring = recurring;
         }
 
         public override void ViewDidLoad ()
@@ -156,21 +158,9 @@ namespace NachoClient.iOS
         public void LoadAttendees ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("EventAttendeeViewController LoadAttendees");
-            AttendeeSource.SetAttendeeList (this.AttendeeList);
-            AttendeeSource.SetEditing (editing);
-            AttendeeSource.SetOrganizer (organizer);
-            AttendeeSource.SetAccount (account);
+            AttendeeSource.Setup (AttendeeList, account, editing, organizer, recurring);
             tableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("EventAttendeeViewController LoadAttendees");
-        }
-
-        public void SetAttendeeList (List<McAttendee> attendees)
-        {
-            this.AttendeeList = new List<McAttendee> ();
-            foreach (var attendee in attendees) {
-                this.AttendeeList.Add (attendee);
-            }
-            UpdateLists ();
         }
 
         public List<McAttendee> GetAttendeeList ()
@@ -611,7 +601,19 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void SendAttendeeInvite (McAttendee attendee)
         {
-            McCalendar item = (McCalendar)c;
+            McCalendar item;
+            if (c is McException) {
+                item = McCalendar.QueryById<McCalendar> ((int)((McException)c).CalendarId);
+                if (null == item) {
+                    Log.Error (Log.LOG_UI, "EventAttendeeViewController.SendAttendeeInvite(): Can't find calendar event for exception.");
+                    return;
+                }
+            } else if (c is McCalendar) {
+                item = (McCalendar)c;
+            } else {
+                Log.Error (Log.LOG_UI, "EventAttendeeViewController.SendAttendeeInvite(): Calendar item is a {0} instead of a McCalendar.", c.GetType ().Name);
+                return;
+            }
             var iCalPart = CalendarHelper.MimeRequestFromCalendar (item);
             var mimeBody = CalendarHelper.CreateMime (item.Description, iCalPart, item.attachments);
 
@@ -620,13 +622,24 @@ namespace NachoClient.iOS
 
         public void SyncRequest ()
         {
-            if (0 == c.Id) {
-                NcAssert.CaseError ();
-            } else {
-                c.Update ();
-                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, false);
-                c = McCalendar.QueryById<McCalendar> (c.Id);
+            if (null == c) {
+                Log.Error (Log.LOG_UI, "Internal error: EventAttendeeViewController.SyncRequest() was called with a null calendar item.");
+                return;
             }
+            if (0 == c.Id) {
+                Log.Error (Log.LOG_UI, "Internal error: EventAttendeeViewController.SyncRequest() was called for a new event that hasn't been saved yet.");
+                return;
+            }
+            if (!(c is McCalendar)) {
+                Log.Error (Log.LOG_UI, "Internal error: EventAttendeeViewController.SyncRequest() was called with a {0} item instead of a McCalendar item.", c.GetType ().Name);
+                return;
+            }
+            // For any changes to the attendees to be saved, McAbstrCalendarRoot.attendees needs to
+            // be explicitly set.
+            c.attendees = AttendeeList;
+            c.Update ();
+            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id, false);
+            c = McCalendar.QueryById<McCalendar> (c.Id);
         }
 
 

@@ -840,7 +840,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, account, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr));
+                dc.Setup (null, account, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr), 0 != root.recurrences.Count);
                 return;
             }
 
