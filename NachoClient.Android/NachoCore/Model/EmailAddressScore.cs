@@ -16,6 +16,22 @@ namespace NachoCore.Model
         [Indexed]
         public int ScoreVersion { get; set; }
 
+        private AnalysisFunctionsTable _AnalysisFunctions;
+
+        [Ignore]
+        public AnalysisFunctionsTable AnalysisFunctions {
+            get {
+                if (null == _AnalysisFunctions) {
+                    _AnalysisFunctions = new AnalysisFunctionsTable () {
+                    };
+                }
+                return _AnalysisFunctions;
+            }
+            set {
+                _AnalysisFunctions = value;
+            }
+        }
+
         /// Time variance state machine type
         public int TimeVarianceType { get; set; }
 
@@ -26,7 +42,7 @@ namespace NachoCore.Model
         public double Score { get; set; }
 
         [Indexed]
-        public bool NeedUpdate { get; set; }
+        public int NeedUpdate { get; set; }
 
         // DO NOT update these fields directly. Use IncrementXXX methods instead.
         // Otherwise, the delta will not be saved correctly. ORM does not allow
@@ -51,7 +67,12 @@ namespace NachoCore.Model
         // Number of emails deleted without being read
         public int EmailsDeleted { get; set; }
 
-        public double GetScore ()
+        public bool ShouldUpdate ()
+        {
+            return (0 < NeedUpdate);
+        }
+
+        public double Classify ()
         {
             int total = EmailsReceived + EmailsSent + EmailsDeleted;
             if (0 == total) {
@@ -60,67 +81,70 @@ namespace NachoCore.Model
             return (double)(EmailsRead + EmailsReplied + EmailsSent) / (double)total;
         }
 
-        public void ScoreObject ()
+        public void Analyze ()
         {
-            if (0 == ScoreVersion) {
-                ScoreVersion++;
-            }
-            if (1 == ScoreVersion) {
-                // Version 2 statistics are updated by emails. Nothing to do here
-                ScoreVersion++;
-            }
-            if (2 == ScoreVersion) {
-                // No statisitcs are updated in v3. Just need to recompute the score
-                // using the new function.
-                ScoreVersion++;
-            }
-            NcAssert.True (Scoring.Version == ScoreVersion);
-            Score = GetScore ();
+            ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            Score = Classify ();
             UpdateByBrain ();
         }
 
-        public void MarkDependencies ()
+        public void MarkDependencies (NcEmailAddress.Kind addressType, int delta = 1)
         {
-            MarkDependentEmailMessages ();
-            // TODO - mark dependent meetings later
+            switch (addressType) {
+            case NcEmailAddress.Kind.From:
+            case NcEmailAddress.Kind.To:
+            case NcEmailAddress.Kind.Cc:
+            case NcEmailAddress.Kind.Bcc:
+            case NcEmailAddress.Kind.Sender:
+                MarkDependentEmailMessages (addressType, delta);
+                break;
+            default:
+                break;
+            }
+
         }
 
         public void IncrementEmailsReceived (int count = 1)
         {
             EmailsReceived += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsRead (int count = 1)
         {
             EmailsRead += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsReplied (int count = 1)
         {
             EmailsReplied += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsArchived (int count = 1)
         {
             EmailsArchived += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
         public void IncrementEmailsDeleted (int count = 1)
         {
             EmailsDeleted += count;
-            MarkDependencies ();
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void MarkDependentEmailMessages ()
+        public void MarkDependentEmailMessages (NcEmailAddress.Kind addressKind, int delta)
         {
+            if (1 > delta) {
+                delta = 1;
+            }
+            var queryString = String.Format (
+                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0} WHERE Id IN " +
+                                  " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
+                                  "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta);
             NcModel.Instance.RunInLock (() => {
-                NcModel.Instance.Db.Execute (
-                    "UPDATE McEmailMessage SET NeedUpdate = 1 WHERE " +
-                    " Id IN (SELECT EmailMessageId FROM McEmailMessageDependency AS d WHERE d.EmailAddressId = ?)", Id);
+                NcModel.Instance.Db.Execute (queryString, Id, (int)addressKind);
             });
         }
 
@@ -157,15 +181,16 @@ namespace NachoCore.Model
         public static McEmailAddress QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.NeedUpdate && x.ScoreVersion == Scoring.Version)
+                .Where (x => x.NeedUpdate > 0 && x.ScoreVersion == Scoring.Version)
                 .FirstOrDefault ();
         }
 
-        public static McEmailAddress QueryNeedAnalysis ()
+        public static List<McEmailAddress> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
-            return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.ScoreVersion < Scoring.Version)
-                .FirstOrDefault ();
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " WHERE a.ScoreVersion < ? " +
+                " LIMIT ?", version, count);
         }
     }
 }

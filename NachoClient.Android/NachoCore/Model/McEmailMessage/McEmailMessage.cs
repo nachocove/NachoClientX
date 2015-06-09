@@ -593,6 +593,11 @@ namespace NachoCore.Model
             );
         }
 
+        public static List<object> QueryNeedsIndexingObjects (int count)
+        {
+            return new List<object> (QueryNeedsIndexing (count));
+        }
+
         public static List<McEmailMessage> QueryForSet (List<int> indexList)
         {
             var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
@@ -613,11 +618,11 @@ namespace NachoCore.Model
         {
             var retardedSince = since.AddDays (-1.0);
             return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
-                " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
-                " likelihood (IsRead = 0, 0.5) AND " +
-                " CreatedAt > ? AND " +
-                " likelihood (DateReceived > ?, 0.01) " +
-                " ORDER BY DateReceived ASC ",
+            " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
+            " likelihood (IsRead = 0, 0.5) AND " +
+            " CreatedAt > ? AND " +
+            " likelihood (DateReceived > ?, 0.01) " +
+            " ORDER BY DateReceived ASC ",
                 since, retardedSince);
         }
 
@@ -930,29 +935,29 @@ namespace NachoCore.Model
             appMeetingRequestSet = false;
         }
 
-//        [Ignore]
-//        public List<int> ToEmailAddressId {
-//            get {
-//                ReadAddressMaps ();
-//                return dbToEmailAddressId;
-//            }
-//            set {
-//                emailAddressesChanged = true;
-//                dbToEmailAddressId = value;
-//            }
-//        }
+        //        [Ignore]
+        //        public List<int> ToEmailAddressId {
+        //            get {
+        //                ReadAddressMaps ();
+        //                return dbToEmailAddressId;
+        //            }
+        //            set {
+        //                emailAddressesChanged = true;
+        //                dbToEmailAddressId = value;
+        //            }
+        //        }
 
-//        [Ignore]
-//        public List<int> CcEmailAddressId {
-//            get {
-//                ReadAddressMaps ();
-//                return dbCcEmailAddressId;
-//            }
-//            set {
-//                emailAddressesChanged = true;
-//                dbCcEmailAddressId = value;
-//            }
-//        }
+        //        [Ignore]
+        //        public List<int> CcEmailAddressId {
+        //            get {
+        //                ReadAddressMaps ();
+        //                return dbCcEmailAddressId;
+        //            }
+        //            set {
+        //                emailAddressesChanged = true;
+        //                dbCcEmailAddressId = value;
+        //            }
+        //        }
 
         protected void ReadAddressMaps ()
         {
