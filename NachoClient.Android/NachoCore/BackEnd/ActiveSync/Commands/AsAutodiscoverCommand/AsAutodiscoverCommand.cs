@@ -663,7 +663,7 @@ namespace NachoCore.ActiveSync
             if (Sm.Arg != null) {
                 StepRobot robot = (StepRobot)Sm.Arg;
                 if (!robot.SrEmailAddr.Equals (BEContext.Account.EmailAddr, StringComparison.Ordinal)) {
-                    Log.Info (Log.LOG_AS, "AUTOD::Will restart Auto Discovery with new email address {0}", robot.SrEmailAddr);                   
+                    Log.Info (Log.LOG_AS, "AUTOD::Will restart Auto Discovery with new email address/domain {0}", robot.SrDomain);                   
                     UpdateEmailAddressToAccount (robot.SrEmailAddr);
                     Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
                     BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
@@ -686,7 +686,7 @@ namespace NachoCore.ActiveSync
             SuccessfulRobotQ = new Queue<StepRobot> ();
             RobotEventsQ = new ConcurrentQueue<Event> ();
             SubdomainComplete = false;
-            Log.Info (Log.LOG_AS, "AUTOD::BEGIN:Starting all robots for email {0}...", BEContext.Account.EmailAddr);
+            Log.Info (Log.LOG_AS, "AUTOD::BEGIN:Starting all robots for domain {0}...", Domain);
             AddAndStartRobot (StepRobot.Steps.S1, Domain, true);
             AddAndStartRobot (StepRobot.Steps.S2, Domain, true);
             AddAndStartRobot (StepRobot.Steps.S3, Domain, true);
