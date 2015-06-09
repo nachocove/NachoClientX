@@ -30,6 +30,7 @@ namespace NachoCore.ActiveSync
         {
             private const int KDefaultCertTimeoutSeconds = 8;
             private double KDefaultTimeoutExpander = 2.0;
+
             public enum RobotLst : uint
             {
                 PostWait = (St.Last + 1),
@@ -569,7 +570,7 @@ namespace NachoCore.ActiveSync
             private void DoRobotHttp ()
             {
                 var currentUri = CurrentServerUri ();
-                Log.Info(Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
                     LastUri = currentUri;
@@ -582,8 +583,8 @@ namespace NachoCore.ActiveSync
             private void DoRobotDns ()
             {
                 if (0 < RetriesLeft--) {
-                    Log.Info(Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending DNS request to {1}", Step, this.DnsHost (null));
-                    DnsOp = new AsDnsOperation (this, new TimeSpan(0, 0, 10));
+                    Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending DNS request to {1}", Step, this.DnsHost (null));
+                    DnsOp = new AsDnsOperation (this, new TimeSpan (0, 0, 10));
                     DnsOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRDHARD");
@@ -665,8 +666,7 @@ namespace NachoCore.ActiveSync
                     } catch (Exception ex) {
                         // Exceptions don't matter - only the cert matters.
                         Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
-                    }
-                    finally {
+                    } finally {
                         client.Dispose ();
                         handler.Dispose ();
                     }
@@ -1040,9 +1040,15 @@ namespace NachoCore.ActiveSync
 
             private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect)
             {
-                SrEmailAddr = xmlRedirect.Value;
-                SrDomain = DomainFromEmailAddr (SrEmailAddr);
-                return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
+                // if email address changed, restart Auto discovery
+                if (!SrEmailAddr.Equals (xmlRedirect.Value, StringComparison.Ordinal)) {
+                    SrEmailAddr = xmlRedirect.Value;
+                    SrDomain = DomainFromEmailAddr (SrEmailAddr);
+                    return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
+                } else { // else fail hard
+                    Log.Error (Log.LOG_AS, "Redirected email address is the same as before so there's no point running auto discovery again. Step = {0}",Step);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
+                }
             }
 
             private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings)
@@ -1147,9 +1153,9 @@ namespace NachoCore.ActiveSync
                 switch (Step) {
                 case Steps.S4:
                     if (RCode.NoError == response.RCode &&
-                            0 < response.AnswerRRs &&
-                            NsType.SRV == response.NsType &&
-                            AtLeastOne<SrvRecord> (response.Answers)) {
+                        0 < response.AnswerRRs &&
+                        NsType.SRV == response.NsType &&
+                        AtLeastOne<SrvRecord> (response.Answers)) {
                         SrvRecord best = null;
                         var allBest = new List<SrvRecord> ();
                         foreach (var answer in response.Answers) {
@@ -1179,9 +1185,9 @@ namespace NachoCore.ActiveSync
 
                 case Steps.S5:
                     if (RCode.NoError == response.RCode &&
-                            0 < response.AnswerRRs &&
-                            NsType.MX == response.NsType &&
-                            AtLeastOne<MxRecord> (response.Answers)) {
+                        0 < response.AnswerRRs &&
+                        NsType.MX == response.NsType &&
+                        AtLeastOne<MxRecord> (response.Answers)) {
                         var aBest = (MxRecord)response.Answers.Where (r0 => r0 is MxRecord).OrderBy (r1 => ((MxRecord)r1).Preference).First ();
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase) ||
                             aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix2, StringComparison.OrdinalIgnoreCase)) {
