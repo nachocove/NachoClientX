@@ -87,7 +87,10 @@ namespace NachoCore.IMAP
                     added_or_changed = true;
                     // TODO do ApplyCommand stuff here
                 }
-                NcAssert.NotNull (folder);
+                if (null == folder) {
+                    Log.Error (Log.LOG_IMAP, "Could not look up Db folder");
+                    throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCDB"), NcResult.WhyEnum.NotSpecified);
+                }
                 if (UpdateImapSetting(mailKitFolder, folder)) {
                     // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                     // Strategy will notice that modseq and/or noselect etc has changed, and resync.

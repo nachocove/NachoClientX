@@ -29,13 +29,16 @@ namespace NachoCore.IMAP
                 encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
             }
 
-            var imapFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-            NcAssert.NotNull (imapFolder);
-            imapFolder.Open (FolderAccess.ReadWrite, Cts.Token);
-            imapFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
+            var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
+            if (null == mailKitFolder) {
+                Log.Error (Log.LOG_IMAP, "Could not get folder on server");
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFOLCREFAIL"), NcResult.WhyEnum.MissingOnServer);
+            }
+            mailKitFolder.Open (FolderAccess.ReadWrite, Cts.Token);
+            mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
 
-            if (CreateOrUpdateFolder (imapFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, out folder)) {
-                UpdateImapSetting (imapFolder, folder);
+            if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, out folder)) {
+                UpdateImapSetting (mailKitFolder, folder);
                 // TODO Do applyCommand stuff here
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 PendingResolveApply ((pending) => {
@@ -43,7 +46,7 @@ namespace NachoCore.IMAP
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPFUPSUC");
             } else {
-                Log.Error (Log.LOG_IMAP, "Folder {0} should have been changed but wasn't", imapFolder.FullName);
+                Log.Error (Log.LOG_IMAP, "Folder {0} should have been changed but wasn't", mailKitFolder.FullName);
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFUPHRD");
             }
         }

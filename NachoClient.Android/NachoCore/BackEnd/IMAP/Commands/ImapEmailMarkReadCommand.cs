@@ -19,12 +19,15 @@ namespace NachoCore.IMAP
         {
             var folderGuid = ImapProtoControl.ImapMessageFolderGuid (PendingSingle.ServerId);
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
-            NcAssert.Equals (folderGuid, folder.ImapGuid);
+            if (folderGuid != folder.ImapGuid) {
+                Log.Error (Log.LOG_IMAP, "Folder GUID no longer matches.");
+                throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.FolderSync, "IMAPEMREADUID"));
+            }
             var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
             lock (Client.SyncRoot) {
-                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
+                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder.ServerId, FolderAccess.ReadWrite);
                 if (null == mailKitFolder) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPEMREADOPEN");
                 }
                 mailKitFolder.SetFlags (uid, MessageFlags.Seen, true, Cts.Token);
             }
@@ -32,7 +35,7 @@ namespace NachoCore.IMAP
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
             });
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPEMREADSUC");
         }
     }
 }

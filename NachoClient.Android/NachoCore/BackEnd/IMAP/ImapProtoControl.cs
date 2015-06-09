@@ -74,6 +74,7 @@ namespace NachoCore.IMAP
                 UiSetServConf,
                 FromStrat,
                 Wait,
+                FolderSync,
                 AuthFail,
                 Last = AuthFail,
             };
@@ -108,6 +109,7 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -125,6 +127,7 @@ namespace NachoCore.IMAP
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.ReDisc,
                             (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -151,6 +154,7 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new Trans[] {
                             // If the creds are still bad, then disc will ask for new ones again.
@@ -174,6 +178,7 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new Trans[] {
                             // If the creds are still bad, then disc will ask for new ones again.
@@ -192,6 +197,7 @@ namespace NachoCore.IMAP
                         },
                         Invalid = new [] {
                             (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoFSync, State = (uint)Lst.FSyncW },
@@ -226,6 +232,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.FromStrat, Act = DoArg, State = (uint)Lst.CmdW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
+                            new Trans { Event = (uint)ImapEvt.E.FolderSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
                     },
                     new Node {
@@ -248,6 +255,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
+                            new Trans { Event = (uint)ImapEvt.E.FolderSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         },
                     },
                     new Node {
@@ -263,6 +271,7 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
@@ -288,6 +297,7 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.FolderSync,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },

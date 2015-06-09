@@ -19,7 +19,10 @@ namespace NachoCore.IMAP
         {
             McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
             var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-            NcAssert.NotNull (mailKitFolder);
+            if (null == mailKitFolder) {
+                Log.Error (Log.LOG_IMAP, "Could not get folder on server");
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFOLCREFAIL"), NcResult.WhyEnum.MissingOnServer);
+            }
             if (mailKitFolder.IsOpen) {
                 mailKitFolder.Close (false, Cts.Token); // rfc4549 Sec 3.c.2: If the action is to delete a mailbox (DELETE), make sure that the mailbox is closed first
             }

@@ -18,8 +18,10 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            NcAssert.NotNull (Client.PersonalNamespaces);
-            NcAssert.True (Client.PersonalNamespaces.Count >= 1);
+            if ((null == Client.PersonalNamespaces) || (Client.PersonalNamespaces.Count <= 0)) {
+                Log.Error (Log.LOG_IMAP, "No namespaces on server");
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFOLCRENAMESPACE"), NcResult.WhyEnum.ServerError);
+            }
 
             // TODO Not sure if this is the right thing to do. Do we loop over all namespaces if there's more than 1? How do we pick?
             FolderNamespace imapNameSpace = Client.PersonalNamespaces [0];
@@ -60,7 +62,10 @@ namespace NachoCore.IMAP
             IMailFolder folder = null;
             var encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
             folder = encapsulatingFolder.Create (name, true);
-            NcAssert.NotNull (folder);
+            if (null == folder) {
+                Log.Error (Log.LOG_IMAP, "Could not create folder on server");
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFOLCREFAIL"), NcResult.WhyEnum.ServerError);
+            }
             return folder;
         }
 

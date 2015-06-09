@@ -43,6 +43,28 @@ namespace NachoCore.IMAP
             }, "ImapCommand");
         }
 
+        public class NcImapCommandException : Exception {
+            public Event Event { get; set; }
+            public NcImapCommandException(Event postEvent)
+            {
+                Event = postEvent;
+            }
+        }
+        public class NcImapCommandRetryException : NcImapCommandException {
+            public NcImapCommandRetryException(Event postEvent) : base(postEvent)
+            {
+                
+            }
+        }
+
+        public class NcImapCommandFailException : NcImapCommandException {
+            public NcResult.WhyEnum ResultWhy { get; set; }
+            public NcImapCommandFailException(Event postEvent, NcResult.WhyEnum why) : base(postEvent)
+            {
+                ResultWhy = why;
+            }
+        }
+
         public void ExecuteNoTask(NcStateMachine sm)
         {
             try {
@@ -55,6 +77,14 @@ namespace NachoCore.IMAP
                 var evt = ExecuteCommand ();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
+            } catch (NcImapCommandRetryException ex) {
+                Log.Info(Log.LOG_IMAP, "NcImapCommandRetryException");
+                ResolveAllDeferred ();
+                sm.PostEvent (ex.Event);
+            } catch (NcImapCommandFailException ex) {
+                Log.Info(Log.LOG_IMAP, "NcImapCommandFailException");
+                ResolveAllFailed (ex.ResultWhy);
+                sm.PostEvent (ex.Event);
             } catch (OperationCanceledException) {
                 Log.Info (Log.LOG_IMAP, "OperationCanceledException");
                 ResolveAllDeferred ();
@@ -87,10 +117,10 @@ namespace NachoCore.IMAP
             }
         }
 
-        protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
+        protected IMailFolder GetOpenMailkitFolder(string folderName, FolderAccess access = FolderAccess.ReadOnly)
         {
             IMailFolder mailKitFolder;
-            mailKitFolder = Client.GetFolder (folder.ServerId);
+            mailKitFolder = Client.GetFolder (folderName);
             if (null == mailKitFolder) {
                 return null;
             }
@@ -98,6 +128,7 @@ namespace NachoCore.IMAP
                 return null;
             }
             return mailKitFolder;
+
         }
 
         protected string GetParentId(IMailFolder mailKitFolder)

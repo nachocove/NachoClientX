@@ -20,10 +20,13 @@ namespace NachoCore.IMAP
         {
             var folderGuid = ImapProtoControl.ImapMessageFolderGuid (PendingSingle.ServerId);
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
-            NcAssert.Equals (folderGuid, folder.ImapGuid);
+            if (folderGuid != folder.ImapGuid) {
+                Log.Error (Log.LOG_IMAP, "Folder GUID no longer matches.");
+                throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.FolderSync, "IMAPEMDELUIDVAL"));
+            }
             var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
             lock (Client.SyncRoot) {
-                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
+                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder.ServerId, FolderAccess.ReadWrite);
                 if (null == mailKitFolder) {
                     return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
                 }

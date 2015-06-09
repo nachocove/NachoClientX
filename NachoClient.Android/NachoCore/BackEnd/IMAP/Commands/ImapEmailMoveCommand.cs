@@ -20,11 +20,20 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             var emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
-            NcAssert.NotNull (emailMessage);
+            if (null == emailMessage) {
+                Log.Error (Log.LOG_IMAP, "No Email matches id {0}.", PendingSingle.ServerId);
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPEMMOVHARD0"), NcResult.WhyEnum.NotSpecified);
+            }
             McFolder src = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ParentId);
-            NcAssert.NotNull (src);
+            if (null == src) {
+                Log.Error (Log.LOG_IMAP, "No folder matches id {0}.", PendingSingle.ParentId);
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPEMMOVHARD1"), NcResult.WhyEnum.NotSpecified);
+            }
             McFolder dst = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.DestParentId);
-            NcAssert.NotNull (dst);
+            if (null == src) {
+                Log.Error (Log.LOG_IMAP, "No folder matches id {0}.", PendingSingle.DestParentId);
+                throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPEMMOVHARD2"), NcResult.WhyEnum.NotSpecified);
+            }
 
             MoveEmail (Client, emailMessage, src, dst, Cts.Token);
 
@@ -32,7 +41,7 @@ namespace NachoCore.IMAP
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded));
             });
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPMOVSUC");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPEMMOVSUC");
         }
 
         public static void MoveEmail(ImapClient Client, McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
@@ -41,11 +50,20 @@ namespace NachoCore.IMAP
             lock (Client.SyncRoot) {
                 var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
                 var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-                NcAssert.Equals (folderGuid, src.ImapGuid);
+                if (folderGuid != src.ImapGuid) {
+                    Log.Error (Log.LOG_IMAP, "folder UIDVALIDITY does not match.");
+                    throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.FolderSync, "IMAPEMMOVUID"));
+                }
                 var srcFolder = Client.GetFolder (src.ServerId, Token);
-                NcAssert.NotNull (srcFolder);
+                if (null == srcFolder) {
+                    Log.Error (Log.LOG_IMAP, "Could not Get imap src folder");
+                    throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPEMMOVHARD3"), NcResult.WhyEnum.MissingOnServer);
+                }
                 var dstFolder = Client.GetFolder (dst.ServerId, Token);
-                NcAssert.NotNull (dstFolder);
+                if (null == dstFolder) {
+                    Log.Error (Log.LOG_IMAP, "Could not Get imap dst folder");
+                    throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPEMMOVHARD4"), NcResult.WhyEnum.MissingOnServer);
+                }
 
                 srcFolder.Open (FolderAccess.ReadWrite, Token);
                 newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
