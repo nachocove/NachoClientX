@@ -631,6 +631,9 @@ namespace NachoCore.Model
 
         public void EngageRateLimiter ()
         {
+            /*
+             * This was inadvertently disabled, and it turns out we don't seem to need it. So leave it off.
+             * 
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
@@ -643,6 +646,7 @@ namespace NachoCore.Model
                     NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "EngageRateLimiter received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                 }
             };
+            */
         }
 
         public void Reset (string dbFileName)

@@ -205,6 +205,8 @@ namespace NachoCore.Utils
             UnavoidableDelay,
             InterruptedByAppExit,
             PredecessorFailed,
+            Unsupported,
+            WrongController,
         };
 
         public KindEnum Kind { get; set; }

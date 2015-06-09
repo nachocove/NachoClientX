@@ -65,6 +65,14 @@ namespace NachoCore.Model
         public const AccountCapabilityEnum SmtpCapabilities = (
                                                                   AccountCapabilityEnum.EmailSender
                                                               );
+
+        public const AccountCapabilityEnum DeviceCapabilities = (
+                                                                    AccountCapabilityEnum.CalReader |
+                                                                    AccountCapabilityEnum.CalWriter |
+                                                                    AccountCapabilityEnum.ContactReader |
+                                                                    AccountCapabilityEnum.ContactWriter
+                                                                );
+            
         
         // This type is stored in the db; add to the end
         [Flags]
@@ -111,24 +119,13 @@ namespace NachoCore.Model
             AccountType = value;
             switch (value) {
             case AccountTypeEnum.Exchange:
-                AccountCapability = (
-                    AccountCapabilityEnum.EmailReaderWriter |
-                    AccountCapabilityEnum.EmailSender |
-                    AccountCapabilityEnum.CalReader |
-                    AccountCapabilityEnum.CalWriter |
-                    AccountCapabilityEnum.ContactReader |
-                    AccountCapabilityEnum.ContactWriter);
+                AccountCapability = ActiveSyncCapabilities;
                 break;
             case AccountTypeEnum.Device:
-                    // FIXME - need to support full contact/cal access thru BE.
-                AccountCapability = (
-                    AccountCapabilityEnum.CalReader |
-                    AccountCapabilityEnum.ContactReader);
+                AccountCapability = DeviceCapabilities;
                 break;
             case AccountTypeEnum.IMAP_SMTP:
-                AccountCapability = (
-                    AccountCapabilityEnum.EmailReaderWriter |
-                    AccountCapabilityEnum.EmailSender);
+                AccountCapability = (ImapCapabilities | SmtpCapabilities);
                 break;
             default:
                 NcAssert.CaseError (value.ToString ());
@@ -162,7 +159,7 @@ namespace NachoCore.Model
                 Protocols = McProtocolState.ProtocolEnum.ActiveSync;
                 break;
             case AccountTypeEnum.Device:
-                // FIXME: Do we need anything here?
+                // No protocols.
                 break;
             default:
                 NcAssert.CaseError (value.ToString ());

@@ -15,12 +15,17 @@ namespace NachoPlatform
 {
     public sealed class Contacts : IPlatformContacts
     {
-        private const int SchemaRev = 0;
+        public const int SchemaRev = 0;
         private static volatile Contacts instance;
         private static object syncRoot = new Object ();
+        private static object AbLockObj = new Object ();
+        private ABAddressBook Ab;
+
+        public event EventHandler ChangeIndicator;
 
         private Contacts ()
         {
+            ABAddressBookCreate ();
         }
 
         public static Contacts Instance {
@@ -36,85 +41,16 @@ namespace NachoPlatform
             }
         }
 
-        public class PlatformContactRecordiOS : PlatformContactRecord
+        private void Dispatch (object sender, EventArgs ea)
         {
-            public override string UniqueId { get { return Person.Id.ToString (); } }
-
-            public override DateTime LastUpdate { get { return Person.ModificationDate.ToDateTime (); } }
-            // Person not to be referenced from platform independent code.
-            public ABPerson Person { get; set; }
-
-            public override NcResult ToMcContact (McContact contactToUpdate)
-            {
-                var accountId = McAccount.GetDeviceAccount ().Id;
-                McContact contact;
-                if (null == contactToUpdate) {
-                    contact = new McContact () {
-                        Source = McAbstrItem.ItemSource.Device,
-                        ServerId = "NachoDeviceContact:" + UniqueId,
-                        AccountId = accountId,
-                        OwnerEpoch = SchemaRev,
-                    };
-                } else {
-                    contact = contactToUpdate;
-                }
-                contact.FirstName = Person.FirstName;
-                contact.LastName = Person.LastName;
-                contact.MiddleName = Person.MiddleName;
-                contact.Suffix = Person.Suffix;
-                contact.NickName = Person.Nickname;
-                contact.YomiFirstName = Person.FirstNamePhonetic;
-                contact.YomiLastName = Person.LastNamePhonetic;
-                contact.CompanyName = Person.Organization;
-                contact.Title = Person.JobTitle;
-                contact.Department = Person.Department;
-                var emails = Person.GetEmails ();
-                int i = 1;
-                foreach (var email in emails) {
-                    // Check if the email address string is valid. iOS contact email address are not
-                    // guaranteed to be RFC compliant.
-                    var emailAddresses = NcEmailAddress.ParseAddressListString (email.Value);
-                    if (1 != emailAddresses.Count) {
-                        Log.Warn (Log.LOG_SYS, "Cannot import invalid email addresses (count={0})", emailAddresses.Count);
-                        continue;
-                    }
-                    contact.AddEmailAddressAttribute (accountId, string.Format ("Email{0}Address", i), null, email.Value);
-                    ++i;
-                }
-                var birthday = Person.Birthday;
-                if (null != birthday) {
-                    contact.AddDateAttribute (accountId, "Birthday", null, birthday.ToDateTime ());
-                }
-                if (null != Person.Note) {
-                    var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Person.Note);
-                    contact.BodyId = body.Id;
-                }
-                var phones = Person.GetPhones ();
-                foreach (var phone in phones) {
-                    var phoneLabel = (null == phone.Label) ? "" : phone.Label.ToString ();
-                    if (phoneLabel.Contains ("Work")) {
-                        contact.AddPhoneNumberAttribute (accountId, "BusinessPhoneNumber", "Work", phone.Value);
-                    } else if (phoneLabel.Contains ("Home")) {
-                        contact.AddPhoneNumberAttribute (accountId, "HomePhoneNumber", "Home", phone.Value);
-                    } else {
-                        // Guess mobile.
-                        contact.AddPhoneNumberAttribute (accountId, "MobilePhoneNumber", null, phone.Value);
-                    }
-                }
-                contact.DeviceCreation = Person.CreationDate.ToDateTime ();
-                contact.DeviceLastUpdate = LastUpdate;
-                contact.DeviceUniqueId = UniqueId;
-
-                if (Person.HasImage) {
-                    var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
-                    var portrait = McPortrait.InsertFile (accountId, data.ToArray ());
-                    contact.PortraitId = portrait.Id;
-                }
-                // TODO: Street addresses, IM addresses, etc.
-
-                return NcResult.OK (contact);
+            if (null != ChangeIndicator) {
+                ChangeIndicator (this, ea);
             }
         }
+
+        public bool AuthorizationStatus { get { 
+                return ABAuthorizationStatus.Authorized == ABAddressBook.GetAuthorizationStatus (); 
+            } }
 
         public bool ShouldWeBotherToAsk ()
         {
@@ -127,25 +63,28 @@ namespace NachoPlatform
             return false;
         }
 
-        private ABAddressBook ABAddressBookCreate ()
+        private void ABAddressBookCreate ()
         {
             NSError err; 
-            var ab = ABAddressBook.Create (out err);
+            Ab = ABAddressBook.Create (out err);
             if (null != err) {
                 Log.Error (Log.LOG_SYS, "ABAddressBook.Create: {0}", GetNSErrorString (err));
-                return null;
+                Ab = null;
             }
-            return ab;
+            // setup external change.
+            if (null != Ab) {
+                Ab.ExternalChange += Dispatch;
+            }
         }
 
         public void AskForPermission (Action<bool> result)
         {
-            var ab = ABAddressBookCreate ();
-            if (null == ab) {
+            ABAddressBookCreate ();
+            if (null == Ab) {
                 result (false);
                 return;
             }
-            ab.RequestAccess ((granted, reqErr) => {
+            Ab.RequestAccess ((granted, reqErr) => {
                 if (null != reqErr) {
                     Log.Error (Log.LOG_SYS, "ABAddressBook.RequestAccess: {0}", GetNSErrorString (reqErr));
                     result (false);
@@ -161,36 +100,37 @@ namespace NachoPlatform
 
         public IEnumerable<PlatformContactRecord> GetContacts ()
         {
-            if (ABAddressBook.GetAuthorizationStatus () != ABAuthorizationStatus.Authorized) {
-                Log.Warn (Log.LOG_SYS, "GetContacts: not Authorized: {0}", ABAddressBook.GetAuthorizationStatus ());
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedContactsPermission),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
-                return null;
-            }
-            var ab = ABAddressBookCreate ();
-            if (null == ab) {
-                return null;
-            }
-            var sources = ab.GetAllSources ();
-
             var retval = new List<PlatformContactRecordiOS> ();
-            Log.Info (Log.LOG_SYS, "GetContacts: Processing {0} sources", sources.Length);
-            foreach (var source in sources) {
-                switch (source.SourceType) {
-                case ABSourceType.Exchange:
-                case ABSourceType.ExchangeGAL:
-                    continue;
-                default:
-                    var peeps = ab.GetPeople (source);
-                    Log.Info (Log.LOG_SYS, "GetContacts: Processing source {0} with {1} contacts", source.SourceType, peeps.Length);
-                    foreach (var peep in peeps) {
-                        retval.Add (new PlatformContactRecordiOS () {
-                            Person = peep,
-                        });
+            lock (AbLockObj) {
+                if (ABAddressBook.GetAuthorizationStatus () != ABAuthorizationStatus.Authorized) {
+                    Log.Warn (Log.LOG_SYS, "GetContacts: not Authorized: {0}", ABAddressBook.GetAuthorizationStatus ());
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NeedContactsPermission),
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
+                    return null;
+                }
+                if (null == Ab) {
+                    return null;
+                }
+                var sources = Ab.GetAllSources ();
+                Log.Info (Log.LOG_SYS, "GetContacts: Processing {0} sources", sources.Length);
+                foreach (var source in sources) {
+                    switch (source.SourceType) {
+                    // FIXME - exclude only those sources we cover in EAS.
+                    case ABSourceType.Exchange:
+                    case ABSourceType.ExchangeGAL:
+                        continue;
+                    default:
+                        var peeps = Ab.GetPeople (source);
+                        Log.Info (Log.LOG_SYS, "GetContacts: Processing source {0} with {1} contacts", source.SourceType, peeps.Length);
+                        foreach (var peep in peeps) {
+                            retval.Add (new PlatformContactRecordiOS () {
+                                Person = peep,
+                            });
+                        }
+                        break;
                     }
-                    break;
                 }
             }
             return retval;
@@ -209,9 +149,170 @@ namespace NachoPlatform
                 }
                 return sb.ToString ();
             } catch {
-                return "";     
+                return "";
+            }
+        }
+
+        public NcResult Add (McContact contact)
+        {
+            try {
+                var person = new ABPerson ();
+                person.FirstName = contact.FirstName;
+                person.LastName = contact.LastName;
+                // FIXME DAVID - need full translator here.
+                lock (AbLockObj) {
+                    Ab.Add (person);
+                    Ab.Save ();
+                }
+                contact.DeviceUniqueId = person.Id.ToString ();
+                contact.Update ();
+                return NcResult.OK ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Contacts.Add: {0}", ex.ToString ());
+                return NcResult.Error ("Contacts.Add");
+            }
+        }
+
+        public NcResult Delete (McContact contact)
+        {
+            try {
+                lock (AbLockObj) {
+                    Ab.Revert ();
+                    var dead = Ab.GetPerson (int.Parse (contact.DeviceUniqueId));
+                    if (null == dead) {
+                        return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    }
+                    Ab.Remove (dead);
+                    Ab.Save ();
+                }
+                return NcResult.OK ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Contacts.Delete: {0}", ex.ToString ());
+                return NcResult.Error ("Contacts.Delete");
+            }
+        }
+
+        public NcResult Change (McContact contact)
+        {
+            try {
+                lock (AbLockObj) {
+                    Ab.Revert ();
+                    var changed = Ab.GetPerson (int.Parse (contact.DeviceUniqueId));
+                    if (null == changed) {
+                        return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    }
+                    if (null == contact.FirstName) {
+                        changed.FirstName = null;
+                    } else {
+                        changed.FirstName = contact.FirstName;
+                    }
+                    if (null == contact.LastName) {
+                        changed.LastName = null;
+                    } else {
+                        changed.LastName = contact.LastName;
+                    }
+                    // FIXME DAVID translator needed.
+                    Ab.Save ();
+                }
+                return NcResult.OK ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Contacts.Change: {0}", ex.ToString ());
+                return NcResult.Error ("Contacts.Change");
             }
         }
     }
-}
 
+    public class PlatformContactRecordiOS : PlatformContactRecord
+    {
+        public override string UniqueId { get { return Person.Id.ToString (); } }
+
+        public override DateTime LastUpdate { get { return Person.ModificationDate.ToDateTime (); } }
+        // Person not to be referenced from platform independent code.
+        public ABPerson Person { get; set; }
+
+        public override NcResult ToMcContact (McContact contactToUpdate)
+        {
+            var accountId = McAccount.GetDeviceAccount ().Id;
+            McContact contact;
+            if (null == contactToUpdate) {
+                contact = new McContact () {
+                    Source = McAbstrItem.ItemSource.Device,
+                    ServerId = "NachoDeviceContact:" + UniqueId,
+                    AccountId = accountId,
+                    OwnerEpoch = Contacts.SchemaRev,
+                };
+            } else {
+                contact = contactToUpdate;
+            }
+            contact.FirstName = Person.FirstName;
+            contact.LastName = Person.LastName;
+            contact.MiddleName = Person.MiddleName;
+            contact.Suffix = Person.Suffix;
+            contact.NickName = Person.Nickname;
+            contact.YomiFirstName = Person.FirstNamePhonetic;
+            contact.YomiLastName = Person.LastNamePhonetic;
+            contact.CompanyName = Person.Organization;
+            contact.Title = Person.JobTitle;
+            contact.Department = Person.Department;
+            var emails = Person.GetEmails ();
+            int i = 1;
+            if (null != emails) {
+                foreach (var email in emails) {
+                    // Check if the email address string is valid. iOS contact email address are not
+                    // guaranteed to be RFC compliant.
+                    var emailAddresses = NcEmailAddress.ParseAddressListString (email.Value);
+                    if (null == emailAddresses) {
+                        Log.Error (Log.LOG_SYS, "NcEmailAddress.ParseAddressListString returned null");
+                        continue;
+                    }
+                    if (1 != emailAddresses.Count) {
+                        Log.Warn (Log.LOG_SYS, "Cannot import invalid email addresses (count={0})", emailAddresses.Count);
+                        continue;
+                    }
+                    contact.AddEmailAddressAttribute (accountId, string.Format ("Email{0}Address", i), null, email.Value);
+                    ++i;
+                }
+            }
+            var birthday = Person.Birthday;
+            if (null != birthday) {
+                contact.AddDateAttribute (accountId, "Birthday", null, birthday.ToDateTime ());
+            }
+            if (null != Person.Note) {
+                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Person.Note);
+                contact.BodyId = body.Id;
+            }
+            var phones = Person.GetPhones ();
+            if (null != phones) {
+                foreach (var phone in phones) {
+                    if (null != phone.Value) {
+                        var phoneLabel = (null == phone.Label) ? "" : phone.Label.ToString ();
+                        if (phoneLabel.Contains ("Work")) {
+                            contact.AddPhoneNumberAttribute (accountId, "BusinessPhoneNumber", "Work", phone.Value);
+                        } else if (phoneLabel.Contains ("Home")) {
+                            contact.AddPhoneNumberAttribute (accountId, "HomePhoneNumber", "Home", phone.Value);
+                        } else {
+                            // Guess mobile.
+                            contact.AddPhoneNumberAttribute (accountId, "MobilePhoneNumber", null, phone.Value);
+                        }
+                    }
+                }
+            }
+            if (null != Person.CreationDate) {
+                contact.DeviceCreation = Person.CreationDate.ToDateTime ();
+            }
+            contact.DeviceLastUpdate = LastUpdate;
+            contact.DeviceUniqueId = UniqueId;
+
+            if (Person.HasImage) {
+                var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
+                if (null != data) {
+                    var portrait = McPortrait.InsertFile (accountId, data.ToArray ());
+                    contact.PortraitId = portrait.Id;
+                }
+            }
+            // TODO: Street addresses, IM addresses, etc.
+
+            return NcResult.OK (contact);
+        }
+    }
+}

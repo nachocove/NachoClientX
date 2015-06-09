@@ -8,6 +8,7 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using SQLite;
+using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.IMAP;
 using NachoCore.SMTP;
@@ -187,7 +188,7 @@ namespace NachoCore
             var account = McAccount.QueryById<McAccount> (accountId);
             switch (account.AccountType) {
             case McAccount.AccountTypeEnum.Device:
-                services.Enqueue (new NcProtoControl (this, accountId));
+                services.Enqueue (new DeviceProtoControl (this, accountId));
                 break;
 
             case McAccount.AccountTypeEnum.Exchange:

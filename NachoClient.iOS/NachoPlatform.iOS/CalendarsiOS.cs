@@ -17,10 +17,14 @@ namespace NachoPlatform
         private const int SchemaRev = 0;
         private static volatile Calendars instance;
         private static object syncRoot = new Object ();
-        private EKEventStore EventStore;
+        private EKEventStore Es;
+        private NSObject NotifToken = null;
+
+        public event EventHandler ChangeIndicator;
 
         private Calendars ()
         {
+            EKEventStoreCreate ();
         }
 
         public static Calendars Instance {
@@ -33,6 +37,13 @@ namespace NachoPlatform
                     }
                 }
                 return instance;
+            }
+        }
+
+        private void Dispatch (NSNotification dummy)
+        {
+            if (null != ChangeIndicator) {
+                ChangeIndicator (this, EventArgs.Empty);
             }
         }
 
@@ -237,6 +248,10 @@ namespace NachoPlatform
             }
         }
 
+        public bool AuthorizationStatus { get { 
+                return EKAuthorizationStatus.Authorized == EKEventStore.GetAuthorizationStatus (EKEntityType.Event); 
+            } }
+
         public bool ShouldWeBotherToAsk ()
         {
             if (EKAuthorizationStatus.NotDetermined == EKEventStore.GetAuthorizationStatus (EKEntityType.Event)) {
@@ -248,14 +263,30 @@ namespace NachoPlatform
             return false;
         }
 
+        private void EKEventStoreCreate ()
+        {
+            if (null != NotifToken) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (NotifToken);
+                NotifToken = null;
+            }
+            Es = new EKEventStore ();
+            if (null == Es) {
+                Log.Error (Log.LOG_SYS, "new EKEventStore failed");
+            }
+            // setup external change.
+            if (null != Es) {
+                NotifToken = NSNotificationCenter.DefaultCenter.AddObserver (EKEventStore.ChangedNotification, Dispatch, Es);
+            }
+        }
+
         public void AskForPermission (Action<bool> result)
         {
-            var eventStore = new EKEventStore ();
-            if (null == eventStore) {
+            EKEventStoreCreate ();
+            if (null == Es) {
                 result (false);
                 return;
             }
-            eventStore.RequestAccess (EKEntityType.Event,
+            Es.RequestAccess (EKEntityType.Event,
                 (granted, reqErr) => {
                     if (null != reqErr) {
                         Log.Error (Log.LOG_SYS, "EKEventStore.RequestAccess: {0}", Contacts.GetNSErrorString (reqErr));
@@ -280,14 +311,14 @@ namespace NachoPlatform
                 return null;
             }
 
-            if (null == EventStore) {
-                EventStore = new EKEventStore ();
+            if (null == Es) {
+                return null;
             }
 
-            // TODO: progressive pull with limits.
+            // FIXME DAVID - we only go a week back and out 6 months. we probably need to expand based on cal view?
             var start = DateTime.Now.AddDays (-7);
-            var end = DateTime.Now.AddMonths (1);
-            var calendars = EventStore.GetCalendars (EKEntityType.Event);
+            var end = DateTime.Now.AddMonths (6);
+            var calendars = Es.GetCalendars (EKEntityType.Event);
             var retval = new List<PlatformCalendarRecordiOS> ();
             var ignoredSources = new List<string> ();
             foreach (var calendar in calendars) {
@@ -296,6 +327,7 @@ namespace NachoPlatform
                     McAccount.AccountCapabilityEnum.CalReader == 
                     (account.AccountCapability & McAccount.AccountCapabilityEnum.CalReader)) {
                     // This is probably one of our accounts - note it as a source we want to ignore.
+                    // FIXME DAVID - we may need this anti-dup logic on the Contact side too.
                     if (null != calendar.Source && null != calendar.Source.Title) {
                         ignoredSources.Add (calendar.Source.Title.Trim ());
                     } else {
@@ -305,8 +337,8 @@ namespace NachoPlatform
             }
             calendars = calendars.Where (x => null == x.Source || null == x.Source.Title ||
             !ignoredSources.Contains (x.Source.Title.Trim ())).ToArray ();
-            var predicate = EventStore.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
-            var calEvents = EventStore.EventsMatching (predicate);
+            var predicate = Es.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
+            var calEvents = Es.EventsMatching (predicate);
             if (null != calEvents) {
                 foreach (var calEvent in calEvents) {
                     retval.Add (new PlatformCalendarRecordiOS () {
@@ -316,6 +348,101 @@ namespace NachoPlatform
             }
             return retval;
         }
+
+        public NcResult Add (McCalendar cal)
+        {
+            EKEvent ekEvent = null;
+            try {
+                ekEvent = EKEvent.FromStore (Es);
+                ekEvent.StartDate = cal.StartTime.DateTimeToNSDate ();
+                ekEvent.EndDate = cal.EndTime.DateTimeToNSDate ();
+                // FIXME DAVID - need full translator here. Also we may need to think about how we target the correct
+                // device calendar. worst case would be making it so that there is a device-based account PER 
+                // device synced calendar (maybe ugly but not impossible).
+                ekEvent.Calendar = Es.DefaultCalendarForNewEvents;
+                NSError err;
+                Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
+                if (null != err) {
+                    Log.Error (Log.LOG_SYS, "Add:Es.SaveEvent: {0}", Contacts.GetNSErrorString (err));
+                    return NcResult.Error ("Es.SaveEvent");
+                }
+                cal.DeviceUniqueId = ekEvent.EventIdentifier;
+                cal.Update ();
+                return NcResult.OK ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Calendar.Add: {0}", ex.ToString ());
+                return NcResult.Error ("Calendar.Add");
+            }
+        }
+
+        public NcResult Delete (McCalendar cal)
+        {
+            try {
+                var ekEvent = Es.EventFromIdentifier ( cal.DeviceUniqueId );
+                NSError err;
+                Es.RemoveEvent (ekEvent, EKSpan.ThisEvent, true, out err);
+                if (null != err) {
+                    Log.Error (Log.LOG_SYS, "Calendar.Delete: {0}", Contacts.GetNSErrorString (err));
+                    return NcResult.Error ("Calendar.Delete");
+                }
+                return NcResult.OK ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Calendar.Delete: {0}", ex.ToString ());
+                return NcResult.Error ("Calendar.Delete");
+            }
+        }
+
+        public NcResult Change (McCalendar cal)
+        {
+            try {
+                var ekEvent = Es.EventFromIdentifier ( cal.DeviceUniqueId );
+                if (null == ekEvent) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                }
+                ekEvent.StartDate = cal.StartTime.DateTimeToNSDate ();
+                // FIXME DAVID - need to fully translate McCalendar - to the extent that we can.
+                NSError err;
+                Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
+                if (null != err) {
+                    Log.Error (Log.LOG_SYS, "Change:Es.SaveEvent: {0}", Contacts.GetNSErrorString (err));
+                    return NcResult.Error ("Es.SaveEvent");
+                }
+                return NcResult.OK ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Calendar.Change: {0}", ex.ToString ());
+                return NcResult.Error ("Calendar.Change");
+            }
+        }
+    }
+
+    // TODO - find a good generic place for these.
+    // Extension methods provided by Xamarin:
+    // http://developer.xamarin.com/guides/cross-platform/macios/unified/
+    // (Our version actually compiles ;-)
+    public static partial class DateTime_Extension
+    {
+        public static NSDate DateTimeToNSDate(this DateTime date)
+        {
+            if (date.Kind == DateTimeKind.Unspecified) {
+                /* DateTimeKind.Local or DateTimeKind.Utc, this depends on each app */
+                date = DateTime.SpecifyKind (date, DateTimeKind.Utc);
+            }
+            return (NSDate)date;
+        }
+    }
+
+    public static partial class NSDate_Extension
+    {
+        public static DateTime NSDateToDateTime(this NSDate date)
+        {
+            // NSDate has a wider range than DateTime, so clip
+            // the converted date to DateTime.Min|MaxValue.
+            double secs = date.SecondsSinceReferenceDate;
+            if (secs < -63113904000)
+                return DateTime.MinValue;
+            if (secs > 252423993599)
+                return DateTime.MaxValue;
+            return (DateTime) date;
+        }
     }
 }
-

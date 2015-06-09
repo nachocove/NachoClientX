@@ -915,10 +915,6 @@ namespace NachoCore.ActiveSync
             });
         }
         // State-machine action methods.
-        private void DoNop ()
-        {
-        }
-
         private void DoUiServConfReq ()
         {
             // Send the request toward the UI.

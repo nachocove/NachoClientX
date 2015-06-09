@@ -172,8 +172,17 @@ namespace NachoPlatform
     {
         // Can be called from any thread.
         IEnumerable<PlatformContactRecord> GetContacts ();
+
+        event EventHandler ChangeIndicator;
+
         // Must be called from UI thread.
         void AskForPermission (Action<bool> result);
+
+        NcResult Add (McContact contact);
+        NcResult Delete (McContact contact);
+        NcResult Change (McContact contact);
+
+        bool AuthorizationStatus { get; }
     }
 
     public abstract class PlatformCalendarRecord
@@ -189,8 +198,17 @@ namespace NachoPlatform
     {
         // Can be called from any thread.
         IEnumerable<PlatformCalendarRecord> GetCalendars ();
+
+        event EventHandler ChangeIndicator;
+
         // Must be called from UI thread.
         void AskForPermission (Action<bool> result);
+
+        NcResult Add (McCalendar contact);
+        NcResult Delete (McCalendar contact);
+        NcResult Change (McCalendar contact);
+
+        bool AuthorizationStatus { get; }
     }
 
     public enum PowerStateEnum

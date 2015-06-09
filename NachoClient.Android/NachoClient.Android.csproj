@@ -431,6 +431,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\Device\DeviceProtoControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -598,6 +599,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
+    <Folder Include="NachoCore\BackEnd\Device\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

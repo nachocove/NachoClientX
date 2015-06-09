@@ -96,7 +96,7 @@ namespace NachoCore.IMAP
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
-                var search = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).
+                var search = McPending.QueryEligible (accountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.EmailSearch == x.Operation).FirstOrDefault ();
                 if (null != search) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailSearch");
@@ -104,7 +104,7 @@ namespace NachoCore.IMAP
                         new ImapSearchCommand (BEContext, search));
                 }
                 // (FG) If the user has initiated a body Fetch, we do that.
-                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ActiveSyncCapabilities).
+                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.EmailBodyDownload == x.Operation).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:EmailBodyDownload");
@@ -112,7 +112,7 @@ namespace NachoCore.IMAP
                         new ImapFetchBodyCommand (BEContext, fetch));
                 }
                 // (FG) If the user has initiated an attachment Fetch, we do that.
-                fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ActiveSyncCapabilities).
+                fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.AttachmentDownload == x.Operation).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG:AttachmentDownload");
@@ -166,7 +166,7 @@ namespace NachoCore.IMAP
                     }
                 }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
-                var next = McPending.QueryEligible (accountId, McAccount.ActiveSyncCapabilities).FirstOrDefault ();
+                var next = McPending.QueryEligible (accountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.EmailSearch);
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());

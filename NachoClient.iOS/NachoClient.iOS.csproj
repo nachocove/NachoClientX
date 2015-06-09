@@ -239,6 +239,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
+    <Folder Include="NachoCore\BackEnd\Device\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1488,6 +1489,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapWaitCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\Device\DeviceProtoControl.cs">
+      <Link>NachoCore\BackEnd\Device\DeviceProtoControl.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

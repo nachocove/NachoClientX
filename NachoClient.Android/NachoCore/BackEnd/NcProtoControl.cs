@@ -23,6 +23,10 @@ namespace NachoCore
             };
         }
 
+        protected void DoNop ()
+        {
+        }
+
         public int AccountId;
 
         public INcProtoControlOwner Owner { get; set; }
