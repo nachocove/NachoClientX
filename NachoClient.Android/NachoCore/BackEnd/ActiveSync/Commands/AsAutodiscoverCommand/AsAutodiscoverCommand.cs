@@ -650,12 +650,12 @@ namespace NachoCore.ActiveSync
 
         private void UpdateEmailAddressToAccount (string newEmailAddr)
         {
-            McAccount Account = McAccount.QueryById<McAccount> (BEContext.Account.Id);
-            McCred Credential = McCred.QueryByAccountId<McCred> (BEContext.Account.Id).SingleOrDefault ();
-            Account.EmailAddr = newEmailAddr;
-            Account.Update ();
-            Credential.Username = newEmailAddr;
-            Credential.Update ();
+            var account = BEContext.Account;
+            account.EmailAddr = newEmailAddr;
+            account.Update ();
+            var cred = BEContext.Cred;
+            cred.Username = newEmailAddr;
+            cred.Update ();
         }
 
         private void DoStepsPllRestart ()
