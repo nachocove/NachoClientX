@@ -161,7 +161,7 @@ namespace NachoCore.ActiveSync
                             // Stop robots and start over.
                             new Trans {
                                 Event = (uint)SharedEvt.E.ReStart,
-                                Act = RestartDoStepsPll,
+                                Act = DoStepsPllRestart,
                                 State = (uint)Lst.RobotW
                             },
                             // Stop and re-start robots, then wait.
@@ -576,7 +576,7 @@ namespace NachoCore.ActiveSync
             Credential.Update ();
         }
 
-        private void RestartDoStepsPll ()
+        private void DoStepsPllRestart ()
         {
             if (Sm.Arg != null) {
                 StepRobot robot = (StepRobot)Sm.Arg;
