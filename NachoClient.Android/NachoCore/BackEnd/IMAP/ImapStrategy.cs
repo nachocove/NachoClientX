@@ -53,6 +53,13 @@ namespace NachoCore.IMAP
             return KBaseNoIdlePollTime;
         }
 
+        private bool folderNeedsResync(McFolder folder)
+        {
+            //return (ulong)folder.CurImapHighestModSeq != (ulong)folder.LastImapHighestModSeq;
+            // TODO Need to understand HighestModSeq better! seems to return the same for every folder. Is it global?
+            return false;
+
+        }
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder, bool UserRequested = false)
         {
             if (folder.ImapNoSelect) {
@@ -83,10 +90,19 @@ namespace NachoCore.IMAP
                 syncKit.Method = SyncKit.MethodEnum.OpenOnly;
                 return syncKit;
             }
+            if (folderNeedsResync (folder) || UserRequested) {
+                // HACK ALERT -- reset the lowest and highest to resync everything.
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ImapUidHighestUidSynced = UInt32.MinValue;
+                    target.ImapUidLowestUidSynced = UInt32.MaxValue;
+                    return true;
+                });
+            }
             if (folder.ImapUidNext - 1 > folder.ImapUidHighestUidSynced) {
                 // Prefer to sync from latest toward oldest.
                 // Start as high as we can, guard against the scenario where Span > UidNext.
-                syncKit.Span = 5; // use a very small window for the first sync, so we quickly get stuff back to display
+                syncKit.Span = 10; // use a very small window for the first sync, so we quickly get stuff back to display
                 syncKit.Start =
                     Math.Max (folder.ImapUidHighestUidSynced, 
                         (syncKit.Span + 1) >= folder.ImapUidNext ? 1 : 
@@ -109,6 +125,7 @@ namespace NachoCore.IMAP
                     Math.Min (syncKit.Span, folder.ImapUidLowestUidSynced - syncKit.Start);
                 return syncKit;
             }
+
             return null;
         }
 

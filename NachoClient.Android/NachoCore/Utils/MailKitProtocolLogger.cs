@@ -5,6 +5,7 @@ using MailKit;
 using NachoCore.Utils;
 using System.Text;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.Utils
 {
@@ -13,19 +14,32 @@ namespace NachoCore.Utils
         private string logPrefix { get; set; }
         private ulong logModule { get; set; }
 
+        string authPattern = "^.*(AUTH|AUTHENTICATE) (PLAIN) (.*)$";
+        Regex AuthRegex;
+
         public MailKitProtocolLogger (string prefix, ulong module)
         {
             logPrefix = logPrefix;
             logModule = module;
+
+            AuthRegex = new Regex(authPattern);
+            NcAssert.NotNull (AuthRegex);
         }
         public void LogConnect (Uri uri)
         {
             if (uri == null)
                 throw new ArgumentNullException ("uri");
 
-            Log.Info (Log.LOG_SMTP, "Connected to {0}", uri);
+            Log.Info (logModule, "Connected to {0}", uri);
         }
 
+        private string RedactString(string line)
+        {
+            if (AuthRegex.IsMatch (line)) {
+                line = AuthRegex.Replace(line, "$1 $2 <elided>");
+            }
+            return line;
+        }
         private void logBuffer (string prefix, byte[] buffer, int offset, int count)
         {
             char[] delimiterChars = { '\n' };
@@ -33,7 +47,7 @@ namespace NachoCore.Utils
 
             Array.ForEach (lines, (line) => {
                 if (line.Length > 0) {
-                    Log.Info (logModule, "{0}{1}{2}", logPrefix, prefix, line);
+                    Log.Info (logModule, "{0}{1}{2}", logPrefix, prefix, RedactString(line));
                 }
             });
         }

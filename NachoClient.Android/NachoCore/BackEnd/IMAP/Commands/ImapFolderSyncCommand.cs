@@ -1,21 +1,11 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.IO;
-using System.Xml.Linq;
 using NachoCore.Utils;
-using System.Threading;
-using MimeKit;
 using MailKit;
-using MailKit.Search;
-using MailKit.Net.Imap;
 using NachoCore;
-using NachoCore.Brain;
 using NachoCore.Model;
-using MailKit.Security;
-using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.IMAP
 {
@@ -48,45 +38,75 @@ namespace NachoCore.IMAP
 
             // Process all incoming folders. Create or update them
             List<string> foldernames = new List<string> (); // Keep track of folder names, so we can compare later.
+            bool added_or_changed = false;
             foreach (var mailKitFolder in folderList) {
                 foldernames.Add (mailKitFolder.FullName);
 
+                ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
+                bool isDistinguished;
+
                 if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2, mailKitFolder.Name, true);
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Sent)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5, mailKitFolder.Name, true);
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Drafts)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, mailKitFolder.Name, true);
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Trash)) {
-                    CreateOrUpdateFolder (mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4, mailKitFolder.Name, true);
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
+                    isDistinguished = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    folderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Archive)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, McFolder.ARCHIVE_DISPLAY_NAME, false);
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.All)) {
-                    CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
                 }
                 else {
                     if ("notes" == mailKitFolder.Name.ToLower ()) {
-                        CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10, mailKitFolder.Name, true);
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
+                        isDistinguished = true;
                     } else {
-                        CreateOrUpdateFolder (mailKitFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                        isDistinguished = false;
                     }
+                }
+                McFolder folder;
+                if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
+                    added_or_changed = true;
+                    // TODO do ApplyCommand stuff here
+                }
+                NcAssert.NotNull (folder);
+                if (UpdateImapSetting(mailKitFolder, folder)) {
+                    // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
+                    // Strategy will notice that modseq and/or noselect etc has changed, and resync.
+                    Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ServerId);
                 }
             }
 
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
             foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
                 if (!foldernames.Contains (folder.ServerId)) {
-                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server");
+                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server", folder.ServerId);
+                    // TODO Do applyCommand stuff here
+                    // Delete folder and everything in and under it.
                     folder.Delete ();
                 }
+            }
+
+            if (added_or_changed) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
             }
 
             var protocolState = BEContext.ProtocolState;
@@ -97,50 +117,5 @@ namespace NachoCore.IMAP
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
-
-        private string parentId(IMailFolder mailKitFolder)
-        {
-            return null != mailKitFolder.ParentFolder && string.Empty != mailKitFolder.ParentFolder.FullName ?
-                mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
-        }
-
-        protected void CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished)
-        {
-            McFolder existing;
-            if (isDisinguished) {
-                existing = McFolder.GetDistinguishedFolder (BEContext.Account.Id, folderType);
-            } else {
-                existing = McFolder.GetUserFolders (BEContext.Account.Id, folderType, parentId(mailKitFolder), mailKitFolder.Name).SingleOrDefault ();
-            }
-
-            if ((null != existing) && (existing.ImapUidValidity < mailKitFolder.UidValidity)) {
-                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} < {2})", mailKitFolder.FullName, existing.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
-                existing.Delete ();
-                existing = null;
-            }
-
-            if (null == existing) {
-                // Add it
-                var created = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, parentId(mailKitFolder), mailKitFolder.FullName, mailKitFolder.Name, folderType);
-                created.ImapUidValidity = mailKitFolder.UidValidity;
-                created.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
-                created.Insert ();
-            } else if (existing.ServerId != mailKitFolder.FullName ||
-                       existing.DisplayName != folderDisplayName ||
-                       existing.ImapNoSelect != mailKitFolder.Attributes.HasFlag(FolderAttributes.NoSelect) ||
-                       existing.ImapUidValidity != mailKitFolder.UidValidity) {
-                // update.
-                existing = existing.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ServerId = mailKitFolder.FullName;
-                    target.DisplayName = folderDisplayName;
-                    target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
-                    target.ImapUidValidity = mailKitFolder.UidValidity;
-                    return true;
-                });
-                return;
-            }
-        }
     }
-
 }

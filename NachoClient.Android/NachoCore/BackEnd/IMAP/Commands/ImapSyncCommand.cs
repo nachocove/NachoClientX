@@ -48,51 +48,32 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
             FolderAccess access;
-            mailKitFolder = Client.GetFolder (folder.ServerId);
-            if (null == mailKitFolder) {
-                return null;
-            }
-            access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-            if (FolderAccess.None == access) {
-                return null;
+            lock (Client.SyncRoot) {
+                mailKitFolder = Client.GetFolder (folder.ServerId);
+                if (null == mailKitFolder) {
+                    return null;
+                }
+                access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                if (FolderAccess.None == access) {
+                    return null;
+                }
             }
             return mailKitFolder;
         }
 
+        private const string KImapSearchTiming = "IMAP Folder Search";
+        private const string KImapFetchTiming = "IMAP Summary Fetch";
+        private const string KImapPreviewGeneration = "IMAP Preview Generation";
+
         protected override Event ExecuteCommand ()
         {
-            var sw = new PlatformStopwatch ();
             IMailFolder mailKitFolder;
-            List<MailSummary> summaries = new List<MailSummary> ();
-            switch (SyncKit.Method) {
-            case SyncKit.MethodEnum.Range:
-                IList<IMessageSummary> imapSummaries = null;
+            NcCapture cap;
+            NcCapture.AddKind (KImapSearchTiming);
+            NcCapture.AddKind (KImapFetchTiming);
+            NcCapture.AddKind (KImapPreviewGeneration);
 
-                lock (Client.SyncRoot) {
-                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                    if (null == mailKitFolder) {
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
-                    }
-                    sw.Start ();
-                    imapSummaries = mailKitFolder.Fetch (
-                        new UniqueIdRange (new UniqueId (mailKitFolder.UidValidity, SyncKit.Start),
-                            new UniqueId (mailKitFolder.UidValidity, SyncKit.Start + SyncKit.Span)),
-                        SyncKit.Flags, Cts.Token);
-                    sw.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, sw.ElapsedMilliseconds);
-                }
-                sw.Start ();
-                foreach (var imapSummary in imapSummaries) {
-                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                    summaries.Add (new MailSummary () {
-                        imapSummary = imapSummary as MessageSummary,
-                        preview = preview,
-                    });
-                }
-                sw.Stop ();
-                Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, sw.ElapsedMilliseconds);
-                break;
-            case SyncKit.MethodEnum.OpenOnly:
+            if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
                 IList<UniqueId> uids;
                 lock (Client.SyncRoot) {
@@ -100,11 +81,11 @@ namespace NachoCore.IMAP
                     if (null == mailKitFolder) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
                     }
-                    sw.Start ();
+                    cap = NcCapture.CreateAndStart (KImapSearchTiming);
                     var query = SearchQuery.NotDeleted;
                     uids = mailKitFolder.Search (query);  // FIXME This does a 1:* search. We'll need to narrow that down in case the mailbox is huge.
-                    sw.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved search all non-deleted messages in {0}ms. Found {1} uids", sw.ElapsedMilliseconds, uids.Count);
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved search all non-deleted messages in {0}ms. Found {1} uids", cap.ElapsedMilliseconds, uids.Count);
                 }
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
@@ -112,33 +93,61 @@ namespace NachoCore.IMAP
                     target.ImapUidValidity = mailKitFolder.UidValidity;
                     target.ImapLowestUid = (0 == uids.Count) ? 1 : uids.Min ().Id;
                     target.ImapLastExamine = DateTime.UtcNow;
+                    target.CurImapHighestModSeq = (long)(mailKitFolder.SupportsModSeq ? mailKitFolder.HighestModSeq : 0);
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
             }
-            if (null != summaries && 0 < summaries.Count) {
-                uint maxUid = UInt32.MinValue;
-                uint minUid = UInt32.MaxValue;
+
+            List<MailSummary> summaries = new List<MailSummary> ();
+            uint MaxSynced;
+            uint MinSynced;
+            switch (SyncKit.Method) {
+            default:
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETH");
+
+            // Process the various Methods here.
+            case SyncKit.MethodEnum.Range:
+                IList<IMessageSummary> imapSummaries = null;
+                lock (Client.SyncRoot) {
+                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                    if (null == mailKitFolder) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
+                    }
+                    cap = NcCapture.CreateAndStart (KImapFetchTiming);
+                    UniqueIdRange range = new UniqueIdRange (new UniqueId (mailKitFolder.UidValidity, SyncKit.Start),
+                                              new UniqueId (mailKitFolder.UidValidity, SyncKit.Start + SyncKit.Span));
+                    imapSummaries = mailKitFolder.Fetch (range, SyncKit.Flags, Cts.Token);
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    MaxSynced = range.Max ().Id;
+                    MinSynced = range.Min ().Id;
+                    cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
+                    foreach (var imapSummary in imapSummaries) {
+                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                        summaries.Add (new MailSummary () {
+                            imapSummary = imapSummary as MessageSummary,
+                            preview = preview,
+                        });
+                    }
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                }
+                break;
+            }
+
+            if (0 < summaries.Count) {
                 foreach (var summary in summaries) {
                     // FIXME use NcApplyServerCommand framework.
                     ServerSaysAddOrChangeEmail (summary, SyncKit.Folder);
-                    var uniqueId = summary.imapSummary.UniqueId.Value.Id;
-                    maxUid = Math.Max (maxUid, uniqueId);
-                    minUid = Math.Min (minUid, uniqueId);
                 }
-                SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ImapUidHighestUidSynced = Math.Max (maxUid, target.ImapUidHighestUidSynced);
-                    target.ImapUidLowestUidSynced = Math.Min (minUid, target.ImapUidLowestUidSynced);
-                    return true;
-                });
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-            } else {
-                // All the messages could be deleted on the server. Record UIDs of the dead spot to keep from looping.
+            }
+            if (SyncKit.MethodEnum.Range == SyncKit.Method) {
                 SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
-                    target.ImapUidHighestUidSynced = Math.Max (SyncKit.Start + SyncKit.Span, target.ImapUidHighestUidSynced);
-                    target.ImapUidLowestUidSynced = Math.Min (SyncKit.Start, target.ImapUidLowestUidSynced);
+                    target.ImapUidHighestUidSynced = Math.Max (MaxSynced, target.ImapUidHighestUidSynced);
+                    target.ImapUidLowestUidSynced = Math.Min (MinSynced, target.ImapUidLowestUidSynced);
                     return true;
                 });
             }
@@ -156,6 +165,7 @@ namespace NachoCore.IMAP
                 var target = (McFolder)record;
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
+                target.LastImapHighestModSeq = (long)(mailKitFolder.SupportsModSeq ? mailKitFolder.HighestModSeq : 0);
                 return true;
             });
             PendingResolveApply ((pending) => {
@@ -172,7 +182,7 @@ namespace NachoCore.IMAP
                 return null;
             }
 
-            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, summary.imapSummary.UniqueId.Value.ToString ());
+            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, summary.imapSummary.UniqueId.Value);
 
             // If the server attempts to overwrite, delete the pre-existing record first.
             var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);

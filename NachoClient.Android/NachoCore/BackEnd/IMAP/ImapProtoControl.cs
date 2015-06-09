@@ -351,7 +351,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static string MessageServerId(McFolder folder, string ImapMessageUid)
+        public static string MessageServerId(McFolder folder, UniqueId ImapMessageUid)
         {
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
