@@ -568,12 +568,15 @@ namespace NachoCore.ActiveSync
 
         private void UpdateEmailAddressToAccount (string newEmailAddr)
         {
+            var cred = BEContext.Cred;
             var account = BEContext.Account;
+            if (cred.Username.Equals (account.EmailAddr, StringComparison.Ordinal)) {
+                // cred.Username is the same as the current account.EmailAddr
+                cred.Username = newEmailAddr;
+                cred.Update ();
+            }
             account.EmailAddr = newEmailAddr;
             account.Update ();
-            var cred = BEContext.Cred;
-            cred.Username = newEmailAddr;
-            cred.Update ();
         }
 
         private void DoStepsPllRestart ()
@@ -581,7 +584,7 @@ namespace NachoCore.ActiveSync
             if (Sm.Arg != null) {
                 StepRobot robot = (StepRobot)Sm.Arg;
                 if (!robot.SrEmailAddr.Equals (BEContext.Account.EmailAddr, StringComparison.Ordinal)) {
-                    Log.Info (Log.LOG_AS, "AUTOD::Will restart Auto Discovery with new email address/domain {0}", robot.SrDomain);                   
+                    Log.Info (Log.LOG_AS, "AUTOD::Will restart auto discovery with new email address/domain {0}", robot.SrDomain);                   
                     UpdateEmailAddressToAccount (robot.SrEmailAddr);
                     Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
                     BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
@@ -657,7 +660,7 @@ namespace NachoCore.ActiveSync
         // check if robots are still doing subdomain discovery
         private bool AreSubDomainRobotsDone ()
         {
-            return((Robots.Where (x => x.SrDomain.Equals (Domain, StringComparison.Ordinal))).Count () == 0);
+            return(!Robots.Any (x => x.IsUserSpecifiedDomain));
         }
 
         // DeQueue all queued events that the base domain robots may have sent
@@ -685,10 +688,9 @@ namespace NachoCore.ActiveSync
 
         private bool ShouldEnQueueRobotEvent (Event Event, StepRobot Robot)
         {
-            // if robot domain is not the same as domain, the robot reporting is running discovery for base domain
+            // if robot domain is not the user specified domain, the robot reporting is running discovery for base domain
             // enqueue base domain robot events only if subdomain robots are not done 
-            // enqueue all events from base domain
-            return !Robot.IsUserSpecifiedDomain && !Robot.SrDomain.Equals (Domain, StringComparison.Ordinal) && !SubdomainComplete;
+            return !Robot.IsUserSpecifiedDomain && !SubdomainComplete;
         }
 
         private void DoQueueSuccess ()
