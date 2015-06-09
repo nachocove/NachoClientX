@@ -142,9 +142,9 @@ namespace NachoCore.Model
             var queryString = String.Format (
                                   "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0} WHERE Id IN " +
                                   " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
-                                  "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta, (int)addressKind);
+                                  "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta);
             NcModel.Instance.RunInLock (() => {
-                NcModel.Instance.Db.Execute (queryString, Id);
+                NcModel.Instance.Db.Execute (queryString, Id, (int)addressKind);
             });
         }
 

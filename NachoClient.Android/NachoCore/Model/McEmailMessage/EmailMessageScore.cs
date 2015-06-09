@@ -173,13 +173,6 @@ namespace NachoCore.Model
                     }
                     emailAddress.Score = emailAddress.Classify ();
                     emailAddress.UpdateByBrain ();
-
-                    // Add Sender dependency
-                    McEmailMessageDependency dep = new McEmailMessageDependency (AccountId);
-                    dep.EmailMessageId = Id;
-                    dep.EmailAddressId = emailAddress.Id;
-                    dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
-                    dep.InsertByBrain ();
                 } else {
                     Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
