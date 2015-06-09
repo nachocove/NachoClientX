@@ -37,18 +37,19 @@ namespace NachoCore.IMAP
 
         public static void MoveEmail(ImapClient Client, McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
         {
-            // Caller must ensure Client.SyncRoot is locked!
+            UniqueId? newUid;
+            lock (Client.SyncRoot) {
+                var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
+                var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
+                NcAssert.Equals (folderGuid, src.ImapGuid);
+                var srcFolder = Client.GetFolder (src.ServerId, Token);
+                NcAssert.NotNull (srcFolder);
+                var dstFolder = Client.GetFolder (dst.ServerId, Token);
+                NcAssert.NotNull (dstFolder);
 
-            var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
-            var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-            NcAssert.Equals (folderGuid, src.ImapGuid);
-            var srcFolder = Client.GetFolder (src.ServerId, Token);
-            NcAssert.NotNull (srcFolder);
-            var dstFolder = Client.GetFolder (dst.ServerId, Token);
-            NcAssert.NotNull (dstFolder);
-
-            srcFolder.Open (FolderAccess.ReadWrite, Token);
-            UniqueId? newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
+                srcFolder.Open (FolderAccess.ReadWrite, Token);
+                newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
+            }
             if (null != newUid && newUid.HasValue && 0 != newUid.Value.Id) {
                 emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;
