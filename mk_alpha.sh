@@ -25,8 +25,7 @@ die () {
 }
 
 # Fetch all git repos and switch to the specific branch
-source repos.sh
-./fetch.py $repos || die "fail to fetch all repos!"
+./scripts/fetch.py || die "fail to fetch all repos!"
 ./scripts/repos.py checkout-branch --branch $branch || die "fail to switch to branch $branch"
 
 # Build everything else

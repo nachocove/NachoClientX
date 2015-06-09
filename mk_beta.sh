@@ -25,8 +25,7 @@ die () {
 }
 
 # Fetch all git repos and check out the tag.
-source repos.sh
-./fetch.py $repos || die "fail to fetch all repos!"
+./scripts/fetch.py || die "fail to fetch all repos!"
 ./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
 
 # Check if the branch matches the given one
