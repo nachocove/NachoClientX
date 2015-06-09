@@ -25,11 +25,8 @@ namespace NachoCore.IMAP
             }
             mailKitFolder.Delete (Cts.Token);
 
-            NcModel.Instance.RunInTransaction (() => {
-                // TODO Do some ApplyCommand stuff here
-                // Blow folder (and subitems) away
-                folder.Delete ();
-            });
+            // Blow folder (and subitems) away
+            folder.Delete ();
 
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
             PendingResolveApply ((pending) => {
