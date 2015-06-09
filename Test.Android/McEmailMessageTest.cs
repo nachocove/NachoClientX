@@ -872,6 +872,125 @@ namespace Test.Common
             spamFolder.Delete ();
             inboxFolder.Delete ();
         }
+
+        [Test]
+        public void TestQueryNeedAnalysis ()
+        {
+            var messages = new McEmailMessage[4];
+
+            messages [0] = new McEmailMessage () {
+                Subject = "Do not need analysis",
+                ScoreVersion = Scoring.Version,
+                HasBeenGleaned = 1,
+            };
+            messages [1] = new McEmailMessage () {
+                Subject = "Is analyzed for current version only",
+                ScoreVersion = Scoring.Version - 1,
+                HasBeenGleaned = 1,
+            };
+            messages [2] = new McEmailMessage () {
+                Subject = "Is analyzed for all versions",
+                ScoreVersion = 0,
+                HasBeenGleaned = 1,
+            };
+            messages [3] = new McEmailMessage () {
+                Subject = "Is not analyzed coz not gleaned",
+                ScoreVersion = 0,
+                HasBeenGleaned = 0,
+            };
+
+            foreach (var message in messages) {
+                message.AccountId = 1;
+                message.From = "bob@company.net";
+                int rows = message.Insert ();
+                Assert.AreEqual (1, rows);
+                Assert.True (0 < message.Id);
+            }
+
+            // Query for 4 latest version. Should get two
+            var results1 = McEmailMessage.QueryNeedAnalysis (4);
+            Assert.AreEqual (2, results1.Count);
+            Assert.AreEqual (messages [2].Id, results1 [0].Id);
+            Assert.AreEqual (messages [1].Id, results1 [1].Id);
+
+            // Query for 1 latest version. Should get 1
+            var results2 = McEmailMessage.QueryNeedAnalysis (1);
+            Assert.AreEqual (1, results2.Count);
+            Assert.AreEqual (messages [2].Id, results2 [0].Id);
+
+            // Query for 2 version 1. Should get 1
+            var results3 = McEmailMessage.QueryNeedAnalysis (2, 1);
+            Assert.AreEqual (1, results3.Count);
+            Assert.AreEqual (messages [2].Id, results3 [0].Id);
+        }
+
+        [Test]
+        public void TestQueryNeedUpdate ()
+        {
+            var messages = new McEmailMessage[6];
+
+            messages [0] = new McEmailMessage () {
+                Subject = "Do not need update",
+                ScoreVersion = Scoring.Version,
+                NeedUpdate = 0,
+            };
+            messages [1] = new McEmailMessage () {
+                Subject = "Need update but is not updated",
+                ScoreVersion = Scoring.Version - 1,
+                NeedUpdate = 1,
+            };
+            messages [2] = new McEmailMessage () {
+                Subject = "Is updated",
+                ScoreVersion = Scoring.Version,
+                NeedUpdate = 25,
+            };
+            messages [3] = new McEmailMessage () {
+                Subject = "Is updated",
+                ScoreVersion = Scoring.Version,
+                NeedUpdate = 21,
+            };
+            messages [4] = new McEmailMessage () {
+                Subject = "Is updated",
+                ScoreVersion = Scoring.Version,
+                NeedUpdate = 20,
+            };
+            messages [5] = new McEmailMessage () {
+                Subject = "Is updated",
+                ScoreVersion = Scoring.Version,
+                NeedUpdate = 1,
+            };
+
+            foreach (var message in messages) {
+                message.AccountId = 1;
+                message.From = "bob@company.net";
+                int rows = message.Insert ();
+                Assert.AreEqual (1, rows);
+                Assert.True (0 < message.Id);
+            }
+
+            // Query for 5 above. Should get 2
+            var results1 = McEmailMessage.QueryNeedUpdate (5, above: true);
+            Assert.AreEqual (2, results1.Count);
+            Assert.AreEqual (messages [2].Id, results1 [0].Id);
+            Assert.AreEqual (messages [3].Id, results1 [1].Id);
+
+            // Query for 5 below. Should get 2
+            var results2 = McEmailMessage.QueryNeedUpdate (5, above: false);
+            Assert.AreEqual (2, results2.Count);
+            Assert.AreEqual (messages [4].Id, results2 [0].Id);
+            Assert.AreEqual (messages [5].Id, results2 [1].Id);
+
+            // Query for 4 above 21. Should get 1
+            var results3 = McEmailMessage.QueryNeedUpdate (4, above: true, threshold: 21);
+            Assert.AreEqual (1, results3.Count);
+            Assert.AreEqual (messages [2].Id, results3 [0].Id);
+
+            // Query for 2 below 21. SHould get 2
+            var results4 = McEmailMessage.QueryNeedUpdate (2, above: false, threshold: 21);
+            Assert.AreEqual (2, results4.Count);
+            Assert.AreEqual (messages [3].Id, results4 [0].Id);
+            Assert.AreEqual (messages [4].Id, results4 [1].Id);
+        }
     }
 }
 

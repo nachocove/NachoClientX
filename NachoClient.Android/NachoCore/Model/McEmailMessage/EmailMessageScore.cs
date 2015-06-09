@@ -278,10 +278,18 @@ namespace NachoCore.Model
 
         public static List<McEmailMessage> QueryNeedUpdate (int count, bool above, int threshold = 20)
         {
-            var query = String.Format (
-                            "SELECT e.* FROM McEmailMessage AS e " +
-                            " WHERE e.NeedUpdate {0} ? AND e.ScoreVersion = ?" +
-                            " LIMIT ?", above ? ">" : "<=");
+            string query;
+            if (above) {
+                query = String.Format (
+                    "SELECT e.* FROM McEmailMessage AS e " +
+                    " WHERE e.NeedUpdate > ? AND e.ScoreVersion = ? " +
+                    " LIMIT ?");
+            } else {
+                query = String.Format (
+                    "SELECT e.* FROM McEmailMessage AS e " +
+                    " WHERE e.NeedUpdate <= ? AND e.NeedUpdate > 0 AND e.ScoreVersion = ? " +
+                    " LIMIT ?");
+            }
             return NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
         }
 
