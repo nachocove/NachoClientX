@@ -161,6 +161,10 @@
       <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
       <Name>NachoPlatformBinding.Android</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.Android.csproj">
+      <Project>{9BF818C3-C20E-4EFB-9426-F0A6C2EDC627}</Project>
+      <Name>MailKit.Android</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\xsd\" />
