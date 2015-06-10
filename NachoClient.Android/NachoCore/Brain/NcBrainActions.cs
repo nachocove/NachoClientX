@@ -48,6 +48,9 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
+            if (!GleanEmailMessage (emailMessage)) {
+                return false;
+            }
             emailMessage.Analyze ();
             return true;
         }
