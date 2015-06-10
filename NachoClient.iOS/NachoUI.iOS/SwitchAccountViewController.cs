@@ -50,7 +50,7 @@ namespace NachoClient.iOS
             accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: false);
+            accountsTableViewSource.Setup (this, showAccessory: false, showUnreadCount:true);
             accountsTableView.Source = accountsTableViewSource;
 
             View.AddSubview (accountsTableView);
@@ -115,6 +115,7 @@ namespace NachoClient.iOS
         public void AccountSelected (McAccount account)
         {
             var spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
+            spinner.Center = View.Center;
             View.AddSubview (spinner);
             spinner.StartAnimating ();
             spinner.HidesWhenStopped = true;
