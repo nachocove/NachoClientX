@@ -291,8 +291,11 @@ namespace NachoClient.iOS
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            switch (((StatusIndEventArgs)e).Status.SubKind) {
-
+            var s = (StatusIndEventArgs)e;
+            if (!s.AppliesToAccount (currentAccount)) {
+                return;
+            }
+            switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
