@@ -286,7 +286,7 @@ namespace NachoClient.iOS
             return false;
         }
 
-        public virtual bool HasAccountSwitcher()
+        public virtual bool HasAccountSwitcher ()
         {
             return false;
         }
@@ -356,15 +356,20 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            switch (s.Status.SubKind) {
 
+            if (null != s.Account) {
+                var m = messageSource.GetNachoEmailMessages ();
+                if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
+                    return;
+                }
+            }
+            switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
                 break;
-
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
                 UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());
