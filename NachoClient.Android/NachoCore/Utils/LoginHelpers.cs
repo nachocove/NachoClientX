@@ -149,8 +149,13 @@ namespace NachoCore.Utils
 
         static public int GetMostRecentAccountId()
         {
-            var deviceId = McAccount.GetDeviceAccount ().Id;
-            return McMutables.GetInt (deviceId, "AccountSwitcher", "MostRecent", 0);
+            var device = McAccount.GetDeviceAccount ();
+            // FIXME, maybe
+            if (null != device) {
+                return McMutables.GetInt (device.Id, "AccountSwitcher", "MostRecent", 0);
+            } else {
+                return 0;
+            }
         }
 
         public static McAccount PickStartupAccount()
