@@ -67,6 +67,13 @@ namespace NachoClient.iOS
                 switchButton.SetImage (image, UIControlState.Highlighted);
             }
         }
+
+        public void SetHaloColor(UIColor color)
+        {
+            UIView.Animate (0.3, () => {
+                haloView.BackgroundColor = color;
+            });
+        }
     }
 
     public class AddAccountCell : UIView

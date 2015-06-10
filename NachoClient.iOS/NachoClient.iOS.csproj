@@ -1489,6 +1489,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainEventHandler.cs">
       <Link>NachoCore\Brain\NcBrainEventHandler.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\UnreadMessagesView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
