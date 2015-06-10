@@ -110,8 +110,8 @@ namespace NachoCore.IMAP
                         currentHighestInFolder - syncKit.Span);
                 syncKit.Span =
                     Math.Min (syncKit.Span, 
-                        (folder.ImapUidHighestUidSynced >= folder.ImapUidNext) ? 1 :
-                        currentHighestInFolder - folder.ImapUidHighestUidSynced);
+                        ((folder.ImapUidHighestUidSynced + 1) >= currentHighestInFolder) ? 1 :
+                        currentHighestInFolder - (folder.ImapUidHighestUidSynced + 1));
                 return syncKit;
             }
             if (currentHighestInFolder > 0 && // are there any messages at all?

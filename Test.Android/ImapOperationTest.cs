@@ -82,21 +82,37 @@ namespace Test.iOS
         [Test]
         public void TestSyncStrategy ()
         {
+            // These tests assume wifi-commstatus (for the span calculation).
+            // They will fail with anything else, so would need to be adjusted.
+
             NachoCore.IMAP.SyncKit syncKit;
             var Strategy = new ImapStrategy (new TestBEContext());
 
+            // NoSelect (i.e. not a folder that can have messages).
+            // Should return null, since there's no syncing we can even do.
             TestFolder.ImapNoSelect = true;
             TestFolder.ImapLastExamine = DateTime.UtcNow;
             syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
             Assert.Null (syncKit);
             TestFolder.ImapNoSelect = false;
 
+            // fresh install or new folder. UidNext is not set (i.e. 0) so we have to go open the folder.
             TestFolder.ImapUidNext = 0;
             TestFolder.ImapLastExamine = DateTime.UtcNow;
             syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly);
 
+            // an empty folder (UidNext is 1, i.e. there's no messages at all)
+            TestFolder.ImapUidNext = 1;
+            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
+            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.Null (syncKit); // no synckkit. Nothing to do.
+
+            // The next few tests simulate a folder with a bunch of messages in it.
+            // This is the first sync, after we've discovered 123 as the UidNext value.
             TestFolder.ImapUidNext = 123;
             TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
             TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
@@ -106,6 +122,8 @@ namespace Test.iOS
             Assert.AreEqual (10, syncKit.Span);  // First sync is 10, subsequent will be larger
             Assert.AreEqual (112, syncKit.Start); // 112 = TestFolder.ImapUidNext - 1 - syncKit.Span
 
+            // This would be the second pass, where we sync the next batch.
+            // In the previous 'sync' we synced UID's 112 - 122. This time, we should see 36 - 111 (36+span of 75 == 111)
             TestFolder.ImapUidLowestUidSynced = 112;
             TestFolder.ImapUidHighestUidSynced = 122;
             TestFolder.ImapLastExamine = DateTime.UtcNow;
@@ -129,6 +147,52 @@ namespace Test.iOS
             Assert.NotNull (syncKit);
             Assert.AreEqual (1, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
             Assert.AreEqual (123, syncKit.Start);  // lowest - span (75) would be negative, so 1.
+
+            // Let's try some cornercases.
+            TestFolder.ImapUidNext = 9;
+            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
+            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (7, syncKit.Span); 
+            Assert.AreEqual (1, syncKit.Start);
+
+            TestFolder.ImapUidNext = 10;
+            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
+            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (8, syncKit.Span); // UidNext is 10, meaning the highest possible message can be 9 (8+1).
+            Assert.AreEqual (1, syncKit.Start); // start at 1, because UidNext -1 - Span (i.e. 10 - 1 - 10 would be negative, and 1 is the lowest possible UID (0 is not legal)
+
+            TestFolder.ImapUidNext = 11;
+            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
+            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (9, syncKit.Span); 
+            Assert.AreEqual (1, syncKit.Start);
+
+            TestFolder.ImapUidNext = 12;
+            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
+            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (10, syncKit.Span); 
+            Assert.AreEqual (1, syncKit.Start);
+
+            TestFolder.ImapUidNext = 13;
+            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
+            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (10, syncKit.Span); 
+            Assert.AreEqual (2, syncKit.Start);
         }
     }
 }
