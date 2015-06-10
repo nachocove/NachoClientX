@@ -706,11 +706,11 @@ namespace NachoClient.iOS
                 descriptionPlaceHolder.Hidden = !string.IsNullOrEmpty (c.Description);
                 break;
             case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                descriptionTextView.Text = ConvertToPlainText (c.Description, NSDocumentType.HTML);
+                descriptionTextView.Text = Util.ConvertToPlainText (c.Description, NSDocumentType.HTML);
                 descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
                 break;
             case McAbstrFileDesc.BodyTypeEnum.RTF_3:
-                descriptionTextView.Text = ConvertToPlainText (c.Description, NSDocumentType.RTF);
+                descriptionTextView.Text = Util.ConvertToPlainText (c.Description, NSDocumentType.RTF);
                 descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
                 break;
             default:
@@ -940,23 +940,6 @@ namespace NachoClient.iOS
             endDatePicker.Date = endDate.ToNSDate ();
             Util.ConstrainDatePicker (endDatePicker, endDate);
             endView.AddSubview (endDatePicker);
-        }
-
-        protected string ConvertToPlainText (string formattedText, NSDocumentType type)
-        {
-            try {
-                NSError error = null;
-                var descriptionData = NSData.FromString (formattedText);
-                var descriptionAttributed = new NSAttributedString (descriptionData, new NSAttributedStringDocumentAttributes {
-                    DocumentType = type
-                }, ref error);
-                return descriptionAttributed.Value;
-            } catch (Exception e) {
-                // The NSAttributedString init: routine will fail if formattedText is not the specified type.
-                // We don't want to crash the app in this case.
-                Log.Warn (Log.LOG_CALENDAR, "Calendar body has unexpected format and will be treated as plain text: {0}", e.ToString());
-                return formattedText;
-            }
         }
 
         protected McFolder GetCalendarFolder ()
@@ -1200,8 +1183,20 @@ namespace NachoClient.iOS
         /// </summary>
         protected void PrepareInvites ()
         {
+            string plainTextDescription;
+            switch (c.DescriptionType) {
+            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                plainTextDescription = Util.ConvertToPlainText (c.Description, NSDocumentType.HTML);
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                plainTextDescription = Util.ConvertToPlainText (c.Description, NSDocumentType.RTF);
+                break;
+            default:
+                plainTextDescription = c.Description;
+                break;
+            }
             var iCalPart = CalendarHelper.MimeRequestFromCalendar (c);
-            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
+            var mimeBody = CalendarHelper.CreateMime (plainTextDescription, iCalPart, c.attachments);
 
             CalendarHelper.SendInvites (account, c, null, null, mimeBody, null);
         }
