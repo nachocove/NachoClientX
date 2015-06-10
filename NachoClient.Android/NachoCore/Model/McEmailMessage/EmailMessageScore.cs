@@ -240,55 +240,54 @@ namespace NachoCore.Model
                     ccUpdated = true;
                 }
             }
-            NcModel.Instance.Db.RunInTransaction (() => {
-                // Insert the address maps for to and cc address lists before we update the to / cc statistics
-                // so that MarkDependencies() can correctly update emails NeedUpdate flag.
-                if (fromUpdated) {
-                    var map = CreateAddressMap ();
-                    map.EmailAddressId = FromEmailAddressId;
-                    map.AddressType = NcEmailAddress.Kind.From;
-                    map.Insert ();
-                }
-                if (toUpdated) {
-                    InsertAddressList (ToEmailAddressId, NcEmailAddress.Kind.To);
-                }
-                if (ccUpdated) {
-                    InsertAddressList (CcEmailAddressId, NcEmailAddress.Kind.Cc);
-                }
 
-                // Update statistics for email addresses
-                McEmailAddress emailAddress;
-                foreach (var toAddressId in ToEmailAddressId) {
-                    emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
-                    if (null == emailAddress) {
-                        Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
-                        continue;
-                    }
-                    emailAddress.IncrementToEmailsReceived (markDependencies: false);
-                    if (IsReplied ()) {
-                        emailAddress.IncrementToEmailsReplied (markDependencies: false);
-                    } else if (IsRead) {
-                        emailAddress.IncrementToEmailsRead (markDependencies: false);
-                    }
-                    emailAddress.MarkDependencies (NcEmailAddress.Kind.To);
-                    emailAddress.UpdateByBrain ();
+            // Insert the address maps for to and cc address lists before we update the to / cc statistics
+            // so that MarkDependencies() can correctly update emails NeedUpdate flag.
+            if (fromUpdated) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = FromEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.From;
+                map.Insert ();
+            }
+            if (toUpdated) {
+                InsertAddressList (ToEmailAddressId, NcEmailAddress.Kind.To);
+            }
+            if (ccUpdated) {
+                InsertAddressList (CcEmailAddressId, NcEmailAddress.Kind.Cc);
+            }
+
+            // Update statistics for email addresses
+            McEmailAddress emailAddress;
+            foreach (var toAddressId in ToEmailAddressId) {
+                emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
+                if (null == emailAddress) {
+                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
+                    continue;
                 }
-                foreach (var ccAddressId in CcEmailAddressId) {
-                    emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
-                    if (null == emailAddress) {
-                        Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
-                        continue;
-                    }
-                    emailAddress.IncrementCcEmailsReceived (markDependencies: false);
-                    if (IsReplied ()) {
-                        emailAddress.IncrementCcEmailsReplied (markDependencies: false);
-                    } else if (IsRead) {
-                        emailAddress.IncrementCcEmailsRead (markDependencies: false);
-                    }
-                    emailAddress.MarkDependencies (NcEmailAddress.Kind.Cc);
-                    emailAddress.UpdateByBrain ();
+                emailAddress.IncrementToEmailsReceived (markDependencies: false);
+                if (IsReplied ()) {
+                    emailAddress.IncrementToEmailsReplied (markDependencies: false);
+                } else if (IsRead) {
+                    emailAddress.IncrementToEmailsRead (markDependencies: false);
                 }
-            });
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.To);
+                emailAddress.UpdateByBrain ();
+            }
+            foreach (var ccAddressId in CcEmailAddressId) {
+                emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
+                if (null == emailAddress) {
+                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
+                    continue;
+                }
+                emailAddress.IncrementCcEmailsReceived (markDependencies: false);
+                if (IsReplied ()) {
+                    emailAddress.IncrementCcEmailsReplied (markDependencies: false);
+                } else if (IsRead) {
+                    emailAddress.IncrementCcEmailsRead (markDependencies: false);
+                }
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.Cc);
+                emailAddress.UpdateByBrain ();
+            }
         }
 
         public void Analyze ()
