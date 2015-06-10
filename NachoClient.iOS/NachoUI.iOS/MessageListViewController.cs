@@ -60,7 +60,7 @@ namespace NachoClient.iOS
 
             NavigationController.NavigationBar.Translucent = false;
 
-            if (ThisIsSpecialInboxView ()) {
+            if (HasAccountSwitcher ()) {
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton;
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -286,7 +286,7 @@ namespace NachoClient.iOS
             return false;
         }
 
-        public virtual bool ThisIsSpecialInboxView()
+        public virtual bool HasAccountSwitcher()
         {
             return false;
         }
@@ -301,7 +301,7 @@ namespace NachoClient.iOS
                     searchDisplayController.Active = false;
                 }
                 CancelSearchIfActive ();
-                if (ThisIsSpecialInboxView ()) {
+                if (HasAccountSwitcher ()) {
                     SwitchToAccount (NcApplication.Instance.Account);
                 } else {
                     NavigationController.PopViewController (true);

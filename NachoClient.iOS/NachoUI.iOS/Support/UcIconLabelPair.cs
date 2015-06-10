@@ -11,8 +11,8 @@ namespace NachoClient.iOS
     {
         const int SPACER = 15;
        
-        UIColor valueColor = A.Color_NachoGreen;
-        UIFont valueFont = A.Font_AvenirNextMedium14;
+        public UIColor valueColor = A.Color_NachoGreen;
+        public UIFont valueFont = A.Font_AvenirNextMedium14;
 
         UIView overlayView;
         UITapGestureRecognizer TapGesture;

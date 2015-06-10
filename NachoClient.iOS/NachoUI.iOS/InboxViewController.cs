@@ -21,7 +21,7 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
         }
 
-        public override bool ThisIsSpecialInboxView()
+        public override bool HasAccountSwitcher()
         {
             return true;
         }

@@ -342,7 +342,7 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public static bool IsGmailServiceAddress(string emailAddress)
+        public static bool IsGmailServiceAddress (string emailAddress)
         {
             return emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase);
         }
@@ -361,7 +361,7 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public static bool IsHotmailService(McAccount.AccountServiceEnum service)
+        public static bool IsHotmailService (McAccount.AccountServiceEnum service)
         {
             if (McAccount.AccountServiceEnum.HotmailDefault == service) {
                 return true;
@@ -677,6 +677,23 @@ namespace NachoCore.Utils
                         }
                     }
                 }
+            }
+        }
+
+        public static void GetMessageCounts (McAccount account, out int unreadMessageCount, out int deferredMessageCount, out int deadlineMessageCount)
+        {
+            var inboxFolder = NcEmailManager.InboxFolder (account.Id);
+            unreadMessageCount = 0;
+            if (null != inboxFolder) {
+                unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+            }
+            deadlineMessageCount = 0;
+            if (null != inboxFolder) {
+                deadlineMessageCount = McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
+            }
+            deferredMessageCount = 0;
+            if (null != inboxFolder) {
+                deferredMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
             }
         }
     }
