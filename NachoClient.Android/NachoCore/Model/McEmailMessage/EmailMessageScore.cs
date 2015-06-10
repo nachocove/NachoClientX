@@ -35,6 +35,7 @@ namespace NachoCore.Model
                         { 2, AnalyzeReplyStatistics },
                         // Version 3 - No statistics is updated. Just need to re-compute the score which
                         // will be done at the end of Analyze().
+                        { 4, AnalyzeOtherAddresses },
                     };
                 }
                 return _AnalysisFunctions;
@@ -216,6 +217,78 @@ namespace NachoCore.Model
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
             }
             ScoreVersion++;
+        }
+
+        public void AnalyzeOtherAddresses ()
+        {
+            bool fromUpdated = false, toUpdated = false, ccUpdated = false;
+            if (!String.IsNullOrEmpty (From) && (0 == FromEmailAddressId)) {
+                FromEmailAddressId = McEmailAddress.Get (AccountId, From);
+                if (0 < FromEmailAddressId) {
+                    fromUpdated = true;
+                }
+            }
+            if (!String.IsNullOrEmpty (To)) {
+                ToEmailAddressId = McEmailAddress.GetList (AccountId, To);
+                if (0 < ToEmailAddressId.Count) {
+                    toUpdated = true;
+                }
+            }
+            if (!String.IsNullOrEmpty (Cc)) {
+                CcEmailAddressId = McEmailAddress.GetList (AccountId, Cc);
+                if (0 < CcEmailAddressId.Count) {
+                    ccUpdated = true;
+                }
+            }
+            NcModel.Instance.Db.RunInTransaction (() => {
+                // Insert the address maps for to and cc address lists before we update the to / cc statistics
+                // so that MarkDependencies() can correctly update emails NeedUpdate flag.
+                if (fromUpdated) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = FromEmailAddressId;
+                    map.AddressType = NcEmailAddress.Kind.From;
+                    map.Insert ();
+                }
+                if (toUpdated) {
+                    InsertAddressList (ToEmailAddressId, NcEmailAddress.Kind.To);
+                }
+                if (ccUpdated) {
+                    InsertAddressList (CcEmailAddressId, NcEmailAddress.Kind.Cc);
+                }
+
+                // Update statistics for email addresses
+                McEmailAddress emailAddress;
+                foreach (var toAddressId in ToEmailAddressId) {
+                    emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
+                    if (null == emailAddress) {
+                        Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
+                        continue;
+                    }
+                    emailAddress.IncrementToEmailsReceived (markDependencies: false);
+                    if (IsReplied ()) {
+                        emailAddress.IncrementToEmailsReplied (markDependencies: false);
+                    } else if (IsRead) {
+                        emailAddress.IncrementToEmailsRead (markDependencies: false);
+                    }
+                    emailAddress.MarkDependencies (NcEmailAddress.Kind.To);
+                    emailAddress.UpdateByBrain ();
+                }
+                foreach (var ccAddressId in CcEmailAddressId) {
+                    emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
+                    if (null == emailAddress) {
+                        Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
+                        continue;
+                    }
+                    emailAddress.IncrementCcEmailsReceived (markDependencies: false);
+                    if (IsReplied ()) {
+                        emailAddress.IncrementCcEmailsReplied (markDependencies: false);
+                    } else if (IsRead) {
+                        emailAddress.IncrementCcEmailsRead (markDependencies: false);
+                    }
+                    emailAddress.MarkDependencies (NcEmailAddress.Kind.Cc);
+                    emailAddress.UpdateByBrain ();
+                }
+            });
         }
 
         public void Analyze ()
