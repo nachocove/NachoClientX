@@ -589,8 +589,14 @@ namespace NachoCore.ActiveSync
                     Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
                     BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
                 }
+                DoStepsPll ();
+            } else {
+                Log.Error (Log.LOG_AS, "AUTOD::Restart event doesn't have Sm.Arg value.");  
+                // Didn't do a hard fail since it doesn't report an error back to user. Posted a cannot connect to server. 
+                // Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODRESTARTFAIL");
+                OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODRESTARTFAIL", AutoDFailureReason.CannotConnectToServer);
+
             }
-            DoStepsPll ();
         }
 
         private void DoStepsPll ()
