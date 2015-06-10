@@ -99,21 +99,22 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
-            if (folder.ImapUidNext - 1 > folder.ImapUidHighestUidSynced) {
+            var currentHighestInFolder = folder.ImapUidNext - 1;
+            if (currentHighestInFolder > folder.ImapUidHighestUidSynced) {
                 // Prefer to sync from latest toward oldest.
                 // Start as high as we can, guard against the scenario where Span > UidNext.
                 syncKit.Span = 10; // use a very small window for the first sync, so we quickly get stuff back to display
                 syncKit.Start =
-                    Math.Max (folder.ImapUidHighestUidSynced, 
+                    Math.Max (folder.ImapUidHighestUidSynced + 1, 
                         (syncKit.Span + 1) >= folder.ImapUidNext ? 1 : 
-                        folder.ImapUidNext - 1 - syncKit.Span);
+                        currentHighestInFolder - syncKit.Span);
                 syncKit.Span =
                     Math.Min (syncKit.Span, 
                         (folder.ImapUidHighestUidSynced >= folder.ImapUidNext) ? 1 :
-                        folder.ImapUidNext - folder.ImapUidHighestUidSynced);
+                        currentHighestInFolder - folder.ImapUidHighestUidSynced);
                 return syncKit;
             }
-            if (folder.ImapUidNext - 1 > 0 && // are there any messages at all?
+            if (currentHighestInFolder > 0 && // are there any messages at all?
                 folder.ImapLowestUid < folder.ImapUidLowestUidSynced)
             {
                 // If there is nothing new to grab, then pull down older mail.

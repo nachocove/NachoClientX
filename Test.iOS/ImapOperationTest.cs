@@ -120,7 +120,16 @@ namespace Test.iOS
             Assert.NotNull (syncKit);
             Assert.AreEqual (35, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
             Assert.AreEqual (1, syncKit.Start);  // lowest - span (75) would be negative, so 1.
-            }
+
+            // Simulate new message coming in. I.e. bump ImapUidNext by 1.
+            TestFolder.ImapUidLowestUidSynced = 1;
+            TestFolder.ImapUidNext = TestFolder.ImapUidNext + 1;
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (1, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
+            Assert.AreEqual (123, syncKit.Start);  // lowest - span (75) would be negative, so 1.
+        }
     }
 }
 
