@@ -139,7 +139,7 @@ namespace NachoCore.IMAP
             if (0 < summaries.Count) {
                 foreach (var summary in summaries) {
                     // FIXME use NcApplyServerCommand framework.
-                    ServerSaysAddOrChangeEmail (summary, SyncKit.Folder);
+                    ServerSaysAddOrChangeEmail (BEContext.Account.Id, summary, SyncKit.Folder);
                 }
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
@@ -175,7 +175,7 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
-        public McEmailMessage ServerSaysAddOrChangeEmail (MailSummary summary, McFolder folder)
+        public static McEmailMessage ServerSaysAddOrChangeEmail (int accountId, MailSummary summary, McFolder folder)
         {
             if (null == summary.imapSummary.UniqueId || string.Empty == summary.imapSummary.UniqueId.Value.ToString ()) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
@@ -193,7 +193,7 @@ namespace NachoCore.IMAP
 
             McEmailMessage emailMessage = null;
             try {
-                var r = ParseEmail (McEmailMessageServerId, summary.imapSummary);
+                var r = ParseEmail (accountId, McEmailMessageServerId, summary.imapSummary);
                 emailMessage = r.GetValue<McEmailMessage> ();
                 emailMessage.BodyPreview = summary.preview;
             } catch (Exception ex) {
@@ -239,11 +239,11 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        public NcResult ParseEmail (string ServerId, IMessageSummary summary)
+        public static NcResult ParseEmail (int accountId, string ServerId, IMessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
-                AccountId = BEContext.Account.Id,
+                AccountId = accountId,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,
                 // FIXME - Any error.
@@ -281,7 +281,7 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
                 emailMessage.From = ((MailboxAddress)summary.Envelope.From [0]).Address;
-                if (McEmailAddress.Get (BEContext.Account.Id, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
+                if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
                     emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
@@ -299,7 +299,7 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
                 emailMessage.Sender = ((MailboxAddress)summary.Envelope.Sender [0]).Address;
-                if (McEmailAddress.Get (BEContext.Account.Id, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
+                if (McEmailAddress.Get (accountId, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
                 }
             }
