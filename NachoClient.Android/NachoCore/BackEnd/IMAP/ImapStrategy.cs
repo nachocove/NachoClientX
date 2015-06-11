@@ -117,6 +117,7 @@ namespace NachoCore.IMAP
             var currentHighestInFolder = folder.ImapUidNext - 1;
             var compareTime = DateTime.UtcNow.AddSeconds (-NoIdlePollTime ());
             if (UserRequested ||
+                0 == folder.ImapUidNext ||
                 folder.ImapLastExamine < compareTime) // perhaps this should be passed in by the caller?
             {
                 Log.Info (Log.LOG_IMAP, "folder.ImapLastExamine {0} < {1}", folder.ImapLastExamine, compareTime);
