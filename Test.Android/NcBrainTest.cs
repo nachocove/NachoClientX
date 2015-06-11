@@ -4,10 +4,12 @@ using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using NUnit.Framework;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Index;
 using NachoCore;
 using Test.iOS;
 
@@ -20,6 +22,21 @@ namespace Test.Common
             return AnalyzeEmailMessage (emailMessage);
         }
 
+        public bool TestIndexEmailMessage (McEmailMessage emailMessage)
+        {
+            return IndexEmailMessage (emailMessage);
+        }
+
+        public bool TestIndexContact (McContact contact)
+        {
+            return IndexContact (contact);
+        }
+
+        public void TestCloseAllOpenedIndexes ()
+        {
+            OpenedIndexes.Cleanup ();
+        }
+
         public WrappedNcBrain (string prefix) : base (prefix)
         {
         }
@@ -27,6 +44,10 @@ namespace Test.Common
 
     public class NcBrainTest : NcTestBase
     {
+        const int TestIndexEmailMessageAccountId = 4;
+
+        const int TestIndexContactAccountId = 5;
+
         McEmailAddress Address;
 
         McEmailMessage Message;
@@ -72,7 +93,20 @@ namespace Test.Common
             NcTask.StopService ();
 
             if (null != Brain) {
+                Brain.TestCloseAllOpenedIndexes ();
                 Brain.Cleanup ();
+            }
+
+            // Clean up all test indexes
+            SafeDirectoryDelete (NcModel.Instance.GetIndexPath (TestIndexEmailMessageAccountId));
+            SafeDirectoryDelete (NcModel.Instance.GetIndexPath (TestIndexContactAccountId));
+        }
+
+        public void SafeDirectoryDelete (string dirPath)
+        {
+            try {
+                Directory.Delete (dirPath, true);
+            } catch (IOException) {
             }
         }
 
@@ -224,6 +258,12 @@ namespace Test.Common
             return McEmailAddress.QueryById<McEmailAddress> (id);
         }
 
+        protected void InsertAndCheck (McAbstrObjectPerAcc item)
+        {
+            var rows = item.Insert ();
+            Assert.True ((1 == rows) && (0 < item.Id));
+        }
+
         [Test]
         public void TestAnalyzeEmail ()
         {
@@ -232,6 +272,7 @@ namespace Test.Common
 
             // Create a glean folder
             McFolder expectedGleaned = FolderOps.CreateFolder (accountId, serverId: McFolder.ClientOwned_Gleaned, isClientOwned: true);
+            Assert.NotNull (expectedGleaned); // for avoiding compilation warning
 
             var alan = "alan@company.net";
             var bob = "bob@company.net";
@@ -249,8 +290,7 @@ namespace Test.Common
                 LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
 
             };
-            int rows = message1.Insert ();
-            Assert.True ((1 == rows) && (0 < message1.Id));
+            InsertAndCheck (message1);
             Brain.TestAnalyzeEmailMessage (message1);
 
             // Verify that addresses are gleaned
@@ -304,8 +344,7 @@ namespace Test.Common
                 IsRead = true,
                 LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
             };
-            message2.Insert ();
-            Assert.True ((1 == rows) && (0 < message2.Id));
+            InsertAndCheck (message2);
             Brain.TestAnalyzeEmailMessage (message2);
 
             // Verify address maps
@@ -345,8 +384,7 @@ namespace Test.Common
                 IsRead = true,
                 LastVerbExecuted = (int)AsLastVerbExecutedType.REPLYTOSENDER,
             };
-            message3.Insert ();
-            Assert.True ((1 == rows) && (0 < message3.Id));
+            InsertAndCheck (message3);
             Brain.TestAnalyzeEmailMessage (message3);
 
             // Verify address maps
@@ -378,6 +416,149 @@ namespace Test.Common
             Assert.AreEqual (4, message1.NeedUpdate);
             message2 = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
             Assert.AreEqual (1, message2.NeedUpdate);
+        }
+
+        protected void CheckOneEmailMessage (int expectedId, List<MatchedItem> matches)
+        {
+            Assert.AreEqual (1, matches.Count);
+            Assert.AreEqual ("message", matches [0].Type);
+            Assert.AreEqual (expectedId.ToString (), matches [0].Id);
+        }
+
+        [Test]
+        public void TestIndexEmailMessage ()
+        {
+            Brain = new WrappedNcBrain ("TestIndexEmailMessage");
+            var index = Brain.Index (TestIndexEmailMessageAccountId);
+            Assert.NotNull (index);
+
+            // Index an email message that does not have a body
+            var message1 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "alan@company.net",
+                To = "bob@company.net",
+                Subject = "test email 1 - short",
+                BodyId = 0,
+            };
+            InsertAndCheck (message1);
+            Brain.TestIndexEmailMessage (message1);
+            Brain.TestCloseAllOpenedIndexes (); // need to commit before search will return match
+
+            // Make sure the index version (IsIndexed) is correct and the document is really in the index
+            Assert.AreEqual (EmailMessageIndexDocument.Version, message1.IsIndexed);
+            var matches = index.SearchAllEmailMessageFields ("short");
+            CheckOneEmailMessage (message1.Id, matches);
+            // Not doing a thorough test of the indexing because that is done in IndexTest.
+
+            // Index an email message that has a body but it is not downloaded.
+            var body2 = new McBody () {
+                AccountId = TestIndexEmailMessageAccountId,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            InsertAndCheck (body2);
+            var message2 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "charles@company.net",
+                To = "david@company.net",
+                Subject = "test email 2 - normal",
+                BodyId = body2.Id,
+            };
+            InsertAndCheck (message2);
+            Brain.TestIndexEmailMessage (message2);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version - 1, message2.IsIndexed);
+            matches = index.SearchAllEmailMessageFields ("normal");
+            CheckOneEmailMessage (message2.Id, matches);
+
+            // Index an email message that has a downloaded body
+            var body3 = new McBody () {
+                AccountId = TestIndexEmailMessageAccountId,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
+            };
+            InsertAndCheck (body3);
+            var message3 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "ellen@company.net",
+                To = "fred@company.net",
+                Subject = "test email 3 - hot",
+                BodyId = body3.Id,
+            };
+            InsertAndCheck (message3);
+            Brain.TestIndexEmailMessage (message3);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version, message3.IsIndexed);
+            matches = index.SearchAllEmailMessageFields ("hot");
+            CheckOneEmailMessage (message3.Id, matches);
+        }
+
+        protected void CheckOneContact (int expectedId, List<MatchedItem> matches)
+        {
+            Assert.AreEqual (1, matches.Count);
+            Assert.AreEqual ("contact", matches [0].Type);
+            Assert.AreEqual (expectedId.ToString (), matches [0].Id);
+        }
+
+        [Test]
+        public void TestIndexContact ()
+        {
+            Brain = new WrappedNcBrain ("TestIndexContact");
+            var index = Brain.Index (TestIndexContactAccountId);
+            Assert.NotNull (index);
+
+            // Index a contact that does not have a note (body).
+            var contact1 = new McContact () {
+                AccountId = TestIndexContactAccountId,
+                FirstName = "Alan",
+                BodyId = 0
+            };
+            contact1.AddEmailAddressAttribute (TestIndexContactAccountId, "Email1Address", "Email", "alan@company.net");
+            InsertAndCheck (contact1);
+            Brain.TestIndexContact (contact1);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version, contact1.IndexVersion);
+            var matches = index.SearchAllContactFields ("alan");
+            CheckOneContact (contact1.Id, matches);
+
+            // Index a contact that has a note but it is not downloaded.
+            var body2 = new McBody () {
+                AccountId = TestIndexContactAccountId,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None
+            };
+            InsertAndCheck (body2);
+            var contact2 = new McContact () {
+                AccountId = TestIndexContactAccountId,
+                FirstName = "Bob",
+                BodyId = body2.Id,
+            };
+            InsertAndCheck (contact2);
+            Brain.TestIndexContact (contact2);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version - 1, contact2.IndexVersion);
+            matches = index.SearchAllContactFields ("bob");
+            CheckOneContact (contact2.Id, matches);
+
+            // Index a contact that has a downloaded note.
+            var body3 = new McBody () {
+                AccountId = TestIndexContactAccountId,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
+            };
+            InsertAndCheck (body3);
+            var contact3 = new McContact () {
+                AccountId = TestIndexContactAccountId,
+                FirstName = "Charles",
+                BodyId = body3.Id,
+            };
+            InsertAndCheck (contact3);
+            Brain.TestIndexContact (contact3);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version, contact3.IndexVersion);
+            matches = index.SearchAllContactFields ("charles");
+            CheckOneContact (contact3.Id, matches);
         }
     }
 }

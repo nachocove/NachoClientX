@@ -8,6 +8,7 @@ using System.Threading;
 using NUnit.Framework;
 using NachoCore.Brain;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace Test.Common
 {
@@ -71,6 +72,16 @@ namespace Test.Common
         public void TearDown ()
         {
             NcBrain.StartupDelayMsec = OriginalStartupDelayMsec;
+            SafeDirectoryDelete (NcModel.Instance.GetIndexPath (Account1));
+            SafeDirectoryDelete (NcModel.Instance.GetIndexPath (Account2));
+        }
+
+        protected void SafeDirectoryDelete (string dirPath)
+        {
+            try {
+                Directory.Delete (dirPath, true);
+            } catch (IOException) {
+            }
         }
 
         [Test]
@@ -183,7 +194,6 @@ namespace Test.Common
         {
             // Test RoundRobinList.RoundRobinListRecord
             var numberSource = new TestSource<int> () { 1, 2 };
-            int currentNumber = -1;
             var source = new RoundRobinSource (numberSource.Query, numberSource.Process, 5);
             var record = new RoundRobinList.RoundRobinListRecord (source, 4);
             record.Initialize ();
