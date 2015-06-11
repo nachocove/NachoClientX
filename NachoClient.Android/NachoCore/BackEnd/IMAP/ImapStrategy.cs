@@ -84,15 +84,31 @@ namespace NachoCore.IMAP
                     Start = 0,
                 };
             } else if (currentHighestInFolder > folder.ImapUidHighestUidSynced) {
-                uint span = 10;  // use a very small window for the first sync, so we quickly get stuff back to display
-                syncKit = new SyncKit () {
-                    Method = SyncKit.MethodEnum.Range,
-                    Folder = folder,
-                    Flags = flags,
-                    Span = span,
-                    Start = Math.Max (folder.ImapUidHighestUidSynced + 1, 
-                        span + 1 > currentHighestInFolder ? 1 : currentHighestInFolder - span + 1),
-                };
+                // This case covers the initial sync, and any syncs where new mail hs arrived.
+                if (UInt32.MinValue == folder.ImapUidHighestUidSynced) {
+                    // This is the first sync. Start at the top, and work your way down.
+                    uint span = 10;  // use a very small window for this sync, so we quickly get stuff back to display
+                    syncKit = new SyncKit () {
+                        Method = SyncKit.MethodEnum.Range,
+                        Folder = folder,
+                        Flags = flags,
+                        Span = span,
+                        Start = Math.Max (folder.ImapUidHighestUidSynced + 1, 
+                            span + 1 > currentHighestInFolder ? 1 : currentHighestInFolder - span + 1),
+                    };
+                } else {
+                    // this is the 'new mail has arrived' case. Start from ImapUidHighestUidSynced
+                    // and work your way up.
+                    //uint span = SpanSizeWithCommStatus ();
+                    uint span = 10;
+                    syncKit = new SyncKit () {
+                        Method = SyncKit.MethodEnum.Range,
+                        Folder = folder,
+                        Flags = flags,
+                        Span = span,
+                        Start = folder.ImapUidHighestUidSynced + 1,
+                    };
+                }
                 // adjust span, to make sure it doesn't over- or under-run.
                 syncKit.Span =
                     Math.Min (syncKit.Span, 

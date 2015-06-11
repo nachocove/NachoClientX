@@ -122,16 +122,15 @@ namespace Test.iOS
             syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (10, syncKit.Span);  // First sync is 10, subsequent will be larger
-            Assert.AreEqual (113, syncKit.Start); // 113 = TestFolder.ImapUidNext - 1 - syncKit.Span + 1 (0 based)
+            Assert.AreEqual (113, syncKit.Start); // 113 == 122 (one less than UIDNEXT) - 10 + 1
             Assert.AreEqual (syncKit.Span, syncKit.UidList.Count);
             Assert.AreEqual (122, syncKit.UidList.Max ().Id);
             Assert.AreEqual (113, syncKit.UidList.Min ().Id);
 
             // This would be the second pass, where we sync the next batch.
-            // In the previous 'sync' we synced UID's 112 - 122. This time, we should see 36 - 111 (36+span of 75 == 111)
-            TestFolder.ImapUidLowestUidSynced = syncKit.UidList.Min ().Id;
-            TestFolder.ImapUidHighestUidSynced = syncKit.UidList.Max ().Id;
-            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            // In the previous 'sync' we synced UID's 113 - 122 (10 items).
+            // This time, we should see 75 items, numbered 38 through 112
+            DoFakeSync (TestFolder, syncKit);
             syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (75, syncKit.Span);  // full sync window
@@ -140,8 +139,8 @@ namespace Test.iOS
             Assert.AreEqual (112, syncKit.UidList.Max ().Id);
             Assert.AreEqual (38, syncKit.UidList.Min ().Id);
 
-            TestFolder.ImapUidLowestUidSynced = syncKit.UidList.Min ().Id;
-            TestFolder.ImapLastExamine = DateTime.UtcNow;
+            // less than 75 items are left, so the span should be "the rest" (i.e. 37), numbered 1 through 37.
+            DoFakeSync (TestFolder, syncKit);
             syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (37, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
@@ -151,9 +150,8 @@ namespace Test.iOS
             Assert.AreEqual (1, syncKit.UidList.Min ().Id);
 
             // Simulate new message coming in. I.e. bump ImapUidNext by 1.
-            TestFolder.ImapUidLowestUidSynced = syncKit.UidList.Min ().Id;
+            DoFakeSync (TestFolder, syncKit);
             TestFolder.ImapUidNext = TestFolder.ImapUidNext + 1;
-            TestFolder.ImapLastExamine = DateTime.UtcNow;
             syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (1, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
@@ -162,8 +160,31 @@ namespace Test.iOS
             Assert.AreEqual (123, syncKit.UidList.Max ().Id);
             Assert.AreEqual (123, syncKit.UidList.Min ().Id);
 
+            // Simulate 12 new message coming in. I.e. bump ImapUidNext by 12
+            // this sync will get a batch of 10, starting at the last fetched +1, so 124 to 133.
+            DoFakeSync (TestFolder, syncKit);
+            TestFolder.ImapUidNext = TestFolder.ImapUidNext + 12;
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (10, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
+            Assert.AreEqual (124, syncKit.Start);  // lowest - span (75) would be negative, so 1.
+            Assert.AreEqual (syncKit.Span, syncKit.UidList.Count);
+            Assert.AreEqual (133, syncKit.UidList.Max ().Id);
+            Assert.AreEqual (124, syncKit.UidList.Min ().Id);
+
+            // and this sync will get the rest, i.e. 2 more.
+            DoFakeSync (TestFolder, syncKit);
+            syncKit = Strategy.GenSyncKit (AccountId, protocolState, TestFolder);
+            Assert.NotNull (syncKit);
+            Assert.AreEqual (2, syncKit.Span); // a span of 75 would overrun into id's we've already syncd, so 35.
+            Assert.AreEqual (134, syncKit.Start);  // lowest - span (75) would be negative, so 1.
+            Assert.AreEqual (syncKit.Span, syncKit.UidList.Count);
+            Assert.AreEqual (135, syncKit.UidList.Max ().Id);
+            Assert.AreEqual (134, syncKit.UidList.Min ().Id);
+
             // Let's try some cornercases.
-            TestFolder.ImapUidNext = 9;
+            TestFolder.ImapUidNext = 9;  // two less than the minimal span
+                                         // (UIDNEXT 9 means there's at most 1 through 8 in the mailbox)
             TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
             TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
             TestFolder.ImapLastExamine = DateTime.UtcNow;
@@ -175,7 +196,7 @@ namespace Test.iOS
             Assert.AreEqual (8, syncKit.UidList.Max ().Id);
             Assert.AreEqual (1, syncKit.UidList.Min ().Id);
 
-            TestFolder.ImapUidNext = 10;
+            TestFolder.ImapUidNext = 10;  // one less than the span (1 - 9)
             TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
             TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
             TestFolder.ImapLastExamine = DateTime.UtcNow;
@@ -223,6 +244,13 @@ namespace Test.iOS
             Assert.AreEqual (12, syncKit.UidList.Max ().Id);
             Assert.AreEqual (3, syncKit.UidList.Min ().Id);
 
+        }
+
+        private void DoFakeSync(McFolder TestFolder, NachoCore.IMAP.SyncKit syncKit)
+        {
+            TestFolder.ImapUidHighestUidSynced = Math.Max (TestFolder.ImapUidHighestUidSynced, syncKit.UidList.Max ().Id);
+            TestFolder.ImapUidLowestUidSynced = Math.Min (TestFolder.ImapUidLowestUidSynced, syncKit.UidList.Min ().Id);
+            TestFolder.ImapLastExamine = DateTime.UtcNow;
         }
     }
 }
