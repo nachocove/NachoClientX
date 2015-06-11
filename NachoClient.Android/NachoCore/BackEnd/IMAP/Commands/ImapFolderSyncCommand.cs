@@ -83,15 +83,21 @@ namespace NachoCore.IMAP
                     }
                 }
                 McFolder folder;
+                if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+                    mailKitFolder.Open (FolderAccess.ReadOnly);
+                }
                 if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
                     added_or_changed = true;
                     // TODO do ApplyCommand stuff here
                 }
-                NcAssert.NotNull (folder);
-                if (UpdateImapSetting(mailKitFolder, folder)) {
-                    // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
-                    // Strategy will notice that modseq and/or noselect etc has changed, and resync.
-                    Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ServerId);
+                if (null != folder) {
+                    if (UpdateImapSetting (mailKitFolder, folder)) {
+                        // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
+                        // Strategy will notice that modseq and/or noselect etc has changed, and resync.
+                        Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ServerId);
+                    }
+                } else {
+                    Log.Error (Log.LOG_IMAP, "No folder returned from CreateOrUpdateFolder!");
                 }
             }
 
@@ -102,6 +108,7 @@ namespace NachoCore.IMAP
                     // TODO Do applyCommand stuff here
                     // Delete folder and everything in and under it.
                     folder.Delete ();
+                    added_or_changed = true;
                 }
             }
 
@@ -112,7 +119,7 @@ namespace NachoCore.IMAP
             var protocolState = BEContext.ProtocolState;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                 var target = (McProtocolState)record;
-                target.AsLastFolderSync = DateTime.UtcNow;
+                target.AsLastFolderSync = DateTime.UtcNow;  // FIXME: Rename AsLastFolderSync to be generic.
                 return true;
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");

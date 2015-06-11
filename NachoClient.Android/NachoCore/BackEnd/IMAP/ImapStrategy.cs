@@ -53,6 +53,15 @@ namespace NachoCore.IMAP
             return KBaseNoIdlePollTime;
         }
 
+        MessageSummaryItems SummaryFlags = MessageSummaryItems.BodyStructure
+            | MessageSummaryItems.Envelope
+            | MessageSummaryItems.Flags
+            | MessageSummaryItems.InternalDate
+            | MessageSummaryItems.MessageSize
+            | MessageSummaryItems.UniqueId
+            | MessageSummaryItems.GMailMessageId
+            | MessageSummaryItems.GMailThreadId;
+
         /// <summary>
         /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
         /// needed for the BE to do a sync with the server.
@@ -100,27 +109,22 @@ namespace NachoCore.IMAP
                 return null;
             }
 
-            MessageSummaryItems flags = MessageSummaryItems.BodyStructure
-                | MessageSummaryItems.Envelope
-                | MessageSummaryItems.Flags
-                | MessageSummaryItems.InternalDate
-                | MessageSummaryItems.MessageSize
-                | MessageSummaryItems.UniqueId
-                | MessageSummaryItems.GMailMessageId
-                | MessageSummaryItems.GMailThreadId;
+            if (null == folder) {
+                return null;
+            }
 
             SyncKit syncKit = null;
             var currentHighestInFolder = folder.ImapUidNext - 1;
-            if (null == folder ||
-                0 == folder.ImapUidNext ||
-                UserRequested ||
-                folder.ImapLastExamine < DateTime.UtcNow.AddSeconds(-NoIdlePollTime())) // perhaps this should be passed in by the caller?
+            var compareTime = DateTime.UtcNow.AddSeconds (-NoIdlePollTime ());
+            if (UserRequested ||
+                folder.ImapLastExamine < compareTime) // perhaps this should be passed in by the caller?
             {
+                Log.Info (Log.LOG_IMAP, "folder.ImapLastExamine {0} < {1}", folder.ImapLastExamine, compareTime);
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.OpenOnly,
                     Folder = folder,
-                    Flags = flags,
+                    Flags = SummaryFlags,
                     Span = 0,
                     Start = 0,
                 };
@@ -132,7 +136,7 @@ namespace NachoCore.IMAP
                     syncKit = new SyncKit () {
                         Method = SyncKit.MethodEnum.Range,
                         Folder = folder,
-                        Flags = flags,
+                        Flags = SummaryFlags,
                         Span = span,
                         Start = Math.Max (folder.ImapUidHighestUidSynced + 1, 
                             span + 1 > currentHighestInFolder ? 1 : currentHighestInFolder - span + 1),
@@ -145,7 +149,7 @@ namespace NachoCore.IMAP
                     syncKit = new SyncKit () {
                         Method = SyncKit.MethodEnum.Range,
                         Folder = folder,
-                        Flags = flags,
+                        Flags = SummaryFlags,
                         Span = span,
                         Start = folder.ImapUidHighestUidSynced + 1,
                     };
@@ -157,14 +161,14 @@ namespace NachoCore.IMAP
                         currentHighestInFolder - folder.ImapUidHighestUidSynced);
                 
             } else if (currentHighestInFolder > 0 && // are there any messages at all?
-                folder.ImapLowestUid < folder.ImapUidLowestUidSynced)
+                       folder.ImapUidLowestUidSynced > 1)
             {
                 // If there is nothing new to grab, then pull down older mail.
                 uint span = SpanSizeWithCommStatus ();
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.Range,
                     Folder = folder,
-                    Flags = flags,
+                    Flags = SummaryFlags,
                     Span = span,
                     Start = (span >= folder.ImapUidLowestUidSynced) ? 1 : 
                         folder.ImapUidLowestUidSynced - span,
@@ -321,8 +325,19 @@ namespace NachoCore.IMAP
                     NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                     // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
                     // for speculatively pre-fetching bodies and attachments.
+                    SyncKit syncKit;
+                    // Always make sure Inbox is checked first.
+                    McFolder defInbox = McFolder.GetDefaultInboxFolder (BEContext.Account.Id);
+                    syncKit = GenSyncKit (accountId, protocolState, defInbox);
+                    if (null != syncKit) {
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, syncKit));
+                    }
                     foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
-                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                        if (defInbox.Id == folder.Id) {
+                            continue;
+                        }
+                        syncKit = GenSyncKit (accountId, protocolState, folder);
                         if (null != syncKit) {
                             Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ServerId);
                             return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
