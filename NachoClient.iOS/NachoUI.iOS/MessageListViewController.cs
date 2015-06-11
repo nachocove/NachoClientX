@@ -60,7 +60,7 @@ namespace NachoClient.iOS
 
             NavigationController.NavigationBar.Translucent = false;
 
-            if (ThisIsSpecialInboxView ()) {
+            if (HasAccountSwitcher ()) {
                 switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
                 NavigationItem.TitleView = switchAccountButton;
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -286,7 +286,7 @@ namespace NachoClient.iOS
             return false;
         }
 
-        public virtual bool ThisIsSpecialInboxView()
+        public virtual bool HasAccountSwitcher ()
         {
             return false;
         }
@@ -301,7 +301,7 @@ namespace NachoClient.iOS
                     searchDisplayController.Active = false;
                 }
                 CancelSearchIfActive ();
-                if (ThisIsSpecialInboxView ()) {
+                if (HasAccountSwitcher ()) {
                     SwitchToAccount (NcApplication.Instance.Account);
                 } else {
                     NavigationController.PopViewController (true);
@@ -356,15 +356,20 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            switch (s.Status.SubKind) {
 
+            if (null != s.Account) {
+                var m = messageSource.GetNachoEmailMessages ();
+                if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
+                    return;
+                }
+            }
+            switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
             case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
                 break;
-
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
                 UpdateSearchResultsFromServer (s.Status.GetValue<List<NcEmailMessageIndex>> ());

@@ -10,7 +10,7 @@ namespace NachoCore.Brain
     public partial class NcBrain
     {
         private NcQueue<NcBrainEvent> EventQueue;
-        private OpenedIndexSet OpenedIndexes;
+        protected OpenedIndexSet OpenedIndexes;
         private long BytesIndexed;
         private RoundRobinList Scheduler;
 

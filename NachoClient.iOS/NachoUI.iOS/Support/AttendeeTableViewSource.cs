@@ -19,6 +19,7 @@ namespace NachoClient.iOS
         protected McAccount Account;
         protected bool editing = false;
         protected bool organizer = false;
+        protected bool recurring = false;
         public IAttendeeTableViewSourceDelegate owner;
         protected bool isMultiSelecting;
         protected Dictionary<NSIndexPath,McAttendee> multiSelect = null;
@@ -82,27 +83,18 @@ namespace NachoClient.iOS
             this.owner = owner;
         }
 
-        public void SetAttendeeList (List<McAttendee> attendees)
+        public void Setup (IList<McAttendee> attendees, McAccount account, bool editing, bool organizer, bool recurring)
         {
-            this.AttendeeList = new List<McAttendee> ();
-            foreach (var attendee in attendees) {
-                this.AttendeeList.Add (attendee);
-            }
-        }
-
-        public void SetEditing (bool editing)
-        {
-            this.editing = editing;
-        }
-
-        public void SetOrganizer (bool organizer)
-        {
-            this.organizer = organizer;
-        }
-
-        public void SetAccount (McAccount account)
-        {
+            SetAttendeeList (attendees);
             this.Account = account;
+            this.editing = editing;
+            this.organizer = organizer;
+            this.recurring = recurring;
+        }
+
+        public void SetAttendeeList (IList<McAttendee> attendees)
+        {
+            this.AttendeeList = new List<McAttendee> (attendees);
         }
 
         public List<McAttendee> GetAttendeeList ()
@@ -298,13 +290,15 @@ namespace NachoClient.iOS
                     view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
                 }
-                if (NcAttendeeType.Required == attendee.AttendeeType) {
-                    view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
-                } else {
-                    view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
-                }
-                if (editing) {
-                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                if (!recurring) {
+                    if (NcAttendeeType.Required == attendee.AttendeeType) {
+                        view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
+                    } else {
+                        view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
+                    }
+                    if (editing) {
+                        view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                    }
                 }
                 view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
 
@@ -551,10 +545,10 @@ namespace NachoClient.iOS
 
         public void ChangeAttendeeType (UITableViewCell cell, McAttendee attendee)
         {
-            if (NcAttendeeType.Optional == attendee.AttendeeType) {
-                attendee.AttendeeType = NcAttendeeType.Required;
-            } else {
+            if (NcAttendeeType.Required == attendee.AttendeeType) {
                 attendee.AttendeeType = NcAttendeeType.Optional;
+            } else {
+                attendee.AttendeeType = NcAttendeeType.Required;
             }
             owner.UpdateLists ();
             owner.ConfigureAttendeeTable ();

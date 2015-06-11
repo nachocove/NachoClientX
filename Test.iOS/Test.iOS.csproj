@@ -305,7 +305,6 @@
     <Compile Include="..\Test.Android\ErrorHelperTest.cs">
       <Link>ErrorHelperTest.cs</Link>
     </Compile>
-    <Compile Include="ImapOperationTest.cs" />
     <Compile Include="..\Test.Android\TelemetryJsonEventTest.cs">
       <Link>TelemetryJsonEventTest.cs</Link>
     </Compile>
@@ -314,6 +313,9 @@
     </Compile>
     <Compile Include="..\Test.Android\NcBrainHelpersTest.cs">
       <Link>NcBrainHelpersTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\ImapOperationTest.cs">
+      <Link>ImapOperationTest.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

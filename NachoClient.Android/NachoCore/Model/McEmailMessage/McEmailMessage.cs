@@ -269,7 +269,15 @@ namespace NachoCore.Model
 
         public DateTime FlagSubOrdinalDate { set; get; }
 
-        public bool IsIndexed { set; get; }
+        // This field was original a boolean. But in order to support versioning and partial indexing
+        // (i.e. indexing of an email message without its body downloaded), it is changed to an int.
+        // I didn't want to rename it to IndexVersion (like McContact) in order to avoid a migration.
+        //
+        // For partially indexed messagess, the field has the value of EmailMessageIndexDocument.Version-1.
+        // For fully indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
+        // just increment the version # and implement the new version of EmailMessageIndexDocument.
+        // Brain will unindex all old version documents and re-index them using the new schema.
+        public int IsIndexed { set; get; }
 
         ///
         /// </Flag> STUFF.
@@ -583,12 +591,14 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage as e " +
-                " JOIN McBody as b ON b.Id == e.BodyId " +
-                " WHERE e.IsIndexed = 0 AND " +
-                " e.BodyId != 0 AND " +
-                " b.FilePresence = ? AND " +
-                " b.BodyType = ? " +
-                " ORDER BY e.DateReceived DESC LIMIT ?",
+                " LEFT JOIN McBody as b ON b.Id == e.BodyId " +
+                " WHERE likelihood (e.IsIndexed < ?, 0.5) OR " +
+                "  (likelihood (e.IsIndexed < ?, 0.5) AND " +
+                "   (likelihood (e.BodyId = 0, 0.2) OR " +
+                "    (likelihood (b.FilePresence = ?, 0.5) AND likelihood (b.BodyType = ?, 0.9))))" +
+                " ORDER BY e.DateReceived DESC " +
+                " LIMIT ?",
+                EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version, 
                 McAbstrFileDesc.FilePresenceEnum.Complete, McAbstrFileDesc.BodyTypeEnum.MIME_4, maxMessages
             );
         }
@@ -935,29 +945,29 @@ namespace NachoCore.Model
             appMeetingRequestSet = false;
         }
 
-        //        [Ignore]
-        //        public List<int> ToEmailAddressId {
-        //            get {
-        //                ReadAddressMaps ();
-        //                return dbToEmailAddressId;
-        //            }
-        //            set {
-        //                emailAddressesChanged = true;
-        //                dbToEmailAddressId = value;
-        //            }
-        //        }
+        [Ignore]
+        public List<int> ToEmailAddressId {
+            get {
+                ReadAddressMaps ();
+                return dbToEmailAddressId;
+            }
+            set {
+                emailAddressesChanged = true;
+                dbToEmailAddressId = value;
+            }
+        }
 
-        //        [Ignore]
-        //        public List<int> CcEmailAddressId {
-        //            get {
-        //                ReadAddressMaps ();
-        //                return dbCcEmailAddressId;
-        //            }
-        //            set {
-        //                emailAddressesChanged = true;
-        //                dbCcEmailAddressId = value;
-        //            }
-        //        }
+        [Ignore]
+        public List<int> CcEmailAddressId {
+            get {
+                ReadAddressMaps ();
+                return dbCcEmailAddressId;
+            }
+            set {
+                emailAddressesChanged = true;
+                dbCcEmailAddressId = value;
+            }
+        }
 
         protected void ReadAddressMaps ()
         {
@@ -1065,6 +1075,14 @@ namespace NachoCore.Model
             return returnVal;
         }
 
+        public void UpdateIsIndex ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ? WHERE Id = ?",
+                    IsIndexed, Id);
+            });
+        }
+
         public override void DeleteAncillary ()
         {
             NcAssert.True (0 != Id);
@@ -1120,6 +1138,21 @@ namespace NachoCore.Model
                 return true;
             }
             return false;
+        }
+
+        public void SetIndexVersion ()
+        {
+            if (0 == BodyId) {
+                // No body to index. This message is fully indexed.
+                IsIndexed = EmailMessageIndexDocument.Version;
+            } else {
+                var body = GetBody ();
+                if ((null != body) && body.IsComplete ()) {
+                    IsIndexed = EmailMessageIndexDocument.Version;
+                } else {
+                    IsIndexed = EmailMessageIndexDocument.Version - 1;
+                }
+            }
         }
     }
 }

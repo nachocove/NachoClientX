@@ -21,6 +21,11 @@ namespace NachoClient.iOS
             searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
         }
 
+        public override bool HasAccountSwitcher()
+        {
+            return true;
+        }
+
 //        protected override void CustomizeBackButton ()
 //        {
 //            BackShouldSwitchToFolders ();

@@ -50,7 +50,7 @@ namespace NachoClient.iOS
             accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: false);
+            accountsTableViewSource.Setup (this, showAccessory: false, showUnreadCount:true);
             accountsTableView.Source = accountsTableViewSource;
 
             View.AddSubview (accountsTableView);
@@ -115,10 +115,12 @@ namespace NachoClient.iOS
         public void AccountSelected (McAccount account)
         {
             var spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
+            spinner.Center = View.Center;
             View.AddSubview (spinner);
             spinner.StartAnimating ();
             spinner.HidesWhenStopped = true;
             NcApplication.Instance.Account = account;
+            LoginHelpers.SetSwitchToTime (account);
             switchAccountCallback (account);
             Deactivate (null, (McAccount acct) => {
                 UIView.Animate (0.75, () => {
@@ -157,7 +159,6 @@ namespace NachoClient.iOS
 
         protected const float LINE_HEIGHT = 20;
 
-
         UIView GetViewForHeader (UITableView tableView)
         {
             var headerView = new UIView (new CGRect (0, 0, tableView.Frame.Width, 0));
@@ -195,31 +196,18 @@ namespace NachoClient.iOS
             accountEmailAddress.TextColor = A.Color_NachoBlack;
             accountInfoView.AddSubview (accountEmailAddress);
 
-            var settingsButton = new UIButton (new CGRect (75, 70, 0, LINE_HEIGHT));
-            settingsButton.BackgroundColor = A.Color_NachoSubmitButton;
-            settingsButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            settingsButton.SetTitle ("Account Settings", UIControlState.Normal);
-            settingsButton.TitleLabel.TextColor = UIColor.White;
-            settingsButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-            settingsButton.Layer.CornerRadius = 4f;
-            settingsButton.Layer.MasksToBounds = true;
-            settingsButton.TouchUpInside += SettingsButtonTouchUpInside;
-            settingsButton.AccessibilityLabel = "Account Settings";
+            var settingsButton = Util.BlueButton ("Account Settings", 0);
+            settingsButton.Frame = new CGRect (75, 70, 0, LINE_HEIGHT);
             settingsButton.SizeToFit ();
             ViewFramer.Create (settingsButton).AdjustWidth (A.Card_Horizontal_Indent);
+            settingsButton.TouchUpInside += SettingsButtonTouchUpInside;
             accountInfoView.AddSubview (settingsButton);
 
-            Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 120, tableView.Frame.Width, A.Color_NachoBorderGray, accountInfoView);
-            Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 160, tableView.Frame.Width, A.Color_NachoBorderGray, accountInfoView);
-            Util.AddHorizontalLine (-A.Card_Horizontal_Indent, 200, tableView.Frame.Width, A.Color_NachoBorderGray, accountInfoView);
+            var unreadMessagesViewFrame = new CGRect (0, 120, accountInfoView.Frame.Width, 40);
+            var unreadMessagesView = new UnreadMessagesView (unreadMessagesViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
+            accountInfoView.AddSubview (unreadMessagesView);
 
-            var unreadMessages = new UcIconLabelPair (new CGRect (0, 120, tableView.Frame.Width, 40), "gen-inbox", 0, 15, null);
-            var deadlineMessages = new UcIconLabelPair (new CGRect (0, 160, tableView.Frame.Width, 40), "gen-deadline", 0, 15, null);
-            var deferredMessages = new UcIconLabelPair (new CGRect (0, 200, tableView.Frame.Width, 40), "gen-deferred-msgs", 0, 15, null);
-
-            accountInfoView.AddSubviews (new UIView[] { unreadMessages, deferredMessages, deadlineMessages, });
-
-            var yOffset = 240;
+            var yOffset = unreadMessagesView.Frame.Bottom;
 
             ViewFramer.Create (headerView).Height (yOffset);
             ViewFramer.Create (accountInfoView).Height (yOffset);
@@ -233,24 +221,7 @@ namespace NachoClient.iOS
             }
             accountEmailAddress.Text = account.EmailAddr;
 
-            var inboxFolder = NcEmailManager.InboxFolder (account.Id);
-            var unreadInboxMessagesCount = 0;
-            if (null != inboxFolder) {
-                unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
-            }
-            unreadMessages.SetValue (Pretty.MessageCount ("unread message", unreadInboxMessagesCount));
-
-            var deadlineMessageCount = 0;
-            if (null != inboxFolder) {
-                deadlineMessageCount = McEmailMessage.QueryDueDateMessageItems (inboxFolder.AccountId).Count;
-            }
-            deadlineMessages.SetValue (Pretty.MessageCount ("deadline", deadlineMessageCount));
-
-            var deferredMessageCount = 0;
-            if (null != inboxFolder) {
-                deferredMessageCount = new NachoDeferredEmailMessages (inboxFolder.AccountId).Count ();
-            }
-            deferredMessages.SetValue (Pretty.MessageCount ("deferred message", deferredMessageCount));
+            unreadMessagesView.Update (account);
 
             return headerView;
         }
@@ -258,6 +229,42 @@ namespace NachoClient.iOS
         void SettingsButtonTouchUpInside (object sender, EventArgs e)
         {
             SettingsSelected (NcApplication.Instance.Account);
+        }
+
+        private void InboxClicked (object sender)
+        {
+            // No double presses
+            switchAccountButton.UserInteractionEnabled = false;
+
+            Deactivate (null, (McAccount account) => {
+                NavigationController.PopViewController (false);
+                var nachoTabBar = Util.GetActiveTabBar ();
+                nachoTabBar.SwitchToInbox ();
+            });
+        }
+
+        private void DeferredClicked (object sender)
+        {
+            // No double presses
+            switchAccountButton.UserInteractionEnabled = false;
+
+            Deactivate (null, (McAccount account) => {
+                NavigationController.PopViewController (false);
+                var nachoTabBar = Util.GetActiveTabBar ();
+                nachoTabBar.SwitchToDeferred ();
+            });
+        }
+
+        private void DeadlinesClicked (object sender)
+        {
+            // No double presses
+            switchAccountButton.UserInteractionEnabled = false;
+
+            Deactivate (null, (McAccount account) => {
+                NavigationController.PopViewController (false);
+                var nachoTabBar = Util.GetActiveTabBar ();
+                nachoTabBar.SwitchToDeadlines ();
+            });
         }
     }
 

@@ -62,7 +62,7 @@ namespace NachoCore.Brain
 
         private NcBrainNotification NotificationRateLimiter;
 
-        public NcBrain ()
+        public NcBrain (string prefix = "Brain")
         {
             _Indexes = new ConcurrentDictionary<int, NcIndex> ();
 
@@ -70,7 +70,7 @@ namespace NachoCore.Brain
             LastPeriodicGleanRestart = new DateTime ();
             NotificationRateLimiter = new NcBrainNotification ();
 
-            RootCounter = new NcCounter ("Brain", true);
+            RootCounter = new NcCounter (prefix, true);
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
             McEmailAddressCounters = new OperationCounters ("McEmailAddress", RootCounter);
             RootCounter.AutoReset = true;
@@ -79,6 +79,12 @@ namespace NachoCore.Brain
             LockObj = new object ();
 
             InitializeEventHandler ();
+        }
+
+        public void Cleanup ()
+        {
+            RootCounter.Dispose ();
+            RootCounter = null;
         }
 
         public NcIndex Index (int accountId)

@@ -49,23 +49,56 @@ namespace NachoCore.Model
         // private property so there is no way to use a public property with
         // customized getters to read of a private property.
 
-        // Number of emails receivied
+        ///////////////////// From address statistics /////////////////////
+        // Number of emails receivied  as a From address
         public int EmailsReceived { get; set; }
 
-        // Number of emails read
+        // Number of emails read as a From address
         public int EmailsRead { get; set; }
 
-        // Number of emails replied
+        // Number of emails replied as a From address
         public int EmailsReplied { get; set; }
 
-        // Number of emails archived
+        // Number of emails archived as a From address
         public int EmailsArchived { get; set; }
+
+        // Number of emails deleted without being read as a From address
+        public int EmailsDeleted { get; set; }
+
+        ///////////////////// To address statistics /////////////////////
+        // Number of emails receivied  as a To address
+        public int ToEmailsReceived { get; set; }
+
+        // Number of emails read as a To address
+        public int ToEmailsRead { get; set; }
+
+        // Number of emails replied as a To address
+        public int ToEmailsReplied { get; set; }
+
+        // Number of emails archived as a To address
+        public int ToEmailsArchived { get; set; }
+
+        // Number of emails deleted without being read as a To address
+        public int ToEmailsDeleted { get; set; }
+
+        ///////////////////// Cc address statistics /////////////////////
+        // Number of emails receivied  as a Cc address
+        public int CcEmailsReceived { get; set; }
+
+        // Number of emails read as a Cc address
+        public int CcEmailsRead { get; set; }
+
+        // Number of emails replied as a cc address
+        public int CcEmailsReplied { get; set; }
+
+        // Number of emails archived as a Cc address
+        public int CcEmailsArchived { get; set; }
+
+        // Number of emails deleted without being read as a Cc address
+        public int CcEmailsDeleted { get; set; }
 
         // Number of emails sent to this contact
         public int EmailsSent { get; set; }
-
-        // Number of emails deleted without being read
-        public int EmailsDeleted { get; set; }
 
         public bool ShouldUpdate ()
         {
@@ -104,6 +137,7 @@ namespace NachoCore.Model
 
         }
 
+        ///////////////////// From address methods /////////////////////
         public void IncrementEmailsReceived (int count = 1)
         {
             EmailsReceived += count;
@@ -132,6 +166,88 @@ namespace NachoCore.Model
         {
             EmailsDeleted += count;
             MarkDependencies (NcEmailAddress.Kind.From);
+        }
+
+        ///////////////////// To address methods /////////////////////
+        public void IncrementToEmailsReceived (int count = 1, bool markDependencies = true)
+        {
+            ToEmailsReceived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        public void IncrementToEmailsRead (int count = 1, bool markDependencies = true)
+        {
+            ToEmailsRead += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        public void IncrementToEmailsReplied (int count = 1, bool markDependencies = true)
+        {
+            ToEmailsReplied += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        public void IncrementToEmailsArchived (int count = 1, bool markDependencies = true)
+        {
+            ToEmailsArchived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        public void IncrementToEmailsDeleted (int count = 1, bool markDependencies = true)
+        {
+            ToEmailsDeleted += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        ///////////////////// Cc address methods /////////////////////
+        public void IncrementCcEmailsReceived (int count = 1, bool markDependencies = true)
+        {
+            CcEmailsReceived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsRead (int count = 1, bool markDependencies = true)
+        {
+            CcEmailsRead += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsReplied (int count = 1, bool markDependencies = true)
+        {
+            CcEmailsReplied += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsArchived (int count = 1, bool markDependencies = true)
+        {
+            CcEmailsArchived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsDeleted (int count = 1, bool markDependencies = true)
+        {
+            CcEmailsDeleted += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
         }
 
         public void MarkDependentEmailMessages (NcEmailAddress.Kind addressKind, int delta)

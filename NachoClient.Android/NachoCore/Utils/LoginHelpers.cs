@@ -125,5 +125,62 @@ namespace NachoCore.Utils
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }
+
+        static public void SetSwitchToTime(McAccount account)
+        {
+            // Save most recently used
+            SetMostRecentAccount (account);
+            var time = DateTime.UtcNow.ToString ();
+            McMutables.Set (account.Id, "AccountSwitcher", "SwitchTo", time);
+        }
+
+        static public DateTime GetSwitchToTime(McAccount account)
+        {
+            var defaultTime = DateTime.UtcNow.ToString ();
+            var switchToTime = McMutables.GetOrCreate (account.Id, "AccountSwitcher", "SwitchTo", defaultTime);
+            return DateTime.Parse (switchToTime);
+        }
+
+        static public void SetMostRecentAccount(McAccount account)
+        {
+            var deviceId = McAccount.GetDeviceAccount ().Id;
+            McMutables.SetInt (deviceId, "AccountSwitcher", "MostRecent", account.Id);
+        }
+
+        static public int GetMostRecentAccountId()
+        {
+            var device = McAccount.GetDeviceAccount ();
+            // FIXME, maybe
+            if (null != device) {
+                return McMutables.GetInt (device.Id, "AccountSwitcher", "MostRecent", 0);
+            } else {
+                return 0;
+            }
+        }
+
+        public static McAccount PickStartupAccount()
+        {
+            McAccount account;
+            // See if the most recently used account is ok.
+            var accountId = LoginHelpers.GetMostRecentAccountId();
+            if (0 != accountId) {
+                account = McAccount.QueryById<McAccount> (accountId);
+                if (null != account) {
+                    if (LoginHelpers.AccountIsConfigured (account)) {
+                        return account; // bingo!
+                    }
+                }
+            }
+            // Pick a configured account or default to device account
+            account = McAccount.GetDeviceAccount ();
+            foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
+                if (LoginHelpers.AccountIsConfigured (a)) {
+                    account = a;
+                    break;
+                }
+            }
+            return account;
+        }
+
     }
 }

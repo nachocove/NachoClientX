@@ -30,6 +30,9 @@ namespace NachoClient.iOS
         protected UITabBarItem nachoNowItem;
         protected UITabBarItem settingsItem;
         protected UITabBarItem foldersItem;
+        protected UITabBarItem deadlinesItem;
+        protected UITabBarItem deferredItem;
+        protected UITabBarItem inboxItem;
 
         protected const int TABLEVIEW_TAG = 1999;
 
@@ -59,11 +62,12 @@ namespace NachoClient.iOS
             nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
+            inboxItem = SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
             settingsItem = SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
             // SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
-            // SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
+            deferredItem = SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
+            deadlinesItem = SetTabBarItem ("NachoClient.iOS.DeadlinesViewController", "Deadlines", "nav-mail", "nav-mail-active"); // Done
             foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.FileListViewController", "Files", "more-files", "more-files-active"); // Done
             SetTabBarItem ("NachoClient.iOS.AboutUsViewController", "About Nacho Mail", "more-nachomail", "more-nachomail-active"); // Done
@@ -170,11 +174,32 @@ namespace NachoClient.iOS
             }
         }
 
+        void SwitchTo (UITabBarItem item)
+        {
+            var tab = FindTabRoot (item);
+            tab.PopToRootViewController(false);
+            this.SelectedViewController = tab;
+        }
+
+
         public void SwitchToFolders ()
         {
-            var folderTab = FindTabRoot (foldersItem);
-            folderTab.PopToRootViewController (false);
-            this.SelectedViewController = folderTab;
+            SwitchTo (foldersItem);
+        }
+
+        public void SwitchToInbox ()
+        {
+            SwitchTo (inboxItem);
+        }
+
+        public void SwitchToDeferred ()
+        {
+            SwitchTo (deferredItem);
+        }
+
+        public void SwitchToDeadlines ()
+        {
+            SwitchTo (deadlinesItem);
         }
 
         protected string GetTabBarItemTypeName (UIViewController vc)
