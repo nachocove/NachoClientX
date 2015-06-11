@@ -14,6 +14,7 @@ repos = (
     'MailKit',
     'DnDns',
     'DDay-iCal-Xamarin',
+    'CSharp-Name-Parser',
     'Telemetry',
     'aws-sdk-xamarin',
     'ModernHttpClient',
