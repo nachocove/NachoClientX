@@ -178,7 +178,9 @@ namespace NachoCore.Brain
                 var id = emailMessage.Id.ToString ();
                 if (0 != emailMessage.IsIndexed) {
                     // There is an old version in the index. Remove it first.
+                    OpenedIndexes.Cleanup ();
                     index.Remove ("message", id);
+                    index = OpenedIndexes.Get (emailMessage.AccountId);
                 }
                 var indexDoc = new EmailMessageIndexDocument (id, parameters, message);
 
@@ -251,7 +253,9 @@ namespace NachoCore.Brain
                 var id = contact.Id.ToString ();
                 if (0 != contact.IndexVersion) {
                     // There is an old version in the index. Remove it first.
+                    OpenedIndexes.Cleanup ();
                     index.Remove ("contact", id);
+                    index = OpenedIndexes.Get (contact.AccountId);
                 }
                 var indexDoc = new ContactIndexDocument (id, contactParams);
                 BytesIndexed += index.BatchAdd (indexDoc);
@@ -272,6 +276,7 @@ namespace NachoCore.Brain
 
         protected void UnindexEmailMessage (int accountId, int emailMessageId)
         {
+            OpenedIndexes.Cleanup ();
             var index = Index (accountId);
             if (null == index) {
                 Log.Warn (Log.LOG_BRAIN, "fail to find index for account {0}", accountId);
@@ -282,6 +287,7 @@ namespace NachoCore.Brain
 
         protected void UnindexContact (int accountId, int contactId)
         {
+            OpenedIndexes.Cleanup ();
             var index = Index (accountId);
             if (null == index) {
                 Log.Warn (Log.LOG_BRAIN, "fail to find index for account {0}", accountId);
