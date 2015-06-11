@@ -115,12 +115,10 @@ namespace NachoCore.IMAP
 
             SyncKit syncKit = null;
             var currentHighestInFolder = folder.ImapUidNext - 1;
-            var compareTime = DateTime.UtcNow.AddSeconds (-NoIdlePollTime ());
             if (UserRequested ||
                 0 == folder.ImapUidNext ||
-                folder.ImapLastExamine < compareTime) // perhaps this should be passed in by the caller?
+                folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ())) // perhaps this should be passed in by the caller?
             {
-                Log.Info (Log.LOG_IMAP, "folder.ImapLastExamine {0} < {1}", folder.ImapLastExamine, compareTime);
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.OpenOnly,
