@@ -132,14 +132,12 @@ namespace NachoCore.IMAP
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
             if (SyncKit.MethodEnum.Range == SyncKit.Method) {
-                Log.Info (Log.LOG_IMAP, "Current Max {0} and Min {1}", SyncKit.Folder.ImapUidHighestUidSynced, SyncKit.Folder.ImapUidLowestUidSynced);
                 SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapUidHighestUidSynced = Math.Max (MaxSynced, target.ImapUidHighestUidSynced);
                     target.ImapUidLowestUidSynced = Math.Min (MinSynced, target.ImapUidLowestUidSynced);
                     return true;
                 });
-                Log.Info (Log.LOG_IMAP, "Set Max to {0} and Min to {1}", SyncKit.Folder.ImapUidHighestUidSynced, SyncKit.Folder.ImapUidLowestUidSynced);
             }
             var protocolState = BEContext.ProtocolState;
             if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == SyncKit.Folder.Type) {
