@@ -105,14 +105,12 @@ namespace NachoCore.IMAP
         /// </remarks>
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder, bool UserRequested = false)
         {
-            if (folder.ImapNoSelect) {
-                return null;
-            }
-
             if (null == folder) {
                 return null;
             }
-
+            if (folder.ImapNoSelect) {
+                return null;
+            }
             SyncKit syncKit = null;
             var currentHighestInFolder = folder.ImapUidNext - 1;
             if (UserRequested ||
