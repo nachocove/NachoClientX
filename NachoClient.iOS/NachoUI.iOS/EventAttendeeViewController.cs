@@ -614,8 +614,20 @@ namespace NachoClient.iOS
                 Log.Error (Log.LOG_UI, "EventAttendeeViewController.SendAttendeeInvite(): Calendar item is a {0} instead of a McCalendar.", c.GetType ().Name);
                 return;
             }
+            string plainTextDescription;
+            switch (item.DescriptionType) {
+            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                plainTextDescription = Util.ConvertToPlainText (item.Description, NSDocumentType.HTML);
+                break;
+            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                plainTextDescription = Util.ConvertToPlainText (item.Description, NSDocumentType.RTF);
+                break;
+            default:
+                plainTextDescription = item.Description;
+                break;
+            }
             var iCalPart = CalendarHelper.MimeRequestFromCalendar (item);
-            var mimeBody = CalendarHelper.CreateMime (item.Description, iCalPart, item.attachments);
+            var mimeBody = CalendarHelper.CreateMime (plainTextDescription, iCalPart, item.attachments);
 
             CalendarHelper.SendInvite (account, item, attendee, mimeBody);
         }
