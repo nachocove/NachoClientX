@@ -15,6 +15,7 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using MailKit.Security;
 using System.Security.Cryptography.X509Certificates;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.IMAP
 {
@@ -46,6 +47,9 @@ namespace NachoCore.IMAP
                 lock (Client.SyncRoot) {
                     if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                    }
+                    if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
+                        BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
                     }
                     Client.Idle (done.Token, CancellationToken.None);
                     Cts.Token.ThrowIfCancellationRequested ();

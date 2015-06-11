@@ -432,6 +432,7 @@
     <Compile Include="NachoCore\Brain\NcBrainHelpers.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEventHandler.cs" />
     <Compile Include="NachoCore\Utils\NcAccountMonitor.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

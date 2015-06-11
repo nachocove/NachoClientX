@@ -82,6 +82,9 @@ namespace NachoCore.IMAP
                         isDistinguished = false;
                     }
                 }
+
+                // FIXME: Catch errors here, so that an error for one folder doesn't blow up the entire FolderSync
+
                 McFolder folder;
                 if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
                     mailKitFolder.Open (FolderAccess.ReadOnly);
