@@ -5,6 +5,7 @@ using Foundation;
 using UIKit;
 using CoreGraphics;
 using NachoCore.Model;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -57,6 +58,7 @@ namespace NachoClient.iOS
                 switchButton.SetImage (image, UIControlState.Selected);
                 switchButton.SetImage (image, UIControlState.Highlighted);
             }
+            UpdateBeacon ();
         }
 
         public void SetImage (string imageName)
@@ -66,6 +68,7 @@ namespace NachoClient.iOS
                 switchButton.SetImage (image, UIControlState.Selected);
                 switchButton.SetImage (image, UIControlState.Highlighted);
             }
+            UpdateBeacon ();
         }
 
         public void SetHaloColor(UIColor color)
@@ -73,6 +76,15 @@ namespace NachoClient.iOS
             UIView.Animate (0.3, () => {
                 haloView.BackgroundColor = color;
             });
+        }
+
+        public void UpdateBeacon()
+        {
+            if (NcAccountMonitor.Instance.HasNewEmail) {
+                SetHaloColor (A.Color_NachoBlue);
+            } else {
+                SetHaloColor (A.Color_NachoGreen);
+            }
         }
     }
 

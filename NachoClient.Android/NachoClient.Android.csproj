@@ -431,6 +431,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
     <Compile Include="NachoCore\Brain\NcBrainHelpers.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEventHandler.cs" />
+    <Compile Include="NachoCore\Utils\NcAccountMonitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

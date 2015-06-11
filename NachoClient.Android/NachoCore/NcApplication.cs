@@ -442,14 +442,8 @@ namespace NachoCore
             }
             Telemetry.StartService ();
 
-            // Pick a configured account or default to device account
-            Account = McAccount.GetDeviceAccount ();
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (LoginHelpers.AccountIsConfigured (account)) {
-                    Account = account;
-                    break;
-                }
-            }
+            // Pick most recently used account
+            Account = LoginHelpers.PickStartupAccount();
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
