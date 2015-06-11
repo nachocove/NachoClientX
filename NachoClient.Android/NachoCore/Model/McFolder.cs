@@ -48,8 +48,6 @@ namespace NachoCore.Model
         public DateTime LastSyncAttempt { get; set; }
         // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
         public bool ImapNoSelect { get; set; }
-        // The lowest known Uid. Used to determine how 'low' to sync/probe
-        public uint ImapLowestUid { get; set; }
         // The lowest UID we've synced in the current round of syncing
         public uint ImapUidLowestUidSynced { get; set; }
         // The highest UID we've synced in the current round of syncing
