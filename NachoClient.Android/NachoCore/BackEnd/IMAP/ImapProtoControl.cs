@@ -397,8 +397,8 @@ namespace NachoCore.IMAP
 
         private void DoDisc ()
         {
-            DoConn (); // For now.
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
+            SetCmd (new ImapDiscoverCommand (this));
+            ExecuteCmd ();
         }
 
         private void DoConn ()
