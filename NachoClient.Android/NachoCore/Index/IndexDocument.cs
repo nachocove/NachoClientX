@@ -1,4 +1,4 @@
-//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.IO;
@@ -83,28 +83,42 @@ namespace NachoCore.Index
         }
     }
 
+    public class EmailMessageIndexParameters
+    {
+        public InternetAddressList From;
+        public InternetAddressList To;
+        public InternetAddressList Cc;
+        public InternetAddressList Bcc;
+        public string Subject;
+        public string Content;
+        public DateTime ReceivedDate;
+    }
+
     public class EmailMessageIndexDocument : MimeIndexDocument
     {
-        public EmailMessageIndexDocument (string id, string content, MimeMessage message) :
-            base ("message", id, content, message)
-        {
-            AddIndexedField ("subject", Message.Subject);
+        public const int Version = 2;
 
-            var dateString = DateTools.DateToString (Message.Date.DateTime, DateTools.Resolution.SECOND);
+        public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters, MimeMessage message) :
+            base ("message", id, parameters.Content, message)
+        {
+            AddIndexedField ("subject", parameters.Subject);
+
+            var dateString = DateTools.DateToString (parameters.ReceivedDate, DateTools.Resolution.SECOND);
             var dateField = GetExactMatchOnlyField ("received_date", dateString);
             Doc.Add (dateField);
             BytesIndexed += dateString.Length;
 
             // Index the addresses
-            AddAddressList ("from", Message.From);
-            AddAddressList ("to", Message.To);
-            AddAddressList ("cc", Message.Cc);
-            AddAddressList ("bcc", Message.Bcc);
+            AddAddressList ("from", parameters.From);
+            AddAddressList ("to", parameters.To);
+            AddAddressList ("cc", parameters.Cc);
+            AddAddressList ("bcc", parameters.Bcc);
         }
     }
 
     /// <summary>
-    /// This class is used for McContact to convert to 
+    /// This class is used for McContact to convert to a model agnostic format so we don't 
+    /// need to include NachoCove.Model here.
     /// </summary>
     public class ContactIndexParameters
     {

@@ -162,8 +162,16 @@ namespace Test.Common
             }
             long bytesIndexed;
             var tokenizer = new NcMimeTokenizer (message);
-            var content = tokenizer.Content;
-            var indexDoc = new EmailMessageIndexDocument (id, content, message);
+            var parameters = new EmailMessageIndexParameters () {
+                From = message.From,
+                To = message.To,
+                Cc = message.Cc,
+                Bcc = message.Bcc,
+                Subject = message.Subject,
+                Content = tokenizer.Content,
+                ReceivedDate = message.Date.DateTime,
+            };
+            var indexDoc = new EmailMessageIndexDocument (id, parameters, message);
             if (useBatch) {
                 bytesIndexed = Index.BatchAdd (indexDoc);
             } else {

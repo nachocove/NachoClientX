@@ -808,6 +808,9 @@ namespace NachoCore.Model
             });
         }
 
+        // We need a specialized version of Update() because the normal Update()
+        // assumes there is a change in content and un-index the message. This would lead
+        // to a perpetual loop of indexing and un-indexing.
         public void UpdateIndexVersion ()
         {
             NcModel.Instance.BusyProtect (() => {
@@ -1571,8 +1574,8 @@ namespace NachoCore.Model
                 "  likelihood (b.FilePresence = ?, 0.5) AND " +
                 "  likelihood (c.IndexVersion < ?, 0.5)) " +
                 " LIMIT ?",
-                ContactIndexDocument.Version - 1, ContactIndexDocument.Version,
-                McAbstrFileDesc.FilePresenceEnum.Complete, maxContact
+                ContactIndexDocument.Version - 1, McAbstrFileDesc.FilePresenceEnum.Complete,
+                ContactIndexDocument.Version, maxContact
             );
         }
 
