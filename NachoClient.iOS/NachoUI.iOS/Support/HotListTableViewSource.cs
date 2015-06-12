@@ -205,6 +205,21 @@ namespace NachoClient.iOS
             return cell;
         }
 
+        /// <summary>
+        /// The height of the parent table view can change after some of the cells have been created.
+        /// Adjust the height or location of any views as necessary to react to the change.
+        /// </summary>
+        protected void AdjustHeight (UITableViewCell cell, nfloat rowHeight)
+        {
+            if (rowHeight != cell.Frame.Height) {
+                ViewFramer.Create (cell).Height (rowHeight);
+                ViewFramer.Create (cell.ViewWithTag (CARD_VIEW_TAG)).Height (rowHeight);
+                ViewFramer.Create (cell.ViewWithTag (SWIPE_TAG)).Height (rowHeight - 10);
+                ViewFramer.Create (cell.ViewWithTag (TOOLBAR_TAG)).Y (rowHeight - 54);
+                ViewFramer.Create (cell.ViewWithTag (USER_MORE_TAG)).Y (rowHeight - 86);
+            }
+        }
+
         protected void ConfigureAsUnavailable (UITableViewCell cell)
         {
             foreach (var v in cell.ContentView.Subviews) {
@@ -224,6 +239,8 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, bool isRefresh)
         {
+            AdjustHeight (cell, GetHeightForRow (tableView, indexPath));
+
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.DisableSwipe ();
             view.OnSwipe = null;
