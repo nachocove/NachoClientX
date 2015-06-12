@@ -1493,6 +1493,15 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountMonitor.cs">
       <Link>NachoCore\Utils\NcAccountMonitor.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScore.cs">
+      <Link>NachoCore\Model\McEmailAddressScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScore.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\IScoreStates.cs">
+      <Link>NachoCore\Model\IScoreStates.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

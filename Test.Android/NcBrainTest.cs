@@ -127,8 +127,9 @@ namespace Test.Common
             // Imagine initially 1 out of 3 emails are read
             Address.Score = 1.0 / 3.0;
             // Then receive one more and read it.
-            Address.EmailsReceived = 4;
-            Address.EmailsRead = 2;
+            Address.ScoreStates.EmailsReceived = 4;
+            Address.ScoreStates.EmailsRead = 2;
+            Address.ScoreStates.Update ();
             Address.ScoreVersion = Scoring.Version;
             Address.Update ();
 
@@ -157,8 +158,9 @@ namespace Test.Common
         public void TestUpdateEmailMessage ()
         {
             Address.IsVip = false;
-            Address.EmailsRead = 2;
-            Address.EmailsReceived = 3;
+            Address.ScoreStates.EmailsRead = 2;
+            Address.ScoreStates.EmailsReceived = 3;
+            Address.ScoreStates.Update ();
             Address.Score = 2.0 / 3.0;
             Address.Update ();
 
@@ -234,23 +236,23 @@ namespace Test.Common
 
         protected void CheckAddressFromStatistics (McEmailAddress address, int received, int read, int replied)
         {
-            Assert.AreEqual (received, address.EmailsReceived);
-            Assert.AreEqual (read, address.EmailsRead);
-            Assert.AreEqual (replied, address.EmailsReplied);
+            Assert.AreEqual (received, address.ScoreStates.EmailsReceived);
+            Assert.AreEqual (read, address.ScoreStates.EmailsRead);
+            Assert.AreEqual (replied, address.ScoreStates.EmailsReplied);
         }
 
         protected void CheckAddressToStatistics (McEmailAddress address, int received, int read, int replied)
         {
-            Assert.AreEqual (received, address.ToEmailsReceived);
-            Assert.AreEqual (read, address.ToEmailsRead);
-            Assert.AreEqual (replied, address.ToEmailsReplied);
+            Assert.AreEqual (received, address.ScoreStates.ToEmailsReceived);
+            Assert.AreEqual (read, address.ScoreStates.ToEmailsRead);
+            Assert.AreEqual (replied, address.ScoreStates.ToEmailsReplied);
         }
 
         protected void CheckAddressCcStatistics (McEmailAddress address, int received, int read, int replied)
         {
-            Assert.AreEqual (received, address.CcEmailsReceived);
-            Assert.AreEqual (read, address.CcEmailsRead);
-            Assert.AreEqual (replied, address.CcEmailsReplied);
+            Assert.AreEqual (received, address.ScoreStates.CcEmailsReceived);
+            Assert.AreEqual (read, address.ScoreStates.CcEmailsRead);
+            Assert.AreEqual (replied, address.ScoreStates.CcEmailsReplied);
         }
 
         protected McEmailAddress EmailAddress (int id)

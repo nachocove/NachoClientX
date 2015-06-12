@@ -432,6 +432,9 @@
     <Compile Include="NachoCore\Brain\NcBrainHelpers.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEventHandler.cs" />
     <Compile Include="NachoCore\Utils\NcAccountMonitor.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddressScore.cs" />
+    <Compile Include="NachoCore\Model\IScoreStates.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScore.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

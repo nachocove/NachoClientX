@@ -48,12 +48,6 @@ namespace NachoCore.Model
         /// Did the user take explicit action?
         public int UserAction { get; set; }
 
-        /// How many times the email is read
-        public int TimesRead { get; set; }
-
-        /// How long the user read the email
-        public int SecondsRead { get; set; }
-
         [Indexed] /// Time variance state machine type
         public int TimeVarianceType { get; set; }
 
@@ -66,13 +60,22 @@ namespace NachoCore.Model
         [Indexed]
         public int NeedUpdate { get; set; }
 
-        [Indexed]
-        public bool ScoreIsRead { get; set; }
-
-        [Indexed]
-        public bool ScoreIsReplied { get; set; }
-
         public const double VipScore = 1.0;
+
+        private McEmailMessageScore DbScoreStates;
+
+        [Ignore]
+        public McEmailMessageScore ScoreStates {
+            get {
+                if (null == DbScoreStates) {
+                    ReadScoreStates ();
+                }
+                return DbScoreStates;
+            }
+            set {
+                DbScoreStates = value;
+            }
+        }
 
         private ConcurrentDictionary<int, string> _AccountAddresses = new ConcurrentDictionary<int, string> ();
 
@@ -173,7 +176,10 @@ namespace NachoCore.Model
                         emailAddress.IncrementEmailsRead ();
                     }
                     emailAddress.Score = emailAddress.Classify ();
-                    emailAddress.UpdateByBrain ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        emailAddress.ScoreStates.Update ();
+                        emailAddress.UpdateByBrain ();
+                    });
                 } else {
                     Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
@@ -204,7 +210,10 @@ namespace NachoCore.Model
                         }
                         emailAddress.IncrementEmailsReplied ();
                         emailAddress.Score = emailAddress.Classify ();
-                        emailAddress.UpdateByBrain ();
+                        NcModel.Instance.RunInTransaction (() => {
+                            emailAddress.ScoreStates.Update ();
+                            emailAddress.UpdateByBrain ();
+                        });
                     }
 
                     // Initialize new columns
@@ -271,6 +280,7 @@ namespace NachoCore.Model
                     emailAddress.IncrementToEmailsRead (markDependencies: false);
                 }
                 emailAddress.MarkDependencies (NcEmailAddress.Kind.To);
+                emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
             foreach (var ccAddressId in CcEmailAddressId) {
@@ -286,6 +296,7 @@ namespace NachoCore.Model
                     emailAddress.IncrementCcEmailsRead (markDependencies: false);
                 }
                 emailAddress.MarkDependencies (NcEmailAddress.Kind.Cc);
+                emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
         }
@@ -301,28 +312,28 @@ namespace NachoCore.Model
 
         public void IncrementTimesRead (int count = 1)
         {
-            TimesRead += count;
+            ScoreStates.TimesRead += count;
         }
 
         public void IncrementSecondsRead (int seconds)
         {
-            SecondsRead += seconds;
+            ScoreStates.SecondsRead += seconds;
         }
 
         public void SetScoreIsRead (bool value)
         {
-            if (value == ScoreIsRead) {
+            if (value == ScoreStates.IsRead) {
                 return;
             }
-            ScoreIsRead = value;
+            ScoreStates.IsRead = value;
         }
 
         public void SetScoreIsReplied (bool value)
         {
-            if (value == ScoreIsReplied) {
+            if (value == ScoreStates.IsReplied) {
                 return;
             }
-            ScoreIsReplied = value;
+            ScoreStates.IsReplied = value;
         }
 
         private string TimeVarianceDescription ()
@@ -654,6 +665,33 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
         }
 
+
+        protected void InsertScoreStates ()
+        {
+            DbScoreStates = new McEmailMessageScore () {
+                AccountId = AccountId,
+                ParentId = Id,
+            };
+            DbScoreStates.Insert ();
+        }
+
+        protected void ReadScoreStates ()
+        {
+            DbScoreStates = McEmailMessageScore.QueryByParentId (Id);
+            if (null == DbScoreStates) {
+                Log.Error (Log.LOG_BRAIN, "fail to get score states for email message {0}. create one", Id);
+                DbScoreStates = new McEmailMessageScore () {
+                    AccountId = this.AccountId
+                };
+                DbScoreStates.Insert ();
+            }
+        }
+
+        protected void DeleteScoreStates ()
+        {
+            DbScoreStates = null;
+            McEmailMessageScore.DeleteByParentId (Id);
+        }
     }
 }
 
