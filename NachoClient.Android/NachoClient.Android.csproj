@@ -435,6 +435,7 @@
     <Compile Include="NachoCore\Model\McEmailAddressScore.cs" />
     <Compile Include="NachoCore\Model\IScoreStates.cs" />
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScore.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

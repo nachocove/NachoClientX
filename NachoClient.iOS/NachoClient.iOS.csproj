@@ -1502,6 +1502,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\IScoreStates.cs">
       <Link>NachoCore\Model\IScoreStates.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

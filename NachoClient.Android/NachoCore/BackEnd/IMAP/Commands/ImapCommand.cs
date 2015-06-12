@@ -116,8 +116,8 @@ namespace NachoCore.IMAP
                 folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
-            if ((null != folder) && (folder.ImapUidValidity < mailKitFolder.UidValidity)) {
-                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} < {2})", mailKitFolder.FullName, folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
+            if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
+                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} != {2})", mailKitFolder.FullName, folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
                 folder.Delete ();
                 folder = null;
             }
@@ -126,6 +126,7 @@ namespace NachoCore.IMAP
                 // Add it
                 folder = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
+                folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                 folder.Insert ();
                 added_or_changed = true;
             } else if (folder.ServerId != mailKitFolder.FullName ||
@@ -164,6 +165,12 @@ namespace NachoCore.IMAP
                 });
                 changed = true;
             }
+            // Set the timestamp regardless of whether any values changed, since this indicates we DID look.
+            folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ImapLastExamine = DateTime.UtcNow;
+                return true;
+            });
             return changed;
         }
 

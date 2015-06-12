@@ -41,15 +41,13 @@ namespace NachoCore.IMAP
                 case (uint)St.Start:
                     return BackEndStateEnum.NotYetStarted;
 
-                case (uint)Lst.DiscW:
-                    return BackEndStateEnum.Running;
-
                 case (uint)Lst.UiCrdW:
                     return BackEndStateEnum.CredWait;
 
                 case (uint)Lst.UiServConfW:
                     return BackEndStateEnum.ServerConfWait;
 
+                case (uint)Lst.DiscW:
                 case (uint)Lst.FSyncW:
                 case (uint)Lst.CmdW:
                 case (uint)Lst.Pick:
@@ -399,7 +397,8 @@ namespace NachoCore.IMAP
 
         private void DoDisc ()
         {
-            DoConn (); // For now.
+            SetCmd (new ImapDiscoverCommand (this));
+            ExecuteCmd ();
         }
 
         private void DoConn ()
