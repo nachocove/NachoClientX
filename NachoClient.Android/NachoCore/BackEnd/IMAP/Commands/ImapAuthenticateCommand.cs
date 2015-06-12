@@ -30,10 +30,15 @@ namespace NachoCore.IMAP
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
             }
             if (!Client.IsAuthenticated) {
-                // FIXME - add support for OAUTH2.
-                Client.AuthenticationMechanisms.Remove ("XOAUTH");
-                Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
+                    Client.AuthenticationMechanisms.Remove ("LOGIN");
+                    Client.AuthenticationMechanisms.Remove ("PLAIN");
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                } else {
+                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                }
             }
             var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
             if (cap != BEContext.ProtocolState.ImapServerCapabilities) {

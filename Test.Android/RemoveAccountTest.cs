@@ -41,6 +41,7 @@ namespace Test.iOS
 
             // create cred
             var cred = new McCred () {
+                CredType = McCred.CredTypeEnum.Password,
                 AccountId = account.Id,
                 Username = Email,
             };

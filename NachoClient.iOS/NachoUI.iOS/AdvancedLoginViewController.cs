@@ -813,8 +813,16 @@ namespace NachoClient.iOS
             GoogleDumper (user);
 
             service = McAccount.AccountServiceEnum.GoogleDefault;
-            CredentialsDismissed (null, false, user.Profile.Email, "wrongsville");
 
+            // FIXME STEVE
+            var account = NcAccountHandler.Instance.CreateAccount (service,
+                user.Profile.Email,
+                user.Authentication.AccessToken, 
+                user.Authentication.RefreshToken,
+                user.Authentication.AccessTokenExpirationDate.ToDateTime ());
+            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
+            // FIXME STEVE
+            // CredentialsDismissed (null, false, user.Profile.Email, "wrongsville");
 
             // TODO:
             // 1. Check for dup account

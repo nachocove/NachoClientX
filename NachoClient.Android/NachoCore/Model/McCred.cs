@@ -7,6 +7,10 @@ namespace NachoCore.Model
 {
     public class McCred : McAbstrObjectPerAcc
     {
+        public enum CredTypeEnum { Password = 0, OAuth2 };
+
+        public CredTypeEnum CredType { get; set; }
+
         public string Username { get; set; }
 
         // We want to remember if the user entered their
@@ -14,11 +18,15 @@ namespace NachoCore.Model
         public bool UserSpecifiedUsername { get; set; }
 
         /// <summary>
-        /// DO NOT ACCESS. Use UpdatePassword/GetPassword.
-        /// Property is here for SQLite.Net only!
+        /// DO NOT ACCESS private properties. Use UpdateXxx/GetXxx.
+        /// private properties are here for SQLite.Net only!
         /// </summary>
         /// <value>The password.</value>
         private string Password { get; set; }
+
+        private string AccessToken { get; set; }
+
+        private string RefreshToken { get; set; }
 
         public DateTime Expiry { get; set; }
 
@@ -37,10 +45,11 @@ namespace NachoCore.Model
         public void UpdatePassword (string password)
         {
             NcAssert.True (0 != Id);
+            NcAssert.AreEqual ((int)CredTypeEnum.Password, (int)CredType, string.Format ("UpdatePassword:CredType:{0}", CredType));
             Expiry = DateTime.MaxValue;
             RectificationUrl = null;
             if (Keychain.Instance.HasKeychain ()) {
-                Keychain.Instance.SetPassword (Id, password);
+                NcAssert.True (Keychain.Instance.SetPassword (Id, password));
                 Password = null;
                 Update ();
             } else {
@@ -49,6 +58,24 @@ namespace NachoCore.Model
             }
             var account = McAccount.QueryById<McAccount> (AccountId);
             NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_McCredPasswordChanged);
+        }
+
+        public void UpdateOauth2 (string accessToken, string refreshToken, DateTime expiry)
+        {
+            NcAssert.True (0 != Id);
+            NcAssert.AreEqual ((int)CredTypeEnum.OAuth2, (int)CredType, string.Format ("UpdateOauth2:CredType:{0}", CredType));
+            Expiry = expiry;
+            if (Keychain.Instance.HasKeychain ()) {
+                NcAssert.True (Keychain.Instance.SetAccessToken (Id, accessToken));
+                AccessToken = null;
+                NcAssert.True (Keychain.Instance.SetRefreshToken (Id, refreshToken));
+                RefreshToken = null;
+                Update ();
+            } else {
+                AccessToken = accessToken;
+                RefreshToken = refreshToken;
+                Update ();
+            }
         }
 
         static public string Join(string domain, string username)
@@ -96,6 +123,24 @@ namespace NachoCore.Model
                 return Keychain.Instance.GetPassword (Id);
             } else {
                 return Password;
+            }
+        }
+
+        public string GetAccessToken ()
+        {
+            if (Keychain.Instance.HasKeychain () && null == AccessToken) {
+                return Keychain.Instance.GetAccessToken (Id);
+            } else {
+                return AccessToken;
+            }
+        }
+
+        public string GetRefreshToken ()
+        {
+            if (Keychain.Instance.HasKeychain () && null == RefreshToken) {
+                return Keychain.Instance.GetRefreshToken (Id);
+            } else {
+                return RefreshToken;
             }
         }
 
