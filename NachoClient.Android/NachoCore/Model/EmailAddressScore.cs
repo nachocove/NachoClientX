@@ -292,8 +292,9 @@ namespace NachoCore.Model
 
         protected void InsertScoreStates ()
         {
+            NcAssert.True ((0 < AccountId) && (0 < Id));
             DbScoreStates = new McEmailAddressScore () {
-                AccountId = this.AccountId,
+                AccountId = AccountId,
                 ParentId = Id,
             };
             DbScoreStates.Insert ();

@@ -668,6 +668,7 @@ namespace NachoCore.Model
 
         protected void InsertScoreStates ()
         {
+            NcAssert.True ((0 < AccountId) && (0 < Id));
             DbScoreStates = new McEmailMessageScore () {
                 AccountId = AccountId,
                 ParentId = Id,
@@ -680,10 +681,7 @@ namespace NachoCore.Model
             DbScoreStates = McEmailMessageScore.QueryByParentId (Id);
             if (null == DbScoreStates) {
                 Log.Error (Log.LOG_BRAIN, "fail to get score states for email message {0}. create one", Id);
-                DbScoreStates = new McEmailMessageScore () {
-                    AccountId = this.AccountId
-                };
-                DbScoreStates.Insert ();
+                InsertScoreStates ();
             }
         }
 
