@@ -336,7 +336,7 @@ namespace NachoCore.IMAP
                         }
                         syncKit = GenSyncKit (accountId, protocolState, folder);
                         if (null != syncKit) {
-                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ServerId);
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.IsDistinguished ? folder.ServerId : "User Folder");
                             return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
                                 new ImapSyncCommand (BEContext, syncKit));
                         }

@@ -403,7 +403,6 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
     <Compile Include="NachoCore\Utils\NcSamples.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
-    <Compile Include="NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
