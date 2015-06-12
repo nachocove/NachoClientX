@@ -791,6 +791,12 @@ namespace NachoClient.iOS
             service = McAccount.AccountServiceEnum.None;
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
+
+            // Add scope to give full access to email
+            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
+            scopes.Add ("https://mail.google.com");
+            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
+
             Google.iOS.GIDSignIn.SharedInstance.SignIn ();
         }
 
@@ -799,7 +805,7 @@ namespace NachoClient.iOS
         {
             // TODO: Handle errors
             if (null != error) {
-                if (error.Code == (int) GIDSignInErrorCode.CodeCanceled) {
+                if (error.Code == (int)GIDSignInErrorCode.CodeCanceled) {
                     return;
                 }
             }
