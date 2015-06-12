@@ -19,13 +19,13 @@ namespace NachoCore.IMAP
             if (!Client.IsConnected) {
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
                 Log.Info (Log.LOG_IMAP, "IMAP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
-                Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
             }
             if (!Client.IsAuthenticated) {
                 // FIXME - add support for OAUTH2.
                 Client.AuthenticationMechanisms.Remove ("XOAUTH");
                 Client.AuthenticationMechanisms.Remove ("XOAUTH2");
                 Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
             }
             var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
             if (cap != BEContext.ProtocolState.ImapServerCapabilities) {
