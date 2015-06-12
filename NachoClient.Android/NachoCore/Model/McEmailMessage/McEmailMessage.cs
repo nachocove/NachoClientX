@@ -1050,6 +1050,7 @@ namespace NachoCore.Model
                 InsertAddressMaps ();
                 InsertMeetingRequest ();
                 InsertCategories ();
+                InsertScoreStates ();
             });
               
             return returnVal;
@@ -1070,6 +1071,8 @@ namespace NachoCore.Model
                     DeleteAddressMaps ();
                     InsertAddressMaps ();
                 }
+                // Score states are only affected by brain which uses the score states Update() method.
+                // So, no need to update score states here
             });
 
             return returnVal;
@@ -1107,6 +1110,7 @@ namespace NachoCore.Model
         {
             int returnVal = base.Delete ();
             NcBrain.UnindexEmailMessage (this);
+            DeleteScoreStates ();
             return returnVal;
         }
 
