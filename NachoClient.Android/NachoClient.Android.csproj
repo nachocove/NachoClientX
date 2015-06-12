@@ -429,6 +429,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration30.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

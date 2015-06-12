@@ -1483,6 +1483,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration30.cs">
+      <Link>NachoCore\Model\Migration\NcMigration30.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
