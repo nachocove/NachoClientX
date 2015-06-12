@@ -70,6 +70,7 @@ namespace NachoCore.IMAP
 
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Getting Folderstate");
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
@@ -93,6 +94,10 @@ namespace NachoCore.IMAP
 
             // Process the various Methods here.
             case SyncKit.MethodEnum.Range:
+                MaxSynced = SyncKit.UidList.Max ().Id;
+                MinSynced = SyncKit.UidList.Min ().Id;
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
+                    SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder");
                 IList<IMessageSummary> imapSummaries = null;
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
@@ -103,8 +108,6 @@ namespace NachoCore.IMAP
                     imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
                     cap.Stop ();
                     Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    MaxSynced = SyncKit.UidList.Max ().Id;
-                    MinSynced = SyncKit.UidList.Min ().Id;
                     cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                     foreach (var imapSummary in imapSummaries) {
                         var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
