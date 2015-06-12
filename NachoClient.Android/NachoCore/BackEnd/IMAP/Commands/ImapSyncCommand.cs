@@ -410,7 +410,6 @@ namespace NachoCore.IMAP
                     if (!isPlainText) {
                         var p = Html2Text (preview);
                         if (string.Empty == p) {
-                            Log.Warn (Log.LOG_IMAP, "Html-converted preview is empty. Source {0}", preview);
                             preview = "(No Preview available)";
                         } else {
                             preview = p;
@@ -423,9 +422,7 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Could not find any previewable segments");
             }
 
-            if (string.Empty != preview) {
-                Log.Info (Log.LOG_IMAP, "IMAP uid {0} preview <{1}>", summary.UniqueId.Value, preview);
-            } else {
+            if (string.Empty == preview) {
                 // This can happen if there's only attachments in the message.
                 Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
             }
@@ -434,7 +431,6 @@ namespace NachoCore.IMAP
 
         private BodyPart findPreviewablePart (MessageSummary summary)
         {
-            Log.Info (Log.LOG_IMAP, "Finding text bodypart for uid {0}", summary.UniqueId.Value.Id);
             BodyPart text;
             text = summary.BodyParts.OfType<BodyPartMessage> ().FirstOrDefault ();
             if (null == text) {

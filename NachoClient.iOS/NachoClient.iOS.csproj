@@ -1383,9 +1383,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
       <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
     </Compile>

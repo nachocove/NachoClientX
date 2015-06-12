@@ -14,7 +14,7 @@ using MailKit.Security;
 
 namespace NachoCore.IMAP
 {
-    public class ImapProtoControl : NcProtoControl, IPushAssistOwner
+    public class ImapProtoControl : NcProtoControl, IPushAssistOwner, INcProtocolLogger
     {
         public ImapClient ImapClient;
 
@@ -475,15 +475,23 @@ namespace NachoCore.IMAP
         public override void ServerConfResp (bool forceAutodiscovery)
         {
             if (forceAutodiscovery) {
-                Log.Error (Log.LOG_IMAP, "Wy a forceautodiscovery?");
+                Log.Error (Log.LOG_IMAP, "Why a forceautodiscovery?");
             }
             Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "IMAPPCUSSC");
         }
 
-        public static ImapClient newClientWithLogger()
+        #region INcProtocolLogger implementation
+
+        public bool ShouldLog ()
         {
-            // FIXME - redaction.
-            MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP);
+            return false;
+        }
+
+        #endregion
+
+        public ImapClient newClientWithLogger()
+        {
+            MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP, this);
             return new ImapClient (logger);
         }
 

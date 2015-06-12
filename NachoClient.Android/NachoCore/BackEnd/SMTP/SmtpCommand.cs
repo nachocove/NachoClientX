@@ -98,15 +98,21 @@ namespace NachoCore.SMTP
         public void ConnectAndAuthenticate()
         {
             lock(Client.SyncRoot) {
-                //client.ClientCertificates = new X509CertificateCollection ();
-                // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
-                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                if (!Client.IsConnected) {
+                    //client.ClientCertificates = new X509CertificateCollection ();
+                    // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
+                    Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                    Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+                    Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
+                }
 
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                if (!Client.IsAuthenticated) {
+                    // Note: since we don't have an OAuth2 token, disable
+                    // the XOAUTH2 authentication mechanism.
+                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
 
-                Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                }
             }
         }
 
