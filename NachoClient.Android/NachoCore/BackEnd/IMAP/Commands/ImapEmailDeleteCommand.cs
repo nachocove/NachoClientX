@@ -5,12 +5,13 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using MailKit;
 using System.Collections.Generic;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapEmailDeleteCommand : ImapCommand
     {
-        public ImapEmailDeleteCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapEmailDeleteCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();

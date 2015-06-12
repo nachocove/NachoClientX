@@ -1,22 +1,20 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Text;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
-using System.Linq;
 using MailKit;
 using MailKit.Net.Imap;
 using System.Security.Cryptography.X509Certificates;
-using MailKit.Security;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
     public class ImapProtoControl : NcProtoControl, IPushAssistOwner, INcProtocolLogger
     {
-        public ImapClient ImapClient;
+        public ImapClient MainClient;
 
         public enum Lst : uint
         {
@@ -25,7 +23,8 @@ namespace NachoCore.IMAP
             UiServConfW,
             FSyncW,
             Pick,
-            CmdW,
+            QOpW,
+            HotQOpW,
             Wait,
             Parked,
         };
@@ -49,7 +48,8 @@ namespace NachoCore.IMAP
 
                 case (uint)Lst.DiscW:
                 case (uint)Lst.FSyncW:
-                case (uint)Lst.CmdW:
+                case (uint)Lst.QOpW:
+                case (uint)Lst.HotQOpW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Wait:
                 case (uint)Lst.Parked:
@@ -83,7 +83,7 @@ namespace NachoCore.IMAP
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
             SetupAccount ();
-            ImapClient = newClientWithLogger ();
+            MainClient = newImapClientWithLogger ();
 
             Sm = new NcStateMachine ("IMAPPC") { 
                 Name = string.Format ("IMAPPC({0})", AccountId),
@@ -222,13 +222,14 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)ImapEvt.E.FromStrat, Act = DoArg, State = (uint)Lst.CmdW },
+                            new Trans { Event = (uint)ImapEvt.E.FromStrat, Act = DoArg, State = (uint)Lst.QOpW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
                         }
                     },
                     new Node {
-                        State = (uint)Lst.CmdW,
+                        State = (uint)Lst.QOpW,
                         Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
                         },
@@ -240,13 +241,34 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
-                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
-                            new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, ActSetsState = true },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
                         },
+                    },
+                    new Node {
+                        State = (uint)Lst.HotQOpW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)ImapEvt.E.UiSetCred,
+                            (uint)ImapEvt.E.UiSetServConf,
+                        },
+                        Invalid = new [] {
+                            (uint)ImapEvt.E.FromStrat,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoExtraOrDont, ActSetsState = true },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                            new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
+                            new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoArg, State = (uint)Lst.Wait },
+                        }
                     },
                     new Node {
                         State = (uint)Lst.Wait,
@@ -397,19 +419,19 @@ namespace NachoCore.IMAP
 
         private void DoDisc ()
         {
-            SetCmd (new ImapDiscoverCommand (this));
+            SetCmd (new ImapDiscoverCommand (this, MainClient));
             ExecuteCmd ();
         }
 
         private void DoConn ()
         {
-            SetCmd (new ImapAuthenticateCommand (this));
+            SetCmd (new ImapAuthenticateCommand (this, MainClient));
             ExecuteCmd ();
         }
 
         private void DoFSync ()
         {
-            SetCmd (new ImapFolderSyncCommand (this));
+            SetCmd (new ImapFolderSyncCommand (this, MainClient));
             ExecuteCmd ();
         }
 
@@ -489,17 +511,118 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        public ImapClient newClientWithLogger()
+        public ImapClient newImapClientWithLogger()
         {
             MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP, this);
             return new ImapClient (logger);
+        }
+
+        private void DoNop ()
+        {
+        }
+
+        private void DoExDone ()
+        {
+            Interlocked.Decrement (ref ConcurrentExtraRequests);
+            // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
+            // to run in parallel.
+            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+        }
+
+        private int MaxConcurrentExtraRequests = 2;
+        private int ConcurrentExtraRequests = 0;
+        private void DoExtraOrDont ()
+        {
+            /* TODO
+             * Move decision logic into strategy.
+             * Evaluate server success rate based on number of outstanding requests.
+             * Let those rates drive the allowed concurrency, rather than "1 + 2".
+             */
+            if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
+                NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
+                MaxConcurrentExtraRequests > ConcurrentExtraRequests)
+            {
+                ImapClient Client = newImapClientWithLogger ();  // Presumably this will get cleaned up by GC?
+                Interlocked.Increment (ref ConcurrentExtraRequests);
+                var pack = Strategy.PickUserDemand (Client);
+                if (null == pack) {
+                    // If strategy could not find something to do, we won't be using the side channel.
+                    Interlocked.Decrement (ref ConcurrentExtraRequests);
+                } else {
+                    Log.Info (Log.LOG_IMAP, "DoExtraOrDont: starting extra request.");
+                    var dummySm = new NcStateMachine ("IMAPPC:EXTRA") { 
+                        Name = string.Format ("IMAPPC:EXTRA({0})", AccountId),
+                        LocalEventType = typeof(ImapEvt),
+                        TransTable = new[] {
+                            new Node {
+                                State = (uint)St.Start,
+                                Invalid = new [] {
+                                    (uint)NcProtoControl.PcEvt.E.PendQ,
+                                    (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                    (uint)NcProtoControl.PcEvt.E.Park,
+                                    (uint)ImapEvt.E.ReDisc,
+                                    (uint)ImapEvt.E.UiSetCred,
+                                    (uint)ImapEvt.E.UiSetServConf,
+                                    (uint)ImapEvt.E.FromStrat,
+                                    (uint)ImapEvt.E.Wait,
+
+                                },
+                                On = new Trans[] {
+                                    new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)SmEvt.E.Success, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoExDone, State = (uint)St.Stop },
+                                },
+                            }
+                        }
+                    };
+                    dummySm.Validate ();
+                    var pickAction = pack.Item1;
+                    var cmd = pack.Item2;
+                    switch (pickAction) {
+                    case PickActionEnum.Fetch:
+                    case PickActionEnum.QOop:
+                    case PickActionEnum.HotQOp:
+                        cmd.Execute (dummySm);
+                        break;
+
+                    case PickActionEnum.Sync:
+                        // TODO add support for user-initiated Sync of >= 1 folders.
+                        // if current op is a sync including specified folder(s) - we must make sure we don't
+                        // have 2 concurrent syncs of the same folder.
+                    case PickActionEnum.Ping:
+                    case PickActionEnum.Wait:
+                    default:
+                        NcAssert.CaseError (cmd.ToString ());
+                        break;
+                    }
+                    // Leave State unchanged.
+                    return;
+                }
+            }
+            // If we got here, we decided that doing an extra request was a bad idea, ...
+            if (0 == ConcurrentExtraRequests) {
+                // ... and we are currently processing no extra requests. Only in this case will we 
+                // interrupt the base request, and only then if we are not already dealing with a "hot" request.
+                if ((uint)Lst.HotQOpW != Sm.State) {
+                    Log.Info (Log.LOG_IMAP, "DoExtraOrDont: calling Pick.");
+                    DoPick ();
+                    Sm.State = (uint)Lst.Pick;
+                } else {
+                    Log.Info (Log.LOG_IMAP, "DoExtraOrDont: not calling Pick (HotQOpW).");
+                }
+            } else {
+                // ... and we are capable of processing extra requests, just not now.
+                Log.Info (Log.LOG_IMAP, "DoExtraOrDont: not starting extra request on top of {0}.", ConcurrentExtraRequests);
+            }
         }
 
         private void DoPick ()
         {
             CancelCmd ();
             Sm.ClearEventQueue ();
-            var pack = Strategy.Pick ();
+            var pack = Strategy.Pick (MainClient);
             var transition = pack.Item1;
             var cmd = pack.Item2;
             switch (transition) {
@@ -534,10 +657,8 @@ namespace NachoCore.IMAP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            if (null != ImapClient) {
-                lock(ImapClient.SyncRoot) {
-                    ImapClient.Disconnect (true); // TODO Where does the Cancellation token come from?
-                }
+            lock(MainClient.SyncRoot) {
+                MainClient.Disconnect (true); // TODO Where does the Cancellation token come from?
             }
         }
 

@@ -16,9 +16,9 @@ namespace NachoCore.IMAP
     {
         protected ImapClient Client { get; set; }
 
-        public ImapCommand (IBEContext beContext) : base (beContext)
+        public ImapCommand (IBEContext beContext, ImapClient imapClient) : base (beContext)
         {
-            Client = ((ImapProtoControl)BEContext.ProtoControl).ImapClient;
+            Client = imapClient;
         }
 
         // MUST be overridden by subclass.
@@ -40,14 +40,14 @@ namespace NachoCore.IMAP
         {
             NcTask.Run (() => {
                 ExecuteNoTask(sm);
-            }, "ImapCommand");
+            }, this.GetType ().Name);
         }
 
         public void ExecuteNoTask(NcStateMachine sm)
         {
             try {
                 if (!Client.IsConnected || !Client.IsAuthenticated) {
-                    var authy = new ImapAuthenticateCommand (BEContext);
+                    var authy = new ImapAuthenticateCommand (BEContext, Client);
                     lock(Client.SyncRoot) {
                         authy.ConnectAndAuthenticate ();
                     }
@@ -179,7 +179,7 @@ namespace NachoCore.IMAP
     public class ImapWaitCommand : ImapCommand
     {
         NcCommand WaitCommand;
-        public ImapWaitCommand (IBEContext dataSource, int duration, bool earlyOnECChange) : base (dataSource)
+        public ImapWaitCommand (IBEContext dataSource, ImapClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
         {
             WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
         }

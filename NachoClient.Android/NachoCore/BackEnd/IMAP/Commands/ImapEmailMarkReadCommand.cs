@@ -4,12 +4,13 @@ using System;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MailKit;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapEmailMarkReadCommand : ImapCommand
     {
-        public ImapEmailMarkReadCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapEmailMarkReadCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             pending.MarkDispached ();

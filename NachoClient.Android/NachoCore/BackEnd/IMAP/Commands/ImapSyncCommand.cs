@@ -4,18 +4,13 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Linq;
 using NachoCore.Utils;
-using System.Threading;
 using MimeKit;
 using MailKit;
-using MailKit.Search;
 using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Brain;
 using NachoCore.Model;
-using MailKit.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
@@ -35,7 +30,7 @@ namespace NachoCore.IMAP
             public string preview { get; set; }
         }
 
-        public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
+        public ImapSyncCommand (IBEContext beContext, ImapClient imap, SyncKit syncKit) : base (beContext, imap)
         {
             SyncKit = syncKit;
             PendingSingle = SyncKit.PendingSingle;
