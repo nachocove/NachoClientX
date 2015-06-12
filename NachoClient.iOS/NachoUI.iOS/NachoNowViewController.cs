@@ -363,6 +363,7 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             hotListView.Frame = carouselNormalSize ();
+            hotListSource.ReconfigureVisibleCells (hotListView);
         }
 
         public override void ViewDidLayoutSubviews ()
