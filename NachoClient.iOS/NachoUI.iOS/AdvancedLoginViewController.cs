@@ -55,6 +55,7 @@ namespace NachoClient.iOS
         };
 
         bool stayInAdvanced = false;
+        bool googleSignInIsActive = false;
 
         McAccount.AccountServiceEnum service;
 
@@ -66,6 +67,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            Log.Info (Log.LOG_UI, "avl: ViewDidLoad");
 
             waitScreen = new WaitingScreen (View.Frame, this);
             waitScreen.Hidden = true;
@@ -80,6 +83,8 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+
+            Log.Info (Log.LOG_UI, "avl: ViewWillAppear");
 
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -107,7 +112,12 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            PromptUserForServiceAndAccount ();
+
+            Log.Info (Log.LOG_UI, "avl: ViewDidAppear");
+
+            if (!googleSignInIsActive) {
+                PromptUserForServiceAndAccount ();
+            }
         }
 
         bool HaveServiceAndAccount ()
@@ -132,15 +142,19 @@ namespace NachoClient.iOS
 
             // Step 2, for GMail
             if (McAccount.AccountServiceEnum.GoogleDefault == service) {
+                Log.Info (Log.LOG_UI, "avl: PromptUserForServiceAndAccount service type is google");
                 StartGoogleSignIn ();
                 return;
             }
 
             // Step 2, get email & password, and/or advanced selection
             if (null == theAccount) {
+                Log.Info (Log.LOG_UI, "avl: PromptUserForServiceAndAccount ask for credentials");
                 PerformSegue ("SegueToAccountCredentials", this);
                 return;
             }
+
+            Log.Info (Log.LOG_UI, "avl: PromptUserForServiceAndAccount have service and account");
         }
 
         protected void ConfigurePostServiceChoice ()
@@ -784,11 +798,6 @@ namespace NachoClient.iOS
 
         void StartGoogleSignIn ()
         {
-            // KLUDGE Alert
-            // Set the service to none in case the
-            // user cancels; so we pop back to the
-            // chooser screen.
-            service = McAccount.AccountServiceEnum.None;
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
 
@@ -797,32 +806,60 @@ namespace NachoClient.iOS
             scopes.Add ("https://mail.google.com");
             Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
 
+            googleSignInIsActive = true;
             Google.iOS.GIDSignIn.SharedInstance.SignIn ();
         }
 
         // GIDSignInDelegate
         public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
         {
-            // TODO: Handle errors
+            Log.Info (Log.LOG_UI, "avl: DidSignInForUser {0}", error);
+
+            googleSignInIsActive = false;
+
+            // TODO: Handle more errors
             if (null != error) {
                 if (error.Code == (int)GIDSignInErrorCode.CodeCanceled) {
+                    service = McAccount.AccountServiceEnum.None;
+                    PromptUserForServiceAndAccount ();
                     return;
                 }
+                // Error is not set if user cancels the permissions page
+                Log.Error (Log.LOG_UI, "avl: DidSignInForUser {0}", error);
+                PromptUserForServiceAndAccount ();
+                return;
             }
 
             GoogleDumper (user);
 
             service = McAccount.AccountServiceEnum.GoogleDefault;
 
-            // FIXME STEVE
+            // TODO: Check for & reject duplicate account.
+
             var account = NcAccountHandler.Instance.CreateAccount (service,
                 user.Profile.Email,
                 user.Authentication.AccessToken, 
                 user.Authentication.RefreshToken,
                 user.Authentication.AccessTokenExpirationDate.ToDateTime ());
             NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
-            // FIXME STEVE
-            // CredentialsDismissed (null, false, user.Profile.Email, "wrongsville");
+
+            if (null == theAccount) {
+                theAccount = new AccountSettings ();
+            }
+            theAccount.Account = account;
+
+            CreateView ();
+            LayoutView ();
+
+            BackEnd.Instance.Stop (theAccount.Account.Id);
+
+            // A null server record will re-start auto-d on Backend.Start()
+            // Delete the server record if the user didn't enter the server name
+            loginFields.MaybeDeleteTheServer ();
+
+            BackEnd.Instance.Start (theAccount.Account.Id);
+
+            waitScreen.ShowView ("Verifying Your Server...");
 
             // TODO:
             // 1. Check for dup account
