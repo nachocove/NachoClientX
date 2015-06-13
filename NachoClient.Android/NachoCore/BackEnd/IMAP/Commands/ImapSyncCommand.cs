@@ -452,6 +452,7 @@ namespace NachoCore.IMAP
                         try {
                             filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
                         } catch (ArgumentException ex) {
+                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
                             Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
                             // continue without the filter
                         }
