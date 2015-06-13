@@ -13,7 +13,7 @@ namespace NachoCore.IMAP
 {
     public class ImapStrategy : NcStrategy
     {
-        public const uint KBaseOverallWindowSize = 25;
+        public const uint KBaseOverallWindowSize = 10;
         public const int KBaseNoIdlePollTime = 60; // seconds
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
@@ -127,7 +127,7 @@ namespace NachoCore.IMAP
                 // This case covers the initial sync, and any syncs where new mail hs arrived.
                 if (UInt32.MinValue == folder.ImapUidHighestUidSynced) {
                     // This is the first sync. Start at the top, and work your way down.
-                    uint span = 10;  // use a very small window for this sync, so we quickly get stuff back to display
+                    uint span = KBaseOverallWindowSize;  // use a very small window for this sync, so we quickly get stuff back to display
                     syncKit = new SyncKit () {
                         Method = SyncKit.MethodEnum.Range,
                         Folder = folder,
@@ -140,7 +140,7 @@ namespace NachoCore.IMAP
                     // this is the 'new mail has arrived' case. Start from ImapUidHighestUidSynced
                     // and work your way up.
                     //uint span = SpanSizeWithCommStatus ();
-                    uint span = 10;
+                    uint span = KBaseOverallWindowSize;
                     syncKit = new SyncKit () {
                         Method = SyncKit.MethodEnum.Range,
                         Folder = folder,
