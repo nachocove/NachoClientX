@@ -241,6 +241,18 @@ namespace NachoPlatform
         bool SetPassword (int handle, string password);
 
         bool DeletePassword (int handle);
+
+        string GetAccessToken (int handle);
+
+        bool SetAccessToken (int handle, string token);
+
+        bool DeleteAccessToken (int handle);
+
+        string GetRefreshToken (int handle);
+
+        bool SetRefreshToken (int handle, string token);
+
+        bool DeleteRefreshToken (int handle);
     }
 
     public interface IPlatformUIRedirector

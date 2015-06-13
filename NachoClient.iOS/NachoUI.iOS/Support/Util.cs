@@ -761,12 +761,6 @@ namespace NachoClient
             }
         }
 
-        public static void HideBlackNavigationControllerLine (UINavigationBar navBar)
-        {
-            navBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-            navBar.ShadowImage = new UIImage ();
-        }
-
         public static bool IsVisible (this UIViewController vc)
         {
             return(vc.IsViewLoaded && (null != vc.View.Window));
@@ -1201,6 +1195,37 @@ namespace NachoClient
             blueButton.Layer.MasksToBounds = true;
             blueButton.AccessibilityLabel = title;
             return blueButton;
+        }
+
+        // Rectangle for contents inside of rectangle at (0,0)
+        public static CGRect CardContentRectangle (nfloat width, nfloat height)
+        {
+            return new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, width - (2 * A.Card_Horizontal_Indent), height);
+        }
+
+        /// <summary>
+        /// Convert formatted text to plain text.
+        /// </summary>
+        /// <remarks>
+        /// This really should be in a platform-generic location.  But the simplest code for doing the conversion
+        /// is iOS-specific.  So this will sit in an iOS-specific class for now.
+        /// </remarks>
+        public static string ConvertToPlainText (string formattedText, NSDocumentType type)
+        {
+            try {
+                NSError error = null;
+                var descriptionData = NSData.FromString (formattedText);
+                var descriptionAttributed = new NSAttributedString (descriptionData, new NSAttributedStringDocumentAttributes {
+                    DocumentType = type
+                }, ref error);
+                return descriptionAttributed.Value;
+            } catch (Exception e) {
+                // The NSAttributedString init: routine will fail if formattedText is not the specified type.
+                // We don't want to crash the app in this case.
+                NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_CALENDAR,
+                    "Calendar body has unexpected format and will be treated as plain text: {0}", e.ToString());
+                return formattedText;
+            }
         }
 
         #endregion

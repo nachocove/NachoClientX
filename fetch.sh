@@ -3,7 +3,6 @@
 # USAGE: sh fetch.sh
 #
 # NOTE: If you add a new repo that is part of NachoClientX, you 
-# MUST add that repo to repos.sh.
+# MUST add that repo to scripts/repos_cfg.py.
 
-source repos.sh
-./fetch.py $repos
+./scripts/fetch.py

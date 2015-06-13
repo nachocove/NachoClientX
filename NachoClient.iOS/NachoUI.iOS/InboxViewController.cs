@@ -21,9 +21,14 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
         }
 
+        public override bool HasAccountSwitcher()
+        {
+            return true;
+        }
+
         protected override void CustomizeBackButton ()
         {
-            BackShouldSwitchToFolders ();
+//            BackShouldSwitchToFolders ();
         }
     }
 }

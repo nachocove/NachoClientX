@@ -44,5 +44,41 @@ namespace NachoPlatform
             NcAssert.True (false);
             return false;
         }
+
+        public bool SetAccessToken (int handle, string token)
+        {
+            NcAssert.True (false);
+            return false;
+        }
+
+        public string GetAccessToken (int handle)
+        {
+            NcAssert.True (false);
+            return null;
+        }
+
+        public bool DeleteAccessToken (int handle)
+        {
+            NcAssert.True (false);
+            return false;
+        }
+
+        public bool SetRefreshToken (int handle, string token)
+        {
+            NcAssert.True (false);
+            return false;
+        }
+
+        public string GetRefreshToken (int handle)
+        {
+            NcAssert.True (false);
+            return null;
+        }
+
+        public bool DeleteRefreshToken (int handle)
+        {
+            NcAssert.True (false);
+            return false;
+        }
     }
 }

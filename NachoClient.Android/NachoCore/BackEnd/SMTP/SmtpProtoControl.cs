@@ -15,10 +15,8 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.SMTP
 {
-    public class SmtpProtoControl : NcProtoControl, IBEContext
+    public class SmtpProtoControl : NcProtoControl, IBEContext, INcProtocolLogger
     {
-        private SmtpValidateConfig Validator;
-
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
@@ -386,9 +384,18 @@ namespace NachoCore.SMTP
             Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "ASPCUSSC");
         }
 
-        public static SmtpClient newClientWithLogger()
+        #region INcProtocolLogger implementation
+
+        public bool ShouldLog ()
         {
-            MailKitProtocolLogger logger = new MailKitProtocolLogger ("SMTP", Log.LOG_SMTP);
+            return false;
+        }
+
+        #endregion
+
+        public SmtpClient newClientWithLogger()
+        {
+            MailKitProtocolLogger logger = new MailKitProtocolLogger ("SMTP", Log.LOG_SMTP, this);
             return new SmtpClient (logger);
         }
 
@@ -517,21 +524,6 @@ namespace NachoCore.SMTP
             } else {
                 // The "Down" case.
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
-            }
-        }
-
-        public override void ValidateConfig (McServer server, McCred cred)
-        {
-            CancelValidateConfig ();
-            Validator = new SmtpValidateConfig(this);
-            Validator.Execute (server, cred);
-        }
-
-        public override void CancelValidateConfig ()
-        {
-            if (null != Validator) {
-                Validator.Cancel ();
-                Validator = null;
             }
         }
 

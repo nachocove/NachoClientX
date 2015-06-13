@@ -11,5 +11,16 @@ namespace NachoCore
         public McAccount Account;
         public NcResult Status;
         public string[] Tokens;
+
+        public bool AppliesToAccount (McAccount account)
+        {
+            if (null == Account) {
+                return true; // applies to all accounts
+            }
+            if (null == account) {
+                return false;
+            }
+            return (account.Id == Account.Id);
+        }
     }
 }

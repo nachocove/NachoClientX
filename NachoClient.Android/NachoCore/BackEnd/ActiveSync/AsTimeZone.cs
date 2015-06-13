@@ -22,18 +22,22 @@ namespace NachoCore.ActiveSync
         /// <param name="encodedTimeZone">Encoded time zone.</param>
         public AsTimeZone (string encodedTimeZone)
         {
+            binaryData = null;
             try {
                 binaryData = System.Convert.FromBase64String (encodedTimeZone);
+                if (binaryData.Length != (4 + 64 + 16 + 4 + 64 + 16 + 4)) {
+                    Log.Error (Log.LOG_AS, "Decoded TimeZone string has the wrong length: " + binaryData.Length.ToString ());
+                    binaryData = null;
+                }
             } catch (System.ArgumentNullException) {
-                Log.Warn (Log.LOG_AS, "Encoded TimeZone string is null.");
-                throw;
+                Log.Error (Log.LOG_AS, "Encoded TimeZone string is null.");
             } catch (System.FormatException) {
-                Log.Warn (Log.LOG_AS, "Encoded TimeZone string length is not 4 or is not an even multiple of 4.");
-                throw;
+                Log.Error (Log.LOG_AS, "Encoded TimeZone string is not a valid base-64 string.");
             }
-            if (binaryData.Length != (4 + 64 + 16 + 4 + 64 + 16 + 4)) {
-                Log.Warn (Log.LOG_AS, "Decoded TimeZone string length is wrong: " + binaryData.Length.ToString ());
-                throw new System.FormatException ();
+            if (null == binaryData) {
+                // Something went wrong.  Since the encoded time zone string was input from an external source
+                // (the Exchange server), the app shouldn't crash.  Instead, set the time zone to be UTC.
+                binaryData = new AsTimeZone (TimeZoneInfo.Utc, DateTime.UtcNow).binaryData;
             }
         }
 

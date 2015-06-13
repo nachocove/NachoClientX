@@ -150,35 +150,35 @@ namespace NachoClient.AndroidClient
 
             menu.Add (new SidebarMenu (null, "Folders", SidebarToFoldersSegueId));
 
-            for (int i = 0; i < email.Count (); i++) {
-                McFolder f = email.GetFolder (i);
-                var m = new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId);
-                m.Indent = 1;
-                menu.Add (m);
-            }
-            menu.Add (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId));
-
-            menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
-            for (int i = 0; i < contacts.Count (); i++) {
-                McFolder f = contacts.GetFolder (i);
-                var m = new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId);
-                m.Indent = 1;
-                menu.Add (m);
-            }
-            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
-            deviceContacts.isDeviceContactsKludge = true;
-            menu.Add (deviceContacts);
-
-            menu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId));
-            for (int i = 0; i < calendars.Count (); i++) {
-                McFolder f = calendars.GetFolder (i);
-                var m = new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId);
-                m.Indent = 1;
-                menu.Add (m);
-            }
-            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
-            deviceCalendar.isDeviceCalendarKludge = true;
-            menu.Add (deviceCalendar);
+//            for (int i = 0; i < email.Count (); i++) {
+//                McFolder f = email.GetFolder (i);
+//                var m = new SidebarMenu (f, f.DisplayName, SidebarToMessagesSegueId);
+//                m.Indent = 1;
+//                menu.Add (m);
+//            }
+//            menu.Add (new SidebarMenu (null, "Later", SidebarToDeferredMessagesSegueId));
+//
+//            menu.Add (new SidebarMenu (null, "Contacts", SidebarToContactsSegueId));
+//            for (int i = 0; i < contacts.Count (); i++) {
+//                McFolder f = contacts.GetFolder (i);
+//                var m = new SidebarMenu (f, f.DisplayName, SidebarToContactsSegueId);
+//                m.Indent = 1;
+//                menu.Add (m);
+//            }
+//            var deviceContacts = new SidebarMenu (null, "Device Contacts", SidebarToContactsSegueId);
+//            deviceContacts.isDeviceContactsKludge = true;
+//            menu.Add (deviceContacts);
+//
+//            menu.Add (new SidebarMenu (null, "Calendars", SidebarToCalendarSegueId));
+//            for (int i = 0; i < calendars.Count (); i++) {
+//                McFolder f = calendars.GetFolder (i);
+//                var m = new SidebarMenu (f, f.DisplayName, SidebarToCalendarSegueId);
+//                m.Indent = 1;
+//                menu.Add (m);
+//            }
+//            var deviceCalendar = new SidebarMenu (null, "Device Calendar", SidebarToCalendarSegueId);
+//            deviceCalendar.isDeviceCalendarKludge = true;
+//            menu.Add (deviceCalendar);
 
             menu.Add (new SidebarMenu (null, "Home", SidebarToHomeSegueId));
             menu.Add (new SidebarMenu (null, "Accounts", "SidebarToAccounts"));

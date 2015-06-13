@@ -15,46 +15,67 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using MailKit.Security;
 using System.Security.Cryptography.X509Certificates;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.IMAP
 {
     public class ImapIdleCommand : ImapCommand
     {
+        McFolder IdleFolder;
+
         public ImapIdleCommand (IBEContext beContext) : base (beContext)
         {
+            IdleFolder = McFolder.GetDefaultInboxFolder(BEContext.Account.Id);
+            NcAssert.NotNull (IdleFolder);
         }
 
         protected override Event ExecuteCommand ()
         {
+            IMailFolder mailKitFolder;
+            bool mailArrived = false;
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
             EventHandler<MessagesArrivedEventArgs> messageHandler = (sender, maea) => {
+                mailArrived = true;
                 done.Cancel ();
             };
+            lock (Client.SyncRoot) {
+                mailKitFolder = Client.GetFolder (IdleFolder.ServerId, Cts.Token);
+                NcAssert.NotNull (mailKitFolder);
+            }
             try {
-                // FIXME - need map from McFolder to MailKit folder.
-                if (!Client.Inbox.IsOpen) {
-                    FolderAccess access;
-                    lock (Client.SyncRoot) {
-                        access = Client.Inbox.Open (FolderAccess.ReadOnly, Cts.Token);
-                    }
-                    if (FolderAccess.None == access) {
+                mailKitFolder.MessagesArrived += messageHandler;
+                lock (Client.SyncRoot) {
+                    if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
                     }
-                }
-                Client.Inbox.MessagesArrived += messageHandler;
-                lock (Client.SyncRoot) {
-                    Client.Idle (done.Token, CancellationToken.None);
-                    if (!Cts.IsCancellationRequested) {
-                        Client.Inbox.Status (
-                            StatusItems.UidNext |
-                            StatusItems.UidValidity, Cts.Token);
+                    if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
+                        BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
                     }
+                    Client.Idle (done.Token, CancellationToken.None);
+                    Cts.Token.ThrowIfCancellationRequested ();
+                    mailKitFolder.Close (false, Cts.Token);
+                    StatusItems statusItems =
+                        StatusItems.UidNext |
+                        StatusItems.UidValidity |
+                        StatusItems.HighestModSeq;
+                    mailKitFolder.Status (statusItems, Cts.Token);
                 }
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLENEWMAIL");
+                UpdateImapSetting (mailKitFolder, IdleFolder);
+
+                var protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.LastPing = DateTime.UtcNow;
+                    return true;
+                });
+                if (mailArrived) {
+                    Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
+                }
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } catch {
                 throw;
             } finally {
-                Client.Inbox.MessagesArrived -= messageHandler;
+                mailKitFolder.MessagesArrived -= messageHandler;
                 done.Dispose ();
             }
         }

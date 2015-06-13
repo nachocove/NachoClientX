@@ -46,16 +46,23 @@ namespace NachoCore.Model
         public int SyncAttemptCount { get; set; }
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
-
+        // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
+        public bool ImapNoSelect { get; set; }
+        // The lowest UID we've synced in the current round of syncing
         public uint ImapUidLowestUidSynced { get; set; }
-
+        // The highest UID we've synced in the current round of syncing
         public uint ImapUidHighestUidSynced { get; set; }
-
+        // The folder's UIDVALIDITY value
         public uint ImapUidValidity { get; set; }
-
+        // the folders UIDNEXT value
         public uint ImapUidNext { get; set; }
-
+        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
         public string ImapGuid { get; set; }
+        // DateTime we last examined the folder.
+        public DateTime ImapLastExamine { get; set; }
+        // Highest Modification Sequence Numbers.
+        public long CurImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
+        public long LastImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
 
         [Indexed]
         public string DisplayName { get; set; }

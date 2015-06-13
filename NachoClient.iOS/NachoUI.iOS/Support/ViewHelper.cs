@@ -428,6 +428,14 @@ namespace NachoClient.iOS
             return MayUpdate ();
         }
 
+        public ViewFramer Square()
+        {
+            var length = NMath.Max (Frame.Width, Frame.Height);
+            Frame.Width = length;
+            Frame.Height = length;
+            return MayUpdate ();
+        }
+
         public ViewFramer Size (CGSize size)
         {
             Frame.Width = size.Width;

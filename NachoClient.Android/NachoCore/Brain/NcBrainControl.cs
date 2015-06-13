@@ -11,9 +11,6 @@ namespace NachoCore.Brain
     {
         private bool Bootstrapped;
 
-        // Amount of "thinking" per background invocation
-        private int WorkCredits;
-
         private bool IsWallPowered ()
         {
             switch (Power.Instance.PowerState) {
@@ -25,14 +22,15 @@ namespace NachoCore.Brain
             return false;
         }
 
-        private void EvaluateRunRate ()
+        private DateTime EvaluateRunTime (double periodSec)
         {
+            double durationSec;
             if (IsWallPowered ()) {
-                WorkCredits = 30;
-                Log.Debug (Log.LOG_BRAIN, "Plugged in, work_credit={0}", WorkCredits);
-                Console.WriteLine ("Plugged in, work_credit={0}", WorkCredits);
+                durationSec = 0.5 * periodSec;
+                Console.WriteLine ("Plugged in, duration={0}", durationSec);
             } else {
                 double level = Power.Instance.BatteryLevel;
+                double dutyCycle;
                 if (!Bootstrapped) {
                     int numScored = McEmailMessage.CountByVersion (Scoring.Version);
                     int numTotal = McEmailMessage.Count ();
@@ -47,28 +45,30 @@ namespace NachoCore.Brain
                 if (!Bootstrapped &&
                     (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext)) {
                     // If brain is not fully initialized, we want to run brain more aggressively.
-                    // "Not fully initialized" is defined as less than 50% of the emails are fully scored.
+                    // "Not fully initialized" is defined as less than 75% of the emails are fully scored.
                     if (level < 0.10) {
-                        WorkCredits = 0;
+                        dutyCycle = 0.0;
                     } else if (level < 0.3) {
-                        WorkCredits = 10;
+                        dutyCycle = 0.2;
                     } else if (level < 0.5) {
-                        WorkCredits = 20;
+                        dutyCycle = 0.3;
                     } else {
-                        WorkCredits = 30;
+                        dutyCycle = 0.4;
                     }
                 } else {
                     if (level < 0.3) {
-                        WorkCredits = 0;
+                        dutyCycle = 0.0;
                     } else if (level < 0.6) {
-                        WorkCredits = 10;
+                        dutyCycle = 0.15;
                     } else {
-                        WorkCredits = 20;
+                        dutyCycle = 0.3;
                     }
                 }
-                Log.Debug (Log.LOG_BRAIN, "On battery, power_level={0}, work_credit={1}", level, WorkCredits);
-                Console.WriteLine ("On battery, power_level={0}, work_credit={1}", level, WorkCredits);
+                durationSec = periodSec * dutyCycle;
+                Log.Debug (Log.LOG_BRAIN, "On battery, power_level={0}, duration={1}", level, durationSec);
+                Console.WriteLine ("On battery, power_level={0}, duration={1}", level, durationSec);
             }
+            return DateTime.UtcNow.AddSeconds (durationSec);
         }
     }
 }

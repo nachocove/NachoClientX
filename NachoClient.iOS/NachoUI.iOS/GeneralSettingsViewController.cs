@@ -56,12 +56,14 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, this.NavigationController);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: true);
+            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount:false);
 
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.Source = accountsTableViewSource;
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
 
             View.AddSubview (accountsTableView);           
         }

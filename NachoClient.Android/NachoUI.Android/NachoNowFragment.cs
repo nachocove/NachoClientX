@@ -31,24 +31,24 @@ namespace NachoClient.AndroidClient
         {
             var rootView = inflater.Inflate (Resource.Layout.NachoNowFragment, container, false);
 
-//            folders = new NachoFolders (NachoFolders.FilterForEmail);
-
-            adapter = new NachoNowPagerAdapter (this, this.FragmentManager);
-            pager = rootView.FindViewById<ViewPager> (Resource.Id.pager);
-            pager.Adapter = adapter;
-
-            var buttonFirst = rootView.FindViewById<Button> (Resource.Id.goto_first);
-            buttonFirst.Click += (object sender, EventArgs e) => {
-                pager.CurrentItem = 0;
-            };
-
-            var buttonLast = rootView.FindViewById<Button> (Resource.Id.goto_last);
-            buttonLast.Click += (object sender, EventArgs e) => {
-                var position = folders.Count () - 1;
-                pager.CurrentItem = position;
-            };
-
-            pager.CurrentItem = 0;
+//            folders = new NachoFolders (NcApplication.Instance.Account.Id, NachoFolders.FilterForEmail);
+//
+//            adapter = new NachoNowPagerAdapter (this, this.FragmentManager);
+//            pager = rootView.FindViewById<ViewPager> (Resource.Id.pager);
+//            pager.Adapter = adapter;
+//
+//            var buttonFirst = rootView.FindViewById<Button> (Resource.Id.goto_first);
+//            buttonFirst.Click += (object sender, EventArgs e) => {
+//                pager.CurrentItem = 0;
+//            };
+//
+//            var buttonLast = rootView.FindViewById<Button> (Resource.Id.goto_last);
+//            buttonLast.Click += (object sender, EventArgs e) => {
+//                var position = folders.Count () - 1;
+//                pager.CurrentItem = position;
+//            };
+//
+//            pager.CurrentItem = 0;
 
             return rootView;
         }

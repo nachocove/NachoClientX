@@ -21,23 +21,27 @@ namespace NachoCore.ActiveSync
         {
             Attachments = new List<McAttachment> ();
             FetchKit = fetchKit;
-            PendingList.AddRange (FetchKit.Pendings);
-            foreach (var pending in PendingList) {
-                pending.MarkDispached ();
+            foreach (var pending in fetchKit.Pendings) {
+                pending.Pending.MarkDispached ();
+                PendingList.Add (pending.Pending);
             }
         }
 
-        private XElement ToEmailFetch (string parentId, string serverId)
+        private XElement ToEmailFetch (string parentId, string serverId, Xml.AirSync.TypeCode bodyPref)
         {
-            // TODO: we should let strategy determine the BodyPref.
+            if (0 == bodyPref) {
+                bodyPref = Xml.AirSync.TypeCode.Mime_4;
+            }
             return new XElement (m_ns + Xml.ItemOperations.Fetch,
                 new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
                 new XElement (AirSyncNs + Xml.AirSync.CollectionId, parentId),
                 new XElement (AirSyncNs + Xml.AirSync.ServerId, serverId),
                 new XElement (m_ns + Xml.ItemOperations.Options,
-                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
+                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport,
+                        Xml.AirSync.TypeCode.Mime_4 == bodyPref ?
+                        (uint)Xml.AirSync.MimeSupportCode.AllMime_2 : (uint)Xml.AirSync.MimeSupportCode.NoMime_0),
                     new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)bodyPref),
                         new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"),
                         new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"))));
         }
@@ -59,7 +63,8 @@ namespace NachoCore.ActiveSync
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns);
             XElement fetch = null;
             // Add in the pendings, if any.
-            foreach (var pending in PendingList) {
+            foreach (var pendingInfo in FetchKit.Pendings) {
+                var pending = pendingInfo.Pending;
                 fetch = null;
                 switch (pending.Operation) {
                 case McPending.Operations.AttachmentDownload:
@@ -71,7 +76,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.Operations.EmailBodyDownload:
-                    fetch = ToEmailFetch (pending.ParentId, pending.ServerId);
+                    fetch = ToEmailFetch (pending.ParentId, pending.ServerId, pendingInfo.BodyPref);
                     break;
 
                 case McPending.Operations.CalBodyDownload:
@@ -117,7 +122,7 @@ namespace NachoCore.ActiveSync
             }
             // Add in the prefetches if any.
             foreach (var pfBody in FetchKit.FetchBodies) {
-                itemOp.Add (ToEmailFetch (pfBody.ParentId, pfBody.ServerId));
+                itemOp.Add (ToEmailFetch (pfBody.ParentId, pfBody.ServerId, pfBody.BodyPref));
             }
             foreach (var pfAtta in FetchKit.FetchAttachments) {
                 Attachments.Add (pfAtta);

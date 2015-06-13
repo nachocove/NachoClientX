@@ -8,6 +8,7 @@ using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
@@ -269,6 +270,10 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (null != McAccount.QueryByEmailAddr (emailField.Text).FirstOrDefault ()) {
+                Complain ("Nacho Mail", "An account with that email address already exists. Duplicate accounts are not supported.");
+                return;
+            }
 
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");

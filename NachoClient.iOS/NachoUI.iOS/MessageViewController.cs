@@ -60,6 +60,7 @@ namespace NachoClient.iOS
         nfloat HEADER_TOP_MARGIN = 0;
         
 
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -110,11 +111,11 @@ namespace NachoClient.iOS
             var message = thread.FirstMessageSpecialCase ();
             NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
         }
-            
+
         protected override void CreateViewHierarchy ()
         {
             scrollView.Frame = View.Frame;
-            ViewFramer.Create (scrollView).AdjustHeight (- 64);
+            ViewFramer.Create (scrollView).AdjustHeight (-64);
 
             // Turn on zooming
             scrollView.MinimumZoomScale = 0.2f;
@@ -343,9 +344,8 @@ namespace NachoClient.iOS
             yOffset += 1;
 
             // Message body, which is added to the scroll view, not the header view.
-            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, LayoutView, onLinkSelected);
+            bodyView = BodyView.VariableHeightBodyView (new CGPoint (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, BodyViewLayoutCallback, onLinkSelected);
             scrollView.AddSubview (bodyView);
-
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
                 new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
@@ -380,9 +380,7 @@ namespace NachoClient.iOS
                 NavigationController.PopViewController (true);
                 return;
             }
-
-            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
-
+                
             attachments = McAttachment.QueryByItemId (message);
 
             var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
@@ -565,6 +563,15 @@ namespace NachoClient.iOS
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
             #endif
+        }
+
+        protected void BodyViewLayoutCallback ()
+        {
+            // BodyView calls its layout delegate after the download of the body has finished.
+            // Downloading the body can result in a status change for attachments.  So we refresh
+            // the attachments in addition to laying out the view.
+            attachmentListView.Refresh ();
+            LayoutView ();
         }
 
         protected void LayoutBody ()

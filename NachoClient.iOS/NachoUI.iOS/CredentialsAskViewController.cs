@@ -153,7 +153,11 @@ namespace NachoClient.iOS
             contentView.AddSubview (submitButton);
 
             submitButton.TouchUpInside += delegate {
-                if (EmailHelper.IsValidEmail (emailField.Text)) {
+                if (!EmailHelper.IsValidEmail (emailField.Text)) {
+                    errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
+                } else if (null != McAccount.QueryByEmailAddr (emailField.Text).FirstOrDefault ()) {
+                    errorMessage.Text = "That email address is already in use. Duplicate accounts are not supported.";
+                } else {
                     McCred UsersCredentials = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
                     UsersCredentials.UpdatePassword (passwordField.Text);
@@ -162,8 +166,6 @@ namespace NachoClient.iOS
                     View.EndEditing (true);
                     DismissViewController (true, null);
                     LoginHelpers.SetDoesBackEndHaveIssues (theAccountId, false);
-                } else {
-                    errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
                 }
             };
 

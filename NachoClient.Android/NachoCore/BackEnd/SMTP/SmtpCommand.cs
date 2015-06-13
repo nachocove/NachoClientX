@@ -54,10 +54,14 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "ServiceNotConnectedException");
                     ResolveAllDeferred ();
                     sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.ReDisc, "SMTPCONN");
+                } catch (AuthenticationException) {
+                    Log.Info (Log.LOG_SMTP, "AuthenticationException");
+                    ResolveAllDeferred ();
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH1");
                 } catch (ServiceNotAuthenticatedException) {
                     Log.Info (Log.LOG_SMTP, "ServiceNotAuthenticatedException");
                     ResolveAllDeferred ();
-                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH");
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTH2");
                 } catch (IOException ex) {
                     Log.Info (Log.LOG_SMTP, "IOException: {0}", ex.ToString ());
                     ResolveAllDeferred ();
@@ -94,15 +98,24 @@ namespace NachoCore.SMTP
         public void ConnectAndAuthenticate()
         {
             lock(Client.SyncRoot) {
-                //client.ClientCertificates = new X509CertificateCollection ();
-                // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
-                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-
-                Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                if (!Client.IsConnected) {
+                    //client.ClientCertificates = new X509CertificateCollection ();
+                    // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
+                    Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                    Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+                    Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
+                }
+                if (!Client.IsAuthenticated) {
+                    if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                        // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
+                        Client.AuthenticationMechanisms.Remove ("LOGIN");
+                        Client.AuthenticationMechanisms.Remove ("PLAIN");
+                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                    } else {
+                        Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                    }
+                }
             }
         }
 

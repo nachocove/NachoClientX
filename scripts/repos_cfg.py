@@ -14,11 +14,13 @@ repos = (
     'MailKit',
     'DnDns',
     'DDay-iCal-Xamarin',
+    'CSharp-Name-Parser',
     'Telemetry',
     'aws-sdk-xamarin',
     'ModernHttpClient',
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
+    'Google.iOS',
     # This is always the last one
     'NachoClientX'
 )

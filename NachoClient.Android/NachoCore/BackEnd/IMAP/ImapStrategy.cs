@@ -15,6 +15,9 @@ namespace NachoCore.IMAP
 {
     public class ImapStrategy : NcStrategy
     {
+        public const uint KBaseOverallWindowSize = 25;
+        public const int KBaseNoIdlePollTime = 60; // seconds
+
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
         }
@@ -23,72 +26,163 @@ namespace NachoCore.IMAP
         {
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (accountId, pending.ServerId);
-            var syncKit = GenSyncKit (accountId, protocolState, folder);
+            var syncKit = GenSyncKit (accountId, protocolState, folder, true);
             if (null != syncKit) {
                 syncKit.PendingSingle = pending;
             }
             return syncKit;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder)
+        private uint SpanSizeWithCommStatus()
         {
-            MessageSummaryItems flags = MessageSummaryItems.BodyStructure
-                | MessageSummaryItems.Envelope
-                | MessageSummaryItems.Flags
-                | MessageSummaryItems.InternalDate
-                | MessageSummaryItems.MessageSize
-                | MessageSummaryItems.UniqueId
-                | MessageSummaryItems.GMailMessageId
-                | MessageSummaryItems.GMailThreadId;
-
-            var syncKit = new SyncKit () {
-                Method = SyncKit.MethodEnum.Range,
-                Folder = folder,
-                Flags = flags,
-                // Span value here indicates preferred chunk size.
-                // FIXME JAN - dynamic size. see EAS logic.
-                Span = 5,
-            };
-            if (null == folder || 0 == folder.ImapUidNext) {
-                // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
-                syncKit.Method = SyncKit.MethodEnum.OpenOnly;
-                return syncKit;
+            uint overallWindowSize = KBaseOverallWindowSize;
+            switch (NcCommStatus.Instance.Speed) {
+            case NetStatusSpeedEnum.CellFast_1:
+                overallWindowSize *= 2;
+                break;
+            case NetStatusSpeedEnum.WiFi_0:
+                overallWindowSize *= 3;
+                break;
             }
-            if (folder.ImapUidNext - 1 > folder.ImapUidHighestUidSynced) {
-                // Prefer to sync from latest toward oldest.
-                // Start as high as we can, guard against the scenario where Span > UidNext.
-                syncKit.Start =
-                    Math.Max (folder.ImapUidHighestUidSynced, 
-                        (syncKit.Span + 1) >= folder.ImapUidNext ? 1 : 
-                        folder.ImapUidNext - 1 - syncKit.Span);
+            return overallWindowSize;
+        }
+
+        private int NoIdlePollTime()
+        {
+            // customize the PollTime here, depending on circumstances.
+            return KBaseNoIdlePollTime;
+        }
+
+        MessageSummaryItems SummaryFlags = MessageSummaryItems.BodyStructure
+            | MessageSummaryItems.Envelope
+            | MessageSummaryItems.Flags
+            | MessageSummaryItems.InternalDate
+            | MessageSummaryItems.MessageSize
+            | MessageSummaryItems.UniqueId
+            | MessageSummaryItems.GMailMessageId
+            | MessageSummaryItems.GMailThreadId;
+
+        /// <summary>
+        /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
+        /// needed for the BE to do a sync with the server.
+        /// </summary>
+        /// <param name="accountId">The account Id.</param>
+        /// <param name="protocolState">The protocol state.</param>
+        /// <param name="folder">The folder to sync.</param>
+        /// <param name="UserRequested">Whether this is a user-requested action.</param>
+        /// <remarks>
+        /// This function reads folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced
+        /// (and other values), but does NOT SET THEM. When the sync is executed (via ImapSymcCommand),
+        /// it will set folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced. Next time
+        /// GenSyncKit is called, these values are used to create the next SyncKit for ImapSyncCommand
+        /// to consume.
+        /// 
+        /// The current 'strategy' (I use the term lightly) is as follows:
+        ///   - If the folder has never been sync'd (or hasn't been sync'd in a while), we tell
+        ///     ImapSyncCommand to merely open the folder and record the current state (mainly UIDNEXT).
+        ///     folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced will remain unchanged at
+        ///     their default values.
+        ///   - Once we know UIDNEXT, starting with the newest X messages, where X is expected to be small.
+        ///     This is to get us going fast and have something to display in the UI. Currently we use 10.
+        ///     ImapSyncCommand sets folder.ImapUidHighestUidSynced to UIDNEXT-1, since that's the highest
+        ///     UID we've sync'd. ImapSyncCommand also sets folder.ImapUidLowestUidSynced to the lowest
+        ///     we've sync'd to now (presumably UIDNEXT-11, but that depends on how many messages there are)
+        ///   - After that, we start syncing from folder.ImapUidLowestUidSynced downwards, in chunks of 
+        ///     'span' (which depends on NcCommStatus). Unless new mail comes in, ImapUidHighestUidSynced
+        ///     is unlikely to change.
+        ///   - When new mail comes in, UIDNEXT will be higher than ImapUidHighestUidSynced, so we again try
+        ///     to sync the newest messages.
+        ///   - After new mail has been processed, we can continue syncing 'downwards', knowing where we
+        ///     left off via ImapUidLowestUidSynced.
+        /// 
+        /// There is a bug with this approach, however, in that the two variables are not enough to keep
+        /// track of all possible cases. In the case where the number of new emails that have arrived is
+        /// > than the span selected, we would sync the newest messages, but since we don't want to move 
+        /// ImapUidLowestUidSynced (because then we'd lose track of where to continue syncing older messages),
+        /// we have no way of keeping track of the downward progress of the 'new mail' sync. So instead,
+        /// for now, we sync from ImapUidHighestUidSynced upwards, rather then from UIDNEXT downwards.
+        /// This is not optimal and will be changed in the future.
+        /// </remarks>
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder, bool UserRequested = false)
+        {
+            if (null == folder) {
+                return null;
+            }
+            if (folder.ImapNoSelect) {
+                return null;
+            }
+            SyncKit syncKit = null;
+            var currentHighestInFolder = folder.ImapUidNext - 1;
+            if (UserRequested ||
+                0 == folder.ImapUidNext ||
+                folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ())) // perhaps this should be passed in by the caller?
+            {
+                // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
+                syncKit = new SyncKit () {
+                    Method = SyncKit.MethodEnum.OpenOnly,
+                    Folder = folder,
+                    Flags = SummaryFlags,
+                    Span = 0,
+                    Start = 0,
+                };
+            } else if (currentHighestInFolder > folder.ImapUidHighestUidSynced) {
+                // This case covers the initial sync, and any syncs where new mail hs arrived.
+                if (UInt32.MinValue == folder.ImapUidHighestUidSynced) {
+                    // This is the first sync. Start at the top, and work your way down.
+                    uint span = 10;  // use a very small window for this sync, so we quickly get stuff back to display
+                    syncKit = new SyncKit () {
+                        Method = SyncKit.MethodEnum.Range,
+                        Folder = folder,
+                        Flags = SummaryFlags,
+                        Span = span,
+                        Start = Math.Max (folder.ImapUidHighestUidSynced + 1, 
+                            span + 1 > currentHighestInFolder ? 1 : currentHighestInFolder - span + 1),
+                    };
+                } else {
+                    // this is the 'new mail has arrived' case. Start from ImapUidHighestUidSynced
+                    // and work your way up.
+                    //uint span = SpanSizeWithCommStatus ();
+                    uint span = 10;
+                    syncKit = new SyncKit () {
+                        Method = SyncKit.MethodEnum.Range,
+                        Folder = folder,
+                        Flags = SummaryFlags,
+                        Span = span,
+                        Start = folder.ImapUidHighestUidSynced + 1,
+                    };
+                }
+                // adjust span, to make sure it doesn't over- or under-run.
                 syncKit.Span =
                     Math.Min (syncKit.Span, 
-                        (folder.ImapUidHighestUidSynced >= folder.ImapUidNext) ? 1 :
-                        folder.ImapUidNext - folder.ImapUidHighestUidSynced);
-                return syncKit;
-            }
-            if (1 < folder.ImapUidLowestUidSynced) {
+                        ((folder.ImapUidHighestUidSynced + 1) >= currentHighestInFolder) ? 1 :
+                        currentHighestInFolder - folder.ImapUidHighestUidSynced);
+                
+            } else if (currentHighestInFolder > 0 && // are there any messages at all?
+                       folder.ImapUidLowestUidSynced > 1)
+            {
                 // If there is nothing new to grab, then pull down older mail.
-                syncKit.Start = 
-                    (syncKit.Span + 1 >= folder.ImapUidLowestUidSynced) ? 1 : 
-                    folder.ImapUidLowestUidSynced - syncKit.Span - 1;
+                uint span = SpanSizeWithCommStatus ();
+                syncKit = new SyncKit () {
+                    Method = SyncKit.MethodEnum.Range,
+                    Folder = folder,
+                    Flags = SummaryFlags,
+                    Span = span,
+                    Start = (span >= folder.ImapUidLowestUidSynced) ? 1 : 
+                        folder.ImapUidLowestUidSynced - span,
+                };
+                // adjust span, to make sure it doesn't over- or under-run.
                 syncKit.Span = 
                     (syncKit.Start >= folder.ImapUidLowestUidSynced) ? 1 : 
                     Math.Min (syncKit.Span, folder.ImapUidLowestUidSynced - syncKit.Start);
-                return syncKit;
             }
-            return null;
+            if (null != syncKit && SyncKit.MethodEnum.Range == syncKit.Method) {
+                syncKit.UidList = new UniqueIdRange (
+                    new UniqueId(folder.ImapUidValidity, syncKit.Start),
+                    new UniqueId(folder.ImapUidValidity, syncKit.Start + syncKit.Span - 1));
+            }
+            return syncKit;
         }
 
-        public override bool ANarrowFolderHasToClientExpected (int accountId)
-        {
-            var defInbox = McFolder.GetDefaultInboxFolder (accountId);
-            if (defInbox.ImapUidLowestUidSynced > 1 ||
-                defInbox.ImapUidHighestUidSynced + 1 < defInbox.ImapUidNext) {
-                return true;
-            }
-            return false;
-        }
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand ()
         {
@@ -136,35 +230,10 @@ namespace NachoCore.IMAP
             if (null != userDemand) {
                 return userDemand;
             }
-            // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
-            // perform a narrow Sync Command.
-            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
-                    var nSyncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
-                    Log.Info (Log.LOG_IMAP, "Strategy:QS:Inbox...");
-                    if (null != nSyncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:QS:...SyncKit");
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, nSyncKit));
-                    }
-                }
-            }
+
             // TODO move user-directed Sync up to this priority level in FG.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
-                // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
-                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
-                if (protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
-                    if (null != nSyncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:...SyncKit");
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, nSyncKit));
-                    }
-                }
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId, McAccount.ImapCapabilities).FirstOrDefault ();
                 if (null != next) {
@@ -236,28 +305,52 @@ namespace NachoCore.IMAP
                 if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext));
                 }
+                // (FG, BG) if the IMAP server doesn't support IDLE, we need to poll
+                if (!BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
+                    var defInbox = McFolder.GetDefaultInboxFolder (accountId);
+                    if (defInbox.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime())) {
+                        SyncKit syncKit = GenSyncKit (accountId, protocolState, defInbox);
+                        if (null != syncKit) {
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:PollSync {0}", defInbox.ServerId);
+                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                                new ImapSyncCommand (BEContext, syncKit));
+                        }
+                    }
+                }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (PowerPermitsSpeculation () ||
                     NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                    SyncKit syncKit = null;
-                    // FIXME JAN once ImapSyncCommand can do other folders, we need to sync all the folders.
                     // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
                     // for speculatively pre-fetching bodies and attachments.
-                    syncKit = GenSyncKit (accountId, protocolState, McFolder.GetDefaultInboxFolder (accountId));
+                    SyncKit syncKit;
+                    // Always make sure Inbox is checked first.
+                    McFolder defInbox = McFolder.GetDefaultInboxFolder (BEContext.Account.Id);
+                    syncKit = GenSyncKit (accountId, protocolState, defInbox);
                     if (null != syncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync");
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
                             new ImapSyncCommand (BEContext, syncKit));
                     }
+                    foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
+                        if (defInbox.Id == folder.Id) {
+                            continue;
+                        }
+                        syncKit = GenSyncKit (accountId, protocolState, folder);
+                        if (null != syncKit) {
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.IsDistinguished ? folder.ServerId : "User Folder");
+                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                                new ImapSyncCommand (BEContext, syncKit));
+                        }
+                    }
                 }
-                if (!ANarrowFolderHasToClientExpected (accountId)) {
+                if (BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
                     Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
                         new ImapIdleCommand (BEContext));
+                } else {
+                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:WaitPing");
+                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                        new ImapWaitCommand (BEContext, NoIdlePollTime(), true));
                 }
-                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Wait");
-                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
-                    new ImapWaitCommand (BEContext, 120, false));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {

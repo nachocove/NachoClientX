@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace NachoCore.Utils
 {
@@ -139,7 +140,7 @@ namespace NachoCore.Utils
 
         // TODO - The long-term value of this should be one day. Keep it small for now
         //        to get T3 to upload more frequently. Will re-adjust when T3 stabilizes.
-        public static long MAX_DURATION = 1 * TimeSpan.TicksPerMinute;
+        public static long MAX_DURATION = 5 * TimeSpan.TicksPerMinute;
 
         // TODO - The long-term value of this should be like 100,000.
         public static int MAX_EVENTS = 500;
@@ -293,6 +294,14 @@ namespace NachoCore.Utils
                     doFinalize = false;
                     if (TelemetryEventClass.Support == eventClass) {
                         doFinalize = true; // always finalize AdSupport FileShare after each write
+                        // Since each SUPPORT event is its own file, it is possible that two quick
+                        // back-to-back SUPPORT events have the same timestamp down to millisecond resolution.
+                        // This would result in two read JSON files with the same name and File.Move()
+                        // would throw an exception. To mitigate this bug, force a millisecond sleep.
+                        // There are a few SUPPORT events sent during the initialization of telemetry
+                        // task but otherwise, it is rather infrequent. So, we should be able to afford
+                        // this busy wait.
+                        Thread.Sleep (1);
                     }
                     if (writeFile.NumberOfEntries >= MAX_EVENTS) {
                         doFinalize = true;

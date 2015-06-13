@@ -17,14 +17,16 @@ namespace NachoClient.iOS
         List<McAccount> accounts;
 
         bool showAccessory;
+        bool showUnreadCount;
         INachoAccountsTableDelegate owner;
 
         nfloat ROW_HEIGHT;
 
-        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory)
+        public void Setup (INachoAccountsTableDelegate owner, bool showAccessory, bool showUnreadCount)
         {
             this.owner = owner;
             this.showAccessory = showAccessory;
+            this.showUnreadCount = showUnreadCount;
 
             accounts = new List<McAccount> ();
 
@@ -79,7 +81,7 @@ namespace NachoClient.iOS
             cell.ContentView.AddSubview (accountView);
 
             var account = accounts [indexPath.Row];
-            accountView.Configure (account, showAccessory);
+            accountView.Configure (account, showAccessory, showUnreadCount);
             return cell;
         }
 

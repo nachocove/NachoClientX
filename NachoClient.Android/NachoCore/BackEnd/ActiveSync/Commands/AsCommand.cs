@@ -34,7 +34,6 @@ namespace NachoCore.ActiveSync
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
         protected NcStateMachine OwnerSm;
         protected AsHttpOperation Op;
-        protected Object LockObj = new Object ();
         private bool Cancelled = false;
         private bool ProcessResponseOwnsPendingCleanup = false;
 
@@ -628,6 +627,23 @@ namespace NachoCore.ActiveSync
             var doc = new XDocument ();
             doc.Declaration = new XDeclaration ("1.0", "utf-8", "no");
             return doc;
+        }
+    }
+
+    public class AsWaitCommand : AsCommand
+    {
+        NcCommand WaitCommand;
+        public AsWaitCommand (IBEContext dataSource, int duration, bool earlyOnECChange) : base ("AsWaitCommand", Xml.AirSyncBase.Ns, dataSource)
+        {
+            WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
+        }
+        public override void Execute (NcStateMachine sm)
+        {
+            WaitCommand.Execute (sm);
+        }
+        public override void Cancel ()
+        {
+            WaitCommand.Cancel ();
         }
     }
 }

@@ -809,6 +809,7 @@ namespace Test.Common
             // 6. body (incomplete), version 0 [MATCH]
             // 7. body (incomplete), lastest version - 1 [NO MATCH]
             var contact1 = TestMcContactForQueryNeedIndexing (0, ContactIndexDocument.Version);
+            Assert.NotNull (contact1); // for avoiding compilation warning
             var contact2 = TestMcContactForQueryNeedIndexing (0, 0);
 
             var body3 = TestMcBodyForQueryNeedIndexing (McAbstrFileDesc.FilePresenceEnum.Complete);

@@ -2,6 +2,8 @@
 //
 using System;
 using NachoCore.Model;
+using NachoCore.Utils;
+using MailKit;
 
 namespace NachoCore.IMAP
 {
@@ -9,7 +11,28 @@ namespace NachoCore.IMAP
     {
         public ImapEmailMarkReadCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
-            // FIXME
+            PendingSingle = pending;
+            pending.MarkDispached ();
+        }
+
+        protected override Event ExecuteCommand ()
+        {
+            var folderGuid = ImapProtoControl.ImapMessageFolderGuid (PendingSingle.ServerId);
+            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
+            NcAssert.Equals (folderGuid, folder.ImapGuid);
+            var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
+            lock (Client.SyncRoot) {
+                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
+                if (null == mailKitFolder) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
+                }
+                mailKitFolder.SetFlags (uid, MessageFlags.Seen, true, Cts.Token);
+            }
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (BEContext.ProtoControl, 
+                    NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));
+            });
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPMARKREADSUC");
         }
     }
 }

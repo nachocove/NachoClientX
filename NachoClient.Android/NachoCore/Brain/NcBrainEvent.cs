@@ -2,6 +2,7 @@
 //
 using System;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
@@ -19,6 +20,7 @@ namespace NachoCore.Brain
         UPDATE_MESSAGE_SCORE,
         UNINDEX_MESSAGE,
         UNINDEX_CONTACT,
+        PERSISTENT_QUEUE,
     };
 
     [Serializable]
@@ -234,6 +236,25 @@ namespace NachoCore.Brain
         public override string ToString ()
         {
             return String.Format ("[NcBrainStateMachineEvent: type={0} accountId={1}", GetEventType (), AccountId);
+        }
+    }
+
+    // This event is for kickstart processing in the persistent queue. Do not insert this into db.
+    public class NcBrainPersistentQueueEvent : NcBrainEvent
+    {
+        public int EventCount;
+
+        public NcBrainPersistentQueueEvent (int eventCount = -1) : base (NcBrainEventType.PERSISTENT_QUEUE)
+        {
+            if (-1 == eventCount) {
+                eventCount = McBrainEvent.Count ();
+            }
+            EventCount = eventCount;
+        }
+
+        public override string ToString ()
+        {
+            return String.Format ("[NcBrainPersistentQueueEvent: type={0} eventCount={1}", GetEventType (), EventCount);
         }
     }
 }

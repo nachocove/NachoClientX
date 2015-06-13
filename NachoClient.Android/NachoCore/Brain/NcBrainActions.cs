@@ -13,7 +13,7 @@ namespace NachoCore.Brain
     // The goal is to separate the actions from the scheduling of actions.
     public partial class NcBrain
     {
-        protected bool GleanEmailMessage (McEmailMessage emailMessage, string accountAddress, bool quickScore)
+        protected bool GleanEmailMessage (McEmailMessage emailMessage)
         {
             if (null == emailMessage) {
                 return false;
@@ -29,21 +29,6 @@ namespace NachoCore.Brain
                     return false;
                 }
             }
-
-            if (quickScore && (0 == emailMessage.ScoreVersion) && (0.0 == emailMessage.Score)) {
-                // Assign a version 0 score by checking if our address is in the to list
-                InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
-                foreach (var address in addressList) {
-                    if (!(address is MailboxAddress)) {
-                        continue;
-                    }
-                    if (((MailboxAddress)address).Address == accountAddress) {
-                        emailMessage.Score = McEmailMessage.minHotScore;
-                        emailMessage.UpdateByBrain ();
-                        break;
-                    }
-                }
-            }
             return true;
         }
 
@@ -53,7 +38,7 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
-            emailAddress.ScoreObject ();
+            emailAddress.Analyze ();
             return true;
         }
 
@@ -63,8 +48,16 @@ namespace NachoCore.Brain
                 return false;
             }
             Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
-            emailMessage.ScoreObject ();
+            if (!GleanEmailMessage (emailMessage)) {
+                return false;
+            }
+            emailMessage.Analyze ();
             return true;
+        }
+
+        protected bool AnalyzeEmailMessage (object obj)
+        {
+            return AnalyzeEmailMessage ((McEmailMessage)obj);
         }
 
         protected bool UpdateEmailAddressScore (McEmailAddress emailAddress, bool updateDependencies)
@@ -76,17 +69,17 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailAddress.ScoreVersion);
                 return true;
             }
-            var newScore = emailAddress.GetScore ();
+            var newScore = emailAddress.Classify ();
             bool scoreUpdated = newScore != emailAddress.Score;
-            if (emailAddress.NeedUpdate || scoreUpdated) {
+            if (emailAddress.ShouldUpdate () || scoreUpdated) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
                     emailAddress.Id, emailAddress.Score);
                 emailAddress.Score = newScore;
-                emailAddress.NeedUpdate = false;
+                emailAddress.NeedUpdate = 0;
                 emailAddress.UpdateByBrain ();
             }
             if (updateDependencies && scoreUpdated) {
-                emailAddress.MarkDependencies ();
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
             }
             return true;
         }
@@ -100,15 +93,20 @@ namespace NachoCore.Brain
                 NcAssert.True (Scoring.Version > emailMessage.ScoreVersion);
                 return true;
             }
-            var newScore = emailMessage.GetScore ();
-            if (emailMessage.NeedUpdate || (newScore != emailMessage.Score)) {
+            var newScore = emailMessage.Classify ();
+            if (emailMessage.ShouldUpdate () || (newScore != emailMessage.Score)) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
                     emailMessage.Id, emailMessage.Score);
                 emailMessage.Score = newScore;
-                emailMessage.NeedUpdate = false;
+                emailMessage.NeedUpdate = 0;
                 emailMessage.UpdateScoreAndNeedUpdate ();
             }
             return true;
+        }
+
+        protected bool UpdateEmailMessageScore (object obj)
+        {
+            return UpdateEmailMessageScore ((McEmailMessage)obj);
         }
 
         // Try to get the file path of the body of an McAbstrItem (or its derived classes)
@@ -125,14 +123,14 @@ namespace NachoCore.Brain
             // Make sure the body is completely downloaded
             if (!body.IsValid || (McAbstrFileDesc.FilePresenceEnum.Complete != body.FilePresence)) {
                 Log.Warn (Log.LOG_BRAIN, "{0}: not a valid, downloaded body (id={1}, bodyId={2}, isValid={3}, filePresence={4})",
-                    item.Id, item.BodyId, body.IsValid, body.FilePresence);
+                    caller, item.Id, item.BodyId, body.IsValid, body.FilePresence);
                 return null;
             }
 
             // Make sure that the file path exists
             var filePath = body.GetFilePath ();
             if (!File.Exists (filePath)) {
-                Log.Warn (Log.LOG_BRAIN, "{0}: {1} does not exist (id={2}, bodyId={3})", filePath, item.Id, item.BodyId);
+                Log.Warn (Log.LOG_BRAIN, "{0}: {1} does not exist (id={2}, bodyId={3})", caller, filePath, item.Id, item.BodyId);
                 body.DeleteFile (); // fix the inconsistent state
                 return null;
             }
@@ -140,48 +138,77 @@ namespace NachoCore.Brain
             return filePath;
         }
 
-        protected bool IndexEmailMessage (NcIndex index, McEmailMessage emailMessage, ref long bytesIndexed)
+        protected bool IndexEmailMessage (McEmailMessage emailMessage)
         {
-            if (null == emailMessage) {
+            if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
                 return false;
             }
             Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
+            var index = OpenedIndexes.Get (emailMessage.AccountId);
+            if (null == index) {
+                return false;
+            }
 
-            // Make sure the body is there
-            McBody body;
-            var messagePath = GetValidBodypath (emailMessage, "IndexEmailMessage", out body);
-            if (null == messagePath) {
-                return false;
+            MimeMessage message = null;
+            var parameters = new EmailMessageIndexParameters () {
+                From = NcEmailAddress.ParseAddressListString (emailMessage.From),
+                To = NcEmailAddress.ParseAddressListString (emailMessage.To),
+                Cc = NcEmailAddress.ParseAddressListString (emailMessage.Cc),
+                Bcc = NcEmailAddress.ParseAddressListString (emailMessage.Bcc),
+                ReceivedDate = emailMessage.DateReceived,
+                Subject = emailMessage.Subject,
+            };
+            if (0 < emailMessage.BodyId) {
+                // Make sure the body is there
+                McBody body;
+                var messagePath = GetValidBodypath (emailMessage, "IndexEmailMessage", out body);
+                if (null != messagePath) {
+                    // Create the parsed object, its tokenizer, and its index document
+                    message = NcObjectParser.ParseMimeMessage (messagePath);
+                    if (null == message) {
+                        Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, bodyType={2}, filePresence={3}",
+                            emailMessage.Id, emailMessage.BodyId, body.BodyType, body.FilePresence);
+                    } else {
+                        var tokenizer = new NcMimeTokenizer (message);
+                        parameters.Content = tokenizer.Content;
+                    }
+                }
             }
- 
-            // Create the parsed object, its tokenizer, and its index document
-            var message = NcObjectParser.ParseMimeMessage (messagePath);
-            if (null == message) {
-                Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, bodyType={2}, filePresence={3}",
-                    emailMessage.Id, emailMessage.BodyId, body.BodyType, body.FilePresence);
-                return false;
-            }
-            var tokenizer = new NcMimeTokenizer (message);
-            var content = tokenizer.Content;
             try {
-                var indexDoc = new EmailMessageIndexDocument (emailMessage.Id.ToString (), content, message);
+                var id = emailMessage.Id.ToString ();
+                if (0 != emailMessage.IsIndexed) {
+                    // There is an old version in the index. Remove it first.
+                    OpenedIndexes.Cleanup ();
+                    index.Remove ("message", id);
+                    index = OpenedIndexes.Get (emailMessage.AccountId);
+                }
+                var indexDoc = new EmailMessageIndexDocument (id, parameters, message);
 
                 // Index the document
-                bytesIndexed += index.BatchAdd (indexDoc);
+                BytesIndexed += index.BatchAdd (indexDoc);
             } catch (NullReferenceException e) {
                 Log.Error (Log.LOG_BRAIN, "IndexEmailmessage: caught null exception - {0}", e);
             }
  
             // Mark the email message indexed
-            emailMessage.IsIndexed = true;
-            emailMessage.UpdateByBrain ();
+            emailMessage.SetIndexVersion ();
+            emailMessage.UpdateIsIndex ();
 
             return true;
         }
 
-        protected bool IndexContact (NcIndex index, McContact contact, ref long bytesIndex)
+        protected bool IndexEmailMessage (object obj)
         {
-            if ((null == index) || (null == contact)) {
+            return IndexEmailMessage ((McEmailMessage)obj);
+        }
+
+        protected bool IndexContact (McContact contact)
+        {
+            if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+                return false;
+            }
+            var index = OpenedIndexes.Get (contact.AccountId);
+            if (null == index) {
                 return false;
             }
 
@@ -213,15 +240,12 @@ namespace NachoCore.Brain
             if (0 != contact.BodyId) {
                 McBody dummy;
                 var notePath = GetValidBodypath (contact, "IndexContact", out dummy);
-                if (null == notePath) {
-                    return false;
-                }
-
-                try {
-                    contactParams.Note = File.ReadAllText (notePath);
-                } catch (IOException) {
-                    Log.Warn (Log.LOG_BRAIN, "IndexContact: fail to read {0} (id={0}, bodyId={1})", contact.Id, contact.BodyId);
-                    return false;
+                if (null != notePath) {
+                    try {
+                        contactParams.Note = File.ReadAllText (notePath);
+                    } catch (IOException) {
+                        Log.Warn (Log.LOG_BRAIN, "IndexContact: fail to read {0} (id={0}, bodyId={1})", contact.Id, contact.BodyId);
+                    }
                 }
             }
 
@@ -229,10 +253,12 @@ namespace NachoCore.Brain
                 var id = contact.Id.ToString ();
                 if (0 != contact.IndexVersion) {
                     // There is an old version in the index. Remove it first.
+                    OpenedIndexes.Cleanup ();
                     index.Remove ("contact", id);
+                    index = OpenedIndexes.Get (contact.AccountId);
                 }
                 var indexDoc = new ContactIndexDocument (id, contactParams);
-                bytesIndex += index.BatchAdd (indexDoc);
+                BytesIndexed += index.BatchAdd (indexDoc);
             } catch (NullReferenceException e) {
                 Log.Error (Log.LOG_BRAIN, "IndexContact: caught null exception - {0}", e);
             }
@@ -243,8 +269,14 @@ namespace NachoCore.Brain
             return true;
         }
 
+        protected bool IndexContact (object obj)
+        {
+            return IndexContact ((McContact)obj);
+        }
+
         protected void UnindexEmailMessage (int accountId, int emailMessageId)
         {
+            OpenedIndexes.Cleanup ();
             var index = Index (accountId);
             if (null == index) {
                 Log.Warn (Log.LOG_BRAIN, "fail to find index for account {0}", accountId);
@@ -255,6 +287,7 @@ namespace NachoCore.Brain
 
         protected void UnindexContact (int accountId, int contactId)
         {
+            OpenedIndexes.Cleanup ();
             var index = Index (accountId);
             if (null == index) {
                 Log.Warn (Log.LOG_BRAIN, "fail to find index for account {0}", accountId);

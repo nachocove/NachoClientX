@@ -199,7 +199,7 @@ namespace NachoClient.iOS
             var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
-                PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
+                if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
@@ -213,7 +213,9 @@ namespace NachoClient.iOS
                             return; // completeHandler is called at the completion of perform fetch.
                         }
                     }
-                });
+                })) {
+                    completionHandler (UIBackgroundFetchResult.NoData);
+                }
             }
         }
 
@@ -376,6 +378,15 @@ namespace NachoClient.iOS
                 }
             }
 
+            // Initialize Google
+            var gglError = new NSError ();
+            var gglInstance = Google.iOS.GGLContext.SharedInstance;
+            gglInstance.ConfigureWithError (ref gglError);
+            if (null != gglError) {
+                // FIXME: Always reporting error
+                Log.Error (Log.LOG_UI, "Google GGLContext initialize has error: {0}", gglError);
+            }
+
             NcKeyboardSpy.Instance.Init ();
 
             if (LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
@@ -396,6 +407,10 @@ namespace NachoClient.iOS
         /// </summary>
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
+            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
+                return true;
+            }
+
             if (!url.IsFileUrl) {
                 return false;
             }

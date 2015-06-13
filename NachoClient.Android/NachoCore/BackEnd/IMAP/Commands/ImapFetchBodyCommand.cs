@@ -20,12 +20,10 @@ namespace NachoCore.IMAP
 {
     public class ImapFetchBodyCommand : ImapCommand
     {
-        ImapFolder _folder { get; set; }
         public ImapFetchBodyCommand (IBEContext beContext, McPending pending) : base (beContext)
         {
             pending.MarkDispached ();
             PendingSingle = pending;
-            _folder = null;
         }
 
         protected override Event ExecuteCommand ()
@@ -46,17 +44,6 @@ namespace NachoCore.IMAP
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
             }
-        }
-
-        private ImapFolder GetOpenedFolder(string serverId)
-        {
-            if (null == _folder || _folder.FullName != serverId) {
-                Log.Info (Log.LOG_IMAP, "Opening folder {0}", serverId);
-                _folder = Client.GetFolder (serverId, Cts.Token) as ImapFolder;
-                NcAssert.NotNull(_folder);
-                _folder.Open (FolderAccess.ReadOnly);
-            }
-            return _folder;
         }
 
         private NcResult ProcessPending (McPending pending)
@@ -83,10 +70,10 @@ namespace NachoCore.IMAP
         {
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             NcResult result;
+            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
+            var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            var folder = GetOpenedFolder (pending.ParentId);
-
-            MimeMessage imapbody = folder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
+            MimeMessage imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
             if (null == imapbody) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
                 email.BodyId = 0;

@@ -304,6 +304,8 @@ namespace NachoCore.Model
                 Db.CreateTable<McMigration> ();
                 Db.CreateTable<McLicenseInformation> ();
                 Db.CreateTable<McBrainEvent> ();
+                Db.CreateTable<McEmailAddressScore> ();
+                Db.CreateTable<McEmailMessageScore> ();
             });
             watch.Stop ();
             QueueLogInfo (string.Format ("NcModel: Db.CreateTables took {0}ms.", watch.ElapsedMilliseconds));
