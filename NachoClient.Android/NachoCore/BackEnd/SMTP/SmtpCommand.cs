@@ -75,7 +75,7 @@ namespace NachoCore.SMTP
                     ResolveAllFailed (NcResult.WhyEnum.Unknown);
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD2");
                 }
-            }, "SmtpCommand");
+            }, this.GetType ().Name);
         }
 
         public override void Cancel ()
