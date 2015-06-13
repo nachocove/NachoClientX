@@ -127,6 +127,7 @@ namespace NachoCore.IMAP
                                     Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
                                 }
                             } catch (ImapProtocolException ex1) {
+                                // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
                                 Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
                                 if (!Client.IsConnected || !Client.IsAuthenticated) {
                                     var authy = new ImapAuthenticateCommand (BEContext, Client);
