@@ -105,13 +105,16 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
                     Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
                 }
-
                 if (!Client.IsAuthenticated) {
-                    // Note: since we don't have an OAuth2 token, disable
-                    // the XOAUTH2 authentication mechanism.
-                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-
-                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                    if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                        // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
+                        Client.AuthenticationMechanisms.Remove ("LOGIN");
+                        Client.AuthenticationMechanisms.Remove ("PLAIN");
+                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                    } else {
+                        Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                    }
                 }
             }
         }

@@ -192,6 +192,7 @@ namespace Test.iOS
                 ProtoControl = protoControl;
             }
             Cred = new McCred () {
+                CredType = McCred.CredTypeEnum.Password,
                 AccountId = Account.Id,
                 Username = "dummy",
             };
