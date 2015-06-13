@@ -672,9 +672,20 @@ namespace NachoCore
                 }
                 CredReqActive.Add (sender.Account.Id, true);
             }
-            InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.CredReq (sender.AccountId);
-            });
+
+            Action<McCred> onSuccess = (cred) => {
+                CredResp (sender.AccountId);
+            };
+
+            Action<McCred> onFailure = (cred) => {
+                InvokeOnUIThread.Instance.Invoke (delegate () {
+                    Owner.CredReq (sender.AccountId);
+                });
+            };
+            // FIXME - need a CancellationToken tied to Stop().
+            if (!sender.Cred.AttemptRefresh (onSuccess, onFailure)) {
+                onFailure (sender.Cred);
+            }
         }
 
         public void ServConfReq (NcProtoControl sender, object arg)

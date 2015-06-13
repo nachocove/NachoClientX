@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailMoveCommand : ImapCommand
     {
-        public ImapEmailMoveCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapEmailMoveCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -52,7 +52,7 @@ namespace NachoCore.IMAP
                 var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
                 if (folderGuid != src.ImapGuid) {
                     Log.Error (Log.LOG_IMAP, "folder UIDVALIDITY does not match.");
-                    throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.FolderSync, "IMAPEMMOVUID"));
+                    throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPEMMOVUID"));
                 }
                 var srcFolder = Client.GetFolder (src.ServerId, Token);
                 if (null == srcFolder) {

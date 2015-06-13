@@ -37,8 +37,8 @@ namespace Test.Common
             McEmailAddress address = new McEmailAddress ();
             address.CanonicalEmailAddress = canonicalAddress;
             address.AccountId = defaultAccountId;
-            address.EmailsReceived = received;
-            address.EmailsRead = read;
+            address.ScoreStates.EmailsReceived = received;
+            address.ScoreStates.EmailsRead = read;
             address.ScoreVersion = 3;
             address.Score = (double)read / (double)received;
             address.IsVip = isVip;

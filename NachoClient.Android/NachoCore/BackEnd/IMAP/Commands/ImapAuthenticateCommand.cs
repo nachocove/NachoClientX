@@ -1,26 +1,16 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Xml.Linq;
 using NachoCore.Utils;
-using System.Threading;
-using MimeKit;
-using MailKit;
-using MailKit.Search;
 using MailKit.Net.Imap;
 using NachoCore;
-using NachoCore.Brain;
 using NachoCore.Model;
-using MailKit.Security;
-using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
-        public ImapAuthenticateCommand (IBEContext beContext) : base (beContext)
+        public ImapAuthenticateCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
         {
         }
 
@@ -28,12 +18,19 @@ namespace NachoCore.IMAP
         {
             if (!Client.IsConnected) {
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
+                Log.Info (Log.LOG_IMAP, "IMAP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
             }
             if (!Client.IsAuthenticated) {
-                // FIXME - add support for OAUTH2.
-                Client.AuthenticationMechanisms.Remove ("XOAUTH");
-                Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
+                    Client.AuthenticationMechanisms.Remove ("LOGIN");
+                    Client.AuthenticationMechanisms.Remove ("PLAIN");
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                } else {
+                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                }
+                Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
             }
             var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
             if (cap != BEContext.ProtocolState.ImapServerCapabilities) {

@@ -206,6 +206,7 @@
       <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="Xamarin.iOS" />
+    <Reference Include="System.Web.Services" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -1383,9 +1384,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
       <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
     </Compile>
@@ -1483,6 +1481,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration30.cs">
+      <Link>NachoCore\Model\Migration\NcMigration30.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainHelpers.cs">
       <Link>NachoCore\Brain\NcBrainHelpers.cs</Link>
     </Compile>
@@ -1492,6 +1493,21 @@
     <Compile Include="NachoUI.iOS\Support\UnreadMessagesView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountMonitor.cs">
       <Link>NachoCore\Utils\NcAccountMonitor.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScore.cs">
+      <Link>NachoCore\Model\McEmailAddressScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScore.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\IScoreStates.cs">
+      <Link>NachoCore\Model\IScoreStates.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration29.cs">
+      <Link>NachoCore\Model\Migration\NcMigration29.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2444,6 +2460,10 @@
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Google.iOS\GoogleAPIs\Google.iOS.csproj">
+      <Project>{C6741CA8-619D-4FF3-8CBA-108CFC3447A0}</Project>
+      <Name>Google.iOS</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />
@@ -2455,6 +2475,9 @@
     <Content Include="Content\PageFive.png" />
     <Content Include="Content\PageSix.png" />
     <Content Include="Content\PageSeven.png" />
+    <Content Include="GoogleService-Info.plist">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ITunesArtwork Include="iTunesArtwork" />

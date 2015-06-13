@@ -1,13 +1,13 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
-using System;
 using NachoCore.Model;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapFetchAttachmentCommand : ImapCommand
     {
-        public ImapFetchAttachmentCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapFetchAttachmentCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             // FIXME
         }

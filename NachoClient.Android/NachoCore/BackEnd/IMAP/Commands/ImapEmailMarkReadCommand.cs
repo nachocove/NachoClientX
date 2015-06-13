@@ -4,12 +4,13 @@ using System;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MailKit;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapEmailMarkReadCommand : ImapCommand
     {
-        public ImapEmailMarkReadCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapEmailMarkReadCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             pending.MarkDispached ();
@@ -21,7 +22,7 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
             if (folderGuid != folder.ImapGuid) {
                 Log.Error (Log.LOG_IMAP, "Folder GUID no longer matches.");
-                throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.FolderSync, "IMAPEMREADUID"));
+                throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPEMREADUID"));
             }
             var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
             lock (Client.SyncRoot) {

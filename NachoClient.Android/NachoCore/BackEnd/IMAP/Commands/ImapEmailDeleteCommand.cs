@@ -5,12 +5,13 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using MailKit;
 using System.Collections.Generic;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapEmailDeleteCommand : ImapCommand
     {
-        public ImapEmailDeleteCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapEmailDeleteCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -22,7 +23,7 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
             if (folderGuid != folder.ImapGuid) {
                 Log.Error (Log.LOG_IMAP, "Folder GUID no longer matches.");
-                throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.FolderSync, "IMAPEMDELUIDVAL"));
+                throw new NcImapCommandRetryException (Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPEMDELUIDVAL"));
             }
             var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
             lock (Client.SyncRoot) {
