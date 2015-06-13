@@ -448,8 +448,14 @@ namespace NachoCore.IMAP
             using (var decoded = new MemoryStream ()) {
                 using (var filtered = new FilteredStream (decoded)) {
                     filtered.Add (DecoderFilter.Create (enc));
-                    if (part.ContentType.Charset != null)
-                        filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
+                    if (part.ContentType.Charset != null) {
+                        try {
+                            filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
+                        } catch (ArgumentException ex) {
+                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
+                            // continue without the filter
+                        }
+                    }
                     stream.CopyTo (filtered);
                 }
                 var buffer = decoded.GetBuffer ();
