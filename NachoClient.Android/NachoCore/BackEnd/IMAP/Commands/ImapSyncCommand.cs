@@ -225,6 +225,19 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
+        private static string CommaSeparatedString(InternetAddressList AddrList)
+        {
+            string result = null;
+            if (AddrList.Any ()) {
+                var addrs = new List<string> ();
+                foreach (var addr in AddrList) {
+                    addrs.Add (((MailboxAddress)addr).Address);
+                }
+                result = string.Join (",", addrs);
+            }
+            return result;
+        }
+
         public static NcResult ParseEmail (int accountId, string ServerId, IMessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
@@ -241,32 +254,16 @@ namespace NachoCore.IMAP
                 cachedFromColor = 1,
             };
 
-            // TODO: DRY this out. Perhaps via Reflection?
-            if (summary.Envelope.To.Count > 0) {
-                if (summary.Envelope.To.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} To entries in message.", summary.Envelope.To.Count);
-                }
-                emailMessage.To = ((MailboxAddress)summary.Envelope.To [0]).Address;
-            }
-            if (summary.Envelope.Cc.Count > 0) {
-                if (summary.Envelope.Cc.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} Cc entries in message.", summary.Envelope.Cc.Count);
-                }
-                emailMessage.Cc = ((MailboxAddress)summary.Envelope.Cc [0]).Address;
-            }
-            if (summary.Envelope.Bcc.Count > 0) {
-                if (summary.Envelope.Bcc.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} Bcc entries in message.", summary.Envelope.Bcc.Count);
-                }
-                emailMessage.Bcc = ((MailboxAddress)summary.Envelope.Bcc [0]).Address;
-            }
+            emailMessage.To = CommaSeparatedString (summary.Envelope.To);
+            emailMessage.Cc = CommaSeparatedString (summary.Envelope.Cc);
+            emailMessage.Bcc = CommaSeparatedString (summary.Envelope.Bcc);
 
-            McEmailAddress fromEmailAddress;
             if (summary.Envelope.From.Count > 0) {
                 if (summary.Envelope.From.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
                 emailMessage.From = ((MailboxAddress)summary.Envelope.From [0]).Address;
+                McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
                     emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
@@ -285,6 +282,7 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
                 emailMessage.Sender = ((MailboxAddress)summary.Envelope.Sender [0]).Address;
+                McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
                 }
