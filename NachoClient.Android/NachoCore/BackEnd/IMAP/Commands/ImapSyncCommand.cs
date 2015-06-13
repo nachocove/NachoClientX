@@ -104,10 +104,39 @@ namespace NachoCore.IMAP
                     if (null == mailKitFolder) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
                     }
-                    cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                    imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
-                    cap.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    try {
+                        cap = NcCapture.CreateAndStart (KImapFetchTiming);
+                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
+                        cap.Stop ();
+                        Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    } catch (ImapProtocolException) {
+                        // try one-by-one so we can at least get a few.
+                        Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
+                        if (!Client.IsConnected || !Client.IsAuthenticated) {
+                            var authy = new ImapAuthenticateCommand (BEContext, Client);
+                            authy.ConnectAndAuthenticate ();
+                        }
+                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                        imapSummaries = new List<IMessageSummary> ();
+                        foreach (var uid in SyncKit.UidList) {
+                            try {
+                                var s = mailKitFolder.Fetch (new List<UniqueId>{uid}, SyncKit.Flags, Cts.Token);
+                                if (1 == s.Count) {
+                                    imapSummaries.Add (s [0]);
+                                } else if (s.Count > 0) {
+                                    Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
+                                }
+                            } catch (ImapProtocolException ex1) {
+                                // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
+                                Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
+                                if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                    var authy = new ImapAuthenticateCommand (BEContext, Client);
+                                    authy.ConnectAndAuthenticate ();
+                                }
+                                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                            }
+                        }
+                    }
                     cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                     foreach (var imapSummary in imapSummaries) {
                         var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
