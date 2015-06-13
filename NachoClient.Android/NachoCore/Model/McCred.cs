@@ -7,6 +7,7 @@ using SQLite;
 using ModernHttpClient;
 using Newtonsoft.Json;
 using NachoCore.Utils;
+using NachoClient.Build;
 using NachoPlatform;
 
 namespace NachoCore.Model
@@ -192,10 +193,10 @@ namespace NachoCore.Model
         {
             var handler = new NativeMessageHandler ();
             var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
-            var query = "client_secret=" + "3NKmUHorCm8_IS4lkOWuN_7i" +
+            var query = "client_secret=" + BuildInfo.GoogleClientSecret +
                         "&grant_type=" + "refresh_token" +
                         "&refresh_token=" + GetRefreshToken () +
-                        "&client_id=" + "135541750674-l44k46h09u2obl3upnchl9lt3nicfd52.apps.googleusercontent.com";
+                        "&client_id=" + BuildInfo.GoogleClientId;
             var requestUri = new Uri ("https://www.googleapis.com/oauth2/v3/token" + "?" + query);
             var httpRequest = new HttpRequestMessage (HttpMethod.Post, requestUri);
             try {

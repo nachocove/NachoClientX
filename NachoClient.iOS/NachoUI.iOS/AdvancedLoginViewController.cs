@@ -830,7 +830,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            GoogleDumper (user);
+            // GoogleDumper (user);
 
             service = McAccount.AccountServiceEnum.GoogleDefault;
 

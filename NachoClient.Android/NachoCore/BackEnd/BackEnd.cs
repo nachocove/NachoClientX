@@ -682,7 +682,7 @@ namespace NachoCore
                     Owner.CredReq (sender.AccountId);
                 });
             };
-
+            // FIXME - need a CancellationToken tied to Stop().
             if (!sender.Cred.AttemptRefresh (onSuccess, onFailure)) {
                 onFailure (sender.Cred);
             }
