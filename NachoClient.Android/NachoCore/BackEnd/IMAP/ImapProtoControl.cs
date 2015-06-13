@@ -647,7 +647,7 @@ namespace NachoCore.IMAP
 
         public bool ShouldLog ()
         {
-            return true;
+            return false;
         }
 
         #endregion
