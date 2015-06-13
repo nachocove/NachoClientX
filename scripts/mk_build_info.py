@@ -51,6 +51,9 @@ def create_buildinfo(options):
     s3_bucket = aws['s3_bucket']
     pinger = projects[release]['pinger']
     pinger_hostname = pinger['hostname']
+    google = projects[release]['google']
+    google_client_id = google['client_id']
+    google_client_secret = google['client_secret']
 
     # Get the pinger pinned root cert
     with open(os.path.join('..', 'Resources', pinger['root_cert'])) as f:
@@ -88,6 +91,8 @@ def create_buildinfo(options):
         print >>f, '        public const string AwsAuthRoleArn = "%s";' % aws_auth_role_arn
         print >>f, '        public const string PingerHostname = "%s";' % pinger_hostname
         print >>f, '        public const string PingerCertPem = @"%s";' % pinger_cert
+        print >>f, '        public const string GoogleClientId = @"%s";' % google_client_id
+        print >>f, '        public const string GoogleClientSecret = @"%s";' % google_client_secret
         print >>f, '        public const string S3Bucket = "%s";' % s3_bucket
         print >>f, '    }'
         print >>f, '}'

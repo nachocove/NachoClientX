@@ -27,6 +27,10 @@ projects = {
         'pinger': {
             'hostname': 'pinger.officetaco.com',
             'root_cert': 'pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-l44k46h09u2obl3upnchl9lt3nicfd52.apps.googleusercontent.com',
+            'client_secret': '3NKmUHorCm8_IS4lkOWuN_7i',
         }
     },
     'alpha': {
@@ -50,6 +54,10 @@ projects = {
         'pinger': {
             'hostname': 'alphapinger.officetaco.com',
             'root_cert': 'beta-pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-ggdpk07n9rd91j9479u685ud6usqodrq.apps.googleusercontent.com',
+            'client_secret': 'uCnNdx_SuZnsa9UZkhlUcbf6',
         }
     },
     'beta': {
@@ -73,12 +81,17 @@ projects = {
         'pinger': {
             'hostname': 'dk65t.pxs001.com',
             'root_cert': 'beta-pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-d6o0v1h299isdh155thlo01r7d1sj22v.apps.googleusercontent.com',
+            'client_secret': 'w_STpstIgIVrPYcCEYclC3KT',
         }
     },
     'appstore': {
         'ios': {
             'bundle_id': 'com.nachocove.mail',
-            'display_name': 'Nacho Mail'
+            'display_name': 'Nacho Mail',
+            'icon_script': 'appstore/copy.sh'
         },
         'hockeyapp': {
             'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa',
@@ -95,7 +108,10 @@ projects = {
         'pinger': {
             'hostname': 'p745x.pxs001.com',
             'root_cert': 'beta-pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-f307j8582mi397cd0hcsbtn8ts1djmdv.apps.googleusercontent.com',
+            'client_secret': '5iBJeVUWnYs4jkHbDZziV0Gl',
         }
     },
-
 }

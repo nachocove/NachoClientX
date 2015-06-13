@@ -34,7 +34,39 @@ namespace NachoCore.Model
         {
         }
 
+        public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress,
+            string accessToken, string refreshToken, DateTime expiry)
+        {
+            return CreateAccountCore (service, emailAddress, (accountId) => {
+                var cred = new McCred () { 
+                    AccountId = accountId,
+                    CredType = McCred.CredTypeEnum.OAuth2,
+                    Username = emailAddress,
+                };
+                cred.Insert ();
+                cred.UpdateOauth2 (accessToken, refreshToken, expiry);
+                return cred;
+            });
+        }
+
         public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
+        {
+            return CreateAccountCore (service, emailAddress, (accountId) => {
+                var cred = new McCred () { 
+                    AccountId = accountId,
+                    CredType = McCred.CredTypeEnum.Password,
+                    Username = emailAddress,
+                };
+                cred.Insert ();
+                if (null != password) {
+                    // FIXME STEVE - why would password be null?
+                    cred.UpdatePassword (password);
+                }
+                return cred;
+            });
+        }
+
+        private McAccount CreateAccountCore (McAccount.AccountServiceEnum service, string emailAddress, Func<int, McCred> makeCred)
         {
             var account = new McAccount () { EmailAddr = emailAddress };
 
@@ -46,14 +78,7 @@ namespace NachoCore.Model
                 account.SetAccountService (service);
                 account.DisplayName = McAccount.AccountServiceName (service);
                 account.Insert ();
-                var cred = new McCred () { 
-                    AccountId = account.Id,
-                    Username = emailAddress,
-                };
-                cred.Insert ();
-                if (null != password) {
-                    cred.UpdatePassword (password);
-                }
+                var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
                 Telemetry.RecordAccountEmailAddress (account);
             });
@@ -191,7 +216,10 @@ namespace NachoCore.Model
             // remove password from keychain
             var cred = McCred.QueryByAccountId<McCred> (AccountId).SingleOrDefault ();
             if (Keychain.Instance.HasKeychain ()) {
+                // TODO - add a wipe API to keychain.
                 Keychain.Instance.DeletePassword (cred.Id);
+                Keychain.Instance.DeleteAccessToken (cred.Id);
+                Keychain.Instance.DeleteRefreshToken (cred.Id);
             }
 
             // delete all DB data for account id - is db running?

@@ -85,6 +85,7 @@
     <Reference Include="antlr.runtime.Android">
       <HintPath>..\..\DDay-iCal-Xamarin\antlr.runtime.Android\obj\Debug\antlr.runtime.Android.dll</HintPath>
     </Reference>
+    <Reference Include="System.Web.Services" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
@@ -428,6 +429,7 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration30.cs" />
     <Compile Include="NachoCore\Brain\NcBrainHelpers.cs" />
     <Compile Include="NachoCore\Brain\NcBrainEventHandler.cs" />
     <Compile Include="NachoCore\Utils\NcAccountMonitor.cs" />

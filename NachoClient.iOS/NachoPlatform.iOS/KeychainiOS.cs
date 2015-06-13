@@ -26,7 +26,17 @@ namespace NachoPlatform
         }
 
         private const string KDefaultAccount = "device";
-
+        private const string KIdentifierForVendor = "IdentifierForVendor";
+        private const string KAccessToken = "AccessToken";
+        private const string KRefreshToken = "RefreshToken";
+        /*
+         * For better or worse...
+         * Key chain is searched using account and service. We keep account constant as KDefaultAccount.
+         * We store passwords using the account id, eg "5" as the service.
+         * We store subsequent account-specific values using the account id and a string, eg "5:RefreshToken".
+         * Global (non-account specific) values use unformatted strings that don't start with a number, 
+         * eg "IdentifierForVendor".
+         */
         public bool HasKeychain ()
         {
             return true;
@@ -41,6 +51,11 @@ namespace NachoPlatform
             };
         }
 
+        private SecRecord CreateQuery (int handle, string subKey)
+        {
+            return CreateQuery (handle.ToString () + ":" + subKey);
+        }
+
         private SecRecord CreateQuery (int handle)
         {
             return CreateQuery (handle.ToString ());
@@ -48,116 +63,127 @@ namespace NachoPlatform
 
         public string GetPassword (int handle)
         {
-            SecStatusCode res;
-            var match = SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
-            if (SecStatusCode.Success == res) {
-                var iData = match.ValueData;
-                if ((null == iData) || (iData.Length == 0)) {
-                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned ValueData of null/(length==0) for handle {0}", handle);
-                    return null;
-                }
-                var bytes = iData.ToArray ();
-                var password = System.Text.Encoding.UTF8.GetString (bytes);
-                return password;
-                // XAMMIT. 
-                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-                // return match.ValueData.ToString ();
-            } else {
-                Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned status {0} for handle {1}", res.ToString (), handle);
-                // TODO : remove this before Appstore
-                if (match != null) {
-                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned value {0} for handle {1}", match.ValueData.ToString (), handle);
-                }
-                return null;
-            }
+            var data = Getter (CreateQuery (handle));
+            // XAMMIT. 
+            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
         }
 
         public bool SetPassword (int handle, string password)
         {
-            SecStatusCode res;
-            var match = SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
-            if (SecStatusCode.Success == res) {
-                match.ValueData = NSData.FromString (password);
-                res = SecKeyChain.Update (CreateQuery (handle), match);
-                if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Update returned {0} for handle {1}", res.ToString (), handle);
-                    return false;
-                }
-            } else {
-                var insert = CreateQuery (handle);
-                insert.ValueData = NSData.FromString (password);
-                insert.Accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly;
-                res = SecKeyChain.Add (insert);
-                if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Add returned {0} for handle {1}", res.ToString (), handle);
-                    return false;
-                }
-            }
-            return true;
+            return Setter (CreateQuery (handle), NSData.FromString (password));
         }
 
         public bool DeletePassword (int handle)
         {
-            SecStatusCode res;
-            SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
-            if (SecStatusCode.Success == res) {
-                res = SecKeyChain.Remove (CreateQuery (handle));
-                if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Remove returned {0} for handle {1}", res.ToString (), handle);
-                    return false;
-                }
-            } else { 
-                Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Delete returned {0} for handle {1}", res.ToString (), handle);
-                return false;
-            }
-            return true;        
+            return Deleter (CreateQuery (handle));
         }
-
-        private const string KIdentifierForVendor = "IdentifierForVendor";
 
         public string GetIdentifierForVendor ()
         {
+            var data = Getter (CreateQuery (KIdentifierForVendor));
+            // XAMMIT. 
+            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+        }
+
+        public bool SetIdentifierForVendor (string ident)
+        {
+            return Setter (CreateQuery (KIdentifierForVendor), NSData.FromString (ident));
+        }
+
+        public bool SetAccessToken (int handle, string token)
+        {
+            return Setter (CreateQuery (handle, KAccessToken), NSData.FromString (token));
+        }
+
+        public string GetAccessToken (int handle)
+        {
+            var data = Getter (CreateQuery (handle, KAccessToken));
+            // XAMMIT.
+            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+        }
+
+        public bool DeleteAccessToken (int handle)
+        {
+            return Deleter (CreateQuery (handle, KAccessToken));
+        }
+
+        public bool SetRefreshToken (int handle, string token)
+        {
+            return Setter (CreateQuery (handle, KRefreshToken), NSData.FromString (token));
+        }
+
+        public string GetRefreshToken (int handle)
+        {
+            var data = Getter (CreateQuery (handle, KRefreshToken));
+            // XAMMIT. 
+            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+        }
+
+        public bool DeleteRefreshToken (int handle)
+        {
+            return Deleter (CreateQuery (handle, KRefreshToken));
+        }
+
+        // Shared implementations below.
+        private NSData Getter (SecRecord query)
+        {
             SecStatusCode res;
-            var match = SecKeyChain.QueryAsRecord (CreateQuery (KIdentifierForVendor), out res);
+            var match = SecKeyChain.QueryAsRecord (query, out res);
             if (SecStatusCode.Success == res) {
-                var iData = match.ValueData;
-                var bytes = iData.ToArray ();
-                var ident = System.Text.Encoding.UTF8.GetString (bytes);
-                return ident;
-                // XAMMIT. 
-                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-                // return match.ValueData.ToString ();
+                if (null == match.ValueData || 0 == match.ValueData.Length) {
+                    Log.Error (Log.LOG_SYS, "Getter: SecKeyChain.QueryAsRecord returned ValueData of null/(length==0)");
+                }
+                return match.ValueData;
             } else {
                 if (SecStatusCode.ItemNotFound != res) {
-                    Log.Error (Log.LOG_SYS, "GetIdentifierForVendor: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Getter: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
                 }
                 return null;
             }
         }
 
-        public bool SetIdentifierForVendor (string ident)
+        private bool Setter (SecRecord query, NSData value)
         {
             SecStatusCode res;
-            var match = SecKeyChain.QueryAsRecord (CreateQuery (KIdentifierForVendor), out res);
+            var match = SecKeyChain.QueryAsRecord (query, out res);
             if (SecStatusCode.Success == res) {
-                match.ValueData = NSData.FromString (ident);
-                res = SecKeyChain.Update (CreateQuery (KIdentifierForVendor), match);
+                match.ValueData = value;
+                res = SecKeyChain.Update (query, match);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetIdentifierForVendor: SecKeyChain.Remove returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Remove returned {0}", res.ToString ());
                     return false;
                 }
             } else {
-                var insert = CreateQuery (KIdentifierForVendor);
-                insert.ValueData = NSData.FromString (ident);
-                insert.Accessible = SecAccessible.AlwaysThisDeviceOnly;
-                res = SecKeyChain.Add (insert);
+                query.ValueData = value;
+                query.Accessible = SecAccessible.AlwaysThisDeviceOnly;
+                res = SecKeyChain.Add (query);
                 if (SecStatusCode.Success != res) {
-                    Log.Error (Log.LOG_SYS, "SetIdentifierForVendor: SecKeyChain.Add returned {0}", res.ToString ());
+                    Log.Error (Log.LOG_SYS, "Setter: SecKeyChain.Add returned {0}", res.ToString ());
                     return false;
                 }
             }
             return true;
         }
+
+        private bool Deleter (SecRecord query)
+        {
+            SecStatusCode res;
+            SecKeyChain.QueryAsRecord (query, out res);
+            if (SecStatusCode.Success == res) {
+                res = SecKeyChain.Remove (query);
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Remove returned {0}", res.ToString ());
+                    return false;
+                }
+            } else { 
+                Log.Error (Log.LOG_SYS, "Deleter: SecKeyChain.Delete returned {0}", res.ToString ());
+                return false;
+            }
+            return true;        
+        }
     }
 }
-

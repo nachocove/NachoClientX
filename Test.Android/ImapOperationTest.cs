@@ -76,8 +76,8 @@ namespace Test.iOS
             public NcProtoControl ProtoControl { set; get; }
             public McProtocolState ProtocolState { get; set; }
             public McServer Server { get; set; }
-            public McAccount Account { get; }
-            public McCred Cred { get; }
+            public McAccount Account { get; set; }
+            public McCred Cred { get; set; }
         }
 
         [Test]
