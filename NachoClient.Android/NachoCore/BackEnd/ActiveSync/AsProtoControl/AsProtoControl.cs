@@ -1016,7 +1016,7 @@ namespace NachoCore.ActiveSync
         private void DoNopOrPick ()
         {
             // If we are parked, the Cmd has been set to null.
-            // Otherwise, it has the last commaned executed (or still executing).
+            // Otherwise, it has the last command executed (or still executing).
             if (null == Cmd) {
                 // We are not running, go figure out what to do.
                 DoPick ();

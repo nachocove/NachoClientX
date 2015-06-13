@@ -6,12 +6,13 @@ using NachoCore.Utils;
 using MailKit.Search;
 using System.Collections.Generic;
 using MailKit;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapSearchCommand : ImapCommand
     {
-        public ImapSearchCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapSearchCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -50,7 +51,7 @@ namespace NachoCore.IMAP
                             emailList.Add (new NcEmailMessageIndex (email.Id));
                         }
                     }
-                    Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ServerId);
+                    Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.IsDistinguished ? folder.ServerId : "User Folder");
                 }
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);

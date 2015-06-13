@@ -24,7 +24,7 @@ namespace NachoCore.Utils
 
         public MailKitProtocolLogger (string prefix, ulong module, INcProtocolLogger protoContext)
         {
-            logPrefix = logPrefix;
+            logPrefix = prefix;
             logModule = module;
             ProtoContext = protoContext;
 
@@ -33,10 +33,12 @@ namespace NachoCore.Utils
         }
         public void LogConnect (Uri uri)
         {
-            if (uri == null)
-                throw new ArgumentNullException ("uri");
+            if (true == ProtoContext.ShouldLog ()) {
+                if (uri == null)
+                    throw new ArgumentNullException ("uri");
 
-            Log.Info (logModule, "Connected to {0}", uri);
+                Log.Info (logModule, "Connected to {0}", uri);
+            }
         }
 
         private string RedactString(string line)
@@ -54,7 +56,7 @@ namespace NachoCore.Utils
 
                 Array.ForEach (lines, (line) => {
                     if (line.Length > 0) {
-                        Log.Info (logModule, "{0}{1}{2}", logPrefix, prefix, RedactString (line));
+                        Log.Info (logModule, "{0} {1}{2}", logPrefix, prefix, RedactString (line));
                     }
                 });
             }

@@ -1,15 +1,15 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
-using System;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MailKit;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapFolderUpdateCommand : ImapCommand
     {
-        public ImapFolderUpdateCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapFolderUpdateCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();

@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailMoveCommand : ImapCommand
     {
-        public ImapEmailMoveCommand (IBEContext beContext, McPending pending) : base (beContext)
+        public ImapEmailMoveCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();

@@ -75,7 +75,7 @@ namespace NachoCore.SMTP
                     ResolveAllFailed (NcResult.WhyEnum.Unknown);
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD2");
                 }
-            }, "SmtpCommand");
+            }, this.GetType ().Name);
         }
 
         public override void Cancel ()
@@ -103,7 +103,6 @@ namespace NachoCore.SMTP
                     // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
                     Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
                     Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
-                    Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
                 }
                 if (!Client.IsAuthenticated) {
                     if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
@@ -115,6 +114,7 @@ namespace NachoCore.SMTP
                         Client.AuthenticationMechanisms.Remove ("XOAUTH2");
                         Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                     }
+                    Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
                 }
             }
         }

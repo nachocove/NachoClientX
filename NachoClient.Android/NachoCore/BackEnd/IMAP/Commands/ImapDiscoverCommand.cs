@@ -1,13 +1,13 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
-using System;
 using NachoCore.Utils;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
     public class ImapDiscoverCommand : ImapCommand
     {
-        public ImapDiscoverCommand (IBEContext beContext) : base (beContext)
+        public ImapDiscoverCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
         {
         }
         protected override Event ExecuteCommand ()
