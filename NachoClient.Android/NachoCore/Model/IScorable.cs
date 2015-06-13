@@ -1,9 +1,14 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
+    public class AnalysisFunctionsTable : Dictionary<int, Action>
+    {
+    }
+
     // All objects that have a score must implement this interface.
     public interface IScorable
     {
@@ -17,9 +22,15 @@ namespace NachoCore.Utils
         /// (from a new version of the app) or statistics being updated.
         double Score { get; set; }
 
-        /// Need to update. Set when statistics that affects this score is updated
-        /// Brain will recompute scores in the background task.
-        bool NeedUpdate { get; set; }
+        /// A table of analysis function indexed by score version.
+        AnalysisFunctionsTable AnalysisFunctions { get; set; }
+
+        /// Need to update score counter. When 0, 'Score' is the same value as the returned value 
+        /// of UpdateScore(). When > 0, the scheduler will call UpdateScore() save the new value to
+        /// 'Score'. When the model is updated in such a way that the score of this object is affected,
+        /// this counter is incremented. A large value does not necessarily mean a large change in
+        /// the value of the score. Rather, it means it has more frequent update. 
+        int NeedUpdate { get; set; }
 
         /// Time variance state machine type
         int TimeVarianceType { get; set; }
@@ -27,21 +38,15 @@ namespace NachoCore.Utils
         /// Time variance state machine current state
         int TimeVarianceState { get; set; }
 
-        /// Get the score of an object. Score combining, if required, happens
-        /// inside this function
-        double GetScore ();
+        /// Compute the score of an object using the current model.
+        double Classify ();
 
-        // Perform all actions that affects scoring of an object. That includes:
-        //   1. Analysis of the object content
-        //   2. Adjustment of collected statistics
-        //   3. Recompute the score using a new function.
-        // Each version may introduce new actions. This method will perform all
-        // actions from the object current version to the (score) version of
-        // NachoClient software.
+        // Analyze this object and update the model. Each version involes analyzing
+        // different statistics / features.
         //
         // Note that this method may affect other objects. For example, scoring
         // an email message affects contacts.
-        void ScoreObject ();
+        void Analyze ();
     }
 }
 

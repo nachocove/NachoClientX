@@ -24,6 +24,8 @@ namespace NachoClient.iOS
         protected UIBarButtonItem backButton;
         protected UIButton deleteAccountButton;
 
+        protected UIView additionalSettingsView;
+        protected UIView deleteAccountView;
         protected UILabel passwordExpiryLabel;
         protected UIButton dirtyBackEndButton;
         protected UILabel dirtyBackEndLabel;
@@ -306,7 +308,7 @@ namespace NachoClient.iOS
 
             // Additional settings
 
-            UIView additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 3 * TEXTFIELD_HEIGHT));
+            additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 3 * TEXTFIELD_HEIGHT));
             additionalSettingsView.BackgroundColor = UIColor.White;
             additionalSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             additionalSettingsView.Layer.BorderWidth = .5f;
@@ -382,7 +384,7 @@ namespace NachoClient.iOS
 
             yOffset = dirtyBackEndButton.Frame.Bottom + 5;
 
-            UIView deleteAccountView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
+            deleteAccountView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
             deleteAccountView.BackgroundColor = UIColor.White;
             deleteAccountView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             deleteAccountView.Layer.BorderWidth = .5f;
@@ -548,6 +550,8 @@ namespace NachoClient.iOS
             mailserverTextField.Enabled = textFieldsEditable;
             conferenceTextField.Enabled = textFieldsEditable;
 
+            yOffset = additionalSettingsView.Frame.Bottom + 20;
+
             DateTime expiry;
             string rectificationUrl;
             if (LoginHelpers.PasswordWillExpire (theAccount.Id, out expiry, out rectificationUrl)) {
@@ -572,6 +576,9 @@ namespace NachoClient.iOS
                 dirtyBackEndLabel.Hidden = true;
                 dirtyBackEndButton.Hidden = true;
             }
+
+            ViewFramer.Create (deleteAccountView).Y (yOffset);
+            yOffset = yOffset + deleteAccountView.Frame.Height + 20;
 
             ColorTextFields ();
 

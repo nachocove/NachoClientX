@@ -213,6 +213,7 @@ namespace NachoClient.iOS
             loadFromWeb = true;
             PerformSegue ("SegueToSettingsLegal", this);
         }
+
         void SwitchAccountButtonPressed ()
         {
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);

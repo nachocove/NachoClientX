@@ -28,6 +28,12 @@ namespace NachoCore.Index
 
         public bool Dirty { protected set; get; }
 
+        public bool IsWriting {
+            get {
+                return (null != Writer);
+            }
+        }
+
         public NcIndex (string indexDirectoryPath)
         {
             Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);

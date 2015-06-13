@@ -130,9 +130,21 @@ namespace NachoCore
             }
         }
 
+        public bool IsBackground {
+            get {
+                return (ExecutionContextEnum.Background == ExecutionContext);
+            }
+        }
+
         public bool IsForeground {
             get {
                 return (ExecutionContextEnum.Foreground == ExecutionContext);
+            }
+        }
+
+        public bool IsForegroundOrBackground {
+            get {
+                return IsBackground || IsForeground;
             }
         }
 
@@ -430,14 +442,8 @@ namespace NachoCore
             }
             Telemetry.StartService ();
 
-            // Pick a configured account or default to device account
-            Account = McAccount.GetDeviceAccount ();
-            foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (LoginHelpers.AccountIsConfigured (account)) {
-                    Account = account;
-                    break;
-                }
-            }
+            // Pick most recently used account
+            Account = LoginHelpers.PickStartupAccount();
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
@@ -869,6 +875,7 @@ namespace NachoCore
                 if ('\n' == bytes [n]) {
                     numTimestamps += 1;
                     if (numTimestamps > 2) {
+                        Telemetry.JsonFileTable.FinalizeAll (); // close of all JSON files
                         return true;
                     }
                 }
@@ -913,8 +920,8 @@ namespace NachoCore
 
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
-                    numTelemetryEvents = McTelemetryEvent.QueryCount ();
-                    if (0 == numTelemetryEvents) {
+                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
+                    if ((0 == numTelemetryEvents) && (null == Telemetry.JsonFileTable.GetNextReadFile ())) {
                         telemetryDone = true;
                     }
                 }

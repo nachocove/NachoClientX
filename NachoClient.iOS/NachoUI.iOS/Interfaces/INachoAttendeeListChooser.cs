@@ -10,7 +10,8 @@ namespace NachoClient.iOS
 {
     public interface INachoAttendeeListChooser
     {
-        void Setup (INachoAttendeeListChooserDelegate owner, McAccount account, IList<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer);
+        void Setup (INachoAttendeeListChooserDelegate owner, McAccount account, IList<McAttendee> attendees,
+            McAbstrCalendarRoot c, bool editing, bool organizer, bool recurring);
         void DismissViewController (bool animated, Action action);
     }
 

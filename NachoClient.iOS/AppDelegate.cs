@@ -199,7 +199,7 @@ namespace NachoClient.iOS
             var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
-                PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
+                if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
@@ -213,7 +213,9 @@ namespace NachoClient.iOS
                             return; // completeHandler is called at the completion of perform fetch.
                         }
                     }
-                });
+                })) {
+                    completionHandler (UIBackgroundFetchResult.NoData);
+                }
             }
         }
 

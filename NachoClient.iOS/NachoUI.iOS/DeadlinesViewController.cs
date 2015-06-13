@@ -16,6 +16,11 @@ namespace NachoClient.iOS
             SetEmailMessages (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id));
         }
 
+        public override bool HasAccountSwitcher()
+        {
+            return true;
+        }
+
 //        protected override void CustomizeBackButton ()
 //        {
 //            BackShouldSwitchToFolders ();

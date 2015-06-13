@@ -5,6 +5,7 @@ using System.Linq;
 using CoreGraphics;
 using UIKit;
 using Foundation;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -19,6 +20,7 @@ namespace NachoClient.iOS
         protected const int ACCOUNT_IMAGE_VIEW_TAG = 102;
         protected const int USER_LABEL_VIEW_TAG = 103;
         protected const int ARROW_VIEW_TAG = 104;
+        protected const int UNREAD_VIEW_TAG = 105;
 
         public AccountInfoView (CGRect frame) : base (frame)
         {
@@ -70,21 +72,36 @@ namespace NachoClient.iOS
             accountSettingsIndicatorArrow.Tag = ARROW_VIEW_TAG;
             accountSettingsIndicatorArrow.Frame = new CGRect (accountInfoView.Frame.Width - (accountSettingsIndicatorArrow.Frame.Width + 10), accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
             accountInfoView.AddSubview (accountSettingsIndicatorArrow);
+
+            var unreadCountLabel = new UILabel (new CGRect (0, 0, 0, 0));
+            unreadCountLabel.Font = A.Font_AvenirNextDemiBold14;
+            unreadCountLabel.TextColor = UIColor.White;
+            unreadCountLabel.TextAlignment = UITextAlignment.Center;
+            unreadCountLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            unreadCountLabel.BackgroundColor = UIColor.Red;
+            unreadCountLabel.Layer.CornerRadius = 4;
+            unreadCountLabel.Layer.MasksToBounds = true;
+            unreadCountLabel.Tag = UNREAD_VIEW_TAG;
+            accountInfoView.AddSubview (unreadCountLabel);
+                
         }
 
-        public void Configure (McAccount account, bool showArrow)
+        public void Configure (McAccount account, bool showArrow, bool showUnreadCount)
         {
             var accountImageView = (UIImageView)this.ViewWithTag (ACCOUNT_IMAGE_VIEW_TAG);
             var userLabelView = (UILabel)this.ViewWithTag (USER_LABEL_VIEW_TAG);
             var nameLabel = (UILabel)this.ViewWithTag (NAME_LABEL_TAG);
             var emailLabel = (UILabel)this.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
             var arrowImageView = (UIImageView)this.ViewWithTag (ARROW_VIEW_TAG);
+            var unreadCountLabel = (UILabel)this.ViewWithTag (UNREAD_VIEW_TAG);
+
 
             userLabelView.Hidden = true;
             arrowImageView.Hidden = !showArrow;
             nameLabel.Hidden = (null == account);
             emailLabel.Hidden = (null == account);
             accountImageView.Hidden = (null == account);
+            unreadCountLabel.Hidden = !showUnreadCount;
 
             if (null != account) {
                 nameLabel.Text = Pretty.AccountName (account);
@@ -92,6 +109,19 @@ namespace NachoClient.iOS
                     accountImageView.Image = image;
                 }
                 emailLabel.Text = account.EmailAddr;
+                if (showUnreadCount) {
+                    var inboxFolder = NcEmailManager.InboxFolder (account.Id);
+                    var unreadMessageCount = 0;
+                    if (null != inboxFolder) {
+                        unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                    }
+                    unreadCountLabel.Text = "000";
+                    unreadCountLabel.SizeToFit ();
+                    ViewFramer.Create (unreadCountLabel).Square ();
+                    unreadCountLabel.Text = unreadMessageCount.ToString ();
+                    var unreadCountLabelX = this.Frame.Width - unreadCountLabel.Frame.Width - 15;
+                    ViewFramer.Create (unreadCountLabel).CenterY (0, this.Frame.Height).X (unreadCountLabelX);
+                }
             }
         }
 

@@ -44,6 +44,11 @@ namespace NachoCore.Model
             var brainEvent = (NcBrainEvent)serializer.Deserialize (binaryStream);
             return brainEvent;
         }
+
+        public static int Count ()
+        {
+            return NcModel.Instance.Db.Table<McBrainEvent> ().Count ();
+        }
     }
 }
 

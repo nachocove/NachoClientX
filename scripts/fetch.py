@@ -6,6 +6,7 @@ import os
 import threading
 import subprocess
 import time
+import repos_cfg
 
 
 class FetchThread(threading.Thread):
@@ -61,11 +62,13 @@ class FetchThread(threading.Thread):
 
 def main():
     if 1 == len(sys.argv):
-        print 'USAGE: fetch.py [repo1] [repo2] ... [repoN]'
-        sys.exit(0)
+        # If no repo is given, use the default list
+        repo_list = repos_cfg.repos
+    else:
+        repo_list = sys.argv[1:]
     start = time.time()
     repos_dir = os.path.abspath('..')
-    threads = [FetchThread(repo=repo, parent_dir=repos_dir) for repo in sys.argv[1:]]
+    threads = [FetchThread(repo=repo, parent_dir=repos_dir) for repo in repo_list]
     for thread in threads:
         thread.start()
 

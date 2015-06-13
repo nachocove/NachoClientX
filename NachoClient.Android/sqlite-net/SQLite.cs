@@ -3169,7 +3169,7 @@ namespace SQLite
 #if __IOS__
 		const string KDllPath = "__Internal";
 #else
-		const string KDllPath = "sqlite3";
+        const string KDllPath = "nachoplatform";
 #endif
 
 #if !USE_CSHARP_SQLITE && !USE_WP8_NATIVE_SQLITE && !USE_SQLITEPCL_RAW

@@ -14,7 +14,7 @@ using MailKit.Security;
 
 namespace NachoCore.IMAP
 {
-    public class ImapProtoControl : NcProtoControl, IPushAssistOwner
+    public class ImapProtoControl : NcProtoControl, IPushAssistOwner, INcProtocolLogger
     {
         public ImapClient ImapClient;
 
@@ -41,15 +41,13 @@ namespace NachoCore.IMAP
                 case (uint)St.Start:
                     return BackEndStateEnum.NotYetStarted;
 
-                case (uint)Lst.DiscW:
-                    return BackEndStateEnum.Running;
-
                 case (uint)Lst.UiCrdW:
                     return BackEndStateEnum.CredWait;
 
                 case (uint)Lst.UiServConfW:
                     return BackEndStateEnum.ServerConfWait;
 
+                case (uint)Lst.DiscW:
                 case (uint)Lst.FSyncW:
                 case (uint)Lst.CmdW:
                 case (uint)Lst.Pick:
@@ -351,7 +349,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static string MessageServerId(McFolder folder, string ImapMessageUid)
+        public static string MessageServerId(McFolder folder, UniqueId ImapMessageUid)
         {
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
@@ -399,7 +397,8 @@ namespace NachoCore.IMAP
 
         private void DoDisc ()
         {
-            DoConn (); // For now.
+            SetCmd (new ImapDiscoverCommand (this));
+            ExecuteCmd ();
         }
 
         private void DoConn ()
@@ -476,15 +475,23 @@ namespace NachoCore.IMAP
         public override void ServerConfResp (bool forceAutodiscovery)
         {
             if (forceAutodiscovery) {
-                Log.Error (Log.LOG_IMAP, "Wy a forceautodiscovery?");
+                Log.Error (Log.LOG_IMAP, "Why a forceautodiscovery?");
             }
             Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "IMAPPCUSSC");
         }
 
-        public static ImapClient newClientWithLogger()
+        #region INcProtocolLogger implementation
+
+        public bool ShouldLog ()
         {
-            // FIXME - redaction.
-            MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP);
+            return false;
+        }
+
+        #endregion
+
+        public ImapClient newClientWithLogger()
+        {
+            MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP, this);
             return new ImapClient (logger);
         }
 

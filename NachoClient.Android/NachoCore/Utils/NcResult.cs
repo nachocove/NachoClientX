@@ -176,6 +176,7 @@ namespace NachoCore.Utils
             Info_McCredPasswordChanged,
             Info_UserIdChanged,
             Error_NoCapableService,
+            Info_AccountBeaconChanged,
         };
 
         public enum WhyEnum

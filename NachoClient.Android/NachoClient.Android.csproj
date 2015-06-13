@@ -404,7 +404,6 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
     <Compile Include="NachoCore\Utils\NcSamples.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
-    <Compile Include="NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
@@ -431,6 +430,14 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration30.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainHelpers.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainEventHandler.cs" />
+    <Compile Include="NachoCore\Utils\NcAccountMonitor.cs" />
+    <Compile Include="NachoCore\Model\McEmailAddressScore.cs" />
+    <Compile Include="NachoCore\Model\IScoreStates.cs" />
+    <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScore.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration29.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
