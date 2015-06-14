@@ -74,7 +74,7 @@ namespace NachoCore.Utils
             if (null == jsonEvent) {
                 return false;
             }
-            var timestamp = new DateTime (jsonEvent.timestamp, DateTimeKind.Utc);
+            var timestamp = jsonEvent.Timestamp ();
             if (0 == NumberOfEntries) {
                 FirstTimestamp = timestamp;
             }
@@ -277,7 +277,7 @@ namespace NachoCore.Utils
                     if (writeFile.LatestTimestamp.Day != now.Day) {
                         doFinalize = true; // do not allow JSON file to span more than one day
                     }
-                    if ((jsonEvent.timestamp - writeFile.FirstTimestamp.Ticks) > MAX_DURATION) {
+                    if ((jsonEvent.Timestamp () - writeFile.FirstTimestamp).Ticks > MAX_DURATION) {
                         doFinalize = true; // larger than max duration
                     }
                 }

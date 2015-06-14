@@ -228,7 +228,7 @@ namespace Test.Common
             // Add a log event. This should create the log file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 1, 2, 3, 456);
             var event1 = new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 2,
                 message = "This is an info",
             };
@@ -239,7 +239,7 @@ namespace Test.Common
             // Add a UI event, This should create the UI JSON file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 2, 2, 3, 456);
             var event2 = new TelemetryUiEvent () {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 ui_type = "UIButton",
                 ui_object = "OK",
             };
@@ -250,7 +250,7 @@ namespace Test.Common
             // Add a WBXML event. This should create the WBXML JSON file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 3, 0, 0, 001);
             var event3 = new TelemetryProtocolEvent () {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 payload = new byte[3] { 0x11, 0x22, 0x33 },
             };
             AddEventAndCheck (event3);
@@ -260,7 +260,7 @@ namespace Test.Common
             // Add a samples event. This should create the samples JSON file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 4, 0, 0, 000);
             var event4 = new TelemetrySamplesEvent () {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 samples_name = "Process_memory",
                 samples = new List<int> () { 90, 110, 70, 130 },
             };
@@ -271,7 +271,7 @@ namespace Test.Common
             // Add a statistics2 event. This should create the statistics2 file
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 11, 0, 0, 22);
             var event5 = new TelemetryStatistics2Event () {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 stat2_name = "McEmailAddress_Insert",
                 count = 100,
                 min = 10,
@@ -286,7 +286,7 @@ namespace Test.Common
             // Add a support event. This should cause the support file to finalize immediately
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 12, 50, 47, 000);
             var event6 = new TelemetrySupportEvent () {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 support = "Help!",
             };
             AddEventAndCheck (event6, shouldAdd: false);
@@ -300,7 +300,7 @@ namespace Test.Common
             // and it is being filled in correctly.
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 12, 55, 0, 101);
             var event7 = new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 10,
                 message = "Another info log",
             };
@@ -355,7 +355,7 @@ namespace Test.Common
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 1, 0, 0, DateTimeKind.Utc);
             bool added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 10,
                 message = "This message should not generate a read file",
             });
@@ -366,7 +366,7 @@ namespace Test.Common
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 2, 0, 0, DateTimeKind.Utc);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 11,
                 message = "This message should not generate a read file",
             });
@@ -377,7 +377,7 @@ namespace Test.Common
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 3, 0, 0);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 12,
                 message = "This message should not generate a read file",
             });
@@ -388,7 +388,7 @@ namespace Test.Common
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 4, 0, 0);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 13,
                 message = "This message should generate a read file",
             });
@@ -406,7 +406,7 @@ namespace Test.Common
             TelemetryJsonFileTable.MAX_DURATION = 5 * TimeSpan.TicksPerMinute;
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 5, 0, 0);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 14,
                 message = "This message should not generate a read file",
             });
@@ -417,7 +417,7 @@ namespace Test.Common
 
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 13, 10, 0, 1);
             added = FileTable.Add (new TelemetryLogEvent (TelemetryEventType.INFO) {
-                timestamp = WrappedTelemetryJsonFileTable.UtcNow.Ticks,
+                timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 thread_id = 15,
                 message = "This message should generate a read file",
             });
