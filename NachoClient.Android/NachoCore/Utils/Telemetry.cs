@@ -188,8 +188,8 @@ namespace NachoCore.Utils
             var jsonEvent = new TelemetryCounterEvent () {
                 counter_name = name,
                 count = count,
-                counter_start = start.Ticks,
-                counter_end = end.Ticks
+                counter_start = TelemetryJsonEvent.AwsDateTime (start),
+                counter_end = TelemetryJsonEvent.AwsDateTime (end)
             };
             RecordJsonEvent (TelemetryEventType.COUNTER, jsonEvent);
         }
