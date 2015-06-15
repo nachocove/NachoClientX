@@ -16,19 +16,40 @@ namespace NachoCore.Utils
     {
         public string id;
         public string client;
-        public long timestamp;
+        public string user;
+        public string timestamp;
         public string event_type;
 
         public TelemetryJsonEvent ()
         {
             id = Guid.NewGuid ().ToString ().Replace ("-", "");
             client = NcApplication.Instance.ClientId;
-            timestamp = DateTime.UtcNow.Ticks;
+            user = NcApplication.Instance.UserId;
+            timestamp = AwsDateTime (DateTime.UtcNow);
         }
 
         public string ToJson ()
         {
-            return JsonConvert.SerializeObject (this);
+            return JsonConvert.SerializeObject (this, Newtonsoft.Json.Formatting.None,
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+        }
+
+        public static string AwsDateTime (DateTime timestamp)
+        {
+            return String.Format ("{0:yyyy-MM-dd HH:mm:ss.fff}", timestamp);
+        }
+
+        public DateTime Timestamp ()
+        {
+            NcAssert.True (23 == timestamp.Length);
+            int year = int.Parse (timestamp.Substring (0, 4));
+            int month = int.Parse (timestamp.Substring (5, 2));
+            int day = int.Parse (timestamp.Substring (8, 2));
+            int hour = int.Parse (timestamp.Substring (11, 2));
+            int minute = int.Parse (timestamp.Substring (14, 2));
+            int second = int.Parse (timestamp.Substring (17, 2));
+            int millisecond = int.Parse (timestamp.Substring (20, 3));
+            return new DateTime (year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
         }
     }
 
@@ -108,8 +129,8 @@ namespace NachoCore.Utils
 
         public string counter_name;
         public long count;
-        public long counter_start;
-        public long counter_end;
+        public string counter_start;
+        public string counter_end;
 
         public TelemetryCounterEvent ()
         {
@@ -135,7 +156,7 @@ namespace NachoCore.Utils
         public const string TIME_SERIES = "TIME_SERIES";
 
         public string time_series_name;
-        public List<long> time_series_timestamp;
+        public List<string> time_series_timestamp;
         public List<int> time_series_samples;
 
         public TelemetryTimeSeriesSamplesEvent ()

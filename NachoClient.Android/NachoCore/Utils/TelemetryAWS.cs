@@ -413,7 +413,7 @@ namespace NachoCore.Utils
                            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
             // Create the temporary JSON .gz file
-            var timestamp = new DateTime (jsonEvent.timestamp, DateTimeKind.Utc);
+            var timestamp = jsonEvent.Timestamp ();
             var readFilePath = TelemetryJsonFileTable.GetReadFilePath (
                                    Path.Combine (NcApplication.GetDataDirPath (), "device_info"),
                                    timestamp, timestamp);
