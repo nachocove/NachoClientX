@@ -61,12 +61,12 @@ namespace NachoCore.Utils
             // Extract the timestamp. Since they can be different type of JSON object,
             // just use regex to grab the tick value.
             if (null == TimestampRegex) {
-                TimestampRegex = new Regex (@"""timestamp""\s*:\s*([0-9]+)");
+                TimestampRegex = new Regex (@"""timestamp""\s*:\s*""([^""]+)""");
             }
             var match = TimestampRegex.Match (line);
             NcAssert.True (match.Success);
             NcAssert.True (2 == match.Groups.Count);
-            return new DateTime (long.Parse (match.Groups [1].Value), DateTimeKind.Utc);
+            return TelemetryJsonEvent.Timestamp (match.Groups [1].Value);
         }
 
         public bool Add (TelemetryJsonEvent jsonEvent)
