@@ -4,18 +4,13 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Linq;
 using NachoCore.Utils;
-using System.Threading;
 using MimeKit;
 using MailKit;
-using MailKit.Search;
 using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Brain;
 using NachoCore.Model;
-using MailKit.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
@@ -35,7 +30,7 @@ namespace NachoCore.IMAP
             public string preview { get; set; }
         }
 
-        public ImapSyncCommand (IBEContext beContext, SyncKit syncKit) : base (beContext)
+        public ImapSyncCommand (IBEContext beContext, ImapClient imap, SyncKit syncKit) : base (beContext, imap)
         {
             SyncKit = syncKit;
             PendingSingle = SyncKit.PendingSingle;
@@ -75,6 +70,7 @@ namespace NachoCore.IMAP
 
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Getting Folderstate");
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
@@ -98,18 +94,49 @@ namespace NachoCore.IMAP
 
             // Process the various Methods here.
             case SyncKit.MethodEnum.Range:
+                MaxSynced = SyncKit.UidList.Max ().Id;
+                MinSynced = SyncKit.UidList.Min ().Id;
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
+                    SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder");
                 IList<IMessageSummary> imapSummaries = null;
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
                     }
-                    cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                    imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
-                    cap.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    MaxSynced = SyncKit.UidList.Max ().Id;
-                    MinSynced = SyncKit.UidList.Min ().Id;
+                    try {
+                        cap = NcCapture.CreateAndStart (KImapFetchTiming);
+                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
+                        cap.Stop ();
+                        Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    } catch (ImapProtocolException) {
+                        // try one-by-one so we can at least get a few.
+                        Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
+                        if (!Client.IsConnected || !Client.IsAuthenticated) {
+                            var authy = new ImapAuthenticateCommand (BEContext, Client);
+                            authy.ConnectAndAuthenticate ();
+                        }
+                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                        imapSummaries = new List<IMessageSummary> ();
+                        foreach (var uid in SyncKit.UidList) {
+                            try {
+                                var s = mailKitFolder.Fetch (new List<UniqueId>{uid}, SyncKit.Flags, Cts.Token);
+                                if (1 == s.Count) {
+                                    imapSummaries.Add (s [0]);
+                                } else if (s.Count > 0) {
+                                    Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
+                                }
+                            } catch (ImapProtocolException ex1) {
+                                // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
+                                Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
+                                if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                    var authy = new ImapAuthenticateCommand (BEContext, Client);
+                                    authy.ConnectAndAuthenticate ();
+                                }
+                                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                            }
+                        }
+                    }
                     cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                     foreach (var imapSummary in imapSummaries) {
                         var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
@@ -227,6 +254,19 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
+        private static string CommaSeparatedString(InternetAddressList AddrList)
+        {
+            string result = null;
+            if (AddrList.Any ()) {
+                var addrs = new List<string> ();
+                foreach (var addr in AddrList) {
+                    addrs.Add (((MailboxAddress)addr).Address);
+                }
+                result = string.Join (",", addrs);
+            }
+            return result;
+        }
+
         public static NcResult ParseEmail (int accountId, string ServerId, IMessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
@@ -243,32 +283,16 @@ namespace NachoCore.IMAP
                 cachedFromColor = 1,
             };
 
-            // TODO: DRY this out. Perhaps via Reflection?
-            if (summary.Envelope.To.Count > 0) {
-                if (summary.Envelope.To.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} To entries in message.", summary.Envelope.To.Count);
-                }
-                emailMessage.To = ((MailboxAddress)summary.Envelope.To [0]).Address;
-            }
-            if (summary.Envelope.Cc.Count > 0) {
-                if (summary.Envelope.Cc.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} Cc entries in message.", summary.Envelope.Cc.Count);
-                }
-                emailMessage.Cc = ((MailboxAddress)summary.Envelope.Cc [0]).Address;
-            }
-            if (summary.Envelope.Bcc.Count > 0) {
-                if (summary.Envelope.Bcc.Count > 1) {
-                    Log.Error (Log.LOG_IMAP, "Found {0} Bcc entries in message.", summary.Envelope.Bcc.Count);
-                }
-                emailMessage.Bcc = ((MailboxAddress)summary.Envelope.Bcc [0]).Address;
-            }
+            emailMessage.To = CommaSeparatedString (summary.Envelope.To);
+            emailMessage.Cc = CommaSeparatedString (summary.Envelope.Cc);
+            emailMessage.Bcc = CommaSeparatedString (summary.Envelope.Bcc);
 
-            McEmailAddress fromEmailAddress;
             if (summary.Envelope.From.Count > 0) {
                 if (summary.Envelope.From.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
                 emailMessage.From = ((MailboxAddress)summary.Envelope.From [0]).Address;
+                McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
                     emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
@@ -287,6 +311,7 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
                 emailMessage.Sender = ((MailboxAddress)summary.Envelope.Sender [0]).Address;
+                McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;
                 }
@@ -450,8 +475,15 @@ namespace NachoCore.IMAP
             using (var decoded = new MemoryStream ()) {
                 using (var filtered = new FilteredStream (decoded)) {
                     filtered.Add (DecoderFilter.Create (enc));
-                    if (part.ContentType.Charset != null)
-                        filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
+                    if (part.ContentType.Charset != null) {
+                        try {
+                            filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
+                        } catch (ArgumentException ex) {
+                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
+                            // continue without the filter
+                        }
+                    }
                     stream.CopyTo (filtered);
                 }
                 var buffer = decoded.GetBuffer ();

@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Newtonsoft.Json;
@@ -11,10 +12,17 @@ namespace Test.Common
 {
     public class TelemetryJsonEventTest
     {
+        protected DateTime GetUtcNow ()
+        {
+            var now = DateTime.UtcNow;
+            Thread.Sleep (1); // make sure we get a new millisecond.
+            return now;
+        }
+
         protected void CheckCommonHeader (DateTime now, TelemetryJsonEvent decoded)
         {
             Assert.True (!String.IsNullOrEmpty (decoded.client));
-            Assert.True (now.Ticks < decoded.timestamp);
+            Assert.True (now.Ticks < decoded.Timestamp ().Ticks);
             Assert.AreEqual (16, decoded.client.Length);
             Assert.AreEqual ("Ncho", decoded.client.Substring (0, 4));
             for (int n = 4; n < 16; n++) {
@@ -26,7 +34,7 @@ namespace Test.Common
         [Test]
         public void TelemetryLogEvent ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent1 = new TelemetryLogEvent (TelemetryEventType.ERROR) {
                 thread_id = 2,
                 message = "This is an error",
@@ -38,7 +46,7 @@ namespace Test.Common
             Assert.AreEqual (jsonEvent1.message, decoded1.message);
 
 
-            now = DateTime.UtcNow;
+            now = GetUtcNow ();
             var jsonEvent2 = new TelemetryLogEvent (TelemetryEventType.WARN) {
                 thread_id = 3,
                 message = "This is a warning",
@@ -49,7 +57,7 @@ namespace Test.Common
             Assert.AreEqual (jsonEvent2.thread_id, decode2.thread_id);
             Assert.AreEqual (jsonEvent2.message, decode2.message);
 
-            now = DateTime.UtcNow;
+            now = GetUtcNow ();
             var jsonEvent3 = new TelemetryLogEvent (TelemetryEventType.INFO) {
                 thread_id = 4,
                 message = "This is an info",
@@ -60,7 +68,7 @@ namespace Test.Common
             Assert.AreEqual (jsonEvent3.thread_id, decode3.thread_id);
             Assert.AreEqual (jsonEvent3.message, decode3.message);
 
-            now = DateTime.UtcNow;
+            now = GetUtcNow ();
             var jsonEvent4 = new TelemetryLogEvent (TelemetryEventType.DEBUG) {
                 thread_id = 5,
                 message = "This is a debug",
@@ -74,7 +82,7 @@ namespace Test.Common
         [Test]
         public void TelemetryWbxmlEvent ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent1 = new TelemetryProtocolEvent (TelemetryEventType.WBXML_REQUEST) {
                 payload = new byte[3] { 0x1, 0x2, 0x3 },
             };
@@ -83,7 +91,7 @@ namespace Test.Common
             CheckCommonHeader (now, decode1);
             Assert.AreEqual (jsonEvent1.payload, decode1.payload);
 
-            now = DateTime.UtcNow;
+            now = GetUtcNow ();
             var jsonEvent2 = new TelemetryProtocolEvent (TelemetryEventType.WBXML_RESPONSE) {
                 payload = new byte[4] { 0x9, 0x8, 0x7, 0x6 },
             };
@@ -96,7 +104,7 @@ namespace Test.Common
         [Test]
         public void TelemetryUiEvent ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent1 = new TelemetryUiEvent () {
                 ui_type = "UITableView",
                 ui_object = "MessageListViewController",
@@ -109,7 +117,7 @@ namespace Test.Common
             Assert.AreEqual (jsonEvent1.ui_object, decode1.ui_object);
             Assert.AreEqual (jsonEvent1.ui_long, decode1.ui_long);
 
-            now = DateTime.UtcNow;
+            now = GetUtcNow ();
             var jsonEvent2 = new TelemetryUiEvent () {
                 ui_type = "UITextField",
                 ui_object = "Password",
@@ -126,7 +134,7 @@ namespace Test.Common
         [Test]
         public void TelemetrySupportEvent ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent = new TelemetrySupportEvent () {
                 support = "Support request",
             };
@@ -139,7 +147,7 @@ namespace Test.Common
         [Test]
         public void TelemetryStatistics2Event ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent = new TelemetryStatistics2Event () {
                 stat2_name = "Foreground time",
                 count = 100,
@@ -162,12 +170,12 @@ namespace Test.Common
         [Test]
         public void TelemetryCounterEvent ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent = new TelemetryCounterEvent () {
                 counter_name = "Number_of_Clicks",
                 count = 432,
-                counter_start = new DateTime (2015, 5, 26, 11, 30, 00).Ticks,
-                counter_end = new DateTime (2015, 5, 26, 12, 30, 00).Ticks,
+                counter_start = TelemetryJsonEvent.AwsDateTime (new DateTime (2015, 5, 26, 11, 30, 00)),
+                counter_end = TelemetryJsonEvent.AwsDateTime (new DateTime (2015, 5, 26, 12, 30, 00)),
             };
             var json = jsonEvent.ToJson ();
             var decode = JsonConvert.DeserializeObject<TelemetryCounterEvent> (json);
@@ -181,7 +189,7 @@ namespace Test.Common
         [Test]
         public void TelemetrySamplesEvent ()
         {
-            var now = DateTime.UtcNow;
+            var now = GetUtcNow ();
             var jsonEvent = new TelemetrySamplesEvent () {
                 samples_name = "Memory usage",
                 samples = new List<int> () { 70, 130, 90, 110 },

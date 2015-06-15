@@ -314,14 +314,16 @@ namespace NachoCore.Utils
                     case 1:
                         // Ensure not in Drop nor Invalid.
                         if (null != stateNode.Drop && Array.Exists (stateNode.Drop, y => eventCode == y)) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists both in Drop and Node.", 
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Drop and Node.", 
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         }
                         if (null != stateNode.Invalid && Array.Exists (stateNode.Invalid, y => eventCode == y)) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists both in Invalid and Node.", 
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Node.", 
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         }
                         break;
                     case 0:
@@ -334,20 +336,23 @@ namespace NachoCore.Utils
                         }
                         // Make sure in either Drop or Invalid, but not both.
                         if (inDrop && inInvalid) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists both in Invalid and Drop.",
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Drop.",
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         } else if (!inDrop && !inInvalid) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         }
                         break;
                     default:
                         // Event is in Node multiple times.
-                        errors.Add (string.Format ("State {0}, event code {1} exists in multiple Trans in same Node.",
+                        errors.Add (string.Format ("{2}: State {0}, event code {1} exists in multiple Trans in same Node.",
                             StateName (stateNode.State),
-                            EventName [eventCode]));
+                            EventName [eventCode],
+                            Name));
                         break;
                     }
                 }

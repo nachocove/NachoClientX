@@ -1,9 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
-using System;
 using System.Collections.Generic;
 using MailKit;
-using MailKit.Net.Imap;
 using NachoCore.Model;
 
 namespace NachoCore.IMAP
