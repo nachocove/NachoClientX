@@ -197,6 +197,41 @@ namespace NachoCore.Model
             }
         }
 
+        public static TimeSpan SyncTimeSpan (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        {
+            switch (code) {
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
+                return TimeSpan.Zero;
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
+                return TimeSpan.FromDays (1);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeDays_2:
+                return TimeSpan.FromDays (3);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneWeek_3:
+                return TimeSpan.FromDays (7);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
+                return TimeSpan.FromDays (14);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
+                return TimeSpan.FromDays (30);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
+                return TimeSpan.FromDays (90);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
+                return TimeSpan.FromDays (180);
+            default:
+                NcAssert.CaseError ();
+                return TimeSpan.Zero;
+            }
+        }
+
+        public TimeSpan DaysSyncEmailSpan()
+        {
+            return SyncTimeSpan (DaysToSyncEmail);
+        }
+
+        public TimeSpan DaysSyncCalendar()
+        {
+            return SyncTimeSpan (DaysToSyncCalendar);
+        }
+
         // This is set as a side effect of setting AccountService.
         public AccountCapabilityEnum AccountCapability { get; set; }
 

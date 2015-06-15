@@ -82,9 +82,14 @@ namespace NachoCore.IMAP
                     SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                     NcAssert.True (false); // FIXME replace this with a FolderSync event when we have it.
                 }
-                var query = SearchQuery.NotDeleted.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.AddDays (-30)));
+
+                var query = SearchQuery.NotDeleted;
+                var timespan = BEContext.Account.DaysSyncEmailSpan();
+                if (TimeSpan.Zero != timespan) {
+                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                }
                 UniqueIdSet uids = mailKitFolder.Search (query) as UniqueIdSet;
-                Log.Info (Log.LOG_IMAP, "Uids from last 30 days: {0}", uids.ToString ());
+                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", uids.ToString (), SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder", TimeSpan.Zero == timespan ? "Forever" : timespan.Days);
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
 
                 // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
@@ -566,6 +571,5 @@ namespace NachoCore.IMAP
                 ConvertTo (subnode, outText);
             }
         }
-
     }
 }
