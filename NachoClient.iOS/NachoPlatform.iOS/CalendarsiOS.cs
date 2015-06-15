@@ -370,6 +370,7 @@ namespace NachoPlatform
                 }
                 cal.ServerId = ekEvent.EventIdentifier;
                 cal.LastModified = ekEvent.LastModifiedDate.ToDateTime ();
+                cal.IsAwaitingCreate = false;
                 cal.Update ();
                 return NcResult.OK ();
             } catch (Exception ex) {

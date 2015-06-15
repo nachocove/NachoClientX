@@ -166,6 +166,7 @@ namespace NachoPlatform
                     Ab.Save ();
                 }
                 contact.ServerId = person.Id.ToString ();
+                contact.IsAwaitingCreate = false;
                 contact.Update ();
                 return NcResult.OK ();
             } catch (Exception ex) {

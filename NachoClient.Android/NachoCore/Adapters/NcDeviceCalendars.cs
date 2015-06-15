@@ -102,6 +102,14 @@ namespace NachoCore
                 return true;
             }
             var map = Stale.Current;
+            var cal = McCalendar.QueryById<McCalendar> (map.FolderEntryId);
+            if (null == cal) {
+                Log.Error (Log.LOG_SYS, "RemoveNextStale: can't find cal");
+            } else {
+                if (cal.IsAwaitingCreate) {
+                    return false;
+                }
+            }
             NcModel.Instance.RunInTransaction (() => {
                 Folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
                 McCalendar.DeleteById<McCalendar> (map.FolderEntryId);

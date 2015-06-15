@@ -95,6 +95,14 @@ namespace NachoCore
                 return true;
             }
             var map = Stale.Current;
+            var contact = McContact.QueryById<McContact> (map.FolderEntryId);
+            if (null == contact) {
+                Log.Error (Log.LOG_SYS, "RemoveNextStale: can't find contact");
+            } else {
+                if (contact.IsAwaitingCreate) {
+                    return false;
+                }
+            }
             NcModel.Instance.RunInTransaction (() => {
                 Folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Contact);
                 McContact.DeleteById<McContact> (map.FolderEntryId);

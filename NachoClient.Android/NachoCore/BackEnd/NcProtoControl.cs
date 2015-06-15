@@ -628,6 +628,8 @@ namespace NachoCore
                     ClientId = cal.ClientId,
                 };
                 pending.Insert ();
+                cal.IsAwaitingCreate = true;
+                cal.Update ();
                 result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
@@ -751,6 +753,9 @@ namespace NachoCore
                     ClientId = contact.ClientId,
                 };
                 pending.Insert ();
+                // TODO consider moving set of IsAwaitingCreate to Insert().
+                contact.IsAwaitingCreate = true;
+                contact.Update ();
                 result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
