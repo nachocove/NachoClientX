@@ -58,12 +58,12 @@ namespace NachoCore
                     });
                     return calendar;
                 } else {
-                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", deviceCalendar.UniqueId);
+                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", deviceCalendar.ServerId);
                     return null;
                 }
             };
 
-            var existing = McCalendar.QueryByDeviceUniqueId (deviceCalendar.UniqueId);
+            var existing = McCalendar.QueryByServerId<McCalendar> (McAccount.GetDeviceAccount ().Id, deviceCalendar.ServerId);
             if (null == existing) {
                 // If missing, insert it.
                 inserter.Invoke (deviceCalendar);
@@ -71,7 +71,7 @@ namespace NachoCore
             } else {
                 var count = Present.RemoveAll (x => x.FolderEntryId == existing.Id);
                 if (1 != count) {
-                    Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.UniqueId, existing.Id);
+                    Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.ServerId, existing.Id);
                 }
                 // If present and stale, update it.
                 if (default(DateTime) == deviceCalendar.LastUpdate ||
@@ -79,10 +79,12 @@ namespace NachoCore
                     deviceCalendar.LastUpdate > existing.DeviceLastUpdate)
                 {
                     NcModel.Instance.RunInTransaction (() => {
+                        Folder.Unlink (existing);
+                        existing.Delete ();
                         if (null != inserter.Invoke (deviceCalendar)) {
-                            Folder.Unlink (existing);
-                            existing.Delete ();
                             ++ UpdateCount;
+                        } else {
+                            Log.Error (Log.LOG_SYS, "Unable to insert device calendar {0}", deviceCalendar.ServerId);
                         }
                     });
                 }

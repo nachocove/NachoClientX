@@ -55,7 +55,7 @@ namespace NachoCore
                 return record;
             };
 
-            var existing = McContact.QueryByDeviceUniqueId (deviceContact.UniqueId);
+            var existing = McContact.QueryByServerId<McContact> (McAccount.GetDeviceAccount ().Id, deviceContact.ServerId);
             if (null != existing) {
                 var removed = Present.RemoveAll (x => x.FolderEntryId == existing.Id);
                 NcAssert.AreEqual (1, removed);
@@ -71,7 +71,7 @@ namespace NachoCore
                 return false;
             }
             if (!result.isOK ()) {
-                Log.Error (Log.LOG_SYS, "Failed to create McContact from device contact {0}", deviceContact.UniqueId);
+                Log.Error (Log.LOG_SYS, "Failed to create McContact from device contact {0}", deviceContact.ServerId);
                 return false;
             }
             var contact = result.GetValue<McContact> ();

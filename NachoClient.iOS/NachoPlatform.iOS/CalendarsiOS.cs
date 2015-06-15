@@ -51,8 +51,11 @@ namespace NachoPlatform
         {
             public EKEvent Event { get; set; }
 
-            public override string UniqueId { get { return Event.EventIdentifier + Event.StartDate.ToString (); } }
-
+            public override string ServerId {
+                get {
+                    return Event.EventIdentifier;
+                }
+            }
             public override DateTime LastUpdate {
                 get {
                     return (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
@@ -93,7 +96,7 @@ namespace NachoPlatform
                 var accountId = McAccount.GetDeviceAccount ().Id;
                 var cal = new McCalendar () {
                     Source = McAbstrItem.ItemSource.Device,
-                    ServerId = "NachoDeviceCalendar:" + UniqueId,
+                    ServerId = Event.EventIdentifier,
                     AccountId = accountId,
                     OwnerEpoch = SchemaRev,
                 };
@@ -101,8 +104,6 @@ namespace NachoPlatform
                 cal.AllDayEvent = Event.AllDay;
                 cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
                 cal.DeviceCreation = (null == Event.CreationDate) ? cal.DeviceLastUpdate : Event.CreationDate.ToDateTime ();
-                cal.DeviceUniqueId = UniqueId;
-
                 cal.Subject = Event.Title;
                 cal.Location = Event.Location;
 
@@ -327,7 +328,7 @@ namespace NachoPlatform
                     McAccount.AccountCapabilityEnum.CalReader == 
                     (account.AccountCapability & McAccount.AccountCapabilityEnum.CalReader)) {
                     // This is probably one of our accounts - note it as a source we want to ignore.
-                    // FIXME DAVID - we may need this anti-dup logic on the Contact side too.
+                    // FIXME DAVID - we may need this anti-dup-source logic on the Contact side too.
                     if (null != calendar.Source && null != calendar.Source.Title) {
                         ignoredSources.Add (calendar.Source.Title.Trim ());
                     } else {
@@ -356,8 +357,9 @@ namespace NachoPlatform
                 ekEvent = EKEvent.FromStore (Es);
                 ekEvent.StartDate = cal.StartTime.DateTimeToNSDate ();
                 ekEvent.EndDate = cal.EndTime.DateTimeToNSDate ();
+                ekEvent.Title = cal.Subject;
                 // FIXME DAVID - need full translator here. Also we may need to think about how we target the correct
-                // device calendar. worst case would be making it so that there is a device-based account PER 
+                // device calendar. worst case would be making it so that there is a device-based nacho account PER 
                 // device synced calendar (maybe ugly but not impossible).
                 ekEvent.Calendar = Es.DefaultCalendarForNewEvents;
                 NSError err;
@@ -366,7 +368,8 @@ namespace NachoPlatform
                     Log.Error (Log.LOG_SYS, "Add:Es.SaveEvent: {0}", Contacts.GetNSErrorString (err));
                     return NcResult.Error ("Es.SaveEvent");
                 }
-                cal.DeviceUniqueId = ekEvent.EventIdentifier;
+                cal.ServerId = ekEvent.EventIdentifier;
+                cal.LastModified = ekEvent.LastModifiedDate.ToDateTime ();
                 cal.Update ();
                 return NcResult.OK ();
             } catch (Exception ex) {
@@ -375,10 +378,13 @@ namespace NachoPlatform
             }
         }
 
-        public NcResult Delete (McCalendar cal)
+        public NcResult Delete (string serverId)
         {
             try {
-                var ekEvent = Es.EventFromIdentifier ( cal.DeviceUniqueId );
+                var ekEvent = Es.EventFromIdentifier (serverId);
+                if (null == ekEvent) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                }
                 NSError err;
                 Es.RemoveEvent (ekEvent, EKSpan.ThisEvent, true, out err);
                 if (null != err) {
@@ -395,7 +401,7 @@ namespace NachoPlatform
         public NcResult Change (McCalendar cal)
         {
             try {
-                var ekEvent = Es.EventFromIdentifier ( cal.DeviceUniqueId );
+                var ekEvent = Es.EventFromIdentifier ( cal.ServerId );
                 if (null == ekEvent) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                 }

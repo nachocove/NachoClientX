@@ -1,8 +1,10 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -307,8 +309,7 @@ namespace NachoCore
                     break;
 
                 case McPending.Operations.CalDelete:
-                    cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
-                    if (Calendars.Instance.Delete (cal).isOK ()) {
+                    if (Calendars.Instance.Delete (pending.ServerId).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -316,6 +317,7 @@ namespace NachoCore
                     break;
                 
                 case McPending.Operations.CalUpdate:
+                    cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
                     if (Calendars.Instance.Change (cal).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
@@ -333,8 +335,7 @@ namespace NachoCore
                     break;
 
                 case McPending.Operations.ContactDelete:
-                    contact = McContact.QueryById<McContact> (pending.ItemId);
-                    if (Contacts.Instance.Delete (contact).isOK ()) {
+                    if (Contacts.Instance.Delete (pending.ServerId).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {
                         pending.ResolveAsHardFail (this, NcResult.WhyEnum.Unknown);
@@ -342,6 +343,7 @@ namespace NachoCore
                     break;
 
                 case McPending.Operations.ContactUpdate:
+                    contact = McContact.QueryById<McContact> (pending.ItemId);
                     if (Contacts.Instance.Change (contact).isOK ()) {
                         pending.ResolveAsSuccess (this);
                     } else {

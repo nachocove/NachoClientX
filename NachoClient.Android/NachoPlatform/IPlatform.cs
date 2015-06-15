@@ -161,7 +161,7 @@ namespace NachoPlatform
 
     public abstract class PlatformContactRecord
     {
-        public abstract string UniqueId { get; }
+        public abstract string ServerId { get; }
 
         public abstract DateTime LastUpdate { get; }
 
@@ -179,7 +179,7 @@ namespace NachoPlatform
         void AskForPermission (Action<bool> result);
 
         NcResult Add (McContact contact);
-        NcResult Delete (McContact contact);
+        NcResult Delete (string serverId);
         NcResult Change (McContact contact);
 
         bool AuthorizationStatus { get; }
@@ -187,7 +187,7 @@ namespace NachoPlatform
 
     public abstract class PlatformCalendarRecord
     {
-        public abstract string UniqueId { get; }
+        public abstract string ServerId { get; }
 
         public abstract DateTime LastUpdate { get; }
 
@@ -205,7 +205,7 @@ namespace NachoPlatform
         void AskForPermission (Action<bool> result);
 
         NcResult Add (McCalendar contact);
-        NcResult Delete (McCalendar contact);
+        NcResult Delete (string serverId);
         NcResult Change (McCalendar contact);
 
         bool AuthorizationStatus { get; }

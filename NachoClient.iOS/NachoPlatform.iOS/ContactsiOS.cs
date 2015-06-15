@@ -159,12 +159,13 @@ namespace NachoPlatform
                 var person = new ABPerson ();
                 person.FirstName = contact.FirstName;
                 person.LastName = contact.LastName;
+                person.MiddleName = contact.MiddleName;
                 // FIXME DAVID - need full translator here.
                 lock (AbLockObj) {
                     Ab.Add (person);
                     Ab.Save ();
                 }
-                contact.DeviceUniqueId = person.Id.ToString ();
+                contact.ServerId = person.Id.ToString ();
                 contact.Update ();
                 return NcResult.OK ();
             } catch (Exception ex) {
@@ -173,12 +174,12 @@ namespace NachoPlatform
             }
         }
 
-        public NcResult Delete (McContact contact)
+        public NcResult Delete (string serverId)
         {
             try {
                 lock (AbLockObj) {
                     Ab.Revert ();
-                    var dead = Ab.GetPerson (int.Parse (contact.DeviceUniqueId));
+                    var dead = Ab.GetPerson (int.Parse (serverId));
                     if (null == dead) {
                         return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     }
@@ -197,7 +198,7 @@ namespace NachoPlatform
             try {
                 lock (AbLockObj) {
                     Ab.Revert ();
-                    var changed = Ab.GetPerson (int.Parse (contact.DeviceUniqueId));
+                    var changed = Ab.GetPerson (int.Parse (contact.ServerId));
                     if (null == changed) {
                         return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     }
@@ -224,7 +225,7 @@ namespace NachoPlatform
 
     public class PlatformContactRecordiOS : PlatformContactRecord
     {
-        public override string UniqueId { get { return Person.Id.ToString (); } }
+        public override string ServerId { get { return Person.Id.ToString (); } }
 
         public override DateTime LastUpdate { get { return Person.ModificationDate.ToDateTime (); } }
         // Person not to be referenced from platform independent code.
@@ -237,7 +238,7 @@ namespace NachoPlatform
             if (null == contactToUpdate) {
                 contact = new McContact () {
                     Source = McAbstrItem.ItemSource.Device,
-                    ServerId = "NachoDeviceContact:" + UniqueId,
+                    ServerId = ServerId,
                     AccountId = accountId,
                     OwnerEpoch = Contacts.SchemaRev,
                 };
@@ -301,7 +302,7 @@ namespace NachoPlatform
                 contact.DeviceCreation = Person.CreationDate.ToDateTime ();
             }
             contact.DeviceLastUpdate = LastUpdate;
-            contact.DeviceUniqueId = UniqueId;
+            contact.ServerId = ServerId;
 
             if (Person.HasImage) {
                 var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
