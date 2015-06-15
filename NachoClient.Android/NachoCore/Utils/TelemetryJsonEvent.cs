@@ -41,6 +41,11 @@ namespace NachoCore.Utils
 
         public DateTime Timestamp ()
         {
+            return Timestamp (timestamp);
+        }
+
+        public static DateTime Timestamp (string timestamp)
+        {
             NcAssert.True (23 == timestamp.Length);
             int year = int.Parse (timestamp.Substring (0, 4));
             int month = int.Parse (timestamp.Substring (5, 2));
