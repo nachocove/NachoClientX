@@ -15,11 +15,17 @@ namespace NachoCore
     {
         public enum Lst : uint
         {
+            // Waiting for a device DB => Nacho DB sync to complete.
             SyncW = (St.Last + 1),
+            // We've been told to chill.
             Abated,
+            // Same as SyncW, but we just got a request to sync during the sync, so we need to do it again.
             SyncWQd,
+            // Same as Abate, but when we are allowed to work again, we need to go to SyncWQd.
             AbatedQd,
+            // There is nothing to do.
             Idle,
+            // There is nothing to do, and "Abate".
             AbateIdle,
             Parked,
         };
@@ -89,12 +95,12 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncWQd },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.SyncWQd },
-                            new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.Idle },
+                            new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)DevEvt.E.AbateOn, Act = DoAbate, State = (uint)Lst.Abated },
                         }
                     },
@@ -109,12 +115,12 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.AbatedQd },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.AbatedQd },
-                            new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.AbateIdle },
+                            new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoSync, State = (uint)Lst.SyncW },
                         }
                     },
@@ -141,7 +147,6 @@ namespace NachoCore
                     new Node {
                         State = (uint)Lst.AbatedQd,
                         Drop = new uint[] {
-                            (uint)SmEvt.E.Launch,
                             (uint)DevEvt.E.SyncStart,
                             (uint)DevEvt.E.AbateOn,
                         },
@@ -151,10 +156,11 @@ namespace NachoCore
                             (uint)SmEvt.E.TempFail,
                         },
                         On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.AbatedQd },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
-                            new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoNop, State = (uint)Lst.Abated },
+                            new Trans { Event = (uint)DevEvt.E.SyncDone, Act = DoProcQ, State = (uint)Lst.Abated },
                             new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoSync, State = (uint)Lst.SyncW },
                         }
                     },
@@ -175,7 +181,7 @@ namespace NachoCore
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)DevEvt.E.AbateOn, Act = DoNop, State = (uint)Lst.AbateIdle },
+                            new Trans { Event = (uint)DevEvt.E.AbateOn, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                         }
                     },
                     new Node {
@@ -190,12 +196,12 @@ namespace NachoCore
                             (uint)DevEvt.E.SyncDone,
                         },
                         On = new Trans[] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Abated },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoProcQ, State = (uint)Lst.Idle },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoProcQ, State = (uint)Lst.AbateIdle },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)DevEvt.E.SyncStart, Act = DoNop, State = (uint)Lst.Abated },
-                            new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoNop, State = (uint)Lst.Idle },
+                            new Trans { Event = (uint)DevEvt.E.AbateOff, Act = DoProcQ, State = (uint)Lst.Idle },
                         }
                     },
                 }
