@@ -261,6 +261,13 @@ namespace NachoCore.Utils
             try {
                 // User may have entered a scheme - let's try it.
                 serverURI = new Uri (serverName);
+            } catch (UriFormatException e) {
+                if (serverName.StartsWith ("http://") || serverName.StartsWith ("https://")) {
+                    // The massaging of the URL that happens later, namely prepending "https://",
+                    // won't do any good.  In fact it will make things worse.  So give up now.
+                    // Since the scheme looks valid, the problem is most likely the host name.
+                    return ParseServerWhyEnum.FailBadHost;
+                }
             } catch {
             }
             if (null != serverURI) {
