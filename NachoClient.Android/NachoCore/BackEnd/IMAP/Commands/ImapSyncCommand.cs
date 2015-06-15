@@ -71,7 +71,7 @@ namespace NachoCore.IMAP
 
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Getting Folderstate");
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerIdentity : "User Folder");
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
