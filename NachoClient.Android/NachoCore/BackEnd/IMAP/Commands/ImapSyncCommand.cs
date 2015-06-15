@@ -15,6 +15,7 @@ using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using HtmlAgilityPack;
+using MailKit.Search;
 
 namespace NachoCore.IMAP
 {
@@ -81,7 +82,22 @@ namespace NachoCore.IMAP
                     SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                     NcAssert.True (false); // FIXME replace this with a FolderSync event when we have it.
                 }
+                var query = SearchQuery.NotDeleted.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.AddDays (-30)));
+                var uids = mailKitFolder.Search (query);
+                Log.Info (Log.LOG_IMAP, "Uids from last 30 days: {0}", uids.ToString ());
+                var uidArr = new List<string> ();
+                foreach (var uid in uids) {
+                    uidArr.Add (uid.ToString ());
+                }
+
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
+                // TODO limit the uidArr to, say, 1000 newest entries. Need to update MailKit.
+                // Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
+                SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ImapUidSet = string.Join (",", uidArr);
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
             }
 
@@ -180,7 +196,6 @@ namespace NachoCore.IMAP
                 var target = (McFolder)record;
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
-                target.LastImapHighestModSeq = (long)(mailKitFolder.SupportsModSeq ? mailKitFolder.HighestModSeq : 0);
                 return true;
             });
             PendingResolveApply ((pending) => {

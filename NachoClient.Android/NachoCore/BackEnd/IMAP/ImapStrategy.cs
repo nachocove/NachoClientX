@@ -8,6 +8,8 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
+using System.Collections.ObjectModel;
+using System.Collections.Generic;
 
 namespace NachoCore.IMAP
 {
@@ -113,6 +115,8 @@ namespace NachoCore.IMAP
             var currentHighestInFolder = folder.ImapUidNext - 1;
             if (UserRequested ||
                 0 == folder.ImapUidNext ||
+                null == folder.ImapUidSet ||
+                (UInt32.MinValue != folder.ImapUidHighestUidSynced && currentHighestInFolder > folder.ImapUidHighestUidSynced) ||
                 folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ())) // perhaps this should be passed in by the caller?
             {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
@@ -120,67 +124,63 @@ namespace NachoCore.IMAP
                     Method = SyncKit.MethodEnum.OpenOnly,
                     Folder = folder,
                     Flags = SummaryFlags,
-                    Span = 0,
-                    Start = 0,
                 };
-            } else if (currentHighestInFolder > folder.ImapUidHighestUidSynced) {
-                // This case covers the initial sync, and any syncs where new mail hs arrived.
-                if (UInt32.MinValue == folder.ImapUidHighestUidSynced) {
-                    // This is the first sync. Start at the top, and work your way down.
-                    uint span = KBaseOverallWindowSize;  // use a very small window for this sync, so we quickly get stuff back to display
-                    syncKit = new SyncKit () {
-                        Method = SyncKit.MethodEnum.Range,
-                        Folder = folder,
-                        Flags = SummaryFlags,
-                        Span = span,
-                        Start = Math.Max (folder.ImapUidHighestUidSynced + 1, 
-                            span + 1 > currentHighestInFolder ? 1 : currentHighestInFolder - span + 1),
-                    };
-                } else {
-                    // this is the 'new mail has arrived' case. Start from ImapUidHighestUidSynced
-                    // and work your way up.
-                    //uint span = SpanSizeWithCommStatus ();
-                    uint span = KBaseOverallWindowSize;
-                    syncKit = new SyncKit () {
-                        Method = SyncKit.MethodEnum.Range,
-                        Folder = folder,
-                        Flags = SummaryFlags,
-                        Span = span,
-                        Start = folder.ImapUidHighestUidSynced + 1,
-                    };
-                }
-                // adjust span, to make sure it doesn't over- or under-run.
-                syncKit.Span =
-                    Math.Min (syncKit.Span, 
-                        ((folder.ImapUidHighestUidSynced + 1) >= currentHighestInFolder) ? 1 :
-                        currentHighestInFolder - folder.ImapUidHighestUidSynced);
-                
             } else if (currentHighestInFolder > 0 && // are there any messages at all?
-                       folder.ImapUidLowestUidSynced > 1)
+                    folder.ImapUidSet.Any ())
             {
                 // If there is nothing new to grab, then pull down older mail.
-                uint span = SpanSizeWithCommStatus ();
+                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+                UniqueIdSet UidSet = ParseUidSet (folder.ImapUidSet, folder.ImapUidValidity);
+                if (null == UidSet) {
+                    Log.Error (Log.LOG_IMAP, "Could not parse uid set");
+                    return null;
+                }
+                UniqueIdSet currentMails = new UniqueIdSet ();
+                foreach (var emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (BEContext.Account.Id, folder.Id)) {
+                    currentMails.Add (ImapProtoControl.ImapMessageUid (emailMessage.ServerId));
+                }
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.Range,
                     Folder = folder,
                     Flags = SummaryFlags,
-                    Span = span,
-                    Start = (span >= folder.ImapUidLowestUidSynced) ? 1 : 
-                        folder.ImapUidLowestUidSynced - span,
+                    UidList = UidSet.Except (currentMails).OrderByDescending (x => x).Take ((int)span).ToList (),
                 };
-                // adjust span, to make sure it doesn't over- or under-run.
-                syncKit.Span = 
-                    (syncKit.Start >= folder.ImapUidLowestUidSynced) ? 1 : 
-                    Math.Min (syncKit.Span, folder.ImapUidLowestUidSynced - syncKit.Start);
-            }
-            if (null != syncKit && SyncKit.MethodEnum.Range == syncKit.Method) {
-                syncKit.UidList = new UniqueIdRange (
-                    new UniqueId(folder.ImapUidValidity, syncKit.Start),
-                    new UniqueId(folder.ImapUidValidity, syncKit.Start + syncKit.Span - 1));
+                if (!syncKit.UidList.Any ()) {
+                    return null;
+                }
             }
             return syncKit;
         }
 
+        public static UniqueIdSet ParseUidSet (string atom, uint validity)
+        {
+            // Lifted from MailKit. Will use new MailKit version once we update.
+            var ranges = atom.Split (new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var list = new UniqueIdSet ();
+
+            for (int i = 0; i < ranges.Length; i++) {
+                var minmax = ranges[i].Split (':');
+                uint min;
+
+                if (!uint.TryParse (minmax[0], out min) || min == 0)
+                    return null;
+
+                if (minmax.Length == 2) {
+                    uint max;
+
+                    if (!uint.TryParse (minmax[1], out max) || max == 0)
+                        return null;
+
+                    for (uint uid = min; uid <= max; uid++)
+                        list.Add (new UniqueId (validity, uid));
+                } else if (minmax.Length == 1) {
+                    list.Add (new UniqueId (validity, min));
+                } else {
+                    return null;
+                }
+            }
+            return list;
+        }
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand (ImapClient Client)
         {

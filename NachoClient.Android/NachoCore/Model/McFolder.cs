@@ -63,6 +63,8 @@ namespace NachoCore.Model
         // Highest Modification Sequence Numbers.
         public long CurImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
         public long LastImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
+        // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+        public string ImapUidSet { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
