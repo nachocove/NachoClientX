@@ -12,6 +12,8 @@ namespace NachoPlatform
         private static volatile Contacts instance;
         private static object syncRoot = new Object ();
 
+        public event EventHandler ChangeIndicator;
+
         private Contacts ()
         {
         }

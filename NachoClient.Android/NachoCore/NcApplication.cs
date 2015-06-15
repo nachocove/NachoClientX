@@ -357,13 +357,10 @@ namespace NachoCore
             }
             StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
-
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
-                    IsBackgroundAbateRequired = true;
                     var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
                     NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
                 } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
-                    IsBackgroundAbateRequired = false;
                     var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
                     NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                 }
@@ -563,8 +560,6 @@ namespace NachoCore
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
-                NcDeviceContacts.Run ();
-                NcDeviceCalendars.Run ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
                 if (null != Class4LateShowEvent) {

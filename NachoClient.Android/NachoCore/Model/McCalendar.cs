@@ -14,9 +14,6 @@ namespace NachoCore.Model
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device calendars.
-        public string DeviceUniqueId { get; set; }
-
-        /// Set only for Device calendars.
         public DateTime DeviceCreation { get; set; }
 
         /// Set only for Device calendars.
@@ -170,15 +167,6 @@ namespace NachoCore.Model
                 SaveRecurrences ();
             });
             return retval;
-        }
-
-        public static McCalendar QueryByDeviceUniqueId (string deviceUniqueId)
-        {
-            var account = McAccount.GetDeviceAccount ();
-            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => 
-                x.DeviceUniqueId == deviceUniqueId &&
-            x.AccountId == account.Id
-            ).SingleOrDefault ();
         }
 
         public static McCalendar QueryByUID (int accountId, string UID)

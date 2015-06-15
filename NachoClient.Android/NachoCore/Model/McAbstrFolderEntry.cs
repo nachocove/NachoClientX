@@ -36,6 +36,9 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwaitingDelete { get; set; }
 
+        [Indexed]
+        public bool IsAwaitingCreate { get; set; }
+
         public virtual ClassCodeEnum GetClassCode ()
         {
             NcAssert.True (false);
