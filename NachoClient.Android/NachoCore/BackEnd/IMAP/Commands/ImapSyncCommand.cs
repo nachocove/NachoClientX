@@ -83,19 +83,15 @@ namespace NachoCore.IMAP
                     NcAssert.True (false); // FIXME replace this with a FolderSync event when we have it.
                 }
                 var query = SearchQuery.NotDeleted.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.AddDays (-30)));
-                var uids = mailKitFolder.Search (query);
+                UniqueIdSet uids = mailKitFolder.Search (query) as UniqueIdSet;
                 Log.Info (Log.LOG_IMAP, "Uids from last 30 days: {0}", uids.ToString ());
-                var uidArr = new List<string> ();
-                foreach (var uid in uids) {
-                    uidArr.Add (uid.ToString ());
-                }
-
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
-                // TODO limit the uidArr to, say, 1000 newest entries. Need to update MailKit.
-                // Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
+
+                // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
+                // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
-                    target.ImapUidSet = string.Join (",", uidArr);
+                    target.ImapUidSet = uids.ToString ();
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");

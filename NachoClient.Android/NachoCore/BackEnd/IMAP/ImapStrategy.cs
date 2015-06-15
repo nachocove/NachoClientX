@@ -130,8 +130,8 @@ namespace NachoCore.IMAP
             {
                 // If there is nothing new to grab, then pull down older mail.
                 uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
-                UniqueIdSet UidSet = ParseUidSet (folder.ImapUidSet, folder.ImapUidValidity);
-                if (null == UidSet) {
+                UniqueIdSet UidSet;
+                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out UidSet)) {
                     Log.Error (Log.LOG_IMAP, "Could not parse uid set");
                     return null;
                 }
@@ -150,36 +150,6 @@ namespace NachoCore.IMAP
                 }
             }
             return syncKit;
-        }
-
-        public static UniqueIdSet ParseUidSet (string atom, uint validity)
-        {
-            // Lifted from MailKit. Will use new MailKit version once we update.
-            var ranges = atom.Split (new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            var list = new UniqueIdSet ();
-
-            for (int i = 0; i < ranges.Length; i++) {
-                var minmax = ranges[i].Split (':');
-                uint min;
-
-                if (!uint.TryParse (minmax[0], out min) || min == 0)
-                    return null;
-
-                if (minmax.Length == 2) {
-                    uint max;
-
-                    if (!uint.TryParse (minmax[1], out max) || max == 0)
-                        return null;
-
-                    for (uint uid = min; uid <= max; uid++)
-                        list.Add (new UniqueId (validity, uid));
-                } else if (minmax.Length == 1) {
-                    list.Add (new UniqueId (validity, min));
-                } else {
-                    return null;
-                }
-            }
-            return list;
         }
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand (ImapClient Client)
