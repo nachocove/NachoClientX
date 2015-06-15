@@ -46,10 +46,23 @@ namespace NachoCore
             Move (messages, folder);
         }
 
+        private static bool ShouldDeleteInsteadOfArchive(int accountId)
+        {
+            // Google doesn't archive. All messages are deemed 'archived' by being in the 'All Mails' folder (aka label).
+            // Archiving is simply deleting from the current folder (i.e. removing the label for the folder), and finding
+            // it via Search or directly in the All Mails folder. See https://support.google.com/mail/answer/6576?hl=en
+            return McAccount.QueryById<McAccount> (accountId).AccountService.HasFlag (McAccount.AccountServiceEnum.GoogleDefault);
+        }
+
+
         public static void Archive (McEmailMessage message)
         {
-            McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
-            Move (message, archiveFolder); // Do not archive messages in Archive folder
+            if (ShouldDeleteInsteadOfArchive(message.AccountId)) {
+                Delete (message);
+            } else {
+                McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
+                Move (message, archiveFolder); // Do not archive messages in Archive folder
+            }
         }
 
         public static void Archive (List<McEmailMessage> messages)
@@ -59,8 +72,12 @@ namespace NachoCore
             }
             var Ids = messages.Select (x => x.Id).ToList ();
             int accountId = messages [0].AccountId;
-            McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
-            BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
+            if (ShouldDeleteInsteadOfArchive (accountId)) {
+                BackEnd.Instance.DeleteEmailsCmd (accountId, Ids);
+            } else {
+                McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
+                BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
+            }
         }
 
         public static void Archive (McEmailMessageThread thread)
