@@ -355,8 +355,8 @@ namespace NachoPlatform
             EKEvent ekEvent = null;
             try {
                 ekEvent = EKEvent.FromStore (Es);
-                ekEvent.StartDate = cal.StartTime.DateTimeToNSDate ();
-                ekEvent.EndDate = cal.EndTime.DateTimeToNSDate ();
+                ekEvent.StartDate = cal.StartTime.ToNSDate ();
+                ekEvent.EndDate = cal.EndTime.ToNSDate ();
                 ekEvent.Title = cal.Subject;
                 // FIXME DAVID - need full translator here. Also we may need to think about how we target the correct
                 // device calendar. worst case would be making it so that there is a device-based nacho account PER 
@@ -406,7 +406,7 @@ namespace NachoPlatform
                 if (null == ekEvent) {
                     return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                 }
-                ekEvent.StartDate = cal.StartTime.DateTimeToNSDate ();
+                ekEvent.StartDate = cal.StartTime.ToNSDate ();
                 // FIXME DAVID - need to fully translate McCalendar - to the extent that we can.
                 NSError err;
                 Es.SaveEvent ( ekEvent, EKSpan.ThisEvent, out err);
@@ -419,37 +419,6 @@ namespace NachoPlatform
                 Log.Error (Log.LOG_SYS, "Calendar.Change: {0}", ex.ToString ());
                 return NcResult.Error ("Calendar.Change");
             }
-        }
-    }
-
-    // TODO - find a good generic place for these.
-    // Extension methods provided by Xamarin:
-    // http://developer.xamarin.com/guides/cross-platform/macios/unified/
-    // (Our version actually compiles ;-)
-    public static partial class DateTime_Extension
-    {
-        public static NSDate DateTimeToNSDate(this DateTime date)
-        {
-            if (date.Kind == DateTimeKind.Unspecified) {
-                /* DateTimeKind.Local or DateTimeKind.Utc, this depends on each app */
-                date = DateTime.SpecifyKind (date, DateTimeKind.Utc);
-            }
-            return (NSDate)date;
-        }
-    }
-
-    public static partial class NSDate_Extension
-    {
-        public static DateTime NSDateToDateTime(this NSDate date)
-        {
-            // NSDate has a wider range than DateTime, so clip
-            // the converted date to DateTime.Min|MaxValue.
-            double secs = date.SecondsSinceReferenceDate;
-            if (secs < -63113904000)
-                return DateTime.MinValue;
-            if (secs > 252423993599)
-                return DateTime.MaxValue;
-            return (DateTime) date;
         }
     }
 }

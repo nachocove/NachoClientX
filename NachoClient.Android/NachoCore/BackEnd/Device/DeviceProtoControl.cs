@@ -248,8 +248,8 @@ namespace NachoCore
             if (null == Cts) {
                 Cts = new CancellationTokenSource ();
             }
+            var cToken = Cts.Token;
             NcTask.Run (() => {
-                var cToken = Cts.Token;
                 try {
                     while (!DeviceContacts.ProcessNextContact ()) {
                         cToken.ThrowIfCancellationRequested ();

@@ -658,10 +658,6 @@ namespace NachoCore.IMAP
             return new ImapClient (logger);
         }
 
-        private void DoNop ()
-        {
-        }
-
         private void DoExDone ()
         {
             Interlocked.Decrement (ref ConcurrentExtraRequests);
