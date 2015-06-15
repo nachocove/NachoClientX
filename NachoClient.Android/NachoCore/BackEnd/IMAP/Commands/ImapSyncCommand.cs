@@ -71,7 +71,7 @@ namespace NachoCore.IMAP
 
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder");
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.ImapFolderNameRedacted());
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
@@ -89,7 +89,7 @@ namespace NachoCore.IMAP
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
                 }
                 UniqueIdSet uids = mailKitFolder.Search (query) as UniqueIdSet;
-                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", uids.ToString (), SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder", TimeSpan.Zero == timespan ? "Forever" : timespan.Days);
+                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", uids.ToString (), SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
 
                 // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
@@ -114,7 +114,7 @@ namespace NachoCore.IMAP
                 MaxSynced = SyncKit.UidList.Max ().Id;
                 MinSynced = SyncKit.UidList.Min ().Id;
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
-                    SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder");
+                    SyncKit.Folder.ImapFolderNameRedacted());
                 IList<IMessageSummary> imapSummaries = null;
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
@@ -451,7 +451,7 @@ namespace NachoCore.IMAP
                     if (!isPlainText) {
                         var p = Html2Text (preview);
                         if (string.Empty == p) {
-                            preview = "(No Preview available)";
+                            preview = string.Empty;
                         } else {
                             preview = p;
                         }
@@ -494,6 +494,10 @@ namespace NachoCore.IMAP
                     if (part.ContentType.Charset != null) {
                         try {
                             filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
+                        } catch (NotSupportedException ex) {
+                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
+                            // continue without the filter
                         } catch (ArgumentException ex) {
                             // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
                             Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);

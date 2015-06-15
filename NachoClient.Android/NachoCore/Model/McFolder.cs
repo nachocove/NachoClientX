@@ -109,6 +109,12 @@ namespace NachoCore.Model
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
+
+        public string ImapFolderNameRedacted()
+        {
+            return IsDistinguished ? ServerId : "User Folder";
+        }
+
         // "factory" to create folders.
         public static McFolder Create (int accountId, 
                                        bool isClientOwned,
