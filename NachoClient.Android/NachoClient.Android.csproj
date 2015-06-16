@@ -439,6 +439,7 @@
     <Compile Include="NachoCore\Model\McEmailMessage\McEmailMessageScore.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration29.cs" />
+    <Compile Include="NachoCore\Adapters\NcMdmConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
