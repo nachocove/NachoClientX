@@ -261,7 +261,7 @@ namespace NachoCore.Utils
             try {
                 // User may have entered a scheme - let's try it.
                 serverURI = new Uri (serverName);
-            } catch (UriFormatException e) {
+            } catch (UriFormatException) {
                 if (serverName.StartsWith ("http://") || serverName.StartsWith ("https://")) {
                     // The massaging of the URL that happens later, namely prepending "https://",
                     // won't do any good.  In fact it will make things worse.  So give up now.

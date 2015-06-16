@@ -1513,6 +1513,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\Device\DeviceProtoControl.cs">
       <Link>NachoCore\BackEnd\Device\DeviceProtoControl.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcMdmConfig.cs">
+      <Link>NachoCore\Adapters\NcMdmConfig.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

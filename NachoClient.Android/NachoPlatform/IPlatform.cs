@@ -300,4 +300,9 @@ namespace NachoPlatform
     {
         void MarkFileForSkipBackup (string filename);
     }
+
+    public interface IPlatformMdmConfig
+    {
+        void ExtractValues ();
+    }
 }
