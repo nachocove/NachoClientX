@@ -34,7 +34,7 @@ namespace NachoPlatform
 
         public class PlatformCalendarRecordAndroid : PlatformCalendarRecord
         {
-            public override string UniqueId { get { return null; } }
+            public override string ServerId { get { return null; } }
 
             public override DateTime LastUpdate { get { return DateTime.MaxValue; } } // FIXME.
 
@@ -52,6 +52,30 @@ namespace NachoPlatform
         public IEnumerable<PlatformCalendarRecord> GetCalendars ()
         {
             return null;
+        }
+
+        public event EventHandler ChangeIndicator;
+
+        public NcResult Add (McCalendar contact)
+        {
+            return NcResult.Error ("Android Calendars.Add not yet implemented.");
+        }
+
+        public NcResult Delete (string serverId)
+        {
+            return NcResult.Error ("Android Calendars.Delete not yet implemented.");
+        }
+
+        public NcResult Change (McCalendar contact)
+        {
+            return NcResult.Error ("Android Calendars.Change not yet implemented.");
+        }
+
+        public bool AuthorizationStatus {
+            get {
+                // TODO Not yet implemented.
+                return false;
+            }
         }
     }
 }

@@ -19,9 +19,6 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { get; set; }
 
-        [Indexed]
-        public bool IsAwaitingCreate { get; set; }
-
         public const string AsSyncKey_Initial = "0";
         public const string AsRootServerId = "0";
 

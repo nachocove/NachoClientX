@@ -116,9 +116,6 @@ namespace NachoCore.Model
         public McAbstrItem.ItemSource Source { get; set; }
 
         /// Set only for Device contacts
-        public string DeviceUniqueId { get; set; }
-
-        /// Set only for Device contacts
         public DateTime DeviceCreation { get; set; }
 
         /// Set only for Device contacts
@@ -1553,15 +1550,6 @@ namespace NachoCore.Model
                 " likelihood (m.FolderId = ?, 0.05) " +
                 " ORDER BY c.WeightedRank DESC LIMIT ?",
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id, limit);
-        }
-
-        public static McContact QueryByDeviceUniqueId (string deviceUniqueId)
-        {
-            var account = McAccount.GetDeviceAccount ();
-            return NcModel.Instance.Db.Query<McContact> ("SELECT * FROM McContact WHERE " +
-            " likelihood (AccountId = ?, 1.0) AND " +
-            " likelihood (DeviceUniqueId = ?, 0.001) ",
-                account.Id, deviceUniqueId).SingleOrDefault ();
         }
 
         public static List<McContact> QueryNeedIndexing (int maxContact)

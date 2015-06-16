@@ -130,7 +130,7 @@ namespace NachoCore.ActiveSync
 
         private XElement ToContactCreate (McPending pending, McFolder folder)
         {
-            var contact = McAbstrObject.QueryById<McContact> (pending.ItemId);
+            var contact = McContact.QueryById<McContact> (pending.ItemId);
             var add = new XElement (m_ns + Xml.AirSync.Add, 
                           new XElement (m_ns + Xml.AirSync.ClientId, pending.ClientId));
             if (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type) !=

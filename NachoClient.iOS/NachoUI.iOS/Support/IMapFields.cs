@@ -441,9 +441,9 @@ namespace NachoClient.iOS
             if (null == imapServer) {
                 message = messagePrefix + " for '" + theAccount.Account.EmailAddr + "'.";
             } else if (null == imapServer.UserSpecifiedServerName) {
-                message = messagePrefix + "'" + imapServer.Host + "'.";
+                message = messagePrefix + " '" + imapServer.Host + "'.";
             } else {
-                message = messagePrefix + "'" + imapServer.UserSpecifiedServerName + "'.";
+                message = messagePrefix + " '" + imapServer.UserSpecifiedServerName + "'.";
             }
             return message;
         }

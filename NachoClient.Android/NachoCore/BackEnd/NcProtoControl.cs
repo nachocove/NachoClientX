@@ -23,6 +23,10 @@ namespace NachoCore
             };
         }
 
+        protected void DoNop ()
+        {
+        }
+
         public int AccountId;
 
         public INcProtoControlOwner Owner { get; set; }
@@ -183,7 +187,8 @@ namespace NachoCore
             out T item,
             int folderId,
             out McFolder folder,
-            out NcResult.SubKindEnum subKind) where T : McAbstrItem, new()
+            out NcResult.SubKindEnum subKind,
+            bool clientOwnedOkay = false) where T : McAbstrItem, new()
         {
             folder = null;
             item = McAbstrObject.QueryById<T> (itemId);
@@ -194,7 +199,7 @@ namespace NachoCore
 
             var folders = McFolder.QueryByFolderEntryId<T> (Account.Id, itemId);
             foreach (var maybe in folders) {
-                if (maybe.IsClientOwned) {
+                if (maybe.IsClientOwned && !clientOwnedOkay) {
                     subKind = NcResult.SubKindEnum.Error_ClientOwned;
                     return false;
                 }
@@ -613,7 +618,7 @@ namespace NachoCore
             McCalendar cal;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind)) {
+                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind, clientOwnedOkay:true)) {
                     result = NcResult.Error (subKind);
                     return;
                 }
@@ -623,6 +628,8 @@ namespace NachoCore
                     ClientId = cal.ClientId,
                 };
                 pending.Insert ();
+                cal.IsAwaitingCreate = true;
+                cal.Update ();
                 result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
@@ -647,11 +654,6 @@ namespace NachoCore
                     return;
                 }
                 var primeFolder = folders.First ();
-                if (primeFolder.IsClientOwned) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
-                    return;
-                }
-
                 var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter, cal) {
                     Operation = McPending.Operations.CalUpdate,
                     ParentId = primeFolder.ServerId,
@@ -683,11 +685,6 @@ namespace NachoCore
                     return;
                 }
                 var primeFolder = folders.First ();
-                if (primeFolder.IsClientOwned) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
-                    return;
-                }
-
                 var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter) {
                     Operation = McPending.Operations.CalDelete,
                     ParentId = primeFolder.ServerId,
@@ -746,7 +743,7 @@ namespace NachoCore
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
                 NcResult.SubKindEnum subKind;
-                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind)) {
+                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind, clientOwnedOkay:true)) {
                     result = NcResult.Error (subKind);
                     return;
                 }
@@ -756,6 +753,9 @@ namespace NachoCore
                     ClientId = contact.ClientId,
                 };
                 pending.Insert ();
+                // TODO consider moving set of IsAwaitingCreate to Insert().
+                contact.IsAwaitingCreate = true;
+                contact.Update ();
                 result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
@@ -780,11 +780,6 @@ namespace NachoCore
                     return;
                 }
                 var primeFolder = folders.First ();
-                if (primeFolder.IsClientOwned) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
-                    return;
-                }
-
                 var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter, contact) {
                     Operation = McPending.Operations.ContactUpdate,
                     ParentId = primeFolder.ServerId,
@@ -815,10 +810,6 @@ namespace NachoCore
                     return;
                 }
                 var primeFolder = folders.First ();
-                if (primeFolder.IsClientOwned) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
-                    return;
-                }
                 var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter) {
                     Operation = McPending.Operations.ContactDelete,
                     ParentId = primeFolder.ServerId,

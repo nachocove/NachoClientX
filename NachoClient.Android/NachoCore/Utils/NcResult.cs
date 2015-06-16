@@ -177,6 +177,7 @@ namespace NachoCore.Utils
             Info_UserIdChanged,
             Error_NoCapableService,
             Info_AccountBeaconChanged,
+            Info_MdmConfigMayHaveChanged,
         };
 
         public enum WhyEnum
@@ -206,6 +207,8 @@ namespace NachoCore.Utils
             UnavoidableDelay,
             InterruptedByAppExit,
             PredecessorFailed,
+            Unsupported,
+            WrongController,
         };
 
         public KindEnum Kind { get; set; }
