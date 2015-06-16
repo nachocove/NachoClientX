@@ -379,7 +379,6 @@ namespace NachoCore.IMAP
 
             if (null != summary.Headers) {
                 foreach (var header in summary.Headers) {
-                    Log.Info (Log.LOG_IMAP, "IMAP header id {0} {1} {2}", header.Id, header.Field, header.Value);
                     switch (header.Id) {
                     case HeaderId.ContentClass:
                         emailMessage.ContentClass = header.Value;
