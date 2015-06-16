@@ -88,15 +88,22 @@ namespace NachoCore.IMAP
                 if (TimeSpan.Zero != timespan) {
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
                 }
-                UniqueIdSet uids = mailKitFolder.Search (query) as UniqueIdSet;
-                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", uids.ToString (), SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+                var uids = mailKitFolder.Search (query);
+                string UidsString;
+                if (uids is UniqueIdRange || uids is UniqueIdSet) {
+                    UidsString = uids.ToString ();
+                } else {
+                    UidsString = string.Join (",", uids.Select (x => x.ToString ()));
+                }
+
+                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", UidsString, SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
 
                 // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
                 // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
-                    target.ImapUidSet = uids.ToString ();
+                    target.ImapUidSet = UidsString;
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
