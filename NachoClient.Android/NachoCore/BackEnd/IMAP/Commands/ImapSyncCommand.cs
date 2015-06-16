@@ -15,6 +15,7 @@ using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using HtmlAgilityPack;
+using MailKit.Search;
 
 namespace NachoCore.IMAP
 {
@@ -70,7 +71,7 @@ namespace NachoCore.IMAP
 
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand: Getting Folderstate");
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.ImapFolderNameRedacted());
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
@@ -81,7 +82,30 @@ namespace NachoCore.IMAP
                     SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                     NcAssert.True (false); // FIXME replace this with a FolderSync event when we have it.
                 }
+
+                var query = SearchQuery.NotDeleted;
+                var timespan = BEContext.Account.DaysSyncEmailSpan();
+                if (TimeSpan.Zero != timespan) {
+                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                }
+                var uids = mailKitFolder.Search (query);
+                string UidsString;
+                if (uids is UniqueIdRange || uids is UniqueIdSet) {
+                    UidsString = uids.ToString ();
+                } else {
+                    UidsString = string.Join (",", uids.Select (x => x.ToString ()));
+                }
+
+                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", UidsString, SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
+
+                // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
+                // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
+                SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ImapUidSet = UidsString;
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
             }
 
@@ -97,7 +121,7 @@ namespace NachoCore.IMAP
                 MaxSynced = SyncKit.UidList.Max ().Id;
                 MinSynced = SyncKit.UidList.Min ().Id;
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
-                    SyncKit.Folder.IsDistinguished ? SyncKit.Folder.ServerId : "User Folder");
+                    SyncKit.Folder.ImapFolderNameRedacted());
                 IList<IMessageSummary> imapSummaries = null;
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
@@ -106,7 +130,12 @@ namespace NachoCore.IMAP
                     }
                     try {
                         cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
+                        HashSet<HeaderId> headers = new HashSet<HeaderId>();
+                        headers.Add (HeaderId.Importance);
+                        headers.Add (HeaderId.DkimSignature);
+                        headers.Add (HeaderId.ContentClass);
+
+                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
                         cap.Stop ();
                         Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                     } catch (ImapProtocolException) {
@@ -180,7 +209,6 @@ namespace NachoCore.IMAP
                 var target = (McFolder)record;
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
-                target.LastImapHighestModSeq = (long)(mailKitFolder.SupportsModSeq ? mailKitFolder.HighestModSeq : 0);
                 return true;
             });
             PendingResolveApply ((pending) => {
@@ -279,7 +307,7 @@ namespace NachoCore.IMAP
                 MessageID = summary.Envelope.MessageId,
                 DateReceived = summary.InternalDate.HasValue ? summary.InternalDate.Value.UtcDateTime : DateTime.MinValue,
                 FromEmailAddressId = 0,
-                cachedFromLetters = "",
+                cachedFromLetters = string.Empty,
                 cachedFromColor = 1,
             };
 
@@ -351,7 +379,6 @@ namespace NachoCore.IMAP
 
             if (null != summary.Headers) {
                 foreach (var header in summary.Headers) {
-                    Log.Info (Log.LOG_IMAP, "IMAP header id {0} {1} {2}", header.Id, header.Field, header.Value);
                     switch (header.Id) {
                     case HeaderId.ContentClass:
                         emailMessage.ContentClass = header.Value;
@@ -376,6 +403,9 @@ namespace NachoCore.IMAP
                             break;
                         }
                         break;
+
+                    case HeaderId.DkimSignature:
+                        break;
                     }
                 }
             }
@@ -383,8 +413,11 @@ namespace NachoCore.IMAP
             if (summary.GMailThreadId.HasValue) {
                 emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
             }
-            if ("" == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
+            if (string.Empty == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
+            }
+            if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
+                emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
             }
             emailMessage.IsIncomplete = false;
 
@@ -435,7 +468,7 @@ namespace NachoCore.IMAP
                     if (!isPlainText) {
                         var p = Html2Text (preview);
                         if (string.Empty == p) {
-                            preview = "(No Preview available)";
+                            preview = string.Empty;
                         } else {
                             preview = p;
                         }
@@ -478,6 +511,10 @@ namespace NachoCore.IMAP
                     if (part.ContentType.Charset != null) {
                         try {
                             filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
+                        } catch (NotSupportedException ex) {
+                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
+                            // continue without the filter
                         } catch (ArgumentException ex) {
                             // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
                             Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
@@ -555,6 +592,5 @@ namespace NachoCore.IMAP
                 ConvertTo (subnode, outText);
             }
         }
-
     }
 }

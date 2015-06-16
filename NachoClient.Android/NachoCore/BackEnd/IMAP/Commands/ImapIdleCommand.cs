@@ -17,6 +17,8 @@ namespace NachoCore.IMAP
 
         public ImapIdleCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
         {
+            // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
+            // for more inspiration
             IdleFolder = McFolder.GetDefaultInboxFolder(BEContext.Account.Id);
             NcAssert.NotNull (IdleFolder);
         }
