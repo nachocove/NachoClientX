@@ -130,7 +130,12 @@ namespace NachoCore.IMAP
                     }
                     try {
                         cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, Cts.Token);
+                        HashSet<HeaderId> headers = new HashSet<HeaderId>();
+                        headers.Add (HeaderId.Importance);
+                        headers.Add (HeaderId.DkimSignature);
+                        headers.Add (HeaderId.ContentClass);
+
+                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
                         cap.Stop ();
                         Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                     } catch (ImapProtocolException) {
@@ -302,7 +307,7 @@ namespace NachoCore.IMAP
                 MessageID = summary.Envelope.MessageId,
                 DateReceived = summary.InternalDate.HasValue ? summary.InternalDate.Value.UtcDateTime : DateTime.MinValue,
                 FromEmailAddressId = 0,
-                cachedFromLetters = "",
+                cachedFromLetters = string.Empty,
                 cachedFromColor = 1,
             };
 
@@ -399,6 +404,9 @@ namespace NachoCore.IMAP
                             break;
                         }
                         break;
+
+                    case HeaderId.DkimSignature:
+                        break;
                     }
                 }
             }
@@ -406,8 +414,11 @@ namespace NachoCore.IMAP
             if (summary.GMailThreadId.HasValue) {
                 emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
             }
-            if ("" == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
+            if (string.Empty == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
+            }
+            if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
+                emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
             }
             emailMessage.IsIncomplete = false;
 
