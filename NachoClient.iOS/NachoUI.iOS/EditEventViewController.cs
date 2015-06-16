@@ -193,24 +193,31 @@ namespace NachoClient.iOS
                 this.item = McCalendar.QueryById<McCalendar> (e.CalendarId);
             }
             this.action = action;
+            SetAccount ();
         }
 
         public void SetCalendarItem (McCalendar c)
         {
-            if (null == c) {
-                this.item = null;
-                this.action = CalendarItemEditorAction.create;
-                return;
-            }
-
-            if (0 == c.Id) {
-                this.item = c;
-                this.action = CalendarItemEditorAction.create;
-                return;
-            }
-
             this.item = c;
-            this.action = CalendarItemEditorAction.edit;
+            if (null == c || 0 == c.Id) {
+                this.action = CalendarItemEditorAction.create;
+            } else {
+                this.action = CalendarItemEditorAction.edit;
+            }
+            SetAccount ();
+        }
+
+        private void SetAccount ()
+        {
+            if (null != item && CalendarItemEditorAction.edit == action) {
+                account = McAccount.QueryById<McAccount> (item.AccountId);
+            } else {
+                account = NcApplication.Instance.Account;
+            }
+            if (0 == (account.AccountCapability & McAccount.AccountCapabilityEnum.CalWriter)) {
+                Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
+                account = McAccount.GetDeviceAccount ();
+            }
         }
 
         public void SetStartingDate (DateTime startingDate)
@@ -350,8 +357,6 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-
             backgroundTapGesture = new UITapGestureRecognizer ();
             backgroundTapGestureToken = backgroundTapGesture.AddTarget (DismissKeyboard);
             contentView.AddGestureRecognizer (backgroundTapGesture);
@@ -1183,6 +1188,10 @@ namespace NachoClient.iOS
         /// </summary>
         protected void PrepareInvites ()
         {
+            if (0 == c.attendees.Count) {
+                // No attendees to invite.
+                return;
+            }
             string plainTextDescription;
             switch (c.DescriptionType) {
             case McAbstrFileDesc.BodyTypeEnum.HTML_2:
