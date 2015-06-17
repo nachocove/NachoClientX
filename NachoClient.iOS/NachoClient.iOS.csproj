@@ -26,7 +26,7 @@
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -ObjC"</MtouchExtraArgs>
     <MtouchI18n>cjk,west</MtouchI18n>
     <CustomCommands>
       <CustomCommands>
@@ -241,6 +241,7 @@
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
     <Folder Include="NachoCore\BackEnd\Device\" />
+    <Folder Include="Resources\Concierge.bundle\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -2406,6 +2407,32 @@
     <BundleResource Include="Resources\avatar-imap%403x.png" />
     <BundleResource Include="Resources\avatar-imap%404x.png" />
     <BundleResource Include="Resources\avatar-imap%406x.png" />
+    <BundleResource Include="Resources\Concierge.bundle\Assets.car" />
+    <BundleResource Include="Resources\Concierge.bundle\Info.plist" />
+    <BundleResource Include="Resources\Concierge.bundle\connecting-light%402x.gif" />
+    <BundleResource Include="Resources\Concierge.bundle\connecting%402x.gif" />
+    <BundleResource Include="Resources\Concierge.bundle\joins.mp3" />
+    <BundleResource Include="Resources\Concierge.bundle\leaves.mp3" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\BLn-qO-twQ-view-jnN-6a-aj1~ipad.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\BLn-qO-twQ-view-jnN-6a-aj1~ipad.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\BLn-qO-twQ-view-jnN-6a-aj1~iphone.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\BLn-qO-twQ-view-jnN-6a-aj1~iphone.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKConciergeViewController~ipad.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKConciergeViewController~ipad.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKConciergeViewController~iphone.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKConciergeViewController~iphone.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKRootViewController~ipad.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKRootViewController~ipad.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKRootViewController~iphone.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\CSKRootViewController~iphone.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\wIy-0a-nKP-view-o0V-NS-jVY~ipad.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\wIy-0a-nKP-view-o0V-NS-jVY~ipad.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\wIy-0a-nKP-view-o0V-NS-jVY~iphone.nib\objects-8.0+.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge.storyboardc\wIy-0a-nKP-view-o0V-NS-jVY~iphone.nib\runtime.nib" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge~ipad.storyboardc\Info-8.0+.plist" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge~ipad.storyboardc\Info.plist" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge~iphone.storyboardc\Info-8.0+.plist" />
+    <BundleResource Include="Resources\Concierge.bundle\CSKConcierge~iphone.storyboardc\Info.plist" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -2471,6 +2498,10 @@
     <ProjectReference Include="..\..\Google.iOS\GoogleAPIs\Google.iOS.csproj">
       <Project>{C6741CA8-619D-4FF3-8CBA-108CFC3447A0}</Project>
       <Name>Google.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Citrix-Concierge\Concierge\Concierge.iOS\Concierge.iOS.csproj">
+      <Project>{D0D71C79-0AFE-4C37-8B42-D5B5FC2C91EF}</Project>
+      <Name>Concierge.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

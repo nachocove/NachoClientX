@@ -4,7 +4,7 @@ PROJECT_ROOT=.
 PROJECT=$(PROJECT_ROOT)/NachoPlatform.xcodeproj
 TARGET=NachoPlatform
 
-all: libNachoPlatformSDK.a libcrypto.a
+all: libNachoPlatformSDK.a libcrypto.a libConcierge.a libFirebase.a libWebRTC.a
 
 gen_srcs: src/tld-canon.h
 
@@ -32,6 +32,15 @@ libNachoPlatformSDK.a: libNachoPlatform-i386.a libNachoPlatform-armv7.a libNacho
 
 libcrypto.a: 
 	cp ../../ios-openssl/lib/libcrypto.a .
+
+libConcierge.a:
+	cp ../../Citrix-Concierge/Concierge/Concierge.iOS/SDK/Concierge.framework/Concierge libConcierge.a
+
+libFirebase.a:
+	cp ../../Citrix-Concierge/Concierge/Concierge.iOS/SDK/Firebase.framework/Versions/A/Firebase libFirebase.a
+
+libWebRTC.a:
+	cp ../../Citrix-Concierge/Concierge/Concierge.iOS/SDK/WebRTC.framework/Versions/A/WebRTC libWebRTC.a
 
 clean:
 	rm -fr build

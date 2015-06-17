@@ -294,6 +294,9 @@ namespace NachoClient.iOS
                 NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
                 NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
                 MdmConfig.Instance.ExtractValues ();
+
+                Concierge.iOS.Concierge.SetApplicationKey ("56uxRn65KmNyJsHmREhTr7asbch6kOuyfp5olvm9sQn27ORjgvZpZraUTCdWNUHy");
+                Console.WriteLine ("Concierge SDK version: {0}", Concierge.iOS.Concierge.Version);
             }
 
             if ((null != launchOptions) && launchOptions.ContainsKey (UIApplication.LaunchOptionsRemoteNotificationKey)) {
