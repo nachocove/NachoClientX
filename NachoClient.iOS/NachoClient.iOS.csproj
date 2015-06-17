@@ -83,7 +83,7 @@
     </IpaPackageName>
     <MtouchI18n>cjk,west</MtouchI18n>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit -ObjC"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
