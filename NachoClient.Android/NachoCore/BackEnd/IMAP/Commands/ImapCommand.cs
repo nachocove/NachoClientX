@@ -103,6 +103,7 @@ namespace NachoCore.IMAP
 
             byte[] requestData;
             byte[] responseData;
+            //Log.Info (Log.LOG_IMAP, "IMAP exchange\n{0}", Encoding.UTF8.GetString (Client.ProtocolLogger.GetCombinedBuffer ()));
             Client.ProtocolLogger.Stop (out requestData, out responseData);
             byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
 
