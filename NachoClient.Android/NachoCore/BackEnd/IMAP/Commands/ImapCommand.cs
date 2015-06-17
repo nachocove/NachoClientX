@@ -107,11 +107,11 @@ namespace NachoCore.IMAP
             byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
 
             if (null != requestData && requestData.Length > 0) {
-                Log.Info (Log.LOG_IMAP, "{0}IMAP Request {1}", ClassName, Encoding.UTF8.GetString (requestData));
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Request\n{1}", ClassName, Encoding.UTF8.GetString (requestData));
                 Telemetry.RecordImapEvent (true, Combine(ClassNameBytes, requestData));
             }
             if (null != responseData && responseData.Length > 0) {
-                Log.Info (Log.LOG_IMAP, "{0}IMAP Response {1}", ClassName, Encoding.UTF8.GetString (responseData));
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Response\n{1}", ClassName, Encoding.UTF8.GetString (responseData));
                 Telemetry.RecordImapEvent (false, Combine(ClassNameBytes, responseData));
             }
         }
