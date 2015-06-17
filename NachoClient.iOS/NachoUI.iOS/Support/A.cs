@@ -382,7 +382,7 @@ namespace NachoClient.iOS
         public static UIColor Color_009E85 {
             get {
                 if (null == _Color_009E85) {
-                    _Color_009E85 = UIColor.FromRGB (0x00, 0x89E, 0x85);
+                    _Color_009E85 = UIColor.FromRGB (0x00, 0x9E, 0x85);
                 }
                 return _Color_009E85;
             }
@@ -427,7 +427,7 @@ namespace NachoClient.iOS
         public static UIColor Color_NachoBlack {
             get {
                 if (null == _Color_NachoBlack) {
-                    _Color_NachoBlack = UIColor.FromRGB (0x0b, 032, 0x39);
+                    _Color_NachoBlack = UIColor.FromRGB (0x0b, 0x32, 0x39);
                 }
                 return _Color_NachoBlack;
             }

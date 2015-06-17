@@ -149,6 +149,7 @@ namespace NachoCore.Utils
 
         protected Dictionary<TelemetryEventClass, TelemetryJsonFile> WriteFiles;
         protected SortedSet<string> ReadFiles;
+        protected Dictionary<string, Action> PendingCallbacks;
         protected object LockObj;
 
         protected static DateTime DefaultGetUtcNow ()
@@ -242,6 +243,7 @@ namespace NachoCore.Utils
             LockObj = new object ();
             WriteFiles = new Dictionary<TelemetryEventClass, TelemetryJsonFile> ();
             ReadFiles = new SortedSet<string> ();
+            PendingCallbacks = new Dictionary<string, Action> ();
 
             var eventClasses = AllEventClasses ();
             foreach (var eventClass in eventClasses) {
@@ -307,7 +309,7 @@ namespace NachoCore.Utils
                         doFinalize = true;
                     }
                     if (doFinalize) {
-                        Finalize (eventClass);
+                        Finalize (eventClass, jsonEvent.callback);
                     }
                 }
                 return true;
@@ -325,7 +327,7 @@ namespace NachoCore.Utils
             return Path.Combine (dirName, newFileName);
         }
 
-        protected void Finalize (TelemetryEventClass eventClass)
+        protected void Finalize (TelemetryEventClass eventClass, Action callback = null)
         {
             lock (LockObj) {
                 TelemetryJsonFile writeFile;
@@ -345,6 +347,9 @@ namespace NachoCore.Utils
                 File.Move (writeFile.FilePath, newFilePath);
 
                 ReadFiles.Add (newFilePath);
+                if (null != callback) {
+                    PendingCallbacks.Add (newFilePath, callback);
+                }
             }
         }
 
@@ -367,14 +372,16 @@ namespace NachoCore.Utils
             }
         }
 
-        public void Remove (string path)
+        public void Remove (string path, out Action callback)
         {
             lock (LockObj) {
+                callback = null;
                 try {
                     File.Delete (path);
                 } catch (IOException) {
                 }
                 ReadFiles.Remove (path);
+                PendingCallbacks.TryGetValue (path, out callback);
             }
         }
     }

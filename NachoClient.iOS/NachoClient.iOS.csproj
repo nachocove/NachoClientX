@@ -2212,7 +2212,6 @@
     <BundleResource Include="Resources\Bootscreen-5%406x.png" />
     <BundleResource Include="Resources\Loginscreen-1%406x.png" />
     <BundleResource Include="Resources\Loginscreen-2%406x.png" />
-    <BundleResource Include="Resources\Loginscreen-6%406x.png" />
     <BundleResource Include="Resources\Loginscreen-BG%406x.png" />
     <BundleResource Include="Resources\Loginscreen-Mail%406x.png" />
     <BundleResource Include="Resources\Slide02BG%406x.png" />
@@ -2412,6 +2411,7 @@
     <BundleResource Include="Resources\avatar-imap%403x.png" />
     <BundleResource Include="Resources\avatar-imap%404x.png" />
     <BundleResource Include="Resources\avatar-imap%406x.png" />
+    <BundleResource Include="Resources\Loginscreen-3%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
