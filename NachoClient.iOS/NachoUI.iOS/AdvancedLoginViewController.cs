@@ -804,6 +804,8 @@ namespace NachoClient.iOS
             // Add scope to give full access to email
             var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
             scopes.Add ("https://mail.google.com");
+            scopes.Add ("https://www.googleapis.com/auth/calendar");
+            scopes.Add ("https://www.google.com/m8/feeds/");
             Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
 
             googleSignInIsActive = true;
