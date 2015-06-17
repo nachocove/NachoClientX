@@ -251,25 +251,38 @@ namespace NachoCore
             var cToken = Cts.Token;
             NcTask.Run (() => {
                 try {
-                    while (!DeviceContacts.ProcessNextContact ()) {
-                        cToken.ThrowIfCancellationRequested ();
+                    // Protect against the situation where another DoSync background task finishes in between
+                    // this call to DoSync and when this background task gets going.
+                    var deviceContacts = DeviceContacts;
+                    if (null != deviceContacts) {
+                        lock (deviceContacts) {
+                            while (!deviceContacts.ProcessNextContact ()) {
+                                cToken.ThrowIfCancellationRequested ();
+                            }
+                            while (!deviceContacts.RemoveNextStale ()) {
+                                cToken.ThrowIfCancellationRequested ();
+                            }
+                            deviceContacts.Report ();
+                            // We completed the sync.
+                            DeviceContacts = null;
+                        }
                     }
-                    while (!DeviceContacts.RemoveNextStale ()) {
-                        cToken.ThrowIfCancellationRequested ();
-                    }
-                    DeviceContacts.Report ();
-                    // We completed the sync.
-                    DeviceContacts = null;
 
-                    while (!DeviceCalendars.ProcessNextCal ()) {
-                        cToken.ThrowIfCancellationRequested ();
+                    var deviceCalendars = DeviceCalendars;
+                    if (null != deviceCalendars) {
+                        lock (deviceCalendars) {
+                            while (!deviceCalendars.ProcessNextCal ()) {
+                                cToken.ThrowIfCancellationRequested ();
+                            }
+                            while (!deviceCalendars.RemoveNextStale ()) {
+                                cToken.ThrowIfCancellationRequested ();
+                            }
+                            deviceCalendars.Report ();
+                            // We completed the sync.
+                            DeviceCalendars = null;
+                        }
                     }
-                    while (!DeviceCalendars.RemoveNextStale ()) {
-                        cToken.ThrowIfCancellationRequested ();
-                    }
-                    DeviceCalendars.Report ();
-                    // We completed the sync.
-                    DeviceCalendars = null;
+
                     Sm.PostEvent ((uint)DevEvt.E.SyncDone, "DEVNCCONSYNCED");
                 } catch (OperationCanceledException) {
                     // Abate was signaled.

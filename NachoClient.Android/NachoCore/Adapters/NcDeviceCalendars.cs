@@ -94,10 +94,10 @@ namespace NachoCore
 
         public bool RemoveNextStale ()
         {
-            // TODO This doesn't work yet. Disable it until I have time to fix it.
-            return true;
-            #if false
             if (null == Stale) {
+                if (null == Present) {
+                    return true;
+                }
                 Stale = Present.GetEnumerator ();
                 PresentCount = Present.Count;
             }
@@ -118,7 +118,6 @@ namespace NachoCore
                 McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
             });
             return false;
-            #endif
         }
 
         public void Report ()
