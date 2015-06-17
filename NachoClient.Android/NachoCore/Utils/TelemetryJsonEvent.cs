@@ -19,6 +19,8 @@ namespace NachoCore.Utils
         public string user;
         public string timestamp;
         public string event_type;
+        [JsonIgnore]
+        public Action callback;
 
         public TelemetryJsonEvent ()
         {

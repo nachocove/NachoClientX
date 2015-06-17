@@ -325,7 +325,8 @@ namespace NachoCore.Utils
             }
 
             var jsonEvent = new TelemetrySupportEvent () {
-                support = JsonConvert.SerializeObject (info)
+                support = JsonConvert.SerializeObject (info),
+                callback = callback
             };
             RecordJsonEvent (TelemetryEventType.SUPPORT, jsonEvent);
         }
@@ -491,7 +492,11 @@ namespace NachoCore.Utils
                             // New log file-based telemetry
                             succeed = BackEnd.UploadEvents (readFile);
                             if (succeed) {
-                                JsonFileTable.Remove (readFile);
+                                Action supportCallback;
+                                JsonFileTable.Remove (readFile, out supportCallback);
+                                if (null != supportCallback) {
+                                    InvokeOnUIThread.Instance.Invoke (supportCallback);
+                                }
                             } else {
                                 FailToSend.Click ();
                                 if (FailToSendLogLimiter.TakeToken ()) {
