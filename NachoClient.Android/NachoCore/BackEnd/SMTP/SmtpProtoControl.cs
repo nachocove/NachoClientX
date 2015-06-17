@@ -15,7 +15,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore.SMTP
 {
-    public class SmtpProtoControl : NcProtoControl, IBEContext, INcProtocolLogger
+    public class SmtpProtoControl : NcProtoControl, IBEContext
     {
         public enum Lst : uint
         {
@@ -327,7 +327,7 @@ namespace NachoCore.SMTP
             Cmd.Execute (Sm);
         }
 
-        public SmtpClient SmtpClient;
+        public NcSmtpClient SmtpClient;
 
         private void DoDisc ()
         {
@@ -340,8 +340,8 @@ namespace NachoCore.SMTP
                         SmtpClient = null;
                     }
                 }
-                SmtpClient = newClientWithLogger();
-                var cmd = new SmtpAuthenticateCommand(this);
+                SmtpClient = new NcSmtpClient ();
+                var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
                 cmd.Execute (Sm);
             }, "SmtpDoDisc");
         }
@@ -384,21 +384,6 @@ namespace NachoCore.SMTP
             Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "ASPCUSSC");
         }
 
-        #region INcProtocolLogger implementation
-
-        public bool ShouldLog ()
-        {
-            return false;
-        }
-
-        #endregion
-
-        public SmtpClient newClientWithLogger()
-        {
-            MailKitProtocolLogger logger = new MailKitProtocolLogger ("SMTP", Log.LOG_SMTP, this);
-            return new SmtpClient (logger);
-        }
-
         private void DoConn ()
         {
             if (null != SmtpClient && SmtpClient.IsConnected) {
@@ -406,8 +391,8 @@ namespace NachoCore.SMTP
             }
             if (null == SmtpClient) {
                 NcTask.Run (delegate {
-                    SmtpClient = newClientWithLogger();
-                    var cmd = new SmtpAuthenticateCommand(this);
+                    SmtpClient = new NcSmtpClient ();
+                    var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
                     cmd.Execute (Sm);
                 }, "SmtpDoConn");
             }
@@ -432,7 +417,7 @@ namespace NachoCore.SMTP
                 case McPending.Operations.EmailSend:
                 case McPending.Operations.EmailForward:
                 case McPending.Operations.EmailReply:
-                    var cmd = new SmtpSendMailCommand (this, send);
+                    var cmd = new SmtpSendMailCommand (this, SmtpClient, send);
                     cmd.Execute (Sm);
                     NcTask.Run (delegate {
                         Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT");

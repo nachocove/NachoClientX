@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderCreateCommand : ImapCommand
     {
-        public ImapFolderCreateCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFolderCreateCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -59,10 +59,18 @@ namespace NachoCore.IMAP
         private IMailFolder CreateFolderInNamespace (FolderNamespace imapNameSpace, string name)
         {
             IMailFolder folder = null;
-            var encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
-            folder = encapsulatingFolder.Create (name, true);
-            NcAssert.NotNull (folder);
-            return folder;
+            lock (Client.SyncRoot) {
+                try {
+                    var encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
+                    folder = encapsulatingFolder.Create (name, true);
+                    NcAssert.NotNull (folder);
+                    return folder;
+                } catch {
+                    throw;
+                } finally {
+                    ProtocolLoggerStopAndPostTelemetry ();
+                }
+            }
         }
 
         private class ApplyCreateFolder : NcApplyServerCommand

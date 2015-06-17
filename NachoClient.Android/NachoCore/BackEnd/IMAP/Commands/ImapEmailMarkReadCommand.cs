@@ -10,7 +10,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailMarkReadCommand : ImapCommand
     {
-        public ImapEmailMarkReadCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailMarkReadCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             pending.MarkDispached ();
@@ -23,11 +23,18 @@ namespace NachoCore.IMAP
             NcAssert.Equals (folderGuid, folder.ImapGuid);
             var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
             lock (Client.SyncRoot) {
-                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
-                if (null == mailKitFolder) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
+                try {
+                    ProtocolLoggerStart ();
+                    IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
+                    if (null == mailKitFolder) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
+                    }
+                    mailKitFolder.SetFlags (uid, MessageFlags.Seen, true, Cts.Token);
+                } catch {
+                    throw;
+                } finally {
+                    ProtocolLoggerStopAndPostTelemetry ();
                 }
-                mailKitFolder.SetFlags (uid, MessageFlags.Seen, true, Cts.Token);
             }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 

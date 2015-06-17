@@ -15,7 +15,7 @@ namespace NachoCore.IMAP
     {
         McFolder IdleFolder;
 
-        public ImapIdleCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
@@ -39,20 +39,26 @@ namespace NachoCore.IMAP
             try {
                 mailKitFolder.MessagesArrived += messageHandler;
                 lock (Client.SyncRoot) {
-                    if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                    try {
+                        if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
+                            return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                        }
+                        if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
+                            BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
+                        }
+                        Client.Idle (done.Token, CancellationToken.None);
+                        Cts.Token.ThrowIfCancellationRequested ();
+                        mailKitFolder.Close (false, Cts.Token);
+                        StatusItems statusItems =
+                            StatusItems.UidNext |
+                            StatusItems.UidValidity |
+                            StatusItems.HighestModSeq;
+                        mailKitFolder.Status (statusItems, Cts.Token);
+                    } catch {
+                        throw;
+                    } finally {
+                        ProtocolLoggerStopAndPostTelemetry ();
                     }
-                    if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
-                        BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
-                    }
-                    Client.Idle (done.Token, CancellationToken.None);
-                    Cts.Token.ThrowIfCancellationRequested ();
-                    mailKitFolder.Close (false, Cts.Token);
-                    StatusItems statusItems =
-                        StatusItems.UidNext |
-                        StatusItems.UidValidity |
-                        StatusItems.HighestModSeq;
-                    mailKitFolder.Status (statusItems, Cts.Token);
                 }
                 UpdateImapSetting (mailKitFolder, IdleFolder);
 

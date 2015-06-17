@@ -31,30 +31,13 @@ namespace NachoCore.IMAP
             public string preview { get; set; }
         }
 
-        public ImapSyncCommand (IBEContext beContext, ImapClient imap, SyncKit syncKit) : base (beContext, imap)
+        public ImapSyncCommand (IBEContext beContext, NcImapClient imap, SyncKit syncKit) : base (beContext, imap)
         {
             SyncKit = syncKit;
             PendingSingle = SyncKit.PendingSingle;
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
-        }
-
-        private IMailFolder GetOpenMailkitFolder(McFolder folder)
-        {
-            IMailFolder mailKitFolder;
-            FolderAccess access;
-            lock (Client.SyncRoot) {
-                mailKitFolder = Client.GetFolder (folder.ServerId);
-                if (null == mailKitFolder) {
-                    return null;
-                }
-                access = mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-                if (FolderAccess.None == access) {
-                    return null;
-                }
-            }
-            return mailKitFolder;
         }
 
         private const string KImapSearchTiming = "IMAP Folder Search";
@@ -72,23 +55,31 @@ namespace NachoCore.IMAP
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.ImapFolderNameRedacted());
+                var timespan = BEContext.Account.DaysSyncEmailSpan ();
+                IList<UniqueId> uids;
                 lock (Client.SyncRoot) {
-                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                    if (null == mailKitFolder) {
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
+                    try {
+                        ProtocolLoggerStart ();
+                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                        if (null == mailKitFolder) {
+                            return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
+                        }
+                        if (UInt32.MinValue != SyncKit.Folder.ImapUidValidity &&
+                            SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
+                            return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
+                        }
+
+                        var query = SearchQuery.NotDeleted;
+                        if (TimeSpan.Zero != timespan) {
+                            query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                        }
+                        uids = mailKitFolder.Search (query);
+                    } catch {
+                        throw;
+                    } finally {
+                        ProtocolLoggerStopAndPostTelemetry ();
                     }
                 }
-                if (UInt32.MinValue != SyncKit.Folder.ImapUidValidity && 
-                    SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
-                    NcAssert.True (false); // FIXME replace this with a FolderSync event when we have it.
-                }
-
-                var query = SearchQuery.NotDeleted;
-                var timespan = BEContext.Account.DaysSyncEmailSpan();
-                if (TimeSpan.Zero != timespan) {
-                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-                }
-                var uids = mailKitFolder.Search (query);
                 string UidsString;
                 if (uids is UniqueIdRange || uids is UniqueIdSet) {
                     UidsString = uids.ToString ();

@@ -441,6 +441,8 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration29.cs" />
     <Compile Include="NachoCore\Adapters\NcMdmConfig.cs" />
     <Compile Include="NachoPlatform.Android\MdmConfigAndroid.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\NcImapClient.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\NcSmtpClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
