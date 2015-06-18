@@ -52,6 +52,20 @@ namespace NachoCore.Brain
             var brainEvent = new NcCBrainUnindexContactEvent (contact.AccountId, contact.Id);
             PersistentEnqueue (contact.AccountId, brainEvent);
         }
+
+        public static void MarkForDeletion (int accountId)
+        {
+            var index = NcBrain.SharedInstance.Index (accountId);
+            if (null != index) {
+                // Signal abatement to get brain to stop processing
+                string caller = "LockIndexForDeletion";
+                NcAbate.HighPriority (caller);
+                NcAbate.RegularPriority (caller);
+
+                // Mark the index to prevent further use
+                index.MarkForDeletion ();
+            }
+        }
     }
 }
 
