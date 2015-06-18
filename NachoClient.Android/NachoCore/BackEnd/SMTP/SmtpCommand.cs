@@ -47,7 +47,7 @@ namespace NachoCore.SMTP
                         var authy = new SmtpAuthenticateCommand(BEContext, Client);
                         authy.ConnectAndAuthenticate ();
                     }
-                    Client.ProtocolLogger.ResetBuffers ();
+                    Client.MailKitProtocolLogger.ResetBuffers ();
                     var evt = ExecuteCommand ();
                     LogProtocol ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.

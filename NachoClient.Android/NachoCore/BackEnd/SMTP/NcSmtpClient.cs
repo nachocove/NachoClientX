@@ -7,10 +7,11 @@ namespace NachoCore.SMTP
 {
     public class NcSmtpClient : MailKit.Net.Smtp.SmtpClient
     {
-        public readonly MailKitProtocolLogger ProtocolLogger;
-        public NcSmtpClient () : base(new MailKitProtocolLogger("SMTP"))
+        public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
+
+        public NcSmtpClient () : base(new NcMailKitProtocolLogger("SMTP"))
         {
-            ProtocolLogger = Logger () as MailKitProtocolLogger;
+            MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
         }
     }
 }

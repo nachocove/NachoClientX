@@ -11,7 +11,7 @@ using System.IO;
 
 namespace NachoCore.Utils
 {
-    public interface INcProtocolLogger {
+    public interface INcMailKitProtocolLogger {
         byte[] GetResponseBuffer ();
         byte[] GetRequestBuffer ();
         byte[] GetCombinedBuffer ();
@@ -22,7 +22,7 @@ namespace NachoCore.Utils
         void Stop (out byte[]RequestLog, out byte[] ResponseLog);
     }
 
-    public class MailKitProtocolLogger : IProtocolLogger, INcProtocolLogger
+    public class NcMailKitProtocolLogger : IProtocolLogger, INcMailKitProtocolLogger
     {
         private byte[] logPrefix;
         private MemoryStream RequestLogBuffer;
@@ -30,7 +30,7 @@ namespace NachoCore.Utils
         private MemoryStream CombinedLogBuffer;
         private bool _Enabled;
 
-        public MailKitProtocolLogger (string prefix)
+        public NcMailKitProtocolLogger (string prefix)
         {
             logPrefix = Encoding.ASCII.GetBytes(prefix + " ");
 

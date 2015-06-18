@@ -8,11 +8,11 @@ namespace NachoCore.IMAP
 {
     public class NcImapClient : MailKit.Net.Imap.ImapClient
     {
-        public MailKitProtocolLogger ProtocolLogger { get; set; }
+        public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
 
-        public NcImapClient () : base(new MailKitProtocolLogger ("IMAP"))
+        public NcImapClient () : base(new NcMailKitProtocolLogger ("IMAP"))
         {
-            ProtocolLogger = Logger() as MailKitProtocolLogger;
+            MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
         }
     }
 }

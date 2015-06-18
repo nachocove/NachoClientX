@@ -22,7 +22,7 @@ namespace NachoCore.IMAP
             }
             bool reenableLogger = false;
             if (!Client.IsAuthenticated) {
-                if (Client.ProtocolLogger.Enabled ()) {
+                if (Client.MailKitProtocolLogger.Enabled ()) {
                     reenableLogger = true;
                     ProtocolLoggerStopAndPostTelemetry ();
                 }

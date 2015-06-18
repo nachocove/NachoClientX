@@ -90,11 +90,11 @@ namespace NachoCore.IMAP
 
         protected void ProtocolLoggerStart()
         {
-            Client.ProtocolLogger.Start ();
+            Client.MailKitProtocolLogger.Start ();
         }
         protected void ProtocolLoggerStop()
         {
-            Client.ProtocolLogger.Stop ();
+            Client.MailKitProtocolLogger.Stop ();
         }
 
         protected void ProtocolLoggerStopAndPostTelemetry ()
@@ -104,7 +104,7 @@ namespace NachoCore.IMAP
             byte[] requestData;
             byte[] responseData;
             //Log.Info (Log.LOG_IMAP, "IMAP exchange\n{0}", Encoding.UTF8.GetString (Client.ProtocolLogger.GetCombinedBuffer ()));
-            Client.ProtocolLogger.Stop (out requestData, out responseData);
+            Client.MailKitProtocolLogger.Stop (out requestData, out responseData);
             byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
 
             if (null != requestData && requestData.Length > 0) {
