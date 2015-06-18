@@ -433,5 +433,23 @@ namespace Test.Common
             readFile = FileTable.GetNextReadFile ();
             Assert.AreEqual ("20150526130500000.20150526130500000.log", Path.GetFileName (readFile));
         }
+
+        [Test]
+        public void TestTelemetryJsonFileTableError ()
+        {
+            // Manually an invalid JSON file and tries to instiante a JSON file table from it.
+            var filePath = Path.Combine (NcApplication.GetDataDirPath (), "log");
+            var jsonEvent = new TelemetryLogEvent (TelemetryEventType.INFO) {
+                thread_id = 1,
+                message = "This event has an invalid timestamp",
+                timestamp = "INVALID",
+            };
+            var json = JsonConvert.SerializeObject (jsonEvent);
+            File.WriteAllText (filePath, json);
+
+            Assert.True (File.Exists (filePath));
+            FileTable = new WrappedTelemetryJsonFileTable ();
+            Assert.False (File.Exists (filePath));
+        }
     }
 }
