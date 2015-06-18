@@ -491,7 +491,7 @@ namespace NachoClient.iOS
             /// If any of these are true the user is the organizer of the event.
             isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) ||
             (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
-            (NcMeetingStatus.Meeting == c.MeetingStatus);
+            (NcMeetingStatus.MeetingOrganizer == c.MeetingStatus);
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
@@ -1100,7 +1100,7 @@ namespace NachoClient.iOS
 
         public void ConfigureRsvpBar (bool isOrganizer)
         {
-            if (c.MeetingStatus == NcMeetingStatus.ForwardedMeetingCancelled) {
+            if (c.MeetingStatus == NcMeetingStatus.MeetingAttendeeCancelled) {
                 messageLabel.Hidden = true;
                 acceptButton.Hidden = true;
                 organizerIcon.Hidden = true;
@@ -1367,7 +1367,7 @@ namespace NachoClient.iOS
             NavigationController.PopViewController (true);
 
             // Remove the item from the calendar.
-            if (c is McException && NcMeetingStatus.ForwardedMeetingCancelled != root.MeetingStatus) {
+            if (c is McException && NcMeetingStatus.MeetingAttendeeCancelled != root.MeetingStatus) {
                 // The user is viewing an occurrence of a recurring meeting, and it appears that the
                 // entire series has not been canceled.  So delete just this one occurrence.
                 CalendarHelper.CancelOccurrence (root, ((McException)c).ExceptionStartTime);
