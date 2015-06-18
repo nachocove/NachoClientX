@@ -64,9 +64,14 @@ namespace NachoCore.Utils
                 TimestampRegex = new Regex (@"""timestamp""\s*:\s*""([^""]+)""");
             }
             var match = TimestampRegex.Match (line);
-            NcAssert.True (match.Success);
-            NcAssert.True (2 == match.Groups.Count);
-            return TelemetryJsonEvent.Timestamp (match.Groups [1].Value);
+            try {
+                if (!match.Success || (2 != match.Groups.Count)) {
+                    throw new FormatException (String.Format ("invalid timestamp in JSON {0}", line));
+                }
+                return TelemetryJsonEvent.Timestamp (match.Groups [1].Value);
+            } catch {
+                throw new FormatException (String.Format ("invalid timestamp in JSON {0}", line));
+            }
         }
 
         public bool Add (TelemetryJsonEvent jsonEvent)
