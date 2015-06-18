@@ -6,75 +6,146 @@ using NachoCore.Utils;
 using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.IO;
 
 namespace NachoCore.Utils
 {
     public interface INcProtocolLogger {
-        bool ShouldLog();
+        byte[] GetResponseBuffer ();
+        byte[] GetRequestBuffer ();
+        byte[] GetCombinedBuffer ();
+        void ResetBuffers();
+        bool Enabled ();
+        void Start ();
+        void Stop ();
+        void Stop (out byte[]RequestLog, out byte[] ResponseLog);
     }
 
-    public class MailKitProtocolLogger : IProtocolLogger
+    public class MailKitProtocolLogger : IProtocolLogger, INcProtocolLogger
     {
-        private string logPrefix { get; set; }
-        private ulong logModule { get; set; }
-        private INcProtocolLogger ProtoContext { get; set; }
+        private byte[] logPrefix;
+        private MemoryStream RequestLogBuffer;
+        private MemoryStream ResponseLogBuffer;
+        private MemoryStream CombinedLogBuffer;
+        private bool _Enabled;
 
-        string authPattern = "^.*(AUTH|AUTHENTICATE) (PLAIN) (.*)$";
-        Regex AuthRegex;
-
-        public MailKitProtocolLogger (string prefix, ulong module, INcProtocolLogger protoContext)
+        public MailKitProtocolLogger (string prefix)
         {
-            logPrefix = prefix;
-            logModule = module;
-            ProtoContext = protoContext;
+            logPrefix = Encoding.ASCII.GetBytes(prefix + " ");
 
-            AuthRegex = new Regex(authPattern);
-            NcAssert.NotNull (AuthRegex);
+            ResetBuffers ();
+            _Enabled = false;
         }
+
+        #region IProtocolLogger implementation
+
         public void LogConnect (Uri uri)
         {
-            if (true == ProtoContext.ShouldLog ()) {
-                if (uri == null)
-                    throw new ArgumentNullException ("uri");
+            if (uri == null)
+                throw new ArgumentNullException ("uri");
 
-                Log.Info (logModule, "Connected to {0}", uri);
-            }
+            Log.Info (Log.LOG_SYS, "Connected to {0}", uri);
         }
 
-        private string RedactString(string line)
+        private void logBuffer (bool isRequest, byte[] buffer, int offset, int count)
         {
-            if (AuthRegex.IsMatch (line)) {
-                line = AuthRegex.Replace(line, "$1 $2 <elided>");
+            if (!_Enabled) {
+                return;
             }
-            return line;
-        }
-        private void logBuffer (string prefix, byte[] buffer, int offset, int count)
-        {
-            if (true == ProtoContext.ShouldLog ()) {
-                char[] delimiterChars = { '\n' };
-                var lines = Encoding.UTF8.GetString (buffer.Skip (offset).Take (count).ToArray ()).Split (delimiterChars);
 
-                Array.ForEach (lines, (line) => {
-                    if (line.Length > 0) {
-                        Log.Info (logModule, "{0} {1}{2}", logPrefix, prefix, RedactString (line));
-                    }
-                });
+            byte[] prefix = isRequest ? Encoding.ASCII.GetBytes("C: ") : Encoding.ASCII.GetBytes("S: ");
+
+            MemoryStream memBuf = isRequest ? RequestLogBuffer : ResponseLogBuffer;
+            byte[] timestamp = Encoding.ASCII.GetBytes (String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}: ", DateTime.UtcNow));
+            if (null != memBuf) {
+                memBuf.Write (timestamp, 0, timestamp.Length);
+                memBuf.Write (logPrefix, 0, logPrefix.Count ());
+                memBuf.Write (prefix, 0, prefix.Count ());
+                memBuf.Write (buffer, offset, count);
             }
+
+            CombinedLogBuffer.Write (timestamp, 0, timestamp.Length);
+            CombinedLogBuffer.Write (logPrefix, 0, logPrefix.Count ());
+            CombinedLogBuffer.Write (prefix, 0, prefix.Count ());
+            CombinedLogBuffer.Write (buffer, offset, count);
         }
 
         public void LogClient (byte[] buffer, int offset, int count)
         {
-            logBuffer ("C: ", buffer, offset, count);
+            logBuffer (true, buffer, offset, count);
         }
 
         public void LogServer (byte[] buffer, int offset, int count)
         {
-            logBuffer ("S: ", buffer, offset, count);
+            logBuffer (false, buffer, offset, count);
         }
 
         public void Dispose ()
         {
         }
+        #endregion
+
+        #region INcProtocolLogger implementation
+
+        public byte[] GetRequestBuffer ()
+        {
+            return RequestLogBuffer.GetBuffer ();
+        }
+
+        public byte[] GetResponseBuffer ()
+        {
+            return ResponseLogBuffer.GetBuffer ();
+        }
+
+        public byte[] GetCombinedBuffer ()
+        {
+            return CombinedLogBuffer.GetBuffer ();
+        }
+        public void ResetBuffers ()
+        {
+            if (null != RequestLogBuffer) {
+                RequestLogBuffer.Dispose ();
+                RequestLogBuffer = null;
+            }
+            if (null != ResponseLogBuffer) {
+                ResponseLogBuffer.Dispose ();
+                ResponseLogBuffer = null;
+            }
+            if (null != CombinedLogBuffer && CombinedLogBuffer.Length > 0) {
+                CombinedLogBuffer.Dispose ();
+                CombinedLogBuffer = null;
+            }
+            CombinedLogBuffer = new MemoryStream ();
+        }
+
+        public void Start ()
+        {
+            RequestLogBuffer = new MemoryStream ();
+            ResponseLogBuffer = new MemoryStream ();
+            _Enabled = true;
+        }
+
+        public void Stop ()
+        {
+            _Enabled = false;
+            ResetBuffers ();
+        }
+
+        public void Stop (out byte[]RequestLog, out byte[] ResponseLog)
+        {
+            RequestLog = null != RequestLogBuffer ? RequestLogBuffer.GetBuffer () : null;
+            ResponseLog = null != ResponseLogBuffer ? ResponseLogBuffer.GetBuffer () : null;
+            _Enabled = false;
+            ResetBuffers ();
+        }
+
+        public bool Enabled ()
+        {
+            return _Enabled;
+        }
+
+        #endregion
     }
 }
 

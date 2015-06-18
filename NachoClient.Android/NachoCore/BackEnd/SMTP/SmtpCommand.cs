@@ -14,7 +14,7 @@ namespace NachoCore.SMTP
 {
     public abstract class SmtpCommand : NcCommand
     {
-        public SmtpClient Client { get; set; }
+        public NcSmtpClient Client { get; set; }
 
         public class SmtpCommandFailure : Exception {
             public SmtpCommandFailure (string message) : base (message)
@@ -22,9 +22,9 @@ namespace NachoCore.SMTP
             }
         }
 
-        public SmtpCommand (IBEContext beContext) : base (beContext)
+        public SmtpCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext)
         {
-            Client = ((SmtpProtoControl)BEContext.ProtoControl).SmtpClient;
+            Client = smtp;
         }
 
         // MUST be overridden by subclass.
@@ -34,15 +34,22 @@ namespace NachoCore.SMTP
             return null;
         }
 
+        public virtual void LogProtocol()
+        {
+            
+        }
+
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
                 try {
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new SmtpAuthenticateCommand(BEContext);
+                        var authy = new SmtpAuthenticateCommand(BEContext, Client);
                         authy.ConnectAndAuthenticate ();
                     }
+                    Client.ProtocolLogger.ResetBuffers ();
                     var evt = ExecuteCommand ();
+                    LogProtocol ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
                     sm.PostEvent (evt);
                 } catch (OperationCanceledException) {
@@ -91,7 +98,7 @@ namespace NachoCore.SMTP
 
     public class SmtpAuthenticateCommand : SmtpCommand
     {
-        public SmtpAuthenticateCommand(IBEContext beContext) : base(beContext)
+        public SmtpAuthenticateCommand(IBEContext beContext, NcSmtpClient smtp) : base(beContext, smtp)
         {
         }
 
@@ -138,7 +145,7 @@ namespace NachoCore.SMTP
 
     public class SmtpSendMailCommand : SmtpCommand
     {
-        public SmtpSendMailCommand(IBEContext beContext, McPending pending) : base(beContext)
+        public SmtpSendMailCommand(IBEContext beContext, NcSmtpClient smtp, McPending pending) : base(beContext, smtp)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();

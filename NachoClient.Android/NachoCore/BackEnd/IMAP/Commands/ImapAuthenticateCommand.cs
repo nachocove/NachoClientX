@@ -10,7 +10,7 @@ namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
-        public ImapAuthenticateCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapAuthenticateCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
         }
 
@@ -20,7 +20,12 @@ namespace NachoCore.IMAP
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
                 Log.Info (Log.LOG_IMAP, "IMAP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
             }
+            bool reenableLogger = false;
             if (!Client.IsAuthenticated) {
+                if (Client.ProtocolLogger.Enabled ()) {
+                    reenableLogger = true;
+                    ProtocolLoggerStopAndPostTelemetry ();
+                }
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
                     // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
                     Client.AuthenticationMechanisms.Remove ("LOGIN");
@@ -31,6 +36,9 @@ namespace NachoCore.IMAP
                     Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                 }
                 Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
+            }
+            if (reenableLogger) {
+                ProtocolLoggerStart ();
             }
             var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
             if (cap != BEContext.ProtocolState.ImapServerCapabilities) {

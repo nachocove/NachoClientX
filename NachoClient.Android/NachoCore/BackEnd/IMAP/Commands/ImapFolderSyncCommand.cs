@@ -12,7 +12,7 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderSyncCommand : ImapCommand
     {
-        public ImapFolderSyncCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapFolderSyncCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
         }
 
@@ -24,13 +24,21 @@ namespace NachoCore.IMAP
             // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
             // skip the GetFolders if it's semi-recent (seconds).
             lock (Client.SyncRoot) {
-                if (Client.PersonalNamespaces.Count == 0) {
-                    Log.Error (Log.LOG_IMAP, "No personal namespaces");
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
+                try {
+                    ProtocolLoggerStart ();
+                    if (Client.PersonalNamespaces.Count == 0) {
+                        Log.Error (Log.LOG_IMAP, "No personal namespaces");
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
+                    }
+                    // TODO Should we loop over all namespaces here? Typically there appears to be only one.
+                    folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
+                } catch {
+                    throw;
+                } finally {
+                    ProtocolLoggerStopAndPostTelemetry ();
                 }
-                // TODO Should we loop over all namespaces here? Typically there appears to be only one.
-                folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
             }
+
 
             if (null == folderList) {
                 Log.Error (Log.LOG_IMAP, "Could not refresh folder list");

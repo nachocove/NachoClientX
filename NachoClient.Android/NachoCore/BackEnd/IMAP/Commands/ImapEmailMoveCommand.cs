@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailMoveCommand : ImapCommand
     {
-        public ImapEmailMoveCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -26,7 +26,7 @@ namespace NachoCore.IMAP
             McFolder dst = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.DestParentId);
             NcAssert.NotNull (dst);
 
-            MoveEmail (Client, emailMessage, src, dst, Cts.Token);
+            MoveEmail (emailMessage, src, dst, Cts.Token);
 
             // FIXME Need to do fixup stuff in pending. Are there API's for that?
             PendingResolveApply ((pending) => {
@@ -35,20 +35,27 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPMOVSUC");
         }
 
-        public static void MoveEmail(ImapClient Client, McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
+        public void MoveEmail(McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
         {
             UniqueId? newUid;
             lock (Client.SyncRoot) {
-                var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
-                var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-                NcAssert.Equals (folderGuid, src.ImapGuid);
-                var srcFolder = Client.GetFolder (src.ServerId, Token);
-                NcAssert.NotNull (srcFolder);
-                var dstFolder = Client.GetFolder (dst.ServerId, Token);
-                NcAssert.NotNull (dstFolder);
+                try {
+                    ProtocolLoggerStart ();
+                    var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
+                    var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
+                    NcAssert.Equals (folderGuid, src.ImapGuid);
+                    var srcFolder = Client.GetFolder (src.ServerId, Token);
+                    NcAssert.NotNull (srcFolder);
+                    var dstFolder = Client.GetFolder (dst.ServerId, Token);
+                    NcAssert.NotNull (dstFolder);
 
-                srcFolder.Open (FolderAccess.ReadWrite, Token);
-                newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
+                    srcFolder.Open (FolderAccess.ReadWrite, Token);
+                    newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
+                } catch {
+                    throw;
+                } finally {
+                    ProtocolLoggerStopAndPostTelemetry ();
+                }
             }
             if (null != newUid && newUid.HasValue && 0 != newUid.Value.Id) {
                 emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {

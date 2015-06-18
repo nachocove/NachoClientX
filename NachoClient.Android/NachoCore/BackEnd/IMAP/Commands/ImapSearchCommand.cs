@@ -12,7 +12,7 @@ namespace NachoCore.IMAP
 {
     public class ImapSearchCommand : ImapCommand
     {
-        public ImapSearchCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapSearchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -33,23 +33,26 @@ namespace NachoCore.IMAP
                 if (folder.ImapNoSelect) {
                     continue;
                 }
-                var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-                mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-                if (mailKitFolder.Count > 0) {
-                    IList<UniqueId> uids;
-                    if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
-                        uids = mailKitFolder.Search (query, orderBy);
-                    } else {
-                        uids = mailKitFolder.Search (query);
-                    }
-                    foreach (var uid in uids) {
-                        var serverId = ImapProtoControl.MessageServerId (folder, uid);
-                        var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
-                        if (null == email) {
-                            Log.Warn (Log.LOG_IMAP, "Could not find email for serverID {0}. Perhaps it hasn't synced yet?", serverId);
+                lock (Client.SyncRoot) {
+                    var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
+                    mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                    if (mailKitFolder.Count > 0) {
+                        IList<UniqueId> uids;
+                        if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
+                            uids = mailKitFolder.Search (query, orderBy);
                         } else {
-                            emailList.Add (new NcEmailMessageIndex (email.Id));
+                            uids = mailKitFolder.Search (query);
                         }
+                        foreach (var uid in uids) {
+                            var serverId = ImapProtoControl.MessageServerId (folder, uid);
+                            var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
+                            if (null == email) {
+                                Log.Warn (Log.LOG_IMAP, "Could not find email for serverID {0}. Perhaps it hasn't synced yet?", serverId);
+                            } else {
+                                emailList.Add (new NcEmailMessageIndex (email.Id));
+                            }
+                        }
+                        // TODO Should we post an indication to the UI for each searched folder?
                     }
                     Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ImapFolderNameRedacted());
                 }

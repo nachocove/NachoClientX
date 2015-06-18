@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
 {
     public class ImapFetchBodyCommand : ImapCommand
     {
-        public ImapFetchBodyCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             pending.MarkDispached ();
             PendingSingle = pending;

@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
 {
     public class ImapEmailDeleteCommand : ImapCommand
     {
-        public ImapEmailDeleteCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapEmailDeleteCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
@@ -24,20 +24,27 @@ namespace NachoCore.IMAP
             NcAssert.Equals (folderGuid, folder.ImapGuid);
             var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
             lock (Client.SyncRoot) {
-                IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
-                if (null == mailKitFolder) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
+                try {
+                    ProtocolLoggerStart ();
+                    IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
+                    if (null == mailKitFolder) {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
+                    }
+                    mailKitFolder.SetFlags (uid, MessageFlags.Deleted, true, Cts.Token);
+                    if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.UidPlus)) {
+                        var list = new List<UniqueId> ();
+                        list.Add (uid);
+                        mailKitFolder.Expunge (list, Cts.Token);
+                    }
+                    // TODO The set flags reply contains information we can use (S: * 5 FETCH (UID 8631 MODSEQ (948373) FLAGS (\Deleted))).
+                    // save it. That being said, if we increment the MODSEQ, then that will basically
+                    // force a resync (or at least a sync), which we don't want. Might want to check the modseq before our delete.
+                    UpdateImapSetting (mailKitFolder, folder);
+                } catch {
+                    throw;
+                } finally {
+                    ProtocolLoggerStopAndPostTelemetry ();
                 }
-                mailKitFolder.SetFlags (uid, MessageFlags.Deleted, true, Cts.Token);
-                if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.UidPlus)) {
-                    var list = new List<UniqueId> ();
-                    list.Add (uid);
-                    mailKitFolder.Expunge (list, Cts.Token);
-                }
-                // TODO The set flags reply contains information we can use (S: * 5 FETCH (UID 8631 MODSEQ (948373) FLAGS (\Deleted))).
-                // save it. That being said, if we increment the MODSEQ, then that will basically
-                // force a resync (or at least a sync), which we don't want. Might want to check the modseq before our delete.
-                UpdateImapSetting (mailKitFolder, folder);
             }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 

@@ -7,7 +7,7 @@ namespace NachoCore.IMAP
 {
     public class ImapDiscoverCommand : ImapCommand
     {
-        public ImapDiscoverCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapDiscoverCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
         }
         protected override Event ExecuteCommand ()

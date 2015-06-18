@@ -1519,6 +1519,12 @@
       <Link>NachoCore\Adapters\NcMdmConfig.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\NcImapClient.cs">
+      <Link>NachoCore\BackEnd\IMAP\NcImapClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\NcSmtpClient.cs">
+      <Link>NachoCore\BackEnd\SMTP\NcSmtpClient.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -9,14 +9,15 @@ using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
 using MailKit.Security;
+using System.Text;
 
 namespace NachoCore.IMAP
 {
     public class ImapCommand : NcCommand
     {
-        protected ImapClient Client { get; set; }
+        protected NcImapClient Client { get; set; }
 
-        public ImapCommand (IBEContext beContext, ImapClient imapClient) : base (beContext)
+        public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
             Client = imapClient;
         }
@@ -85,6 +86,43 @@ namespace NachoCore.IMAP
                 ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
+        }
+
+        protected void ProtocolLoggerStart()
+        {
+            Client.ProtocolLogger.Start ();
+        }
+        protected void ProtocolLoggerStop()
+        {
+            Client.ProtocolLogger.Stop ();
+        }
+
+        protected void ProtocolLoggerStopAndPostTelemetry ()
+        {
+            string ClassName = this.GetType ().Name + " ";
+
+            byte[] requestData;
+            byte[] responseData;
+            //Log.Info (Log.LOG_IMAP, "IMAP exchange\n{0}", Encoding.UTF8.GetString (Client.ProtocolLogger.GetCombinedBuffer ()));
+            Client.ProtocolLogger.Stop (out requestData, out responseData);
+            byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
+
+            if (null != requestData && requestData.Length > 0) {
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Request\n{1}", ClassName, Encoding.UTF8.GetString (requestData));
+                Telemetry.RecordImapEvent (true, Combine(ClassNameBytes, requestData));
+            }
+            if (null != responseData && responseData.Length > 0) {
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Response\n{1}", ClassName, Encoding.UTF8.GetString (responseData));
+                Telemetry.RecordImapEvent (false, Combine(ClassNameBytes, responseData));
+            }
+        }
+
+        private static byte[] Combine(byte[] first, byte[] second)
+        {
+            byte[] ret = new byte[first.Length + second.Length];
+            Buffer.BlockCopy(first, 0, ret, 0, first.Length);
+            Buffer.BlockCopy(second, 0, ret, first.Length, second.Length);
+            return ret;
         }
 
         protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
@@ -179,7 +217,7 @@ namespace NachoCore.IMAP
     public class ImapWaitCommand : ImapCommand
     {
         NcCommand WaitCommand;
-        public ImapWaitCommand (IBEContext dataSource, ImapClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
+        public ImapWaitCommand (IBEContext dataSource, NcImapClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
         {
             WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
         }
