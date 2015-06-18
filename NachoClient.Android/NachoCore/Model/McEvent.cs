@@ -134,7 +134,7 @@ namespace NachoCore.Model
             McEvent result = null;
             foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= now && x.StartTime < weekInFuture).OrderBy (x => x.StartTime)) {
                 var cal = evt.GetCalendarItemforEvent ();
-                if (null != cal && (NcMeetingStatus.MeetingCancelled == cal.MeetingStatus || NcMeetingStatus.ForwardedMeetingCancelled == cal.MeetingStatus)) {
+                if (null != cal && (NcMeetingStatus.MeetingOrganizerCancelled == cal.MeetingStatus || NcMeetingStatus.MeetingAttendeeCancelled == cal.MeetingStatus)) {
                     // A meeting that has been canceled.  Ignore it.
                     continue;
                 }

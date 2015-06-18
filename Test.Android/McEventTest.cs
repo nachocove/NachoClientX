@@ -147,12 +147,12 @@ namespace Test.Common
             var goodCal = new McCalendar () {
                 AccountId = 1,
                 MeetingStatusIsSet = true,
-                MeetingStatus = NcMeetingStatus.Meeting,
+                MeetingStatus = NcMeetingStatus.MeetingOrganizer,
             };
             var canceledCal = new McCalendar () {
                 AccountId = 1,
                 MeetingStatusIsSet = true,
-                MeetingStatus = NcMeetingStatus.MeetingCancelled,
+                MeetingStatus = NcMeetingStatus.MeetingOrganizerCancelled,
             };
             goodCal.Insert ();
             canceledCal.Insert ();

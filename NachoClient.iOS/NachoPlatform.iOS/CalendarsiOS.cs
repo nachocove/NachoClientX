@@ -106,6 +106,7 @@ namespace NachoPlatform
                 cal.DeviceCreation = (null == Event.CreationDate) ? cal.DeviceLastUpdate : Event.CreationDate.ToDateTime ();
                 cal.Subject = Event.Title;
                 cal.Location = Event.Location;
+                cal.UID = Event.CalendarItemExternalIdentifier;
 
                 cal.BusyStatusIsSet = true;
                 switch (Event.Availability) {
@@ -135,8 +136,7 @@ namespace NachoPlatform
                     cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
                 }
 
-                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Event.Notes ?? "");
-                cal.BodyId = body.Id;
+                cal.SetDescription (Event.Notes ?? "", McBody.BodyTypeEnum.PlainText_1);
 
                 cal.ResponseTypeIsSet = true;
                 switch (Event.Status) {

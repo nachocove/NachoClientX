@@ -476,16 +476,16 @@ namespace NachoCore.Model
 
     public enum NcMeetingStatus
     {
-        /// No attendees
+        /// An appointment.  Not a meeting.  No attendees.
         Appointment = 0,
-        /// The user is the meeting organizer
-        Meeting = 1,
-        /// The meeting was recieved from someone else
-        ForwardedMeeting = 3,
-        /// The user is the cancelled meeting's organizer
-        MeetingCancelled = 5,
-        /// The cancelled meeting was recieved from someone else
-        ForwardedMeetingCancelled = 7,
+        /// The event is a meeting and the user is the meeting organizer.
+        MeetingOrganizer = 1,
+        /// The event is a meeting and the user was invited to attend the meeting.
+        MeetingAttendee = 3,
+        /// The user is the organizer but the meeting has been cancelled.
+        MeetingOrganizerCancelled = 5,
+        /// The user was invited to attend the meeting but the meeting has been cancelled.
+        MeetingAttendeeCancelled = 7,
     }
     // Similar to NcResponseType
     public enum NcAttendeeStatus

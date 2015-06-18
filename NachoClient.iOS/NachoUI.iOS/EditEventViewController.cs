@@ -1119,7 +1119,7 @@ namespace NachoClient.iOS
                 c.ResponseRequestedIsSet = true;
             } else {
                 c.MeetingStatusIsSet = true;
-                c.MeetingStatus = NcMeetingStatus.Meeting;
+                c.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
             }

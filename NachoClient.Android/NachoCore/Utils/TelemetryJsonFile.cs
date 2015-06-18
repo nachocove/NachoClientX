@@ -64,8 +64,9 @@ namespace NachoCore.Utils
                 TimestampRegex = new Regex (@"""timestamp""\s*:\s*""([^""]+)""");
             }
             var match = TimestampRegex.Match (line);
-            NcAssert.True (match.Success);
-            NcAssert.True (2 == match.Groups.Count);
+            if (!match.Success || (2 != match.Groups.Count)) {
+                throw new FormatException (String.Format ("invalid timestamp in JSON {0}", line));
+            }
             return TelemetryJsonEvent.Timestamp (match.Groups [1].Value);
         }
 
@@ -249,7 +250,18 @@ namespace NachoCore.Utils
             foreach (var eventClass in eventClasses) {
                 var filePath = GetFilePath (eventClass);
                 if (File.Exists (filePath)) {
-                    WriteFiles.Add (eventClass, new TelemetryJsonFile (filePath));
+                    TelemetryJsonFile jsonFile = null;
+                    try {
+                        jsonFile = new TelemetryJsonFile (filePath);
+                    } catch (Exception e) {
+                        // JSON table is not initialized. Can log to console
+                        Console.WriteLine ("Fail to open JSON file {0} (exception={1})", filePath, e);
+                    }
+                    if (null != jsonFile) {
+                        WriteFiles.Add (eventClass, jsonFile);
+                    } else {
+                        File.Delete (filePath); // this file must be somehow in bad state. Delete it
+                    }
                 }
                 var readFilePaths = GetReadFile (filePath);
                 foreach (var readFilePath in readFilePaths) {

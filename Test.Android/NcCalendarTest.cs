@@ -375,7 +375,7 @@ namespace Test.Common
             Assert.AreNotEqual (NcRecurrenceType.YearlyOnDay, "0".ParseInteger<NcRecurrenceType> ());
             Assert.AreNotEqual (NcResponseType.Tentative, "3".ParseInteger<NcResponseType> ());
             Assert.AreNotEqual (NcSensitivity.Private, "3".ParseInteger<NcSensitivity> ());
-            Assert.AreNotEqual (NcMeetingStatus.MeetingCancelled, "0".ParseInteger<NcMeetingStatus> ());
+            Assert.AreNotEqual (NcMeetingStatus.MeetingOrganizerCancelled, "0".ParseInteger<NcMeetingStatus> ());
             Assert.AreNotEqual (NcDayOfWeek.Tuesday, "32".ParseInteger<NcDayOfWeek> ());
             Assert.AreNotEqual (NcCalendarType.UmalQuraReservedMustNotBeUsed, "15".ParseInteger<NcCalendarType> ());
             Assert.AreNotEqual (NcBusyStatus.Tentative, "2".ParseInteger<NcBusyStatus> ());
