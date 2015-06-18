@@ -161,7 +161,7 @@ namespace NachoPlatform
 
     public abstract class PlatformContactRecord
     {
-        public abstract string UniqueId { get; }
+        public abstract string ServerId { get; }
 
         public abstract DateTime LastUpdate { get; }
 
@@ -172,13 +172,22 @@ namespace NachoPlatform
     {
         // Can be called from any thread.
         IEnumerable<PlatformContactRecord> GetContacts ();
+
+        event EventHandler ChangeIndicator;
+
         // Must be called from UI thread.
         void AskForPermission (Action<bool> result);
+
+        NcResult Add (McContact contact);
+        NcResult Delete (string serverId);
+        NcResult Change (McContact contact);
+
+        bool AuthorizationStatus { get; }
     }
 
     public abstract class PlatformCalendarRecord
     {
-        public abstract string UniqueId { get; }
+        public abstract string ServerId { get; }
 
         public abstract DateTime LastUpdate { get; }
 
@@ -189,8 +198,17 @@ namespace NachoPlatform
     {
         // Can be called from any thread.
         IEnumerable<PlatformCalendarRecord> GetCalendars ();
+
+        event EventHandler ChangeIndicator;
+
         // Must be called from UI thread.
         void AskForPermission (Action<bool> result);
+
+        NcResult Add (McCalendar contact);
+        NcResult Delete (string serverId);
+        NcResult Change (McCalendar contact);
+
+        bool AuthorizationStatus { get; }
     }
 
     public enum PowerStateEnum
@@ -281,5 +299,10 @@ namespace NachoPlatform
     public interface IPlatformFileHandler
     {
         void MarkFileForSkipBackup (string filename);
+    }
+
+    public interface IPlatformMdmConfig
+    {
+        void ExtractValues ();
     }
 }

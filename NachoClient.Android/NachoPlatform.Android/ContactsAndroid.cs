@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -11,6 +12,8 @@ namespace NachoPlatform
         private const int SchemaRev = 0;
         private static volatile Contacts instance;
         private static object syncRoot = new Object ();
+
+        public event EventHandler ChangeIndicator;
 
         private Contacts ()
         {
@@ -36,6 +39,28 @@ namespace NachoPlatform
         public IEnumerable<PlatformContactRecord> GetContacts ()
         {
             return null;
+        }
+
+        public NcResult Add (McContact contact)
+        {
+            return NcResult.Error ("Android Contacts.Add not yet implemented.");
+        }
+
+        public NcResult Delete (string serverId)
+        {
+            return NcResult.Error ("Android Contacts.Delete not yet implemented.");
+        }
+
+        public NcResult Change (McContact contact)
+        {
+            return NcResult.Error ("Android Contacts.Change not yet implement.");
+        }
+
+        public bool AuthorizationStatus {
+            get {
+                // TODO Not yet implemented.
+                return false;
+            }
         }
     }
 }

@@ -19,9 +19,6 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { get; set; }
 
-        [Indexed]
-        public bool IsAwaitingCreate { get; set; }
-
         public const string AsSyncKey_Initial = "0";
         public const string AsRootServerId = "0";
 
@@ -63,6 +60,8 @@ namespace NachoCore.Model
         // Highest Modification Sequence Numbers.
         public long CurImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
         public long LastImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
+        // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+        public string ImapUidSet { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -107,6 +106,12 @@ namespace NachoCore.Model
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
+
+        public string ImapFolderNameRedacted()
+        {
+            return IsDistinguished ? ServerId : "User Folder";
+        }
+
         // "factory" to create folders.
         public static McFolder Create (int accountId, 
                                        bool isClientOwned,

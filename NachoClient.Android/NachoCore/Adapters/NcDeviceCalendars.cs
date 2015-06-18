@@ -10,41 +10,41 @@ namespace NachoCore
 {
     public class NcDeviceCalendars
     {
-        public static void Run ()
-        {
-            NcTask.Run (Process, "NcDeviceCalendars");
-        }
+        private McFolder Folder;
+        private IEnumerator<PlatformCalendarRecord> DeviceCalendars = null;
+        private IEnumerator<McMapFolderFolderEntry> Stale = null;
+        private List<McMapFolderFolderEntry> Present;
+        private int InsertCount = 0, UpdateCount = 0, PresentCount = 0;
 
-        static bool running;
-        static object lockObject = new object ();
-
-        private static void Process ()
+        public NcDeviceCalendars ()
         {
-            lock (lockObject) {
-                if (running) {
-                    return;
-                }
-                running = true;
-            }
-            try {
-                ProcessCalendars ();
-            } finally {
-                running = false;
-            }
-        }
-
-        private static void ProcessCalendars ()
-        {
-            var folder = McFolder.GetDeviceCalendarsFolder ();
-            NcAssert.NotNull (folder);
             var deviceCalendars = Calendars.Instance.GetCalendars ();
             if (null == deviceCalendars) {
                 return;
             }
-            Func<PlatformCalendarRecord, McCalendar> inserter = (deviceCalendar) => {
+            DeviceCalendars = deviceCalendars.GetEnumerator ();
+            Folder = McFolder.GetDeviceCalendarsFolder ();
+            Present = McMapFolderFolderEntry.QueryByFolderIdClassCode (Folder.AccountId, Folder.Id, 
+                McAbstrFolderEntry.ClassCodeEnum.Calendar);
+        }
+
+        public bool ProcessNextCal ()
+        {
+            if (null == DeviceCalendars) {
+                return true;
+            }
+            if (!DeviceCalendars.MoveNext ()) {
+                return true;
+            }
+            var deviceCalendar = DeviceCalendars.Current;
+            // defensive.
+            if (null == deviceCalendar) {
+                return true;
+            }
+            Func<PlatformCalendarRecord, McCalendar> inserter = (record) => {
                 NcResult result;
                 try {
-                    result = deviceCalendar.ToMcCalendar ();
+                    result = record.ToMcCalendar ();
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_SYS, "Exception during ToMcCalendar: {0}", ex.ToString ());
                     return null;
@@ -54,59 +54,77 @@ namespace NachoCore
                     NcAssert.NotNull (calendar);
                     NcModel.Instance.RunInTransaction (() => {
                         calendar.Insert ();
-                        folder.Link (calendar);
+                        Folder.Link (calendar);
                     });
                     return calendar;
                 } else {
-                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", deviceCalendar.UniqueId);
+                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", deviceCalendar.ServerId);
                     return null;
                 }
             };
-            List<McMapFolderFolderEntry> present = McMapFolderFolderEntry.QueryByFolderIdClassCode (folder.AccountId, folder.Id, 
-                                                       McAbstrFolderEntry.ClassCodeEnum.Calendar);
-            foreach (var deviceCalendar in deviceCalendars) {
-                // Use the TPL like iOS GCD here. Schedule chunks.
-                var task = NcTask.Run (() => {
-                    var existing = McCalendar.QueryByDeviceUniqueId (deviceCalendar.UniqueId);
-                    if (null == existing) {
-                        // If missing, insert it.
-                        inserter.Invoke (deviceCalendar);
-                    } else {
-                        var count = present.RemoveAll (x => x.FolderEntryId == existing.Id);
-                        if (1 != count) {
-                            Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.UniqueId, existing.Id);
-                        }
-                        // If present and stale, update it.
-                        if (default(DateTime) == deviceCalendar.LastUpdate ||
-                            default(DateTime) == existing.DeviceLastUpdate ||
-                            deviceCalendar.LastUpdate > existing.DeviceLastUpdate)
-                        {
-                            NcModel.Instance.RunInTransaction (() => {
-                                if (null != inserter.Invoke (deviceCalendar)) {
-                                    folder.Unlink (existing);
-                                    existing.Delete ();
-                                }
-                            });
-                        }
-                    }
-                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
-                }, "NcDeviceCalendars:Process", true);
-                task.Wait (NcTask.Cts.Token);
-                NcTask.Cts.Token.ThrowIfCancellationRequested ();
-            }
-            // If it isn't in the list of device calendars, it needs to be removed.
-            foreach (var map in present) {
-                // Use the TPL like iOS GCD here. Schedule chunks.
-                var task = NcTask.Run (() => {
+
+            var existing = McCalendar.QueryByServerId<McCalendar> (McAccount.GetDeviceAccount ().Id, deviceCalendar.ServerId);
+            if (null == existing) {
+                // If missing, insert it.
+                inserter.Invoke (deviceCalendar);
+                ++ InsertCount;
+            } else {
+                var count = Present.RemoveAll (x => x.FolderEntryId == existing.Id);
+                if (1 != count) {
+                    Log.Error (Log.LOG_SYS, "RemoveAll found {0} for {1}/{2}", count, deviceCalendar.ServerId, existing.Id);
+                }
+                // If present and stale, update it.
+                if (default(DateTime) == deviceCalendar.LastUpdate ||
+                    default(DateTime) == existing.DeviceLastUpdate ||
+                    deviceCalendar.LastUpdate > existing.DeviceLastUpdate)
+                {
                     NcModel.Instance.RunInTransaction (() => {
-                        folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
-                        McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
+                        Folder.Unlink (existing);
+                        existing.Delete ();
+                        if (null != inserter.Invoke (deviceCalendar)) {
+                            ++ UpdateCount;
+                        } else {
+                            Log.Error (Log.LOG_SYS, "Unable to insert device calendar {0}", deviceCalendar.ServerId);
+                        }
                     });
-                    NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
-                }, "NcDeviceCalendars:Delete", true);
-                task.Wait (NcTask.Cts.Token);
-                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
             }
+            return false;
+        }
+
+        public bool RemoveNextStale ()
+        {
+            if (null == Stale) {
+                if (null == Present) {
+                    return true;
+                }
+                Stale = Present.GetEnumerator ();
+                PresentCount = Present.Count;
+            }
+            if (!Stale.MoveNext ()) {
+                return true;
+            }
+            var map = Stale.Current;
+            var cal = McCalendar.QueryById<McCalendar> (map.FolderEntryId);
+            if (null == cal) {
+                Log.Error (Log.LOG_SYS, "RemoveNextStale: can't find cal");
+            } else {
+                if (cal.IsAwaitingCreate) {
+                    return false;
+                }
+            }
+            NcModel.Instance.RunInTransaction (() => {
+                Folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
+                McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
+            });
+            return false;
+        }
+
+        public void Report ()
+        {
+            NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
+            Log.Info (Log.LOG_SYS, "NcDeviceCalendars: {0} inserted, {1} updated, cleaning up {2} dead links.", 
+                InsertCount, UpdateCount, PresentCount);
         }
     }
 }

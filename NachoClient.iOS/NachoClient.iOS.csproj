@@ -33,6 +33,7 @@
         <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
@@ -59,6 +60,7 @@
         <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
@@ -240,6 +242,7 @@
     <Folder Include="NachoCore\BackEnd\IMAP\" />
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
+    <Folder Include="NachoCore\BackEnd\Device\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1509,6 +1512,13 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration29.cs">
       <Link>NachoCore\Model\Migration\NcMigration29.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\Device\DeviceProtoControl.cs">
+      <Link>NachoCore\BackEnd\Device\DeviceProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcMdmConfig.cs">
+      <Link>NachoCore\Adapters\NcMdmConfig.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2198,7 +2208,6 @@
     <BundleResource Include="Resources\Bootscreen-5%406x.png" />
     <BundleResource Include="Resources\Loginscreen-1%406x.png" />
     <BundleResource Include="Resources\Loginscreen-2%406x.png" />
-    <BundleResource Include="Resources\Loginscreen-6%406x.png" />
     <BundleResource Include="Resources\Loginscreen-BG%406x.png" />
     <BundleResource Include="Resources\Loginscreen-Mail%406x.png" />
     <BundleResource Include="Resources\Slide02BG%406x.png" />
@@ -2398,6 +2407,7 @@
     <BundleResource Include="Resources\avatar-imap%403x.png" />
     <BundleResource Include="Resources\avatar-imap%404x.png" />
     <BundleResource Include="Resources\avatar-imap%406x.png" />
+    <BundleResource Include="Resources\Loginscreen-3%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

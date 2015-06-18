@@ -73,7 +73,8 @@ def main():
     info_plist.replace('CFBundleShortVersionString', version)
     info_plist.replace('CFBundleDisplayName', display_name)
     if release_dir is not None:
-        src_path = os.path.join(release_dir, 'GoogleService-Info.plist')
+        google_path = '%s/Resources/%s' % (project_dir, release_dir)
+        src_path = os.path.join(google_path, 'GoogleService-Info.plist')
         dst_path = os.path.join(project_dir, 'GoogleService-Info.plist')
         shutil.copyfile(src_path, dst_path)
     google_plist_path = os.path.join(project_dir, 'GoogleService-Info.plist')

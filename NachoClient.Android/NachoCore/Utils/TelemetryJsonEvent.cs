@@ -19,6 +19,8 @@ namespace NachoCore.Utils
         public string user;
         public string timestamp;
         public string event_type;
+        [JsonIgnore]
+        public Action callback;
 
         public TelemetryJsonEvent ()
         {
@@ -41,15 +43,26 @@ namespace NachoCore.Utils
 
         public DateTime Timestamp ()
         {
-            NcAssert.True (23 == timestamp.Length);
-            int year = int.Parse (timestamp.Substring (0, 4));
-            int month = int.Parse (timestamp.Substring (5, 2));
-            int day = int.Parse (timestamp.Substring (8, 2));
-            int hour = int.Parse (timestamp.Substring (11, 2));
-            int minute = int.Parse (timestamp.Substring (14, 2));
-            int second = int.Parse (timestamp.Substring (17, 2));
-            int millisecond = int.Parse (timestamp.Substring (20, 3));
-            return new DateTime (year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
+            return Timestamp (timestamp);
+        }
+
+        public static DateTime Timestamp (string timestamp)
+        {
+            if (23 != timestamp.Length) {
+                throw new FormatException (timestamp);
+            }
+            try {
+                int year = int.Parse (timestamp.Substring (0, 4));
+                int month = int.Parse (timestamp.Substring (5, 2));
+                int day = int.Parse (timestamp.Substring (8, 2));
+                int hour = int.Parse (timestamp.Substring (11, 2));
+                int minute = int.Parse (timestamp.Substring (14, 2));
+                int second = int.Parse (timestamp.Substring (17, 2));
+                int millisecond = int.Parse (timestamp.Substring (20, 3));
+                return new DateTime (year, month, day, hour, minute, second, millisecond, DateTimeKind.Utc);
+            } catch {
+                throw new FormatException (timestamp);
+            }
         }
     }
 

@@ -12,8 +12,7 @@ namespace NachoCore.Utils
 {
     // Model of use is that it is instantiated with an
     // "owner" (aka delegate in the Obj-C sense of the word).
-    // Signature of event handling callback.
-    public delegate void Cb ();
+
     // This is the list of must-support events (not-ActiveSync specific).
     // Each user starts creating event codes at Last+1.
     // Types of failure:
@@ -60,7 +59,7 @@ namespace NachoCore.Utils
     {
         public uint State { set; get; }
 
-        public Cb Act { set; get; }
+        public Action Act { set; get; }
 
         public uint Event { set; get; }
 
@@ -122,13 +121,13 @@ namespace NachoCore.Utils
 
         public uint FireEventCode { set; get; }
 
-        public Cb Action { set; get; }
+        public Action Action { set; get; }
 
         public object Arg { set; get; }
 
         public string Message { set; get; }
 
-        public Cb StateChangeIndication { set; get; }
+        public Action StateChangeIndication { set; get; }
 
         private string PseudoKlass;
         private Dictionary<string,uint> EventCode;

@@ -65,6 +65,14 @@ namespace NachoCore.Model
         public const AccountCapabilityEnum SmtpCapabilities = (
                                                                   AccountCapabilityEnum.EmailSender
                                                               );
+
+        public const AccountCapabilityEnum DeviceCapabilities = (
+                                                                    AccountCapabilityEnum.CalReader |
+                                                                    AccountCapabilityEnum.CalWriter |
+                                                                    AccountCapabilityEnum.ContactReader |
+                                                                    AccountCapabilityEnum.ContactWriter
+                                                                );
+            
         
         // This type is stored in the db; add to the end
         [Flags]
@@ -111,24 +119,13 @@ namespace NachoCore.Model
             AccountType = value;
             switch (value) {
             case AccountTypeEnum.Exchange:
-                AccountCapability = (
-                    AccountCapabilityEnum.EmailReaderWriter |
-                    AccountCapabilityEnum.EmailSender |
-                    AccountCapabilityEnum.CalReader |
-                    AccountCapabilityEnum.CalWriter |
-                    AccountCapabilityEnum.ContactReader |
-                    AccountCapabilityEnum.ContactWriter);
+                AccountCapability = ActiveSyncCapabilities;
                 break;
             case AccountTypeEnum.Device:
-                    // FIXME - need to support full contact/cal access thru BE.
-                AccountCapability = (
-                    AccountCapabilityEnum.CalReader |
-                    AccountCapabilityEnum.ContactReader);
+                AccountCapability = DeviceCapabilities;
                 break;
             case AccountTypeEnum.IMAP_SMTP:
-                AccountCapability = (
-                    AccountCapabilityEnum.EmailReaderWriter |
-                    AccountCapabilityEnum.EmailSender);
+                AccountCapability = (ImapCapabilities | SmtpCapabilities);
                 break;
             default:
                 NcAssert.CaseError (value.ToString ());
@@ -162,7 +159,7 @@ namespace NachoCore.Model
                 Protocols = McProtocolState.ProtocolEnum.ActiveSync;
                 break;
             case AccountTypeEnum.Device:
-                // FIXME: Do we need anything here?
+                // No protocols.
                 break;
             default:
                 NcAssert.CaseError (value.ToString ());
@@ -195,6 +192,41 @@ namespace NachoCore.Model
                 NcAssert.CaseError (value.ToString ());
                 return AccountTypeEnum.Device;
             }
+        }
+
+        public static TimeSpan SyncTimeSpan (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        {
+            switch (code) {
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
+                return TimeSpan.Zero;
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
+                return TimeSpan.FromDays (1);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeDays_2:
+                return TimeSpan.FromDays (3);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneWeek_3:
+                return TimeSpan.FromDays (7);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
+                return TimeSpan.FromDays (14);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
+                return TimeSpan.FromDays (30);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
+                return TimeSpan.FromDays (90);
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
+                return TimeSpan.FromDays (180);
+            default:
+                NcAssert.CaseError ();
+                return TimeSpan.Zero;
+            }
+        }
+
+        public TimeSpan DaysSyncEmailSpan()
+        {
+            return SyncTimeSpan (DaysToSyncEmail);
+        }
+
+        public TimeSpan DaysSyncCalendar()
+        {
+            return SyncTimeSpan (DaysToSyncCalendar);
         }
 
         // This is set as a side effect of setting AccountService.

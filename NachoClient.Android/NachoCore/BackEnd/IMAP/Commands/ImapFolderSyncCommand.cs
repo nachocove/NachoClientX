@@ -94,21 +94,22 @@ namespace NachoCore.IMAP
                     added_or_changed = true;
                     // TODO do ApplyCommand stuff here
                 }
-                if (null == folder) {
-                    Log.Error (Log.LOG_IMAP, "Could not look up Db folder");
+                if (null != folder) {
+                    if (UpdateImapSetting (mailKitFolder, folder)) {
+                        // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
+                        // Strategy will notice that modseq and/or noselect etc has changed, and resync.
+                        Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
+                    }
+                } else {
+                    Log.Error (Log.LOG_IMAP, "No folder returned from CreateOrUpdateFolder!");
                     throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCDB"), NcResult.WhyEnum.NotSpecified);
-                }
-                if (UpdateImapSetting(mailKitFolder, folder)) {
-                    // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
-                    // Strategy will notice that modseq and/or noselect etc has changed, and resync.
-                    Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.IsDistinguished ? folder.ServerId : "User Folder");
                 }
             }
 
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
             foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
                 if (!foldernames.Contains (folder.ServerId)) {
-                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server", folder.IsDistinguished ? folder.ServerId : "User Folder");
+                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server", folder.ImapFolderNameRedacted());
                     // TODO Do applyCommand stuff here
                     // Delete folder and everything in and under it.
                     folder.Delete ();

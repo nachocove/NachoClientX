@@ -423,9 +423,9 @@ namespace NachoClient.iOS
             if (null == Server) {
                 message = messagePrefix + " for '" + theAccount.Account.EmailAddr + "'.";
             } else if (null == Server.UserSpecifiedServerName) {
-                message = messagePrefix + "'" + Server.Host + "'.";
+                message = messagePrefix + " '" + Server.Host + "'.";
             } else {
-                message = messagePrefix + "'" + Server.UserSpecifiedServerName + "'.";
+                message = messagePrefix + " '" + Server.UserSpecifiedServerName + "'.";
             }
             return message;
         }

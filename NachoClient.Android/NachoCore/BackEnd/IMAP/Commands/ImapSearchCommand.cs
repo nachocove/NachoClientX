@@ -51,7 +51,7 @@ namespace NachoCore.IMAP
                             emailList.Add (new NcEmailMessageIndex (email.Id));
                         }
                     }
-                    Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.IsDistinguished ? folder.ServerId : "User Folder");
+                    Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ImapFolderNameRedacted());
                 }
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);

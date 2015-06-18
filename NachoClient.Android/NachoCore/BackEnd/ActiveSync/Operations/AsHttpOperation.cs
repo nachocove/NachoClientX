@@ -62,6 +62,7 @@ namespace NachoCore.ActiveSync
         private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
         private const string ContentTypeMail = "message/rfc822";
         private const string ContentTypeXml = "text/xml";
+        private const string HeaderLocation = "Location";
         private const string HeaderRetryAfter = "Retry-After";
         private const string HeaderXMsRp = "X-MS-RP";
         private const string HeaderXMsLocation = "X-MS-Location";
@@ -719,6 +720,21 @@ namespace NachoCore.ActiveSync
             case HttpStatusCode.Found:
                 ReportCommResult (ServerUri.Host, false);
                 Owner.ResolveAllDeferred ();
+                if (response.Headers.Contains (HeaderLocation)) {
+                    var redirUri = new Uri (response.Headers.GetValues (HeaderLocation).First ());
+                    if (!redirUri.IsHttps ()) {
+                        // Don't be tricked into accepting a non-HTTPS URI.
+                        return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP302NOSSL");
+                    }
+                    if (redirUri.Query.Contains ("TARGET")) {
+                        // We can bet this is SAML.
+                        var cred = BEContext.Cred;
+                        cred.CredType = McCred.CredTypeEnum.SAML;
+                        cred.RedirectUrl = redirUri.ToString ();
+                        cred.DoneSubstring = BEContext.Server.Path;
+                        return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP302SAML");
+                    }
+                }
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 302 with X-MS-RP");
                     McFolder.UpdateResetSyncState (BEContext.Account.Id);

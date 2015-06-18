@@ -61,12 +61,13 @@ namespace NachoCore.Utils
             // Extract the timestamp. Since they can be different type of JSON object,
             // just use regex to grab the tick value.
             if (null == TimestampRegex) {
-                TimestampRegex = new Regex (@"""timestamp""\s*:\s*([0-9]+)");
+                TimestampRegex = new Regex (@"""timestamp""\s*:\s*""([^""]+)""");
             }
             var match = TimestampRegex.Match (line);
-            NcAssert.True (match.Success);
-            NcAssert.True (2 == match.Groups.Count);
-            return new DateTime (long.Parse (match.Groups [1].Value), DateTimeKind.Utc);
+            if (!match.Success || (2 != match.Groups.Count)) {
+                throw new FormatException (String.Format ("invalid timestamp in JSON {0}", line));
+            }
+            return TelemetryJsonEvent.Timestamp (match.Groups [1].Value);
         }
 
         public bool Add (TelemetryJsonEvent jsonEvent)
@@ -149,6 +150,7 @@ namespace NachoCore.Utils
 
         protected Dictionary<TelemetryEventClass, TelemetryJsonFile> WriteFiles;
         protected SortedSet<string> ReadFiles;
+        protected Dictionary<string, Action> PendingCallbacks;
         protected object LockObj;
 
         protected static DateTime DefaultGetUtcNow ()
@@ -242,12 +244,24 @@ namespace NachoCore.Utils
             LockObj = new object ();
             WriteFiles = new Dictionary<TelemetryEventClass, TelemetryJsonFile> ();
             ReadFiles = new SortedSet<string> ();
+            PendingCallbacks = new Dictionary<string, Action> ();
 
             var eventClasses = AllEventClasses ();
             foreach (var eventClass in eventClasses) {
                 var filePath = GetFilePath (eventClass);
                 if (File.Exists (filePath)) {
-                    WriteFiles.Add (eventClass, new TelemetryJsonFile (filePath));
+                    TelemetryJsonFile jsonFile = null;
+                    try {
+                        jsonFile = new TelemetryJsonFile (filePath);
+                    } catch (Exception e) {
+                        // JSON table is not initialized. Can log to console
+                        Console.WriteLine ("Fail to open JSON file {0} (exception={1})", filePath, e);
+                    }
+                    if (null != jsonFile) {
+                        WriteFiles.Add (eventClass, jsonFile);
+                    } else {
+                        File.Delete (filePath); // this file must be somehow in bad state. Delete it
+                    }
                 }
                 var readFilePaths = GetReadFile (filePath);
                 foreach (var readFilePath in readFilePaths) {
@@ -307,7 +321,7 @@ namespace NachoCore.Utils
                         doFinalize = true;
                     }
                     if (doFinalize) {
-                        Finalize (eventClass);
+                        Finalize (eventClass, jsonEvent.callback);
                     }
                 }
                 return true;
@@ -325,7 +339,7 @@ namespace NachoCore.Utils
             return Path.Combine (dirName, newFileName);
         }
 
-        protected void Finalize (TelemetryEventClass eventClass)
+        protected void Finalize (TelemetryEventClass eventClass, Action callback = null)
         {
             lock (LockObj) {
                 TelemetryJsonFile writeFile;
@@ -345,6 +359,9 @@ namespace NachoCore.Utils
                 File.Move (writeFile.FilePath, newFilePath);
 
                 ReadFiles.Add (newFilePath);
+                if (null != callback) {
+                    PendingCallbacks.Add (newFilePath, callback);
+                }
             }
         }
 
@@ -367,14 +384,16 @@ namespace NachoCore.Utils
             }
         }
 
-        public void Remove (string path)
+        public void Remove (string path, out Action callback)
         {
             lock (LockObj) {
+                callback = null;
                 try {
                     File.Delete (path);
                 } catch (IOException) {
                 }
                 ReadFiles.Remove (path);
+                PendingCallbacks.TryGetValue (path, out callback);
             }
         }
     }
