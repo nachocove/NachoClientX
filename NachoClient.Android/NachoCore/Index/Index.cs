@@ -25,6 +25,7 @@ namespace NachoCore.Index
         private Mutex Lock;
         private IndexWriter Writer;
         private IndexReader Reader;
+        private bool Deleted;
 
         public bool Dirty { protected set; get; }
 
@@ -86,6 +87,10 @@ namespace NachoCore.Index
             if (!Lock.WaitOne (KTimeoutMsec)) {
                 return false;
             }
+            if (Deleted) {
+                Lock.ReleaseMutex ();
+                return false;
+            }
             if (null != Writer) {
                 throw new ArgumentException ("writer already exists");
             }
@@ -145,6 +150,10 @@ namespace NachoCore.Index
             if (!Lock.WaitOne (KTimeoutMsec)) {
                 return false;
             }
+            if (Deleted) {
+                Lock.ReleaseMutex ();
+                return false;
+            }
             if (null != Reader) {
                 throw new ArgumentException ("reader already exists");
             }
@@ -164,6 +173,16 @@ namespace NachoCore.Index
             Reader.Dispose ();
             Reader = null;
             Lock.ReleaseMutex ();
+        }
+
+        public bool MarkForDeletion ()
+        {
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return false;
+            }
+            Deleted = true;
+            Lock.ReleaseMutex ();
+            return true;
         }
 
         public List<MatchedItem> Search (string queryString, int maxMatches = 1000)
