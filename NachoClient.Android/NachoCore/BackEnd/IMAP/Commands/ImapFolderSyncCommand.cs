@@ -102,6 +102,7 @@ namespace NachoCore.IMAP
                     }
                 } else {
                     Log.Error (Log.LOG_IMAP, "No folder returned from CreateOrUpdateFolder!");
+                    throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCDB"), NcResult.WhyEnum.NotSpecified);
                 }
             }
 

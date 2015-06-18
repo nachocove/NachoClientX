@@ -34,7 +34,10 @@ namespace NachoCore.IMAP
             };
             lock (Client.SyncRoot) {
                 mailKitFolder = Client.GetFolder (IdleFolder.ServerId, Cts.Token);
-                NcAssert.NotNull (mailKitFolder);
+                if (null == mailKitFolder) {
+                    Log.Error (Log.LOG_IMAP, "Could not get folder on server");
+                    throw new NcImapCommandFailException (Event.Create ((uint)SmEvt.E.HardFail, "IMAPIDLEGET"), NcResult.WhyEnum.MissingOnServer);
+                }
             }
             try {
                 mailKitFolder.MessagesArrived += messageHandler;

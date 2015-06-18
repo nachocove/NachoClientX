@@ -28,12 +28,16 @@ namespace NachoCore.IMAP
                     pending.ResolveAsSuccess (BEContext.ProtoControl, result);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
-            } else {
-                NcAssert.True (result.isError ());
+            } else if (result.isError ()) {
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
+            } else {
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (string.Format ("Unexpected NcResult {0}", result.ToString ())));
+                });
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD1");
             }
         }
 
@@ -61,8 +65,7 @@ namespace NachoCore.IMAP
         {
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             NcResult result;
-            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
-            var mailKitFolder = GetOpenMailkitFolder (folder);
+            var mailKitFolder = GetOpenMailkitFolder (pending.ParentId);
 
             MimeMessage imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
             if (null == imapbody) {
