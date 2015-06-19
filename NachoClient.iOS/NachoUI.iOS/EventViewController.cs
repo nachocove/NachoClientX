@@ -138,6 +138,9 @@ namespace NachoClient.iOS
             EVENT_NOTES_TEXT_VIEW_TAG = 120,
             EVENT_NOTE_TITLE_TAG = 121,
             EVENT_NOTES_DETAIL_TAG = 122,
+
+            EVENT_CALENDAR_TITLE_TAG = 123,
+            EVENT_CALENDAR_DETAIL_TAG = 124,
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -433,6 +436,11 @@ namespace NachoClient.iOS
 
             yOffset += CELL_HEIGHT;
 
+            Util.AddTextLabelWithImageView (yOffset, "CALENDAR", "event-when", TagType.EVENT_CALENDAR_TITLE_TAG, eventCardView);
+            yOffset += 16 + 6;
+            Util.AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_CALENDAR_DETAIL_TAG, eventCardView);
+            yOffset += 20 + 20;
+
             cancelMeetingSeparatorLine = Util.AddHorizontalLine (0, yOffset, EVENT_CARD_WIDTH, A.Color_NachoBorderGray);
             eventCardView.AddSubview (cancelMeetingSeparatorLine);
 
@@ -709,6 +717,22 @@ namespace NachoClient.iOS
             eventNotes.LineBreakMode = UILineBreakMode.WordWrap;
             eventNotes.Frame = new CGRect (42, 22, EVENT_CARD_WIDTH - 60, 0);
             eventNotes.SizeToFit ();
+
+            var calendarName = (UILabel)View.ViewWithTag ((int)TagType.EVENT_CALENDAR_DETAIL_TAG);
+            string accountName = account.DisplayName;
+            string folderName = "(Unknown)";
+            var folderMapEntry = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (root.AccountId, root.Id, root.GetClassCode ()).FirstOrDefault ();
+            if (null != folderMapEntry) {
+                var folder = McFolder.QueryById<McFolder> (folderMapEntry.FolderId);
+                if (null != folder) {
+                    folderName = folder.DisplayName;
+                }
+            }
+            if (string.IsNullOrEmpty(accountName) || accountName == folderName) {
+                calendarName.Text = folderName;
+            } else {
+                calendarName.Text = string.Format ("{0} : {1}", accountName, folderName);
+            }
 
             // Cancel meeting button.  Only visible for recurring meetings owned by the user.
             if (isOrganizer && isRecurring && hasAttendees) {
@@ -999,6 +1023,9 @@ namespace NachoClient.iOS
             }
             View.ViewWithTag ((int)TagType.EVENT_NOTES_TEXT_VIEW_TAG).Frame = new CGRect (0, internalYOffset, EVENT_CARD_WIDTH, eventNotesViewHeight);
             internalYOffset += eventNotesViewHeight;
+
+            AdjustViewLayout (TagType.EVENT_CALENDAR_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
+            AdjustViewLayout (TagType.EVENT_CALENDAR_DETAIL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
 
             if (isOrganizer && isRecurring && hasAttendees) {
                 AdjustViewLayout (cancelMeetingSeparatorLine, 0, ref internalYOffset, 0);
