@@ -302,11 +302,13 @@ namespace NachoCore.Model
 
         protected void ReadScoreStates ()
         {
-            DbScoreStates = McEmailAddressScore.QueryByParentId (Id);
-            if (null == DbScoreStates) {
-                Log.Error (Log.LOG_BRAIN, "fail to find score states for email address {0}. Create one", Id);
-                InsertScoreStates ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                DbScoreStates = McEmailAddressScore.QueryByParentId (Id);
+                if (null == DbScoreStates) {
+                    Log.Error (Log.LOG_BRAIN, "fail to find score states for email address {0}. Create one", Id);
+                    InsertScoreStates ();
+                }
+            });
         }
 
         protected void DeleteScoreStates ()
