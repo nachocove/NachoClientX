@@ -22,7 +22,7 @@ projects = {
             'identity_pool_id': 'us-east-1:b3323849-deda-440a-a225-03043e591ec7',
             'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_dev_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': 'c6ae00d0-e259-4bfc-903d-5b6bc62cd651-dev-telemetry',
+            's3_bucket': 'c6ae00d0-dev-t3-',
         },
         'pinger': {
             'hostname': 'pinger.officetaco.com',
@@ -49,7 +49,7 @@ projects = {
             'identity_pool_id': 'us-east-1:667b2a39-05d8-4035-a078-2f5afb82a6b8',
             'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_alpha_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
-            's3_bucket': 'd3daf3ef-2391-41e6-ba37-3b297191751a-alpha-telemetry',
+            's3_bucket': 'd3daf3ef-alpha-t3-',
         },
         'pinger': {
             'hostname': 'alphapinger.officetaco.com',
