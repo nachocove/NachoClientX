@@ -13,6 +13,12 @@ namespace NachoCore.IMAP
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
@@ -24,24 +30,16 @@ namespace NachoCore.IMAP
 
             IMailFolder encapsulatingFolder;
             IMailFolder mailKitFolder;
-            lock (Client.SyncRoot) {
-                try {
-                    if (McFolder.AsRootServerId != PendingSingle.DestParentId) {
-                        encapsulatingFolder = Client.GetFolder (PendingSingle.DestParentId, Cts.Token);
-                    } else {
-                        encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
-                    }
-
-                    mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-                    NcAssert.NotNull (mailKitFolder);
-                    mailKitFolder.Open (FolderAccess.ReadWrite, Cts.Token);
-                    mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
-                } catch {
-                    throw;
-                } finally {
-                    ProtocolLoggerStopAndPostTelemetry ();
-                }
+            if (McFolder.AsRootServerId != PendingSingle.DestParentId) {
+                encapsulatingFolder = Client.GetFolder (PendingSingle.DestParentId, Cts.Token);
+            } else {
+                encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
             }
+
+            mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
+            NcAssert.NotNull (mailKitFolder);
+            mailKitFolder.Open (FolderAccess.ReadWrite, Cts.Token);
+            mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
 
             if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, out folder)) {
                 UpdateImapSetting (mailKitFolder, folder);

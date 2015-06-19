@@ -7,13 +7,24 @@ using MailKit;
 using NachoCore;
 using NachoCore.Model;
 using MailKit.Net.Imap;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.IMAP
 {
     public class ImapFolderSyncCommand : ImapCommand
     {
+        private List<Regex> RegexList;
+
         public ImapFolderSyncCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
+            RedactProtocolLogFunc = RedactProtocolLog;
+            RegexList = new List<Regex> ();
+            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+)(?<space1>\s)(?<redact>.*)$", NcMailKitProtocolLogger.rxOptions));
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
         }
 
         protected override Event ExecuteCommand ()
@@ -23,21 +34,12 @@ namespace NachoCore.IMAP
             // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
             // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
             // skip the GetFolders if it's semi-recent (seconds).
-            lock (Client.SyncRoot) {
-                try {
-                    ProtocolLoggerStart ();
-                    if (Client.PersonalNamespaces.Count == 0) {
-                        Log.Error (Log.LOG_IMAP, "No personal namespaces");
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
-                    }
-                    // TODO Should we loop over all namespaces here? Typically there appears to be only one.
-                    folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
-                } catch {
-                    throw;
-                } finally {
-                    ProtocolLoggerStopAndPostTelemetry ();
-                }
+            if (Client.PersonalNamespaces.Count == 0) {
+                Log.Error (Log.LOG_IMAP, "No personal namespaces");
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
             }
+            // TODO Should we loop over all namespaces here? Typically there appears to be only one.
+            folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
 
 
             if (null == folderList) {

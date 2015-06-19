@@ -9,12 +9,14 @@ using MailKit.Security;
 using MimeKit;
 using MailKit;
 using System.IO;
+using System.Text;
 
 namespace NachoCore.SMTP
 {
     public abstract class SmtpCommand : NcCommand
     {
         public NcSmtpClient Client { get; set; }
+        protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
         public class SmtpCommandFailure : Exception {
             public SmtpCommandFailure (string message) : base (message)
@@ -25,6 +27,7 @@ namespace NachoCore.SMTP
         public SmtpCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext)
         {
             Client = smtp;
+            RedactProtocolLogFunc = null;
         }
 
         // MUST be overridden by subclass.
@@ -34,22 +37,28 @@ namespace NachoCore.SMTP
             return null;
         }
 
-        public virtual void LogProtocol()
-        {
-            
-        }
-
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
                 try {
-                    if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new SmtpAuthenticateCommand(BEContext, Client);
-                        authy.ConnectAndAuthenticate ();
+                    Event evt;
+                    lock (Client.SyncRoot) {
+                        try {
+                            if (null != RedactProtocolLogFunc) {
+                                Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
+                            }
+                            if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                var authy = new SmtpAuthenticateCommand(BEContext, Client);
+                                authy.ConnectAndAuthenticate ();
+                            }
+                            Client.MailKitProtocolLogger.ResetBuffers ();
+                            evt = ExecuteCommand ();
+                        } finally {
+                            if (Client.MailKitProtocolLogger.Enabled ()) {
+                                ProtocolLoggerStopAndLog ();
+                            }
+                        }
                     }
-                    Client.MailKitProtocolLogger.ResetBuffers ();
-                    var evt = ExecuteCommand ();
-                    LogProtocol ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
                     sm.PostEvent (evt);
                 } catch (OperationCanceledException) {
@@ -94,6 +103,13 @@ namespace NachoCore.SMTP
                 }
             }
         }
+
+        protected void ProtocolLoggerStopAndLog ()
+        {
+            string ClassName = this.GetType ().Name + " ";
+            Log.Info (Log.LOG_SMTP, "{0}SMTP exchange\n{1}", ClassName, Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ()));
+            Client.MailKitProtocolLogger.Stop ();
+        }
     }
 
     public class SmtpAuthenticateCommand : SmtpCommand
@@ -104,24 +120,31 @@ namespace NachoCore.SMTP
 
         public void ConnectAndAuthenticate()
         {
-            lock(Client.SyncRoot) {
-                if (!Client.IsConnected) {
-                    //client.ClientCertificates = new X509CertificateCollection ();
-                    // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
-                    Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
-                    Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+            if (!Client.IsConnected) {
+                //client.ClientCertificates = new X509CertificateCollection ();
+                // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
+                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+            }
+            if (!Client.IsAuthenticated) {
+                RedactProtocolLogFuncDel RestartLog = null;
+                if (Client.MailKitProtocolLogger.Enabled ()) {
+                    ProtocolLoggerStopAndLog ();
+                    RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
                 }
-                if (!Client.IsAuthenticated) {
-                    if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
-                        // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
-                        Client.AuthenticationMechanisms.Remove ("LOGIN");
-                        Client.AuthenticationMechanisms.Remove ("PLAIN");
-                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
-                    } else {
-                        Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
-                    }
-                    Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
+
+                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
+                    Client.AuthenticationMechanisms.Remove ("LOGIN");
+                    Client.AuthenticationMechanisms.Remove ("PLAIN");
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                } else {
+                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                }
+                Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
+                if (null != RestartLog) {
+                    Client.MailKitProtocolLogger.Start (RestartLog);
                 }
             }
         }
@@ -129,12 +152,10 @@ namespace NachoCore.SMTP
         protected override Event ExecuteCommand ()
         {
             try {
-                lock (Client.SyncRoot) {
-                    if (Client.IsConnected) {
-                        Client.Disconnect (false, Cts.Token);
-                    }
-                    ConnectAndAuthenticate ();
+                if (Client.IsConnected) {
+                    Client.Disconnect (false, Cts.Token);
                 }
+                ConnectAndAuthenticate ();
                 return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
             } catch (NotSupportedException ex) {
                 Log.Info (Log.LOG_SMTP, "SmtpAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());
@@ -161,9 +182,7 @@ namespace NachoCore.SMTP
                 MimeHelpers.AddAttachments (mimeMessage, attachments);
             }
 
-            lock(Client.SyncRoot) {
-                Client.Send (mimeMessage, Cts.Token);
-            }
+            Client.Send (mimeMessage, Cts.Token);
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (
                     BEContext.ProtoControl,

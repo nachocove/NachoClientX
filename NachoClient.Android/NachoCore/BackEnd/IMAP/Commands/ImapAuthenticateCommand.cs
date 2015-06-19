@@ -12,6 +12,12 @@ namespace NachoCore.IMAP
     {
         public ImapAuthenticateCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
+            RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         public void ConnectAndAuthenticate ()
@@ -20,12 +26,12 @@ namespace NachoCore.IMAP
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
                 Log.Info (Log.LOG_IMAP, "IMAP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
             }
-            bool reenableLogger = false;
+//            RedactProtocolLogFuncDel RestartLog = null;
             if (!Client.IsAuthenticated) {
-                if (Client.MailKitProtocolLogger.Enabled ()) {
-                    reenableLogger = true;
-                    ProtocolLoggerStopAndPostTelemetry ();
-                }
+//                if (Client.MailKitProtocolLogger.Enabled ()) {
+//                    RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
+//                    ProtocolLoggerStopAndPostTelemetry ();
+//                }
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
                     // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
                     Client.AuthenticationMechanisms.Remove ("LOGIN");
@@ -37,9 +43,9 @@ namespace NachoCore.IMAP
                 }
                 Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
             }
-            if (reenableLogger) {
-                ProtocolLoggerStart ();
-            }
+//            if (null != RestartLog) {
+//                Client.MailKitProtocolLogger.Start (RestartLog);
+//            }
             var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
             if (cap != BEContext.ProtocolState.ImapServerCapabilities) {
                 BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -53,12 +59,10 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             try {
-                lock (Client.SyncRoot) {
-                    if (Client.IsConnected) {
-                        Client.Disconnect (false, Cts.Token);
-                    }
-                    ConnectAndAuthenticate ();
+                if (Client.IsConnected) {
+                    Client.Disconnect (false, Cts.Token);
                 }
+                ConnectAndAuthenticate ();
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPAUTHSUC");
             } catch (NotSupportedException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());

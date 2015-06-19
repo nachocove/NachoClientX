@@ -16,6 +16,7 @@ using MimeKit.IO;
 using MimeKit.IO.Filters;
 using HtmlAgilityPack;
 using MailKit.Search;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.IMAP
 {
@@ -23,6 +24,7 @@ namespace NachoCore.IMAP
     {
         SyncKit SyncKit;
         private const int PreviewSizeBytes = 500;
+        private List<Regex> RegexList;
 
         public class MailSummary
         {
@@ -38,6 +40,16 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
+            //RedactProtocolLogFunc = RedactProtocolLog;
+            RegexList = new List<Regex> ();
+
+            //* 59 FETCH (UID 8721 MODSEQ (952121) BODY[1]<0> {500} ... )
+            RegexList.Add (new Regex (@"^(?<star>\* )(?<num>\d+ )(?<cmd>FETCH )(?<openparen>\()(?<stuff>[^\n]+)(?<redact>.*)(?<closeparen>\))$", NcMailKitProtocolLogger.rxOptions));
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
         }
 
         private const string KImapSearchTiming = "IMAP Folder Search";
@@ -57,29 +69,20 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.ImapFolderNameRedacted());
                 var timespan = BEContext.Account.DaysSyncEmailSpan ();
                 IList<UniqueId> uids;
-                lock (Client.SyncRoot) {
-                    try {
-                        ProtocolLoggerStart ();
-                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                        if (null == mailKitFolder) {
-                            return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
-                        }
-                        if (UInt32.MinValue != SyncKit.Folder.ImapUidValidity &&
-                            SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
-                            return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
-                        }
-
-                        var query = SearchQuery.NotDeleted;
-                        if (TimeSpan.Zero != timespan) {
-                            query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-                        }
-                        uids = mailKitFolder.Search (query);
-                    } catch {
-                        throw;
-                    } finally {
-                        ProtocolLoggerStopAndPostTelemetry ();
-                    }
+                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                if (null == mailKitFolder) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
                 }
+                if (UInt32.MinValue != SyncKit.Folder.ImapUidValidity &&
+                    SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
+                    return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
+                }
+
+                var query = SearchQuery.NotDeleted;
+                if (TimeSpan.Zero != timespan) {
+                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                }
+                uids = mailKitFolder.Search (query);
                 string UidsString;
                 if (uids is UniqueIdRange || uids is UniqueIdSet) {
                     UidsString = uids.ToString ();
@@ -114,60 +117,58 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
                     SyncKit.Folder.ImapFolderNameRedacted());
                 IList<IMessageSummary> imapSummaries = null;
-                lock (Client.SyncRoot) {
-                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                    if (null == mailKitFolder) {
-                        return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
-                    }
-                    try {
-                        cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                        HashSet<HeaderId> headers = new HashSet<HeaderId>();
-                        headers.Add (HeaderId.Importance);
-                        headers.Add (HeaderId.DkimSignature);
-                        headers.Add (HeaderId.ContentClass);
-
-                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
-                        cap.Stop ();
-                        Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    } catch (ImapProtocolException) {
-                        // try one-by-one so we can at least get a few.
-                        Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
-                        if (!Client.IsConnected || !Client.IsAuthenticated) {
-                            var authy = new ImapAuthenticateCommand (BEContext, Client);
-                            authy.ConnectAndAuthenticate ();
-                        }
-                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                        imapSummaries = new List<IMessageSummary> ();
-                        foreach (var uid in SyncKit.UidList) {
-                            try {
-                                var s = mailKitFolder.Fetch (new List<UniqueId>{uid}, SyncKit.Flags, Cts.Token);
-                                if (1 == s.Count) {
-                                    imapSummaries.Add (s [0]);
-                                } else if (s.Count > 0) {
-                                    Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
-                                }
-                            } catch (ImapProtocolException ex1) {
-                                // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
-                                Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
-                                if (!Client.IsConnected || !Client.IsAuthenticated) {
-                                    var authy = new ImapAuthenticateCommand (BEContext, Client);
-                                    authy.ConnectAndAuthenticate ();
-                                }
-                                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                            }
-                        }
-                    }
-                    cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
-                    foreach (var imapSummary in imapSummaries) {
-                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                        summaries.Add (new MailSummary () {
-                            imapSummary = imapSummary as MessageSummary,
-                            preview = preview,
-                        });
-                    }
-                    cap.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                if (null == mailKitFolder) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
                 }
+                try {
+                    cap = NcCapture.CreateAndStart (KImapFetchTiming);
+                    HashSet<HeaderId> headers = new HashSet<HeaderId>();
+                    headers.Add (HeaderId.Importance);
+                    headers.Add (HeaderId.DkimSignature);
+                    headers.Add (HeaderId.ContentClass);
+
+                    imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                } catch (ImapProtocolException) {
+                    // try one-by-one so we can at least get a few.
+                    Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
+                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                        var authy = new ImapAuthenticateCommand (BEContext, Client);
+                        authy.ConnectAndAuthenticate ();
+                    }
+                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                    imapSummaries = new List<IMessageSummary> ();
+                    foreach (var uid in SyncKit.UidList) {
+                        try {
+                            var s = mailKitFolder.Fetch (new List<UniqueId>{uid}, SyncKit.Flags, Cts.Token);
+                            if (1 == s.Count) {
+                                imapSummaries.Add (s [0]);
+                            } else if (s.Count > 0) {
+                                Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
+                            }
+                        } catch (ImapProtocolException ex1) {
+                            // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
+                            Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
+                            if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                var authy = new ImapAuthenticateCommand (BEContext, Client);
+                                authy.ConnectAndAuthenticate ();
+                            }
+                            mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                        }
+                    }
+                }
+                cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
+                foreach (var imapSummary in imapSummaries) {
+                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                    summaries.Add (new MailSummary () {
+                        imapSummary = imapSummary as MessageSummary,
+                        preview = preview,
+                    });
+                }
+                cap.Stop ();
+                Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                 break;
             }
 

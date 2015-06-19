@@ -15,6 +15,12 @@ namespace NachoCore.IMAP
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
@@ -59,18 +65,10 @@ namespace NachoCore.IMAP
         private IMailFolder CreateFolderInNamespace (FolderNamespace imapNameSpace, string name)
         {
             IMailFolder folder = null;
-            lock (Client.SyncRoot) {
-                try {
-                    var encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
-                    folder = encapsulatingFolder.Create (name, true);
-                    NcAssert.NotNull (folder);
-                    return folder;
-                } catch {
-                    throw;
-                } finally {
-                    ProtocolLoggerStopAndPostTelemetry ();
-                }
-            }
+            var encapsulatingFolder = Client.GetFolder (imapNameSpace.Path);
+            folder = encapsulatingFolder.Create (name, true);
+            NcAssert.NotNull (folder);
+            return folder;
         }
 
         private class ApplyCreateFolder : NcApplyServerCommand

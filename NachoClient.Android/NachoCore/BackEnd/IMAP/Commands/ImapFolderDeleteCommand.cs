@@ -13,25 +13,23 @@ namespace NachoCore.IMAP
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
         {
             McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
-            lock (Client.SyncRoot) {
-                try {
-                    var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-                    NcAssert.NotNull (mailKitFolder);
-                    if (mailKitFolder.IsOpen) {
-                        mailKitFolder.Close (false, Cts.Token); // rfc4549 Sec 3.c.2: If the action is to delete a mailbox (DELETE), make sure that the mailbox is closed first
-                    }
-                    mailKitFolder.Delete (Cts.Token);
-                } catch {
-                    throw;
-                } finally {
-                    ProtocolLoggerStopAndPostTelemetry ();
-                }
+            var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
+            NcAssert.NotNull (mailKitFolder);
+            if (mailKitFolder.IsOpen) {
+                mailKitFolder.Close (false, Cts.Token); // rfc4549 Sec 3.c.2: If the action is to delete a mailbox (DELETE), make sure that the mailbox is closed first
             }
+            mailKitFolder.Delete (Cts.Token);
 
             // Blow folder (and subitems) away
             folder.Delete ();

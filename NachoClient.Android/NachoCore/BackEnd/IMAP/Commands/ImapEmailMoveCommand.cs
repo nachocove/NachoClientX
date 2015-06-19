@@ -6,15 +6,28 @@ using NachoCore.Utils;
 using MailKit;
 using System.Threading;
 using MailKit.Net.Imap;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace NachoCore.IMAP
 {
     public class ImapEmailMoveCommand : ImapCommand
     {
+        private List<Regex> RegexList;
+
         public ImapEmailMoveCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            RedactProtocolLogFunc = RedactProtocolLog;
+
+            RegexList = new List<Regex> ();
+            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+)(?<space1>\s)(?<redact>.*)$", NcMailKitProtocolLogger.rxOptions));
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
         }
 
         protected override Event ExecuteCommand ()
@@ -38,25 +51,16 @@ namespace NachoCore.IMAP
         public void MoveEmail(McEmailMessage emailMessage, McFolder src, McFolder dst, CancellationToken Token)
         {
             UniqueId? newUid;
-            lock (Client.SyncRoot) {
-                try {
-                    ProtocolLoggerStart ();
-                    var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
-                    var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-                    NcAssert.Equals (folderGuid, src.ImapGuid);
-                    var srcFolder = Client.GetFolder (src.ServerId, Token);
-                    NcAssert.NotNull (srcFolder);
-                    var dstFolder = Client.GetFolder (dst.ServerId, Token);
-                    NcAssert.NotNull (dstFolder);
+            var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
+            var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
+            NcAssert.Equals (folderGuid, src.ImapGuid);
+            var srcFolder = Client.GetFolder (src.ServerId, Token);
+            NcAssert.NotNull (srcFolder);
+            var dstFolder = Client.GetFolder (dst.ServerId, Token);
+            NcAssert.NotNull (dstFolder);
 
-                    srcFolder.Open (FolderAccess.ReadWrite, Token);
-                    newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
-                } catch {
-                    throw;
-                } finally {
-                    ProtocolLoggerStopAndPostTelemetry ();
-                }
-            }
+            srcFolder.Open (FolderAccess.ReadWrite, Token);
+            newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
             if (null != newUid && newUid.HasValue && 0 != newUid.Value.Id) {
                 emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                     var target = (McEmailMessage)record;

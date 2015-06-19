@@ -16,10 +16,12 @@ namespace NachoCore.IMAP
     public class ImapCommand : NcCommand
     {
         protected NcImapClient Client { get; set; }
+        protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
         public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
             Client = imapClient;
+            RedactProtocolLogFunc = null;
         }
 
         // MUST be overridden by subclass.
@@ -47,13 +49,23 @@ namespace NachoCore.IMAP
         public void ExecuteNoTask(NcStateMachine sm)
         {
             try {
-                if (!Client.IsConnected || !Client.IsAuthenticated) {
-                    var authy = new ImapAuthenticateCommand (BEContext, Client);
-                    lock(Client.SyncRoot) {
-                        authy.ConnectAndAuthenticate ();
+                Event evt;
+                lock(Client.SyncRoot) {
+                    try {
+                        if (null != RedactProtocolLogFunc) {
+                            Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
+                        }
+                        if (!Client.IsConnected || !Client.IsAuthenticated) {
+                            var authy = new ImapAuthenticateCommand (BEContext, Client);
+                            authy.ConnectAndAuthenticate ();
+                        }
+                        evt = ExecuteCommand ();
+                    } finally {
+                        if (Client.MailKitProtocolLogger.Enabled ()) {
+                            ProtocolLoggerStopAndPostTelemetry ();
+                        }
                     }
                 }
-                var evt = ExecuteCommand ();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
             } catch (OperationCanceledException) {
@@ -88,27 +100,18 @@ namespace NachoCore.IMAP
             }
         }
 
-        protected void ProtocolLoggerStart()
-        {
-            Client.MailKitProtocolLogger.Start ();
-        }
-        protected void ProtocolLoggerStop()
-        {
-            Client.MailKitProtocolLogger.Stop ();
-        }
-
         protected void ProtocolLoggerStopAndPostTelemetry ()
         {
             string ClassName = this.GetType ().Name + " ";
-
             byte[] requestData;
             byte[] responseData;
-            //Log.Info (Log.LOG_IMAP, "IMAP exchange\n{0}", Encoding.UTF8.GetString (Client.ProtocolLogger.GetCombinedBuffer ()));
+            string combinedLog = Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ());
+            Log.Info (Log.LOG_IMAP, "{0}IMAP exchange\n{1}", ClassName, combinedLog);
             Client.MailKitProtocolLogger.Stop (out requestData, out responseData);
             byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
 
             if (null != requestData && requestData.Length > 0) {
-                //Log.Info (Log.LOG_IMAP, "{0}IMAP Request\n{1}", ClassName, Encoding.UTF8.GetString (requestData));
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Request\n{1}", ClassName, Encoding.UTF8.GetString (RedactProtocolLog(requestData)));
                 Telemetry.RecordImapEvent (true, Combine(ClassNameBytes, requestData));
             }
             if (null != responseData && responseData.Length > 0) {
