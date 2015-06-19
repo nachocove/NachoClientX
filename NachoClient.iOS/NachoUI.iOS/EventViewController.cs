@@ -81,6 +81,7 @@ namespace NachoClient.iOS
         // Helper objects
         protected bool isRecurring = false;
         protected bool isOrganizer = false;
+        protected bool isAppointment = false;
         protected bool hasLocation = false;
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
@@ -484,16 +485,17 @@ namespace NachoClient.iOS
                 isRecurring = true;
             }
 
-            /// There are three cases which ensure the user is the organizer of an event.  
-            /// 1. The user's email and account ID match the event's organizer email and event's account ID.
-            /// 2. The event's ResponseType is set to Organizer.
-            /// 3. The event's MeetingStatus is "Meeting"
-            /// If any of these are true the user is the organizer of the event.
-            isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) ||
-            (c.HasResponseType () && NcResponseType.Organizer == c.GetResponseType ()) ||
-            (NcMeetingStatus.MeetingOrganizer == c.MeetingStatus);
+            // If the meeting status field is not set, assume that this is an appointment owned by the user.
+            isAppointment = !root.MeetingStatusIsSet || NcMeetingStatus.Appointment == root.MeetingStatus;
 
-            if (isOrganizer && !isRecurring) {
+            isOrganizer = isAppointment ||
+                NcMeetingStatus.MeetingOrganizer == root.MeetingStatus ||
+                NcMeetingStatus.MeetingOrganizerCancelled == root.MeetingStatus;
+
+            // The event can be edited if (1) it is owned by the current user, (2) it is not a recurring event,
+            // and (3) it did not come from the device calendar.  (The recurring event restriction will be lifted
+            // at some future date.  The device calendar restriction is under discussion.)
+            if (isOrganizer && !isRecurring && account.Id != McAccount.GetDeviceAccount().Id) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
 
@@ -502,7 +504,7 @@ namespace NachoClient.iOS
                 userResponseIsSet = true;
             }
 
-            ConfigureRsvpBar (isOrganizer);
+            ConfigureRsvpBar ();
 
             // If the user has just edited the event, changing the start or end times, then the McEvent object
             // that we have is stale.  There is not a reliable way to refresh the McEvent object.  Instead, we
@@ -604,49 +606,47 @@ namespace NachoClient.iOS
             ConfigureAttachments ();
 
             // Organizer
-            if (!String.IsNullOrEmpty (root.OrganizerEmail)) {
-                if (!isOrganizer) {
-                    var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
-                    if (null != root.OrganizerName) {
-                        var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
-                        organizerNameLabel.Text = root.OrganizerName;
-                    } else {
-                        organizerEmailLabel.Frame = new CGRect (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20);
-                    }
-                    organizerEmailLabel.Text = root.OrganizerEmail;
-
-                    var userImage = Util.ImageOfSender (account.Id, root.OrganizerEmail);
-
-                    if (null != userImage) {
-                        using (var rawImage = userImage) {
-                            using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                                // User image
-                                var userImageView = new UIImageView (new CGRect (42, 10 + 16, 40, 40));
-                                userImageView.Layer.CornerRadius = (40.0f / 2.0f);
-                                userImageView.Layer.MasksToBounds = true;
-                                userImageView.Image = originalImage;
-                                userImageView.Layer.BorderWidth = .25f;
-                                userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                                eventOrganizerView.AddSubview (userImageView);
-                            }
-                        }
-                    } else {
-
-                        // User userLabelView view, if no image
-                        var userLabelView = new UILabel (new CGRect (42, 10 + 16, 40, 40));
-                        userLabelView.Font = A.Font_AvenirNextRegular17;
-                        userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
-                        userLabelView.TextColor = UIColor.White;
-                        userLabelView.TextAlignment = UITextAlignment.Center;
-                        userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                        userLabelView.Layer.CornerRadius = (40 / 2);
-                        userLabelView.Layer.MasksToBounds = true;
-                        var nameString = (null != root.OrganizerName ? root.OrganizerName : root.OrganizerEmail);
-                        userLabelView.Text = Util.NameToLetters (nameString);
-                        eventOrganizerView.AddSubview (userLabelView);
-                    }
-                    eventOrganizerView.Hidden = false;
+            if (!String.IsNullOrEmpty (root.OrganizerEmail) && !isOrganizer) {
+                var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
+                if (null != root.OrganizerName) {
+                    var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
+                    organizerNameLabel.Text = root.OrganizerName;
+                } else {
+                    organizerEmailLabel.Frame = new CGRect (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20);
                 }
+                organizerEmailLabel.Text = root.OrganizerEmail;
+
+                var userImage = Util.ImageOfSender (account.Id, root.OrganizerEmail);
+
+                if (null != userImage) {
+                    using (var rawImage = userImage) {
+                        using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                            // User image
+                            var userImageView = new UIImageView (new CGRect (42, 10 + 16, 40, 40));
+                            userImageView.Layer.CornerRadius = (40.0f / 2.0f);
+                            userImageView.Layer.MasksToBounds = true;
+                            userImageView.Image = originalImage;
+                            userImageView.Layer.BorderWidth = .25f;
+                            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                            eventOrganizerView.AddSubview (userImageView);
+                        }
+                    }
+                } else {
+
+                    // User userLabelView view, if no image
+                    var userLabelView = new UILabel (new CGRect (42, 10 + 16, 40, 40));
+                    userLabelView.Font = A.Font_AvenirNextRegular17;
+                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
+                    userLabelView.TextColor = UIColor.White;
+                    userLabelView.TextAlignment = UITextAlignment.Center;
+                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                    userLabelView.Layer.CornerRadius = (40 / 2);
+                    userLabelView.Layer.MasksToBounds = true;
+                    var nameString = (null != root.OrganizerName ? root.OrganizerName : root.OrganizerEmail);
+                    userLabelView.Text = Util.NameToLetters (nameString);
+                    eventOrganizerView.AddSubview (userLabelView);
+                }
+                eventOrganizerView.Hidden = false;
             }
 
             // Attendees
@@ -946,7 +946,7 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 15 + 18, ref yOffset, 20, SCREEN_WIDTH - 66);
             AdjustY (eventCardView, yOffset + 15);
 
-            nfloat internalYOffset = (NcMeetingStatus.Appointment == c.MeetingStatus && !isOrganizer) ? 0 : 60;
+            nfloat internalYOffset = isAppointment ? 0 : 60;
 
             AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
@@ -983,10 +983,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (!String.IsNullOrEmpty (root.OrganizerEmail)) {
-                if (!isOrganizer) {
-                    AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
-                }
+            if (!String.IsNullOrEmpty (root.OrganizerEmail) && !isOrganizer) {
+                AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
             }
 
             if (hasAttendees) {
@@ -1098,9 +1096,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public void ConfigureRsvpBar (bool isOrganizer)
+        public void ConfigureRsvpBar ()
         {
             if (c.MeetingStatus == NcMeetingStatus.MeetingAttendeeCancelled) {
+
+                // Show "Remove from calendar"
                 messageLabel.Hidden = true;
                 acceptButton.Hidden = true;
                 organizerIcon.Hidden = true;
@@ -1113,9 +1113,26 @@ namespace NachoClient.iOS
                 removeFromCalendarButton.Hidden = false;
                 removeFromCalendarLabel.Hidden = false;
                 rsvpSeparatorLine.Hidden = false;
-                return;
-            }
-            if (isOrganizer) {
+
+            } else if (isAppointment) {
+
+                // It's an appointment.  Leave out the header section entirely.
+                messageLabel.Hidden = true;
+                acceptButton.Hidden = true;
+                organizerIcon.Hidden = true;
+                acceptButton.Selected = true;
+                acceptLabel.Hidden = true;
+                tentativeButton.Hidden = true;
+                tentativeLabel.Hidden = true;
+                declineButton.Hidden = true;
+                declineLabel.Hidden = true;
+                removeFromCalendarButton.Hidden = true;
+                removeFromCalendarLabel.Hidden = true;
+                rsvpSeparatorLine.Hidden = true;
+
+            } else if (isOrganizer) {
+
+                // Show "You are the organizer"
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new CGRect (18 + 24 + 12, 18, 150, 24);
@@ -1129,23 +1146,6 @@ namespace NachoClient.iOS
                 removeFromCalendarButton.Hidden = true;
                 removeFromCalendarLabel.Hidden = true;
                 rsvpSeparatorLine.Hidden = false;
-                return;
-            } 
-
-            if (NcMeetingStatus.Appointment == c.MeetingStatus) {
-                messageLabel.Hidden = true;
-                acceptButton.Hidden = true;
-                organizerIcon.Hidden = true;
-                acceptButton.Selected = true;
-                acceptLabel.Hidden = true;
-                tentativeButton.Hidden = true;
-                tentativeLabel.Hidden = true;
-                declineButton.Hidden = true;
-                declineLabel.Hidden = true;
-                removeFromCalendarButton.Hidden = true;
-                removeFromCalendarLabel.Hidden = true;
-                rsvpSeparatorLine.Hidden = true;
-                return;
 
             } else {
 
