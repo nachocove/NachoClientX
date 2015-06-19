@@ -408,8 +408,12 @@ namespace NachoClient.iOS
         /// </summary>
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
-            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                return true;
+            Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
+
+            if (null != annotation) {
+                if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
+                    return true;
+                }
             }
 
             if (!url.IsFileUrl) {
