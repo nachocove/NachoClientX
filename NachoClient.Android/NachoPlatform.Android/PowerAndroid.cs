@@ -29,14 +29,14 @@ namespace NachoPlatform
 
         public double BatteryLevel { 
             get {
-//                NcAssert.True (false);
+//                FIXME
                 return 0.0;
             }
         }
 
         public PowerStateEnum PowerState {
             get {
-//                NcAssert.True (false);
+//                FIXME
                 return PowerStateEnum.Unknown;
             }
         }

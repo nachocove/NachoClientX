@@ -76,7 +76,8 @@ namespace NachoCore.ActiveSync
         // for getting the error code, SetLastError=true, won't work.  So we have created
         // a wrapper function around res_query that gets the error code from h_errno and
         // returns it through a ref parameter.
-        [DllImport("__Internal")]
+        #if __IOS__
+        [DllImport ("__Internal")]
         private static extern int nacho_res_query (
             string host, int queryClass, int queryType, byte[] answer, int anslen, ref int errorCode);
 
@@ -121,7 +122,16 @@ namespace NachoCore.ActiveSync
             answerLength = 0;
             return null;
         }
-
+        #elif __ANDROID__
+        // FIXME need to try to get res_query to work or switch back to DnDns.
+        private static byte[] ResQuery (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength)
+        {
+            answerLength = 0;
+            return null;
+        }
+        #else
+        #error
+        #endif
         private void DoExecuteWithRetries ()
         {
             int answerLength;

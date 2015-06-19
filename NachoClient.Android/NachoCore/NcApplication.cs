@@ -437,7 +437,7 @@ namespace NachoCore
                 // this can be null if cloud is not accessible or if this the first time
                 UserId = CloudHandler.Instance.GetUserId (); 
             }
-            Telemetry.StartService ();
+            //Telemetry.StartService ();
 
             // Pick most recently used account
             Account = LoginHelpers.PickStartupAccount();

@@ -127,7 +127,7 @@ namespace NachoCore.ActiveSync
                 if (DontReUseHttpClient || null == EncryptedClient ||
                     null == LastUsername || null == LastPassword ||
                     LastUsername != username || LastPassword != password) {
-                    var handler = new NativeMessageHandler () {
+                    var handler = new NativeMessageHandler (false, true) {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
                     };
@@ -441,7 +441,7 @@ namespace NachoCore.ActiveSync
         {
             IHttpClient client;
             Cts = new CancellationTokenSource ();
-            var cToken = Cts.Token;
+            var cToken = CancellationToken.None;//Cts.Token;
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
@@ -552,7 +552,13 @@ namespace NachoCore.ActiveSync
 
         private bool HasBody (HttpResponseMessage response)
         {
-            return 0 < ContentData.Length ||
+            long cdLength = -1;
+            try {
+                cdLength = ContentData.Length;
+            } catch (NotSupportedException) {
+                // Work around Android ModernHttpClient issue.
+            }
+            return 0 < cdLength ||
                 (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength) ||
                 (response.Headers.TransferEncodingChunked.HasValue && 
                     (bool)response.Headers.TransferEncodingChunked);
@@ -619,7 +625,12 @@ namespace NachoCore.ActiveSync
                 }
                 if (Owner.IgnoreBody (this)) {
                     if (HasBody (response)) {
-                        Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: ContentType: {0}, Length: {1}", ContentType, ContentData.Length);
+                        Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: ContentType: {0}", ContentType);
+                        try {
+                            Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: Length: {0}", ContentData.Length);
+                        } catch (NotSupportedException) {
+                            // ModernHttpClient on Android issue.
+                        }
                     }
                 } else if (HasBody (response)) {
                     switch (ContentType) {

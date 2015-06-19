@@ -7,7 +7,6 @@ namespace NachoPlatform
 {
 	public class Assets : IPlatformAssets
 	{
-		// NOTE: 
 		public static Android.Content.Res.AssetManager AndroidAssetManager { set; get; }
 
 		public Stream Open (string relPath) {
