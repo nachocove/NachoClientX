@@ -968,7 +968,7 @@ namespace NachoCore
                 return "unknown";
             case PushAssistProtocol.ACTIVE_SYNC:
                 return "ActiveSync";
-            case PushAssistProtocol.IMAP_SMTP:
+            case PushAssistProtocol.IMAP:
                 return "IMAP";
             default:
                 Log.Error (Log.LOG_PUSH, "Unexpected push assist protocol {0}", (uint)protocol);

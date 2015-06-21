@@ -10,7 +10,7 @@ namespace NachoCore
     {
         UNKNOWN = 0,
         ACTIVE_SYNC = 1,
-        IMAP_SMTP = 2,
+        IMAP = 2,
     };
 
     public class PushAssistParameters
