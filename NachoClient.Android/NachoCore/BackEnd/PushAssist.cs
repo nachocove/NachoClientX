@@ -488,6 +488,9 @@ namespace NachoCore
                 prefix = "exchange";
                 id = account.EmailAddr;
                 break;
+            case McAccount.AccountTypeEnum.IMAP_SMTP:
+                prefix = "imap_smtp";
+                break;
             default:
                 Log.Error (Log.LOG_PUSH, "GetClientContext: Unexpected account type {0}", (uint)account.AccountType);
                 break;
@@ -965,7 +968,7 @@ namespace NachoCore
                 return "unknown";
             case PushAssistProtocol.ACTIVE_SYNC:
                 return "ActiveSync";
-            case PushAssistProtocol.IMAP:
+            case PushAssistProtocol.IMAP_SMTP:
                 return "IMAP";
             default:
                 Log.Error (Log.LOG_PUSH, "Unexpected push assist protocol {0}", (uint)protocol);
