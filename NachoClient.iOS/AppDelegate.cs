@@ -200,6 +200,7 @@ namespace NachoClient.iOS
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
                 fetchAccounts = new List<int> ();
+                pushAccounts = GetAllNonDeviceAccountIds ();
                 if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
@@ -602,11 +603,23 @@ namespace NachoClient.iOS
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
         private Timer performFetchTimer = null;
-        private bool fetchComplete;
-        private bool pushAssistArmComplete;
         private string fetchCause;
         // A list of all account ids that are waiting to be synced.
         private List<int> fetchAccounts;
+        // A list of all accounts ids that are waiting for push assist to set up
+        private List<int> pushAccounts;
+
+        private bool fetchComplete {
+            get {
+                return (0 == fetchAccounts.Count);
+            }
+        }
+
+        private bool pushAssistArmComplete {
+            get {
+                return (0 == pushAccounts.Count);
+            }
+        }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -625,18 +638,17 @@ namespace NachoClient.iOS
                 } else {
                     Log.Error (Log.LOG_PUSH, "Info_SyncSucceeded for unknown account {0}", statusEvent.Account.Id);
                 }
-                if (0 == fetchAccounts.Count) {
-                    fetchComplete = true;
+                if (fetchComplete) {
                     BadgeNotifUpdate ();
-                }
-                if (fetchComplete && pushAssistArmComplete) {
-                    CompletePerformFetch ();
+                    if (pushAssistArmComplete) {
+                        CompletePerformFetch ();
+                    }
                 }
                 break;
 
             case NcResult.SubKindEnum.Info_PushAssistArmed:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
-                pushAssistArmComplete = true;
+                pushAccounts.Remove (statusEvent.Account.Id);
                 if (fetchComplete && pushAssistArmComplete) {
                     CompletePerformFetch ();
                 }
@@ -697,9 +709,8 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
-            fetchAccounts = (from account in McAccount.GetAllAccounts ()
-                                      where McAccount.AccountTypeEnum.Device != account.AccountType
-                                      select account.Id).ToList ();
+            fetchAccounts = GetAllNonDeviceAccountIds ();
+            pushAccounts = GetAllNonDeviceAccountIds ();
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -710,8 +721,6 @@ namespace NachoClient.iOS
                 CompletePerformFetchWithoutShutdown ();
             }
             CompletionHandler = completionHandler;
-            fetchComplete = false;
-            pushAssistArmComplete = false;
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
@@ -1163,6 +1172,13 @@ namespace NachoClient.iOS
             }
         }
 
+        protected List<int> GetAllNonDeviceAccountIds ()
+        {
+            return (from account in McAccount.GetAllAccounts ()
+                             where McAccount.AccountTypeEnum.Device != account.AccountType
+                             select account.Id).ToList ();
+
+        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate

@@ -460,7 +460,11 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)St.Start
                             },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoActive, State = (uint)Lst.Active },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
                         }
                     }
