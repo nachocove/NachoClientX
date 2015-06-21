@@ -317,27 +317,10 @@ namespace NachoPlatform
             }
 
             // FIXME DAVID - we only go a week back and out 6 months. we probably need to expand based on cal view?
-            var start = DateTime.Now.AddDays (-7);
-            var end = DateTime.Now.AddMonths (6);
+            var start = DateTime.UtcNow.AddDays (-7);
+            var end = DateTime.UtcNow.AddMonths (6);
             var calendars = Es.GetCalendars (EKEntityType.Event);
             var retval = new List<PlatformCalendarRecordiOS> ();
-            var ignoredSources = new List<string> ();
-            foreach (var calendar in calendars) {
-                var account = McAccount.QueryByEmailAddr (calendar.Title.Trim ()).FirstOrDefault ();
-                if (null != calendar.Title && null != account && 
-                    McAccount.AccountCapabilityEnum.CalReader == 
-                    (account.AccountCapability & McAccount.AccountCapabilityEnum.CalReader)) {
-                    // This is probably one of our accounts - note it as a source we want to ignore.
-                    // FIXME DAVID - we may need this anti-dup-source logic on the Contact side too.
-                    if (null != calendar.Source && null != calendar.Source.Title) {
-                        ignoredSources.Add (calendar.Source.Title.Trim ());
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "GetCalendars: could not exclude calendar source.");
-                    }
-                }
-            }
-            calendars = calendars.Where (x => null == x.Source || null == x.Source.Title ||
-            !ignoredSources.Contains (x.Source.Title.Trim ())).ToArray ();
             var predicate = Es.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
             var calEvents = Es.EventsMatching (predicate);
             if (null != calEvents) {
