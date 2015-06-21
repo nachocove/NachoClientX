@@ -222,13 +222,6 @@ namespace NachoCore
                     Log.Error (Log.LOG_PUSH, "Invalid account for context {0} for remote notification", context.Key);
                     continue;
                 }
-
-                // TODO - We don't have multiple account support yet. So, for now, perform fetch always
-                //        fetches the one account. In the future, we have to figure out which account
-                //        should participate in the fetch and pass them in.
-                if (ranOnce) {
-                    continue;
-                }
                 ranOnce = true;
 
                 switch (context.Value.cmd) {
@@ -467,7 +460,11 @@ namespace NachoCore
                                 Act = DoGetCliTok,
                                 State = (uint)St.Start
                             },
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoActive, State = (uint)Lst.Active },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Launch,
+                                Act = DoStartSession,
+                                State = (uint)Lst.SessTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.Stop, Act = DoStopSession, State = (uint)St.Start },
                         }
                     }

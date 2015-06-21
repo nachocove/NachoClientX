@@ -199,22 +199,28 @@ namespace NachoClient.iOS
             var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
+                fetchAccounts = new List<int> ();
+                pushAccounts = GetAllNonDeviceAccountIds ();
                 if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
-                        completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
-                        if (doingPerformFetch) {
-                            Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
-                            completionHandler (UIBackgroundFetchResult.NewData);
-                        } else {
-                            StartFetch (application, completionHandler, "RN");
-                            return; // completeHandler is called at the completion of perform fetch.
-                        }
+                        fetchAccounts.Add (accountId);
                     }
                 })) {
+                    // Can't find any account matching those contexts. Abort immediately
                     completionHandler (UIBackgroundFetchResult.NoData);
+                }
+                if (NcApplication.Instance.IsForeground) {
+                    completionHandler (UIBackgroundFetchResult.NewData);
+                } else {
+                    if (doingPerformFetch) {
+                        Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
+                        completionHandler (UIBackgroundFetchResult.NewData);
+                    } else {
+                        StartFetch (application, completionHandler, "RN");
+                    }
                 }
             }
         }
@@ -593,16 +599,27 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Exit");
         }
 
-        /// <summary>
-        /// Code to implement iOS-7 background-fetch.
-        /// </summary>/
         private bool doingPerformFetch = false;
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
         private Timer performFetchTimer = null;
-        private bool fetchComplete;
-        private bool pushAssistArmComplete;
         private string fetchCause;
+        // A list of all account ids that are waiting to be synced.
+        private List<int> fetchAccounts;
+        // A list of all accounts ids that are waiting for push assist to set up
+        private List<int> pushAccounts;
+
+        private bool fetchComplete {
+            get {
+                return (0 == fetchAccounts.Count);
+            }
+        }
+
+        private bool pushAssistArmComplete {
+            get {
+                return (0 == pushAccounts.Count);
+            }
+        }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -616,16 +633,22 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
-                fetchComplete = true;
-                BadgeNotifUpdate ();
-                if (fetchComplete && pushAssistArmComplete) {
-                    CompletePerformFetch ();
+                if ((null != statusEvent.Account) && (0 < statusEvent.Account.Id)) {
+                    fetchAccounts.Remove (statusEvent.Account.Id);
+                } else {
+                    Log.Error (Log.LOG_PUSH, "Info_SyncSucceeded for unknown account {0}", statusEvent.Account.Id);
+                }
+                if (fetchComplete) {
+                    BadgeNotifUpdate ();
+                    if (pushAssistArmComplete) {
+                        CompletePerformFetch ();
+                    }
                 }
                 break;
 
             case NcResult.SubKindEnum.Info_PushAssistArmed:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
-                pushAssistArmComplete = true;
+                pushAccounts.Remove (statusEvent.Account.Id);
                 if (fetchComplete && pushAssistArmComplete) {
                     CompletePerformFetch ();
                 }
@@ -686,6 +709,8 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
+            fetchAccounts = GetAllNonDeviceAccountIds ();
+            pushAccounts = GetAllNonDeviceAccountIds ();
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -696,8 +721,6 @@ namespace NachoClient.iOS
                 CompletePerformFetchWithoutShutdown ();
             }
             CompletionHandler = completionHandler;
-            fetchComplete = false;
-            pushAssistArmComplete = false;
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
@@ -1149,6 +1172,13 @@ namespace NachoClient.iOS
             }
         }
 
+        protected List<int> GetAllNonDeviceAccountIds ()
+        {
+            return (from account in McAccount.GetAllAccounts ()
+                             where McAccount.AccountTypeEnum.Device != account.AccountType
+                             select account.Id).ToList ();
+
+        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
