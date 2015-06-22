@@ -2343,8 +2343,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0200be
 			public const int nav_nachonow_active = 2130837694;
 			
-			// aapt resource value: 0x7f0200c6
-			public const int notification_template_icon_bg = 2130837702;
+			// aapt resource value: 0x7f0200e6
+			public const int notification_template_icon_bg = 2130837734;
 			
 			// aapt resource value: 0x7f0200bf
 			public const int now_addcalevent = 2130837695;
@@ -2366,6 +2366,102 @@ namespace NachoClient.AndroidClient
 			
 			// aapt resource value: 0x7f0200c5
 			public const int toolbar_icn_reply_all = 2130837701;
+			
+			// aapt resource value: 0x7f0200c6
+			public const int UserColor0 = 2130837702;
+			
+			// aapt resource value: 0x7f0200c7
+			public const int UserColor1 = 2130837703;
+			
+			// aapt resource value: 0x7f0200c8
+			public const int UserColor10 = 2130837704;
+			
+			// aapt resource value: 0x7f0200c9
+			public const int UserColor11 = 2130837705;
+			
+			// aapt resource value: 0x7f0200ca
+			public const int UserColor12 = 2130837706;
+			
+			// aapt resource value: 0x7f0200cb
+			public const int UserColor13 = 2130837707;
+			
+			// aapt resource value: 0x7f0200cc
+			public const int UserColor14 = 2130837708;
+			
+			// aapt resource value: 0x7f0200cd
+			public const int UserColor15 = 2130837709;
+			
+			// aapt resource value: 0x7f0200ce
+			public const int UserColor16 = 2130837710;
+			
+			// aapt resource value: 0x7f0200cf
+			public const int UserColor17 = 2130837711;
+			
+			// aapt resource value: 0x7f0200d0
+			public const int UserColor18 = 2130837712;
+			
+			// aapt resource value: 0x7f0200d1
+			public const int UserColor19 = 2130837713;
+			
+			// aapt resource value: 0x7f0200d2
+			public const int UserColor2 = 2130837714;
+			
+			// aapt resource value: 0x7f0200d3
+			public const int UserColor20 = 2130837715;
+			
+			// aapt resource value: 0x7f0200d4
+			public const int UserColor21 = 2130837716;
+			
+			// aapt resource value: 0x7f0200d5
+			public const int UserColor22 = 2130837717;
+			
+			// aapt resource value: 0x7f0200d6
+			public const int UserColor23 = 2130837718;
+			
+			// aapt resource value: 0x7f0200d7
+			public const int UserColor24 = 2130837719;
+			
+			// aapt resource value: 0x7f0200d8
+			public const int UserColor25 = 2130837720;
+			
+			// aapt resource value: 0x7f0200d9
+			public const int UserColor26 = 2130837721;
+			
+			// aapt resource value: 0x7f0200da
+			public const int UserColor27 = 2130837722;
+			
+			// aapt resource value: 0x7f0200db
+			public const int UserColor28 = 2130837723;
+			
+			// aapt resource value: 0x7f0200dc
+			public const int UserColor29 = 2130837724;
+			
+			// aapt resource value: 0x7f0200dd
+			public const int UserColor3 = 2130837725;
+			
+			// aapt resource value: 0x7f0200de
+			public const int UserColor30 = 2130837726;
+			
+			// aapt resource value: 0x7f0200df
+			public const int UserColor31 = 2130837727;
+			
+			// aapt resource value: 0x7f0200e0
+			public const int UserColor4 = 2130837728;
+			
+			// aapt resource value: 0x7f0200e1
+			public const int UserColor5 = 2130837729;
+			
+			// aapt resource value: 0x7f0200e2
+			public const int UserColor6 = 2130837730;
+			
+			// aapt resource value: 0x7f0200e3
+			public const int UserColor7 = 2130837731;
+			
+			// aapt resource value: 0x7f0200e4
+			public const int UserColor8 = 2130837732;
+			
+			// aapt resource value: 0x7f0200e5
+			public const int UserColor9 = 2130837733;
 			
 			static Drawable()
 			{
@@ -3447,8 +3543,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070002
 			public const int accept = 2131165186;
 			
-			// aapt resource value: 0x7f070064
-			public const int account_settings = 2131165284;
+			// aapt resource value: 0x7f070065
+			public const int account_settings = 2131165285;
 			
 			// aapt resource value: 0x7f07005b
 			public const int add_account = 2131165275;
@@ -3462,8 +3558,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070054
 			public const int calendar = 2131165268;
 			
-			// aapt resource value: 0x7f070066
-			public const int cc = 2131165286;
+			// aapt resource value: 0x7f070067
+			public const int cc = 2131165287;
 			
 			// aapt resource value: 0x7f070045
 			public const int cd_logo = 2131165253;
@@ -3582,6 +3678,9 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f07005d
 			public const int demo_email = 2131165277;
 			
+			// aapt resource value: 0x7f070061
+			public const int demo_initials = 2131165281;
+			
 			// aapt resource value: 0x7f070060
 			public const int demo_preview = 2131165280;
 			
@@ -3614,6 +3713,9 @@ namespace NachoClient.AndroidClient
 			
 			// aapt resource value: 0x7f070053
 			public const int mail = 2131165267;
+			
+			// aapt resource value: 0x7f070069
+			public const int message_not_available = 2131165289;
 			
 			// aapt resource value: 0x7f07005a
 			public const int more = 2131165274;
@@ -3669,8 +3771,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070000
 			public const int store_picture_title = 2131165184;
 			
-			// aapt resource value: 0x7f070067
-			public const int subject = 2131165287;
+			// aapt resource value: 0x7f070068
+			public const int subject = 2131165288;
 			
 			// aapt resource value: 0x7f070048
 			public const int submit = 2131165256;
@@ -3678,17 +3780,17 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070057
 			public const int support = 2131165271;
 			
-			// aapt resource value: 0x7f070065
-			public const int to = 2131165285;
-			
-			// aapt resource value: 0x7f070062
-			public const int to_deadline = 2131165282;
+			// aapt resource value: 0x7f070066
+			public const int to = 2131165286;
 			
 			// aapt resource value: 0x7f070063
-			public const int to_deferred = 2131165283;
+			public const int to_deadline = 2131165283;
 			
-			// aapt resource value: 0x7f070061
-			public const int to_inbox = 2131165281;
+			// aapt resource value: 0x7f070064
+			public const int to_deferred = 2131165284;
+			
+			// aapt resource value: 0x7f070062
+			public const int to_inbox = 2131165282;
 			
 			// aapt resource value: 0x7f070022
 			public const int wallet_buy_button_place_holder = 2131165218;
