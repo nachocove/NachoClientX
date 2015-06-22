@@ -105,8 +105,8 @@ namespace NachoCore.IMAP
             string ClassName = this.GetType ().Name + " ";
             byte[] requestData;
             byte[] responseData;
-            string combinedLog = Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ());
-            Log.Info (Log.LOG_IMAP, "{0}IMAP exchange\n{1}", ClassName, combinedLog);
+            //string combinedLog = Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ());
+            //Log.Info (Log.LOG_IMAP, "{0}IMAP exchange\n{1}", ClassName, combinedLog);
             Client.MailKitProtocolLogger.Stop (out requestData, out responseData);
             byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
 

@@ -17,6 +17,7 @@ namespace NachoCore.IMAP
 
         public string RedactProtocolLog (bool isRequest, string logData)
         {
+            // Redaction is done in the base class, since it's more complicated than just string replacement
             return logData;
         }
 
@@ -26,12 +27,7 @@ namespace NachoCore.IMAP
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, true, Cts.Token);
                 Log.Info (Log.LOG_IMAP, "IMAP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
             }
-//            RedactProtocolLogFuncDel RestartLog = null;
             if (!Client.IsAuthenticated) {
-//                if (Client.MailKitProtocolLogger.Enabled ()) {
-//                    RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
-//                    ProtocolLoggerStopAndPostTelemetry ();
-//                }
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
                     // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
                     Client.AuthenticationMechanisms.Remove ("LOGIN");
@@ -43,9 +39,6 @@ namespace NachoCore.IMAP
                 }
                 Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
             }
-//            if (null != RestartLog) {
-//                Client.MailKitProtocolLogger.Start (RestartLog);
-//            }
             var cap = McProtocolState.FromImapCapabilities (Client.Capabilities);
             if (cap != BEContext.ProtocolState.ImapServerCapabilities) {
                 BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {

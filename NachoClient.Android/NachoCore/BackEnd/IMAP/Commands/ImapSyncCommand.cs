@@ -88,7 +88,6 @@ namespace NachoCore.IMAP
                 // Just load UID with SELECT.
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.ImapFolderNameRedacted());
                 var timespan = BEContext.Account.DaysSyncEmailSpan ();
-                IList<UniqueId> uids;
                 mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                 if (null == mailKitFolder) {
                     return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
@@ -102,7 +101,7 @@ namespace NachoCore.IMAP
                 if (TimeSpan.Zero != timespan) {
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
                 }
-                var uids = MustUniqueIdSet (mailKitFolder.Search (query));
+                UniqueIdSet uids = MustUniqueIdSet (mailKitFolder.Search (query));
                 string UidsString = UidSetString(uids);
                 Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
                     uids.ToString (),

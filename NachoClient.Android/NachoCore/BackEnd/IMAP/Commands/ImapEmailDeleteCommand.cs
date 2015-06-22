@@ -20,6 +20,7 @@ namespace NachoCore.IMAP
 
         public string RedactProtocolLog (bool isRequest, string logData)
         {
+            // Nothing additional to redact. The command just has UID's.
             return logData;
         }
 

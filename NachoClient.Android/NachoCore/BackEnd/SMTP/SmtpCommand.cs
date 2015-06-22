@@ -122,7 +122,6 @@ namespace NachoCore.SMTP
         {
             if (!Client.IsConnected) {
                 //client.ClientCertificates = new X509CertificateCollection ();
-                // TODO Try useSSL true and fix whatever is needed to get past the server cert warning.
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
                 Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
             }
