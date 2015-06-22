@@ -163,7 +163,7 @@ namespace NachoCore.Model
             return score;
         }
 
-        private void AnalyzeFromAddress ()
+        public void AnalyzeFromAddress ()
         {
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -196,7 +196,7 @@ namespace NachoCore.Model
             ((int)AsLastVerbExecutedType.REPLYTOSENDER == LastVerbExecuted));
         }
 
-        private void AnalyzeReplyStatistics ()
+        public void AnalyzeReplyStatistics ()
         {
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
