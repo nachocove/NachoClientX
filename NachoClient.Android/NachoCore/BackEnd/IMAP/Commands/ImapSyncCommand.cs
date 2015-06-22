@@ -317,7 +317,7 @@ namespace NachoCore.IMAP
             if (AddrList.Any ()) {
                 var addrs = new List<string> ();
                 foreach (var addr in AddrList) {
-                    addrs.Add (((MailboxAddress)addr).Address);
+                    addrs.Add (addr.ToString ());
                 }
                 result = string.Join (",", addrs);
             }
@@ -348,7 +348,7 @@ namespace NachoCore.IMAP
                 if (summary.Envelope.From.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
-                emailMessage.From = ((MailboxAddress)summary.Envelope.From [0]).Address;
+                emailMessage.From = summary.Envelope.From [0].ToString ();
                 McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
@@ -361,13 +361,13 @@ namespace NachoCore.IMAP
                 if (summary.Envelope.ReplyTo.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} ReplyTo entries in message.", summary.Envelope.ReplyTo.Count);
                 }
-                emailMessage.ReplyTo = ((MailboxAddress)summary.Envelope.ReplyTo [0]).Address;
+                emailMessage.ReplyTo = summary.Envelope.ReplyTo [0].ToString ();
             }
             if (summary.Envelope.Sender.Count > 0) {
                 if (summary.Envelope.Sender.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} Sender entries in message.", summary.Envelope.Sender.Count);
                 }
-                emailMessage.Sender = ((MailboxAddress)summary.Envelope.Sender [0]).Address;
+                emailMessage.Sender = summary.Envelope.Sender [0].ToString ();
                 McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.Sender [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.SenderEmailAddressId = fromEmailAddress.Id;

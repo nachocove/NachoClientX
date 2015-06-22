@@ -41,6 +41,7 @@ namespace NachoCore
             if (null == deviceCalendar) {
                 return true;
             }
+
             Func<PlatformCalendarRecord, McCalendar> inserter = (record) => {
                 NcResult result;
                 try {
@@ -58,7 +59,7 @@ namespace NachoCore
                     });
                     return calendar;
                 } else {
-                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", deviceCalendar.ServerId);
+                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", record.ServerId);
                     return null;
                 }
             };

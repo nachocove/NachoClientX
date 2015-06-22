@@ -478,6 +478,7 @@
     <Compile Include="NachoUI.Android\Support\VerticalViewPager.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
+    <Compile Include="NachoUI.Android\Support\Bind.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -894,5 +895,37 @@
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\styles.xml" />
     <AndroidResource Include="Resources\values\strings.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor0.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor1.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor2.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor3.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor4.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor5.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor6.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor7.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor8.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor9.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor10.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor11.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor12.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor13.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor14.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor15.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor16.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor17.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor18.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor19.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor20.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor21.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor22.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor23.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor24.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor25.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor26.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor27.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor28.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor29.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor30.xml" />
+    <AndroidResource Include="Resources\drawable\UserColor31.xml" />
   </ItemGroup>
 </Project>

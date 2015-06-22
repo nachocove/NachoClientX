@@ -16,6 +16,9 @@ using Android.Support.V7.App;
 using Android.Support.V7.Widget;
 using Android.Support.Design.Widget;
 
+using NachoCore;
+using NachoCore.Utils;
+
 namespace NachoClient.AndroidClient
 {
     public class MessageListFragment : Fragment
@@ -24,9 +27,16 @@ namespace NachoClient.AndroidClient
         RecyclerView.LayoutManager layoutManager;
         MessageListAdapter messageListAdapter;
 
+        INachoEmailMessages messages;
+
         Android.Widget.ImageView composeButton;
 
         public event EventHandler<int> onMessageClick;
+
+        public MessageListFragment(INachoEmailMessages messages)
+        {
+            this.messages = messages;
+        }
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -51,7 +61,7 @@ namespace NachoClient.AndroidClient
             var inboxImage = view.FindViewById<Android.Widget.ImageView> (Resource.Id.inbox_image);
             inboxImage.SetImageResource (Resource.Drawable.nav_mail_active);
 
-            messageListAdapter = new MessageListAdapter ();
+            messageListAdapter = new MessageListAdapter (messages);
 
             messageListAdapter.onMessageClick += MessageListAdapter_onMessageClick;
 
@@ -85,6 +95,13 @@ namespace NachoClient.AndroidClient
     {
         public event EventHandler<int> onMessageClick;
 
+        INachoEmailMessages messages;
+
+        public MessageListAdapter(INachoEmailMessages messages)
+        {
+            this.messages = messages;
+        }
+
         class MessageHolder : RecyclerView.ViewHolder
         {
             Action<int> listener;
@@ -103,7 +120,7 @@ namespace NachoClient.AndroidClient
 
         public override int ItemCount {
             get {
-                return 100;
+                return messages.Count();
             }
         }
 
@@ -122,7 +139,13 @@ namespace NachoClient.AndroidClient
 
         public override void OnBindViewHolder (RecyclerView.ViewHolder holder, int position)
         {
+            var thread = messages.GetEmailThread (position);
+            var message = thread.FirstMessageSpecialCase ();
+            Bind.BindMessageHeader (thread, message, holder.ItemView);
 
+            var previewView = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
+            var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
+            previewView.Text = cookedPreview;
         }
 
 

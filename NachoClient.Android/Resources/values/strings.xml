@@ -31,6 +31,7 @@
     <string name="demo_subject">What is the deal with this long subject line?</string>
     <string name="demo_date">Wed, Jun 17 - 2:58pm</string>
     <string name="demo_preview">Get the most from your inbox today!  Get Nacho Mail pronto for your Chromebook."</string>
+    <string name="demo_initials">JB</string>
     <string name="to_inbox">Go to Inbox</string>
     <string name="to_deadline">Go to Deadlines</string>
     <string name="to_deferred">Go to Deferred Messages</string>
@@ -38,4 +39,5 @@
     <string name="to">To:</string>
     <string name="cc">Cc:</string>
     <string name="subject">Subject:</string>
+    <string name="message_not_available">Message not available</string>
 </resources>

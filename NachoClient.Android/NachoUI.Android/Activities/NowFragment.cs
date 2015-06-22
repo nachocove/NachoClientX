@@ -16,6 +16,8 @@ using Android.Support.V7.App;
 using Android.Support.V7.Widget;
 using Android.Support.Design.Widget;
 
+using NachoCore;
+
 namespace NachoClient.AndroidClient
 {
     public class NowFragment : Android.App.Fragment
@@ -105,17 +107,20 @@ namespace NachoClient.AndroidClient
     {
         public event EventHandler<int> onMessageClick;
 
+        INachoEmailMessages messages = NcEmailManager.PriorityInbox(NcApplication.Instance.Account.Id);
+
         public GenericFragmentPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
         {
         }
 
         public override int Count {
-            get { return 4; }
+            get { return messages.Count (); }
         }
 
         public override Android.App.Fragment GetItem (int position)
         {
-            var hotMessageFragment = new HotMessageFragment ();
+            var thread = messages.GetEmailThread (position);
+            var hotMessageFragment = new HotMessageFragment (thread, messages);
             hotMessageFragment.onMessageClick += HotMessageFragment_onMessageClick;
             return hotMessageFragment;
         }
@@ -123,7 +128,7 @@ namespace NachoClient.AndroidClient
         void HotMessageFragment_onMessageClick (object sender, int e)
         {
             if (null != onMessageClick) {
-                onMessageClick (this, PositionNone);
+                onMessageClick (this, e);
             }
         }
 

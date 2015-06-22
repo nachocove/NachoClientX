@@ -11,6 +11,8 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 
+using NachoCore;
+
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "InboxActivity")]            
@@ -22,7 +24,13 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle, Resource.Layout.InboxActivity);
 
-            messageListFragment = new MessageListFragment ();
+            var messages = NcEmailManager.Inbox (NcApplication.Instance.Account.Id);
+
+            List<int> adds;
+            List<int> deletes;
+            messages.Refresh (out adds, out deletes);
+
+            messageListFragment = new MessageListFragment (messages);
             messageListFragment.onMessageClick += MessageListFragment_onMessageClick;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack("Inbox").Commit ();
         }

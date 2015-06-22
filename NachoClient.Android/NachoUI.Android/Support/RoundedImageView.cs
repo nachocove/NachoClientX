@@ -38,28 +38,30 @@ namespace NachoClient.AndroidClient
             if (drawable == null) {
                 return;
             }
-
             if (this.Width == 0 || this.Height == 0) {
                 return; 
             }
-            Bitmap b = ((BitmapDrawable)drawable).Bitmap;
-            Bitmap bitmap = b.Copy (Bitmap.Config.Argb8888, true);
-
-            int w = this.Width, h = this.Height;
-
-            Bitmap roundBitmap = getCroppedBitmap (bitmap, w);
-            canvas.DrawBitmap (roundBitmap, 0, 0, null);
-
+            var b = ((BitmapDrawable)drawable).Bitmap;
+            using (var bitmap = b.Copy (Bitmap.Config.Argb8888, true)) {
+                using (var roundBitmap = getCroppedBitmap (bitmap, Width)) {
+                    canvas.DrawBitmap (roundBitmap, 0, 0, null);
+                }
+            }
         }
 
         public static Bitmap getCroppedBitmap (Bitmap bmp, int radius)
         {
-            Bitmap sbmp;
             if (bmp.Width != radius || bmp.Height != radius) {
-                sbmp = Bitmap.CreateScaledBitmap (bmp, radius, radius, false);
+                using (var sbmp = Bitmap.CreateScaledBitmap (bmp, radius, radius, false)) {
+                    return CropBitmap (sbmp, radius);
+                }
             } else {
-                sbmp = bmp;
+                return CropBitmap (bmp, radius);
             }
+        }
+
+        static Bitmap CropBitmap (Bitmap sbmp, int radius)
+        {
             Bitmap output = Bitmap.CreateBitmap (sbmp.Width, sbmp.Height, Bitmap.Config.Argb8888);
             Canvas canvas = new Canvas (output);
 
