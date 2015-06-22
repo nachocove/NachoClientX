@@ -45,6 +45,9 @@ namespace NachoCore.IMAP
 
             //* 59 FETCH (UID 8721 MODSEQ (952121) BODY[1]<0> {500} ... )
             RegexList.Add (new Regex (@"^(?<star>\* )(?<num>\d+ )(?<cmd>FETCH )(?<openparen>\()(?<stuff>[^\n]+)(?<redact>.*)(?<closeparen>\))$", NcMailKitProtocolLogger.rxOptions));
+
+            //* 38 FETCH (X-GM-THRID 1503699202635470816 X-GM-MSGID 1503699202635470816 UID 8695 RFC822.SIZE 64686 MODSEQ (950792) INTERNALDATE "11-Jun-2015 16:15:08 +0000" FLAGS () ENVELOPE ("Thu, 11 Jun 2015 16:15:02 +0000" "test with attachment" (("Jan Vilhuber" NIL "janv" "nachocove.com")) (("Jan Vilhuber" NIL "janv" "nachocove.com")) (("Jan Vilhuber" NIL "janv" "nachocove.com")) (("Jan Vilhuber" NIL "jan.vilhuber" "gmail.com")) NIL NIL NIL "<C4E2D584-AC73-492F-B08B-D0FA8A12929E@nachocove.com>") BODYSTRUCTURE ((2015-06-17T23:20:14.541Z: IMAP S: "TEXT" "PLAIN" ("CHARSET" "us-ascii") NIL NIL "QUOTED-PRINTABLE" 0 0 NIL NIL NIL)("IMAGE" "PNG" ("NAME" "Screen Shot 2015-06-10 at 10.13.12 AM.png") "<9A84A7CB1408CC4A96BF4CB3CC02846B@prod.exchangelabs.com>" "Screen Shot 2015-06-10 at 10.13.12 AM.png" "BASE64" 59598 NIL ("ATTACHMENT" ("CREATION-DATE" "Thu, 11 Jun 2015 16:15:02 GMT" "FILENAME" "Screen Shot 2015-06-10 at 10.13.12 AM.png" "MODIFICATION-DATE" "Thu, 11 Jun 2015 16:15:02 GMT" "SIZE" "43549")) NIL) "MIXED" ("BOUNDARY" "_002_C4E2D584AC73492FB08BD0FA8A12929Enachocovecom_") NIL NIL) BODY[HEADER.FIELDS (IMPORTANCE DKIM-SIGNATURE CONTENT-CLASS)] {2}
+            // Need to redact the entire Envelope and BODYSTRUCTURE filenames
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
