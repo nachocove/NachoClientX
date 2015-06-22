@@ -113,35 +113,30 @@ namespace NachoCore.IMAP
             }
             SyncKit syncKit = null;
             var currentHighestInFolder = new UniqueId (folder.ImapUidNext - 1);
-            UniqueIdSet UidSet;
+            UniqueIdSet CurrentKnownUidSet;
             if (null != folder.ImapUidSet && string.Empty != folder.ImapUidSet) {
-                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out UidSet)) {
+                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out CurrentKnownUidSet)) {
                     Log.Error (Log.LOG_IMAP, "Could not parse uid set");
                     return null;
                 }
             } else {
-                UidSet = new UniqueIdSet ();
+                CurrentKnownUidSet = new UniqueIdSet ();
             }
 
-            if (UserRequested ||
-                0 == folder.ImapUidNext ||
-                null == folder.ImapUidSet ||
-                folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ()) ||
-                (UInt32.MinValue != folder.ImapUidHighestUidSynced &&
-                    currentHighestInFolder.Id > folder.ImapUidHighestUidSynced &&
-                    !UidSet.Contains (currentHighestInFolder))
+            if (!folder.ImapNeedsSync &&  // we already know we need to sync.
+                (UserRequested || 
+                    0 == folder.ImapUidNext || null == folder.ImapUidSet || // new folder, never set up
+                    folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ())) // is our information possibly out of date?
                 )
             {
-                // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
+                // We really need to do an Open/SELECT to get folder metadata
+                // (UIDNEXT, RECENT, COUNT, etc) before we can sync this folder.
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.OpenOnly,
                     Folder = folder,
                     Flags = SummaryFlags,
                 };
-            } else if (currentHighestInFolder.Id > 0 && // are there any messages at all?
-                UidSet.Any ())
-            {
-                // If there is nothing new to grab, then pull down older mail.
+            } else if (folder.ImapNeedsSync) {
                 uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
                 UniqueIdSet currentMails = new UniqueIdSet ();
                 foreach (var emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (accountId, folder.Id)) {
@@ -155,11 +150,8 @@ namespace NachoCore.IMAP
                     Method = SyncKit.MethodEnum.Range,
                     Folder = folder,
                     Flags = SummaryFlags,
-                    UidList = UidSet.Except (currentMails).OrderByDescending (x => x).Take ((int)span).ToList (),
+                    UidList = CurrentKnownUidSet.Except (currentMails).OrderByDescending (x => x).Take ((int)span).ToList (),
                 };
-                if (!syncKit.UidList.Any ()) {
-                    syncKit = null;
-                }
             }
             return syncKit;
         }

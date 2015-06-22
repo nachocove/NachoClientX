@@ -151,16 +151,30 @@ namespace NachoCore.IMAP
         {
             bool changed = false;
             ulong hmodseq = mailKitFolder.SupportsModSeq ? mailKitFolder.HighestModSeq : 0;
+
+            // TODO Why do the check here when we can do the check inside the UpdateWithOCApply function and return false?
             if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||
                 (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id) ||
+                (folder.ImapMessageCount != mailKitFolder.Count) ||
+                (folder.ImapMessageRecent != mailKitFolder.Recent) ||
                 (ulong)folder.CurImapHighestModSeq != hmodseq)
             {
                 // update.
+                bool needsSync = (
+                                     (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id) ||
+                                     (folder.ImapMessageCount != mailKitFolder.Count) ||
+                                     (folder.ImapMessageRecent != mailKitFolder.Recent) ||
+                                     (ulong)folder.CurImapHighestModSeq != hmodseq
+                                 );
+
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.CurImapHighestModSeq = (long)hmodseq;
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
+                    target.ImapMessageCount = (uint)mailKitFolder.Count;
+                    target.ImapMessageRecent = (uint)mailKitFolder.Recent;
+                    target.ImapNeedsSync = needsSync;
                     return true;
                 });
                 changed = true;

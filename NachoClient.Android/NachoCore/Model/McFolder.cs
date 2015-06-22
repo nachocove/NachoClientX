@@ -51,8 +51,12 @@ namespace NachoCore.Model
         public uint ImapUidHighestUidSynced { get; set; }
         // The folder's UIDVALIDITY value
         public uint ImapUidValidity { get; set; }
-        // the folders UIDNEXT value
+        // the folder's UIDNEXT value
         public uint ImapUidNext { get; set; }
+        // the folder's Count of Messages value
+        public uint ImapMessageCount { get; set; }
+        // the folder's Count of Recent value
+        public uint ImapMessageRecent { get; set; }
         // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
         public string ImapGuid { get; set; }
         // DateTime we last examined the folder.
@@ -62,6 +66,7 @@ namespace NachoCore.Model
         public long LastImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
         // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
         public string ImapUidSet { get; set; }
+        public bool ImapNeedsSync { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }

@@ -88,6 +88,8 @@ namespace NachoCore.IMAP
             NcCapture.AddKind (KImapSearchTiming);
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
+            SearchQuery query;
+            var timespan = BEContext.Account.DaysSyncEmailSpan();
 
             if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
                 // Just load UID with SELECT.
@@ -100,11 +102,13 @@ namespace NachoCore.IMAP
                 }
                 if (UInt32.MinValue != SyncKit.Folder.ImapUidValidity && 
                     SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
-                    NcAssert.True (false); // FIXME replace this with a FolderSync event when we have it.
+                    return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDVALIDITY");
                 }
 
-                var query = SearchQuery.NotDeleted;
-                var timespan = BEContext.Account.DaysSyncEmailSpan();
+                // TODO Move the rest to the SyncKit.MethodEnum.Range case?
+
+                // Check for regular message messages
+                query = SearchQuery.NotDeleted;
                 if (TimeSpan.Zero != timespan) {
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
                 }
@@ -114,24 +118,13 @@ namespace NachoCore.IMAP
                     uids.ToString (),
                     SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
 
-                query = SearchQuery.Deleted;
-                if (TimeSpan.Zero != timespan) {
-                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-                }
-                var deletedUids = MustUniqueIdSet (mailKitFolder.Search (query));
-                Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
-                    deletedUids.ToString (),
-                    SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-                UpdateImapSetting (mailKitFolder, SyncKit.Folder);
-
                 var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
                 if (uids.Any () && !uids.Contains(highestUid))
                 {
-                    // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
+                    // need to artificially add this to the set, otherwise we'll loop
+                    // forever if there's a hole at the top.
                     uids.Add (highestUid);
                 }
-                // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
-                // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapUidSet = uids.ToString ();
@@ -149,54 +142,64 @@ namespace NachoCore.IMAP
 
             // Process the various Methods here.
             case SyncKit.MethodEnum.Range:
-                MaxSynced = SyncKit.UidList.Max ().Id;
-                MinSynced = SyncKit.UidList.Min ().Id;
+                MaxSynced = SyncKit.UidList.Any () ? SyncKit.UidList.Max ().Id : UInt32.MinValue;
+                MinSynced = SyncKit.UidList.Any () ? SyncKit.UidList.Min ().Id : UInt32.MaxValue;
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
                     SyncKit.Folder.ImapFolderNameRedacted());
-                IList<IMessageSummary> imapSummaries = null;
+                IList<IMessageSummary> imapSummaries = new List<IMessageSummary> ();
                 lock (Client.SyncRoot) {
                     mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                     if (null == mailKitFolder) {
                         return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
                     }
-                    try {
-                        cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                        HashSet<HeaderId> headers = new HashSet<HeaderId>();
+
+                    query = SearchQuery.NotDeleted;
+                    if (TimeSpan.Zero != timespan) {
+                        query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                    }
+                    var uids = MustUniqueIdSet (mailKitFolder.Search (query));
+
+                    if (SyncKit.UidList.Any ()) {
+                        HashSet<HeaderId> headers = new HashSet<HeaderId> ();
                         headers.Add (HeaderId.Importance);
                         headers.Add (HeaderId.DkimSignature);
                         headers.Add (HeaderId.ContentClass);
 
-                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
-                        cap.Stop ();
-                        Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    } catch (ImapProtocolException) {
-                        // try one-by-one so we can at least get a few.
-                        Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
-                        if (!Client.IsConnected || !Client.IsAuthenticated) {
-                            var authy = new ImapAuthenticateCommand (BEContext, Client);
-                            authy.ConnectAndAuthenticate ();
-                        }
-                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                        imapSummaries = new List<IMessageSummary> ();
-                        foreach (var uid in SyncKit.UidList) {
-                            try {
-                                var s = mailKitFolder.Fetch (new List<UniqueId>{uid}, SyncKit.Flags, Cts.Token);
-                                if (1 == s.Count) {
-                                    imapSummaries.Add (s [0]);
-                                } else if (s.Count > 0) {
-                                    Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
+                        try {
+                            cap = NcCapture.CreateAndStart (KImapFetchTiming);
+
+                            imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
+                            cap.Stop ();
+                            Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                        } catch (ImapProtocolException) {
+                            // try one-by-one so we can at least get a few.
+                            Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
+                            if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                var authy = new ImapAuthenticateCommand (BEContext, Client);
+                                authy.ConnectAndAuthenticate ();
+                            }
+                            mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
+                            foreach (var uid in SyncKit.UidList) {
+                                try {
+                                    var s = mailKitFolder.Fetch (new List<UniqueId>{ uid }, SyncKit.Flags, headers, Cts.Token);
+                                    if (1 == s.Count) {
+                                        imapSummaries.Add (s [0]);
+                                    } else if (s.Count > 0) {
+                                        Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
+                                    }
+                                } catch (ImapProtocolException ex1) {
+                                    // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
+                                    Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
+                                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                        var authy = new ImapAuthenticateCommand (BEContext, Client);
+                                        authy.ConnectAndAuthenticate ();
+                                    }
+                                    mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                                 }
-                            } catch (ImapProtocolException ex1) {
-                                // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
-                                Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
-                                if (!Client.IsConnected || !Client.IsAuthenticated) {
-                                    var authy = new ImapAuthenticateCommand (BEContext, Client);
-                                    authy.ConnectAndAuthenticate ();
-                                }
-                                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                             }
                         }
                     }
+
                     cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                     foreach (var imapSummary in imapSummaries) {
                         if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
@@ -221,6 +224,38 @@ namespace NachoCore.IMAP
                 }
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
+            // Check for deleted messages
+            query = SearchQuery.Deleted;
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+            }
+            var deletedUids = MustUniqueIdSet (mailKitFolder.Search (query));
+            Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
+                deletedUids.ToString (),
+                SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+            UpdateImapSetting (mailKitFolder, SyncKit.Folder);
+
+            UniqueIdSet currentMails = new UniqueIdSet ();
+
+            // TODO Convert some of this to queries instead of loops
+            // TODO Need to be able to query based on time, i.e. last X days
+            List<String> mailsToDelete = new List<String> ();
+            foreach (var emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (BEContext.Account.Id, SyncKit.Folder.Id)) {
+                currentMails.Add (ImapProtoControl.ImapMessageUid (emailMessage.ServerId));
+            }
+            foreach (var uid in deletedUids.Intersect (currentMails)) {
+                Log.Info (Log.LOG_IMAP, "Deleted: Need to delete email message {0}", uid);
+                mailsToDelete.Add (ImapProtoControl.MessageServerId (SyncKit.Folder, uid));
+            }
+            foreach (var uid in currentMails.Except (uids)) {
+                Log.Info (Log.LOG_IMAP, "Missing: Need to delete email message {0}", uid);
+                mailsToDelete.Add (ImapProtoControl.MessageServerId (SyncKit.Folder, uid));
+            }
+            foreach (var serverId in mailsToDelete) {
+                Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", SyncKit.Folder.ImapFolderNameRedacted (), serverId);
+                //McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId).Delete ();
+            }
+
             if (SyncKit.MethodEnum.Range == SyncKit.Method) {
                 SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
