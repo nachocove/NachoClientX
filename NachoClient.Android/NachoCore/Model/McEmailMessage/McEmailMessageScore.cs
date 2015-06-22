@@ -32,7 +32,7 @@ namespace NachoCore.Model
 
         public static void DeleteByParentId (int parentId)
         {
-            NcModel.Instance.Db.Execute ("DELETE FROM McEmailAddressScore WHERE ParentId = ?", parentId);
+            NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScore WHERE ParentId = ?", parentId);
         }
     }
 }

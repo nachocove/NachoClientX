@@ -142,6 +142,8 @@
     <Compile Include="TelemetryJsonFileTest.cs" />
     <Compile Include="NcBrainHelpersTest.cs" />
     <Compile Include="ImapOperationTest.cs" />
+    <Compile Include="McEmailMessageScoreTest.cs" />
+    <Compile Include="EmailMessageScoreTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
