@@ -358,11 +358,13 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            var jsonEvent = new TelemetrySamplesEvent () {
-                samples_name = samplesName,
-                samples = samplesValues
-            };
-            RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_value = value
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
         }
 
         public static void RecordStatistics2 (string name, int count, int min, int max, long sum, long sum2)

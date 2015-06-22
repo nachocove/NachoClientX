@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="1.0" package="NachoClient.AndroidClient">
-	<uses-sdk android:minSdkVersion="16" android:targetSdkVersion="16" />
-	<application android:label="Taco Mail" android:icon="@drawable/icon">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="1.0" package="com.android.nachomail">
+	<uses-sdk android:minSdkVersion="16" android:targetSdkVersion="21" />
+	<application android:label="Nacho Mail" android:theme="@style/Theme.NachoMail" android:icon="@drawable/icon">
 	</application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 </manifest>

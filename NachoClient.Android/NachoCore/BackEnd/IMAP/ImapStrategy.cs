@@ -112,7 +112,7 @@ namespace NachoCore.IMAP
                 return null;
             }
             SyncKit syncKit = null;
-            var currentHighestInFolder = folder.ImapUidNext - 1;
+            var currentHighestInFolder = new UniqueId (folder.ImapUidNext - 1);
             UniqueIdSet UidSet;
             if (null != folder.ImapUidSet && string.Empty != folder.ImapUidSet) {
                 if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out UidSet)) {
@@ -128,8 +128,8 @@ namespace NachoCore.IMAP
                 null == folder.ImapUidSet ||
                 folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ()) ||
                 (UInt32.MinValue != folder.ImapUidHighestUidSynced &&
-                    currentHighestInFolder > folder.ImapUidHighestUidSynced &&
-                    !UidSet.Contains (new UniqueId(currentHighestInFolder)))
+                    currentHighestInFolder.Id > folder.ImapUidHighestUidSynced &&
+                    !UidSet.Contains (currentHighestInFolder))
                 )
             {
                 // We really need to do an Open/SELECT to get UidNext before we can sync this folder.
@@ -138,14 +138,18 @@ namespace NachoCore.IMAP
                     Folder = folder,
                     Flags = SummaryFlags,
                 };
-            } else if (currentHighestInFolder > 0 && // are there any messages at all?
+            } else if (currentHighestInFolder.Id > 0 && // are there any messages at all?
                 UidSet.Any ())
             {
                 // If there is nothing new to grab, then pull down older mail.
-                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
                 UniqueIdSet currentMails = new UniqueIdSet ();
                 foreach (var emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (accountId, folder.Id)) {
                     currentMails.Add (ImapProtoControl.ImapMessageUid (emailMessage.ServerId));
+                }
+                if (currentMails.Any () && !currentMails.Contains (currentHighestInFolder)) {
+                    // deal with a hole at the top
+                    currentMails.Add (currentHighestInFolder);
                 }
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.Range,

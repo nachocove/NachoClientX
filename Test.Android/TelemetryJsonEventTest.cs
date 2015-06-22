@@ -191,14 +191,14 @@ namespace Test.Common
         {
             var now = GetUtcNow ();
             var jsonEvent = new TelemetrySamplesEvent () {
-                samples_name = "Memory usage",
-                samples = new List<int> () { 70, 130, 90, 110 },
+                sample_name = "Memory usage",
+                sample_value = 70,
             };
             var json = jsonEvent.ToJson ();
             var decode = JsonConvert.DeserializeObject<TelemetrySamplesEvent> (json);
             CheckCommonHeader (now, decode);
-            Assert.AreEqual (jsonEvent.samples_name, decode.samples_name);
-            Assert.AreEqual (jsonEvent.samples, decode.samples);
+            Assert.AreEqual (jsonEvent.sample_name, decode.sample_name);
+            Assert.AreEqual (jsonEvent.sample_value, decode.sample_value);
         }
     }
 }

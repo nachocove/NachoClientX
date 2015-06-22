@@ -56,6 +56,26 @@ namespace NachoCore.IMAP
         private const string KImapFetchTiming = "IMAP Summary Fetch";
         private const string KImapPreviewGeneration = "IMAP Preview Generation";
 
+        private string UidSetString(IList<UniqueId> uids)
+        {
+            return (uids is UniqueIdRange || uids is UniqueIdSet) ? uids.ToString () : UniqueIdSet.ToString (uids);
+        }
+
+        private UniqueIdSet MustUniqueIdSet(IList<UniqueId> uids)
+        {
+            if (uids is UniqueIdSet) {
+                return uids as UniqueIdSet;
+            } else {
+                UniqueIdSet newUidSet;
+                string uidSetString = UidSetString (uids);
+                if (!UniqueIdSet.TryParse (uidSetString, out newUidSet)) {
+                    Log.Error (Log.LOG_IMAP, "Could not parse uid set string {0}", uidSetString);
+                    newUidSet = new UniqueIdSet ();
+                }
+                return newUidSet;
+            }
+        }
+
         protected override Event ExecuteCommand ()
         {
             IMailFolder mailKitFolder;
@@ -82,22 +102,33 @@ namespace NachoCore.IMAP
                 if (TimeSpan.Zero != timespan) {
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
                 }
-                uids = mailKitFolder.Search (query);
-                string UidsString;
-                if (uids is UniqueIdRange || uids is UniqueIdSet) {
-                    UidsString = uids.ToString ();
-                } else {
-                    UidsString = string.Join (",", uids.Select (x => x.ToString ()));
-                }
+                var uids = MustUniqueIdSet (mailKitFolder.Search (query));
+                string UidsString = UidSetString(uids);
+                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
+                    uids.ToString (),
+                    SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
 
-                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}", UidsString, SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+                query = SearchQuery.Deleted;
+                if (TimeSpan.Zero != timespan) {
+                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                }
+                var deletedUids = MustUniqueIdSet (mailKitFolder.Search (query));
+                Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
+                    deletedUids.ToString (),
+                    SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
                 UpdateImapSetting (mailKitFolder, SyncKit.Folder);
 
+                var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
+                if (uids.Any () && !uids.Contains(highestUid))
+                {
+                    // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
+                    uids.Add (highestUid);
+                }
                 // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
                 // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
                 SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
-                    target.ImapUidSet = UidsString;
+                    target.ImapUidSet = uids.ToString ();
                     return true;
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
@@ -161,6 +192,9 @@ namespace NachoCore.IMAP
                 }
                 cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                 foreach (var imapSummary in imapSummaries) {
+			if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
+			    continue;
+			}
                     var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                     summaries.Add (new MailSummary () {
                         imapSummary = imapSummary as MessageSummary,
