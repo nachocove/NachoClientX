@@ -105,7 +105,6 @@ namespace NachoCore.IMAP
                     query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
                 }
                 UniqueIdSet uids = MustUniqueIdSet (mailKitFolder.Search (query));
-                string UidsString = UidSetString(uids);
                 Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
                     uids.ToString (),
                     SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
