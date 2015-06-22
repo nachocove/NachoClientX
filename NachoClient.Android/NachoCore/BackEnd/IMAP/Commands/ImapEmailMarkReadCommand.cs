@@ -19,6 +19,10 @@ namespace NachoCore.IMAP
 
         public string RedactProtocolLog (bool isRequest, string logData)
         {
+            // No additional redaction necessary
+            //2015-06-22T17:26:07.601Z: IMAP C: A00000062 UID STORE 8728 FLAGS.SILENT (\Seen)
+            //2015-06-22T17:26:08.028Z: IMAP S: * 60 FETCH (UID 8728 MODSEQ (953644) FLAGS (\Seen))
+            //A00000062 OK Success
             return logData;
         }
 

@@ -25,16 +25,17 @@ namespace NachoCore.Utils
 
     public class NcMailKitProtocolLogger : IProtocolLogger, INcMailKitProtocolLogger
     {
+        public RedactProtocolLogFuncDel RedactProtocolLogFunc { get; private set; }
+        public static RegexOptions rxOptions {
+            get { return RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Multiline | RegexOptions.Singleline; }
+        }
+        public static readonly string ImapCommandNumRegexStr = @"(?<num>[A-Z]\d+ )";
+
         private byte[] logPrefix;
         private MemoryStream RequestLogBuffer;
         private MemoryStream ResponseLogBuffer;
         private MemoryStream CombinedLogBuffer;
         private bool _Enabled;
-
-        public RedactProtocolLogFuncDel RedactProtocolLogFunc { get; private set; }
-        public static RegexOptions rxOptions {
-            get { return RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Multiline | RegexOptions.Singleline; }
-        }
 
         private List<Regex> CommonRequestRegexList;
         private List<Regex> CommonResponseRegexList;
@@ -42,6 +43,7 @@ namespace NachoCore.Utils
 
         private Regex ImapCommandRx;
         private bool pauseLogging;
+
 
         public NcMailKitProtocolLogger (string prefix)
         {
@@ -56,8 +58,6 @@ namespace NachoCore.Utils
 
             // All regex's must convert everything into one or more groups. A group-name that starts with 'redact', will be redacted.
             // Otherwise, the group will be copied as is.
-
-            string ImapCommandNumRegexStr = @"(?<num>[A-Z]\d+ )";
 
             ImapCommandRx = new Regex (@"^" + ImapCommandNumRegexStr + @"(?<cmd>\w+)");
 

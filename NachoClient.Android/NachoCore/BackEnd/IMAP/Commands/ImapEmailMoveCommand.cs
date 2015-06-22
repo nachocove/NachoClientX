@@ -22,11 +22,15 @@ namespace NachoCore.IMAP
             RedactProtocolLogFunc = RedactProtocolLog;
 
             RegexList = new List<Regex> ();
-            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+)(?<space1>\s)(?<redact>.*)$", NcMailKitProtocolLogger.rxOptions));
+            RegexList.Add (new Regex (@"^(?<num>\w+)(?<space1>\s)(?<cmd>UID MOVE )(?<uid>\d+ )(?<redact>.*)(?<end>[\r\n]+)$", NcMailKitProtocolLogger.rxOptions));
         }
 
         public string RedactProtocolLog (bool isRequest, string logData)
         {
+            //2015-06-22T17:27:03.854Z: IMAP C: A00000082 UID MOVE 8728 REDACTED
+            //2015-06-22T17:27:04.326Z: IMAP S: * 60 EXPUNGE
+            //* 59 EXISTS
+            //A00000082 OK [COPYUID 5 8728 8648] (Success)
             return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
         }
 

@@ -145,7 +145,7 @@ namespace NachoCore.IMAP
                 MaxSynced = SyncKit.UidList.Max ().Id;
                 MinSynced = SyncKit.UidList.Min ().Id;
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
-                    SyncKit.Folder.ImapFolderNameRedacted());
+                    SyncKit.Folder.ImapFolderNameRedacted ());
                 IList<IMessageSummary> imapSummaries = null;
                 mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
                 if (null == mailKitFolder) {
@@ -153,7 +153,7 @@ namespace NachoCore.IMAP
                 }
                 try {
                     cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                    HashSet<HeaderId> headers = new HashSet<HeaderId>();
+                    HashSet<HeaderId> headers = new HashSet<HeaderId> ();
                     headers.Add (HeaderId.Importance);
                     headers.Add (HeaderId.DkimSignature);
                     headers.Add (HeaderId.ContentClass);
@@ -172,7 +172,7 @@ namespace NachoCore.IMAP
                     imapSummaries = new List<IMessageSummary> ();
                     foreach (var uid in SyncKit.UidList) {
                         try {
-                            var s = mailKitFolder.Fetch (new List<UniqueId>{uid}, SyncKit.Flags, Cts.Token);
+                            var s = mailKitFolder.Fetch (new List<UniqueId>{ uid }, SyncKit.Flags, Cts.Token);
                             if (1 == s.Count) {
                                 imapSummaries.Add (s [0]);
                             } else if (s.Count > 0) {
@@ -189,19 +189,21 @@ namespace NachoCore.IMAP
                         }
                     }
                 }
-                cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
-                foreach (var imapSummary in imapSummaries) {
-        			if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
-        			    continue;
-        			}
-                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                    summaries.Add (new MailSummary () {
-                        imapSummary = imapSummary as MessageSummary,
-                        preview = preview,
-                    });
+                if (null != imapSummaries) {
+                    cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
+                    foreach (var imapSummary in imapSummaries) {
+                        if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
+                            continue;
+                        }
+                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                        summaries.Add (new MailSummary () {
+                            imapSummary = imapSummary as MessageSummary,
+                            preview = preview,
+                        });
+                    }
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                 }
-                cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
                 break;
             }
 
