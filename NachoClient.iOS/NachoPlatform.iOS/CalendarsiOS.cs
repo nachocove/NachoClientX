@@ -93,6 +93,13 @@ namespace NachoPlatform
 
             public override NcResult ToMcCalendar ()
             {
+                if (Event.IsDetached) {
+                    // FIXME Figure out how to handle exceptions.  That's hard because the item for the
+                    // exception is not directly linked to the main item for the recurring meeting.
+                    // That makes it hard to process the items one at a time.
+                    return NcResult.Error("Ignoring exception to recurring event from device calendar.");
+                }
+
                 var accountId = McAccount.GetDeviceAccount ().Id;
                 var cal = new McCalendar () {
                     Source = McAbstrItem.ItemSource.Device,
@@ -181,6 +188,16 @@ namespace NachoPlatform
                 }
                 cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (timeZone), cal.StartTime).toEncodedTimeZone ();
 
+                if (Event.HasRecurrenceRules) {
+                    // The iOS documentation says that only one recurrence rule is supported for a calendar item,
+                    // even though the API allows for multiple.  So the app only looks at the first recurrence rule
+                    // from the device event.
+                    var recurrences = new List<McRecurrence> ();
+                    recurrences.Add (ConvertRecurrence (accountId, Event.RecurrenceRules [0],
+                        TimeZoneInfo.ConvertTimeFromUtc (cal.StartTime, timeZone)));
+                    cal.recurrences = recurrences;
+                }
+
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
                 if (null != ekAttendees) {
@@ -247,11 +264,153 @@ namespace NachoPlatform
                 }
                 return NcResult.OK (cal);
             }
+
+            /// <summary>
+            /// Convert from an iOS recurrence rule to a McRecurrence (which is based on the ActiveSync recurrence
+            /// rule).  The two systems represent recurrences differently, so this is not a trivial task.  The iOS
+            /// rules allow for more flexibility, so there may be some rules that are not converted correctly.
+            /// But the code does not try to detect or report those cases, since there is nothing useful that can
+            /// be done with them.  The iOS rule keeps some of the information in the start date of the event, so
+            /// the start date and time zone need to be passed in to this method.
+            /// </summary>
+            private McRecurrence ConvertRecurrence (int accountId, EKRecurrenceRule rule, DateTime localStartTime)
+            {
+                var result = new McRecurrence ();
+                result.AccountId = accountId;
+
+                // The interval is the easiest thing to convert.
+                result.Interval = (int)rule.Interval;
+                result.IntervalIsSet = true;
+
+                switch (rule.Frequency) {
+
+                case EKRecurrenceFrequency.Daily:
+                    // Daily recurrences don't require any extra information.
+                    result.Type = NcRecurrenceType.Daily;
+                    break;
+
+                case EKRecurrenceFrequency.Weekly:
+                    result.Type = NcRecurrenceType.Weekly;
+                    if (null == rule.DaysOfTheWeek || 0 == rule.DaysOfTheWeek.Length) {
+                        // If the days of the week is not specified, then it is taken from the start date of the event.
+                        result.DayOfWeek = CalendarHelper.ToNcDayOfWeek (localStartTime.DayOfWeek);
+                    } else {
+                        result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                    }
+                    result.DayOfWeekIsSet = true;
+                    if (EKDay.NotSet != rule.FirstDayOfTheWeek) {
+                        result.FirstDayOfWeek = ConvertFirstDayOfWeek (rule.FirstDayOfTheWeek);
+                        result.FirstDayOfWeekIsSet = true;
+                    }
+                    break;
+
+                case EKRecurrenceFrequency.Monthly:
+                    if (null == rule.DaysOfTheWeek || 0 == rule.DaysOfTheWeek.Length) {
+                        // Monthly event on a numerical day of the month (e.g. "the 25th"), which is taken
+                        // from the start date.
+                        result.Type = NcRecurrenceType.Monthly;
+                        result.DayOfMonth = localStartTime.Day;
+                    } else {
+                        // Monthly event that happens on a particular day of the week (e.g. "first Monday"
+                        // or "fourth Thursday").
+                        result.Type = NcRecurrenceType.MonthlyOnDay;
+                        result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                        result.DayOfWeekIsSet = true;
+                        if (null == rule.SetPositions || 0 == rule.SetPositions.Length) {
+                            result.WeekOfMonth = 1;
+                        } else {
+                            // iOS allows for multiple occurrences in one rule.  ActiveSync does not.  So only the
+                            // first occurrence is used.
+                            int week = (int)(NSNumber)rule.SetPositions [0];
+                            if (0 >= week || 5 <= week) {
+                                // iOS allows "next to last" or "3rd from last".  But ActiveSync only allows for
+                                // 1st, 2nd, 3rd, 4th, or last.  So anything that isn't 1st, 2nd, 3nd, or 4th gets
+                                // translated as "last", which ActiveSync represents as "week 5".
+                                result.WeekOfMonth = 5;
+                            } else {
+                                result.WeekOfMonth = week;
+                            }
+                        }
+                    }
+                    break;
+
+                case EKRecurrenceFrequency.Yearly:
+                    if (null == rule.DaysOfTheWeek || 0 == rule.DaysOfTheWeek.Length) {
+                        // Yearly on a specific month and day, which are taken from the start time of the event.
+                        result.Type = NcRecurrenceType.Yearly;
+                        result.MonthOfYear = localStartTime.Month;
+                        result.DayOfMonth = localStartTime.Day;
+                    } else {
+                        // Yearly on a particular day of the week within a month.  For reasons that do not have a
+                        // good explanation, the week within the month is stored in the DaysOfTheWeek field rather
+                        // than the SetPositions field.
+                        result.Type = NcRecurrenceType.YearlyOnDay;
+                        result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                        int week = (int)rule.DaysOfTheWeek [0].WeekNumber;
+                        if (0 >= week || 5 <= week) {
+                            result.WeekOfMonth = 5;
+                        } else {
+                            result.WeekOfMonth = week;
+                        }
+                        if (null == rule.MonthsOfTheYear || 0 == rule.MonthsOfTheYear.Length) {
+                            result.MonthOfYear = 1;
+                        } else {
+                            result.MonthOfYear = (int)rule.MonthsOfTheYear [0];
+                        }
+                    }
+                    break;
+                }
+
+                if (null != rule.RecurrenceEnd) {
+                    if (0 < rule.RecurrenceEnd.OccurrenceCount) {
+                        result.Occurrences = (int)rule.RecurrenceEnd.OccurrenceCount;
+                        result.OccurrencesIsSet = true;
+                    }
+                    if (null != rule.RecurrenceEnd.EndDate) {
+                        result.Until = rule.RecurrenceEnd.EndDate.ToDateTime ();
+                    }
+                }
+
+                return result;
+            }
+
+            private NcDayOfWeek ConvertDaysOfWeek (EKRecurrenceDayOfWeek[] daysOfWeek)
+            {
+                NcDayOfWeek result = (NcDayOfWeek)0;
+                foreach (var dow in daysOfWeek) {
+                    result = (NcDayOfWeek)((int)result | (1 << ((int)dow.DayOfTheWeek - 1)));
+                }
+                return result;
+            }
+
+            private int ConvertFirstDayOfWeek (EKDay day)
+            {
+                switch (day) {
+                case EKDay.Sunday:
+                    return 0;
+                case EKDay.Monday:
+                    return 1;
+                case EKDay.Tuesday:
+                    return 2;
+                case EKDay.Wednesday:
+                    return 3;
+                case EKDay.Thursday:
+                    return 4;
+                case EKDay.Friday:
+                    return 5;
+                case EKDay.Saturday:
+                    return 6;
+                default:
+                    return 0;
+                }
+            }
         }
 
-        public bool AuthorizationStatus { get { 
+        public bool AuthorizationStatus {
+            get {
                 return EKAuthorizationStatus.Authorized == EKEventStore.GetAuthorizationStatus (EKEntityType.Event); 
-            } }
+            }
+        }
 
         public bool ShouldWeBotherToAsk ()
         {
