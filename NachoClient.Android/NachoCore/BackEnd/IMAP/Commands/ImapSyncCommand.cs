@@ -192,9 +192,9 @@ namespace NachoCore.IMAP
                 }
                 cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                 foreach (var imapSummary in imapSummaries) {
-			if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
-			    continue;
-			}
+        			if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
+        			    continue;
+        			}
                     var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                     summaries.Add (new MailSummary () {
                         imapSummary = imapSummary as MessageSummary,
