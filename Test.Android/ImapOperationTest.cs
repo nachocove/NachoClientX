@@ -70,8 +70,8 @@ namespace Test.iOS
 
             Assert.AreEqual (emailMessage.Subject, TestSubject);
             Assert.True (emailMessage.FromEmailAddressId > 0);
-            Assert.AreEqual (emailMessage.From, TestFrom.Address);
-            Assert.AreEqual (emailMessage.To, TestTo.Address);
+            Assert.AreEqual (emailMessage.From, TestFrom.ToString ());
+            Assert.AreEqual (emailMessage.To, TestTo.ToString ());
         }
 
         public class TestBEContext : IBEContext
