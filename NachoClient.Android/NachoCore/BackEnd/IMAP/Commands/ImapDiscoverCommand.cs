@@ -9,6 +9,12 @@ namespace NachoCore.IMAP
     {
         public ImapDiscoverCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
         {
+            RedactProtocolLogFunc = RedactProtocolLog;
+        }
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            // Redaction is done in the base class, since it's more complicated than just string replacement
+            return logData;
         }
         protected override Event ExecuteCommand ()
         {

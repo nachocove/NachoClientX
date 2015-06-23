@@ -50,6 +50,8 @@ namespace NachoCore.IMAP
                     return BackEndStateEnum.ServerConfWait;
 
                 case (uint)Lst.DiscW:
+                    return BackEndStateEnum.Running;
+
                 case (uint)Lst.FSyncW:
                 case (uint)Lst.SyncW:
                 case (uint)Lst.QOpW:
