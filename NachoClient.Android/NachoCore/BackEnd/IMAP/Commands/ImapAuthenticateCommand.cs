@@ -43,6 +43,7 @@ namespace NachoCore.IMAP
                     try {
                         Client.Authenticate (username, BEContext.Cred.GetPassword (), Cts.Token);
                     } catch (ImapProtocolException ex) {
+                        Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", ex);
                         // some servers (icloud.com) seem to close the connection on a bad password/username.
                         throw new AuthenticationException ();
                     }
