@@ -24,12 +24,13 @@ namespace NachoCore.Model
         // own username or if we copied in the email address.
         public bool UserSpecifiedUsername { get; set; }
 
+        public string Password { get; set; }
+
         /// <summary>
         /// DO NOT ACCESS private properties. Use UpdateXxx/GetXxx.
         /// private properties are here for SQLite.Net only!
         /// </summary>
         /// <value>The password.</value>
-        private string Password { get; set; }
 
         private string AccessToken { get; set; }
 
