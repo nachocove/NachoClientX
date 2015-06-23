@@ -9,16 +9,19 @@ using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
 using MailKit.Security;
+using System.Text;
 
 namespace NachoCore.IMAP
 {
     public class ImapCommand : NcCommand
     {
-        protected ImapClient Client { get; set; }
+        protected NcImapClient Client { get; set; }
+        protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
-        public ImapCommand (IBEContext beContext, ImapClient imapClient) : base (beContext)
+        public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
             Client = imapClient;
+            RedactProtocolLogFunc = null;
         }
 
         // MUST be overridden by subclass.
@@ -46,13 +49,23 @@ namespace NachoCore.IMAP
         public void ExecuteNoTask(NcStateMachine sm)
         {
             try {
-                if (!Client.IsConnected || !Client.IsAuthenticated) {
-                    var authy = new ImapAuthenticateCommand (BEContext, Client);
-                    lock(Client.SyncRoot) {
-                        authy.ConnectAndAuthenticate ();
+                Event evt;
+                lock(Client.SyncRoot) {
+                    try {
+                        if (null != RedactProtocolLogFunc) {
+                            Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
+                        }
+                        if (!Client.IsConnected || !Client.IsAuthenticated) {
+                            var authy = new ImapAuthenticateCommand (BEContext, Client);
+                            authy.ConnectAndAuthenticate ();
+                        }
+                        evt = ExecuteCommand ();
+                    } finally {
+                        if (Client.MailKitProtocolLogger.Enabled ()) {
+                            ProtocolLoggerStopAndPostTelemetry ();
+                        }
                     }
                 }
-                var evt = ExecuteCommand ();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
             } catch (OperationCanceledException) {
@@ -85,6 +98,34 @@ namespace NachoCore.IMAP
                 ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
+        }
+
+        protected void ProtocolLoggerStopAndPostTelemetry ()
+        {
+            string ClassName = this.GetType ().Name + " ";
+            byte[] requestData;
+            byte[] responseData;
+            //string combinedLog = Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ());
+            //Log.Info (Log.LOG_IMAP, "{0}IMAP exchange\n{1}", ClassName, combinedLog);
+            Client.MailKitProtocolLogger.Stop (out requestData, out responseData);
+            byte[] ClassNameBytes = Encoding.UTF8.GetBytes (ClassName + "\n");
+
+            if (null != requestData && requestData.Length > 0) {
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Request\n{1}", ClassName, Encoding.UTF8.GetString (RedactProtocolLog(requestData)));
+                Telemetry.RecordImapEvent (true, Combine(ClassNameBytes, requestData));
+            }
+            if (null != responseData && responseData.Length > 0) {
+                //Log.Info (Log.LOG_IMAP, "{0}IMAP Response\n{1}", ClassName, Encoding.UTF8.GetString (responseData));
+                Telemetry.RecordImapEvent (false, Combine(ClassNameBytes, responseData));
+            }
+        }
+
+        private static byte[] Combine(byte[] first, byte[] second)
+        {
+            byte[] ret = new byte[first.Length + second.Length];
+            Buffer.BlockCopy(first, 0, ret, 0, first.Length);
+            Buffer.BlockCopy(second, 0, ret, first.Length, second.Length);
+            return ret;
         }
 
         protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
@@ -193,7 +234,7 @@ namespace NachoCore.IMAP
     public class ImapWaitCommand : ImapCommand
     {
         NcCommand WaitCommand;
-        public ImapWaitCommand (IBEContext dataSource, ImapClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
+        public ImapWaitCommand (IBEContext dataSource, NcImapClient imap, int duration, bool earlyOnECChange) : base (dataSource, imap)
         {
             WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
         }

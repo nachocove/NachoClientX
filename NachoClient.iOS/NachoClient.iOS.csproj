@@ -1392,9 +1392,6 @@
       <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\MailKitProtocolLogger.cs">
-      <Link>NachoCore\Utils\MailKitProtocolLogger.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
       <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
     </Compile>
@@ -1517,6 +1514,15 @@
       <Link>NachoCore\Adapters\NcMdmConfig.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\NcImapClient.cs">
+      <Link>NachoCore\BackEnd\IMAP\NcImapClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\NcSmtpClient.cs">
+      <Link>NachoCore\BackEnd\SMTP\NcSmtpClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcMailKitProtocolLogger.cs">
+      <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

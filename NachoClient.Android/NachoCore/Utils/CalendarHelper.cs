@@ -906,7 +906,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Convert from a C# DayOfWeek value to the DayOfWeek field within a recurrence.
         /// </summary>
-        protected static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
+        public static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
         {
             switch (day) {
             case DayOfWeek.Sunday:

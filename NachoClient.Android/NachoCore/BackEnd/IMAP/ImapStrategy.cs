@@ -156,7 +156,7 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
-        public Tuple<PickActionEnum, ImapCommand> PickUserDemand (ImapClient Client)
+        public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client)
         {
             var accountId = BEContext.Account.Id;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
@@ -189,7 +189,7 @@ namespace NachoCore.IMAP
             return null;
         }
 
-        public Tuple<PickActionEnum, ImapCommand> Pick (ImapClient Client)
+        public Tuple<PickActionEnum, ImapCommand> Pick (NcImapClient Client)
         {
             var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;

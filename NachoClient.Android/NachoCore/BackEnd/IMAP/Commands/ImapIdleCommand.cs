@@ -15,12 +15,18 @@ namespace NachoCore.IMAP
     {
         McFolder IdleFolder;
 
-        public ImapIdleCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             // TODO Look at https://github.com/jstedfast/MailKit/commit/0ec1a1c26c96193384f4c3aa4a6ce2275bbb2533
             // for more inspiration
             IdleFolder = McFolder.GetDefaultInboxFolder(BEContext.Account.Id);
             NcAssert.NotNull (IdleFolder);
+            RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
@@ -35,6 +41,7 @@ namespace NachoCore.IMAP
                 mailArrived = true;
                 done.Cancel ();
             };
+<<<<<<< HEAD
             EventHandler<MessageEventArgs> ExpungedMessageHandler = (sender, e) => {
                 // Sadly, the Expunged message only passes an ID, not a UID. In the absence of keeping the ID in our DB, we just
                 // have to do a sync.
@@ -85,6 +92,27 @@ namespace NachoCore.IMAP
                         StatusItems.HighestModSeq;
                     mailKitFolder.Status (statusItems, Cts.Token);
                     UpdateImapSetting (mailKitFolder, IdleFolder);
+=======
+            mailKitFolder = Client.GetFolder (IdleFolder.ServerId, Cts.Token);
+            NcAssert.NotNull (mailKitFolder);
+            try {
+                mailKitFolder.MessagesArrived += messageHandler;
+                if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
+                }
+                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
+                }
+                Client.Idle (done.Token, CancellationToken.None);
+                Cts.Token.ThrowIfCancellationRequested ();
+                mailKitFolder.Close (false, Cts.Token);
+                StatusItems statusItems =
+                    StatusItems.UidNext |
+                    StatusItems.UidValidity |
+                    StatusItems.HighestModSeq;
+                mailKitFolder.Status (statusItems, Cts.Token);
+                UpdateImapSetting (mailKitFolder, IdleFolder);
+>>>>>>> master
 
                     var protocolState = BEContext.ProtocolState;
                     protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -104,6 +132,13 @@ namespace NachoCore.IMAP
                     mailKitFolder.MessageExpunged -= ExpungedMessageHandler;
                     done.Dispose ();
                 }
+<<<<<<< HEAD
+=======
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
+            } finally {
+                mailKitFolder.MessagesArrived -= messageHandler;
+                done.Dispose ();
+>>>>>>> master
             }
         }
     }
