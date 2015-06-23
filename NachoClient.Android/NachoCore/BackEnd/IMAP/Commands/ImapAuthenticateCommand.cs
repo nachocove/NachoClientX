@@ -11,8 +11,15 @@ namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
-        public ImapAuthenticateCommand (IBEContext beContext, ImapClient imap) : base (beContext, imap)
+        public ImapAuthenticateCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
+            RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            // Redaction is done in the base class, since it's more complicated than just string replacement
+            return logData;
         }
 
         public void ConnectAndAuthenticate ()
@@ -55,12 +62,10 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             try {
-                lock (Client.SyncRoot) {
-                    if (Client.IsConnected) {
-                        Client.Disconnect (false, Cts.Token);
-                    }
-                    ConnectAndAuthenticate ();
+                if (Client.IsConnected) {
+                    Client.Disconnect (false, Cts.Token);
                 }
+                ConnectAndAuthenticate ();
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPAUTHSUC");
             } catch (NotSupportedException ex) {
                 Log.Info (Log.LOG_IMAP, "ImapAuthenticateCommand: NotSupportedException: {0}", ex.ToString ());

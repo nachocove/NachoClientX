@@ -407,7 +407,6 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
-    <Compile Include="NachoCore\Utils\MailKitProtocolLogger.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
@@ -442,6 +441,9 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration29.cs" />
     <Compile Include="NachoCore\Adapters\NcMdmConfig.cs" />
     <Compile Include="NachoPlatform.Android\MdmConfigAndroid.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\NcImapClient.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\NcSmtpClient.cs" />
+    <Compile Include="NachoCore\Utils\NcMailKitProtocolLogger.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedExchangeFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AdvancedImapFragment.cs" />
     <Compile Include="NachoUI.Android\Activities\AttachmentFragment.cs" />
