@@ -69,10 +69,6 @@ namespace NachoCore.Model
             }
         }
 
-        private static OperationCaptures InsertCaptures;
-        private static OperationCaptures DeleteCaptures;
-        private static OperationCaptures UpdateCaptures;
-
         [PrimaryKey, AutoIncrement, Unique]
         public virtual int Id { get; set; }
         // Optimistic concurrency control.
@@ -87,26 +83,22 @@ namespace NachoCore.Model
 
         protected Boolean isDeleted;
 
+        protected string CaptureName (string opName)
+        {
+            return "NcModel." + ClassName () + "." + opName;
+        }
+
+        protected NcCapture CaptureWithStart (string opName)
+        {
+            return NcCapture.CreateAndStart (CaptureName (opName));
+        }
+
         public McAbstrObject ()
         {
             Id = 0;
             LastModified = DateTime.MinValue;
             isDeleted = false;
             MigrationVersion = NcMigration.CurrentVersion;
-
-            string className = ClassName ();
-            if (null == InsertCaptures) {
-                InsertCaptures = new OperationCaptures ("Insert");
-                InsertCaptures.Add (className);
-            }
-            if (null == DeleteCaptures) {
-                DeleteCaptures = new OperationCaptures ("Delete");
-                DeleteCaptures.Add (className);
-            }
-            if (null == UpdateCaptures) {
-                UpdateCaptures = new OperationCaptures ("Update");
-                UpdateCaptures.Add (className);
-            }
         }
 
         public string ClassName ()
@@ -116,34 +108,30 @@ namespace NachoCore.Model
 
         public virtual int Insert ()
         {
-            NcAssert.True (0 == Id);
-            NcAssert.True (!isDeleted);
-            NcModel.Instance.TakeTokenOrSleep ();
-            LastModified = DateTime.UtcNow;
-            CreatedAt = LastModified;
-            NcCapture capture = InsertCaptures.Find (ClassName ());
-            capture.Start ();
-            int rc = NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Insert (this);
-            });
-            capture.Stop ();
-            capture.Reset ();
-            return rc;
+            using (var capture = CaptureWithStart ("Insert")) {
+                NcAssert.True (0 == Id);
+                NcAssert.True (!isDeleted);
+                NcModel.Instance.TakeTokenOrSleep ();
+                LastModified = DateTime.UtcNow;
+                CreatedAt = LastModified;
+                int rc = NcModel.Instance.BusyProtect (() => {
+                    return NcModel.Instance.Db.Insert (this);
+                });
+                return rc;
+            }
         }
 
         public virtual int Delete ()
         {
-            NcAssert.True (0 < Id);
-            isDeleted = true;
-            NcModel.Instance.TakeTokenOrSleep ();
-            NcCapture capture = DeleteCaptures.Find (ClassName ());
-            capture.Start ();
-            int rc = NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Delete (this);
-            });
-            capture.Stop ();
-            capture.Reset ();
-            return rc;
+            using (var capture = CaptureWithStart ("Delete")) {
+                NcAssert.True (0 < Id);
+                isDeleted = true;
+                NcModel.Instance.TakeTokenOrSleep ();
+                int rc = NcModel.Instance.BusyProtect (() => {
+                    return NcModel.Instance.Db.Delete (this);
+                });
+                return rc;
+            }
         }
 
         public delegate bool Mutator (McAbstrObject record);
@@ -214,18 +202,16 @@ namespace NachoCore.Model
 
         public virtual int Update ()
         {
-            NcAssert.True (0 < Id);
-            NcAssert.True (!isDeleted);
-            NcModel.Instance.TakeTokenOrSleep ();
-            LastModified = DateTime.UtcNow;
-            NcCapture capture = UpdateCaptures.Find (ClassName ());
-            capture.Start ();
-            int rc = NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Update (this);
-            });
-            capture.Stop ();
-            capture.Reset ();
-            return rc;
+            using (var capture = CaptureWithStart ("Update")) {
+                NcAssert.True (0 < Id);
+                NcAssert.True (!isDeleted);
+                NcModel.Instance.TakeTokenOrSleep ();
+                LastModified = DateTime.UtcNow;
+                int rc = NcModel.Instance.BusyProtect (() => {
+                    return NcModel.Instance.Db.Update (this);
+                });
+                return rc;
+            }
         }
 
         public static T QueryById<T> (int id) where T : McAbstrObject, new()

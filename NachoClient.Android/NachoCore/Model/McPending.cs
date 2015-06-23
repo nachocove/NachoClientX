@@ -13,6 +13,7 @@ namespace NachoCore.Model
     {
         // Incremented on every table write.
         private static int _Version = 0;
+
         public static int Version { get { return _Version; } }
 
         // Parameterless constructor only here for use w/LINQ. Please only use w/accountId.
@@ -144,6 +145,7 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
+
         [Indexed]
         public McAccount.AccountCapabilityEnum Capability { set; get; }
         // Valid when in Deferred state.
@@ -161,6 +163,7 @@ namespace NachoCore.Model
         [Indexed]
         // Always valid.
         public bool DelayNotAllowed { set; get; }
+
         public XmlStatusKindEnum ResponseXmlStatusKind { set; get; }
         // Valid when Deferred, Blocked, or Failed. 0 is unset.
         public uint ResponsegXmlStatus { set; get; }
@@ -260,7 +263,7 @@ namespace NachoCore.Model
                     case McPending.StateEnum.Failed:
                     case McPending.StateEnum.PredBlocked:
                     case McPending.StateEnum.UserBlocked:
-                        if (McPending.Operations.ContactSearch == pending.Operation || 
+                        if (McPending.Operations.ContactSearch == pending.Operation ||
                             McPending.Operations.EmailSearch == pending.Operation) {
                             McPending.ResolvePendingSearchReqs (accountId, token, false);
                         } else {
@@ -302,7 +305,7 @@ namespace NachoCore.Model
                 if (null != pending) {
                     NcAssert.True (accountId == pending.AccountId);
                     NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
-                    retval = pending.UpdateWithOCApply<McPending>((record) => {
+                    retval = pending.UpdateWithOCApply<McPending> ((record) => {
                         var target = (McPending)record;
                         target.BlockReason = McPending.BlockReasonEnum.NotBlocked;
                         target.State = McPending.StateEnum.Eligible;
@@ -699,7 +702,7 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Warn (Log.LOG_AS,"ResolveAsHardFail/AttachmentClear: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/AttachmentClear: Attachment {0} does not exist", attachmentId);
                 return;
             }
             attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
@@ -991,11 +994,11 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.DelayNotAllowed &&
-                    rec.State != StateEnum.Failed).All (y => {
-                        y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
-                        return true;
-                    });
+            rec.DelayNotAllowed &&
+            rec.State != StateEnum.Failed).All (y => {
+                y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
+                return true;
+            });
         }
 
         public static void ResolveAllDispatchedAsDeferred (NcProtoControl control, int accountId)
@@ -1011,47 +1014,49 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            var predIds = new List<int> ();
+            using (var capture = CaptureWithStart ("Insert")) {
+                var predIds = new List<int> ();
 
-            NcModel.Instance.RunInTransaction (() => {
-                if (CanDepend ()) {
-                    // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
-                    // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
-                    var pendq = QueryNonFailedNonDeleted (AccountId).OrderByDescending (x => x.Priority);
-                    foreach (var elem in pendq) {
-                        if (DependsUpon (elem)) {
-                            predIds.Add (elem.Id);
+                NcModel.Instance.RunInTransaction (() => {
+                    if (CanDepend ()) {
+                        // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
+                        // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
+                        var pendq = QueryNonFailedNonDeleted (AccountId).OrderByDescending (x => x.Priority);
+                        foreach (var elem in pendq) {
+                            if (DependsUpon (elem)) {
+                                predIds.Add (elem.Id);
+                            }
+                        }
+                        if (0 != predIds.Count) {
+                            State = StateEnum.PredBlocked;
                         }
                     }
-                    if (0 != predIds.Count) {
-                        State = StateEnum.PredBlocked;
+                    if (null != Item) {
+                        ItemId = Item.Id;
+                        Item.PendingRefCount++;
+                        Item.Update ();
                     }
-                }
-                if (null != Item) {
-                    ItemId = Item.Id;
-                    Item.PendingRefCount++;
-                    Item.Update ();
-                }
-                base.Insert ();
-                ++_Version;
-                // Note that because Insert & Update are in the same transaction, we don't really need UpdateWithOCApply here.
-                // But we must to avoid the assert in Update().
-                base.UpdateWithOCApply<McPending> ((record) => {
-                    var target = (McPending)record;
-                    target.Priority = target.Id;
-                    return true;
+                    base.Insert ();
+                    ++_Version;
+                    // Note that because Insert & Update are in the same transaction, we don't really need UpdateWithOCApply here.
+                    // But we must to avoid the assert in Update().
+                    base.UpdateWithOCApply<McPending> ((record) => {
+                        var target = (McPending)record;
+                        target.Priority = target.Id;
+                        return true;
+                    });
+                    foreach (var predId in predIds) {
+                        var pendDep = new McPendDep (AccountId, predId, Id);
+                        pendDep.Insert ();
+                    }
                 });
-                foreach (var predId in predIds) {
-                    var pendDep = new McPendDep (AccountId, predId, Id);
-                    pendDep.Insert ();
-                }
-            });
 
-            if (null != Item) {
-                Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
+                if (null != Item) {
+                    Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
+                }
+                Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
+                return 1;
             }
-            Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
-            return 1;
         }
 
         public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
@@ -1102,62 +1107,64 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            McAbstrItem item = null;
+            using (var capture = CaptureWithStart ("Delete")) {
+                McAbstrItem item = null;
 
-            NcModel.Instance.RunInTransaction (() => {
-                // Deal with referenced McItem ref count if needed.
-                if (0 != ItemId) {
-                    switch (Operation) {
-                    case Operations.EmailSend:
-                    case Operations.EmailForward:
-                    case Operations.EmailReply:
-                    case Operations.CalForward: // An e-mail message is used when forwarding a calendar item.
-                        item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
-                        break;
+                NcModel.Instance.RunInTransaction (() => {
+                    // Deal with referenced McItem ref count if needed.
+                    if (0 != ItemId) {
+                        switch (Operation) {
+                        case Operations.EmailSend:
+                        case Operations.EmailForward:
+                        case Operations.EmailReply:
+                        case Operations.CalForward: // An e-mail message is used when forwarding a calendar item.
+                            item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
+                            break;
 
-                    case Operations.CalCreate:
-                    case Operations.CalUpdate:
-                        item = McAbstrObject.QueryById<McCalendar> (ItemId);
-                        break;
+                        case Operations.CalCreate:
+                        case Operations.CalUpdate:
+                            item = McAbstrObject.QueryById<McCalendar> (ItemId);
+                            break;
 
-                    case Operations.ContactCreate:
-                    case Operations.ContactUpdate:
-                        item = McAbstrObject.QueryById<McContact> (ItemId);
-                        break;
+                        case Operations.ContactCreate:
+                        case Operations.ContactUpdate:
+                            item = McAbstrObject.QueryById<McContact> (ItemId);
+                            break;
 
-                    case Operations.TaskCreate:
-                    case Operations.TaskUpdate:
-                        item = McAbstrObject.QueryById<McTask> (ItemId);
-                        break;
+                        case Operations.TaskCreate:
+                        case Operations.TaskUpdate:
+                            item = McAbstrObject.QueryById<McTask> (ItemId);
+                            break;
 
-                    default:
-                        Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
-                        NcAssert.True (false);
-                        break;
-                    }
-                    NcAssert.NotNull (item);
-                    NcAssert.True (0 < item.PendingRefCount);
-                    item.PendingRefCount--;
-                    item.Update ();
-                    Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
-                    if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
-                        item.Delete ();
-                    }
-                    // Deal with any dependent McPending (if there are any, it is an error).
-                    var successors = QuerySuccessors (AccountId, Id);
-                    if (0 != successors.Count) {
-                        Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
-                        foreach (var succ in successors) {
-                            succ.Delete ();
+                        default:
+                            Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
+                            NcAssert.True (false);
+                            break;
+                        }
+                        NcAssert.NotNull (item);
+                        NcAssert.True (0 < item.PendingRefCount);
+                        item.PendingRefCount--;
+                        item.Update ();
+                        Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
+                        if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
+                            item.Delete ();
+                        }
+                        // Deal with any dependent McPending (if there are any, it is an error).
+                        var successors = QuerySuccessors (AccountId, Id);
+                        if (0 != successors.Count) {
+                            Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
+                            foreach (var succ in successors) {
+                                succ.Delete ();
+                            }
                         }
                     }
-                }
-                base.Delete ();
-                ++_Version;
-            });
+                    base.Delete ();
+                    ++_Version;
+                });
             
-            Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
-            return 1;
+                Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
+                return 1;
+            }
         }
 
         // Query APIs for any & all to call.
@@ -1176,16 +1183,16 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (x => x.AccountId == accountId &&
-                    StateEnum.Failed != x.State &&
-                    StateEnum.Deleted != x.State).ToList ();
+            StateEnum.Failed != x.State &&
+            StateEnum.Deleted != x.State).ToList ();
         }
 
         public static IEnumerable<McPending> QueryEligible (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.State == StateEnum.Eligible &&
-                rec.Capability == (rec.Capability & capabilities)
+            rec.State == StateEnum.Eligible &&
+            rec.Capability == (rec.Capability & capabilities)
             ).OrderBy (x => x.Priority);
         }
 
@@ -1193,8 +1200,8 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.State == StateEnum.Eligible &&
-                rec.Capability == (rec.Capability & capabilities)
+            rec.State == StateEnum.Eligible &&
+            rec.Capability == (rec.Capability & capabilities)
             ).OrderByDescending (x => x.PriorityStamp);
         }
 
@@ -1257,8 +1264,8 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.Operation == operation &&
-                    rec.AttachmentId == attId).OrderBy (x => x.Priority);
+            rec.Operation == operation &&
+            rec.AttachmentId == attId).OrderBy (x => x.Priority);
         }
 
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)
@@ -1270,14 +1277,14 @@ namespace NachoCore.Model
         }
 
         public static List<McPending> QueryFirstEligibleByOperation (int accountId, 
-            Operations operation1, Operations operation2, Operations operation3, Operations operation4,
-            int limit)
+                                                                     Operations operation1, Operations operation2, Operations operation3, Operations operation4,
+                                                                     int limit)
         {
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    (rec.Operation == operation1 || rec.Operation == operation2 || rec.Operation == operation3 || rec.Operation == operation4) &&
-                    rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).Take (limit).ToList ();
+            (rec.Operation == operation1 || rec.Operation == operation2 || rec.Operation == operation3 || rec.Operation == operation4) &&
+            rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).Take (limit).ToList ();
         }
 
         public static McPending QueryFirstEligibleByOperation (int accountId, Operations operation)
@@ -1290,11 +1297,11 @@ namespace NachoCore.Model
         }
 
         public static IEnumerable<McPending> QueryFirstNEligibleByOperation (int accountId, 
-            McPending.Operations operation, int n)
+                                                                             McPending.Operations operation, int n)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.Operation == operation &&
+            rec.Operation == operation &&
             rec.State == StateEnum.Eligible).OrderBy (x => x.Id).Take (n);
         }
 
@@ -1328,7 +1335,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.AttachmentId == AttachmentId
+            rec.AttachmentId == AttachmentId
             ).FirstOrDefault ();
         }
 
@@ -1337,10 +1344,10 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.ItemId == emailMessageId &&
-                    (rec.Operation == Operations.EmailSend ||
-                        rec.Operation == Operations.EmailForward ||
-                        rec.Operation == Operations.EmailReply)).FirstOrDefault ();
+            rec.ItemId == emailMessageId &&
+            (rec.Operation == Operations.EmailSend ||
+            rec.Operation == Operations.EmailForward ||
+            rec.Operation == Operations.EmailReply)).FirstOrDefault ();
         }
 
         public static IEnumerable<McPending> QueryOlderThanByState (int accountId, DateTime olderThan, StateEnum state)
@@ -1348,8 +1355,8 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.State == state &&
-                    rec.LastModified < olderThan);
+            rec.State == state &&
+            rec.LastModified < olderThan);
         }
 
         public class ReWrite
