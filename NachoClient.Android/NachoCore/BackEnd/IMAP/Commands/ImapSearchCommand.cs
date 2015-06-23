@@ -7,15 +7,32 @@ using MailKit.Search;
 using System.Collections.Generic;
 using MailKit;
 using MailKit.Net.Imap;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.IMAP
 {
     public class ImapSearchCommand : ImapCommand
     {
-        public ImapSearchCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        private List<Regex> RegexList;
+
+        public ImapSearchCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+
+            RedactProtocolLogFunc = RedactProtocolLog;
+
+            RegexList = new List<Regex> ();
+            RegexList.Add (new Regex (@"^" + NcMailKitProtocolLogger.ImapCommandNumRegexStr + @"(?<uidstr>UID SEARCH RETURN \(.*\) )(?<redact>.*)(?<end>[\r\n]+)$", NcMailKitProtocolLogger.rxOptions));
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            // Need to redact search strings
+            //2015-06-22T17:28:56.589Z: IMAP C: B00000006 UID SEARCH RETURN () REDACTED
+            //2015-06-22T17:28:57.190Z: IMAP S: * ESEARCH (TAG "B00000006") UID
+            //B00000006 OK SEARCH completed (Success)
+            return NcMailKitProtocolLogger.RedactLogDataRegex(RegexList, logData);
         }
 
         public override void Execute (NcStateMachine sm)
@@ -51,8 +68,9 @@ namespace NachoCore.IMAP
                             emailList.Add (new NcEmailMessageIndex (email.Id));
                         }
                     }
-                    Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ImapFolderNameRedacted());
+                    // TODO Should we post an indication to the UI for each searched folder?
                 }
+                Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ImapFolderNameRedacted());
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);
             result.Value = emailList;

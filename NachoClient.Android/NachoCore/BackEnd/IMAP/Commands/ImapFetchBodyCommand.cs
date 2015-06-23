@@ -11,18 +11,22 @@ namespace NachoCore.IMAP
 {
     public class ImapFetchBodyCommand : ImapCommand
     {
-        public ImapFetchBodyCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             pending.MarkDispached ();
             PendingSingle = pending;
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
         {
             NcResult result = null;
-            lock (Client.SyncRoot) {
-                result = ProcessPending (PendingSingle);
-            }
+            result = ProcessPending (PendingSingle);
             if (result.isInfo ()) {
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsSuccess (BEContext.ProtoControl, result);
