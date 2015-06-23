@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,13 +11,16 @@ using Android.Views;
 using Android.Widget;
 
 using NachoCore;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "InboxActivity")]            
     public class InboxActivity : NcActivity
     {
+        MessageViewFragment messageViewFragment;
         MessageListFragment messageListFragment;
+        MessageThreadFragment threadListFragment;
 
         protected override void OnCreate (Bundle bundle)
         {
@@ -31,22 +33,40 @@ namespace NachoClient.AndroidClient
             messages.Refresh (out adds, out deletes);
 
             messageListFragment = new MessageListFragment (messages);
-            messageListFragment.onMessageClick += MessageListFragment_onMessageClick;
-            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack("Inbox").Commit ();
+            messageListFragment.onMessageClick += MessageListFragment_onThreadClick;
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
         }
 
-        void MessageListFragment_onMessageClick (object sender, int e)
+        void MessageListFragment_onThreadClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("MessageListFragment_onMessageClick: {0}", e);
+            Console.WriteLine ("MessageListFragment_onMessageClick: {0}", thread);
 
-            var messageViewFragment = new MessageViewFragment ();
-            this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack("View").Commit ();
+            if (1 == thread.MessageCount) {
+                var message = thread.FirstMessageSpecialCase ();
+                MessageThreadFragment_onMessageClick (sender, message);
+                return;
+            }
+
+            threadListFragment = new MessageThreadFragment (thread);
+            threadListFragment.onMessageClick += MessageThreadFragment_onMessageClick;
+
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, threadListFragment).AddToBackStack ("Inbox").Commit ();
+        }
+
+        void MessageThreadFragment_onMessageClick (object sender, McEmailMessage message)
+        {
+            Console.WriteLine ("MessageThreadFragment_onMessageClick: {0}", message);
+            messageViewFragment = new MessageViewFragment (message);
+            this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
         }
 
         public override void OnBackPressed ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is MessageViewFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
+            if (f is MessageThreadFragment) {
                 this.FragmentManager.PopBackStack ();
             }
         }

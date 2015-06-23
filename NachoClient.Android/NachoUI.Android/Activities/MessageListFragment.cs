@@ -17,6 +17,7 @@ using Android.Support.V7.Widget;
 using Android.Support.Design.Widget;
 
 using NachoCore;
+using NachoCore.Model;
 using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
@@ -31,9 +32,9 @@ namespace NachoClient.AndroidClient
 
         Android.Widget.ImageView composeButton;
 
-        public event EventHandler<int> onMessageClick;
+        public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        public MessageListFragment(INachoEmailMessages messages)
+        public MessageListFragment (INachoEmailMessages messages)
         {
             this.messages = messages;
         }
@@ -81,11 +82,11 @@ namespace NachoClient.AndroidClient
             StartActivity (intent);
         }
 
-        void MessageListAdapter_onMessageClick (object sender, int e)
+        void MessageListAdapter_onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("MessageListAdapter_onMessageClick: {0}", e);
+            Console.WriteLine ("MessageListAdapter_onMessageClick: list {0}", thread);
             if (null != onMessageClick) {
-                onMessageClick (this, e);
+                onMessageClick (this, thread);
             }
         }
 
@@ -93,11 +94,11 @@ namespace NachoClient.AndroidClient
 
     public class MessageListAdapter : RecyclerView.Adapter
     {
-        public event EventHandler<int> onMessageClick;
+        public event EventHandler<McEmailMessageThread> onMessageClick;
 
         INachoEmailMessages messages;
 
-        public MessageListAdapter(INachoEmailMessages messages)
+        public MessageListAdapter (INachoEmailMessages messages)
         {
             this.messages = messages;
         }
@@ -120,14 +121,15 @@ namespace NachoClient.AndroidClient
 
         public override int ItemCount {
             get {
-                return messages.Count();
+                return messages.Count ();
             }
         }
 
         public void OnClick (int position)
         {
             if (null != onMessageClick) {
-                onMessageClick (this, position);
+                var thread = messages.GetEmailThread (position);
+                onMessageClick (this, thread);
             }
         }
 

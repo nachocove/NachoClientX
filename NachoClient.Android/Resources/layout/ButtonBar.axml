@@ -8,7 +8,7 @@
         android:paddingRight="10dp"
         android:background="@color/NachoGreen">
         <TextView
-            android:id="@+id/body"
+            android:id="@+id/title"
             android:text="@string/inbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

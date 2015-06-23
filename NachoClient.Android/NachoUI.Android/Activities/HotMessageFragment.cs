@@ -23,22 +23,18 @@ namespace NachoClient.AndroidClient
 {
     public class HotMessageFragment : Android.App.Fragment
     {
-        public event EventHandler<int> onMessageClick;
+        public event EventHandler<McEmailMessageThread> onMessageClick;
 
         McEmailMessageThread thread;
-        INachoEmailMessages threads;
 
-        public HotMessageFragment (McEmailMessageThread thread, INachoEmailMessages threads) : base ()
+        public HotMessageFragment (McEmailMessageThread thread) : base ()
         {
             this.thread = thread;
-            this.threads = threads;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -139,8 +135,7 @@ namespace NachoClient.AndroidClient
         {
             Console.WriteLine ("View_Click");
             if (null != onMessageClick) {
-                // FIXME: position
-                onMessageClick (this, 42);
+                onMessageClick (this, thread);
             }
         }
     }

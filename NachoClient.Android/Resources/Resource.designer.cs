@@ -2563,8 +2563,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0041
 			public const int beginning = 2131427393;
 			
-			// aapt resource value: 0x7f0b0084
-			public const int body = 2131427460;
+			// aapt resource value: 0x7f0b009c
+			public const int body = 2131427484;
 			
 			// aapt resource value: 0x7f0b001b
 			public const int book_now = 2131427355;
@@ -2605,11 +2605,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00c9
 			public const int cancel_action = 2131427529;
 			
-			// aapt resource value: 0x7f0b008f
-			public const int cc_label = 2131427471;
+			// aapt resource value: 0x7f0b008e
+			public const int cc_label = 2131427470;
 			
-			// aapt resource value: 0x7f0b0090
-			public const int cc_list = 2131427472;
+			// aapt resource value: 0x7f0b008f
+			public const int cc_list = 2131427471;
 			
 			// aapt resource value: 0x7f0b0029
 			public const int center = 2131427369;
@@ -2641,14 +2641,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0044
 			public const int collapseActionView = 2131427396;
 			
-			// aapt resource value: 0x7f0b008c
-			public const int compose = 2131427468;
+			// aapt resource value: 0x7f0b008b
+			public const int compose = 2131427467;
 			
 			// aapt resource value: 0x7f0b00c6
 			public const int contacts = 2131427526;
 			
-			// aapt resource value: 0x7f0b009a
-			public const int content = 2131427482;
+			// aapt resource value: 0x7f0b0099
+			public const int content = 2131427481;
 			
 			// aapt resource value: 0x7f0b005d
 			public const int contentPanel = 2131427421;
@@ -2692,8 +2692,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00d9
 			public const int drawer_item_2 = 2131427545;
 			
-			// aapt resource value: 0x7f0b0098
-			public const int drawer_layout = 2131427480;
+			// aapt resource value: 0x7f0b0097
+			public const int drawer_layout = 2131427479;
 			
 			// aapt resource value: 0x7f0b0049
 			public const int dropdown = 2131427401;
@@ -2701,8 +2701,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b006e
 			public const int edit_query = 2131427438;
 			
-			// aapt resource value: 0x7f0b0095
-			public const int email = 2131427477;
+			// aapt resource value: 0x7f0b0094
+			public const int email = 2131427476;
 			
 			// aapt resource value: 0x7f0b002e
 			public const int end = 2131427374;
@@ -2749,8 +2749,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0020
 			public const int grayscale = 2131427360;
 			
-			// aapt resource value: 0x7f0b008b
-			public const int gridview = 2131427467;
+			// aapt resource value: 0x7f0b008a
+			public const int gridview = 2131427466;
 			
 			// aapt resource value: 0x7f0b0012
 			public const int holo_dark = 2131427346;
@@ -2797,14 +2797,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0032
 			public const int left = 2131427378;
 			
+			// aapt resource value: 0x7f0b0087
+			public const int left_button1 = 2131427463;
+			
 			// aapt resource value: 0x7f0b0088
-			public const int left_button1 = 2131427464;
+			public const int left_button2 = 2131427464;
 			
 			// aapt resource value: 0x7f0b0089
-			public const int left_button2 = 2131427465;
-			
-			// aapt resource value: 0x7f0b008a
-			public const int left_button3 = 2131427466;
+			public const int left_button3 = 2131427465;
 			
 			// aapt resource value: 0x7f0b00cd
 			public const int line1 = 2131427533;
@@ -2839,8 +2839,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b00bb
 			public const int media_route_volume_slider = 2131427515;
 			
-			// aapt resource value: 0x7f0b0093
-			public const int message = 2131427475;
+			// aapt resource value: 0x7f0b0092
+			public const int message = 2131427474;
 			
 			// aapt resource value: 0x7f0b00a0
 			public const int message_read = 2131427488;
@@ -2860,11 +2860,11 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b004a
 			public const int multiply = 2131427402;
 			
-			// aapt resource value: 0x7f0b009b
-			public const int myButton = 2131427483;
+			// aapt resource value: 0x7f0b009a
+			public const int myButton = 2131427482;
 			
-			// aapt resource value: 0x7f0b009c
-			public const int navigation = 2131427484;
+			// aapt resource value: 0x7f0b009b
+			public const int navigation = 2131427483;
 			
 			// aapt resource value: 0x7f0b00bf
 			public const int navigation_bar = 2131427519;
@@ -2890,8 +2890,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0059
 			public const int parentPanel = 2131427417;
 			
-			// aapt resource value: 0x7f0b0096
-			public const int password = 2131427478;
+			// aapt resource value: 0x7f0b0095
+			public const int password = 2131427477;
 			
 			// aapt resource value: 0x7f0b0027
 			public const int pin = 2131427367;
@@ -2929,14 +2929,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0033
 			public const int right = 2131427379;
 			
+			// aapt resource value: 0x7f0b0084
+			public const int right_button1 = 2131427460;
+			
 			// aapt resource value: 0x7f0b0085
-			public const int right_button1 = 2131427461;
+			public const int right_button2 = 2131427461;
 			
 			// aapt resource value: 0x7f0b0086
-			public const int right_button2 = 2131427462;
-			
-			// aapt resource value: 0x7f0b0087
-			public const int right_button3 = 2131427463;
+			public const int right_button3 = 2131427462;
 			
 			// aapt resource value: 0x7f0b00b3
 			public const int route_name = 2131427507;
@@ -3043,14 +3043,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0016
 			public const int strict_sandbox = 2131427350;
 			
-			// aapt resource value: 0x7f0b0092
-			public const int subject = 2131427474;
-			
 			// aapt resource value: 0x7f0b0091
-			public const int subject_label = 2131427473;
+			public const int subject = 2131427473;
 			
-			// aapt resource value: 0x7f0b0097
-			public const int submit = 2131427479;
+			// aapt resource value: 0x7f0b0090
+			public const int subject_label = 2131427472;
+			
+			// aapt resource value: 0x7f0b0096
+			public const int submit = 2131427478;
 			
 			// aapt resource value: 0x7f0b0077
 			public const int submit_area = 2131427447;
@@ -3094,14 +3094,14 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b005b
 			public const int title_template = 2131427419;
 			
+			// aapt resource value: 0x7f0b008c
+			public const int to_label = 2131427468;
+			
 			// aapt resource value: 0x7f0b008d
-			public const int to_label = 2131427469;
+			public const int to_list = 2131427469;
 			
-			// aapt resource value: 0x7f0b008e
-			public const int to_list = 2131427470;
-			
-			// aapt resource value: 0x7f0b0099
-			public const int toolbar = 2131427481;
+			// aapt resource value: 0x7f0b0098
+			public const int toolbar = 2131427480;
 			
 			// aapt resource value: 0x7f0b0035
 			public const int top = 2131427381;
@@ -3121,8 +3121,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f0b0001
 			public const int view_offset_helper = 2131427329;
 			
-			// aapt resource value: 0x7f0b0094
-			public const int welcome = 2131427476;
+			// aapt resource value: 0x7f0b0093
+			public const int welcome = 2131427475;
 			
 			// aapt resource value: 0x7f0b0047
 			public const int withText = 2131427399;

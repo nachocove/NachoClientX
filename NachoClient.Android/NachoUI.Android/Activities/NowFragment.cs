@@ -17,6 +17,7 @@ using Android.Support.V7.Widget;
 using Android.Support.Design.Widget;
 
 using NachoCore;
+using NachoCore.Model;
 
 namespace NachoClient.AndroidClient
 {
@@ -28,7 +29,7 @@ namespace NachoClient.AndroidClient
         ViewPager pager;
         GenericFragmentPagerAdaptor adapter;
 
-        public event EventHandler<int> onMessageClick;
+        public event EventHandler<McEmailMessageThread> onMessageClick;
 
         public override void OnCreate (Bundle savedInstanceState)
         {
@@ -81,10 +82,10 @@ namespace NachoClient.AndroidClient
             Console.WriteLine ("NowFragment: OnPause {0}", pager);
         }
 
-        void Adapter_onMessageClick (object sender, int e)
+        void Adapter_onMessageClick (object sender, McEmailMessageThread thread)
         {
             if (null != onMessageClick) {
-                onMessageClick (this, e);
+                onMessageClick (this, thread);
             }
         }
 
@@ -105,7 +106,7 @@ namespace NachoClient.AndroidClient
 
     public class GenericFragmentPagerAdaptor : Android.Support.V13.App.FragmentPagerAdapter
     {
-        public event EventHandler<int> onMessageClick;
+        public event EventHandler<McEmailMessageThread> onMessageClick;
 
         INachoEmailMessages messages = NcEmailManager.PriorityInbox(NcApplication.Instance.Account.Id);
 
@@ -120,15 +121,15 @@ namespace NachoClient.AndroidClient
         public override Android.App.Fragment GetItem (int position)
         {
             var thread = messages.GetEmailThread (position);
-            var hotMessageFragment = new HotMessageFragment (thread, messages);
+            var hotMessageFragment = new HotMessageFragment (thread);
             hotMessageFragment.onMessageClick += HotMessageFragment_onMessageClick;
             return hotMessageFragment;
         }
 
-        void HotMessageFragment_onMessageClick (object sender, int e)
+        void HotMessageFragment_onMessageClick (object sender, McEmailMessageThread thread)
         {
             if (null != onMessageClick) {
-                onMessageClick (this, e);
+                onMessageClick (this, thread);
             }
         }
 

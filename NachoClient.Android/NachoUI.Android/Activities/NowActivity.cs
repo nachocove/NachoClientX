@@ -10,27 +10,46 @@ using Android.Support.V7.App;
 using Android.Support.Design.Widget;
 using Android.Graphics;
 
+using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
+
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "NowActivity")]            
     public class NowActivity : NcActivity
     {
 
-        NowFragment nowFragment = new NowFragment();
+        NowFragment nowFragment = new NowFragment ();
 
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle, Resource.Layout.NowActivity);
 
             nowFragment.onMessageClick += NowFragment_onMessageClick;
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment).AddToBackStack("Now").Commit ();
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, nowFragment).AddToBackStack ("Now").Commit ();
         }
 
-        void NowFragment_onMessageClick (object sender, int e)
+        void NowFragment_onMessageClick (object sender, McEmailMessageThread thread)
         {
-            Console.WriteLine ("NowFragment_onMessageClick: {0}", e);
+            Console.WriteLine ("MessageListFragment_onMessageClick: {0}", thread);
 
-            var messageViewFragment = new MessageViewFragment ();
+            if (1 == thread.MessageCount) {
+                var message = thread.FirstMessageSpecialCase ();
+                MessageThreadFragment_onMessageClick (sender, message);
+                return;
+            }
+
+            var messageThreadFragment = new MessageThreadFragment (thread);
+            messageThreadFragment.onMessageClick += MessageThreadFragment_onMessageClick;
+
+            FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageThreadFragment).AddToBackStack ("Inbox").Commit ();
+        }
+
+        void MessageThreadFragment_onMessageClick (object sender, McEmailMessage message)
+        {
+            Console.WriteLine ("MessageThreadFragment_onMessageClick: {0}", message);
+            var messageViewFragment = new MessageViewFragment (message);
             this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
         }
 
@@ -38,6 +57,9 @@ namespace NachoClient.AndroidClient
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is MessageViewFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
+            if (f is MessageThreadFragment) {
                 this.FragmentManager.PopBackStack ();
             }
         }

@@ -72,7 +72,7 @@ namespace NachoClient.AndroidClient
             userImageView.SetBackgroundResource (ColorForUser(message.cachedFromColor));
 
             int chiliImageId;
-            if (thread.HasMultipleMessages ()) {
+            if ((null != thread) && thread.HasMultipleMessages ()) {
                 chiliImageId = (message.isHot () ? Resource.Drawable.email_not_hot: Resource.Drawable.email_nothothread);
             } else {
                 chiliImageId = (message.isHot () ? Resource.Drawable.email_hot : Resource.Drawable.email_not_hot);

@@ -12,15 +12,24 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 
+using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
+
 namespace NachoClient.AndroidClient
 {
     public class MessageViewFragment : Fragment
     {
+        McEmailMessage message;
+
+        public MessageViewFragment (McEmailMessage message)
+        {
+            this.message = message;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -57,8 +66,39 @@ namespace NachoClient.AndroidClient
             var chiliButton = view.FindViewById (Resource.Id.chili);
             chiliButton.Click += ChiliButton_Click;
 
+            BindValues (view);
+
             return view;
         }
+
+        void BindValues (View view)
+        {
+            Bind.BindMessageHeader (null, message, view);
+
+            var bodyView = view.FindViewById<Android.Widget.TextView> (Resource.Id.body);
+            bodyView.Visibility = ViewStates.Visible;
+
+            if (null == message) {
+                bodyView.SetText (Resource.String.message_not_available);
+                return;
+            }
+
+            var body = McBody.QueryById<McBody> (message.BodyId);
+
+            if (!McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
+                // FIXME download body
+                return;
+            }
+
+            var text = MimeHelpers.ExtractTextPart (message);
+            if (null == text) {
+                bodyView.Text = "No text available.";
+            } else {
+                bodyView.Text = text;
+            }
+            bodyView.Visibility = ViewStates.Visible;
+        }
+
 
         void SaveButton_Click (object sender, EventArgs e)
         {

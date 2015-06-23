@@ -479,6 +479,7 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="NachoUI.Android\MainApplication.cs" />
     <Compile Include="NachoUI.Android\Support\Bind.cs" />
+    <Compile Include="NachoUI.Android\Activities\MessageThreadFragment.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
