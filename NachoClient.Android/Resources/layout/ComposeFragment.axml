@@ -10,7 +10,8 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="5dp">
         <TextView
             android:id="@+id/to_label"
             android:layout_width="wrap_content"
@@ -23,12 +24,14 @@
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
             android:background="@android:color/white"
+            android:inputType="textEmailAddress"
             android:id="@+id/to_list" />
     </LinearLayout>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="5dp">
         <TextView
             android:id="@+id/cc_label"
             android:layout_width="wrap_content"
@@ -41,12 +44,14 @@
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
             android:background="@android:color/white"
+            android:inputType="textEmailAddress"
             android:id="@+id/cc_list" />
     </LinearLayout>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:padding="5dp">
         <TextView
             android:id="@+id/subject_label"
             android:layout_width="wrap_content"
@@ -59,6 +64,7 @@
             android:layout_height="wrap_content"
             android:textColor="@android:color/black"
             android:background="@android:color/white"
+            android:inputType="textEmailSubject"
             android:id="@+id/subject" />
     </LinearLayout>
     <View
@@ -69,6 +75,8 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:textColor="@android:color/black"
+        android:inputType="textLongMessage"
         android:background="@android:color/white"
-        android:id="@+id/message" />
+        android:id="@+id/message"
+        android:padding="5dp" />
 </LinearLayout>
