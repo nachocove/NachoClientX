@@ -227,22 +227,26 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int rc = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                rc = base.Insert ();
-                InsertScoreStates ();
-            });
-            return rc;
+            using (var capture = CaptureWithStart ("Insert")) {
+                int rc = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    rc = base.Insert ();
+                    InsertScoreStates ();
+                });
+                return rc;
+            }
         }
 
         public override int Delete ()
         {
-            int rc = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                rc = base.Delete ();
-                DeleteScoreStates ();
-            });
-            return rc;
+            using (var capture = CaptureWithStart ("Delete")) {
+                int rc = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    rc = base.Delete ();
+                    DeleteScoreStates ();
+                });
+                return rc;
+            }
         }
 
         public void InsertByBrain ()

@@ -48,7 +48,7 @@ namespace NachoCore.Model
         // Note: by design there should only be one entry per ServerId && AccountId.
         // We choose to announce inconsistency and keep running rather than crash w/r/t this.
 
-        // Temporary - used to exclude GMail from error reporting. 
+        // Temporary - used to exclude GMail from error reporting.
         public int Insert (bool isGMail)
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
@@ -67,47 +67,53 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            var preExists = McPath.QueryByServerId (AccountId, ServerId);
-            Log.Debug (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
-            if (null != preExists) {
-                // In a move, expect the server to send one Add, which is not an error.
-                if (!preExists.WasMoveDest) {
-                    Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
-                        preExists.ParentId, preExists.ServerId,
-                        ParentId, ServerId, new StackTrace ().ToString ()));
+            using (var capture = CaptureWithStart ("Insert")) {
+                var preExists = McPath.QueryByServerId (AccountId, ServerId);
+                Log.Debug (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
+                if (null != preExists) {
+                    // In a move, expect the server to send one Add, which is not an error.
+                    if (!preExists.WasMoveDest) {
+                        Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                            preExists.ParentId, preExists.ServerId,
+                            ParentId, ServerId, new StackTrace ().ToString ()));
+                    }
+                    preExists.Delete ();
                 }
-                preExists.Delete ();
+                return base.Insert ();
             }
-            return base.Insert ();
         }
 
         public override int Update ()
         {
-            var preExists = McPath.QueryByServerId (AccountId, ServerId);
-            Log.Info (Log.LOG_DB, "McPath:Update ServerId {0}", ServerId);
-            if (null != preExists && preExists.Id != Id) {
-                Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
-                    preExists.ParentId, preExists.ServerId,
-                    ParentId, ServerId, new StackTrace ().ToString ()));
-                preExists.Delete ();
+            using (var capture = CaptureWithStart ("Update")) {
+                var preExists = McPath.QueryByServerId (AccountId, ServerId);
+                Log.Info (Log.LOG_DB, "McPath:Update ServerId {0}", ServerId);
+                if (null != preExists && preExists.Id != Id) {
+                    Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                        preExists.ParentId, preExists.ServerId,
+                        ParentId, ServerId, new StackTrace ().ToString ()));
+                    preExists.Delete ();
+                }
+                return base.Update ();
             }
-            return base.Update ();
         }
 
         public override int Delete ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                var subs = QueryByParentId (AccountId, ServerId, true);
-                Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0}", ServerId);
-                foreach (var sub in subs) {
-                    Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0} (subordinate)", sub.ServerId);
-                    sub.Delete ();
-                }
-                DeleteNonFolderByParentId (AccountId, ServerId);
-                retval = base.Delete ();
-            }, true);
-            return retval;
+            using (var capture = CaptureWithStart ("Delete")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    var subs = QueryByParentId (AccountId, ServerId, true);
+                    Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0}", ServerId);
+                    foreach (var sub in subs) {
+                        Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0} (subordinate)", sub.ServerId);
+                        sub.Delete ();
+                    }
+                    DeleteNonFolderByParentId (AccountId, ServerId);
+                    retval = base.Delete ();
+                }, true);
+                return retval;
+            }
         }
 
         public static List<McPath> QueryByParentId (int accountId, string parentId, bool isFolder)
