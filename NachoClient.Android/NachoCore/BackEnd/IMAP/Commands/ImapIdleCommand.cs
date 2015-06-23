@@ -33,20 +33,20 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
             bool mailArrived = false;
+            bool mailDeleted = false;
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
 
             // TODO Add handlers for folder deletion, folder rename, etc.
 
-            EventHandler<MessagesArrivedEventArgs> CountChangedMessageHandler = (sender, e) => {
+            EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 mailArrived = true;
                 done.Cancel ();
             };
-            EventHandler<MessageEventArgs> ExpungedMessageHandler = (sender, e) => {
-                // Sadly, the Expunged message only passes an ID, not a UID. In the absence of keeping the ID in our DB, we just
-                // have to do a sync.
-                Log.Info (Log.LOG_IMAP, "Message expunged");
+            EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                mailDeleted = true;
                 done.Cancel ();
             };
+
             EventHandler<MessageFlagsChangedEventArgs> MessageFlagsChangedHandler = (sender, e) => {
                 var mkFolder = (ImapFolder) sender;
 
@@ -71,9 +71,9 @@ namespace NachoCore.IMAP
 
             mailKitFolder = Client.GetFolder (IdleFolder.ServerId, Cts.Token);
             try {
-                mailKitFolder.MessagesArrived += CountChangedMessageHandler;
+                mailKitFolder.MessagesArrived += MessagesArrivedHandler;
                 mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
-                mailKitFolder.MessageExpunged += ExpungedMessageHandler;
+                mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
                 if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
                     return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
@@ -84,10 +84,12 @@ namespace NachoCore.IMAP
                 Client.Idle (done.Token, CancellationToken.None);
                 Cts.Token.ThrowIfCancellationRequested ();
                 mailKitFolder.Close (false, Cts.Token);
-                StatusItems statusItems =
-                    StatusItems.UidNext |
-                    StatusItems.UidValidity |
-                    StatusItems.HighestModSeq;
+                        StatusItems statusItems =
+                            StatusItems.UidNext |
+                            StatusItems.UidValidity |
+                            StatusItems.Count |
+                            StatusItems.Recent |
+                            StatusItems.HighestModSeq;
                 mailKitFolder.Status (statusItems, Cts.Token);
                 UpdateImapSetting (mailKitFolder, IdleFolder);
 
@@ -100,13 +102,16 @@ namespace NachoCore.IMAP
                 if (mailArrived) {
                     Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
                 }
+                if (mailDeleted) {
+                    Log.Info (Log.LOG_IMAP, "Mail Deleted during idle");
+                }
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } catch {
                 throw;
             } finally {
-                mailKitFolder.MessagesArrived -= CountChangedMessageHandler;
+                mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
                 mailKitFolder.MessageFlagsChanged -= MessageFlagsChangedHandler;
-                mailKitFolder.MessageExpunged -= ExpungedMessageHandler;
+                mailKitFolder.MessageExpunged -= MessageExpungedHandler;
                 done.Dispose ();
             }
         }
