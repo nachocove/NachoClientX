@@ -57,6 +57,9 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
+            if (!Client.Capabilities.HasFlag (ImapCapabilities.UidPlus)) {
+                Log.Warn (Log.LOG_IMAP, "Server does not support required extension UidPlus (for Copy and Move)");
+            }
         }
 
         protected override Event ExecuteCommand ()
