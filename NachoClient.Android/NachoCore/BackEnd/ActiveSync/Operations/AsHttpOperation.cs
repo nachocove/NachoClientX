@@ -556,8 +556,14 @@ namespace NachoCore.ActiveSync
             try {
                 cdLength = ContentData.Length;
             } catch (NotSupportedException) {
-                // Work around Android ModernHttpClient issue.
+                // Work around Android ModernHttpClient problem.
             }
+            #if __ANDROID__
+            if (!(response.Content is ByteArrayContent)) {
+                return true;
+                // Work around another Android ModernHttpClient problem.
+            }
+            #endif
             return 0 < cdLength ||
                 (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength) ||
                 (response.Headers.TransferEncodingChunked.HasValue && 
