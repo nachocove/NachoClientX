@@ -138,9 +138,19 @@ namespace NachoCore.Brain
             return filePath;
         }
 
+        protected bool IndexExists (int accountId)
+        {
+            return Directory.Exists (NcModel.Instance.GetAccountDirPath (accountId));
+        }
+
         protected bool IndexEmailMessage (McEmailMessage emailMessage)
         {
             if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {
+                return false;
+            }
+            if (!IndexExists (emailMessage.AccountId)) {
+                Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing email message {1}",
+                    emailMessage.AccountId, emailMessage.Id);
                 return false;
             }
             Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
@@ -205,6 +215,11 @@ namespace NachoCore.Brain
         protected bool IndexContact (McContact contact)
         {
             if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+                return false;
+            }
+            if (!IndexExists (contact.AccountId)) {
+                Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing contact {1}",
+                    contact.AccountId, contact.Id);
                 return false;
             }
             var index = OpenedIndexes.Get (contact.AccountId);
@@ -276,6 +291,10 @@ namespace NachoCore.Brain
 
         protected void UnindexEmailMessage (int accountId, int emailMessageId)
         {
+            if (!IndexExists (accountId)) {
+                Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore unindexing email message {1}", accountId, emailMessageId);
+                return;
+            }
             OpenedIndexes.Cleanup ();
             var index = Index (accountId);
             if (null == index) {
@@ -287,6 +306,10 @@ namespace NachoCore.Brain
 
         protected void UnindexContact (int accountId, int contactId)
         {
+            if (!IndexExists (accountId)) {
+                Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore unindexing contact {1}", accountId, contactId);
+                return;
+            }
             OpenedIndexes.Cleanup ();
             var index = Index (accountId);
             if (null == index) {
