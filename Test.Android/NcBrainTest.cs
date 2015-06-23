@@ -75,6 +75,9 @@ namespace Test.Common
             Message.Insert ();
 
             Brain = null;
+
+            Directory.CreateDirectory (NcModel.Instance.GetAccountDirPath (TestIndexContactAccountId));
+            Directory.CreateDirectory (NcModel.Instance.GetAccountDirPath (TestIndexEmailMessageAccountId));
         }
 
         [TearDown]
