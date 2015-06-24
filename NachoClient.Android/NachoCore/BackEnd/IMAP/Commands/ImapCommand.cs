@@ -203,15 +203,15 @@ namespace NachoCore.IMAP
                 // update.
                 bool needsSync = (
                                      (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id) ||
-                                     (folder.ImapMessageCount != mailKitFolder.Count) ||
-                                     (folder.ImapMessageRecent != mailKitFolder.Recent) ||
                                      (ulong)folder.CurImapHighestModSeq != hmodseq
                                  );
-
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.CurImapHighestModSeq = (long)hmodseq;
+                    if (0 == target.LastImapHighestModSeq) {
+                        target.LastImapHighestModSeq = target.CurImapHighestModSeq;
+                    }
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
                     target.ImapMessageCount = (uint)mailKitFolder.Count;
                     target.ImapMessageRecent = (uint)mailKitFolder.Recent;
