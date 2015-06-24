@@ -22,7 +22,7 @@ namespace NachoCore.IMAP
 {
     public class ImapSyncCommand : ImapCommand
     {
-        SyncKit SyncKit;
+        SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
         private List<Regex> RegexList;
 
@@ -35,8 +35,8 @@ namespace NachoCore.IMAP
 
         public ImapSyncCommand (IBEContext beContext, NcImapClient imap, SyncKit syncKit) : base (beContext, imap)
         {
-            SyncKit = syncKit;
-            PendingSingle = SyncKit.PendingSingle;
+            Synckit = syncKit;
+            PendingSingle = Synckit.PendingSingle;
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
@@ -59,207 +59,92 @@ namespace NachoCore.IMAP
         private const string KImapFetchTiming = "IMAP Summary Fetch";
         private const string KImapPreviewGeneration = "IMAP Preview Generation";
 
-        private string UidSetString(IList<UniqueId> uids)
-        {
-            return (uids is UniqueIdRange || uids is UniqueIdSet) ? uids.ToString () : UniqueIdSet.ToString (uids);
-        }
-
-        private UniqueIdSet MustUniqueIdSet(IList<UniqueId> uids)
-        {
-            if (uids is UniqueIdSet) {
-                return uids as UniqueIdSet;
-            } else {
-                UniqueIdSet newUidSet;
-                string uidSetString = UidSetString (uids);
-                if (!UniqueIdSet.TryParse (uidSetString, out newUidSet)) {
-                    Log.Error (Log.LOG_IMAP, "Could not parse uid set string {0}", uidSetString);
-                    newUidSet = new UniqueIdSet ();
-                }
-                return newUidSet;
-            }
-        }
-
         protected override Event ExecuteCommand ()
         {
-            IMailFolder mailKitFolder;
-            NcCapture cap;
             NcCapture.AddKind (KImapSearchTiming);
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
-            SearchQuery query;
-            var timespan = BEContext.Account.DaysSyncEmailSpan();
+            var timespan = BEContext.Account.DaysSyncEmailSpan ();
 
-            if (SyncKit.MethodEnum.OpenOnly == SyncKit.Method) {
-                // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", SyncKit.Folder.ImapFolderNameRedacted());
-                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                if (null == mailKitFolder) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
-                }
-                if (UInt32.MinValue != SyncKit.Folder.ImapUidValidity &&
-                    SyncKit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
-                    return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
-                }
+            Log.Info (Log.LOG_IMAP, "Sync {0}: {1}", Synckit.Folder.ImapFolderNameRedacted (), Synckit.ToString ());
 
-                // TODO Move the rest to the SyncKit.MethodEnum.Range case?
-
-                // Check for regular message messages
-                query = SearchQuery.NotDeleted;
-                if (TimeSpan.Zero != timespan) {
-                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-                }
-                UniqueIdSet uids = MustUniqueIdSet (mailKitFolder.Search (query));
-                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
-                    uids.ToString (),
-                    SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-
-                var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
-                if (uids.Any () && !uids.Contains(highestUid))
-                {
-                    // need to artificially add this to the set, otherwise we'll loop
-                    // forever if there's a hole at the top.
-                    uids.Add (highestUid);
-                }
-                SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ImapUidSet = uids.ToString ();
-                    return true;
-                });
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
+            var mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
+            if (null == mailKitFolder) {
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
             }
 
-            List<MailSummary> summaries = new List<MailSummary> ();
-            uint MaxSynced;
-            uint MinSynced;
-            switch (SyncKit.Method) {
+            if (SyncKit.MethodEnum.OpenOnly == Synckit.Method) {
+                return getFolderMetaData (mailKitFolder, timespan);
+            } else {
+                return SyncFolder (mailKitFolder, timespan);
+            }
+        }
+
+        private Event SyncFolder(IMailFolder mailKitFolder, TimeSpan timespan) {
+            int added_or_changed = 0;
+
+            switch (Synckit.Method) {
             default:
+                // We must never get here with SyncKit.MethodEnum.OpenOnly. it's processed separately.
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETH");
 
-            // Process the various Methods here.
-            case SyncKit.MethodEnum.Range:
-                MaxSynced = SyncKit.UidList.Any () ? SyncKit.UidList.Max ().Id : UInt32.MinValue;
-                MinSynced = SyncKit.UidList.Any () ? SyncKit.UidList.Min ().Id : UInt32.MaxValue;
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}", MinSynced, MaxSynced,
-                    SyncKit.Folder.ImapFolderNameRedacted ());
-                IList<IMessageSummary> imapSummaries = null;
-                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                if (null == mailKitFolder) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN1");
-                }
+            case SyncKit.MethodEnum.UidSet:
+                if (Synckit.FetchNewUidSet.Any ()) {
+                    Log.Info (Log.LOG_IMAP, "ImapSyncCommand {2}: Getting Message summaries {0}:{1}",
+                        Synckit.FetchNewUidSet.Min ().Id, Synckit.FetchNewUidSet.Max ().Id,
+                        Synckit.Folder.ImapFolderNameRedacted ());
 
-                query = SearchQuery.NotDeleted;
-                if (TimeSpan.Zero != timespan) {
-                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-                }
-                var uids = MustUniqueIdSet (mailKitFolder.Search (query));
-
-                if (SyncKit.UidList.Any ()) {
-                    HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-                    headers.Add (HeaderId.Importance);
-                    headers.Add (HeaderId.DkimSignature);
-                    headers.Add (HeaderId.ContentClass);
-
-                    try {
-                        cap = NcCapture.CreateAndStart (KImapFetchTiming);
-
-                        imapSummaries = mailKitFolder.Fetch (SyncKit.UidList, SyncKit.Flags, headers, Cts.Token);
-                        cap.Stop ();
-                        Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-                    } catch (ImapProtocolException) {
-                        // try one-by-one so we can at least get a few.
-                        Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
-                        if (!Client.IsConnected || !Client.IsAuthenticated) {
-                            var authy = new ImapAuthenticateCommand (BEContext, Client);
-                            authy.ConnectAndAuthenticate ();
-                        }
-                        mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                        foreach (var uid in SyncKit.UidList) {
-                            try {
-                                var s = mailKitFolder.Fetch (new List<UniqueId>{ uid }, SyncKit.Flags, headers, Cts.Token);
-                                if (1 == s.Count) {
-                                    imapSummaries.Add (s [0]);
-                                } else if (s.Count > 0) {
-                                    Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
-                                }
-                            } catch (ImapProtocolException ex1) {
-                                // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
-                                Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
-                                if (!Client.IsConnected || !Client.IsAuthenticated) {
-                                    var authy = new ImapAuthenticateCommand (BEContext, Client);
-                                    authy.ConnectAndAuthenticate ();
-                                }
-                                mailKitFolder = GetOpenMailkitFolder (SyncKit.Folder);
-                            }
-                        }
-                    }
-                }
-                if (null != imapSummaries) {
-                    cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
-                    foreach (var imapSummary in imapSummaries) {
-                        if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
-                            continue;
-                        }
-                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                        summaries.Add (new MailSummary () {
-                            imapSummary = imapSummary as MessageSummary,
-                            preview = preview,
-                        });
-                    }
-                    cap.Stop ();
-                    Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    var newUids = GetNewOrChangedMessages (mailKitFolder, Synckit.FetchNewUidSet);
+                    added_or_changed += newUids.Count;
                 }
                 break;
             }
 
-            if (0 < summaries.Count) {
-                foreach (var summary in summaries) {
-                    // FIXME use NcApplyServerCommand framework.
-                    ServerSaysAddOrChangeEmail (BEContext.Account.Id, summary, SyncKit.Folder);
+            if (null != Synckit.SyncQuery) {
+                var changedUids = FindChangedUids (mailKitFolder, timespan);
+                added_or_changed += changedUids.Count;
+            }
+
+            if (Synckit.SyncUidSet.Any ()) {
+                // Delete messages that disappeared or are marked \deleted
+                var deletedUids = FindDeletedUids (mailKitFolder, timespan);
+                added_or_changed += deletedUids.Count;
+            }
+
+            UpdateImapSetting (mailKitFolder, Synckit.Folder);
+
+            if (SyncKit.MethodEnum.UidSet == Synckit.Method) {
+                // FIXME UGH. Need to either separate out FetchNewUidSet and SyncUidSet into separate SyncKits, or something. This is too error prone
+                uint MaxSynced = Synckit.FetchNewUidSet.Any () ? Synckit.FetchNewUidSet.Max ().Id : UInt32.MinValue;
+                uint MinSynced = Synckit.FetchNewUidSet.Any () ? Synckit.FetchNewUidSet.Min ().Id : UInt32.MaxValue;
+                if (Synckit.SyncUidSet.Any ()) {
+                    MaxSynced = Math.Max (MaxSynced, Synckit.SyncUidSet.Max ().Id);
+                    MinSynced = Math.Max (MaxSynced, Synckit.SyncUidSet.Min ().Id);
                 }
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-            }
-            // Check for deleted messages
-            query = SearchQuery.Deleted;
-            if (TimeSpan.Zero != timespan) {
-                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-            }
-            var deletedUids = MustUniqueIdSet (mailKitFolder.Search (query));
-            Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
-                deletedUids.ToString (),
-                SyncKit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-            UpdateImapSetting (mailKitFolder, SyncKit.Folder);
-
-            UniqueIdSet currentMails = new UniqueIdSet ();
-
-            // TODO Convert some of this to queries instead of loops
-            // TODO Need to be able to query based on time, i.e. last X days
-            List<String> mailsToDelete = new List<String> ();
-            foreach (var emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (BEContext.Account.Id, SyncKit.Folder.Id)) {
-                currentMails.Add (ImapProtoControl.ImapMessageUid (emailMessage.ServerId));
-            }
-            foreach (var uid in deletedUids.Intersect (currentMails)) {
-                Log.Info (Log.LOG_IMAP, "Deleted: Need to delete email message {0}", uid);
-                mailsToDelete.Add (ImapProtoControl.MessageServerId (SyncKit.Folder, uid));
-            }
-//            foreach (var uid in currentMails.Except (uids)) {
-//                Log.Info (Log.LOG_IMAP, "Missing: Need to delete email message {0}", uid);
-//                mailsToDelete.Add (ImapProtoControl.MessageServerId (SyncKit.Folder, uid));
-//            }
-            foreach (var serverId in mailsToDelete) {
-                Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", SyncKit.Folder.ImapFolderNameRedacted (), serverId);
-                //McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId).Delete ();
-            }
-
-            if (SyncKit.MethodEnum.Range == SyncKit.Method) {
-                SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapUidHighestUidSynced = Math.Max (MaxSynced, target.ImapUidHighestUidSynced);
                     target.ImapUidLowestUidSynced = Math.Min (MinSynced, target.ImapUidLowestUidSynced);
+                    target.ImapCurrentUidPtr = Math.Max(1, MinSynced);
                     return true;
                 });
             }
+
+            // FIXME Do a global search to see if there's anything left to do. If not, update the Modseq.
+            if (0 != Synckit.Folder.CurImapHighestModSeq && Synckit.Folder.CurImapHighestModSeq != Synckit.Folder.LastImapHighestModSeq) {
+                var query = SearchQuery.NotDeleted.And (SearchQuery.ChangedSince ((ulong)Synckit.Folder.LastImapHighestModSeq));
+                var changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncQuery));
+                if (!changedUids.Any ()) {
+                    Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.LastImapHighestModSeq = target.CurImapHighestModSeq;
+                        return true;
+                    });
+                }
+            }
+
             var protocolState = BEContext.ProtocolState;
-            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == SyncKit.Folder.Type) {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == Synckit.Folder.Type) {
                 if (!protocolState.HasSyncedInbox) {
                     protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                         var target = (McProtocolState)record;
@@ -268,7 +153,7 @@ namespace NachoCore.IMAP
                     });
                 }
             }
-            SyncKit.Folder = SyncKit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+            Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
@@ -281,6 +166,205 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
+        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uids)
+        {
+            List<MailSummary> summaries = null;
+            UniqueIdSet processedUids = new UniqueIdSet ();
+
+            summaries = getMessageSummaries (mailKitFolder, uids);
+            if (summaries.Count > 0) {
+                foreach (var summary in summaries) {
+                    // FIXME use NcApplyServerCommand framework.
+                    ServerSaysAddOrChangeEmail (BEContext.Account.Id, summary, Synckit.Folder);
+                    processedUids.Add (summary.imapSummary.UniqueId.Value);
+                }
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            }
+
+            // Check for deleted mails. If we get a UID passed in, but we don't get a summary, then the email must be deleted
+            UniqueIdSet toDelete = new UniqueIdSet ();
+            foreach (var uid in uids) {
+                bool found = false;
+                foreach (var sum in summaries) {
+                    if (sum.imapSummary.UniqueId == uid) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    toDelete.Add (uid);
+                }
+            }
+            bool messagesDeleted = deleteEmails(toDelete);
+            if (messagesDeleted) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            }
+            return processedUids;
+        }
+
+        private UniqueIdSet FindChangedUids(IMailFolder mailKitFolder, TimeSpan timespan)
+        {
+            if (null == Synckit.SyncQuery) {
+                return new UniqueIdSet (); // nothing has changed.
+            }
+            UniqueIdSet changedUids;
+            if (Synckit.SyncUidSet.Any ()) {
+                changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncUidSet, Synckit.SyncQuery));
+            } else {
+                Log.Warn (Log.LOG_IMAP, "Doing a global query");
+                changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncQuery));
+            }
+            if (!changedUids.Any ()) {
+                
+                return new UniqueIdSet ();
+            }
+            return GetNewOrChangedMessages (mailKitFolder, changedUids);
+        }
+
+        private UniqueIdSet FindDeletedUids(IMailFolder mailKitFolder,  TimeSpan timespan)
+        {
+            SearchQuery query;
+            UniqueIdSet toDelete = new UniqueIdSet ();
+            query = SearchQuery.NotDeleted;
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+            }
+            var existingUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncUidSet, query));
+            var expungedUids = SyncKit.MustUniqueIdSet (Synckit.SyncUidSet.Except (existingUids).ToList ());
+            Log.Info (Log.LOG_IMAP, "{1}: ExpungedUids: {0}",
+                expungedUids.ToString (),
+                Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+
+            foreach (var uid in expungedUids) {
+                toDelete.Add (uid);
+            }
+
+            // Check for deleted messages
+            query = SearchQuery.Deleted;
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+            }
+            var deletedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncUidSet, query));
+            Log.Info (Log.LOG_IMAP, "{1}: DeletedUids: {0}",
+                deletedUids.ToString (),
+                Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+            foreach (var uid in deletedUids) {
+                toDelete.Add (uid);
+            }
+
+            // TODO Convert some of this to queries instead of loops
+            // TODO Need to be able to query based on time, i.e. last X days
+            bool messagesDeleted = deleteEmails(toDelete);
+            if (messagesDeleted) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            }
+            return deletedUids;
+        }
+
+        private bool deleteEmails(UniqueIdSet uids)
+        {
+            bool messagesDeleted = false;
+            foreach (var uid in uids) {
+                var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
+                if (null != email) {
+                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ServerId);
+                    email.Delete ();
+                }
+                messagesDeleted = true;
+            }
+            return messagesDeleted;
+        }
+        private Event getFolderMetaData(IMailFolder mailKitFolder, TimeSpan timespan)
+        {
+            SearchQuery query;
+
+            // Just load UID with SELECT.
+            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", Synckit.Folder.ImapFolderNameRedacted());
+            if (UInt32.MinValue != Synckit.Folder.ImapUidValidity &&
+                Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
+                return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
+            }
+
+            // TODO Move the rest to the SyncKit.MethodEnum.Range case?
+
+            // Check for regular message messages
+            query = SearchQuery.NotDeleted;
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+            }
+            UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
+            Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
+                uids.ToString (),
+                Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+
+            UpdateImapSetting (mailKitFolder, Synckit.Folder);
+
+            Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ImapUidSet = uids.ToString ();
+                target.ImapHighestInList = target.ImapUidNext - 1;
+                return true;
+            });
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
+        }
+
+        private List<MailSummary> getMessageSummaries(IMailFolder mailKitFolder, UniqueIdSet uids)
+        {
+            NcCapture cap;
+            IList<IMessageSummary> imapSummaries = new List<IMessageSummary> ();
+            List<MailSummary> summaries = new List<MailSummary> ();
+            if (Synckit.FetchNewUidSet.Any ()) {
+                try {
+                    cap = NcCapture.CreateAndStart (KImapFetchTiming);
+
+                    imapSummaries = mailKitFolder.Fetch (uids, Synckit.Flags, Synckit.Headers, Cts.Token);
+                    cap.Stop ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                } catch (ImapProtocolException) {
+                    // try one-by-one so we can at least get a few.
+                    Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
+                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                        var authy = new ImapAuthenticateCommand (BEContext, Client);
+                        authy.ConnectAndAuthenticate ();
+                    }
+                    mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
+                    foreach (var uid in Synckit.FetchNewUidSet) {
+                        try {
+                            var s = mailKitFolder.Fetch (new List<UniqueId>{ uid }, Synckit.Flags, Synckit.Headers, Cts.Token);
+                            if (1 == s.Count) {
+                                imapSummaries.Add (s [0]);
+                            } else if (s.Count > 0) {
+                                Log.Error (Log.LOG_IMAP, "Got {0} summaries but was expecting 1", s.Count);
+                            }
+                        } catch (ImapProtocolException ex1) {
+                            // FIXME In our current scheme we can not handle a 'lost' message like this, as we only know Min and Max UID. Need a better Sync scheme.
+                            Log.Error (Log.LOG_IMAP, "Could not fetch item uid {0}\n{1}", uid, ex1);
+                            if (!Client.IsConnected || !Client.IsAuthenticated) {
+                                var authy = new ImapAuthenticateCommand (BEContext, Client);
+                                authy.ConnectAndAuthenticate ();
+                            }
+                            mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
+                        }
+                    }
+                }
+            }
+
+            cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
+            foreach (var imapSummary in imapSummaries) {
+                if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
+                    continue;
+                }
+                var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                summaries.Add (new MailSummary () {
+                    imapSummary = imapSummary as MessageSummary,
+                    preview = preview,
+                });
+            }
+            cap.Stop ();
+            Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);            
+            return summaries;
+        }
+
         public static McEmailMessage ServerSaysAddOrChangeEmail (int accountId, MailSummary summary, McFolder folder)
         {
             if (null == summary.imapSummary.UniqueId || string.Empty == summary.imapSummary.UniqueId.Value.ToString ()) {
@@ -290,58 +374,42 @@ namespace NachoCore.IMAP
 
             string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, summary.imapSummary.UniqueId.Value);
 
-            // If the server attempts to overwrite, delete the pre-existing record first.
-            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
-            if (null != eMsg) {
-                eMsg.Delete ();
-                eMsg = null;
-            }
-
-            McEmailMessage emailMessage = null;
-            try {
-                var r = ParseEmail (accountId, McEmailMessageServerId, summary.imapSummary);
-                emailMessage = r.GetValue<McEmailMessage> ();
-                emailMessage.BodyPreview = summary.preview;
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
-                if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
-                    emailMessage = new McEmailMessage () {
-                        ServerId = McEmailMessageServerId,
-                    };
+            McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
+            if (null != emailMessage) {
+                if (UpdateEmail (emailMessage, summary.imapSummary)) {
+                    emailMessage.Update ();
+                } else {
+                    Log.Error (Log.LOG_IMAP, "Could not update email message");
                 }
-                emailMessage.IsIncomplete = true;
-            }
-
-            // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
-            NcModel.Instance.RunInTransaction (() => {
-                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty (emailMessage.To)) {
-                    if (!folder.IsJunkFolder ()) {
-                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            } else {
+                try {
+                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, summary.imapSummary);
+                    emailMessage.BodyPreview = summary.preview;
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
+                    if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
+                        emailMessage = new McEmailMessage () {
+                            ServerId = McEmailMessageServerId,
+                        };
                     }
+                    emailMessage.IsIncomplete = true;
                 }
-
-                bool justCreated = false;
-                if (null == eMsg) {
-                    justCreated = true;
-                    emailMessage.AccountId = folder.AccountId;
-                }
-                if (justCreated) {
+                NcModel.Instance.RunInTransaction (() => {
+                    if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty (emailMessage.To)) {
+                        if (!folder.IsJunkFolder ()) {
+                            NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                        }
+                    }
                     emailMessage.Insert ();
                     folder.Link (emailMessage);
                     // FIXME
                     // InsertAttachments (emailMessage);
-                } else {
-                    emailMessage.AccountId = folder.AccountId;
-                    emailMessage.Id = eMsg.Id;
-                    folder.UpdateLink (emailMessage);
-                    emailMessage.Update ();
+                });
+
+                if (!emailMessage.IsIncomplete) {
+                    // Extra work that needs to be done, but doesn't need to be in the same database transaction.
                 }
-            });
-
-            if (!emailMessage.IsIncomplete) {
-                // Extra work that needs to be done, but doesn't need to be in the same database transaction.
             }
-
             return emailMessage;
         }
 
@@ -358,7 +426,12 @@ namespace NachoCore.IMAP
             return result;
         }
 
-        public static NcResult ParseEmail (int accountId, string ServerId, IMessageSummary summary)
+        public static bool UpdateEmail( McEmailMessage McEmailMessage, IMessageSummary summary)
+        {
+            throw new Exception ("Not implemented");
+        }
+
+        public static McEmailMessage ParseEmail (int accountId, string ServerId, IMessageSummary summary)
         {
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
@@ -484,7 +557,7 @@ namespace NachoCore.IMAP
             }
             emailMessage.IsIncomplete = false;
 
-            return NcResult.OK (emailMessage);
+            return emailMessage;
         }
 
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder)

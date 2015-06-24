@@ -43,16 +43,21 @@ namespace NachoCore.Model
         public int SyncAttemptCount { get; set; }
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
+
         // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
         public bool ImapNoSelect { get; set; }
-        // The lowest UID we've synced in the current round of syncing
+        // The lowest UID we've synced in the current round of syncing. uint.MaxValue means unset
         public uint ImapUidLowestUidSynced { get; set; }
-        // The highest UID we've synced in the current round of syncing
+        // The highest UID we've synced in the current round of syncing. uint.MinValue means unset.
         public uint ImapUidHighestUidSynced { get; set; }
+        // The last UID we synced (lowest number in the current set). uint.MinValue means unset.
+        public uint ImapCurrentUidPtr { get; set; }
         // The folder's UIDVALIDITY value
         public uint ImapUidValidity { get; set; }
         // the folder's UIDNEXT value
         public uint ImapUidNext { get; set; }
+        // The highest UID we WANT to sync (it may not actually exist)
+        public uint ImapHighestInList { get; set; }
         // the folder's Count of Messages value
         public uint ImapMessageCount { get; set; }
         // the folder's Count of Recent value

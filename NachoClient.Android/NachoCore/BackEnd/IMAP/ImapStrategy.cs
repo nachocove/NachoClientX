@@ -10,6 +10,8 @@ using NachoCore.Model;
 using NachoPlatform;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using MailKit.Search;
+using MimeKit;
 
 namespace NachoCore.IMAP
 {
@@ -112,21 +114,12 @@ namespace NachoCore.IMAP
                 return null;
             }
             SyncKit syncKit = null;
-            var currentHighestInFolder = new UniqueId (folder.ImapUidNext - 1);
-            UniqueIdSet CurrentKnownUidSet;
-            if (null != folder.ImapUidSet && string.Empty != folder.ImapUidSet) {
-                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out CurrentKnownUidSet)) {
-                    Log.Error (Log.LOG_IMAP, "Could not parse uid set");
-                    return null;
-                }
-            } else {
-                CurrentKnownUidSet = new UniqueIdSet ();
-            }
+            var highestPossibleInFolder = folder.ImapUidNext - 1;
 
-            if (!folder.ImapNeedsSync &&  // we already know we need to sync.
-                (UserRequested || 
-                    0 == folder.ImapUidNext || null == folder.ImapUidSet || // new folder, never set up
-                    folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ())) // is our information possibly out of date?
+            if (null == folder.ImapUidSet || // new folder, never set up
+                folder.ImapHighestInList < highestPossibleInFolder ||
+                (!folder.ImapNeedsSync &&  // we already know we need to sync.
+                    UserRequested || folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-NoIdlePollTime ())) // is our information possibly out of date?
                 )
             {
                 // We really need to do an Open/SELECT to get folder metadata
@@ -134,26 +127,177 @@ namespace NachoCore.IMAP
                 syncKit = new SyncKit () {
                     Method = SyncKit.MethodEnum.OpenOnly,
                     Folder = folder,
-                    Flags = SummaryFlags,
+                    //Flags = SummaryFlags,
                 };
             } else if (folder.ImapNeedsSync) {
-                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
-                UniqueIdSet currentMails = new UniqueIdSet ();
-                foreach (var emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (accountId, folder.Id)) {
-                    currentMails.Add (ImapProtoControl.ImapMessageUid (emailMessage.ServerId));
+                UniqueIdSet CurrentKnownUidSet = getCurrentUIDSet (folder);
+                if (null == CurrentKnownUidSet) {
+                    Log.Error (Log.LOG_IMAP, "Could not parse uid set");
+                    return null;
                 }
-                if (currentMails.Any () && !currentMails.Contains (currentHighestInFolder)) {
-                    // deal with a hole at the top
-                    currentMails.Add (currentHighestInFolder);
+
+                UniqueIdSet syncUids = null;
+                UniqueIdSet fetchUids = null;
+                SearchQuery syncQuery = null;
+
+                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || highestPossibleInFolder > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+
+                if (HasNewMail (folder)) {
+                    // New messages. Start at top and work our way down again.
+                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ImapCurrentUidPtr = folder.ImapUidNext;
+                        return true;
+                    });
+                    fetchUids = getFetchUIDs (folder, span);
+                } else if (HasChangedMail (folder) || HasDeletedMail (folder)) {
+                    // Reset the pointer, and start at the top.
+                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ImapCurrentUidPtr = folder.ImapUidNext;
+                        return true;
+                    });
+
+                    // Get a list of messages to sync (i.e. look for deleted or changed)
+                    syncUids = getSyncUIDs (folder, span);
+
+                    if (0 != folder.CurImapHighestModSeq) {
+                        if (folder.LastImapHighestModSeq != folder.CurImapHighestModSeq) {
+                            // FIXME For this to work properly we really ought to sync UPWARDS, not downwards, since then
+                            // we can save the highest modseq we've sync SO FAR, and keep looping until we're up to date.
+                            var timespan = BEContext.Account.DaysSyncEmailSpan ();
+                            syncQuery = SearchQuery.NotDeleted.And (SearchQuery.ChangedSince ((ulong)folder.LastImapHighestModSeq));
+                            if (TimeSpan.Zero != timespan) {
+                                syncQuery = syncQuery.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                            }
+                        }
+                    } else {
+                        // FIXME need to figure out how to find changes.
+                    }
+                } else {
+                    // No new messages or changes. Continue downwards.
+                    fetchUids = getFetchUIDs (folder, span); // can be empty!
                 }
-                syncKit = new SyncKit () {
-                    Method = SyncKit.MethodEnum.Range,
-                    Folder = folder,
-                    Flags = SummaryFlags,
-                    UidList = CurrentKnownUidSet.Except (currentMails).OrderByDescending (x => x).Take ((int)span).ToList (),
-                };
+
+                if ((null == fetchUids || !fetchUids.Any ()) &&
+                    (null == syncUids || !syncUids.Any ()) &&
+                    null == syncQuery)
+                {
+                    if (folder.LastImapHighestModSeq != folder.CurImapHighestModSeq) {
+                        Log.Error (Log.LOG_IMAP, "We should have something to do!");
+                    }
+                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ImapNeedsSync = false;
+                        return true;
+                    });
+                } else {
+                    var headers = new HashSet<HeaderId> ();
+                    headers.Add (HeaderId.Importance);
+                    headers.Add (HeaderId.DkimSignature);
+                    headers.Add (HeaderId.ContentClass);
+
+                    syncKit = new SyncKit () {
+                        Method = SyncKit.MethodEnum.UidSet,
+                        Folder = folder,
+                        Flags = SummaryFlags,
+                        Headers = headers,
+                        SyncUidSet = syncUids ?? new UniqueIdSet (),
+                        SyncQuery = syncQuery,
+                        FetchNewUidSet = fetchUids ?? new UniqueIdSet (),
+                    };
+                }
             }
             return syncKit;
+        }
+
+        private bool HasNewMail(McFolder folder)
+        {
+            return (0 == folder.ImapUidHighestUidSynced || folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1);
+        }
+
+        private bool HasDeletedMail(McFolder folder)
+        {
+            // FIXME need to figure this out
+            return false;
+        }
+
+        private bool HasChangedMail(McFolder folder)
+        {
+            return folder.LastImapHighestModSeq != folder.CurImapHighestModSeq;
+        }
+
+        private UniqueIdSet getFetchUIDs(McFolder folder, uint span)
+        {
+            uint max = 0 != folder.ImapCurrentUidPtr ? folder.ImapCurrentUidPtr : folder.ImapUidNext;
+            UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, max, span);
+            UniqueIdSet currentUids = getCurrentUIDSet (folder, 0, max, span);
+            return SyncKit.MustUniqueIdSet (currentUids.Except (currentMails).OrderByDescending (x => x).Take ((int)span).ToList ());
+        }
+
+        private UniqueIdSet getSyncUIDs(McFolder folder, uint span)
+        {
+            uint max = 0 != folder.ImapCurrentUidPtr ? folder.ImapCurrentUidPtr : folder.ImapUidNext;
+            return getCurrentEmailUids (folder, 0, max, span);
+        }
+
+        private UniqueIdSet getCurrentEmailUids(McFolder folder)
+        {
+            return getCurrentEmailUids (folder, 0, 0, 0);
+        }
+
+        private UniqueIdSet getCurrentEmailUids(McFolder folder, uint min, uint max, uint span)
+        {
+            // FIXME: Turn into query, not loop!
+            UniqueIdSet currentMails = new UniqueIdSet ();
+            foreach (McEmailMessage emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (folder.AccountId, folder.Id).OrderByDescending (x => x.ServerId)) {
+                var uid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
+                if ((0 == min || uid.Id >= min) &&
+                    (0 == max || uid.Id < max)) {
+                    currentMails.Add (uid);
+                }
+                if (0 != span && currentMails.Count >= span) {
+                    break;
+                }
+            }
+            return currentMails;
+        }
+
+        private UniqueIdSet getCurrentUIDSet(McFolder folder)
+        {
+            return getCurrentUIDSet (folder, 0, 0, 0);
+        }
+
+        private UniqueIdSet getCurrentUIDSet(McFolder folder, uint min, uint max, uint span)
+        {
+            UniqueIdSet uids;
+            if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
+                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out uids)) {
+                    return null;
+                }
+            } else {
+                return new UniqueIdSet ();
+            }
+
+            if (0 == max && 0 == min && 0 == span) {
+                return uids;
+            }
+
+            List<UniqueId> uidList = new List<UniqueId> ();
+            foreach (var uid in uids) {
+                uidList.Add (uid);
+            }
+            var retUids = new UniqueIdSet ();
+            foreach (UniqueId uid in uidList.OrderByDescending (x => x)) {
+                if ((0 == min || uid.Id >= min) &&
+                    (0 == max || uid.Id < max)) {
+                    retUids.Add (uid);
+                }
+                if (0 != span && retUids.Count >= span) {
+                    break;
+                }
+            }
+            return retUids;
         }
 
         public Tuple<PickActionEnum, ImapCommand> PickUserDemand (NcImapClient Client)
