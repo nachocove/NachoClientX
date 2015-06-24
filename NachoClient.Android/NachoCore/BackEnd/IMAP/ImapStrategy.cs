@@ -61,6 +61,7 @@ namespace NachoCore.IMAP
             | MessageSummaryItems.InternalDate
             | MessageSummaryItems.MessageSize
             | MessageSummaryItems.UniqueId
+            | MessageSummaryItems.ModSeq
             | MessageSummaryItems.GMailMessageId
             | MessageSummaryItems.GMailThreadId;
 
@@ -158,21 +159,19 @@ namespace NachoCore.IMAP
                         return true;
                     });
 
-                    // Get a list of messages to sync (i.e. look for deleted or changed)
-                    syncUids = getSyncUIDs (folder, span);
-
                     if (0 != folder.CurImapHighestModSeq) {
                         if (folder.LastImapHighestModSeq != folder.CurImapHighestModSeq) {
                             // FIXME For this to work properly we really ought to sync UPWARDS, not downwards, since then
                             // we can save the highest modseq we've sync SO FAR, and keep looping until we're up to date.
-                            var timespan = BEContext.Account.DaysSyncEmailSpan ();
+                            //var timespan = BEContext.Account.DaysSyncEmailSpan ();
                             syncQuery = SearchQuery.NotDeleted.And (SearchQuery.ChangedSince ((ulong)folder.LastImapHighestModSeq));
-                            if (TimeSpan.Zero != timespan) {
-                                syncQuery = syncQuery.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-                            }
+                            //if (TimeSpan.Zero != timespan) {
+                            //    syncQuery = syncQuery.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                            //}
                         }
                     } else {
-                        // FIXME need to figure out how to find changes.
+                        // Get a list of messages to sync (i.e. look for deleted or changed)
+                        syncUids = getSyncUIDs (folder, span);
                     }
                 } else {
                     // No new messages or changes. Continue downwards.

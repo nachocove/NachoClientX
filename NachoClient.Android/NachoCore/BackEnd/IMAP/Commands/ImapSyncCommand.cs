@@ -40,7 +40,7 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
-            //RedactProtocolLogFunc = RedactProtocolLog;
+            RedactProtocolLogFunc = RedactProtocolLog;
             RegexList = new List<Regex> ();
 
             //* 59 FETCH (UID 8721 MODSEQ (952121) BODY[1]<0> {500} ... )
@@ -169,6 +169,12 @@ namespace NachoCore.IMAP
 
         private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uids)
         {
+            List<MailSummary> summaries;
+            return GetNewOrChangedMessages (mailKitFolder, uids, out summaries);
+        }
+
+        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uids, out List<MailSummary> summaryRet)
+        {
             List<MailSummary> summaries = null;
             UniqueIdSet processedUids = new UniqueIdSet ();
 
@@ -193,6 +199,7 @@ namespace NachoCore.IMAP
             if (messagesDeleted) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
+            summaryRet = summaries;
             return processedUids;
         }
 
@@ -208,18 +215,43 @@ namespace NachoCore.IMAP
                 Log.Warn (Log.LOG_IMAP, "Doing a global query");
                 changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncQuery));
             }
+            UniqueIdSet retSet;
             if (!changedUids.Any ()) {
                 if (null != Synckit.SyncUidSet && Synckit.SyncUidSet.Any ()) {
                     var toDelete = new UniqueIdSet ();
                     toDelete.AddRange (Synckit.SyncUidSet.Except (changedUids));
-                    bool messagesDeleted = deleteEmails(toDelete);
+                    bool messagesDeleted = deleteEmails (toDelete);
                     if (messagesDeleted) {
                         BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                     }
                 }
-                return new UniqueIdSet ();
+                retSet = new UniqueIdSet ();
+            } else {
+                List<MailSummary> summaries;
+                retSet = GetNewOrChangedMessages (mailKitFolder, changedUids, out summaries);
+
+                // If we did a full-folder search and the folder support ModSeq, then mark the LastImapHighestModSeq
+                // with the highest modseq we encountered. This SHOULD be the same as Cur, if we did a full-folder scan.
+                // FIXME Need to figure out the case where we have Synckit.SyncUidSet. Need to make sure Strategy
+                // starts low and goes high, instead of our normal high to low.
+                if (!Synckit.SyncUidSet.Any () && mailKitFolder.SupportsModSeq) {
+                    ulong hmodseqfetched = ulong.MinValue;
+                    foreach(var summary in summaries) {
+                        hmodseqfetched = Math.Max (hmodseqfetched, summary.imapSummary.ModSeq.Value);
+                    }
+                    if (hmodseqfetched > (ulong)Synckit.Folder.LastImapHighestModSeq) {
+                        Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                            var target = (McFolder)record;
+                            target.LastImapHighestModSeq = (long)hmodseqfetched;
+                            return true;
+                        });
+                    }
+                }
             }
-            return GetNewOrChangedMessages (mailKitFolder, changedUids);
+            if (mailKitFolder.SupportsModSeq) {
+                
+            }
+            return retSet;
         }
 
         private UniqueIdSet FindDeletedUids(IMailFolder mailKitFolder,  TimeSpan timespan)
@@ -271,6 +303,7 @@ namespace NachoCore.IMAP
             }
             return messagesDeleted;
         }
+
         private Event getFolderMetaData(IMailFolder mailKitFolder, TimeSpan timespan)
         {
             SearchQuery query;

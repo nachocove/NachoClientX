@@ -69,32 +69,32 @@ namespace NachoCore.IMAP
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
             } catch (OperationCanceledException) {
-                Log.Info (Log.LOG_IMAP, "OperationCanceledException");
+                Log.Info (Log.LOG_IMAP, "{0} OperationCanceledException", this.GetType ().Name);
                 ResolveAllDeferred ();
                 // No event posted to SM if cancelled.
             } catch (ServiceNotConnectedException) {
                 // FIXME - this needs to feed into NcCommStatus, not loop forever.
-                Log.Info (Log.LOG_IMAP, "ServiceNotConnectedException");
+                Log.Info (Log.LOG_IMAP, "{0} ServiceNotConnectedException", this.GetType ().Name);
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.ReDisc, "IMAPCONN");
             } catch (AuthenticationException) {
-                Log.Info (Log.LOG_IMAP, "AuthenticationException");
+                Log.Info (Log.LOG_IMAP, "{0} AuthenticationException", this.GetType ().Name);
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
             } catch (ServiceNotAuthenticatedException) {
-                Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
+                Log.Info (Log.LOG_IMAP, "{0} ServiceNotAuthenticatedException", this.GetType ().Name);
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
             } catch (IOException ex) {
-                Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
+                Log.Info (Log.LOG_IMAP, "{0} IOException: {1}", this.GetType ().Name, ex.ToString ());
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
             } catch (InvalidOperationException ex) {
-                Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
+                Log.Error (Log.LOG_IMAP, "{0} InvalidOperationException: {1}", this.GetType ().Name, ex.ToString ());
                 ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD1");
             } catch (Exception ex) {
-                Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
+                Log.Error (Log.LOG_IMAP, "{0} Exception : {0}", this.GetType ().Name, ex.ToString ());
                 ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
