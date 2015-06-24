@@ -343,7 +343,7 @@ namespace NachoCore.IMAP
             NcCapture cap;
             IList<IMessageSummary> imapSummaries = new List<IMessageSummary> ();
             List<MailSummary> summaries = new List<MailSummary> ();
-            if (Synckit.FetchNewUidSet.Any ()) {
+            if (uids.Any ()) {
                 try {
                     cap = NcCapture.CreateAndStart (KImapFetchTiming);
 
@@ -358,7 +358,7 @@ namespace NachoCore.IMAP
                         authy.ConnectAndAuthenticate ();
                     }
                     mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
-                    foreach (var uid in Synckit.FetchNewUidSet) {
+                    foreach (var uid in uids) {
                         try {
                             var s = mailKitFolder.Fetch (new List<UniqueId>{ uid }, Synckit.Flags, Synckit.Headers, Cts.Token);
                             if (1 == s.Count) {
