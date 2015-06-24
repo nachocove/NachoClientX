@@ -456,9 +456,44 @@ namespace NachoCore.IMAP
             return result;
         }
 
-        public static bool UpdateEmail( McEmailMessage McEmailMessage, IMessageSummary summary)
+        public static bool UpdateEmail(McEmailMessage emailMessage, IMessageSummary summary)
         {
-            throw new Exception ("Not implemented");
+            // IMAP can only update flags. Anything else is a new UID/message.
+            return setFlags (emailMessage, summary);
+        }
+
+        private static bool setFlags(McEmailMessage emailMessage, IMessageSummary summary)
+        {
+            bool changed = false;
+            if (summary.Flags.HasValue) {
+                if (summary.Flags.Value != MessageFlags.None) {
+                    
+                    bool before = emailMessage.IsRead;
+                    emailMessage.IsRead = ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen);
+                    if (emailMessage.IsRead != before) {
+                        changed = true;
+                    }
+                    // FIXME Where do we set these flags?
+                    if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
+                        //emailMessage.UserAction = 1;
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Draft) == MessageFlags.Draft) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
+                    }
+                    if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
+                        // FIXME See if these are handled by the summary.UserFlags
+                    }
+                }
+            }
+            if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
+                // FIXME Where do we set these flags?
+            }
+            return changed;
         }
 
         public static McEmailMessage ParseEmail (int accountId, string ServerId, IMessageSummary summary)
@@ -517,31 +552,7 @@ namespace NachoCore.IMAP
                 emailMessage.References = summary.References [0];
             }
 
-            if (summary.Flags.HasValue) {
-                if (summary.Flags.Value != MessageFlags.None) {
-                    if ((summary.Flags.Value & MessageFlags.Seen) == MessageFlags.Seen) {
-                        emailMessage.IsRead = true;
-                    }
-                    // FIXME Where do we set these flags?
-                    if ((summary.Flags.Value & MessageFlags.Answered) == MessageFlags.Answered) {
-                    }
-                    if ((summary.Flags.Value & MessageFlags.Flagged) == MessageFlags.Flagged) {
-                        emailMessage.UserAction = 1;
-                    }
-                    if ((summary.Flags.Value & MessageFlags.Deleted) == MessageFlags.Deleted) {
-                    }
-                    if ((summary.Flags.Value & MessageFlags.Draft) == MessageFlags.Draft) {
-                    }
-                    if ((summary.Flags.Value & MessageFlags.Recent) == MessageFlags.Recent) {
-                    }
-                    if ((summary.Flags.Value & MessageFlags.UserDefined) == MessageFlags.UserDefined) {
-                        // FIXME See if these are handled by the summary.UserFlags
-                    }
-                }
-            }
-            if (null != summary.UserFlags && summary.UserFlags.Count > 0) {
-                // FIXME Where do we set these flags?
-            }
+            setFlags (emailMessage, summary);
 
             if (null != summary.Headers) {
                 foreach (var header in summary.Headers) {
