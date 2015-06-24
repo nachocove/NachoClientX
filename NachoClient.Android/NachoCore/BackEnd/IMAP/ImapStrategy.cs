@@ -237,8 +237,11 @@ namespace NachoCore.IMAP
 
         private UniqueIdSet getSyncUIDs(McFolder folder, uint span)
         {
-            uint max = 0 != folder.ImapCurrentUidPtr ? folder.ImapCurrentUidPtr : folder.ImapUidNext;
-            return getCurrentEmailUids (folder, 0, max, span);
+            // In order to discover deleted messages, we have to consider UID's that are not in the Current UID set (folder.ImapUidSet).
+            // If they are in the set, they are obviously not deleted (though they could have the \deleted flag set).
+            uint max = Math.Max ((0 != folder.ImapCurrentUidPtr ? folder.ImapCurrentUidPtr : folder.ImapUidNext) - 1, 1);
+            uint min = Math.Max (max - span + 1, 1);
+            return new UniqueIdSet (new UniqueIdRange (new UniqueId (max), new UniqueId (min)));
         }
 
         private UniqueIdSet getCurrentEmailUids(McFolder folder)
@@ -283,12 +286,8 @@ namespace NachoCore.IMAP
                 return uids;
             }
 
-            List<UniqueId> uidList = new List<UniqueId> ();
-            foreach (var uid in uids) {
-                uidList.Add (uid);
-            }
             var retUids = new UniqueIdSet ();
-            foreach (UniqueId uid in uidList.OrderByDescending (x => x)) {
+            foreach (UniqueId uid in uids.OrderByDescending (x => x)) {
                 if ((0 == min || uid.Id >= min) &&
                     (0 == max || uid.Id < max)) {
                     retUids.Add (uid);

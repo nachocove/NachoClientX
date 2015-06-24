@@ -131,10 +131,11 @@ namespace NachoCore.IMAP
             }
 
             // FIXME Do a global search to see if there's anything left to do. If not, update the Modseq.
-            if (0 != Synckit.Folder.CurImapHighestModSeq && Synckit.Folder.CurImapHighestModSeq != Synckit.Folder.LastImapHighestModSeq) {
+            if (0 == added_or_changed &&
+                0 != Synckit.Folder.CurImapHighestModSeq && Synckit.Folder.CurImapHighestModSeq != Synckit.Folder.LastImapHighestModSeq) {
                 var query = SearchQuery.NotDeleted.And (SearchQuery.ChangedSince ((ulong)Synckit.Folder.LastImapHighestModSeq));
-                var changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncQuery));
-                if (!changedUids.Any ()) {
+                var changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
+                if (!changedUids.Any () || !changedUids.Except (Synckit.SyncUidSet).Any ()) {
                     Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.LastImapHighestModSeq = target.CurImapHighestModSeq;
@@ -182,19 +183,12 @@ namespace NachoCore.IMAP
             }
 
             // Check for deleted mails. If we get a UID passed in, but we don't get a summary, then the email must be deleted
-            UniqueIdSet toDelete = new UniqueIdSet ();
-            foreach (var uid in uids) {
-                bool found = false;
-                foreach (var sum in summaries) {
-                    if (sum.imapSummary.UniqueId == uid) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    toDelete.Add (uid);
-                }
+            UniqueIdSet summaryUids = new UniqueIdSet ();
+            foreach (var sum in summaries) {
+                summaryUids.Add (sum.imapSummary.UniqueId.Value);
             }
+
+            UniqueIdSet toDelete = SyncKit.MustUniqueIdSet (uids.Except (summaryUids).ToList ());
             bool messagesDeleted = deleteEmails(toDelete);
             if (messagesDeleted) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
@@ -215,7 +209,14 @@ namespace NachoCore.IMAP
                 changedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncQuery));
             }
             if (!changedUids.Any ()) {
-                
+                if (null != Synckit.SyncUidSet && Synckit.SyncUidSet.Any ()) {
+                    var toDelete = new UniqueIdSet ();
+                    toDelete.AddRange (Synckit.SyncUidSet.Except (changedUids));
+                    bool messagesDeleted = deleteEmails(toDelete);
+                    if (messagesDeleted) {
+                        BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                    }
+                }
                 return new UniqueIdSet ();
             }
             return GetNewOrChangedMessages (mailKitFolder, changedUids);
@@ -230,14 +231,12 @@ namespace NachoCore.IMAP
                 query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
             }
             var existingUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (Synckit.SyncUidSet, query));
-            var expungedUids = SyncKit.MustUniqueIdSet (Synckit.SyncUidSet.Except (existingUids).ToList ());
-            Log.Info (Log.LOG_IMAP, "{1}: ExpungedUids: {0}",
-                expungedUids.ToString (),
-                Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-
-            foreach (var uid in expungedUids) {
-                toDelete.Add (uid);
-            }
+            var possiblyExpungedUids = SyncKit.MustUniqueIdSet (Synckit.SyncUidSet.Except (existingUids).ToList ());
+            // Note: Just because there's UID's in this list doesn't mean they've been expunged. They may not exist at
+            // all since strategy tends to give us a range, not a list of known (or previous known) UIDs. The UIDS's may
+            // have been expunged (and dealt with a long time ago).
+            // If they don't exist in our DB, we'll ignore the UIDs in deleteEmails(). 
+            toDelete.AddRange (possiblyExpungedUids);
 
             // Check for deleted messages
             query = SearchQuery.Deleted;
@@ -248,9 +247,7 @@ namespace NachoCore.IMAP
             Log.Info (Log.LOG_IMAP, "{1}: DeletedUids: {0}",
                 deletedUids.ToString (),
                 Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-            foreach (var uid in deletedUids) {
-                toDelete.Add (uid);
-            }
+            toDelete.AddRange (deletedUids);
 
             // TODO Convert some of this to queries instead of loops
             // TODO Need to be able to query based on time, i.e. last X days
