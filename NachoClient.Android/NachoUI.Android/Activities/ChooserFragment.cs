@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class ChooserFragment : Fragment
     {
+        public static ChooserFragment newInstance ()
+        {
+            var fragment = new ChooserFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

@@ -290,6 +290,22 @@ namespace NachoCore.Model
             dbCollection = new List<T> (appCollection);
             appCollection = null;
         }
+
+        public static McAbstrItem RefreshItem (McAbstrItem item)
+        {
+            McAbstrItem refreshedItem;
+            if (item is McEmailMessage) {
+                refreshedItem = McEmailMessage.QueryById<McEmailMessage> (item.Id);
+            } else if (item is McCalendar) {
+                refreshedItem = McCalendar.QueryById<McCalendar> (item.Id);
+            } else if (item is McException) {
+                refreshedItem = McException.QueryById<McException> (item.Id);
+            } else {
+                throw new NcAssert.NachoDefaultCaseFailure (
+                    string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
+            }
+            return refreshedItem;
+        }
     }
 }
 

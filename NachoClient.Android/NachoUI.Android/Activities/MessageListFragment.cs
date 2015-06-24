@@ -34,9 +34,11 @@ namespace NachoClient.AndroidClient
 
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        public MessageListFragment (INachoEmailMessages messages)
+        public static MessageListFragment newInstance (INachoEmailMessages messages)
         {
-            this.messages = messages;
+            var fragment = new MessageListFragment ();
+            fragment.messages = messages;
+            return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -166,7 +168,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void RefreshMessageIfVisible()
+        void RefreshMessageIfVisible ()
         {
             List<int> adds;
             List<int> deletes;

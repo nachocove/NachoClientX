@@ -24,6 +24,12 @@ namespace NachoClient.AndroidClient
     {
         McAccount account;
 
+        public static ComposeFragment newInstance ()
+        {
+            var fragment = new ComposeFragment ();
+            return fragment;
+        }
+
         EmailHelper.Action action;
         McEmailMessage referencedMessage;
 

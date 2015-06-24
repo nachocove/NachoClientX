@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class GoogleSignInFragment : Fragment
     {
+        public static GoogleSignInFragment newInstance ()
+        {
+            var fragment = new GoogleSignInFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

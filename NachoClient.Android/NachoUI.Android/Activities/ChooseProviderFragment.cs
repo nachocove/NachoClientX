@@ -20,6 +20,13 @@ namespace NachoClient.AndroidClient
     {
         ProviderAdapter providerAdapter;
 
+        public static ChooseProviderFragment newInstance ()
+        {
+            var fragment = new ChooseProviderFragment ();
+            return fragment;
+        }
+
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

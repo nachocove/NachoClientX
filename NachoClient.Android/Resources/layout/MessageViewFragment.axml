@@ -3,7 +3,7 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/NachoLightGray">
+    android:background="@android:color/white">
     <include
         layout="@layout/ButtonBar" />
     <View

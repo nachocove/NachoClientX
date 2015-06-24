@@ -29,11 +29,14 @@ namespace NachoClient.AndroidClient
 
         BodyDownloader bodyDownloader;
 
-        public HotMessageFragment (McEmailMessageThread thread) : base ()
+        public static HotMessageFragment newInstance (McEmailMessageThread thread)
         {
-            this.thread = thread;
-            this.message = thread.FirstMessageSpecialCase ();
+            var fragment = new HotMessageFragment ();
 
+            fragment.thread = thread;
+            fragment.message = thread.FirstMessageSpecialCase ();
+
+            return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -72,8 +75,8 @@ namespace NachoClient.AndroidClient
 
             var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
             webview.SetOnTouchListener (new IgnoreTouchListener (view));
-//            webview.SetScrollContainer(false);
-//            webview.OverScrollMode = OverScrollMode.Never;
+
+            bodyDownloader = new BodyDownloader ();
 
             BindValues (view);
 
@@ -82,7 +85,6 @@ namespace NachoClient.AndroidClient
 
         void BindValues (View view)
         {
-
             Bind.BindMessageHeader (thread, message, view);
 
             var body = McBody.QueryById<McBody> (message.BodyId);
@@ -92,9 +94,9 @@ namespace NachoClient.AndroidClient
                 var bodyRenderer = new BodyRenderer ();
                 bodyRenderer.Start (webview, body, message.NativeBodyType);
             } else {
-                bodyDownloader = new BodyDownloader (message);
+                bodyDownloader = new BodyDownloader ();
                 bodyDownloader.Finished += BodyDownloader_Finished;
-                bodyDownloader.Start ();
+                bodyDownloader.Start (message);
             }
         }
 
@@ -102,7 +104,7 @@ namespace NachoClient.AndroidClient
         {
             View view;
 
-            public IgnoreTouchListener(View view)
+            public IgnoreTouchListener (View view)
             {
                 this.view = view;
             }
@@ -113,13 +115,17 @@ namespace NachoClient.AndroidClient
                 return false;
             }
         }
-            
+
         void BodyDownloader_Finished (object sender, string e)
         {
             bodyDownloader = null;
 
-            message = (McEmailMessage)RefreshItem (message);
+            message = (McEmailMessage)McAbstrItem.RefreshItem (message);
 
+            if (null == View) {
+                Console.WriteLine ("HotMessageFragment: BodyDownloader_Finished: View is null");
+                return;
+            }
             var webview = View.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
 
             if (null == e) {
@@ -131,22 +137,6 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        private McAbstrItem RefreshItem (McAbstrItem item)
-        {
-            McAbstrItem refreshedItem;
-            if (item is McEmailMessage) {
-                refreshedItem = McEmailMessage.QueryById<McEmailMessage> (item.Id);
-            } else if (item is McCalendar) {
-                refreshedItem = McCalendar.QueryById<McCalendar> (item.Id);
-            } else if (item is McException) {
-                refreshedItem = McException.QueryById<McException> (item.Id);
-            } else {
-                throw new NcAssert.NachoDefaultCaseFailure (
-                    string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
-            }
-            return refreshedItem;
-        }
-
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -156,7 +146,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void DoneWithMessage()
+        void DoneWithMessage ()
         {
             var parent = (NowActivity)this.Activity;
             parent.DoneWithMessage ();
@@ -212,39 +202,6 @@ namespace NachoClient.AndroidClient
             if (null != onMessageClick) {
                 onMessageClick (this, thread);
             }
-        }
-
-    }
-
-    public class WebViewNoScroll : Android.Webkit.WebView
-    {
-        protected WebViewNoScroll (IntPtr javaReference, JniHandleOwnership transfer) : base(javaReference, transfer)
-        {
-        }
-
-        public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs, int defStyleAttr, int defStyleRes) : base(context, attrs, defStyleAttr, defStyleRes)
-        {
-        }
-
-        public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs, int defStyleAttr, bool privateBrowsing) : base(context, attrs, defStyleAttr, privateBrowsing)
-        {
-        }
-
-        public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs, int defStyleAttr) : base(context, attrs, defStyleAttr)
-        {
-        }
-
-        public WebViewNoScroll (Context context, Android.Util.IAttributeSet attrs) : base(context, attrs)
-        {
-        }
-
-        public WebViewNoScroll (Context context) : base(context)
-        {
-        }
-
-        protected override bool OverScrollBy (int deltaX, int deltaY, int scrollX, int scrollY, int scrollRangeX, int scrollRangeY, int maxOverScrollX, int maxOverScrollY, bool isTouchEvent)
-        {
-            return false;
         }
     }
 }

@@ -40,7 +40,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
 
-            var messageThreadFragment = new MessageThreadFragment (thread);
+            var messageThreadFragment = MessageThreadFragment.newInstance (thread);
             messageThreadFragment.onMessageClick += MessageThreadFragment_onMessageClick;
 
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageThreadFragment).AddToBackStack ("Inbox").Commit ();
@@ -49,11 +49,11 @@ namespace NachoClient.AndroidClient
         void MessageThreadFragment_onMessageClick (object sender, McEmailMessage message)
         {
             Console.WriteLine ("MessageThreadFragment_onMessageClick: {0}", message);
-            var messageViewFragment = new MessageViewFragment (message);
+            var messageViewFragment = MessageViewFragment.newInstance (message);
             this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
         }
 
-        public void DoneWithMessage()
+        public void DoneWithMessage ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);
             if (f is MessageViewFragment) {

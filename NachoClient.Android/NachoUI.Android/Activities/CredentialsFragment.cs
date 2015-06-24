@@ -20,6 +20,13 @@ namespace NachoClient.AndroidClient
     {
         public McAccount.AccountServiceEnum service;
 
+        public static CredentialsFragment newInstance ()
+        {
+            var fragment = new CredentialsFragment ();
+            return fragment;
+        }
+
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

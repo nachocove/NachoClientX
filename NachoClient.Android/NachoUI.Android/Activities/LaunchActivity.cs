@@ -18,9 +18,9 @@ namespace NachoClient.AndroidClient
     [Activity (Label = "LaunchActivity")]            
     public class LaunchActivity : AppCompatActivity
     {
-        bool ReadyToStart()
+        bool ReadyToStart ()
         {
-            if(null == NcApplication.Instance.Account) {
+            if (null == NcApplication.Instance.Account) {
                 return false;
             }
             if (McAccount.AccountTypeEnum.Device == NcApplication.Instance.Account.AccountType) {
@@ -80,11 +80,11 @@ namespace NachoClient.AndroidClient
 
             BackEnd.Instance.Start (account.Id);
 
-            var waitingFragment = new WaitingFragment (account);
+            var waitingFragment = WaitingFragment.newInstance (account);
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, waitingFragment).Commit ();
         }
 
-        public void WaitingFinished()
+        public void WaitingFinished ()
         {
             var intent = new Intent ();
             intent.SetClass (this, typeof(NowActivity));

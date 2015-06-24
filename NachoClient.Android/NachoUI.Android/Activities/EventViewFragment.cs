@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class EventViewFragment : Fragment
     {
+        public static EventViewFragment newInstance ()
+        {
+            var fragment = new EventViewFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

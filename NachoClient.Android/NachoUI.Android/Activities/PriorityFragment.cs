@@ -16,11 +16,15 @@ namespace NachoClient.AndroidClient
 {
     public class PriorityFragment : Fragment
     {
+        public static PriorityFragment newInstance ()
+        {
+            var fragment = new PriorityFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)

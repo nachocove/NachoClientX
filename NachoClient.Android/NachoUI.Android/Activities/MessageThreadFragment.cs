@@ -32,9 +32,11 @@ namespace NachoClient.AndroidClient
 
         public event EventHandler<McEmailMessage> onMessageClick;
 
-        public MessageThreadFragment (McEmailMessageThread thread)
+        public static MessageThreadFragment newInstance (McEmailMessageThread thread)
         {
-            this.thread = thread;
+            var fragment = new MessageThreadFragment ();
+            fragment.thread = thread;
+            return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)

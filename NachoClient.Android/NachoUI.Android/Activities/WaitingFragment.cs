@@ -21,9 +21,11 @@ namespace NachoClient.AndroidClient
     {
         McAccount account;
 
-        public WaitingFragment(McAccount account)
+        public static WaitingFragment newInstance (McAccount account)
         {
-            this.account = account;
+            var fragment = new WaitingFragment ();
+            fragment.account = account;
+            return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -53,17 +55,17 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
-        void SyncCompleted(int accountId)
+        void SyncCompleted (int accountId)
         {
             var parent = (LaunchActivity)Activity;
-            parent.WaitingFinished();
+            parent.WaitingFinished ();
         }
 
-        public void handleStatusEnums()
+        public void handleStatusEnums ()
         {
             if (BackEndStateEnum.PostAutoDPostInboxSync == BackEnd.Instance.BackEndState (account.Id, account.AccountCapability)) {
                 var parent = (LaunchActivity)Activity;
-                parent.WaitingFinished();
+                parent.WaitingFinished ();
             }
         }
 
