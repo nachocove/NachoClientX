@@ -280,6 +280,11 @@ namespace NachoCore.Model
         public int IsIndexed { set; get; }
 
         ///
+        /// IMAP stuff
+        /// 
+        public long ImapModSeq { get; set; }
+
+        ///
         /// </Flag> STUFF.
         ///
 

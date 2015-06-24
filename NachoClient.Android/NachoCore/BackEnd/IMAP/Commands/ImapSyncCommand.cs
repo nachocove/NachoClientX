@@ -458,11 +458,24 @@ namespace NachoCore.IMAP
 
         public static bool UpdateEmail(McEmailMessage emailMessage, IMessageSummary summary)
         {
+            bool changed = false;
+
+            // update the modseq if we have one.
+            if (summary.ModSeq.HasValue) {
+                if (emailMessage.ImapModSeq != (long)summary.ModSeq.Value) {
+                    changed = true;
+                    emailMessage.ImapModSeq = (long)summary.ModSeq.Value;
+                }
+            }
+
             // IMAP can only update flags. Anything else is a new UID/message.
-            return setFlags (emailMessage, summary);
+            if (updateFlags (emailMessage, summary)) {
+                changed = true;
+            }
+            return changed;
         }
 
-        private static bool setFlags(McEmailMessage emailMessage, IMessageSummary summary)
+        private static bool updateFlags(McEmailMessage emailMessage, IMessageSummary summary)
         {
             bool changed = false;
             if (summary.Flags.HasValue) {
@@ -552,7 +565,7 @@ namespace NachoCore.IMAP
                 emailMessage.References = summary.References [0];
             }
 
-            setFlags (emailMessage, summary);
+            updateFlags (emailMessage, summary);
 
             if (null != summary.Headers) {
                 foreach (var header in summary.Headers) {
@@ -595,6 +608,9 @@ namespace NachoCore.IMAP
             }
             if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
                 emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
+            }
+            if (summary.ModSeq.HasValue) {
+                emailMessage.ImapModSeq = (long)summary.ModSeq.Value;
             }
             emailMessage.IsIncomplete = false;
 
