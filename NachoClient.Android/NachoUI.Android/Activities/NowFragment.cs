@@ -18,6 +18,7 @@ using Android.Support.Design.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
@@ -112,8 +113,9 @@ namespace NachoClient.AndroidClient
 
         public GenericFragmentPagerAdaptor (Android.App.FragmentManager fm) : base (fm)
         {
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
-
+            
         public override int Count {
             get { return messages.Count (); }
         }
@@ -132,6 +134,31 @@ namespace NachoClient.AndroidClient
                 onMessageClick (this, thread);
             }
         }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                RefreshPriorityInboxIfVisible ();
+                break;
+            }
+        }
+
+        void RefreshPriorityInboxIfVisible()
+        {
+            List<int> adds;
+            List<int> deletes;
+            if (messages.Refresh (out adds, out deletes)) {
+                this.NotifyDataSetChanged ();
+            }
+        }
+
 
     }
    

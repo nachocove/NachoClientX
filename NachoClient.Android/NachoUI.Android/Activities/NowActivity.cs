@@ -53,6 +53,14 @@ namespace NachoClient.AndroidClient
             this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
         }
 
+        public void DoneWithMessage()
+        {
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is MessageViewFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
+        }
+
         public override void OnBackPressed ()
         {
             var f = FragmentManager.FindFragmentById (Resource.Id.content);

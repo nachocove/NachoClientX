@@ -21,12 +21,15 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (bundle);
 
+            SkipIfStarted ();
+
+
+
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
 
             var startupFragment = new StartupFragment ();
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, startupFragment).Commit ();
-
         }
 
         protected override void OnStart ()
@@ -39,31 +42,62 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.AppStartupTasks ();
         }
 
-        public void StartupFinished()
+        protected override void OnResume ()
+        {
+            base.OnResume ();
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        void SkipIfStarted ()
+        {
+            if (NcApplication.Instance.IsUp ()) {
+                Skip ();
+            }
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
+                if (NcApplication.Instance.IsUp ()) {
+                    NachoPlatform.InvokeOnUIThread.Instance.Invoke (delegate () {
+                        Skip ();
+                    });
+                }
+            }
+        }
+
+        protected override void OnPause ()
+        {
+            base.OnPause ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public void StartupFinished ()
         {
             var recoveryFragment = new RecoveryFragment ();
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, recoveryFragment).Commit ();
         }
 
-        public void RecoveryFinished()
+        public void RecoveryFinished ()
         {
             var migrationFragment = new MigrationFragment ();
             FragmentManager.BeginTransaction ().Replace (Resource.Id.content, migrationFragment).Commit ();
         }
 
-        public void MigrationFinished()
+        public void MigrationFinished ()
         {
-            var intent = new Intent();
-            intent.SetClass(this, typeof(LaunchActivity));
-            StartActivity(intent);
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(LaunchActivity));
+            StartActivity (intent);
         }
 
         // Demo only
-        public void Skip()
+        public void Skip ()
         {
-            var intent = new Intent();
-            intent.SetClass(this, typeof(LaunchActivity));
-            StartActivity(intent);
+            var intent = new Intent ();
+            intent.SetClass (this, typeof(LaunchActivity));
+            StartActivity (intent);
         }
 
         public override void OnConfigurationChanged (Android.Content.Res.Configuration newConfig)
