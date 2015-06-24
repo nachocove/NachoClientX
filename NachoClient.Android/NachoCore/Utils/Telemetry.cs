@@ -194,23 +194,6 @@ namespace NachoCore.Utils
             RecordJsonEvent (TelemetryEventType.COUNTER, jsonEvent);
         }
 
-        public static void RecordCapture (string name, int count, int min, int max, long sum, long sum2)
-        {
-            if (!ENABLED) {
-                return;
-            }
-
-            var jsonEvent = new TelemetryStatistics2Event () {
-                stat2_name = name,
-                count = count,
-                min = min,
-                max = max,
-                sum = sum,
-                sum2 = sum2,
-            };
-            RecordJsonEvent (TelemetryEventType.CAPTURE, jsonEvent);
-        }
-
         private static TelemetryUiEvent GetTelemetryUiEvent (string uiType, string uiObject)
         {
             TelemetryUiEvent uiEvent = new TelemetryUiEvent ();
@@ -381,6 +364,19 @@ namespace NachoCore.Utils
                 sum2 = sum2,
             };
             RecordJsonEvent (TelemetryEventType.STATISTICS2, jsonEvent);
+        }
+
+        public static void RecordTimeSeries (string name, DateTime time, int value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            var jsonEvent = new TelemetryTimeSeriesEvent () {
+                time_series_name = name,
+                time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
+                time_series_value = value,
+            };
+            RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
         }
 
         public static void StartService ()

@@ -98,6 +98,8 @@ namespace NachoClient.iOS
             }
         }
 
+        private DateTime foregroundTime = DateTime.MinValue;
+
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -447,7 +449,7 @@ namespace NachoClient.iOS
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
-
+            foregroundTime = DateTime.UtcNow;
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
             if (-1 != BackgroundIosTaskId) {
@@ -478,6 +480,13 @@ namespace NachoClient.iOS
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
+
+            if (DateTime.MinValue != foregroundTime) {
+                // Log the duration of foreground for usage analytics
+                var duration = (int)(DateTime.UtcNow - foregroundTime).TotalMilliseconds;
+                Telemetry.RecordTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
+                foregroundTime = DateTime.MinValue;
+            }
 
             if (!isInitializing) {
                 NcApplication.Instance.StopClass4Services ();

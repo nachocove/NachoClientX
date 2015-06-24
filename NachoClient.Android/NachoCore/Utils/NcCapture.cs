@@ -91,7 +91,7 @@ namespace NachoCore.Utils
 
         public void Report (string kind)
         {
-            Telemetry.RecordCapture (kind, Count, Min, Max, Total, Total2);
+            Telemetry.RecordStatistics2 (kind, Count, Min, Max, Total, Total2);
             Reset ();
         }
     }

@@ -57,9 +57,7 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
-        nfloat HEADER_TOP_MARGIN = 0;
-        
-
+        float HEADER_TOP_MARGIN = 0;
 
 #else
         const int VIEW_INSET = 0;
@@ -71,6 +69,9 @@ namespace NachoClient.iOS
         protected bool expandedHeader = false;
         protected nfloat expandedSeparatorYOffset;
         protected nfloat compactSeparatorYOffset;
+
+        // Information to be collected for telemetry
+        protected DateTime appearTime;
 
         public enum TagType
         {
@@ -110,6 +111,29 @@ namespace NachoClient.iOS
             // Can't switch acct; let's be sure for now
             var message = thread.FirstMessageSpecialCase ();
             NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            appearTime = DateTime.UtcNow;
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            // Record information about the read email and then reset them.
+            if (null != thread) {
+                var now = DateTime.UtcNow;
+                var message = thread.FirstMessageSpecialCase ();
+                Telemetry.RecordTimeSeries ("MessageViewController.Duration", appearTime, (int)(now - appearTime).TotalMilliseconds);
+                Telemetry.RecordTimeSeries ("McEmailMessage.Read.Id", appearTime, message.Id);
+                Telemetry.RecordTimeSeries ("McEmailMessage.Read.Score", appearTime, (int)(message.Score * 1000000));
+                var body = McBody.QueryById<McBody> (message.BodyId);
+                if (McBody.IsComplete (body)) {
+                    Telemetry.RecordTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                }
+            }
+            base.ViewWillDisappear (animated);
         }
 
         protected override void CreateViewHierarchy ()
