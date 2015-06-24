@@ -94,7 +94,7 @@ namespace NachoCore.IMAP
                 ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD1");
             } catch (Exception ex) {
-                Log.Error (Log.LOG_IMAP, "{0} Exception : {0}", this.GetType ().Name, ex.ToString ());
+                Log.Error (Log.LOG_IMAP, "{0} Exception : {1}", this.GetType ().Name, ex.ToString ());
                 ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             }
