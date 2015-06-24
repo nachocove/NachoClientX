@@ -248,9 +248,6 @@ namespace NachoCore.IMAP
                     }
                 }
             }
-            if (mailKitFolder.SupportsModSeq) {
-                
-            }
             return retSet;
         }
 
@@ -408,8 +405,6 @@ namespace NachoCore.IMAP
             if (null != emailMessage) {
                 if (UpdateEmail (emailMessage, summary.imapSummary)) {
                     emailMessage.Update ();
-                } else {
-                    Log.Error (Log.LOG_IMAP, "Could not update email message");
                 }
             } else {
                 try {
