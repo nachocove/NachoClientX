@@ -111,7 +111,7 @@ namespace NachoClient.AndroidClient
 
             public bool OnTouch (View v, MotionEvent e)
             {
-                view.OnTouchEvent (e);
+//                view.OnTouchEvent (e);
                 return false;
             }
         }

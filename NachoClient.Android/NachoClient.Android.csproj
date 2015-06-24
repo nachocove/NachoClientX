@@ -57,6 +57,7 @@
       </CustomCommands>
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
+    <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -483,6 +484,7 @@
     <Compile Include="NachoUI.Android\Activities\MessageThreadFragment.cs" />
     <Compile Include="NachoUI.Android\Support\BodyRenderer.cs" />
     <Compile Include="NachoUI.Android\Support\BodyDownloader.cs" />
+    <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
