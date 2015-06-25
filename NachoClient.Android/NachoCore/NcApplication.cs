@@ -440,7 +440,7 @@ namespace NachoCore
             Telemetry.StartService ();
 
             // Pick most recently used account
-            Account = LoginHelpers.PickStartupAccount();
+            Account = LoginHelpers.PickStartupAccount ();
 
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
@@ -1018,6 +1018,29 @@ namespace NachoCore
                 Directory.CreateDirectory (dataDirPath);
             }
             return dataDirPath;
+        }
+
+        // Fast track to UI
+        static public bool ReadyToStartUI ()
+        {
+            if (!NcApplication.Instance.IsUp ()) {
+                return false;
+            }
+            if (!LoginHelpers.HasViewedTutorial ()) {
+                return false;
+            }
+            var account = NcApplication.Instance.Account;
+            if (null == account) {
+                return false;
+            }
+            if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                return false;
+            }
+            var configAccount = McAccount.GetAccountBeingConfigured ();
+            if (null != configAccount) {
+                return false;
+            }
+            return true;
         }
 
     }
