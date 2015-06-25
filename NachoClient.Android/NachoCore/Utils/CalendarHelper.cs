@@ -1119,7 +1119,7 @@ namespace NachoCore.Utils
             int exceptionId = null == exception ? 0 : exception.Id;
             do {
                 DateTime nextDay = dayStart.AddDays (1.0);
-                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, true, c.Id, exceptionId);
+                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, c.UID, true, c.Id, exceptionId);
                 if (needsReminder) {
                     ev.SetReminder (reminderItem.GetReminder ());
                     needsReminder = false; // Only the first day should have a reminder.
@@ -1208,7 +1208,7 @@ namespace NachoCore.Utils
             var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
-                var e = McEvent.Create (c.AccountId, startTime, endTime, false, c.Id, 0);
+                var e = McEvent.Create (c.AccountId, startTime, endTime, c.UID, false, c.Id, 0);
                 if (c.ReminderIsSet) {
                     e.SetReminder (c.Reminder);
                 }
@@ -1223,7 +1223,7 @@ namespace NachoCore.Utils
                         if (DateTime.MinValue == exceptionEnd) {
                             exceptionEnd = endTime;
                         }
-                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, false, c.Id, exception.Id);
+                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.UID, false, c.Id, exception.Id);
                         if (exception.HasReminder ()) {
                             e.SetReminder (exception.GetReminder ());
                         }

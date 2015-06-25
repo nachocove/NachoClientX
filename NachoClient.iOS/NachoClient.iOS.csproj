@@ -1523,6 +1523,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcMailKitProtocolLogger.cs">
       <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
     </Compile>
+    <Compile Include="NachoCore\Model\Migration\NcMigration31.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
