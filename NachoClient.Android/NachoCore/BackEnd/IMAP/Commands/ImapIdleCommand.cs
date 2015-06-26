@@ -63,9 +63,11 @@ namespace NachoCore.IMAP
                 return true;
             });
             if (mailArrived) {
+                // TODO this would be a good opportunity to force a sync.
                 Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
             }
             if (mailDeleted) {
+                // TODO this would be a good opportunity to force a sync.
                 Log.Info (Log.LOG_IMAP, "Mail Deleted during idle");
             }
             return retEvent;
@@ -73,7 +75,7 @@ namespace NachoCore.IMAP
 
         private Event IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
-            EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, maea) => {
+            EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 mailArrived = true;
                 done.Cancel ();
             };
@@ -118,27 +120,43 @@ namespace NachoCore.IMAP
             }
         }
 
+        // TODO: Should be tied into power-state
+        uint kNoopSleepTime = 20;
+
         private Event NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
-            EventHandler<EventArgs> MessagesCountChangedHandler = (sender, e) => {
+            EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
+                // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
+                if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
+                    mailArrived = true;
+                }
+                done.Cancel ();
+            };
+            EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
+                if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
+                    mailDeleted = true;
+                }
                 done.Cancel ();
             };
 
             try {
-                mailKitFolder.CountChanged += MessagesCountChangedHandler;
+                mailKitFolder.MessagesArrived += MessagesArrivedHandler;
+                mailKitFolder.MessageExpunged += MessageExpungedHandler;
 
-                while(!done.Token.IsCancellationRequested) {
-                    // FIXME I wonder if this NOOP technique relates to UIDPLUS or CONDSTORE
-                    Client.NoOp (Cts.Token);
-                    Cts.Token.ThrowIfCancellationRequested ();
-                    var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(20));
+                while (!Cts.Token.IsCancellationRequested) {
+                    var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
                     if (cancelled) {
                         break;
                     }
+                    Client.NoOp (Cts.Token);
                 }
+                Cts.Token.ThrowIfCancellationRequested ();
+
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } finally {
-                mailKitFolder.CountChanged -= MessagesCountChangedHandler;
+                mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
+                mailKitFolder.MessageExpunged -= MessageExpungedHandler;
             }
         }
     }
