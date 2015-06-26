@@ -82,6 +82,7 @@ namespace NachoCore.IMAP
                 done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", e.Index);
                 mailDeleted = true;
                 done.Cancel ();
             };
@@ -136,6 +137,7 @@ namespace NachoCore.IMAP
                 done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", e.Index);
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
                 if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
                     mailDeleted = true;
