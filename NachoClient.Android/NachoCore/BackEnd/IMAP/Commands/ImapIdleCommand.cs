@@ -82,12 +82,12 @@ namespace NachoCore.IMAP
                 done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
-                Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", e.Index);
+                Log.Info (Log.LOG_IMAP, "Message ID {0} expunged", e.Index);
                 mailDeleted = true;
                 done.Cancel ();
             };
             EventHandler<MessageFlagsChangedEventArgs> MessageFlagsChangedHandler = (sender, e) => {
-                var mkFolder = (ImapFolder) sender;
+                var mkFolder = (IMailFolder) sender;
 
                 McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, mkFolder.FullName);
                 if (!e.UniqueId.HasValue) {
