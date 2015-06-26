@@ -119,6 +119,10 @@ namespace NachoCore.IMAP
                     {
                         // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
                         syncSet.Add (highestUid);
+                        if (syncSet.Count > span) {
+                            var lowest = syncSet.Min ();
+                            syncSet.Remove (lowest);
+                        }
                     }
                 } else if (HasChangedMails (folder, out uids)) {
                     // FIXME This needs work. Need to figure out how to detect changed emails.
@@ -205,7 +209,8 @@ namespace NachoCore.IMAP
         {
             // FIXME: Turn into query, not loop!
             UniqueIdSet currentMails = new UniqueIdSet ();
-            foreach (McEmailMessage emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (folder.AccountId, folder.Id).OrderByDescending (x => x.ServerId)) {
+            foreach (McEmailMessage emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (folder.AccountId, folder.Id)
+                .OrderByDescending (x => ImapProtoControl.ImapMessageUid(x.ServerId))) {
                 var uid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
                 if ((0 == min || uid.Id >= min) &&
                     (0 == max || uid.Id < max)) {
