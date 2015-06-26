@@ -31,9 +31,15 @@ namespace NachoClient.iOS
             accounts = new List<McAccount> ();
 
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (LoginHelpers.AccountIsConfigured (account)) {
+                if (!account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
+            }
+
+            // Remove the device account (for now)
+            var deviceAccount = McAccount.GetDeviceAccount();
+            if (null != deviceAccount) {
+                accounts.RemoveAll ((McAccount account) => (account.Id == deviceAccount.Id));
             }
 
             // Remove the current account from the switcher view.
