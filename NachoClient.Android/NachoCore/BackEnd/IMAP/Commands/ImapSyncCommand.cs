@@ -134,6 +134,7 @@ namespace NachoCore.IMAP
                 if (string.IsNullOrEmpty (target.ImapLastUidSet)) {
                     target.ImapLastUidSet = target.ImapUidSet;
                 }
+                target.ImapLastExamine = DateTime.UtcNow;
                 return true;
             });
             return true;
@@ -161,9 +162,11 @@ namespace NachoCore.IMAP
                 // TODO Need a better way to know when to just copy over ImapUidSet to ImapLastUidSet
                 UniqueIdSet last;
                 NcAssert.True (UniqueIdSet.TryParse (Synckit.Folder.ImapLastUidSet, out last));
+                var uidstring = SyncKit.MustUniqueIdSet (last.Except (toDelete).ToList ()).ToString ();
                 Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                     McFolder target = (McFolder)record;
-                    Synckit.Folder.ImapLastUidSet = SyncKit.MustUniqueIdSet (last.Except (toDelete).ToList ()).ToString ();
+                    Log.Info (Log.LOG_IMAP, "{0}: Removing uids {{{0}}} from ImapLastUidSet", toDelete.ToString ());
+                    target.ImapLastUidSet = uidstring;
                     return true;
                 });
 

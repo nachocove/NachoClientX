@@ -203,12 +203,6 @@ namespace NachoCore.IMAP
                 });
                 changed = true;
             }
-            // Set the timestamp regardless of whether any values changed, since this indicates we DID look.
-            folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapLastExamine = DateTime.UtcNow;
-                return true;
-            });
             return changed;
         }
 
