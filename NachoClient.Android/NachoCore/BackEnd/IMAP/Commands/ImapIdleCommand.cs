@@ -89,8 +89,6 @@ namespace NachoCore.IMAP
                 done.Cancel ();
             };
             EventHandler<MessageFlagsChangedEventArgs> MessageFlagsChangedHandler = (sender, e) => {
-                var mkFolder = (IMailFolder) sender;
-
                 if (!e.UniqueId.HasValue) {
                     Log.Warn (Log.LOG_IMAP, "{0}: flags for message Index {1} have changed to: {2}. No UID passed.",
                         IdleFolder.ImapFolderNameRedacted (), e.Index, e.Flags);
