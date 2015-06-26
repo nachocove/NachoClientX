@@ -118,6 +118,7 @@ namespace NachoCore.IMAP
             Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
                 deletedUids.ToString (),
                 folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+            
             UpdateImapSetting (mailKitFolder, ref folder);
 
             var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
@@ -126,7 +127,6 @@ namespace NachoCore.IMAP
                 // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
                 uids.Add (highestUid);
             }
-            // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
             // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
             folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
