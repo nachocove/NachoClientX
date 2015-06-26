@@ -90,7 +90,7 @@ namespace NachoCore.IMAP
             SyncKit syncKit = null;
             var currentHighestInFolder = new UniqueId (folder.ImapUidNext - 1);
             UniqueIdSet UidSet;
-            if (null != folder.ImapUidSet && string.Empty != folder.ImapUidSet) {
+            if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
                 if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out UidSet)) {
                     Log.Error (Log.LOG_IMAP, "Could not parse uid set");
                     return null;
