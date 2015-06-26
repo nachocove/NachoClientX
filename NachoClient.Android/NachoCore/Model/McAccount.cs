@@ -196,6 +196,7 @@ namespace NachoCore.Model
             }
         }
 
+        private static uint FudgeFactor = 1;
         public static TimeSpan SyncTimeSpan (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             switch (code) {
@@ -210,11 +211,11 @@ namespace NachoCore.Model
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
                 return TimeSpan.FromDays (14);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
-                return TimeSpan.FromDays (30);
+                return TimeSpan.FromDays (30 + FudgeFactor);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
-                return TimeSpan.FromDays (90);
+                return TimeSpan.FromDays (90 + FudgeFactor*2);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
-                return TimeSpan.FromDays (180);
+                return TimeSpan.FromDays (180 + FudgeFactor*3);
             default:
                 NcAssert.CaseError ();
                 return TimeSpan.Zero;
@@ -223,6 +224,7 @@ namespace NachoCore.Model
 
         public TimeSpan DaysSyncEmailSpan()
         {
+            // Add 2 days just because we can.
             return SyncTimeSpan (DaysToSyncEmail);
         }
 
