@@ -29,6 +29,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            Log.Info (Log.LOG_UI, "StartupViewController: viewdidload");
+
             CreateView ();
             this.View.BackgroundColor = A.Color_NachoGreen;
             Util.ConfigureNavBar (false, NavigationController);
@@ -52,22 +54,34 @@ namespace NachoClient.iOS
 
         void GetThisPartyStarted ()
         {
+            // Is there an account being configured?
+            var configAccount = McAccount.GetAccountBeingConfigured ();
+            if (null != configAccount) {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted finish configuring account SegueToAdvancedLogin");
+                PerformSegue ("SegueToAdvancedLogin", this);
+                return;
+            }
+
             // Fresh start, let's create the first account
             if (null == NcApplication.Instance.Account) {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch");
                 PerformSegue ("SegueToLaunch", this);
                 return;
             }
 
             // Something else in our way?
             if(!NcApplication.ReadyToStartUI()) {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToAdvancedLogin");
                 PerformSegue ("SegueToAdvancedLogin", this);
                 return;
             }
 
             var eventId = McMutables.Get (McAccount.GetDeviceAccount ().Id, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
             if (null == eventId) {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToTabController");
                 PerformSegue ("SegueToTabController", this);
             } else {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToEventView");
                 PerformSegue ("SegueToEventView", this);
             }
         }

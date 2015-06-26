@@ -79,6 +79,7 @@ namespace NachoClient.iOS
                 theAccount.Account = configAccount;
                 theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault ();
                 service = theAccount.Account.AccountService;
+                googleSignInIsActive = (McAccount.AccountServiceEnum.GoogleDefault == service);
                 CreateView ();
                 LayoutView ();
                 loginFields.RefreshUI (theAccount);
