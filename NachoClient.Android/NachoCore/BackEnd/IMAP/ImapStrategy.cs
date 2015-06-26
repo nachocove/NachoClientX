@@ -281,6 +281,17 @@ namespace NachoCore.IMAP
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp, 
                         new ImapSearchCommand (BEContext, Client, search));
                 }
+                // (FG) If the user has initiated a Sync, we do that.
+                var sync = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
+                    Where (x => McPending.Operations.Sync == x.Operation).FirstOrDefault ();
+                if (null != sync) {
+                    SyncKit syncKit = GenSyncKit (BEContext.Account.Id, BEContext.ProtocolState, sync);
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG:Sync");
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.HotQOp,
+                            new ImapSyncCommand (BEContext, Client, syncKit));
+                    }
+                }
                 // (FG) If the user has initiated a body Fetch, we do that.
                 var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId, McAccount.ImapCapabilities).
                     Where (x => McPending.Operations.EmailBodyDownload == x.Operation).FirstOrDefault ();
