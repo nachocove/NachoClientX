@@ -127,11 +127,28 @@ namespace NachoCore.IMAP
                 // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
                 uids.Add (highestUid);
             }
-            // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
+
+//            UniqueIdSet current;
+//            if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
+//                var added = new UniqueIdSet (uids.Except (current));
+//                var removed = new UniqueIdSet (current.Except (uids));
+//                if (added.Any ()) {
+//                    Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
+//                }
+//                if (removed.Any ()) {
+//                    Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
+//                }
+//            }
+
+            var uidstring = uids.ToString ();
             folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
-                target.ImapUidSet = uids.ToString ();
-                if (string.IsNullOrEmpty (target.ImapLastUidSet)) {
+                if (uidstring != target.ImapUidSet) {
+                    Log.Info (Log.LOG_IMAP, "Updating ImapUidSet");
+                    target.ImapUidSet = uidstring;
+                }
+                if (string.IsNullOrEmpty (target.ImapLastUidSet) && !string.IsNullOrEmpty (target.ImapUidSet)) {
+                    Log.Info (Log.LOG_IMAP, "Updating ImapLastUidSet");
                     target.ImapLastUidSet = target.ImapUidSet;
                 }
                 target.ImapLastExamine = DateTime.UtcNow;
@@ -443,6 +460,8 @@ namespace NachoCore.IMAP
 
         public static McEmailMessage ParseEmail (int accountId, string ServerId, IMessageSummary summary)
         {
+            NcAssert.NotNull (summary.Envelope);
+
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
                 AccountId = accountId,
