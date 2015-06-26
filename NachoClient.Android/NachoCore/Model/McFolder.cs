@@ -74,7 +74,6 @@ namespace NachoCore.Model
         public uint ImapLastUidSynced { get; set; }
         // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
         public string ImapUidSet { get; set; }
-        public string ImapLastUidSet { get; set; }
 
         #endregion
 
@@ -125,7 +124,7 @@ namespace NachoCore.Model
 
         public string ImapFolderNameRedacted ()
         {
-            return IsDistinguished ? ServerId : "User Folder";
+            return string.Format ("{0}/{1}", ImapGuid, IsDistinguished ? ServerId : "User Folder");
         }
 
         // "factory" to create folders.

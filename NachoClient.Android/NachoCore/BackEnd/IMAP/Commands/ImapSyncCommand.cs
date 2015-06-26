@@ -65,6 +65,8 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
 
+            Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
+
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
             mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
             if (null == mailKitFolder) {
@@ -74,17 +76,23 @@ namespace NachoCore.IMAP
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
-
+            Event result;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
-                return getFolderMetaDataInternal (mailKitFolder, timespan);
+                result = getFolderMetaDataInternal (mailKitFolder, timespan);
+                break;
 
             case SyncKit.MethodEnum.Sync:
-                return syncFolder (mailKitFolder, timespan);
+                result = syncFolder (mailKitFolder, timespan);
+                break;
 
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
+            PendingResolveApply ((pending) => {
+                pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+            });
+            return result;
         }
 
         private Event getFolderMetaDataInternal (IMailFolder mailKitFolder, TimeSpan timespan)
@@ -121,24 +129,17 @@ namespace NachoCore.IMAP
             
             UpdateImapSetting (mailKitFolder, ref folder);
 
-            var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
-            if (uids.Any () && !uids.Contains(highestUid))
-            {
-                // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
-                uids.Add (highestUid);
+            UniqueIdSet current;
+            if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
+                var added = new UniqueIdSet (uids.Except (current));
+                var removed = new UniqueIdSet (current.Except (uids));
+                if (added.Any ()) {
+                    Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
+                }
+                if (removed.Any ()) {
+                    Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
+                }
             }
-
-//            UniqueIdSet current;
-//            if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
-//                var added = new UniqueIdSet (uids.Except (current));
-//                var removed = new UniqueIdSet (current.Except (uids));
-//                if (added.Any ()) {
-//                    Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
-//                }
-//                if (removed.Any ()) {
-//                    Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
-//                }
-//            }
 
             var uidstring = uids.ToString ();
             folder = folder.UpdateWithOCApply<McFolder> ((record) => {
@@ -146,10 +147,6 @@ namespace NachoCore.IMAP
                 if (uidstring != target.ImapUidSet) {
                     Log.Info (Log.LOG_IMAP, "Updating ImapUidSet");
                     target.ImapUidSet = uidstring;
-                }
-                if (string.IsNullOrEmpty (target.ImapLastUidSet) && !string.IsNullOrEmpty (target.ImapUidSet)) {
-                    Log.Info (Log.LOG_IMAP, "Updating ImapLastUidSet");
-                    target.ImapLastUidSet = target.ImapUidSet;
                 }
                 target.ImapLastExamine = DateTime.UtcNow;
                 return true;
@@ -174,32 +171,24 @@ namespace NachoCore.IMAP
             if (deleted.Any ()) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
-            if (toDelete.Any ()) {
-                // Remove the deleted from the ImapLastUidSet so we don't try to delete them again and loop forever
-                // TODO Need a better way to know when to just copy over ImapUidSet to ImapLastUidSet
-                UniqueIdSet last;
-                NcAssert.True (UniqueIdSet.TryParse (Synckit.Folder.ImapLastUidSet, out last));
-                var uidstring = SyncKit.MustUniqueIdSet (last.Except (toDelete).ToList ()).ToString ();
-                Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                    McFolder target = (McFolder)record;
-                    Log.Info (Log.LOG_IMAP, "{0}: Removing uids {{{0}}} from ImapLastUidSet", toDelete.ToString ());
-                    target.ImapLastUidSet = uidstring;
-                    return true;
-                });
-
-            }
 
             if (!deleted.Any () && !newOrChanged.Any ()) {
-                Log.Info (Log.LOG_IMAP, "Nothing was done.");
+                Log.Warn (Log.LOG_IMAP, "{0}: Nothing was done.", Synckit.Folder.ImapFolderNameRedacted ());
             }
 
             // remember where we sync'd
-            uint MaxSynced = Synckit.SyncSet.Max ().Id;
-            uint MinSynced = Synckit.SyncSet.Min ().Id;
+            uint MaxSynced = Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced);
+            uint MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
+            if (MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
+                MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
+                Log.Info (Log.LOG_IMAP, "{0}: Set ImapUidHighestUidSynced {1} ImapUidLowestUidSynced {2}",
+                    Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
+            }
+
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
-                target.ImapUidHighestUidSynced = Math.Max (MaxSynced, target.ImapUidHighestUidSynced);
-                target.ImapUidLowestUidSynced = Math.Min (MinSynced, target.ImapUidLowestUidSynced);
+                target.ImapUidHighestUidSynced = MaxSynced;
+                target.ImapUidLowestUidSynced = MinSynced;
                 target.ImapLastUidSynced = MinSynced;
                 return true;
             });
