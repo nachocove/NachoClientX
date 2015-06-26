@@ -46,20 +46,6 @@ namespace NachoCore.IMAP
                 NoopIdle(mailKitFolder, done);
             }
             Cts.Token.ThrowIfCancellationRequested ();
-            mailKitFolder.Close (false, Cts.Token);
-            StatusItems statusItems =
-                StatusItems.UidNext |
-                StatusItems.UidValidity |
-                StatusItems.HighestModSeq;
-            mailKitFolder.Status (statusItems, Cts.Token);
-            UpdateImapSetting (mailKitFolder, ref IdleFolder);
-
-            var protocolState = BEContext.ProtocolState;
-            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                var target = (McProtocolState)record;
-                target.LastPing = DateTime.UtcNow;
-                return true;
-            });
             if (mailArrived) {
                 Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
             }
@@ -67,11 +53,27 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "Mail Deleted during idle");
             }
             if (mailArrived || mailDeleted || needResync) {
-                mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
                 if (!ImapSyncCommand.GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
                     Log.Error (Log.LOG_IMAP, "Could not refresh folder metadata");
                 }
+                // GetFolderMetaData does an UpdateImapSetting already.
+            } else {
+                // just do a quick status check
+                mailKitFolder.Close (false, Cts.Token);
+                StatusItems statusItems =
+                    StatusItems.UidNext |
+                    StatusItems.UidValidity |
+                    StatusItems.HighestModSeq;
+                mailKitFolder.Status (statusItems, Cts.Token);
+                UpdateImapSetting (mailKitFolder, ref IdleFolder);
             }
+
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastPing = DateTime.UtcNow;
+                return true;
+            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
         }
 
