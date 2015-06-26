@@ -77,7 +77,7 @@ namespace NachoCore.IMAP
 
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
-                return getFolderMetaData (mailKitFolder, timespan);
+                return getFolderMetaDataInternal (mailKitFolder, timespan);
 
             case SyncKit.MethodEnum.Sync:
                 return syncFolder (mailKitFolder, timespan);
@@ -85,7 +85,58 @@ namespace NachoCore.IMAP
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
+        }
 
+        private Event getFolderMetaDataInternal (IMailFolder mailKitFolder, TimeSpan timespan)
+        {
+            if (!GetFolderMetaData(ref Synckit.Folder, mailKitFolder, timespan)) {
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL");
+            } else {
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
+            }
+        }
+
+        public static bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
+        {
+            // Just load UID with SELECT.
+            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted());
+
+            var query = SearchQuery.NotDeleted;
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+            }
+            UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
+            Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
+                uids.ToString (),
+                folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+
+            query = SearchQuery.Deleted;
+            if (TimeSpan.Zero != timespan) {
+                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+            }
+            var deletedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
+            Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
+                deletedUids.ToString (),
+                folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+            UpdateImapSetting (mailKitFolder, ref folder);
+
+            var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
+            if (uids.Any () && !uids.Contains(highestUid))
+            {
+                // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
+                uids.Add (highestUid);
+            }
+            // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
+            // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
+            folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ImapUidSet = uids.ToString ();
+                if (string.IsNullOrEmpty (target.ImapLastUidSet)) {
+                    target.ImapLastUidSet = target.ImapUidSet;
+                }
+                return true;
+            });
+            return true;
         }
 
         private Event syncFolder (IMailFolder mailKitFolder, TimeSpan timespan)
@@ -104,6 +155,22 @@ namespace NachoCore.IMAP
             var deleted = deleteEmails (toDelete);
             if (deleted.Any ()) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            }
+            if (toDelete.Any ()) {
+                // Remove the deleted from the ImapLastUidSet so we don't try to delete them again and loop forever
+                // TODO Need a better way to know when to just copy over ImapUidSet to ImapLastUidSet
+                UniqueIdSet last;
+                NcAssert.True (UniqueIdSet.TryParse (Synckit.Folder.ImapLastUidSet, out last));
+                Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
+                    McFolder target = (McFolder)record;
+                    Synckit.Folder.ImapLastUidSet = SyncKit.MustUniqueIdSet (last.Except (toDelete).ToList ()).ToString ();
+                    return true;
+                });
+
+            }
+
+            if (!deleted.Any () && !newOrChanged.Any ()) {
+                Log.Info (Log.LOG_IMAP, "Nothing was done.");
             }
 
             // remember where we sync'd
@@ -474,49 +541,6 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        private Event getFolderMetaData (IMailFolder mailKitFolder, TimeSpan timespan)
-        {
-            // Just load UID with SELECT.
-            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", Synckit.Folder.ImapFolderNameRedacted());
-
-            var query = SearchQuery.NotDeleted;
-            if (TimeSpan.Zero != timespan) {
-                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-            }
-            UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
-            Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
-                uids.ToString (),
-                Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-
-            query = SearchQuery.Deleted;
-            if (TimeSpan.Zero != timespan) {
-                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-            }
-            var deletedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
-            Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
-                deletedUids.ToString (),
-                Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-            UpdateImapSetting (mailKitFolder, Synckit.Folder);
-
-            var highestUid = new UniqueId (mailKitFolder.UidNext.Value.Id - 1);
-            if (uids.Any () && !uids.Contains(highestUid))
-            {
-                // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
-                uids.Add (highestUid);
-            }
-            // FIXME: Alternatively, perhaps we can store this in SyncKit and pass the synckit back to strategy somehow.
-            // TODO Store only 1000, but can we (easily) do that in a set? Or do we need to convert to List?
-            Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapUidSet = uids.ToString ();
-                if (string.IsNullOrEmpty (target.ImapLastUidSet)) {
-                    target.ImapLastUidSet = target.ImapUidSet;
-                }
-                return true;
-            });
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
-
-        }
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder)
         {
             string preview = string.Empty;

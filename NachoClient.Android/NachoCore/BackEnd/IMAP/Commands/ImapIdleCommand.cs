@@ -31,30 +31,28 @@ namespace NachoCore.IMAP
 
         private bool mailArrived = false;
         private bool mailDeleted = false;
+        private bool needResync = false; // used if something happened, but we don't know what exactly.
 
         protected override Event ExecuteCommand ()
         {
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
-            Event retEvent = Event.Create ((uint)SmEvt.E.HardFail, "IMAPIDLEHARDX");
             var mailKitFolder = GetOpenMailkitFolder (IdleFolder);
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
             if (Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
-                retEvent = IdleIdle(mailKitFolder, done);
+                IdleIdle(mailKitFolder, done);
             } else {
-                retEvent = NoopIdle(mailKitFolder, done);
+                NoopIdle(mailKitFolder, done);
             }
             Cts.Token.ThrowIfCancellationRequested ();
             mailKitFolder.Close (false, Cts.Token);
             StatusItems statusItems =
                 StatusItems.UidNext |
                 StatusItems.UidValidity |
-                StatusItems.Count |
-                StatusItems.Recent |
                 StatusItems.HighestModSeq;
             mailKitFolder.Status (statusItems, Cts.Token);
-            UpdateImapSetting (mailKitFolder, IdleFolder);
+            UpdateImapSetting (mailKitFolder, ref IdleFolder);
 
             var protocolState = BEContext.ProtocolState;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -63,17 +61,21 @@ namespace NachoCore.IMAP
                 return true;
             });
             if (mailArrived) {
-                // TODO this would be a good opportunity to force a sync.
                 Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
             }
             if (mailDeleted) {
-                // TODO this would be a good opportunity to force a sync.
                 Log.Info (Log.LOG_IMAP, "Mail Deleted during idle");
             }
-            return retEvent;
+            if (mailArrived || mailDeleted || needResync) {
+                mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                if (!ImapSyncCommand.GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
+                    Log.Error (Log.LOG_IMAP, "Could not refresh folder metadata");
+                }
+            }
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
         }
 
-        private Event IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        private void IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 mailArrived = true;
@@ -112,7 +114,6 @@ namespace NachoCore.IMAP
 
                 Client.Idle (done.Token, CancellationToken.None);
                 Cts.Token.ThrowIfCancellationRequested ();
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
                 mailKitFolder.MessageFlagsChanged -= MessageFlagsChangedHandler;
@@ -123,12 +124,14 @@ namespace NachoCore.IMAP
         // TODO: Should be tied into power-state
         uint kNoopSleepTime = 20;
 
-        private Event NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        private void NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
                 if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
                     mailArrived = true;
+                } else {
+                    needResync = true;
                 }
                 done.Cancel ();
             };
@@ -136,6 +139,8 @@ namespace NachoCore.IMAP
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
                 if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
                     mailDeleted = true;
+                } else {
+                    needResync = true;
                 }
                 done.Cancel ();
             };
@@ -152,8 +157,6 @@ namespace NachoCore.IMAP
                     Client.NoOp (Cts.Token);
                 }
                 Cts.Token.ThrowIfCancellationRequested ();
-
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
                 mailKitFolder.MessageExpunged -= MessageExpungedHandler;

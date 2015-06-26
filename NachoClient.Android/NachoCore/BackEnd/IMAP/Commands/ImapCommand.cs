@@ -188,7 +188,7 @@ namespace NachoCore.IMAP
             return added_or_changed;
         }
 
-        protected bool UpdateImapSetting (IMailFolder mailKitFolder, McFolder folder)
+        public static bool UpdateImapSetting (IMailFolder mailKitFolder, ref McFolder folder)
         {
             bool changed = false;
             if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||

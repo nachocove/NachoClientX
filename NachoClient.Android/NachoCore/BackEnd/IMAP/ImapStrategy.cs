@@ -189,9 +189,9 @@ namespace NachoCore.IMAP
             }
 
             UniqueIdSet current;
+            NcAssert.True (UniqueIdSet.TryParse (folder.ImapUidSet, out current));
             UniqueIdSet last;
             NcAssert.True (UniqueIdSet.TryParse (folder.ImapLastUidSet, out last));
-            NcAssert.True (UniqueIdSet.TryParse (folder.ImapUidSet, out current));
 
             // subtract all current ones from the last set. Any that are left are to be deleted.
             uids = SyncKit.MustUniqueIdSet (last.Except (current).ToList ());
