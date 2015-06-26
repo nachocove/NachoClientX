@@ -53,7 +53,13 @@ namespace NachoPlatform
 
             public override string ServerId {
                 get {
-                    return Event.EventIdentifier;
+                    if (Event.IsDetached || !Event.HasRecurrenceRules) {
+                        return Event.EventIdentifier;
+                    }
+                    // A regular occurrence of a recurring meeting.  Add a date stamp to the ID to distinguish it
+                    // from any other occurrences of the same event.  Use the same format for the date stamp that
+                    // iOS uses for exceptional occurrences.
+                    return string.Format ("{0}/RID={1}", Event.EventIdentifier, (long)Event.StartDate.SecondsSinceReferenceDate);
                 }
             }
             public override DateTime LastUpdate {
@@ -93,27 +99,26 @@ namespace NachoPlatform
 
             public override NcResult ToMcCalendar ()
             {
-                if (Event.IsDetached) {
-                    // FIXME Figure out how to handle exceptions.  That's hard because the item for the
-                    // exception is not directly linked to the main item for the recurring meeting.
-                    // That makes it hard to process the items one at a time.
-                    return NcResult.Error("Ignoring exception to recurring event from device calendar.");
-                }
-
                 var accountId = McAccount.GetDeviceAccount ().Id;
-                var cal = new McCalendar () {
-                    Source = McAbstrItem.ItemSource.Device,
-                    ServerId = Event.EventIdentifier,
-                    AccountId = accountId,
-                    OwnerEpoch = SchemaRev,
-                };
 
-                cal.AllDayEvent = Event.AllDay;
+                var cal = new McCalendar ();
+
+                cal.Source = McAbstrItem.ItemSource.Device;
+                cal.ServerId = this.ServerId;
                 cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
                 cal.DeviceCreation = (null == Event.CreationDate) ? cal.DeviceLastUpdate : Event.CreationDate.ToDateTime ();
+                cal.UID = Event.CalendarItemExternalIdentifier;
+                if (null != Event.Organizer) {
+                    cal.OrganizerName = Event.Organizer.Name;
+                    cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
+                }
+
+                cal.AccountId = accountId;
+                cal.OwnerEpoch = SchemaRev;
+
+                cal.AllDayEvent = Event.AllDay;
                 cal.Subject = Event.Title;
                 cal.Location = Event.Location;
-                cal.UID = Event.CalendarItemExternalIdentifier;
 
                 cal.BusyStatusIsSet = true;
                 switch (Event.Availability) {
@@ -136,11 +141,6 @@ namespace NachoPlatform
                 default:
                     cal.BusyStatusIsSet = false;
                     break;
-                }
-
-                if (null != Event.Organizer) {
-                    cal.OrganizerName = Event.Organizer.Name;
-                    cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
                 }
 
                 cal.SetDescription (Event.Notes ?? "", McBody.BodyTypeEnum.PlainText_1);
@@ -173,30 +173,20 @@ namespace NachoPlatform
                     cal.EndTime = cal.StartTime.AddDays (Math.Round ((cal.EndTime - cal.StartTime).TotalDays));
                 }
 
-                TimeZoneInfo timeZone = null;
+                TimeZoneInfo eventTimeZone = null;
                 if (null != Event.TimeZone) {
                     // iOS's NSTimeZone does not expose the daylight saving transition rules, so there is no way
                     // to construct a TimeZoneInfo object from the NSTimeZone object.  Instead we have to look
                     // up the TimeZoneInfo by its ID.
-                    timeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                    eventTimeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
                 }
-                if (null == timeZone) {
+                if (null == eventTimeZone) {
                     // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be
                     // found, assume the local time zone.  Time zones only matter for all-day events and recurring
                     // events, so getting the wrong time zone won't be a problem for most events.
-                    timeZone = TimeZoneInfo.Local;
+                    eventTimeZone = TimeZoneInfo.Local;
                 }
-                cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (timeZone), cal.StartTime).toEncodedTimeZone ();
-
-                if (Event.HasRecurrenceRules) {
-                    // The iOS documentation says that only one recurrence rule is supported for a calendar item,
-                    // even though the API allows for multiple.  So the app only looks at the first recurrence rule
-                    // from the device event.
-                    var recurrences = new List<McRecurrence> ();
-                    recurrences.Add (ConvertRecurrence (accountId, Event.RecurrenceRules [0],
-                        TimeZoneInfo.ConvertTimeFromUtc (cal.StartTime, timeZone)));
-                    cal.recurrences = recurrences;
-                }
+                cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (eventTimeZone), cal.StartTime).toEncodedTimeZone ();
 
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
@@ -262,6 +252,17 @@ namespace NachoPlatform
                         cal.attendees = attendees;
                     }
                 }
+
+                if (!Event.IsDetached && Event.HasRecurrenceRules) {
+                    // The iOS documentation says that only one recurrence rule is supported for a calendar item,
+                    // even though the API allows for multiple.  So the app only looks at the first recurrence rule
+                    // from the device event.
+                    var recurrences = new List<McRecurrence> ();
+                    recurrences.Add (ConvertRecurrence (McAccount.GetDeviceAccount ().Id, Event.RecurrenceRules [0],
+                        TimeZoneInfo.ConvertTimeFromUtc (cal.StartTime, eventTimeZone)));
+                    cal.recurrences = recurrences;
+                }
+
                 return NcResult.OK (cal);
             }
 
@@ -361,15 +362,12 @@ namespace NachoPlatform
                     break;
                 }
 
-                if (null != rule.RecurrenceEnd) {
-                    if (0 < rule.RecurrenceEnd.OccurrenceCount) {
-                        result.Occurrences = (int)rule.RecurrenceEnd.OccurrenceCount;
-                        result.OccurrencesIsSet = true;
-                    }
-                    if (null != rule.RecurrenceEnd.EndDate) {
-                        result.Until = rule.RecurrenceEnd.EndDate.ToDateTime ();
-                    }
-                }
+                // iOS gives us a separate EKEvent for each occurrence of a recurring event, so the app creates a
+                // separate McCalendar for each one.  The McRecurrence exists so the recurring nature of the event
+                // is shown in the event detail view.  It is not used to generate all of the McEvents.  To get that
+                // behavior, set the number of occurrences to 1, no matter what the EKEvent's recurrence rule states.
+                result.Occurrences = 1;
+                result.OccurrencesIsSet = true;
 
                 return result;
             }
@@ -475,21 +473,24 @@ namespace NachoPlatform
                 return null;
             }
 
-            // FIXME DAVID - we only go a week back and out 6 months. we probably need to expand based on cal view?
-            var start = DateTime.UtcNow.AddDays (-7);
-            var end = DateTime.UtcNow.AddMonths (6);
-            var calendars = Es.GetCalendars (EKEntityType.Event);
-            var retval = new List<PlatformCalendarRecordiOS> ();
-            var predicate = Es.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
-            var calEvents = Es.EventsMatching (predicate);
-            if (null != calEvents) {
-                foreach (var calEvent in calEvents) {
-                    retval.Add (new PlatformCalendarRecordiOS () {
-                        Event = calEvent,
+            // Ask for all events from one month ago (which is as far back as the calendar normally goes) until
+            // way into the future.  iOS will only deliver several years of events at a time, so we won't actually
+            // get recurring events hundreds of years from now.  There is not a way to find out how far into the
+            // future the user has scrolled the calendar, nor is there a way for the calendar view to ask for more
+            // McCalendar items as the user scrolls, so the app needs to get events from iOS farther into the future
+            // than is necessary in the normal case.
+            var result = new List<PlatformCalendarRecordiOS> ();
+            var allCalendars = Es.GetCalendars (EKEntityType.Event);
+            var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), NSDate.DistantFuture, allCalendars);
+            var deviceEvents = Es.EventsMatching (predicate);
+            if (null != deviceEvents) {
+                foreach (var deviceEvent in deviceEvents) {
+                    result.Add (new PlatformCalendarRecordiOS () {
+                        Event = deviceEvent,
                     });
                 }
             }
-            return retval;
+            return result;
         }
 
         public NcResult Add (McCalendar cal)
