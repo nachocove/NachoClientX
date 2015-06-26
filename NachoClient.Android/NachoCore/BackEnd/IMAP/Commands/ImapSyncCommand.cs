@@ -129,15 +129,17 @@ namespace NachoCore.IMAP
             
             UpdateImapSetting (mailKitFolder, ref folder);
 
-            UniqueIdSet current;
-            if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
-                var added = new UniqueIdSet (uids.Except (current));
-                var removed = new UniqueIdSet (current.Except (uids));
-                if (added.Any ()) {
-                    Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
-                }
-                if (removed.Any ()) {
-                    Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
+            if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
+                UniqueIdSet current;
+                if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
+                    var added = new UniqueIdSet (uids.Except (current));
+                    var removed = new UniqueIdSet (current.Except (uids));
+                    if (added.Any ()) {
+                        Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
+                    }
+                    if (removed.Any ()) {
+                        Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
+                    }
                 }
             }
 
