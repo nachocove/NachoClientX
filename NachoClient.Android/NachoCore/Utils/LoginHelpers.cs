@@ -149,7 +149,6 @@ namespace NachoCore.Utils
         {
             foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
                 var cred = McCred.QueryByAccountId<McCred> (a.Id).SingleOrDefault ();
-                Console.WriteLine ("Account: {0} {1} {2} {3}", a.AccountService, a.DisplayName, a.DisplayUserName, null == cred ? "no creds" : cred.Username);
             }
 
             McAccount account = GetMostRecentAccount ();
