@@ -61,27 +61,6 @@ namespace NachoCore.IMAP
             return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
         }
 
-
-        private string UidSetString(IList<UniqueId> uids)
-        {
-            return (uids is UniqueIdRange || uids is UniqueIdSet) ? uids.ToString () : UniqueIdSet.ToString (uids);
-        }
-
-        private UniqueIdSet MustUniqueIdSet(IList<UniqueId> uids)
-        {
-            if (uids is UniqueIdSet) {
-                return uids as UniqueIdSet;
-            } else {
-                UniqueIdSet newUidSet;
-                string uidSetString = UidSetString (uids);
-                if (!UniqueIdSet.TryParse (uidSetString, out newUidSet)) {
-                    Log.Error (Log.LOG_IMAP, "Could not parse uid set string {0}", uidSetString);
-                    newUidSet = new UniqueIdSet ();
-                }
-                return newUidSet;
-            }
-        }
-
         protected override Event ExecuteCommand ()
         {
             IMailFolder mailKitFolder;
@@ -200,7 +179,7 @@ namespace NachoCore.IMAP
             if (somethingChanged) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
-            vanished = MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
+            vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
             return summaryUids;
         }
 
@@ -504,7 +483,7 @@ namespace NachoCore.IMAP
             if (TimeSpan.Zero != timespan) {
                 query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
             }
-            UniqueIdSet uids = MustUniqueIdSet (mailKitFolder.Search (query));
+            UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
             Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
                 uids.ToString (),
                 Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
@@ -513,7 +492,7 @@ namespace NachoCore.IMAP
             if (TimeSpan.Zero != timespan) {
                 query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
             }
-            var deletedUids = MustUniqueIdSet (mailKitFolder.Search (query));
+            var deletedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
             Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
                 deletedUids.ToString (),
                 Synckit.Folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());

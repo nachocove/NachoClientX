@@ -41,26 +41,12 @@ namespace NachoCore.IMAP
             Headers = headers;
         }
 
-        public static string UidSetString (IList<UniqueId> uids)
-        {
-            return (uids is UniqueIdRange || uids is UniqueIdSet) ? uids.ToString () : UniqueIdSet.ToString (uids);
-        }
-
         public static UniqueIdSet MustUniqueIdSet (IList<UniqueId> uids)
         {
             if (uids is UniqueIdSet) {
                 return uids as UniqueIdSet;
             } else {
-                if (0 == uids.Count) {
-                    return new UniqueIdSet ();
-                } else {
-                    UniqueIdSet newUidSet;
-                    string uidSetString = UidSetString (uids);
-                    if (!UniqueIdSet.TryParse (uidSetString, out newUidSet)) {
-                        throw new Exception (string.Format ("Could not parse uid set string {0}", uidSetString));
-                    }
-                    return newUidSet;
-                }
+                return new UniqueIdSet (uids);
             }
         }
     }
