@@ -179,14 +179,15 @@ namespace NachoCore.Utils
 
         private void logBuffer (bool isRequest, byte[] buffer, int offset, int count)
         {
+            byte[] logData = buffer.Skip (offset).Take (count).ToArray ();
+            byte[] timestamp = Encoding.ASCII.GetBytes (String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}: ", DateTime.UtcNow));
+            byte[] prefix = isRequest ? Encoding.ASCII.GetBytes ("C: ") : Encoding.ASCII.GetBytes ("S: ");
+            //Log.Info (Log.LOG_IMAP, "{0}{1}", Encoding.ASCII.GetString (prefix), Encoding.UTF8.GetString (logData));
+
             if (!_Enabled || null == RedactProtocolLogFunc) {
                 return;
             }
 
-            byte[] logData = buffer.Skip (offset).Take (count).ToArray ();
-            byte[] timestamp = Encoding.ASCII.GetBytes (String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}: ", DateTime.UtcNow));
-            byte[] prefix = isRequest ? Encoding.ASCII.GetBytes ("C: ") : Encoding.ASCII.GetBytes ("S: ");
-            //Log.Error (Log.LOG_IMAP, "{0}{1}", Encoding.ASCII.GetString (prefix), Encoding.UTF8.GetString (logData));
             byte[] logRedactedBytes;
             if (isRequest && pauseLogging) {
                 setPausingBasedOnAuth (isRequest, logData);
