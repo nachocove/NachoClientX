@@ -49,6 +49,24 @@ namespace NachoCore.IMAP
                 return new UniqueIdSet (uids);
             }
         }
+
+        public override string ToString ()
+        {
+            string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method.ToString ());
+            switch (Method) {
+            case MethodEnum.Sync:
+                me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
+                break;
+
+            default:
+                break;
+            }
+            if (null != PendingSingle) {
+                me += " UserRequested";
+            }
+            me += ")";
+            return me;
+        }
     }
 
     public interface IImapStrategy
