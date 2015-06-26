@@ -426,15 +426,9 @@ namespace NachoCore.IMAP
                         }
                     }
                 }
-                if (BEContext.ProtocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.Idle)) {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                        new ImapIdleCommand (BEContext, Client));
-                } else {
-                    Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:WaitPing");
-                    return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
-                        new ImapWaitCommand (BEContext, Client, NoIdlePollTime (), true));
-                }
+                Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
+                return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
+                    new ImapIdleCommand (BEContext, Client));
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {

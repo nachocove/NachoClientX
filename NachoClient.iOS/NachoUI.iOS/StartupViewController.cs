@@ -52,13 +52,14 @@ namespace NachoClient.iOS
 
         void GetThisPartyStarted ()
         {
+            // Fresh start, let's create the first account
             if (null == NcApplication.Instance.Account) {
-                // Nothing yet, let's create the first account
                 PerformSegue ("SegueToLaunch", this);
                 return;
             }
 
-            if (!LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
+            // Something else in our way?
+            if(!NcApplication.ReadyToStartUI()) {
                 PerformSegue ("SegueToAdvancedLogin", this);
                 return;
             }

@@ -186,8 +186,8 @@ namespace NachoCore.Utils
             byte[] logData = buffer.Skip (offset).Take (count).ToArray ();
             byte[] timestamp = Encoding.ASCII.GetBytes (String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}: ", DateTime.UtcNow));
             byte[] prefix = isRequest ? Encoding.ASCII.GetBytes ("C: ") : Encoding.ASCII.GetBytes ("S: ");
+            //Log.Error (Log.LOG_IMAP, "{0}{1}", Encoding.ASCII.GetString (prefix), Encoding.UTF8.GetString (logData));
             byte[] logRedactedBytes;
-            //Log.Info (Log.LOG_IMAP, "Processing Protocol line {0}{1}", Encoding.UTF8.GetString(prefix), Encoding.UTF8.GetString (logData));
             if (isRequest && pauseLogging) {
                 setPausingBasedOnAuth (isRequest, logData);
             }

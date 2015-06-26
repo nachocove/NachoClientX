@@ -40,11 +40,11 @@ namespace Test.Common
                 cg.Insert ();
 
                 var list = new System.Collections.Generic.List<NachoCore.Model.McEvent> ();
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-60), DateTime.Now.AddDays (-60).AddHours (1), false, cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-30), DateTime.Now.AddDays (-30).AddHours (1), false, cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (0), DateTime.Now.AddDays (0).AddHours (1), false, cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (30), DateTime.Now.AddDays (30).AddHours (1), false, cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (60), DateTime.Now.AddDays (60).AddHours (1), false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-60), DateTime.Now.AddDays (-60).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-30), DateTime.Now.AddDays (-30).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (0), DateTime.Now.AddDays (0).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (30), DateTime.Now.AddDays (30).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (60), DateTime.Now.AddDays (60).AddHours (1), "a", false, cg.Id, 0));
                 return list;
             }
                  

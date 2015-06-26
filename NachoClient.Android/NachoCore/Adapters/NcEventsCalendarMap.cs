@@ -259,7 +259,44 @@ namespace NachoCore
     {
         protected override List<McEvent> GetEvents ()
         {
-            return McEvent.QueryAllEventsInOrder ();
+            var deviceAccount = McAccount.GetDeviceAccount ().Id;
+            var currentAccount = NcApplication.Instance.Account.Id;
+
+            var result = McEvent.QueryAllEventsInOrder ();
+
+            // Go through the list of events, removing duplicates.  In the initial pass, set any duplicate events
+            // to null.  Then remove any null events in a single call to RemoveAll().  This two pass approach
+            // simplifies the bookkeeping during the first pass and reduces the amount of copying that needs to
+            // happen.
+            for (int i = 0; i < result.Count; ++i) {
+                var event1 = result [i];
+                if (null == event1 || null == event1.UID) {
+                    continue;
+                }
+                for (int j = i + 1; j < result.Count && (null == result[j] || event1.StartTime == result[j].StartTime); ++j) {
+                    var event2 = result [j];
+                    if (null != event2 && event1.UID == event2.UID) {
+                        // Two events start at the same time and have the same UID.  Get rid of one of them.
+                        // Prefer a non-device account over the device account.
+                        // Prefer the currently active account over other accounts.
+                        // If they are still tied, pick the first one in the list.
+                        if ((deviceAccount == event1.AccountId && deviceAccount != event2.AccountId) ||
+                            (currentAccount != event1.AccountId && currentAccount == event2.AccountId))
+                        {
+                            result [i] = null;
+                            break;
+                        } else {
+                            result [j] = null;
+                        }
+                    }
+                }
+            }
+
+            result.RemoveAll (delegate(McEvent obj) {
+                return null == obj;
+            });
+
+            return result;
         }
     }
 }
