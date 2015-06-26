@@ -195,6 +195,11 @@ namespace NachoCore.IMAP
 
             // subtract all current ones from the last set. Any that are left are to be deleted.
             uids = SyncKit.MustUniqueIdSet (last.Except (current).ToList ());
+
+            // get a list of all email UID's in the folder, and subtract out the current list as well.
+            // this gives us a list of messages we still have, that are not on the server.
+            UniqueIdSet currentMails = getCurrentEmailUids (folder);
+            uids.AddRange (currentMails.Except (current));
             return uids.Any ();
         }
 
