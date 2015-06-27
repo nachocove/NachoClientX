@@ -28,7 +28,7 @@ class EvaluatorResult:
         self.false_alarms_rate = rate(self.false_alarms, self.total)
         self.hot_error_rate = rate(self.false_alarms, self.hot)
         self.not_hot_error_rate = rate(self.misses, self.not_hot)
-        self.error_rate = rate(self.misses + self.false_alarms, self.not_hot)
+        self.error_rate = rate(self.misses + self.false_alarms, self.total)
 
     def summary(self):
         out = 'total: %d\n' % self.total

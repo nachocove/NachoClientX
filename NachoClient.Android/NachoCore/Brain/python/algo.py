@@ -4,6 +4,7 @@ import sys
 from model import Model
 from analyzer_relation import RelationAnalyzer
 from analyzer_content import ContentAnalyzer
+from analyzer_combined import LinearCombinedAnalyzer, ProductCombinedAnalyzer, MaxCombinedAnalyzer
 from evaluator import Evaluator
 
 
@@ -16,6 +17,12 @@ def get_analyzer(name):
         analyzer = RelationAnalyzer()
     elif name == 'logistic':
         analyzer = ContentAnalyzer()
+    elif name == 'linear':
+        analyzer = LinearCombinedAnalyzer()
+    elif name == 'product':
+        analyzer = ProductCombinedAnalyzer()
+    elif name == 'max':
+        analyzer = MaxCombinedAnalyzer()
     else:
         raise ValueError('unknown analyzer type %s' % name)
     return analyzer

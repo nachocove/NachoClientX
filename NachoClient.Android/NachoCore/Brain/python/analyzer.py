@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class Analyzer:
+class Analyzer(object):
     __metaclass__ = ABCMeta
     """
     Template for all algorithms that analyze objects
