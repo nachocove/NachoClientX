@@ -267,12 +267,7 @@ namespace NachoCore.IMAP
             IList<IMessageSummary> imapSummaries = null;
             try {
                 cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                HashSet<HeaderId> headers = new HashSet<HeaderId> ();
-                headers.Add (HeaderId.Importance);
-                headers.Add (HeaderId.DkimSignature);
-                headers.Add (HeaderId.ContentClass);
-
-                imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, headers, Cts.Token);
+                imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
                 cap.Stop ();
                 Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
             } catch (ImapProtocolException) {
