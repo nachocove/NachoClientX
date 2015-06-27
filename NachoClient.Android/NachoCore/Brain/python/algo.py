@@ -2,18 +2,20 @@
 
 import sys
 from model import Model
-from analyzer_relation import AnalyzerRelation
+from analyzer_relation import RelationAnalyzer
+from analyzer_content import ContentAnalyzer
 from evaluator import Evaluator
-import pprint
 
 
 def get_analyzer(name):
     if name == 'bayes1':
-        analyzer = AnalyzerRelation()
+        analyzer = RelationAnalyzer()
         analyzer.analyze_to = False
         analyzer.analyze_cc = False
     elif name == 'bayes3':
-        analyzer = AnalyzerRelation()
+        analyzer = RelationAnalyzer()
+    elif name == 'logistic':
+        analyzer = ContentAnalyzer()
     else:
         raise ValueError('unknown analyzer type %s' % name)
     return analyzer

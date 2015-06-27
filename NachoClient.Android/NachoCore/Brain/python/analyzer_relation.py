@@ -2,7 +2,7 @@ from analyzer import Analyzer
 from email_address import EmailAddress, EmailAddressTable
 
 
-class AnalyzerRelation(Analyzer):
+class RelationAnalyzer(Analyzer):
     def __init__(self):
         self._table = EmailAddressTable()
         # Default algorithm is bayes3
