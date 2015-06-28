@@ -134,7 +134,7 @@ namespace NachoCore.Utils
         {
             var item = CreateEvent (account);
             item.MeetingStatusIsSet = true;
-            item.MeetingStatus = NcMeetingStatus.Meeting;
+            item.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
             item.ResponseRequestedIsSet = true;
             item.ResponseRequested = true;
             var attendees = new List<McAttendee> ();
@@ -230,7 +230,7 @@ namespace NachoCore.Utils
             item.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), DateTime.UtcNow).toEncodedTimeZone ();
             item.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             item.MeetingStatusIsSet = true;
-            item.MeetingStatus = NcMeetingStatus.Meeting;
+            item.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
             item.ResponseRequestedIsSet = true;
             item.ResponseRequested = true;
 

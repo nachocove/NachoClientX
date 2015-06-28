@@ -9,6 +9,7 @@ using NachoCore.Utils;
 using System.Text.RegularExpressions;
 using NachoPlatform;
 using System.Linq;
+using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
@@ -35,7 +36,7 @@ namespace NachoCore.Model
         }
 
         public McAccount CreateAccount (McAccount.AccountServiceEnum service, string emailAddress,
-            string accessToken, string refreshToken, DateTime expiry)
+                                        string accessToken, string refreshToken, DateTime expiry)
         {
             return CreateAccountCore (service, emailAddress, (accountId) => {
                 var cred = new McCred () { 
@@ -74,6 +75,7 @@ namespace NachoCore.Model
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
+                account.ConfigurationInProgress = true;
                 account.Signature = "Sent from Nacho Mail";
                 account.SetAccountService (service);
                 account.DisplayName = McAccount.AccountServiceName (service);
@@ -204,6 +206,10 @@ namespace NachoCore.Model
             Log.Info (Log.LOG_DB, "RemoveAccount: removing file data for account {0}", AccountId);
             String AccountDirPath = NcModel.Instance.GetAccountDirPath (AccountId);
             try {
+                var indexDirPath = NcModel.Instance.GetIndexPath (AccountId);
+                if (Directory.Exists (indexDirPath)) {
+                    NcBrain.MarkForDeletion (AccountId);
+                }
                 Directory.Delete (AccountDirPath, true);
             } catch (Exception e) {
                 Log.Error (Log.LOG_DB, "RemoveAccount: cannot remove file data for account {0}. {1}", AccountId, e.Message);

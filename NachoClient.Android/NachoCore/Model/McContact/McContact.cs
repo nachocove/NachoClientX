@@ -757,36 +757,40 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            if (0 == CircleColor) {
-                CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+            using (var capture = CaptureWithStart ("Insert")) {
+                if (0 == CircleColor) {
+                    CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+                }
+                EvaluateSelfEclipsing ();
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    retval = base.Insert ();
+                    HasReadAncillaryData = McContactAncillaryDataEnum.READ_ALL;
+                    InsertAncillaryData ();
+                    EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Insert);
+                });
+                return retval;
             }
-            EvaluateSelfEclipsing ();
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                retval = base.Insert ();
-                HasReadAncillaryData = McContactAncillaryDataEnum.READ_ALL;
-                InsertAncillaryData ();
-                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Insert);
-            });
-            return retval;
         }
 
         public override int Update ()
         {
-            EvaluateSelfEclipsing ();
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                // Delete the old index document. Brain will re-index it in the background.
-                IndexVersion = 0;
-                NcBrain.UnindexContact (this);
+            using (var capture = CaptureWithStart ("Update")) {
+                EvaluateSelfEclipsing ();
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    // Delete the old index document. Brain will re-index it in the background.
+                    IndexVersion = 0;
+                    NcBrain.UnindexContact (this);
 
-                retval = base.Update ();
-                if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
-                    InsertAncillaryData ();
-                }
-                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
-            });
-            return retval;
+                    retval = base.Update ();
+                    if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
+                        InsertAncillaryData ();
+                    }
+                    EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
+                });
+                return retval;
+            }
         }
 
         public void UpdateEmailAddressesEclipsing ()
@@ -818,16 +822,18 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            // Force an auxilary read
-            var addressList = EmailAddresses;
-            var phoneList = PhoneNumbers;
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                NcBrain.UnindexContact (this);
-                retval = base.Delete ();
-                EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Delete")) {
+                // Force an auxilary read
+                var addressList = EmailAddresses;
+                var phoneList = PhoneNumbers;
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    NcBrain.UnindexContact (this);
+                    retval = base.Delete ();
+                    EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
+                });
+                return retval;
+            }
         }
 
         private void EvaluateEmailAddressEclipsing (List<McContactEmailAddressAttribute> addressList, McContactOpEnum op)

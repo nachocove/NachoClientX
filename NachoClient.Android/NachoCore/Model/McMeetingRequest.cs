@@ -152,6 +152,7 @@ namespace NachoCore.Model
         private static char[] HexDigits = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
         };
+
         private static string HexString (byte[] bytes, int start, int length)
         {
             var builder = new StringBuilder (length * 2);
@@ -163,22 +164,26 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                retval = base.Insert ();
-                InsertRecurrences ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Insert")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    retval = base.Insert ();
+                    InsertRecurrences ();
+                });
+                return retval;
+            }
         }
 
         public override int Update ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                retval = base.Update ();
-                SaveRecurrences ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Update")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    retval = base.Update ();
+                    SaveRecurrences ();
+                });
+                return retval;
+            }
         }
 
         public override void DeleteAncillary ()

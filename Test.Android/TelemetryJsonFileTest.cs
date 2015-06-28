@@ -111,6 +111,11 @@ namespace Test.Common
             Assert.AreEqual (a.message, b.message);
         }
 
+        protected long TimestampTicks (string timestamp)
+        {
+            return TelemetryJsonEvent.Timestamp (timestamp).Ticks;
+        }
+
         [Test]
         public void TestTelemetryJsonFile ()
         {
@@ -130,8 +135,8 @@ namespace Test.Common
             };
             bool added = jsonFile.Add (event1);
             Assert.True (added);
-            Assert.AreEqual (event1.timestamp, jsonFile.FirstTimestamp.Ticks);
-            Assert.AreEqual (event1.timestamp, jsonFile.LatestTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event1.timestamp), jsonFile.FirstTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event1.timestamp), jsonFile.LatestTimestamp.Ticks);
             Assert.AreEqual (1, jsonFile.NumberOfEntries);
 
             // Write a warning log
@@ -141,8 +146,8 @@ namespace Test.Common
             };
             added = jsonFile.Add (event2);
             Assert.True (added);
-            Assert.AreEqual (event1.timestamp, jsonFile.FirstTimestamp.Ticks);
-            Assert.AreEqual (event2.timestamp, jsonFile.LatestTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event1.timestamp), jsonFile.FirstTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event2.timestamp), jsonFile.LatestTimestamp.Ticks);
             Assert.AreEqual (2, jsonFile.NumberOfEntries);
 
             // Write an info log
@@ -152,15 +157,15 @@ namespace Test.Common
             };
             added = jsonFile.Add (event3);
             Assert.True (added);
-            Assert.AreEqual (event1.timestamp, jsonFile.FirstTimestamp.Ticks);
-            Assert.AreEqual (event3.timestamp, jsonFile.LatestTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event1.timestamp), jsonFile.FirstTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event3.timestamp), jsonFile.LatestTimestamp.Ticks);
             Assert.AreEqual (3, jsonFile.NumberOfEntries);
 
             // Close the file and re-open it. Make sure the timestamp and # entries are correct
             jsonFile.Close ();
             jsonFile = new TelemetryJsonFile (filePath);
-            Assert.AreEqual (event1.timestamp, jsonFile.FirstTimestamp.Ticks);
-            Assert.AreEqual (event3.timestamp, jsonFile.LatestTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event1.timestamp), jsonFile.FirstTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (event3.timestamp), jsonFile.LatestTimestamp.Ticks);
             Assert.AreEqual (3, jsonFile.NumberOfEntries);
 
             // Close it again. Read it line-by-line and make sure the content is correct
@@ -200,11 +205,11 @@ namespace Test.Common
         {
             Assert.AreEqual (numEntries, jsonFile.NumberOfEntries);
             if (1 == numEntries) {
-                Assert.AreEqual (jsonEvent.timestamp, jsonFile.FirstTimestamp.Ticks);
+                Assert.AreEqual (TimestampTicks (jsonEvent.timestamp), jsonFile.FirstTimestamp.Ticks);
             } else {
-                Assert.AreNotEqual (jsonEvent.timestamp, jsonFile.FirstTimestamp.Ticks);
+                Assert.AreNotEqual (TimestampTicks (jsonEvent.timestamp), jsonFile.FirstTimestamp.Ticks);
             }
-            Assert.AreEqual (jsonEvent.timestamp, jsonFile.LatestTimestamp.Ticks);
+            Assert.AreEqual (TimestampTicks (jsonEvent.timestamp), jsonFile.LatestTimestamp.Ticks);
         }
 
         protected void CheckWriteFilesCount (int expected)
@@ -261,8 +266,8 @@ namespace Test.Common
             WrappedTelemetryJsonFileTable.UtcNow = new DateTime (2015, 5, 26, 4, 0, 0, 000);
             var event4 = new TelemetrySamplesEvent () {
                 timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
-                samples_name = "Process_memory",
-                samples = new List<int> () { 90, 110, 70, 130 },
+                sample_name = "Process_memory",
+                sample_value = 90,
             };
             AddEventAndCheck (event4);
             CheckWriteFilesCount (4);
@@ -340,11 +345,12 @@ namespace Test.Common
             }
 
             // Read each read file.
+            Action dummyCallback;
             foreach (var expected in expectedReadFiles) {
                 readFile = FileTable.GetNextReadFile ();
                 Assert.AreEqual (expected, Path.GetFileName (readFile));
                 Assert.True (File.Exists (readFile));
-                FileTable.Remove (readFile);
+                FileTable.Remove (readFile, out dummyCallback);
                 Assert.False (File.Exists (readFile));
             }
 
@@ -397,7 +403,7 @@ namespace Test.Common
             CheckWriteFilesCount (0);
             readFile = FileTable.GetNextReadFile ();
             Assert.AreEqual ("20150526130100000.20150526130400000.log", Path.GetFileName (readFile));
-            FileTable.Remove (readFile);
+            FileTable.Remove (readFile, out dummyCallback);
 
             // Set the max duration to 5 mins. Write 2 entries 5m0.001s apart and expect a new read file
             CheckReadFilesCount (0);
@@ -426,6 +432,24 @@ namespace Test.Common
             CheckWriteFilesCount (1);
             readFile = FileTable.GetNextReadFile ();
             Assert.AreEqual ("20150526130500000.20150526130500000.log", Path.GetFileName (readFile));
+        }
+
+        [Test]
+        public void TestTelemetryJsonFileTableError ()
+        {
+            // Manually an invalid JSON file and tries to instiante a JSON file table from it.
+            var filePath = Path.Combine (NcApplication.GetDataDirPath (), "log");
+            var jsonEvent = new TelemetryLogEvent (TelemetryEventType.INFO) {
+                thread_id = 1,
+                message = "This event has an invalid timestamp",
+                timestamp = "INVALID",
+            };
+            var json = JsonConvert.SerializeObject (jsonEvent);
+            File.WriteAllText (filePath, json);
+
+            Assert.True (File.Exists (filePath));
+            FileTable = new WrappedTelemetryJsonFileTable ();
+            Assert.False (File.Exists (filePath));
         }
     }
 }

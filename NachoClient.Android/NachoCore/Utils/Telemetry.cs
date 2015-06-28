@@ -17,7 +17,11 @@ namespace NachoCore.Utils
 {
     public class Telemetry
     {
+        #if __IOS__
         public static bool ENABLED = true;
+        #else
+        public static bool ENABLED = false;
+        #endif
 
         // AWS Redshift has a limit of 65,535 for varchar.
         private const int MAX_AWS_LEN = 65535;
@@ -325,7 +329,8 @@ namespace NachoCore.Utils
             }
 
             var jsonEvent = new TelemetrySupportEvent () {
-                support = JsonConvert.SerializeObject (info)
+                support = JsonConvert.SerializeObject (info),
+                callback = callback
             };
             RecordJsonEvent (TelemetryEventType.SUPPORT, jsonEvent);
         }
@@ -357,11 +362,13 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            var jsonEvent = new TelemetrySamplesEvent () {
-                samples_name = samplesName,
-                samples = samplesValues
-            };
-            RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_value = value
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
         }
 
         public static void RecordStatistics2 (string name, int count, int min, int max, long sum, long sum2)
@@ -491,7 +498,11 @@ namespace NachoCore.Utils
                             // New log file-based telemetry
                             succeed = BackEnd.UploadEvents (readFile);
                             if (succeed) {
-                                JsonFileTable.Remove (readFile);
+                                Action supportCallback;
+                                JsonFileTable.Remove (readFile, out supportCallback);
+                                if (null != supportCallback) {
+                                    InvokeOnUIThread.Instance.Invoke (supportCallback);
+                                }
                             } else {
                                 FailToSend.Click ();
                                 if (FailToSendLogLimiter.TakeToken ()) {

@@ -588,5 +588,27 @@ namespace Test.Common
             matches = Index.Search ("note:happy");
             Assert.AreEqual (0, matches.Count);
         }
+
+        [Test]
+        public void TestMarkForDeletion ()
+        {
+            bool succeeded;
+            succeeded = Index.BeginAddTransaction ();
+            Assert.True (succeeded);
+            Index.EndAddTransaction ();
+
+            succeeded = Index.BeginRemoveTransaction ();
+            Assert.True (succeeded);
+            Index.EndRemoveTransaction ();
+
+            succeeded = Index.MarkForDeletion ();
+            Assert.True (succeeded);
+
+            succeeded = Index.BeginAddTransaction ();
+            Assert.False (succeeded);
+
+            succeeded = Index.BeginRemoveTransaction ();
+            Assert.False (succeeded);
+        }
     }
 }

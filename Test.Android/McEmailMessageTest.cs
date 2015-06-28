@@ -37,14 +37,17 @@ namespace Test.Common
             McEmailAddress address = new McEmailAddress ();
             address.CanonicalEmailAddress = canonicalAddress;
             address.AccountId = defaultAccountId;
-            address.ScoreStates.EmailsReceived = received;
-            address.ScoreStates.EmailsRead = read;
-            address.ScoreVersion = 3;
-            address.Score = (double)read / (double)received;
-            address.IsVip = isVip;
-
             address.Insert ();
             NcAssert.True (0 < address.Id);
+
+            address.ScoreStates.EmailsReceived = received;
+            address.ScoreStates.EmailsRead = read;
+            address.ScoreStates.Update ();
+
+            address.ScoreVersion = Scoring.Version;
+            address.Score = (double)read / (double)received;
+            address.IsVip = isVip;
+            address.Update ();
 
             return address;
         }

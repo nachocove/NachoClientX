@@ -456,12 +456,6 @@ namespace NachoClient.iOS
             if (passwordView.IsNullOrEmpty ()) {
                 return AdvancedLoginViewController.LoginStatus.EnterInfo;
             }
-
-            if (null != McAccount.QueryByEmailAddr(emailView.textField.Text).FirstOrDefault()) {
-                nuance = "That email address is already in use. Duplicate accounts are not supported.";
-                return AdvancedLoginViewController.LoginStatus.InvalidEmailAddress;
-            }
-
             string serviceName;
             var emailAddress = emailView.textField.Text;
             if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {

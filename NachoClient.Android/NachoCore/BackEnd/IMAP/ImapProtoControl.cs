@@ -12,9 +12,9 @@ using System.Threading;
 
 namespace NachoCore.IMAP
 {
-    public class ImapProtoControl : NcProtoControl, IPushAssistOwner, INcProtocolLogger
+    public class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
-        public ImapClient MainClient;
+        public NcImapClient MainClient;
 
         public enum Lst : uint
         {
@@ -50,6 +50,8 @@ namespace NachoCore.IMAP
                     return BackEndStateEnum.ServerConfWait;
 
                 case (uint)Lst.DiscW:
+                    return BackEndStateEnum.Running;
+
                 case (uint)Lst.FSyncW:
                 case (uint)Lst.SyncW:
                 case (uint)Lst.QOpW:
@@ -94,7 +96,7 @@ namespace NachoCore.IMAP
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
             SetupAccount ();
-            MainClient = newImapClientWithLogger ();
+            MainClient = new NcImapClient ();
 
             Sm = new NcStateMachine ("IMAPPC") { 
                 Name = string.Format ("IMAPPC({0})", AccountId),
@@ -643,21 +645,6 @@ namespace NachoCore.IMAP
             Sm.PostEvent ((uint)ImapEvt.E.UiSetServConf, "IMAPPCUSSC");
         }
 
-        #region INcProtocolLogger implementation
-
-        public bool ShouldLog ()
-        {
-            return false;
-        }
-
-        #endregion
-
-        public ImapClient newImapClientWithLogger()
-        {
-            MailKitProtocolLogger logger = new MailKitProtocolLogger ("IMAP", Log.LOG_IMAP, this);
-            return new ImapClient (logger);
-        }
-
         private void DoExDone ()
         {
             Interlocked.Decrement (ref ConcurrentExtraRequests);
@@ -679,7 +666,7 @@ namespace NachoCore.IMAP
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
                 MaxConcurrentExtraRequests > ConcurrentExtraRequests)
             {
-                ImapClient Client = newImapClientWithLogger ();  // Presumably this will get cleaned up by GC?
+                NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = Strategy.PickUserDemand (Client);
                 if (null == pack) {

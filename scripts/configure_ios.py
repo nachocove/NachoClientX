@@ -31,10 +31,34 @@ class PlistFile:
             if value not in self.plist[key]:
                 self.plist[key].append(value)
 
+    def remove_list_index(self, key, index):
+        """
+        Remove a particular value in a list key specified by the index.
+        """
+        if not key in self.plist:
+            return
+        if not isinstance(self.plist[key], list):
+            raise TypeError(key)
+        self.plist[key].pop(index)
+
     def write(self, path=None):
         if path is None:
             path = self.path
         plistlib.writePlist(self.plist, path)
+
+    def get(self, key):
+        return self.plist.get(key)
+
+
+def find_url_type_by_scheme(plist, scheme):
+    index = 0
+    bundle_url_types = plist.get('CFBundleURLTypes')
+    for url_type in bundle_url_types:
+        url_schemes = url_type['CFBundleURLSchemes']
+        if scheme in url_schemes:
+            return index
+        index += 1
+    return None
 
 
 def main():
@@ -68,18 +92,51 @@ def main():
     info_plist = PlistFile(sys.argv[1])
     info_plist.write(os.path.join(project_dir, 'Info.plist.rewritten'))
 
+    orig_bundle_id = info_plist.get('CFBundleIdentifier')
+
     info_plist.replace('CFBundleIdentifier', app_id)
     info_plist.replace('CFBundleVersion', build)
     info_plist.replace('CFBundleShortVersionString', version)
     info_plist.replace('CFBundleDisplayName', display_name)
+
+    # Copy the google info plsit over
+    google_path = '%s/Resources/%s' % (project_dir, release_dir)
+    src_path = os.path.join(google_path, 'GoogleService-Info.plist')
+    dst_path = os.path.join(project_dir, 'GoogleService-Info.plist')
+    # Need to remove the original value. This is done by reading the dst .plist
+    # and remove the value there
+    old_google_plist = plistlib.readPlist(dst_path)
+    rev_client_id = old_google_plist['REVERSED_CLIENT_ID']
+    print 'Remove old google service value %s' % rev_client_id
+    index = find_url_type_by_scheme(info_plist, rev_client_id)
+    if index is not None:
+        info_plist.remove_list_index('CFBundleURLTypes', index)
     if release_dir is not None:
-        google_path = '%s/Resources/%s' % (project_dir, release_dir)
-        src_path = os.path.join(google_path, 'GoogleService-Info.plist')
-        dst_path = os.path.join(project_dir, 'GoogleService-Info.plist')
         shutil.copyfile(src_path, dst_path)
     google_plist_path = os.path.join(project_dir, 'GoogleService-Info.plist')
     google_plist = plistlib.readPlist(google_plist_path)
-    info_plist.append('CFBundleURLSchemes', google_plist['REVERSED_CLIENT_ID'])
+    print 'Add new google service value %s' % google_plist['REVERSED_CLIENT_ID']
+
+    index = find_url_type_by_scheme(info_plist, orig_bundle_id)
+    if index is not None:
+        info_plist.remove_list_index('CFBundleURLTypes', index)
+
+    # Create a new entry and insert it
+    entry = {
+        'CFBundleURLName': 'google',
+        'CFBundleURLSchemes': [google_plist['REVERSED_CLIENT_ID']],
+        'CFBundleURLTypes': 'Editor'
+    }
+    info_plist.append('CFBundleURLTypes', entry)
+
+    entry2 = {
+        'CFBundleURLName': 'google',
+        'CFBundleURLSchemes': [app_id],
+        'CFBundleURLTypes': 'Editor'
+    }
+    info_plist.append('CFBundleURLTypes', entry2)
+
+    # Update the entry with bundle ID as well
     info_plist.write()
 
     if icon_script is not None:

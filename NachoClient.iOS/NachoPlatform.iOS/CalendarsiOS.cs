@@ -53,7 +53,13 @@ namespace NachoPlatform
 
             public override string ServerId {
                 get {
-                    return Event.EventIdentifier;
+                    if (Event.IsDetached || !Event.HasRecurrenceRules) {
+                        return Event.EventIdentifier;
+                    }
+                    // A regular occurrence of a recurring meeting.  Add a date stamp to the ID to distinguish it
+                    // from any other occurrences of the same event.  Use the same format for the date stamp that
+                    // iOS uses for exceptional occurrences.
+                    return string.Format ("{0}/RID={1}", Event.EventIdentifier, (long)Event.StartDate.SecondsSinceReferenceDate);
                 }
             }
             public override DateTime LastUpdate {
@@ -94,16 +100,23 @@ namespace NachoPlatform
             public override NcResult ToMcCalendar ()
             {
                 var accountId = McAccount.GetDeviceAccount ().Id;
-                var cal = new McCalendar () {
-                    Source = McAbstrItem.ItemSource.Device,
-                    ServerId = Event.EventIdentifier,
-                    AccountId = accountId,
-                    OwnerEpoch = SchemaRev,
-                };
 
-                cal.AllDayEvent = Event.AllDay;
+                var cal = new McCalendar ();
+
+                cal.Source = McAbstrItem.ItemSource.Device;
+                cal.ServerId = this.ServerId;
                 cal.DeviceLastUpdate = (null == Event.LastModifiedDate) ? default(DateTime) : Event.LastModifiedDate.ToDateTime ();
                 cal.DeviceCreation = (null == Event.CreationDate) ? cal.DeviceLastUpdate : Event.CreationDate.ToDateTime ();
+                cal.UID = Event.CalendarItemExternalIdentifier;
+                if (null != Event.Organizer) {
+                    cal.OrganizerName = Event.Organizer.Name;
+                    cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
+                }
+
+                cal.AccountId = accountId;
+                cal.OwnerEpoch = SchemaRev;
+
+                cal.AllDayEvent = Event.AllDay;
                 cal.Subject = Event.Title;
                 cal.Location = Event.Location;
 
@@ -130,13 +143,7 @@ namespace NachoPlatform
                     break;
                 }
 
-                if (null != Event.Organizer) {
-                    cal.OrganizerName = Event.Organizer.Name;
-                    cal.OrganizerEmail = TryExtractEmailAddress (Event.Organizer);
-                }
-
-                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, Event.Notes ?? "");
-                cal.BodyId = body.Id;
+                cal.SetDescription (Event.Notes ?? "", McBody.BodyTypeEnum.PlainText_1);
 
                 cal.ResponseTypeIsSet = true;
                 switch (Event.Status) {
@@ -166,20 +173,20 @@ namespace NachoPlatform
                     cal.EndTime = cal.StartTime.AddDays (Math.Round ((cal.EndTime - cal.StartTime).TotalDays));
                 }
 
-                TimeZoneInfo timeZone = null;
+                TimeZoneInfo eventTimeZone = null;
                 if (null != Event.TimeZone) {
                     // iOS's NSTimeZone does not expose the daylight saving transition rules, so there is no way
                     // to construct a TimeZoneInfo object from the NSTimeZone object.  Instead we have to look
                     // up the TimeZoneInfo by its ID.
-                    timeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                    eventTimeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
                 }
-                if (null == timeZone) {
+                if (null == eventTimeZone) {
                     // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be
                     // found, assume the local time zone.  Time zones only matter for all-day events and recurring
                     // events, so getting the wrong time zone won't be a problem for most events.
-                    timeZone = TimeZoneInfo.Local;
+                    eventTimeZone = TimeZoneInfo.Local;
                 }
-                cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (timeZone), cal.StartTime).toEncodedTimeZone ();
+                cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (eventTimeZone), cal.StartTime).toEncodedTimeZone ();
 
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
@@ -245,13 +252,163 @@ namespace NachoPlatform
                         cal.attendees = attendees;
                     }
                 }
+
+                if (!Event.IsDetached && Event.HasRecurrenceRules) {
+                    // The iOS documentation says that only one recurrence rule is supported for a calendar item,
+                    // even though the API allows for multiple.  So the app only looks at the first recurrence rule
+                    // from the device event.
+                    var recurrences = new List<McRecurrence> ();
+                    recurrences.Add (ConvertRecurrence (McAccount.GetDeviceAccount ().Id, Event.RecurrenceRules [0],
+                        TimeZoneInfo.ConvertTimeFromUtc (cal.StartTime, eventTimeZone)));
+                    cal.recurrences = recurrences;
+                }
+
                 return NcResult.OK (cal);
+            }
+
+            /// <summary>
+            /// Convert from an iOS recurrence rule to a McRecurrence (which is based on the ActiveSync recurrence
+            /// rule).  The two systems represent recurrences differently, so this is not a trivial task.  The iOS
+            /// rules allow for more flexibility, so there may be some rules that are not converted correctly.
+            /// But the code does not try to detect or report those cases, since there is nothing useful that can
+            /// be done with them.  The iOS rule keeps some of the information in the start date of the event, so
+            /// the start date and time zone need to be passed in to this method.
+            /// </summary>
+            private McRecurrence ConvertRecurrence (int accountId, EKRecurrenceRule rule, DateTime localStartTime)
+            {
+                var result = new McRecurrence ();
+                result.AccountId = accountId;
+
+                // The interval is the easiest thing to convert.
+                result.Interval = (int)rule.Interval;
+                result.IntervalIsSet = true;
+
+                switch (rule.Frequency) {
+
+                case EKRecurrenceFrequency.Daily:
+                    // Daily recurrences don't require any extra information.
+                    result.Type = NcRecurrenceType.Daily;
+                    break;
+
+                case EKRecurrenceFrequency.Weekly:
+                    result.Type = NcRecurrenceType.Weekly;
+                    if (null == rule.DaysOfTheWeek || 0 == rule.DaysOfTheWeek.Length) {
+                        // If the days of the week is not specified, then it is taken from the start date of the event.
+                        result.DayOfWeek = CalendarHelper.ToNcDayOfWeek (localStartTime.DayOfWeek);
+                    } else {
+                        result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                    }
+                    result.DayOfWeekIsSet = true;
+                    if (EKDay.NotSet != rule.FirstDayOfTheWeek) {
+                        result.FirstDayOfWeek = ConvertFirstDayOfWeek (rule.FirstDayOfTheWeek);
+                        result.FirstDayOfWeekIsSet = true;
+                    }
+                    break;
+
+                case EKRecurrenceFrequency.Monthly:
+                    if (null == rule.DaysOfTheWeek || 0 == rule.DaysOfTheWeek.Length) {
+                        // Monthly event on a numerical day of the month (e.g. "the 25th"), which is taken
+                        // from the start date.
+                        result.Type = NcRecurrenceType.Monthly;
+                        result.DayOfMonth = localStartTime.Day;
+                    } else {
+                        // Monthly event that happens on a particular day of the week (e.g. "first Monday"
+                        // or "fourth Thursday").
+                        result.Type = NcRecurrenceType.MonthlyOnDay;
+                        result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                        result.DayOfWeekIsSet = true;
+                        if (null == rule.SetPositions || 0 == rule.SetPositions.Length) {
+                            result.WeekOfMonth = 1;
+                        } else {
+                            // iOS allows for multiple occurrences in one rule.  ActiveSync does not.  So only the
+                            // first occurrence is used.
+                            int week = (int)(NSNumber)rule.SetPositions [0];
+                            if (0 >= week || 5 <= week) {
+                                // iOS allows "next to last" or "3rd from last".  But ActiveSync only allows for
+                                // 1st, 2nd, 3rd, 4th, or last.  So anything that isn't 1st, 2nd, 3nd, or 4th gets
+                                // translated as "last", which ActiveSync represents as "week 5".
+                                result.WeekOfMonth = 5;
+                            } else {
+                                result.WeekOfMonth = week;
+                            }
+                        }
+                    }
+                    break;
+
+                case EKRecurrenceFrequency.Yearly:
+                    if (null == rule.DaysOfTheWeek || 0 == rule.DaysOfTheWeek.Length) {
+                        // Yearly on a specific month and day, which are taken from the start time of the event.
+                        result.Type = NcRecurrenceType.Yearly;
+                        result.MonthOfYear = localStartTime.Month;
+                        result.DayOfMonth = localStartTime.Day;
+                    } else {
+                        // Yearly on a particular day of the week within a month.  For reasons that do not have a
+                        // good explanation, the week within the month is stored in the DaysOfTheWeek field rather
+                        // than the SetPositions field.
+                        result.Type = NcRecurrenceType.YearlyOnDay;
+                        result.DayOfWeek = ConvertDaysOfWeek (rule.DaysOfTheWeek);
+                        int week = (int)rule.DaysOfTheWeek [0].WeekNumber;
+                        if (0 >= week || 5 <= week) {
+                            result.WeekOfMonth = 5;
+                        } else {
+                            result.WeekOfMonth = week;
+                        }
+                        if (null == rule.MonthsOfTheYear || 0 == rule.MonthsOfTheYear.Length) {
+                            result.MonthOfYear = 1;
+                        } else {
+                            result.MonthOfYear = (int)rule.MonthsOfTheYear [0];
+                        }
+                    }
+                    break;
+                }
+
+                // iOS gives us a separate EKEvent for each occurrence of a recurring event, so the app creates a
+                // separate McCalendar for each one.  The McRecurrence exists so the recurring nature of the event
+                // is shown in the event detail view.  It is not used to generate all of the McEvents.  To get that
+                // behavior, set the number of occurrences to 1, no matter what the EKEvent's recurrence rule states.
+                result.Occurrences = 1;
+                result.OccurrencesIsSet = true;
+
+                return result;
+            }
+
+            private NcDayOfWeek ConvertDaysOfWeek (EKRecurrenceDayOfWeek[] daysOfWeek)
+            {
+                NcDayOfWeek result = (NcDayOfWeek)0;
+                foreach (var dow in daysOfWeek) {
+                    result = (NcDayOfWeek)((int)result | (1 << ((int)dow.DayOfTheWeek - 1)));
+                }
+                return result;
+            }
+
+            private int ConvertFirstDayOfWeek (EKDay day)
+            {
+                switch (day) {
+                case EKDay.Sunday:
+                    return 0;
+                case EKDay.Monday:
+                    return 1;
+                case EKDay.Tuesday:
+                    return 2;
+                case EKDay.Wednesday:
+                    return 3;
+                case EKDay.Thursday:
+                    return 4;
+                case EKDay.Friday:
+                    return 5;
+                case EKDay.Saturday:
+                    return 6;
+                default:
+                    return 0;
+                }
             }
         }
 
-        public bool AuthorizationStatus { get { 
+        public bool AuthorizationStatus {
+            get {
                 return EKAuthorizationStatus.Authorized == EKEventStore.GetAuthorizationStatus (EKEntityType.Event); 
-            } }
+            }
+        }
 
         public bool ShouldWeBotherToAsk ()
         {
@@ -316,38 +473,24 @@ namespace NachoPlatform
                 return null;
             }
 
-            // FIXME DAVID - we only go a week back and out 6 months. we probably need to expand based on cal view?
-            var start = DateTime.Now.AddDays (-7);
-            var end = DateTime.Now.AddMonths (6);
-            var calendars = Es.GetCalendars (EKEntityType.Event);
-            var retval = new List<PlatformCalendarRecordiOS> ();
-            var ignoredSources = new List<string> ();
-            foreach (var calendar in calendars) {
-                var account = McAccount.QueryByEmailAddr (calendar.Title.Trim ()).FirstOrDefault ();
-                if (null != calendar.Title && null != account && 
-                    McAccount.AccountCapabilityEnum.CalReader == 
-                    (account.AccountCapability & McAccount.AccountCapabilityEnum.CalReader)) {
-                    // This is probably one of our accounts - note it as a source we want to ignore.
-                    // FIXME DAVID - we may need this anti-dup-source logic on the Contact side too.
-                    if (null != calendar.Source && null != calendar.Source.Title) {
-                        ignoredSources.Add (calendar.Source.Title.Trim ());
-                    } else {
-                        Log.Warn (Log.LOG_SYS, "GetCalendars: could not exclude calendar source.");
-                    }
-                }
-            }
-            calendars = calendars.Where (x => null == x.Source || null == x.Source.Title ||
-            !ignoredSources.Contains (x.Source.Title.Trim ())).ToArray ();
-            var predicate = Es.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
-            var calEvents = Es.EventsMatching (predicate);
-            if (null != calEvents) {
-                foreach (var calEvent in calEvents) {
-                    retval.Add (new PlatformCalendarRecordiOS () {
-                        Event = calEvent,
+            // Ask for all events from one month ago (which is as far back as the calendar normally goes) until
+            // way into the future.  iOS will only deliver several years of events at a time, so we won't actually
+            // get recurring events hundreds of years from now.  There is not a way to find out how far into the
+            // future the user has scrolled the calendar, nor is there a way for the calendar view to ask for more
+            // McCalendar items as the user scrolls, so the app needs to get events from iOS farther into the future
+            // than is necessary in the normal case.
+            var result = new List<PlatformCalendarRecordiOS> ();
+            var allCalendars = Es.GetCalendars (EKEntityType.Event);
+            var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), NSDate.DistantFuture, allCalendars);
+            var deviceEvents = Es.EventsMatching (predicate);
+            if (null != deviceEvents) {
+                foreach (var deviceEvent in deviceEvents) {
+                    result.Add (new PlatformCalendarRecordiOS () {
+                        Event = deviceEvent,
                     });
                 }
             }
-            return retval;
+            return result;
         }
 
         public NcResult Add (McCalendar cal)

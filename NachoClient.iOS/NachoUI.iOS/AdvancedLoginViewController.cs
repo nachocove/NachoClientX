@@ -39,6 +39,8 @@ namespace NachoClient.iOS
         private WaitingScreen waitScreen;
         private CertificateView certificateView;
 
+        bool viewCreated;
+
         public delegate void onConnectCallback ();
 
         public enum LoginStatus
@@ -69,6 +71,19 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             Log.Info (Log.LOG_UI, "avl: ViewDidLoad");
+
+            // Configus interruptus?
+            var configAccount = McAccount.GetAccountBeingConfigured ();
+            if (null != configAccount) {
+                theAccount = new AccountSettings ();
+                theAccount.Account = configAccount;
+                theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault ();
+                service = theAccount.Account.AccountService;
+                googleSignInIsActive = (McAccount.AccountServiceEnum.GoogleDefault == service);
+                CreateView ();
+                LayoutView ();
+                loginFields.RefreshUI (theAccount);
+            }
 
             waitScreen = new WaitingScreen (View.Frame, this);
             waitScreen.Hidden = true;
@@ -634,10 +649,14 @@ namespace NachoClient.iOS
         void TryToFinishUp ()
         {
             if (LoginHelpers.HasViewedTutorial ()) {
+                var account = theAccount.Account;
                 if (null == NcApplication.Instance.Account) {
                     // FIXME: There ought to be a better way
-                    NcApplication.Instance.Account = theAccount.Account;
+                    NcApplication.Instance.Account = account;
+
                 }
+                account.ConfigurationInProgress = false;
+                account.Update ();
                 PerformSegue ("SegueToTabController", this);
             } else {
                 PerformSegue ("SegueToHome", this);
@@ -672,6 +691,11 @@ namespace NachoClient.iOS
 
         private void CreateView ()
         {
+            if (viewCreated) {
+                return;
+            }
+            viewCreated = true;
+
             if (null != this.NavigationController) {
                 NavigationController.NavigationBar.Opaque = true;
                 NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
@@ -839,10 +863,10 @@ namespace NachoClient.iOS
             // TODO: Check for & reject duplicate account.
 
             var account = NcAccountHandler.Instance.CreateAccount (service,
-                user.Profile.Email,
-                user.Authentication.AccessToken, 
-                user.Authentication.RefreshToken,
-                user.Authentication.AccessTokenExpirationDate.ToDateTime ());
+                              user.Profile.Email,
+                              user.Authentication.AccessToken, 
+                              user.Authentication.RefreshToken,
+                              user.Authentication.AccessTokenExpirationDate.ToDateTime ());
             NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
 
             if (null == theAccount) {

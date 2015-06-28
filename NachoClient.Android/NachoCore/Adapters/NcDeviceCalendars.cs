@@ -41,6 +41,7 @@ namespace NachoCore
             if (null == deviceCalendar) {
                 return true;
             }
+
             Func<PlatformCalendarRecord, McCalendar> inserter = (record) => {
                 NcResult result;
                 try {
@@ -58,7 +59,7 @@ namespace NachoCore
                     });
                     return calendar;
                 } else {
-                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", deviceCalendar.ServerId);
+                    Log.Error (Log.LOG_SYS, "Failed to create McCalendar from device calendar {0}", record.ServerId);
                     return null;
                 }
             };
@@ -94,10 +95,10 @@ namespace NachoCore
 
         public bool RemoveNextStale ()
         {
-            // TODO This doesn't work yet. Disable it until I have time to fix it.
-            return true;
-            #if false
             if (null == Stale) {
+                if (null == Present) {
+                    return true;
+                }
                 Stale = Present.GetEnumerator ();
                 PresentCount = Present.Count;
             }
@@ -118,7 +119,6 @@ namespace NachoCore
                 McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
             });
             return false;
-            #endif
         }
 
         public void Report ()

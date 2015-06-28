@@ -294,7 +294,7 @@ namespace NachoCore.Model
             }
             if (0 == BodyId) {
                 // No existing body.  Create one.
-                var body = McBody.InsertFile(AccountId, cachedDescriptionType, cachedDescription);
+                var body = McBody.InsertFile (AccountId, cachedDescriptionType, cachedDescription);
                 BodyId = body.Id;
             } else {
                 // Existing body.  We can't replace just the description, leaving
@@ -350,7 +350,7 @@ namespace NachoCore.Model
                 cachedServerAttachments = null;
             }
             // Take ownership of any attachments that are unowned or owned by a different item.
-            var cleanAttachments = new List<McAttachment>(appAttachments.Count);
+            var cleanAttachments = new List<McAttachment> (appAttachments.Count);
             foreach (var attachment in appAttachments) {
                 McAttachment cleanAttachment;
                 if (0 == attachment.ItemId) {
@@ -360,7 +360,7 @@ namespace NachoCore.Model
                     attachment.ClassCode = this.GetClassCode ();
                     attachment.Update ();
                     cleanAttachment = attachment;
-                } else if (attachment.AccountId != this.AccountId || attachment.ItemId != this.Id || attachment.ClassCode != this.GetClassCode()) {
+                } else if (attachment.AccountId != this.AccountId || attachment.ItemId != this.Id || attachment.ClassCode != this.GetClassCode ()) {
                     // The attachment is already owned by another item.  Make a copy.
                     var copy = new McAttachment () {
                         AccountId = this.AccountId,
@@ -406,7 +406,7 @@ namespace NachoCore.Model
                     IsInline = !attachmentEntity.ContentDisposition.IsAttachment,
                 };
                 // McAttachments need to be in the database before the content can be set.
-                serverAttachment.Insert();
+                serverAttachment.Insert ();
                 serverAttachment.SetDisplayName (attachmentEntity.ContentDisposition.FileName);
                 var mimePart = (MimePart)attachmentEntity;
                 if (null == mimePart.ContentObject) {
@@ -425,28 +425,32 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                UpdateDescription (); // Must be called before base.Insert()
-                retval = base.Insert ();
-                InsertAttendees ();
-                InsertCategories ();
-                InsertAttachments ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Insert")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    UpdateDescription (); // Must be called before base.Insert()
+                    retval = base.Insert ();
+                    InsertAttendees ();
+                    InsertCategories ();
+                    InsertAttachments ();
+                });
+                return retval;
+            }
         }
 
         public override int Update ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                UpdateDescription (); // Must be called before base.Update()
-                retval = base.Update ();
-                SaveAttendees ();
-                SaveCategories ();
-                SaveAttachments ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Update")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    UpdateDescription (); // Must be called before base.Update()
+                    retval = base.Update ();
+                    SaveAttendees ();
+                    SaveCategories ();
+                    SaveAttachments ();
+                });
+                return retval;
+            }
         }
 
         public override void DeleteAncillary ()
@@ -476,16 +480,16 @@ namespace NachoCore.Model
 
     public enum NcMeetingStatus
     {
-        /// No attendees
+        /// An appointment.  Not a meeting.  No attendees.
         Appointment = 0,
-        /// The user is the meeting organizer
-        Meeting = 1,
-        /// The meeting was recieved from someone else
-        ForwardedMeeting = 3,
-        /// The user is the cancelled meeting's organizer
-        MeetingCancelled = 5,
-        /// The cancelled meeting was recieved from someone else
-        ForwardedMeetingCancelled = 7,
+        /// The event is a meeting and the user is the meeting organizer.
+        MeetingOrganizer = 1,
+        /// The event is a meeting and the user was invited to attend the meeting.
+        MeetingAttendee = 3,
+        /// The user is the organizer but the meeting has been cancelled.
+        MeetingOrganizerCancelled = 5,
+        /// The user was invited to attend the meeting but the meeting has been cancelled.
+        MeetingAttendeeCancelled = 7,
     }
     // Similar to NcResponseType
     public enum NcAttendeeStatus

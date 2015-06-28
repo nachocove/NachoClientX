@@ -38,7 +38,7 @@ namespace NachoPlatform
 
         public void ScheduleNotification (int handle, DateTime when, string message)
         {
-            NcAssert.True (false);
+            Log.Info (Log.LOG_CALENDAR, "ScheduleNotification not implemented for Android.");
         }
 
         public void ScheduleNotification (NotificationInfo notification)

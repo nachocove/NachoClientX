@@ -14,30 +14,41 @@ namespace NachoCore.Model
 {
     public class McCred : McAbstrObjectPerAcc
     {
-        public enum CredTypeEnum { Password = 0, OAuth2 };
+        public enum CredTypeEnum { 
+            Password = 0, 
+            OAuth2, 
+            SAML,
+            // Only append - values stored in DB.
+        };
 
         public CredTypeEnum CredType { get; set; }
-
+        // General-use.
         public string Username { get; set; }
 
         // We want to remember if the user entered their
         // own username or if we copied in the email address.
         public bool UserSpecifiedUsername { get; set; }
 
+        public string Password { get; set; }
+
         /// <summary>
         /// DO NOT ACCESS private properties. Use UpdateXxx/GetXxx.
         /// private properties are here for SQLite.Net only!
         /// </summary>
         /// <value>The password.</value>
-        private string Password { get; set; }
 
+        // OAUTH2
         private string AccessToken { get; set; }
-
+        // OAUTH2
         private string RefreshToken { get; set; }
-
+        // General-use. When will the credential expire?
         public DateTime Expiry { get; set; }
-
+        // General-use. Where can a user manually refresh this credential?
         public string RectificationUrl { get; set; }
+        // General-use. When we open the web view for web-based auth, where should we point it?
+        public string RedirectUrl { get; set; }
+        // General-use. What substring in a URL will cause us to tear-down the web view?
+        public string DoneSubstring { get; set; }
 
         public McCred ()
         {

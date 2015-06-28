@@ -78,47 +78,53 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            var existingItems = ExistingItems ();
-            foreach (var existingItem in existingItems) {
-                NcAssert.True (false, string.Format ("Existing item {0} has ServerId {1}", existingItem.Id, ServerId));
+            using (var capture = CaptureWithStart ("Insert")) {
+                var existingItems = ExistingItems ();
+                foreach (var existingItem in existingItems) {
+                    NcAssert.True (false, string.Format ("Existing item {0} has ServerId {1}", existingItem.Id, ServerId));
+                }
+                return base.Insert ();
             }
-            return base.Insert ();
         }
 
         public override int Update ()
         {
-            var existingItems = ExistingItems ();
-            foreach (var existingItem in existingItems) {
-                NcAssert.Equals (Id, existingItem.Id);
+            using (var capture = CaptureWithStart ("Update")) {
+                var existingItems = ExistingItems ();
+                foreach (var existingItem in existingItems) {
+                    NcAssert.Equals (Id, existingItem.Id);
+                }
+                return base.Update ();
             }
-            return base.Update ();
         }
 
         public override int Delete ()
         {
-            NcAssert.True (100000 > PendingRefCount);
-            var returnVal = -1;
+            using (var capture = CaptureWithStart ("Delete")) {
+                NcAssert.True (100000 > PendingRefCount);
+                var returnVal = -1;
 
-            NcModel.Instance.RunInTransaction (() => {
-                McFolder.UnlinkAll (this);
-                if (0 == PendingRefCount) {
-                    var result = base.Delete ();
-                    if (0 < BodyId) {
-                        var body = McBody.QueryById<McBody> (BodyId);
-                        if (null != body) {
-                            body.Delete ();
+                NcModel.Instance.RunInTransaction (() => {
+                    McFolder.UnlinkAll (this);
+                    if (0 == PendingRefCount) {
+                        var result = base.Delete ();
+                        if (0 < BodyId) {
+                            var body = McBody.QueryById<McBody> (BodyId);
+                            if (null != body) {
+                                body.Delete ();
+                            }
                         }
+                        DeleteAncillary ();
+                        returnVal = result;
+                    } else {
+                        IsAwaitingDelete = true;
+                        Update ();
+                        returnVal = 0;
                     }
-                    DeleteAncillary ();
-                    returnVal = result;
-                } else {
-                    IsAwaitingDelete = true;
-                    Update ();
-                    returnVal = 0;
-                }
-            });
+                });
 
-            return returnVal;
+                return returnVal;
+            }
         }
 
         public static IEnumerable<T> QueryByBodyIdIncAwaitDel<T> (int accountId, int bodyId) where T : McAbstrItem, new()
@@ -283,6 +289,22 @@ namespace NachoCore.Model
             }
             dbCollection = new List<T> (appCollection);
             appCollection = null;
+        }
+
+        public static McAbstrItem RefreshItem (McAbstrItem item)
+        {
+            McAbstrItem refreshedItem;
+            if (item is McEmailMessage) {
+                refreshedItem = McEmailMessage.QueryById<McEmailMessage> (item.Id);
+            } else if (item is McCalendar) {
+                refreshedItem = McCalendar.QueryById<McCalendar> (item.Id);
+            } else if (item is McException) {
+                refreshedItem = McException.QueryById<McException> (item.Id);
+            } else {
+                throw new NcAssert.NachoDefaultCaseFailure (
+                    string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
+            }
+            return refreshedItem;
         }
     }
 }

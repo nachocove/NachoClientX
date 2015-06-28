@@ -11,10 +11,16 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderCreateCommand : ImapCommand
     {
-        public ImapFolderCreateCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFolderCreateCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()

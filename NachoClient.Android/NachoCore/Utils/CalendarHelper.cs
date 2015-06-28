@@ -139,13 +139,13 @@ namespace NachoCore.Utils
             }
             if (DateTime.MinValue == eventInfo.RecurrenceId) {
                 // Cancel the entire meeting, not just one occurrence.  This is the easy case.
-                if (cal.MeetingStatusIsSet && (NcMeetingStatus.MeetingCancelled == cal.MeetingStatus || NcMeetingStatus.ForwardedMeetingCancelled == cal.MeetingStatus)) {
+                if (cal.MeetingStatusIsSet && (NcMeetingStatus.MeetingOrganizerCancelled == cal.MeetingStatus || NcMeetingStatus.MeetingAttendeeCancelled == cal.MeetingStatus)) {
                     // Someone, most likely the server, has already marked the meeting as cancelled.
                     // No need to update the item again.
                     return;
                 }
                 cal.MeetingStatusIsSet = true;
-                cal.MeetingStatus = NcMeetingStatus.ForwardedMeetingCancelled;
+                cal.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
                 cal.Subject = "Canceled: " + cal.Subject;
             } else {
                 // Only one occurrence of a recurring meeting has been cancelled.
@@ -159,7 +159,7 @@ namespace NachoCore.Utils
                         EndTime = eventInfo.EndTime,
                         Subject = "Canceled: " + cal.Subject,
                         MeetingStatusIsSet = true,
-                        MeetingStatus = NcMeetingStatus.ForwardedMeetingCancelled,
+                        MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled,
                     };
                     allExceptions.Add (exception);
                 } else {
@@ -171,10 +171,10 @@ namespace NachoCore.Utils
                     foreach (var exception in exceptions) {
                         if (0 == exception.Deleted &&
                             (!exception.MeetingStatusIsSet ||
-                                (NcMeetingStatus.MeetingCancelled != exception.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != exception.MeetingStatus)))
+                                (NcMeetingStatus.MeetingOrganizerCancelled != exception.MeetingStatus && NcMeetingStatus.MeetingAttendeeCancelled != exception.MeetingStatus)))
                         {
                             exception.MeetingStatusIsSet = true;
-                            exception.MeetingStatus = NcMeetingStatus.ForwardedMeetingCancelled;
+                            exception.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
                             exception.Subject = "Canceled: " + exception.GetSubject ();
                         }
                     }
@@ -906,7 +906,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Convert from a C# DayOfWeek value to the DayOfWeek field within a recurrence.
         /// </summary>
-        protected static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
+        public static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
         {
             switch (day) {
             case DayOfWeek.Sunday:
@@ -1119,7 +1119,7 @@ namespace NachoCore.Utils
             int exceptionId = null == exception ? 0 : exception.Id;
             do {
                 DateTime nextDay = dayStart.AddDays (1.0);
-                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, true, c.Id, exceptionId);
+                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, c.UID, true, c.Id, exceptionId);
                 if (needsReminder) {
                     ev.SetReminder (reminderItem.GetReminder ());
                     needsReminder = false; // Only the first day should have a reminder.
@@ -1208,7 +1208,7 @@ namespace NachoCore.Utils
             var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
-                var e = McEvent.Create (c.AccountId, startTime, endTime, false, c.Id, 0);
+                var e = McEvent.Create (c.AccountId, startTime, endTime, c.UID, false, c.Id, 0);
                 if (c.ReminderIsSet) {
                     e.SetReminder (c.Reminder);
                 }
@@ -1223,7 +1223,7 @@ namespace NachoCore.Utils
                         if (DateTime.MinValue == exceptionEnd) {
                             exceptionEnd = endTime;
                         }
-                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, false, c.Id, exception.Id);
+                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.UID, false, c.Id, exception.Id);
                         if (exception.HasReminder ()) {
                             e.SetReminder (exception.GetReminder ());
                         }
