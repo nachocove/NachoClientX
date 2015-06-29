@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
@@ -258,14 +259,20 @@ namespace NachoClient.iOS
             // Subject label view
             var subject = Pretty.SubjectString (c.GetSubject ());
 
-            var dotView = cell.ContentView.ViewWithTag (DOT_TAG) as UIImageView;
             var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
             subjectLabelView.Hidden = false;
- 
             subjectLabelView.Text = subject;
+
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+
+            var dotView = cell.ContentView.ViewWithTag (DOT_TAG) as UIImageView;
             dotView.Frame = new CGRect (30, 20, 9, 9);
             var size = new CGSize (10, 10);
-            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
+            dotView.Image = Util.DrawCalDot (Util.CalendarColor (colorIndex), size);
             dotView.Hidden = false;
 
             // Duration label view
@@ -552,4 +559,3 @@ namespace NachoClient.iOS
         }
     }
 }
-
