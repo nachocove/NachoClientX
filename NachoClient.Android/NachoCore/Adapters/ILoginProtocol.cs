@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using Prompt = NachoCore.Utils.LoginProtocolControl.Prompt;
 
 namespace NachoCore
 {
@@ -10,9 +11,7 @@ namespace NachoCore
 
         void PromptForService ();
 
-        void ShowAdvancedConfiguration ();
-
-        void ShowAdvancedConfigurationWithError ();
+        void ShowAdvancedConfiguration (Prompt prompt);
 
         void ShowNoNetwork();
 

@@ -27,14 +27,19 @@ namespace NachoClient.iOS
         McAccount account;
         McAccount.AccountServiceEnum service;
 
-        public enum ConnectStatusEnum
+        public enum ConnectCallbackStatusEnum
         {
             Connect,
             Support,
             StartOver
         }
 
-        public delegate void onConnectCallback (ConnectStatusEnum status, McAccount account);
+        public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account);
+
+        public AdvancedLoginViewController (IntPtr handle) : base (handle)
+        {
+            service = McAccount.AccountServiceEnum.None;
+        }
 
         public override void ViewDidLoad ()
         {
@@ -93,7 +98,9 @@ namespace NachoClient.iOS
                 // Configus interruptus?
                 account = McAccount.GetAccountBeingConfigured ();
                 if (null != account) {
+                    email = account.EmailAddr;
                     service = account.AccountService;
+                    password = LoginHelpers.GetPassword (account);
                     BackEnd.Instance.Start (account.Id);
                 }
             }
@@ -128,15 +135,21 @@ namespace NachoClient.iOS
             PerformSegue ("SegueToAccountType", this);
         }
 
-        public void ShowAdvancedConfiguration ()
+        public void ShowAdvancedConfiguration (LoginProtocolControl.Prompt prompt)
         {
+            if (null != loginFields) {
+                loginFields.View.RemoveFromSuperview ();
+                loginFields = null;
+            }
+            waitScreen.HideView ();
+
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (service) {
             case McAccount.AccountServiceEnum.Exchange:
-                loginFields = new ExchangeFields (account, rect, onConnect);
+                loginFields = new ExchangeFields (account, prompt, rect, onConnect);
                 break;
             case McAccount.AccountServiceEnum.IMAP_SMTP:
-                loginFields = new IMapFields (account, rect, onConnect);
+                loginFields = new IMapFields (account, prompt, rect, onConnect);
                 break;
             default:
                 NcAssert.CaseError ();
@@ -145,12 +158,12 @@ namespace NachoClient.iOS
             View.AddSubview (loginFields.View);
         }
 
-        void onConnect (ConnectStatusEnum connect, McAccount account)
+        void onConnect (ConnectCallbackStatusEnum connect, McAccount account)
         {
             View.EndEditing (true);
 
             switch (connect) {
-            case ConnectStatusEnum.Connect:
+            case ConnectCallbackStatusEnum.Connect:
                 if (null == this.account) {
                     this.account = account;
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: onConnect");
@@ -159,17 +172,13 @@ namespace NachoClient.iOS
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NotYetStarted, "avl: onConnect");
                 }
                 break;
-            case ConnectStatusEnum.StartOver:
+            case ConnectCallbackStatusEnum.StartOver:
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.StartOver, "avl: onConnect");
                 break;
-            case ConnectStatusEnum.Support:
+            case ConnectCallbackStatusEnum.Support:
                 PerformSegue ("SegueToSupport", this);
                 break;
             }
-        }
-
-        public void ShowAdvancedConfigurationWithError ()
-        {
         }
 
         public void ShowNoNetwork ()
@@ -226,7 +235,15 @@ namespace NachoClient.iOS
 
         public void ShowCredReq ()
         {
-            PerformSegue ("SegueToAccountCredentials", new SegueHolder (true));
+            switch (service) {
+            case McAccount.AccountServiceEnum.Exchange:
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
+                ShowAdvancedConfiguration (LoginProtocolControl.Prompt.BadCredentials);
+                break;
+            default:
+                PerformSegue ("SegueToAccountCredentials", new SegueHolder (true));
+                break;
+            }
         }
 
         public void StartGoogleLogin ()
@@ -311,16 +328,7 @@ namespace NachoClient.iOS
         {
             RemoveWorkInProgress (() => NavigationController.PopToRootViewController (false));
         }
-
-
-
-        public AdvancedLoginViewController (IntPtr handle) : base (handle)
-        {
-            service = McAccount.AccountServiceEnum.None;
-        }
-
-
-
+            
         protected void ServiceSelected (McAccount.AccountServiceEnum service)
         {
             this.service = service;
@@ -364,6 +372,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1}", account.Id, cred.Id);
                 BackEnd.Instance.CredResp (account.Id);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
+                waitScreen.ShowView ();
+                return;
             }
 
             account = NcAccountHandler.Instance.CreateAccount (service, email, password);
@@ -546,12 +556,12 @@ namespace NachoClient.iOS
         public void ReturnToAdvanceView ()
         {
             // FIXME
-            waitScreen.DismissView ();
+            waitScreen.HideView ();
         }
 
         public void SegueToSupport ()
         {
-            waitScreen.DismissView ();
+            waitScreen.HideView ();
             PerformSegue ("SegueToSupport", this);
         }
 

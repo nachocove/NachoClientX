@@ -19,6 +19,13 @@ namespace NachoCore.Utils
             FinishWait,
         };
 
+        public enum Prompt
+        {
+            EnterInfo,
+            ServerConf,
+            BadCredentials,
+        };
+
         public class Events
         {
             public enum E : uint
@@ -95,7 +102,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.NotYetStarted, Act = Start, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.Running, Act = Noop, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.NoNetwork, Act = ShowNoNetwork, State = (uint)States.SubmitWait },
-                            new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
+                            new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowServerConfCallback, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CredReqCallback, Act = ShowCredReq, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CertAskCallback, Act = ShowCertAsk, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.PostAutoDPostInboxSync, Act = UpdateUI, State = (uint)States.SyncWait },
@@ -273,7 +280,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.NotYetStarted, Act = Start, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.Running, Act = Noop, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.NoNetwork, Act = ShowNoNetwork, State = (uint)States.SubmitWait },
-                            new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
+                            new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowServerConfCallback, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CredReqCallback, Act = ShowCredReq, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CertAskCallback, Act = ShowCertAsk, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.PostAutoDPreInboxSync, Act = UpdateUI, State = (uint)States.SyncWait },
@@ -365,6 +372,18 @@ namespace NachoCore.Utils
         {
         }
 
+        void ShowServerConfCallback()
+        {
+            ShowAdvancedConfiguration (Prompt.ServerConf);
+        }
+
+        void ShowAdvancedConfiguration()
+        {
+            ShowAdvancedConfiguration (Prompt.EnterInfo);
+        }
+
+        // ILoginProtocol
+
         void FinishUp ()
         {
             owner.FinishUp ();
@@ -375,17 +394,12 @@ namespace NachoCore.Utils
             owner.PromptForService ();
         }
 
-        void ShowAdvancedConfiguration ()
+        void ShowAdvancedConfiguration (Prompt prompt)
         {
-            owner.ShowAdvancedConfiguration ();
+            owner.ShowAdvancedConfiguration (prompt);
         }
 
-        void ShowAdvancedConfigurationWithError ()
-        {
-            owner.ShowAdvancedConfigurationWithError ();
-        }
-
-        void ShowNoNetwork()
+        void ShowNoNetwork ()
         {
             owner.ShowNoNetwork ();
         }

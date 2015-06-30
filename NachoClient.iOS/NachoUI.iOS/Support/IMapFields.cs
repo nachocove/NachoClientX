@@ -10,6 +10,8 @@ using CoreGraphics;
 using NachoCore.Model;
 using NachoCore.Utils;
 
+using Prompt = NachoCore.Utils.LoginProtocolControl.Prompt;
+
 namespace NachoClient.iOS
 {
     public class IMapFields : ILoginFields
@@ -56,13 +58,14 @@ namespace NachoClient.iOS
 
         McAccount account;
 
-        public IMapFields (McAccount account, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+        public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
         {
             this.onConnect = onConnect;
             this.account = account;
 
             showAdvancedSettings = true;
             CreateView (rect);
+            UpdatePrompt (prompt);
             Layout ();
 
             if (null != account) {
@@ -201,7 +204,7 @@ namespace NachoClient.iOS
         {
             scrollView.EndEditing (true);
             if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectStatusEnum.StartOver, null);
+                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.StartOver, null);
             }
         }
 
@@ -209,7 +212,7 @@ namespace NachoClient.iOS
         {
             scrollView.EndEditing (true);
             if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectStatusEnum.Support, null);
+                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Support, null);
             }
         }
 
@@ -222,7 +225,7 @@ namespace NachoClient.iOS
             }
 
             if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectStatusEnum.Connect, account);
+                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect, account);
             }
         }
 
@@ -292,7 +295,55 @@ namespace NachoClient.iOS
             ViewFramer.Create (contentView).Height (yOffset);
         }
 
-        public void LoadAccount ()
+        void UpdatePrompt (Prompt prompt)
+        {
+            switch (prompt) {
+            case Prompt.EnterInfo:
+                infoLabel.Text = "Please fill out the required credentials.";
+                infoLabel.TextColor = A.Color_NachoGreen;
+                break;
+            case Prompt.ServerConf:
+                infoLabel.Text = GetServerConfMessage ();
+                infoLabel.TextColor = A.Color_NachoRed;
+                break;
+            case Prompt.BadCredentials:
+                infoLabel.Text = "There seems to be a problem with your credentials.";
+                infoLabel.TextColor = A.Color_NachoRed;
+                break;
+            }
+        }
+
+        string GetServerConfMessage ()
+        {
+            var servers = McServer.QueryByAccountId<McServer> (account.Id);
+
+            foreach (var server in servers) {
+                var message = GetServerConfMessage (server);
+                if (null != message) {
+                    return message;
+                }
+            }
+            return "We had a problem find a server.";
+        }
+
+        // FIXME: How do we pull a msg from the McServer?
+        string GetServerConfMessage(McServer server)
+        {
+            string message;
+            string messagePrefix = "We had a problem finding the server";
+
+            if (null == server) {
+                message = messagePrefix + " for '" + account.EmailAddr + "'.";
+            } else if (null == server.UserSpecifiedServerName) {
+                message = messagePrefix + " '" + server.Host + "'.";
+            } else {
+                message = messagePrefix + " '" + server.UserSpecifiedServerName + "'.";
+            }
+            return message;
+        }
+
+
+        void LoadAccount ()
         {
             NcAssert.NotNull (account);
 

@@ -194,6 +194,11 @@ namespace NachoClient.iOS
             }
         }
 
+        public void HideView()
+        {
+            DismissView ();
+        }
+
         public void DismissView ()
         {
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
