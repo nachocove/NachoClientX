@@ -6,6 +6,7 @@ namespace NachoCore.Model
 {
     // McAccount.DeviceCapabilities was changed, removing CalWriter.  Update the device account with the new
     // set of capabilities.
+
     public class NcMigration33 : NcMigration
     {
         public override int GetNumberOfObjects ()

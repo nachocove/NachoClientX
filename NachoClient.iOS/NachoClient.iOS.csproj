@@ -1523,15 +1523,21 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcMailKitProtocolLogger.cs">
       <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Model\Migration\NcMigration31.cs" />
-    <Compile Include="NachoCore\Model\Migration\NcMigration32.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\ILoginProtocol.cs">
       <Link>NachoCore\Adapters\ILoginProtocol.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginProtocolControl.cs">
       <Link>NachoCore\Utils\LoginProtocolControl.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Model\Migration\NcMigration33.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration31.cs">
+      <Link>NachoCore\Model\Migration\NcMigration31.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration32.cs">
+      <Link>NachoCore\Model\Migration\NcMigration32.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration33.cs">
+      <Link>NachoCore\Model\Migration\NcMigration33.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
