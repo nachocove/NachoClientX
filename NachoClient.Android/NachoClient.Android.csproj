@@ -485,6 +485,8 @@
     <Compile Include="NachoUI.Android\Support\BodyRenderer.cs" />
     <Compile Include="NachoUI.Android\Support\BodyDownloader.cs" />
     <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />
+    <Compile Include="NachoCore\Adapters\ILoginProtocol.cs" />
+    <Compile Include="NachoCore\Utils\LoginProtocolControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
