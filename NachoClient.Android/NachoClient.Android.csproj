@@ -487,6 +487,9 @@
     <Compile Include="NachoUI.Android\Support\WebViewNoScroll.cs" />
     <Compile Include="NachoCore\Adapters\ILoginProtocol.cs" />
     <Compile Include="NachoCore\Utils\LoginProtocolControl.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration31.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration32.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration33.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
