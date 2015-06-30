@@ -721,12 +721,9 @@ namespace NachoClient.iOS
             var calendarName = (UILabel)View.ViewWithTag ((int)TagType.EVENT_CALENDAR_DETAIL_TAG);
             string accountName = account.DisplayName;
             string folderName = "(Unknown)";
-            var folderMapEntry = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (root.AccountId, root.Id, root.GetClassCode ()).FirstOrDefault ();
-            if (null != folderMapEntry) {
-                var folder = McFolder.QueryById<McFolder> (folderMapEntry.FolderId);
-                if (null != folder) {
-                    folderName = folder.DisplayName;
-                }
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (root.AccountId, root.Id).FirstOrDefault ();
+            if (null != folder) {
+                folderName = folder.DisplayName;
             }
             if (string.IsNullOrEmpty(accountName) || accountName == folderName) {
                 calendarName.Text = folderName;
