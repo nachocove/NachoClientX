@@ -1524,6 +1524,13 @@
       <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
     </Compile>
     <Compile Include="NachoCore\Model\Migration\NcMigration31.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration32.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\ILoginProtocol.cs">
+      <Link>NachoCore\Adapters\ILoginProtocol.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginProtocolControl.cs">
+      <Link>NachoCore\Utils\LoginProtocolControl.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

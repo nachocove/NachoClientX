@@ -16,7 +16,7 @@ namespace NachoClient.iOS
         public delegate void EditingChanged (UITextField textField);
 
         public EditingChanged EditingChangedCallback;
-      
+
         public AdvancedTextField (string labelText, string placeHolder, bool hasBorder, CGRect rect, UIKeyboardType keyboardType = UIKeyboardType.Default) : base (rect)
         {
             this.BackgroundColor = UIColor.White;
@@ -50,7 +50,7 @@ namespace NachoClient.iOS
             textField.EditingChanged += TextField_EditingChanged;
         }
 
-        public bool IsNullOrEmpty()
+        public bool IsNullOrEmpty ()
         {
             return String.IsNullOrEmpty (textField.Text);
         }
@@ -87,6 +87,7 @@ namespace NachoClient.iOS
             }
             return false;
         }
+
     }
 }
 

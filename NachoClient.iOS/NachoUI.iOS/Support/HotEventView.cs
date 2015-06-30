@@ -211,8 +211,12 @@ namespace NachoClient.iOS
             subjectLabelView.Text = subject;
             subjectLabelView.Hidden = false;
 
-            var size = new CGSize (10, 10);
-            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            dotView.Image = Util.DrawCalDot (Util.CalendarColor (colorIndex), new CGSize (10, 10));
             dotView.Hidden = false;
 
             var startString = "";
