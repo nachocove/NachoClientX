@@ -64,7 +64,14 @@ namespace NachoClient.iOS
 
             // Fresh start, let's create the first account
             if (null == NcApplication.Instance.Account) {
-                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch");
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch because account is null");
+                PerformSegue ("SegueToLaunch", this);
+                return;
+            }
+
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch because account is device account");
                 PerformSegue ("SegueToLaunch", this);
                 return;
             }
@@ -101,6 +108,11 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+
+            if (NcApplication.Instance.IsUp ()) {
+                GetThisPartyStarted ();
+                return;
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
