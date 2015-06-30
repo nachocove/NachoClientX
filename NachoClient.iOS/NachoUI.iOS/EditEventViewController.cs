@@ -110,6 +110,7 @@ namespace NachoClient.iOS
         protected bool suppressLayout = false;
 
         protected bool calendarItemIsMissing = false;
+        protected bool noCalendarSupport = false;
 
         protected event Action OpenKeyboardAction;
 
@@ -216,7 +217,18 @@ namespace NachoClient.iOS
             }
             if (0 == (account.AccountCapability & McAccount.AccountCapabilityEnum.CalWriter)) {
                 Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
-                account = McAccount.GetDeviceAccount ();
+                account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.CalWriter).FirstOrDefault ();
+                if (null == account) {
+                    Log.Warn (Log.LOG_CALENDAR,
+                        "The current account does not support writing to calendars, and no suitable account could be found.");
+                    noCalendarSupport = true;
+                    // Need to set the account to something, to get through creating the view hierarchy.
+                    account = NcApplication.Instance.Account;
+                } else {
+                    Log.Info (Log.LOG_CALENDAR,
+                        "The current account does not support writing to calendars.  Using a different account, {0}, that has calendar support.",
+                        account.DisplayName);
+                }
             }
         }
 
@@ -244,6 +256,16 @@ namespace NachoClient.iOS
 
             if (calendarItemIsMissing) {
                 NcAlertView.Show (this, "Event Deleted", "The event can't be edited because it was deleted.",
+                    new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
+                        NavigationController.PopViewController (true);
+                    }));
+            }
+
+            if (noCalendarSupport) {
+                var message = string.Format (
+                    "This version of the app does not support calendars for {0} accounts. Calendar support will be available in a future release.",
+                    McAccount.AccountServiceName (account.AccountService));
+                NcAlertView.Show (this, "No Calendar Support", message,
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                         NavigationController.PopViewController (true);
                     }));
@@ -687,6 +709,12 @@ namespace NachoClient.iOS
             suppressLayout = true;
 
             calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+            if (0 == calendars.Count()) {
+                // The current account does not support calendars.  But setting up the UI always expects there to be
+                // at least one calendar in the list.  Use the device calendar to keep the UI happy until an error
+                // message can be popped up.
+                calendars = new NachoFolders (McAccount.GetDeviceAccount().Id, NachoFolders.FilterForCalendars);
+            }
 
             if (CalendarItemEditorAction.create == action) {
                 NavigationItem.Title = "New Event";
