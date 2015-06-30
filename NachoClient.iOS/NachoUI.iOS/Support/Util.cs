@@ -1252,6 +1252,14 @@ namespace NachoClient
             }
         }
 
+        public static void SetHidden(bool hidden, params UIView[] views)
+        {
+            foreach(var view in views) {
+                view.Hidden = hidden;
+            }
+        }
+
+
         #endregion
     }
 }

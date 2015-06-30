@@ -12,7 +12,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class ExchangeFields : UIView, ILoginFields
+    public class ExchangeFields : ILoginFields
     {
         protected nfloat CELL_HEIGHT = 44;
 
@@ -22,15 +22,22 @@ namespace NachoClient.iOS
         AdvancedTextField usernameView;
         AdvancedTextField passwordView;
 
+        UILabel infoLabel;
         UIButton connectButton;
         UIButton advancedButton;
+        UIButton startOverButton;
+        UIButton customerSupportButton;
+
+
+        UIScrollView scrollView;
+        UIView contentView;
 
         List<AdvancedTextField> inputViews = new List<AdvancedTextField> ();
 
         UIView emailWhiteInset;
         UIView domainWhiteInset;
 
-        McServer Server { get; set; }
+        bool showAdvancedSettings;
 
         public bool showAdvanced {
             get;
@@ -38,136 +45,85 @@ namespace NachoClient.iOS
         }
 
         public UIView View {
-            get { return this; }
+            get { return scrollView; }
         }
 
-        public string emailText {
-            get {
-                return emailView.textField.Text;
-            }
-            set {
-                emailView.textField.Text = value;
-            }
-        }
-
-        public string passwordText {
-            get {
-                return passwordView.textField.Text;
-            }
-            set {
-                passwordView.textField.Text = value;
-            }
-        }
-
-        public string serverText {
-            get {
-                return serverView.textField.Text;
-            }
-            set {
-                serverView.textField.Text = value;
-            }
-        }
-
-        public string usernameText {
-            get {
-                return usernameView.textField.Text;
-            }
-            set {
-                usernameView.textField.Text = value;
-            }
-        }
-
-        public void HighlightEmailError ()
-        {
-            setTextToRed (new AdvancedTextField[] { emailView });
-        }
-
-        public void HighlightServerConfError ()
-        {
-            if (serverView.IsNullOrEmpty ()) {
-                setTextToRed (new AdvancedTextField[] { emailView });
-            } else {
-                setTextToRed (new AdvancedTextField[] { serverView });
-            }
-        }
-
-        public void HighlightUsernameError ()
-        {
-            setTextToRed (new AdvancedTextField[] { domainView, usernameView });
-        }
-
-        public void ClearHighlights ()
-        {
-            setTextToRed (new AdvancedTextField[] { });
-        }
-
-        public void HighlightCredentials ()
-        {
-            setTextToRed (new AdvancedTextField[] {
-                emailView,
-                domainView,
-                usernameView,
-                passwordView
-            });
-        }
-
+        McAccount account;
         AdvancedLoginViewController.onConnectCallback onConnect;
-        McAccount.AccountServiceEnum service;
 
-        public ExchangeFields (CGRect rect, McAccount.AccountServiceEnum service, AdvancedLoginViewController.onConnectCallback onConnect) : base (rect)
+        public ExchangeFields (McAccount account, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
         {
-            this.service = service;
+            this.account = account;
             this.onConnect = onConnect;
-            CreateView ();
+
+            showAdvancedSettings = true;
+
+            CreateView (rect);
+            Layout ();
+
+            if (null != account) {
+                LoadAccount ();
+            }
         }
 
-        public McAccount CreateAccount ()
+        void CreateView (CGRect rect)
         {
-            var account = NcAccountHandler.Instance.CreateAccount (service, emailView.textField.Text, passwordView.textField.Text);
-            return account;
-        }
+            scrollView = new UIScrollView (rect);
+            scrollView.BackgroundColor = A.Color_NachoGreen;
+            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
 
-        void CreateView ()
-        {
+            contentView = new UIView (View.Frame);
+            contentView.BackgroundColor = A.Color_NachoNowBackground;
+            scrollView.AddSubview (contentView);
+
             nfloat yOffset = 0;
 
-            emailView = new AdvancedTextField ("Email", "joe@bigdog.com", true, new CGRect (0, yOffset, this.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            infoLabel = new UILabel (new CGRect (20, 15, View.Frame.Width - 40, 50));
+            infoLabel.Font = A.Font_AvenirNextRegular17;
+            infoLabel.BackgroundColor = A.Color_NachoNowBackground;
+            infoLabel.TextColor = A.Color_NachoRed;
+            infoLabel.Lines = 2;
+            infoLabel.TextAlignment = UITextAlignment.Center;
+            contentView.AddSubview (infoLabel);
+            yOffset = infoLabel.Frame.Bottom + 15;
+
+            emailView = new AdvancedTextField ("Email", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             emailView.EditingChangedCallback = MaybeEnableConnect;
-            this.AddSubview (emailView);
+            contentView.AddSubview (emailView);
             yOffset += CELL_HEIGHT;
 
-            passwordView = new AdvancedTextField ("Password", "******", true, new CGRect (0, yOffset, this.Frame.Width + 1, CELL_HEIGHT));
+            passwordView = new AdvancedTextField ("Password", "******", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT));
             passwordView.EditingChangedCallback = MaybeEnableConnect;
             passwordView.textField.SecureTextEntry = true;
-            this.AddSubview (passwordView);
+            contentView.AddSubview (passwordView);
             yOffset += CELL_HEIGHT;
 
             emailWhiteInset = new UIView (new CGRect (0, emailView.Frame.Top + (CELL_HEIGHT / 2), 15, CELL_HEIGHT));
             emailWhiteInset.BackgroundColor = UIColor.White;
-            this.AddSubview (emailWhiteInset);
+            contentView.AddSubview (emailWhiteInset);
 
             yOffset += 25;
-            serverView = new AdvancedTextField ("Server", "Server", true, new CGRect (0, yOffset, this.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            serverView = new AdvancedTextField ("Server", "Server", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             serverView.EditingChangedCallback = MaybeEnableConnect;
 
-            this.AddSubview (serverView);
+            contentView.AddSubview (serverView);
             yOffset += CELL_HEIGHT;
 
             yOffset += 25;
-            domainView = new AdvancedTextField ("Domain", "Domain", true, new CGRect (0, yOffset, this.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            domainView = new AdvancedTextField ("Domain", "Domain", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             domainView.EditingChangedCallback = MaybeEnableConnect;
 
-            this.AddSubview (domainView);
+            contentView.AddSubview (domainView);
             yOffset += CELL_HEIGHT;
-            usernameView = new AdvancedTextField ("Username", "Username", true, new CGRect (0, yOffset, this.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            usernameView = new AdvancedTextField ("Username", "Username", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             usernameView.EditingChangedCallback = MaybeEnableConnect;
 
-            this.AddSubview (usernameView);
+            contentView.AddSubview (usernameView);
             yOffset += CELL_HEIGHT;
 
             domainWhiteInset = new UIView (new CGRect (0, domainView.Frame.Top + (CELL_HEIGHT / 2), 15, CELL_HEIGHT));
             domainWhiteInset.BackgroundColor = UIColor.White;
-            this.AddSubview (domainWhiteInset);
+            contentView.AddSubview (domainWhiteInset);
 
             connectButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
             connectButton.AccessibilityLabel = "Connect";
@@ -180,7 +136,7 @@ namespace NachoClient.iOS
             connectButton.Layer.MasksToBounds = true;
             connectButton.TouchUpInside += ConnectButton_TouchUpInside;
 
-            this.AddSubview (connectButton);
+            contentView.AddSubview (connectButton);
 
             advancedButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
             advancedButton.AccessibilityLabel = "Advanced Sign In";
@@ -189,31 +145,82 @@ namespace NachoClient.iOS
             advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
             advancedButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            advancedButton.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                showAdvanced = true;
-            };
-            this.AddSubview (advancedButton);
-
+            advancedButton.TouchUpInside += AdvancedButton_TouchUpInside;
+            contentView.AddSubview (advancedButton);
             yOffset = advancedButton.Frame.Bottom + 20;
+
+            customerSupportButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
+            customerSupportButton.AccessibilityLabel = "Customer Support";
+            customerSupportButton.BackgroundColor = A.Color_NachoNowBackground;
+            customerSupportButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            customerSupportButton.SetTitle ("Customer Support", UIControlState.Normal);
+            customerSupportButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            customerSupportButton.TouchUpInside += CustomerSupportButton_TouchUpInside;
+            contentView.AddSubview (customerSupportButton);
+            yOffset = customerSupportButton.Frame.Bottom + 20;
+
+            startOverButton = new UIButton (new CGRect (50, yOffset, View.Frame.Width - 100, 20));
+            startOverButton.AccessibilityLabel = "Start Over";
+            startOverButton.BackgroundColor = A.Color_NachoNowBackground;
+            startOverButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            startOverButton.SetTitle ("Start Over", UIControlState.Normal);
+            startOverButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            startOverButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            startOverButton.TouchUpInside += StartOverButton_TouchUpInside;
+            contentView.AddSubview (startOverButton);
+            yOffset = startOverButton.Frame.Bottom + 20;
 
             inputViews.Add (emailView);
             inputViews.Add (serverView);
             inputViews.Add (domainView);
             inputViews.Add (usernameView);
             inputViews.Add (passwordView);
+
+        }
+
+        void StartOverButton_TouchUpInside (object sender, EventArgs e)
+        {
+            scrollView.EndEditing (true);
+            if (null != onConnect) {
+                onConnect (AdvancedLoginViewController.ConnectStatusEnum.StartOver, null);
+            }
+        }
+
+        void CustomerSupportButton_TouchUpInside (object sender, EventArgs e)
+        {
+            scrollView.EndEditing (true);
+            if (null != onConnect) {
+                onConnect (AdvancedLoginViewController.ConnectStatusEnum.Support, null);
+            }
         }
 
         void ConnectButton_TouchUpInside (object sender, EventArgs e)
         {
-            if (null != onConnect) {
-                onConnect ();
+            scrollView.EndEditing (true);
+
+            if (!SaveUserSettings ()) {
+                return;
             }
+
+            if (null != onConnect) {
+                onConnect (AdvancedLoginViewController.ConnectStatusEnum.Connect, account);
+            }
+        }
+
+        void AdvancedButton_TouchUpInside (object sender, EventArgs e)
+        {
+            showAdvancedSettings = true;
+            Layout ();
         }
 
         public void Layout ()
         {
             nfloat yOffset = 0;
+
+            ViewFramer.Create (infoLabel).Y (yOffset);
+            yOffset = infoLabel.Frame.Bottom + 15;
+
             ViewFramer.Create (emailView).Y (yOffset);
             yOffset += CELL_HEIGHT;
 
@@ -223,7 +230,7 @@ namespace NachoClient.iOS
             ViewFramer.Create (emailWhiteInset).Y (emailView.Frame.Top + (CELL_HEIGHT / 2));
             yOffset += 20;
 
-            if (showAdvanced) {
+            if (showAdvancedSettings) {
                 ViewFramer.Create (serverView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
 
@@ -242,73 +249,49 @@ namespace NachoClient.iOS
             ViewFramer.Create (connectButton).Y (yOffset);
             yOffset = connectButton.Frame.Bottom + 20;
 
-            advancedButton.Hidden = showAdvanced || (McAccount.AccountServiceEnum.Exchange != service);
-
-            if (!advancedButton.Hidden) {
+            if (!showAdvancedSettings) {
                 ViewFramer.Create (advancedButton).Y (yOffset);
                 yOffset = advancedButton.Frame.Bottom + 20;
             }
+            advancedButton.Hidden = showAdvancedSettings;
 
-            serverView.Hidden = !showAdvanced;
-            domainView.Hidden = !showAdvanced;
-            usernameView.Hidden = !showAdvanced;
-            domainWhiteInset.Hidden = !showAdvanced;
+            ViewFramer.Create (customerSupportButton).Y (yOffset);
+            yOffset = customerSupportButton.Frame.Bottom + 20;
 
-            ViewFramer.Create (this).Height (yOffset);
+            ViewFramer.Create (startOverButton).Y (yOffset);
+            yOffset = startOverButton.Frame.Bottom + 20;
+
+            // Padding
+            yOffset += 20;
+
+            Util.SetHidden (!showAdvancedSettings, serverView, domainView, usernameView, domainWhiteInset);
+
+            scrollView.ContentSize = new CGSize (scrollView.Frame.Width, yOffset);
+            ViewFramer.Create (contentView).Height (yOffset);
         }
 
-        /// <summary>
-        /// Refreshs the server.  The server potentially changes
-        /// </summary>
-        public void RefreshTheServer (ref AdvancedLoginViewController.AccountSettings theAccount)
+        public void LoadAccount ()
         {
-            MaybeEnableConnect (null);
-            if (null != theAccount.Account) {
-                // FIXME STEVE
-                Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).FirstOrDefault ();
-                if (null != Server) {
-                    if (null == Server.UserSpecifiedServerName) {
-                        serverView.textField.Text = Server.Host;
-                        Log.Info (Log.LOG_UI, "avl: refresh server {0}", serverView.textField.Text);
-                    } else {
-                        serverView.textField.Text = Server.UserSpecifiedServerName;
-                        Log.Info (Log.LOG_UI, "avl: refresh user defined server {0}", serverView.textField.Text);
-                    }
-                    return;
-                }
+            NcAssert.NotNull (account);
+
+            var creds = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+            NcAssert.NotNull (creds);
+
+            if (creds.UserSpecifiedUsername) {
+                string domain, username;
+                McCred.Split (creds.Username, out domain, out username);
+                usernameView.textField.Text = username;
+                domainView.textField.Text = domain;
             }
-            Log.Info (Log.LOG_UI, "avl: refresh no server");
-            serverView.textField.Text = "";
-        }
+            passwordView.textField.Text = creds.GetPassword ();
 
-        public void RefreshUI (AdvancedLoginViewController.AccountSettings theAccount)
-        {
-            MaybeEnableConnect (null);
-            foreach (var v in inputViews) {
-                v.textField.Text = "";
-                v.textField.TextColor = UIColor.Black;
-            }
+            var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();
 
-            if (null != theAccount.Account) {
-                emailView.textField.Text = theAccount.Account.EmailAddr;
-            }
-
-            if (null != theAccount.Credentials) {
-                if (theAccount.Credentials.UserSpecifiedUsername) {
-                    string domain, username;
-                    McCred.Split (theAccount.Credentials.Username, out domain, out username);
-                    usernameView.textField.Text = username;
-                    domainView.textField.Text = domain;
-
-                }
-                passwordView.textField.Text = theAccount.Credentials.GetPassword ();
-            }
-
-            if (null != Server) {
-                if (null == Server.UserSpecifiedServerName) {
-                    serverView.textField.Text = Server.Host;
+            if (null != server) {
+                if (null == server.UserSpecifiedServerName) {
+                    serverView.textField.Text = server.Host;
                 } else {
-                    serverView.textField.Text = Server.UserSpecifiedServerName;
+                    serverView.textField.Text = server.UserSpecifiedServerName;
                 }
             }
         }
@@ -317,50 +300,63 @@ namespace NachoClient.iOS
         /// Updates McCred and McAccount from the UI
         /// in both theAccount and the database.
         /// </summary>
-        public void SaveUserSettings (ref AdvancedLoginViewController.AccountSettings theAccount)
+        public bool SaveUserSettings ()
         {
-            NcAssert.NotNull (theAccount.Account);
-            NcAssert.NotNull (theAccount.Credentials);
+            if (!CanUserConnect ()) {
+                return false;
+            }
+            var email = emailView.textField.Text.Trim ();
+            var password = passwordView.textField.Text;
 
-            // Save email & password
-            theAccount.Account.EmailAddr = emailView.textField.Text.Trim ();
-            theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
+            if (null == account) {
+                account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.Exchange, email, password);
+            }
+            var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+
+            account.EmailAddr = email;
+            account.Update ();
 
             // If the user clears the username, we'll let them start over
             if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
-                theAccount.Credentials.UserSpecifiedUsername = false;
-                theAccount.Credentials.Username = theAccount.Account.EmailAddr;
+                cred.UserSpecifiedUsername = false;
+                cred.Username = email;
             } else {
                 // Otherwise, we'll use what they've entered
-                theAccount.Credentials.UserSpecifiedUsername = true;
-                theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
+                cred.UserSpecifiedUsername = true;
+                cred.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
             }
+            cred.Update();
                 
-            if (showAdvanced) {
-                SaveServerSettings (ref theAccount);
+            if (showAdvancedSettings) {
+                SaveServerSettings ();
             }
 
-            // Update the database
-            theAccount.Account.Update ();
-            theAccount.Credentials.Update ();
-            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", theAccount.Account.Id, theAccount.Credentials.Id, theAccount.Credentials.UserSpecifiedUsername);
+            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", account.Id, cred.Id, cred.UserSpecifiedUsername);
+
+            return true;
         }
 
         /// <summary>
         /// Saves the server settings.
         /// </summary>
-        private void SaveServerSettings (ref AdvancedLoginViewController.AccountSettings theAccount)
+        private void SaveServerSettings ()
         {
+            var server = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
+
             // if there is a server record and the text is empty, delete the server record. Let the user start over.
             if (String.IsNullOrEmpty (serverView.textField.Text)) {
-                DeleteTheServer ();
-                return;
+                if (null != server) {
+                    server.Delete ();
+                    Log.Info (Log.LOG_UI, "avl: delete server {0}", server.BaseUriString ());
+                    return;
+                }
             }
 
             // did the server came from the back end, we're done
-            if (null != Server) {
-                if (null == Server.UserSpecifiedServerName) {
-                    if (String.Equals (Server.Host, serverView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
+            if (null != server) {
+                if (null == server.UserSpecifiedServerName) {
+                    if (String.Equals (server.Host, serverView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
+                        // FIXME: If the email address changed, delete the server
                         Log.Info (Log.LOG_UI, "avl: user did not enter server name");
                         return;
                     }
@@ -368,66 +364,24 @@ namespace NachoClient.iOS
             }
 
             // the user specified the host name, save it
-            if (null == Server) {
-                Server = new McServer () { 
-                    AccountId = theAccount.Account.Id,
+            if (null == server) {
+                server = new McServer () { 
+                    AccountId = account.Id,
                     Capabilities = McAccount.ActiveSyncCapabilities,
                 };
-                Server.Insert ();
+                server.Insert ();
             }
             var temp = new McServer ();
             var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
             NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
             temp.Capabilities = McAccount.ActiveSyncCapabilities;
-            if (!Server.IsSameServer (temp)) {
-                Server.CopyFrom (temp);
-                Server.UserSpecifiedServerName = serverView.textField.Text;
-                Server.UsedBefore = false;
-                Server.Update ();
-                Log.Info (Log.LOG_UI, "avl: update server {0}", Server.UserSpecifiedServerName);
+            if (!server.IsSameServer (temp)) {
+                server.CopyFrom (temp);
+                server.UserSpecifiedServerName = serverView.textField.Text;
+                server.UsedBefore = false;
+                server.Update ();
+                Log.Info (Log.LOG_UI, "avl: update server {0}", server.UserSpecifiedServerName);
             }
-        }
-
-        public void MaybeDeleteTheServer ()
-        {
-            Log.Info (Log.LOG_UI, "avl: maybe delete server");
-            if ((null != Server) && (null == Server.UserSpecifiedServerName)) {
-                Log.Info (Log.LOG_UI, "avl: maybe delete server {0}", Server.BaseUriString ());
-                DeleteTheServer ();
-            }
-        }
-
-        void DeleteTheServer ()
-        {
-            if (null != Server) {
-                Log.Info (Log.LOG_UI, "avl: delete server {0}", Server.BaseUriString ());
-                Server.Delete ();
-                Server = null;
-            }
-        }
-
-        private void setTextToRed (AdvancedTextField[] whichViews)
-        {
-            foreach (var textView in inputViews) {
-                if (whichViews.Contains (textView)) {
-                    textView.textField.TextColor = A.Color_NachoRed;
-                } else {
-                    textView.textField.TextColor = UIColor.Black;
-                }
-            }
-        }
-
-        public string GetServerConfMessage (AdvancedLoginViewController.AccountSettings theAccount, string messagePrefix)
-        {
-            string message;
-            if (null == Server) {
-                message = messagePrefix + " for '" + theAccount.Account.EmailAddr + "'.";
-            } else if (null == Server.UserSpecifiedServerName) {
-                message = messagePrefix + " '" + Server.Host + "'.";
-            } else {
-                message = messagePrefix + " '" + Server.UserSpecifiedServerName + "'.";
-            }
-            return message;
         }
 
         bool haveEnteredEmailAndPassword ()
@@ -446,30 +400,46 @@ namespace NachoClient.iOS
             }
         }
 
-        public AdvancedLoginViewController.LoginStatus CanUserConnect (out string nuance)
+        void SetRedText (AdvancedTextField field, string text)
         {
-            nuance = "";
+            infoLabel.Text = text;
+        }
 
+        bool CanUserConnect ()
+        {
             if (emailView.IsNullOrEmpty ()) {
-                return AdvancedLoginViewController.LoginStatus.EnterInfo;
+                SetRedText (emailView, "Enter an email address");
+                return false;
             }
             if (passwordView.IsNullOrEmpty ()) {
-                return AdvancedLoginViewController.LoginStatus.EnterInfo;
+                SetRedText (passwordView, "Enter a password");
             }
             string serviceName;
             var emailAddress = emailView.textField.Text;
             if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                return AdvancedLoginViewController.LoginStatus.InvalidEmailAddress;
+                var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
+                SetRedText (emailView, nuance);
+                return false;
             }
-            string serverName = serverView.textField.Text;
-            if (!String.IsNullOrEmpty (serverName)) {
-                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverName)) {
-                    return AdvancedLoginViewController.LoginStatus.InvalidServerName;
-                }
-            }
-            return AdvancedLoginViewController.LoginStatus.OK;
+
+            return true;
         }
+
+
+        //
+        //            // If only password has changed & backend is in CredWait, do cred resp
+        //            if (!freshAccount) {
+        //                if (!String.Equals (gOriginalPassword, loginFields.passwordText, StringComparison.Ordinal)) {
+        //                    Log.Info (Log.LOG_UI, "avl: onConnect retry password");
+        //                    // FIXME STEVE
+        //                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+        //                    if (BackEndStateEnum.CredWait == backEndState) {
+        //                        BackEnd.Instance.CredResp (theAccount.Account.Id);
+        //                        waitScreen.ShowView ("Verifying Your Credentials...");
+        //                        return;
+        //                    }
+        //                }
+        //            }
 
     }
 }
