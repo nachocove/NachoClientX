@@ -266,6 +266,15 @@ namespace NachoCore.Model
 
         public bool FastNotificationEnabled { get; set; }
 
+        /// <summary>
+        /// Does this account have the given capability or capabilities?
+        /// </summary>
+        /// <param name="capability">A combination of capabilities from AccountCapabilityEnum</param>
+        public bool HasCapability (McAccount.AccountCapabilityEnum capability)
+        {
+            return (AccountCapability & capability) == capability;
+        }
+
         public static IEnumerable<McAccount> QueryByEmailAddr (string emailAddr)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr);
@@ -281,7 +290,7 @@ namespace NachoCore.Model
             List<McAccount> result = new List<McAccount> ();
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (McAccount acc in accounts) {
-                if (accountCapabilities == (accountCapabilities & acc.AccountCapability)) {
+                if (acc.HasCapability (accountCapabilities)) {
                     result.Add (acc);
                 }
             }
