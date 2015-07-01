@@ -390,13 +390,8 @@ namespace NachoClient.iOS
             }
 
             // Initialize Google
-            var gglError = new NSError ();
-            var gglInstance = Google.iOS.GGLContext.SharedInstance;
-            gglInstance.ConfigureWithError (ref gglError);
-            if (null != gglError) {
-                // FIXME: Always reporting error
-                Log.Error (Log.LOG_UI, "Google GGLContext initialize has error: {0}", gglError);
-            }
+            var googleInfo = NSDictionary.FromFile("GoogleService-Info.plist");
+            GIDSignIn.SharedInstance.ClientID = googleInfo[new NSString("CLIENT_ID")].ToString();
 
             NcKeyboardSpy.Instance.Init ();
 

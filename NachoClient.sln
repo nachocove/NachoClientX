@@ -662,7 +662,7 @@ Global
 		$7.inheritsScope = text/x-csharp
 		$7.scope = text/x-csharp
 		$0.TextStylePolicy = $8
-		$8.FileWidth = 120
+		$8.FileWidth = 160
 		$8.NoTabsAfterNonTabs = True
 		$8.inheritsSet = VisualStudio
 		$8.inheritsScope = text/plain
@@ -803,5 +803,14 @@ Global
 		$34.NamingStyle = PascalCase
 		$34.IncludeInstanceMembers = True
 		$34.IncludeStaticEntities = True
+		$0.TextStylePolicy = $36
+		$36.inheritsSet = null
+		$36.scope = application/x-csproject
+		$0.XmlFormattingPolicy = $37
+		$37.inheritsSet = null
+		$37.scope = application/x-csproject
+		$0.TextStylePolicy = $38
+		$38.inheritsSet = null
+		$38.scope = application/t4-template
 	EndGlobalSection
 EndGlobal

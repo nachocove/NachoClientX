@@ -4,6 +4,8 @@ using System;
 
 namespace NachoCore.Model
 {
+    // Fill in the UID field in McEvents.
+
     public class NcMigration31 : NcMigration
     {
         public override int GetNumberOfObjects ()
@@ -21,4 +23,3 @@ namespace NachoCore.Model
         }
     }
 }
-
