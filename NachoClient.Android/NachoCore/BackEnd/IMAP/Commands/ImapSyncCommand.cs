@@ -165,19 +165,17 @@ namespace NachoCore.IMAP
 
             // Process any new or changed messages. This will also tell us any messages that vanished.
             UniqueIdSet vanished;
-            UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
-
+            UniqueIdSet newOrChanged;
+            GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished, out newOrChanged);
+            if (newOrChanged.Any ()) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+            }
             // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
             toDelete.AddRange (vanished);
             var deleted = deleteEmails (toDelete);
             if (deleted.Any ()) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
-
-            if (!deleted.Any () && !newOrChanged.Any ()) {
-                Log.Warn (Log.LOG_IMAP, "{0}: Nothing was done.", Synckit.Folder.ImapFolderNameRedacted ());
-            }
-
             // remember where we sync'd
             uint MaxSynced = Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced);
             uint MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
@@ -191,7 +189,7 @@ namespace NachoCore.IMAP
                 var target = (McFolder)record;
                 target.ImapUidHighestUidSynced = MaxSynced;
                 target.ImapUidLowestUidSynced = MinSynced;
-                target.ImapLastUidSynced = MinSynced;
+                target.ImapLastUidSynced = Synckit.SyncSet.Min ().Id;
                 return true;
             });
 
@@ -223,39 +221,43 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
-        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
+        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished, out UniqueIdSet newOrChanged)
         {
+            newOrChanged = new UniqueIdSet ();
             Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Message summaries {1}", Synckit.Folder.ImapFolderNameRedacted (), uidset.ToString ());
 
             NcCapture cap;
+            UniqueIdSet summaryUids = new UniqueIdSet ();
             IList<IMessageSummary> imapSummaries = getMessageSummaries (mailKitFolder, uidset);
-
-            List<MailSummary> summaries = new List<MailSummary> ();
             if (imapSummaries.Any ()) {
                 cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
                 foreach (var imapSummary in imapSummaries) {
                     if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
                         continue;
                     }
-                    var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                    summaries.Add (new MailSummary () {
-                        imapSummary = imapSummary as MessageSummary,
-                        preview = preview,
-                    });
+                    bool changed1;
+                    MessageSummary summ = imapSummary as MessageSummary;
+                    var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1);
+                    if (changed1) {
+                        Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: message UID {1} was modified or added", Synckit.Folder.ImapFolderNameRedacted (), imapSummary.UniqueId.Value.Id);
+                        newOrChanged.Add (summ.UniqueId.Value);
+                    }
+                    if (null == emailMessage.BodyPreview) {
+                        Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: message UID {1} needs preview", Synckit.Folder.ImapFolderNameRedacted (), imapSummary.UniqueId.Value.Id);
+                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                        if (!string.IsNullOrEmpty (preview)) {
+                            emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.BodyPreview = preview;
+                                target.IsIncomplete = false;
+                                return true;
+                            });
+                        }
+                    }
+                    summaryUids.Add (imapSummary.UniqueId.Value);
                 }
                 cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "Retrieved {0} previews in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
-            }
-            bool somethingChanged = false;
-            UniqueIdSet summaryUids = new UniqueIdSet ();
-            foreach (var summary in summaries) {
-                // FIXME use NcApplyServerCommand framework.
-                ServerSaysAddOrChangeEmail (BEContext.Account.Id, summary, Synckit.Folder);
-                somethingChanged = true;
-                summaryUids.Add (summary.imapSummary.UniqueId.Value);
-            }
-            if (somethingChanged) {
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds);
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
             return summaryUids;
@@ -267,7 +269,11 @@ namespace NachoCore.IMAP
             IList<IMessageSummary> imapSummaries = null;
             try {
                 cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
+                if (Synckit.Headers.Any ()) {
+                    imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
+                } else {
+                    imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
+                }
                 cap.Stop ();
                 Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
             } catch (ImapProtocolException) {
@@ -301,27 +307,31 @@ namespace NachoCore.IMAP
             return imapSummaries;
         }
 
-        public static McEmailMessage ServerSaysAddOrChangeEmail (int accountId, MailSummary summary, McFolder folder)
+        public static McEmailMessage ServerSaysAddOrChangeEmail (int accountId, MessageSummary imapSummary, McFolder folder, out bool changed)
         {
-            if (null == summary.imapSummary.UniqueId || string.Empty == summary.imapSummary.UniqueId.Value.ToString ()) {
+            changed = false;
+            if (null == imapSummary.UniqueId || string.Empty == imapSummary.UniqueId.Value.ToString ()) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
                 return null;
             }
 
-            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, summary.imapSummary.UniqueId.Value);
+            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, imapSummary.UniqueId.Value);
             bool justCreated = false;
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
                 try {
-                    updateFlags (emailMessage, summary.imapSummary.Flags.GetValueOrDefault (), summary.imapSummary.UserFlags);
+                    changed = updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
             } else {
+                changed = true;
                 try {
-                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, summary.imapSummary);
-                    updateFlags (emailMessage, summary.imapSummary.Flags.GetValueOrDefault (), summary.imapSummary.UserFlags);
-                    emailMessage.BodyPreview = summary.preview;
+                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary);
+                    updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    if (null == emailMessage.BodyPreview) {
+                        emailMessage.IsIncomplete = true;
+                    }
                     justCreated = true;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
@@ -334,23 +344,25 @@ namespace NachoCore.IMAP
                 }
             }
 
-            // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
-            NcModel.Instance.RunInTransaction (() => {
-                if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty (emailMessage.To)) {
-                    if (!folder.IsJunkFolder ()) {
-                        NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            if (changed) {
+                // TODO move the rest to parent class or into the McEmailAddress class before insert or update?
+                NcModel.Instance.RunInTransaction (() => {
+                    if ((0 != emailMessage.FromEmailAddressId) || !String.IsNullOrEmpty (emailMessage.To)) {
+                        if (!folder.IsJunkFolder ()) {
+                            NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                        }
                     }
-                }
-                if (justCreated) {
-                    emailMessage.Insert ();
-                    folder.Link (emailMessage);
-                    // FIXME
-                    // InsertAttachments (emailMessage);
-                } else {
-                    emailMessage.AccountId = folder.AccountId;
-                    emailMessage.Update ();
-                }
-            });
+                    if (justCreated) {
+                        emailMessage.Insert ();
+                        folder.Link (emailMessage);
+                        // FIXME
+                        // InsertAttachments (emailMessage);
+                    } else {
+                        emailMessage.AccountId = folder.AccountId;
+                        emailMessage.Update ();
+                    }
+                });
+            }
 
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
