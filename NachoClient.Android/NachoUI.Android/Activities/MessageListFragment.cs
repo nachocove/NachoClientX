@@ -34,9 +34,11 @@ namespace NachoClient.AndroidClient
 
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
-        public MessageListFragment (INachoEmailMessages messages)
+        public static MessageListFragment newInstance (INachoEmailMessages messages)
         {
-            this.messages = messages;
+            var fragment = new MessageListFragment ();
+            fragment.messages = messages;
+            return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -101,6 +103,7 @@ namespace NachoClient.AndroidClient
         public MessageListAdapter (INachoEmailMessages messages)
         {
             this.messages = messages;
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         class MessageHolder : RecyclerView.ViewHolder
@@ -148,6 +151,30 @@ namespace NachoClient.AndroidClient
             var previewView = holder.ItemView.FindViewById<Android.Widget.TextView> (Resource.Id.preview);
             var cookedPreview = EmailHelper.AdjustPreviewText (message.GetBodyPreviewOrEmpty ());
             previewView.Text = cookedPreview;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            switch (s.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
+            case NcResult.SubKindEnum.Info_EmailMessageScoreUpdated:
+            case NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded:
+            case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
+                RefreshMessageIfVisible ();
+                break;
+            }
+        }
+
+        void RefreshMessageIfVisible ()
+        {
+            List<int> adds;
+            List<int> deletes;
+            if (messages.Refresh (out adds, out deletes)) {
+                this.NotifyDataSetChanged ();
+            }
         }
 
 

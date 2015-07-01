@@ -16,6 +16,11 @@ namespace NachoClient.AndroidClient
 {
     public class RecoveryFragment : Fragment
     {
+        public static RecoveryFragment newInstance ()
+        {
+            var fragment = new RecoveryFragment ();
+            return fragment;
+        }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {

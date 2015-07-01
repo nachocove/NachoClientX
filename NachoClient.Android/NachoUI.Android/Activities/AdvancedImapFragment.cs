@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class AdvancedImapFragment : Fragment
     {
+        public static AdvancedImapFragment newInstance ()
+        {
+            var fragment = new AdvancedImapFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

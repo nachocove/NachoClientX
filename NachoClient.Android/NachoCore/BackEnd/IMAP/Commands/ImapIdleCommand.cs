@@ -29,48 +29,134 @@ namespace NachoCore.IMAP
             return logData;
         }
 
+        private bool mailArrived = false;
+        private bool mailDeleted = false;
+
         protected override Event ExecuteCommand ()
         {
-            IMailFolder mailKitFolder;
-            bool mailArrived = false;
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
-            EventHandler<MessagesArrivedEventArgs> messageHandler = (sender, maea) => {
+            Event retEvent = Event.Create ((uint)SmEvt.E.HardFail, "IMAPIDLEHARDX");
+            var mailKitFolder = GetOpenMailkitFolder (IdleFolder);
+            if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
+            }
+            if (Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
+                retEvent = IdleIdle(mailKitFolder, done);
+            } else {
+                retEvent = NoopIdle(mailKitFolder, done);
+            }
+            Cts.Token.ThrowIfCancellationRequested ();
+            mailKitFolder.Close (false, Cts.Token);
+            StatusItems statusItems =
+                StatusItems.UidNext |
+                StatusItems.UidValidity |
+                StatusItems.Count |
+                StatusItems.Recent |
+                StatusItems.HighestModSeq;
+            mailKitFolder.Status (statusItems, Cts.Token);
+            UpdateImapSetting (mailKitFolder, IdleFolder);
+
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastPing = DateTime.UtcNow;
+                return true;
+            });
+            if (mailArrived) {
+                // TODO this would be a good opportunity to force a sync.
+                Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
+            }
+            if (mailDeleted) {
+                // TODO this would be a good opportunity to force a sync.
+                Log.Info (Log.LOG_IMAP, "Mail Deleted during idle");
+            }
+            return retEvent;
+        }
+
+        private Event IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        {
+            EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 mailArrived = true;
                 done.Cancel ();
             };
-            mailKitFolder = Client.GetFolder (IdleFolder.ServerId, Cts.Token);
-            NcAssert.NotNull (mailKitFolder);
+            EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                mailDeleted = true;
+                done.Cancel ();
+            };
+            EventHandler<MessageFlagsChangedEventArgs> MessageFlagsChangedHandler = (sender, e) => {
+                var mkFolder = (ImapFolder) sender;
+
+                McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, mkFolder.FullName);
+                if (!e.UniqueId.HasValue) {
+                    Log.Warn (Log.LOG_IMAP, "{0}: flags for message Index {1} have changed to: {2}. No UID passed.", folder.ImapFolderNameRedacted (), e.Index, e.Flags);
+                } else {
+                    Log.Info (Log.LOG_IMAP, "{0}: flags for message {1} have changed to: {2}.", folder.ImapFolderNameRedacted (), e.UniqueId, e.Flags);
+                    McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (folder, e.UniqueId.Value));
+                    if (null != emailMessage) {
+                        if (emailMessage.IsRead != e.Flags.HasFlag (MessageFlags.Seen)) {
+                            emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.IsRead = e.Flags.HasFlag (MessageFlags.Seen);
+                                return true;
+                            });
+                            BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                        }
+                    }
+                }
+            };
+
             try {
-                mailKitFolder.MessagesArrived += messageHandler;
-                if (FolderAccess.None == mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token)) {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN");
-                }
-                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
-                }
+                mailKitFolder.MessagesArrived += MessagesArrivedHandler;
+                mailKitFolder.MessageFlagsChanged += MessageFlagsChangedHandler;
+                mailKitFolder.MessageExpunged += MessageExpungedHandler;
+
                 Client.Idle (done.Token, CancellationToken.None);
                 Cts.Token.ThrowIfCancellationRequested ();
-                mailKitFolder.Close (false, Cts.Token);
-                StatusItems statusItems =
-                    StatusItems.UidNext |
-                    StatusItems.UidValidity |
-                    StatusItems.HighestModSeq;
-                mailKitFolder.Status (statusItems, Cts.Token);
-                UpdateImapSetting (mailKitFolder, IdleFolder);
-
-                var protocolState = BEContext.ProtocolState;
-                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                    var target = (McProtocolState)record;
-                    target.LastPing = DateTime.UtcNow;
-                    return true;
-                });
-                if (mailArrived) {
-                    Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
-                }
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } finally {
-                mailKitFolder.MessagesArrived -= messageHandler;
-                done.Dispose ();
+                mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
+                mailKitFolder.MessageFlagsChanged -= MessageFlagsChangedHandler;
+                mailKitFolder.MessageExpunged -= MessageExpungedHandler;
+            }
+        }
+
+        // TODO: Should be tied into power-state
+        uint kNoopSleepTime = 20;
+
+        private Event NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        {
+            EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
+                // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
+                if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
+                    mailArrived = true;
+                }
+                done.Cancel ();
+            };
+            EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
+                if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
+                    mailDeleted = true;
+                }
+                done.Cancel ();
+            };
+
+            try {
+                mailKitFolder.MessagesArrived += MessagesArrivedHandler;
+                mailKitFolder.MessageExpunged += MessageExpungedHandler;
+
+                while (!Cts.Token.IsCancellationRequested) {
+                    var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
+                    if (cancelled) {
+                        break;
+                    }
+                    Client.NoOp (Cts.Token);
+                }
+                Cts.Token.ThrowIfCancellationRequested ();
+
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
+            } finally {
+                mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
+                mailKitFolder.MessageExpunged -= MessageExpungedHandler;
             }
         }
     }

@@ -11,12 +11,25 @@ using Android.Support.Design.Widget;
 
 using NachoCore;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.AndroidClient
 {
     [Activity (Label = "LaunchActivity")]            
     public class LaunchActivity : AppCompatActivity
     {
+        bool ReadyToStart ()
+        {
+            if (null == NcApplication.Instance.Account) {
+                return false;
+            }
+            if (McAccount.AccountTypeEnum.Device == NcApplication.Instance.Account.AccountType) {
+                return false;
+            }
+            return true;
+        }
+
+
         protected override void OnCreate (Bundle bundle)
         {
             base.OnCreate (bundle);
@@ -24,8 +37,14 @@ namespace NachoClient.AndroidClient
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.LaunchActivity);
 
-            var welcomeFragment = new WelcomeFragment ();
-            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, welcomeFragment).Commit ();
+//            var welcomeFragment = new WelcomeFragment ();
+//            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, welcomeFragment).Commit ();
+
+            if (ReadyToStart ()) {
+                Skip ();
+            } else {
+                WelcomeFinished ();
+            }
 
         }
 
@@ -57,8 +76,16 @@ namespace NachoClient.AndroidClient
 
             // FIXME
             NcApplication.Instance.Account = account;
+            LoginHelpers.SetFirstSyncCompleted (account.Id, true);
+
             BackEnd.Instance.Start (account.Id);
 
+            var waitingFragment = WaitingFragment.newInstance (account);
+            FragmentManager.BeginTransaction ().Replace (Resource.Id.content, waitingFragment).Commit ();
+        }
+
+        public void WaitingFinished ()
+        {
             var intent = new Intent ();
             intent.SetClass (this, typeof(NowActivity));
             StartActivity (intent);

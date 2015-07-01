@@ -41,13 +41,22 @@ namespace NachoCore.Model
         [Indexed]
         public int ExceptionId { get; set; }
 
-        static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, bool allDayEvent, int calendarId, int exceptionId)
+        /// <summary>
+        /// The UID of the root calendar item.  It is stored in the McEvent to avoid database lookups when
+        /// eliminating duplicates from the calendar view.  The UID is not unique to this McEvent when
+        /// (1) this is one occurrence in a recurring meeting, or (2) the same event is on multiple calendars
+        /// that are being tracked by the app.
+        /// </summary>
+        public string UID { get; set; }
+
+        static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, string UID, bool allDayEvent, int calendarId, int exceptionId)
         {
             // Save the event
             var e = new McEvent ();
             e.AccountId = accountId;
             e.StartTime = startTime;
             e.EndTime = endTime;
+            e.UID = UID;
             e.AllDayEvent = allDayEvent;
             e.CalendarId = calendarId;
             e.ExceptionId = exceptionId;

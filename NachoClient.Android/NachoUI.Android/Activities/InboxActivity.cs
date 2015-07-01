@@ -32,7 +32,7 @@ namespace NachoClient.AndroidClient
             List<int> deletes;
             messages.Refresh (out adds, out deletes);
 
-            messageListFragment = new MessageListFragment (messages);
+            messageListFragment = MessageListFragment.newInstance (messages);
             messageListFragment.onMessageClick += MessageListFragment_onThreadClick;
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageListFragment).AddToBackStack ("Inbox").Commit ();
         }
@@ -47,7 +47,7 @@ namespace NachoClient.AndroidClient
                 return;
             }
 
-            threadListFragment = new MessageThreadFragment (thread);
+            threadListFragment = MessageThreadFragment.newInstance (thread);
             threadListFragment.onMessageClick += MessageThreadFragment_onMessageClick;
 
             FragmentManager.BeginTransaction ().Add (Resource.Id.content, threadListFragment).AddToBackStack ("Inbox").Commit ();
@@ -56,8 +56,16 @@ namespace NachoClient.AndroidClient
         void MessageThreadFragment_onMessageClick (object sender, McEmailMessage message)
         {
             Console.WriteLine ("MessageThreadFragment_onMessageClick: {0}", message);
-            messageViewFragment = new MessageViewFragment (message);
+            messageViewFragment = MessageViewFragment.newInstance (message);
             this.FragmentManager.BeginTransaction ().Add (Resource.Id.content, messageViewFragment).AddToBackStack ("View").Commit ();
+        }
+
+        public void DoneWithMessage ()
+        {
+            var f = FragmentManager.FindFragmentById (Resource.Id.content);
+            if (f is MessageViewFragment) {
+                this.FragmentManager.PopBackStack ();
+            }
         }
 
         public override void OnBackPressed ()

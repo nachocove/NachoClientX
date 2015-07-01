@@ -6,7 +6,6 @@ using System.Text;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Android.Util;
 using Android.Views;
 using Android.Support.V4.App;
 using Android.Support.V4.View;
@@ -25,11 +24,19 @@ namespace NachoClient.AndroidClient
     {
         public event EventHandler<McEmailMessageThread> onMessageClick;
 
+        McEmailMessage message;
         McEmailMessageThread thread;
 
-        public HotMessageFragment (McEmailMessageThread thread) : base ()
+        BodyDownloader bodyDownloader;
+
+        public static HotMessageFragment newInstance (McEmailMessageThread thread)
         {
-            this.thread = thread;
+            var fragment = new HotMessageFragment ();
+
+            fragment.thread = thread;
+            fragment.message = thread.FirstMessageSpecialCase ();
+
+            return fragment;
         }
 
         public override void OnCreate (Bundle savedInstanceState)
@@ -66,39 +73,83 @@ namespace NachoClient.AndroidClient
             var chiliButton = view.FindViewById (Resource.Id.chili);
             chiliButton.Click += ChiliButton_Click;
 
+            var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+            webview.SetOnTouchListener (new IgnoreTouchListener (view));
+
+            bodyDownloader = new BodyDownloader ();
+
             BindValues (view);
 
             return view;
         }
-            
+
         void BindValues (View view)
         {
-            var message = thread.FirstMessageSpecialCase ();
-
             Bind.BindMessageHeader (thread, message, view);
 
-            var bodyView = view.FindViewById<Android.Widget.TextView> (Resource.Id.body);
-            bodyView.Visibility = ViewStates.Visible;
-
-            if (null == message) {
-                bodyView.SetText (Resource.String.message_not_available);
-                return;
-            }
-               
             var body = McBody.QueryById<McBody> (message.BodyId);
 
-            if (!McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
-                // FIXME download body
-                return;
+            if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
+                var webview = view.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+                var bodyRenderer = new BodyRenderer ();
+                bodyRenderer.Start (webview, body, message.NativeBodyType);
+            } else {
+                bodyDownloader = new BodyDownloader ();
+                bodyDownloader.Finished += BodyDownloader_Finished;
+                bodyDownloader.Start (message);
+            }
+        }
+
+        public class IgnoreTouchListener : Java.Lang.Object, View.IOnTouchListener
+        {
+            View view;
+
+            public IgnoreTouchListener (View view)
+            {
+                this.view = view;
             }
 
-            var text = MimeHelpers.ExtractTextPart (message);
-            if (null == text) {
-                bodyView.Text = "No text available.";
-            } else {
-                bodyView.Text = text;
+            public bool OnTouch (View v, MotionEvent e)
+            {
+//                view.OnTouchEvent (e);
+                return false;
             }
-            bodyView.Visibility = ViewStates.Visible;
+        }
+
+        void BodyDownloader_Finished (object sender, string e)
+        {
+            bodyDownloader = null;
+
+            message = (McEmailMessage)McAbstrItem.RefreshItem (message);
+
+            if (null == View) {
+                Console.WriteLine ("HotMessageFragment: BodyDownloader_Finished: View is null");
+                return;
+            }
+            var webview = View.FindViewById<Android.Webkit.WebView> (Resource.Id.webview);
+
+            if (null == e) {
+                var body = McBody.QueryById<McBody> (message.BodyId);
+                var bodyRenderer = new BodyRenderer ();
+                bodyRenderer.Start (webview, body, message.NativeBodyType);
+            } else {
+                webview.LoadData (e, "text/plain", null);
+            }
+        }
+
+        private void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if ((null != bodyDownloader) && bodyDownloader.HandleStatusEvent (s)) {
+                return;
+            }
+        }
+
+        void DoneWithMessage ()
+        {
+            var parent = (NowActivity)this.Activity;
+            parent.DoneWithMessage ();
         }
 
         void ChiliButton_Click (object sender, EventArgs e)
@@ -109,26 +160,40 @@ namespace NachoClient.AndroidClient
         void ArchiveButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ArchiveButton_Click");
+            NcEmailArchiver.Archive (message);
+            DoneWithMessage ();
         }
 
         void DeleteButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("DeleteButton_Click");
+            NcEmailArchiver.Delete (message);
+            DoneWithMessage ();
         }
 
         void ForwardButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ForwardButton_Click");
+            StartComposeActivity (EmailHelper.Action.Forward);
         }
 
         void ReplyButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ReplyButton_Click");
+            StartComposeActivity (EmailHelper.Action.Reply);
         }
 
         void ReplyAllButton_Click (object sender, EventArgs e)
         {
             Console.WriteLine ("ReplyAllButton_Click");
+            StartComposeActivity (EmailHelper.Action.ReplyAll);
+        }
+
+        void StartComposeActivity (EmailHelper.Action action)
+        {
+            var intent = new Intent ();
+            intent.SetClass (this.Activity, typeof(MessageComposeActivity));
+            StartActivity (intent);
         }
 
         void View_Click (object sender, EventArgs e)

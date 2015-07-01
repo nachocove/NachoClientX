@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class AttachmentFragment : Fragment
     {
+        public static AttachmentFragment newInstance ()
+        {
+            var fragment = new AttachmentFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

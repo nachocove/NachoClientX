@@ -3,7 +3,7 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/NachoLightGray">
+    android:background="@android:color/white">
     <include
         layout="@layout/ButtonBar" />
     <View
@@ -24,7 +24,13 @@
         android:textStyle="normal"
         android:ellipsize="none"
         android:textColor="@android:color/black"
-        android:background="@android:color/white" />
+        android:background="@android:color/white"
+        android:visibility="gone" />
+    <android.webkit.WebView
+        android:id="@+id/webview"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
     <View
         android:layout_width="fill_parent"
         android:layout_height="1dp"

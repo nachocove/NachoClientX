@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class FolderFragment : Fragment
     {
+        public static FolderFragment newInstance()
+        {
+            var fragment = new FolderFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);

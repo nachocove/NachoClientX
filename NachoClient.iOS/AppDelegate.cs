@@ -30,6 +30,7 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
+using Google.iOS;
 
 namespace NachoClient.iOS
 {
@@ -39,7 +40,7 @@ namespace NachoClient.iOS
     // See http://iosapi.xamarin.com/?link=T%3aMonoTouch.UIKit.UIApplicationDelegate
 
     [Register ("AppDelegate")]
-    public partial class AppDelegate : UIApplicationDelegate
+    public partial class AppDelegate : UIApplicationDelegate, IGIDSignInDelegate
     {
         [DllImport ("libc")]
         private static extern int sigaction (Signal sig, IntPtr act, IntPtr oact);
@@ -388,17 +389,12 @@ namespace NachoClient.iOS
             }
 
             // Initialize Google
-            var gglError = new NSError ();
-            var gglInstance = Google.iOS.GGLContext.SharedInstance;
-            gglInstance.ConfigureWithError (ref gglError);
-            if (null != gglError) {
-                // FIXME: Always reporting error
-                Log.Error (Log.LOG_UI, "Google GGLContext initialize has error: {0}", gglError);
-            }
+            var googleInfo = NSDictionary.FromFile("GoogleService-Info.plist");
+            GIDSignIn.SharedInstance.ClientID = googleInfo[new NSString("CLIENT_ID")].ToString();
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
+            if (NcApplication.ReadyToStartUI ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -418,10 +414,9 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
 
-            if (null != annotation) {
-                if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                    return true;
-                }
+            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
+                StartGoogleSignInSilently (); // It'll create a new account if needed
+                return true;
             }
 
             if (!url.IsFileUrl) {
@@ -1188,6 +1183,62 @@ namespace NachoClient.iOS
                              select account.Id).ToList ();
 
         }
+
+        void StartGoogleSignInSilently ()
+        {
+            Log.Info (Log.LOG_UI, "avl: AppDelegate StartGoogleSignInSilently");
+
+            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
+
+            // Add scope to give full access to email
+            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
+            scopes.Add ("https://mail.google.com");
+            scopes.Add ("https://www.googleapis.com/auth/calendar");
+            scopes.Add ("https://www.google.com/m8/feeds/");
+            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
+
+            Google.iOS.GIDSignIn.SharedInstance.SignInSilently ();
+        }
+
+
+        // GIDSignInDelegate
+        public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
+        {
+            Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser {0}", error);
+
+            // TODO: Handle more errors
+            if (null != error) {
+                return;
+            }
+
+            var emailAddress = user.Profile.Email;
+            var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
+
+            if (null != existingAccount) {
+                // Already have this one.
+                Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", emailAddress);
+                return;
+            }
+
+            Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser new account account: {0}", emailAddress);
+                
+            var service = McAccount.AccountServiceEnum.GoogleDefault;
+
+            var account = NcAccountHandler.Instance.CreateAccount (service,
+                              user.Profile.Email,
+                              user.Authentication.AccessToken, 
+                              user.Authentication.RefreshToken,
+                              user.Authentication.AccessTokenExpirationDate.ToDateTime ());
+            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
+
+            BackEnd.Instance.Stop (account.Id);
+            BackEnd.Instance.Start (account.Id);
+
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = storyboard.InstantiateViewController ("StartupViewController");
+            Window.RootViewController.ShowViewController (vc, this);
+        }
+
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
@@ -1259,5 +1310,7 @@ namespace NachoClient.iOS
             });
         }
     }
+
+   
 }
 

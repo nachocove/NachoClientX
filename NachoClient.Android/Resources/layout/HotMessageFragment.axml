@@ -7,7 +7,7 @@
     android:paddingLeft="15dp"
     android:paddingTop="15dp"
     android:paddingBottom="15dp"
-    android:background="@color/NachoBackgroundGray">
+    android:background="@color/NachoLightGray">
     <include
         layout="@layout/MessageHeader" />
     <TextView
@@ -22,7 +22,13 @@
         android:textStyle="normal"
         android:ellipsize="none"
         android:textColor="@android:color/black"
-        android:background="@android:color/white" />
+        android:background="@android:color/white"
+        android:visibility="gone" />
+    <nachoclient.androidclient.WebViewNoScroll
+        android:id="@+id/webview"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
     <View
         android:layout_width="fill_parent"
         android:layout_height="1dp"

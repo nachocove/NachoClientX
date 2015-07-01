@@ -24,11 +24,15 @@ namespace NachoClient.AndroidClient
         RecyclerView.LayoutManager layoutManager;
         AccountAdapter accountAdapter;
 
+        public static SwitchAccountFragment newInstance ()
+        {
+            var fragment = new SwitchAccountFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)

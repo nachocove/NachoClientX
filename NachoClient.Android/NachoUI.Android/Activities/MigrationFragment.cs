@@ -19,11 +19,15 @@ namespace NachoClient.AndroidClient
         int currentMigration = 0;
         int NumberOfMigrations = 2;
 
+        public static MigrationFragment newInstance ()
+        {
+            var fragment = new MigrationFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
-
-            // Create your fragment here
         }
 
         public override View OnCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -56,7 +60,7 @@ namespace NachoClient.AndroidClient
             }
         }
 
-        void UpdateProgressMessage(View parentView)
+        void UpdateProgressMessage (View parentView)
         {
             var progressBar = parentView.FindViewById<ProgressBar> (Resource.Id.progress);
             if (0 < currentMigration) {

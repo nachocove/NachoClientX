@@ -68,11 +68,12 @@ namespace NachoCore.Model
 
         public const AccountCapabilityEnum DeviceCapabilities = (
                                                                     AccountCapabilityEnum.CalReader |
-                                                                    AccountCapabilityEnum.CalWriter |
                                                                     AccountCapabilityEnum.ContactReader |
                                                                     AccountCapabilityEnum.ContactWriter
                                                                 );
             
+        // Flags an account that's being configured
+        public bool ConfigurationInProgress { get; set; }
         
         // This type is stored in the db; add to the end
         [Flags]
@@ -295,6 +296,11 @@ namespace NachoCore.Model
         public static List<McAccount> GetAllAccounts ()
         {
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
+        }
+
+        public static McAccount GetAccountBeingConfigured()
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.ConfigurationInProgress).SingleOrDefault ();
         }
 
         public static string AccountServiceName (AccountServiceEnum service)

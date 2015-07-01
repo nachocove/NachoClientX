@@ -16,6 +16,12 @@ namespace NachoClient.AndroidClient
 {
     public class AdvancedExchangeFragment : Fragment
     {
+        public static AdvancedExchangeFragment newInstance ()
+        {
+            var fragment = new AdvancedExchangeFragment ();
+            return fragment;
+        }
+
         public override void OnCreate (Bundle savedInstanceState)
         {
             base.OnCreate (savedInstanceState);
