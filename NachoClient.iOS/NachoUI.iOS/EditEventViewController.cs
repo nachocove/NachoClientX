@@ -215,8 +215,7 @@ namespace NachoClient.iOS
             } else {
                 account = NcApplication.Instance.Account;
             }
-            if (0 == (account.AccountCapability & McAccount.AccountCapabilityEnum.CalWriter)) {
-                Log.Info (Log.LOG_CALENDAR, "The current account does not support writing to calendars. Using the device account instead.");
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.CalWriter).FirstOrDefault ();
                 if (null == account) {
                     Log.Warn (Log.LOG_CALENDAR,
