@@ -39,6 +39,7 @@ namespace NachoClient.iOS
         protected BodyView descriptionView;
         protected UIView eventAttendeeView;
         protected UIView eventAlertsView;
+        protected UIView eventAlertsViewArrow;
         protected UIView eventOrganizerView;
         protected AttachmentListView attachmentListView;
         protected UIView eventNotesView;
@@ -332,10 +333,10 @@ namespace NachoClient.iOS
             eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
             eventAlertsView.BackgroundColor = cellBGColor;
 
-            Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, 2, 12, eventAlertsView);
-
             Util.AddTextLabelWithImageView (0, "REMINDER", "event-reminder", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
             Util.AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.EVENT_ALERT_DETAIL_TAG, eventAlertsView);
+
+            eventAlertsViewArrow = Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, 2, 12, eventAlertsView);
 
             alertTapGestureRecognizer = new UITapGestureRecognizer ();
             alertTapGestureRecognizerTapToken = alertTapGestureRecognizer.AddTarget (AlertTapGestureRecognizerTap);
@@ -501,9 +502,9 @@ namespace NachoClient.iOS
                 NcMeetingStatus.MeetingOrganizerCancelled == root.MeetingStatus;
 
             // The event can be edited if (1) it is owned by the current user, (2) it is not a recurring event,
-            // and (3) it did not come from the device calendar.  (The recurring event restriction will be lifted
-            // at some future date.  The device calendar restriction is under discussion.)
-            if (isOrganizer && !isRecurring && account.Id != McAccount.GetDeviceAccount().Id) {
+            // and (3) it is from a writable calendar.  (The recurring event restriction will be lifted
+            // at some future date.)
+            if (isOrganizer && !isRecurring && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
 
@@ -608,6 +609,7 @@ namespace NachoClient.iOS
             var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = Pretty.ReminderString (c.HasReminder (), c.GetReminder ());
             alertDetailLabel.SizeToFit ();
+            eventAlertsViewArrow.Hidden = !account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter);
 
             hasAttachments = 0 != c.attachments.Count ();
             attachmentListView.Hidden = !hasAttachments;
@@ -731,8 +733,8 @@ namespace NachoClient.iOS
                 calendarName.Text = string.Format ("{0} : {1}", accountName, folderName);
             }
 
-            // Cancel meeting button.  Only visible for recurring meetings owned by the user.
-            if (isOrganizer && isRecurring && hasAttendees) {
+            // Cancel meeting button.  Only visible for recurring meetings owned by the user in writable calendars
+            if (isOrganizer && isRecurring && hasAttendees && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 cancelMeetingSeparatorLine.Hidden = false;
                 cancelMeetingButton.Hidden = false;
                 cancelMeetingLabel.Hidden = false;
@@ -788,6 +790,7 @@ namespace NachoClient.iOS
             descriptionView = null;
             eventAttendeeView = null;
             eventAlertsView = null;
+            eventAlertsViewArrow = null;
             eventOrganizerView = null;
             attachmentListView = null;
             eventNotesView = null;
@@ -1024,7 +1027,7 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_CALENDAR_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_CALENDAR_DETAIL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
 
-            if (isOrganizer && isRecurring && hasAttendees) {
+            if (isOrganizer && isRecurring && hasAttendees && account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 AdjustViewLayout (cancelMeetingSeparatorLine, 0, ref internalYOffset, 0);
                 AdjustViewLayout (cancelMeetingButton, 18, ref internalYOffset, 18);
                 ViewFramer.Create (cancelMeetingLabel).Y (cancelMeetingButton.Frame.Y);
@@ -1124,19 +1127,37 @@ namespace NachoClient.iOS
         {
             if (c.MeetingStatus == NcMeetingStatus.MeetingAttendeeCancelled) {
 
-                // Show "Remove from calendar"
-                messageLabel.Hidden = true;
-                acceptButton.Hidden = true;
-                organizerIcon.Hidden = true;
-                acceptButton.Selected = true;
-                acceptLabel.Hidden = true;
-                tentativeButton.Hidden = true;
-                tentativeLabel.Hidden = true;
-                declineButton.Hidden = true;
-                declineLabel.Hidden = true;
-                removeFromCalendarButton.Hidden = false;
-                removeFromCalendarLabel.Hidden = false;
-                rsvpSeparatorLine.Hidden = false;
+                if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                    // Show "Remove from calendar"
+                    messageLabel.Hidden = true;
+                    acceptButton.Hidden = true;
+                    organizerIcon.Hidden = true;
+                    acceptButton.Selected = true;
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineButton.Hidden = true;
+                    declineLabel.Hidden = true;
+                    removeFromCalendarButton.Hidden = false;
+                    removeFromCalendarLabel.Hidden = false;
+                    rsvpSeparatorLine.Hidden = false;
+                } else {
+                    // The calendar is not writable, so the "Remove from calendar" button doesn't make sense.
+                    // Instead, just show a message about the meeting being cancelled.
+                    messageLabel.Text = "The meeting has been canceled.";
+                    messageLabel.Hidden = false;
+                    messageLabel.Frame = new CGRect (18, 18, 150, 24);
+                    organizerIcon.Hidden = true;
+                    acceptButton.Hidden = true;
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineButton.Hidden = true;
+                    declineLabel.Hidden = true;
+                    removeFromCalendarButton.Hidden = true;
+                    removeFromCalendarLabel.Hidden = true;
+                    rsvpSeparatorLine.Hidden = false;
+                }
 
             } else if (isAppointment) {
 
@@ -1364,7 +1385,9 @@ namespace NachoClient.iOS
 
         private void AlertTapGestureRecognizerTap ()
         {
-            PerformSegue ("EventToAlert", this);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                PerformSegue ("EventToAlert", this);
+            }
         }
 
         private void OrganizerTapGestureRecognizerTap ()
@@ -1401,22 +1424,41 @@ namespace NachoClient.iOS
             }
         }
 
+        private void ResponseChangeDeniedPopUp ()
+        {
+            NcAlertView.ShowMessage (this, "Can't Change Response",
+                "Your response to the meeting can't be changed because the meeting is stored in a calendar that is not writable by this app. " +
+                "Use a different client, such as the Calendar app, to change your response.");
+        }
+
         private void AcceptButtonTouchUpInside (object sender, EventArgs e)
         {
-            SelectButtonForResponse (NcResponseType.Accepted);
-            UpdateStatus (NcResponseType.Accepted);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                SelectButtonForResponse (NcResponseType.Accepted);
+                UpdateStatus (NcResponseType.Accepted);
+            } else {
+                ResponseChangeDeniedPopUp ();
+            }
         }
 
         private void TentativeButtonTouchUpInside (object sender, EventArgs e)
         {
-            SelectButtonForResponse (NcResponseType.Tentative);
-            UpdateStatus (NcResponseType.Tentative);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                SelectButtonForResponse (NcResponseType.Tentative);
+                UpdateStatus (NcResponseType.Tentative);
+            } else {
+                ResponseChangeDeniedPopUp ();
+            }
         }
 
         private void DeclineButtonTouchUpInside (object sender, EventArgs e)
         {
-            SelectButtonForResponse (NcResponseType.Declined);
-            UpdateStatus (NcResponseType.Declined);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+                SelectButtonForResponse (NcResponseType.Declined);
+                UpdateStatus (NcResponseType.Declined);
+            } else {
+                ResponseChangeDeniedPopUp ();
+            }
         }
 
         private void EditButtonClicked (object sender, EventArgs e)

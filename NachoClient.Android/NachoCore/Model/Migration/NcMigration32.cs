@@ -1,14 +1,15 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
-using System.Linq;
 
 namespace NachoCore.Model
 {
     // Set the DisplayColor field for existing calendar folders.  Each calendar folder needs to have a unique
     // value, and the values should be continuous.
+
     public class NcMigration32 : NcMigration
     {
         public override int GetNumberOfObjects ()
@@ -48,4 +49,3 @@ namespace NachoCore.Model
         }
     }
 }
-

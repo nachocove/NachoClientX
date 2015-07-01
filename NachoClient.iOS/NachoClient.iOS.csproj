@@ -83,7 +83,7 @@
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>cjk,west</MtouchI18n>
-    <MtouchArch>ARM64</MtouchArch>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
@@ -147,7 +147,7 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -176,7 +176,7 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
       </CustomCommands>
@@ -1523,13 +1523,20 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcMailKitProtocolLogger.cs">
       <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Model\Migration\NcMigration31.cs" />
-    <Compile Include="NachoCore\Model\Migration\NcMigration32.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\ILoginProtocol.cs">
       <Link>NachoCore\Adapters\ILoginProtocol.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginProtocolControl.cs">
       <Link>NachoCore\Utils\LoginProtocolControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration31.cs">
+      <Link>NachoCore\Model\Migration\NcMigration31.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration32.cs">
+      <Link>NachoCore\Model\Migration\NcMigration32.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration33.cs">
+      <Link>NachoCore\Model\Migration\NcMigration33.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -108,9 +108,13 @@ namespace NachoCore.Model
 
         public void SetReminder (uint reminderMinutes)
         {
-            ReminderTime = GetStartTimeUtc () - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
-            Update ();
-            LocalNotificationManager.ScheduleNotification (this);
+            // Don't set a reminder if the event came from a device calendar.  The device's calendar app should handle those notifications.
+            // A notification from Nacho Mail would probably be a duplicate.
+            if (AccountId != McAccount.GetDeviceAccount ().Id) {
+                ReminderTime = GetStartTimeUtc () - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
+                Update ();
+                LocalNotificationManager.ScheduleNotification (this);
+            }
         }
 
         public override int Delete ()
