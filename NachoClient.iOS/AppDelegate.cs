@@ -389,8 +389,8 @@ namespace NachoClient.iOS
             }
 
             // Initialize Google
-            var googleInfo = NSDictionary.FromFile("GoogleService-Info.plist");
-            GIDSignIn.SharedInstance.ClientID = googleInfo[new NSString("CLIENT_ID")].ToString();
+            var googleInfo = NSDictionary.FromFile ("GoogleService-Info.plist");
+            GIDSignIn.SharedInstance.ClientID = googleInfo [new NSString ("CLIENT_ID")].ToString ();
 
             NcKeyboardSpy.Instance.Init ();
 
@@ -479,7 +479,7 @@ namespace NachoClient.iOS
             if (DateTime.MinValue != foregroundTime) {
                 // Log the duration of foreground for usage analytics
                 var duration = (int)(DateTime.UtcNow - foregroundTime).TotalMilliseconds;
-                Telemetry.RecordTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
+                Telemetry.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
                 foregroundTime = DateTime.MinValue;
             }
 

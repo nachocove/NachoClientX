@@ -59,6 +59,8 @@ namespace NachoClient.iOS
         const int ATTACHMENTVIEW_INSET = 10;
         float HEADER_TOP_MARGIN = 0;
 
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -125,12 +127,12 @@ namespace NachoClient.iOS
             if (null != thread) {
                 var now = DateTime.UtcNow;
                 var message = thread.FirstMessageSpecialCase ();
-                Telemetry.RecordTimeSeries ("MessageViewController.Duration", appearTime, (int)(now - appearTime).TotalMilliseconds);
-                Telemetry.RecordTimeSeries ("McEmailMessage.Read.Id", appearTime, message.Id);
-                Telemetry.RecordTimeSeries ("McEmailMessage.Read.Score", appearTime, (int)(message.Score * 1000000));
+                Telemetry.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
+                Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, message.Id);
+                Telemetry.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, message.Score);
                 var body = McBody.QueryById<McBody> (message.BodyId);
                 if (McBody.IsComplete (body)) {
-                    Telemetry.RecordTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                    Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
                 }
             }
             base.ViewWillDisappear (animated);

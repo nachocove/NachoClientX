@@ -340,7 +340,7 @@ namespace NachoCore.Utils
             RecordSupport (dict);
         }
 
-        public static void RecordSamples (string samplesName, List<int> samplesValues)
+        public static void RecordIntSamples (string samplesName, List<int> samplesValues)
         {
             if (!ENABLED) {
                 return;
@@ -348,7 +348,35 @@ namespace NachoCore.Utils
             foreach (var value in samplesValues) {
                 var jsonEvent = new TelemetrySamplesEvent () {
                     sample_name = samplesName,
-                    sample_value = value
+                    sample_int = value,
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
+        }
+
+        public static void RecordFloatSamples (string samplesName, List<double> samplesValues)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_float = value,
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
+        }
+
+        public static void RecordStringSamples (string samplesName, List<string> samplesValues)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_string = value,
                 };
                 RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
             }
@@ -370,7 +398,7 @@ namespace NachoCore.Utils
             RecordJsonEvent (TelemetryEventType.STATISTICS2, jsonEvent);
         }
 
-        public static void RecordTimeSeries (string name, DateTime time, int value)
+        public static void RecordIntTimeSeries (string name, DateTime time, int value)
         {
             if (!ENABLED) {
                 return;
@@ -378,7 +406,33 @@ namespace NachoCore.Utils
             var jsonEvent = new TelemetryTimeSeriesEvent () {
                 time_series_name = name,
                 time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
-                time_series_value = value,
+                time_series_int = value,
+            };
+            RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
+        }
+
+        public static void RecordFloatTimeSeries (string name, DateTime time, double value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            var jsonEvent = new TelemetryTimeSeriesEvent () {
+                time_series_name = name,
+                time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
+                time_series_float = value,
+            };
+            RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
+        }
+
+        public static void RecordStringTimeSeries (string name, DateTime time, string value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            var jsonEvent = new TelemetryTimeSeriesEvent () {
+                time_series_name = name,
+                time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
+                time_series_string = value,
             };
             RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
         }

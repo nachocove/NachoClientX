@@ -133,7 +133,7 @@ namespace NachoCore.Utils
 
         protected override void RecordSamples ()
         {
-            Telemetry.RecordSamples (Name, Samples);
+            Telemetry.RecordIntSamples (Name, Samples);
         }
     }
 }
