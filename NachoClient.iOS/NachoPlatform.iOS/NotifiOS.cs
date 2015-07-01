@@ -132,16 +132,31 @@ namespace NachoPlatform
         }
     }
 
+    /// <summary>
+    /// Conversions between DateTime and NSDate.  This code comes from http://developer.xamarin.com/guides/cross-platform/macios/unified/
+    /// </summary>
     public static class DateExtensions
     {
         public static NSDate ToNSDate (this DateTime dateTime)
         {
-            return NSDate.FromTimeIntervalSinceReferenceDate ((dateTime - (new DateTime (2001, 1, 1, 0, 0, 0))).TotalSeconds);
+            if (DateTimeKind.Unspecified == dateTime.Kind) {
+                dateTime = DateTime.SpecifyKind (dateTime, DateTimeKind.Utc);
+            }
+            return (NSDate)dateTime;
         }
 
         public static DateTime ToDateTime (this NSDate nsDate)
         {
-            return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+            // NSDate has a wider range than DateTime.  If the given NSDate is outside DateTime's range,
+            // return DateTime.MinValue or DateTime.MaxValue.
+            double seconds = nsDate.SecondsSinceReferenceDate;
+            if (seconds < -63113904000) {
+                return DateTime.MinValue;
+            }
+            if (seconds > 252423993599) {
+                return DateTime.MaxValue;
+            }
+            return (DateTime)nsDate;
         }
     }
 }
