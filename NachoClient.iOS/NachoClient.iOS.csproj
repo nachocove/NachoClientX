@@ -132,7 +132,7 @@
     <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodesignKey>iPhone Developer: Henry Kwok (E5VR34U847)</CodesignKey>
+    <CodesignKey>iPhone Distribution</CodesignKey>
     <BuildIpa>true</BuildIpa>
     <ConsolePause>false</ConsolePause>
     <MtouchI18n>cjk,west</MtouchI18n>
