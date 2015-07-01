@@ -133,6 +133,8 @@ namespace NachoCore.Utils
                             if (null != Client) {
                                 Client.Dispose ();
                                 Client = null;
+                            }
+                            if (null != S3Client) {
                                 S3Client.Dispose ();
                                 S3Client = null;
                             }
