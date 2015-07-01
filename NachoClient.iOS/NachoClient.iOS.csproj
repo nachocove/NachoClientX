@@ -83,7 +83,7 @@
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>cjk,west</MtouchI18n>
-    <MtouchArch>ARM64</MtouchArch>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
     <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
