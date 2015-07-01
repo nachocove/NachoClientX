@@ -43,27 +43,39 @@ namespace NachoCore.Model
         public int SyncAttemptCount { get; set; }
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
+
+
+        #region IMAP Folder metadata
+
+        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
+        // technically this isn't part of the actual IMAP metadata (that the server provides), but we'll treat it as such, since
+        // it really never should be modified by any code (other than the McFolder initializer).
+        public string ImapGuid { get; set; }
+
         // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
         public bool ImapNoSelect { get; set; }
-        // The lowest UID we've synced in the current round of syncing
-        public uint ImapUidLowestUidSynced { get; set; }
-        // The highest UID we've synced in the current round of syncing
-        public uint ImapUidHighestUidSynced { get; set; }
         // The folder's UIDVALIDITY value
         public uint ImapUidValidity { get; set; }
         // the folders UIDNEXT value
         public uint ImapUidNext { get; set; }
-        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
-        public string ImapGuid { get; set; }
+
+        #endregion
+
+        #region IMAP Sync helper variables
+
         // DateTime we last examined the folder.
         public DateTime ImapLastExamine { get; set; }
-        // Highest Modification Sequence Numbers.
-        // should be a ulong but apparently sqlite doesn't support uint64
-        public long CurImapHighestModSeq { get; set; }
-        // should be a ulong but apparently sqlite doesn't support uint64
-        public long LastImapHighestModSeq { get; set; }
+
+        // The lowest UID we've synced in the current round of syncing
+        public uint ImapUidLowestUidSynced { get; set; }
+        // The highest UID we've synced in the current round of syncing
+        public uint ImapUidHighestUidSynced { get; set; }
+        // The current sync-point in the current round of syncing
+        public uint ImapLastUidSynced { get; set; }
         // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
         public string ImapUidSet { get; set; }
+
+        #endregion
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -100,6 +112,7 @@ namespace NachoCore.Model
         public McFolder ()
         {
             ImapUidLowestUidSynced = uint.MaxValue;
+            ImapLastUidSynced = uint.MinValue;
             ImapUidHighestUidSynced = uint.MinValue;
             ImapGuid = Guid.NewGuid ().ToString ("N");
         }
@@ -111,7 +124,7 @@ namespace NachoCore.Model
 
         public string ImapFolderNameRedacted ()
         {
-            return IsDistinguished ? ServerId : "User Folder";
+            return string.Format ("{0}/{1}", ImapGuid, IsDistinguished ? ServerId : "User Folder");
         }
 
         // "factory" to create folders.

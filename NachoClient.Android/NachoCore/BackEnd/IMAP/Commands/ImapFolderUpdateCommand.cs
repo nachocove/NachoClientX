@@ -42,7 +42,7 @@ namespace NachoCore.IMAP
             mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
 
             if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, out folder)) {
-                UpdateImapSetting (mailKitFolder, folder);
+                UpdateImapSetting (mailKitFolder, ref folder);
                 // TODO Do applyCommand stuff here
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 PendingResolveApply ((pending) => {

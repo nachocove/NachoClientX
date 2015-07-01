@@ -47,7 +47,7 @@ namespace NachoCore.IMAP
                 //   not have the right destId, because that folder doesn't yet exist, so we fail in the Move Command.
                 Log.Info (Log.LOG_IMAP, "Created folder {0}", newFolder.FullName);
             }
-            UpdateImapSetting (newFolder, folder);
+            UpdateImapSetting (newFolder, ref folder);
 
             var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
                 PlaceholderId = PendingSingle.ServerId,

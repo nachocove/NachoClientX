@@ -188,30 +188,21 @@ namespace NachoCore.IMAP
             return added_or_changed;
         }
 
-        protected bool UpdateImapSetting (IMailFolder mailKitFolder, McFolder folder)
+        public static bool UpdateImapSetting (IMailFolder mailKitFolder, ref McFolder folder)
         {
             bool changed = false;
-            ulong hmodseq = mailKitFolder.SupportsModSeq ? mailKitFolder.HighestModSeq : 0;
             if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||
-                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id) ||
-                (ulong)folder.CurImapHighestModSeq != hmodseq)
+                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id))
             {
                 // update.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
-                    target.CurImapHighestModSeq = (long)hmodseq;
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
                     return true;
                 });
                 changed = true;
             }
-            // Set the timestamp regardless of whether any values changed, since this indicates we DID look.
-            folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapLastExamine = DateTime.UtcNow;
-                return true;
-            });
             return changed;
         }
 
