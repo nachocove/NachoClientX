@@ -25,7 +25,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchLink>None</MtouchLink>
     <MtouchDebug>true</MtouchDebug>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit"</MtouchExtraArgs>
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>i386</MtouchArch>
@@ -41,7 +41,7 @@
     <WarningLevel>4</WarningLevel>
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit"</MtouchExtraArgs>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
@@ -58,7 +58,7 @@
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
     <CodesignKey>iPhone Developer</CodesignKey>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit"</MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchI18n>
@@ -77,7 +77,7 @@
     <ConsolePause>false</ConsolePause>
     <CodesignKey>iPhone Developer</CodesignKey>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit"</MtouchExtraArgs>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
@@ -94,7 +94,7 @@
     <CodesignProvision>Automatic:AppStore</CodesignProvision>
     <CodesignKey>iPhone Distribution</CodesignKey>
     <MtouchArch>ARMv7, ARM64</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit"</MtouchExtraArgs>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
@@ -113,7 +113,7 @@
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <MtouchI18n>
     </MtouchI18n>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lcrypto"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -lc++ -lFirebase -lWebRTC -licucore -lsqlite3 -framework GLKit"</MtouchExtraArgs>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
