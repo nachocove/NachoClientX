@@ -998,6 +998,10 @@ namespace NachoClient
 
         public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
+            if (null == contact) {
+                ComplainAbout ("No Phone Number", "This contact does not have a phone number.");
+                return;
+            }
             if (0 == contact.PhoneNumbers.Count) {
                 if (contact.CanUserEdit ()) {
                     owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
@@ -1019,6 +1023,10 @@ namespace NachoClient
 
         public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
+            if (null == contact) {
+                ComplainAbout ("No Email Address", "This contact does not have an email address.");
+                return;
+            }
             if (0 == contact.EmailAddresses.Count) {
                 if (contact.CanUserEdit ()) {
                     owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));

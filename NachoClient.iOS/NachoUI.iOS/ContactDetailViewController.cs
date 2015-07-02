@@ -1064,8 +1064,10 @@ namespace NachoClient.iOS
 
         protected void VipButtonTouchUpInside (object sender, EventArgs e)
         {
-            contact.SetVIP (!contact.IsVip);
-            UpdateVipButton ();
+            if (null != contact) {
+                contact.SetVIP (!contact.IsVip);
+                UpdateVipButton ();
+            }
         }
 
         protected void UpdateVipButton ()
@@ -1107,6 +1109,10 @@ namespace NachoClient.iOS
 
         public void RefreshData ()
         {
+            if (null == contact) {
+                return;
+            }
+
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
 
             NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
