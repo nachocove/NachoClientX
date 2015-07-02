@@ -890,6 +890,11 @@ namespace NachoClient.iOS
         protected void DoneButtonClicked (object sender, EventArgs e)
         {
             View.EndEditing (true);
+            foreach (var d in dateCellList) {
+                if (!d.dateView.Hidden) {
+                    d.Dismiss ();
+                }
+            }
             bool hasData = UpdateContact ();
             if (HasInvalidEmail ()) {
                 NcAlertView.ShowMessage (this, "Incorrect E-mail Address",
@@ -1935,20 +1940,30 @@ namespace NachoClient.iOS
                 owner.shouldScrollToDateView = true;
                 if (dateView.Hidden) {
                     dateView.Hidden = false;
+                    if (DateTime.MinValue != dateAttribute.Value) {
+                        var d = dateAttribute.Value;
+                        var localDate = new DateTime (d.Year, d.Month, d.Day, 0, 0, 0, DateTimeKind.Local);
+                        this.datePicker.Date = localDate.ToUniversalTime ().ToNSDate ();
+                    }
                     this.dateLabel.TextColor = A.Color_NachoTeal;
                     LayoutView ();
                 } else {
-                    // The user selected a date/time in the local time zone.  (The picker only showed the date, but
-                    // there was also a hidden time component.)  But datePicker.Date returns a date/time in UTC, which
-                    // might be on a different date.  So we need to convert back to local time, extract the date,
-                    // then construct a new DateTime with that date in UTC.
-                    DateTime selectedDate = datePicker.Date.ToDateTime ().ToLocalTime ().Date;
-                    dateAttribute.Value = new DateTime (selectedDate.Year, selectedDate.Month, selectedDate.Day, 0, 0, 0, DateTimeKind.Utc);
-                    dateView.Hidden = true;
-                    this.dateLabel.TextColor = A.Color_NachoGreen;
-                    ConfigureView ();
-                    LayoutView ();
+                    Dismiss ();
                 }
+            }
+
+            public void Dismiss ()
+            {
+                // The user selected a date/time in the local time zone.  (The picker only showed the date, but
+                // there was also a hidden time component.)  But datePicker.Date returns a date/time in UTC, which
+                // might be on a different date.  So we need to convert back to local time, extract the date,
+                // then construct a new DateTime with that date in UTC.
+                DateTime selectedDate = datePicker.Date.ToDateTime ().ToLocalTime ().Date;
+                dateAttribute.Value = new DateTime (selectedDate.Year, selectedDate.Month, selectedDate.Day, 0, 0, 0, DateTimeKind.Utc);
+                dateView.Hidden = true;
+                this.dateLabel.TextColor = A.Color_NachoGreen;
+                ConfigureView ();
+                LayoutView ();
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
