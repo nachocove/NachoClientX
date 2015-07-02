@@ -612,15 +612,15 @@ namespace NachoCore.Model
                     // code that is specific to calendar folders.  But on the other hand, McFolder.Insert() is
                     // the only place that the code can go that guarantees that DisplayColor is set and that its
                     // value is unique.
-                    if (NachoFolders.FilterForCalendars.Contains(this.Type) && 0 == DisplayColor) {
+                    if (NachoFolders.FilterForCalendars.Contains (this.Type) && 0 == DisplayColor) {
                         // This code will work even if the app UI allows the user to select the color for a folder,
                         // which could result in a gap in the index numbers.  The next folder to be created will
                         // start filling in the gap.  That is why we don't just look for the largest existing index.
                         int nextColor = 1;
                         var calFolders = NcModel.Instance.Db.Query<McFolder> (
-                            "SELECT f.* FROM McFolder AS f " +
-                            " WHERE f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (NachoFolders.FilterForCalendars) +
-                            " ORDER BY f.DisplayColor ");
+                                             "SELECT f.* FROM McFolder AS f " +
+                                             " WHERE f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (NachoFolders.FilterForCalendars) +
+                                             " ORDER BY f.DisplayColor ");
                         foreach (var folder in calFolders) {
                             if (nextColor == folder.DisplayColor) {
                                 ++nextColor;
@@ -952,7 +952,8 @@ namespace NachoCore.Model
             // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
             string[] tags = {
                 "junk",
-                "spam"
+                "spam",
+                "bulk mail", // Yahoo uses this as junk mail folder
             };
             var folderLower = folderName.ToLower ();
             for (int n = 0; n < tags.Length; n++) {
