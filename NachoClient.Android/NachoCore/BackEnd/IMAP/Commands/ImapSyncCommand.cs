@@ -393,19 +393,6 @@ namespace NachoCore.IMAP
             return messagesDeleted;
         }
 
-        private static string CommaSeparatedString(InternetAddressList AddrList)
-        {
-            string result = null;
-            if (AddrList.Any ()) {
-                var addrs = new List<string> ();
-                foreach (var addr in AddrList) {
-                    addrs.Add (addr.ToString ());
-                }
-                result = string.Join (",", addrs);
-            }
-            return result;
-        }
-
         public static bool UpdateEmailMetaData(McEmailMessage emailMessage, IMessageSummary summary)
         {
             if (!summary.Flags.HasValue) {
@@ -473,9 +460,9 @@ namespace NachoCore.IMAP
                 cachedFromColor = 1,
             };
 
-            emailMessage.To = CommaSeparatedString (summary.Envelope.To);
-            emailMessage.Cc = CommaSeparatedString (summary.Envelope.Cc);
-            emailMessage.Bcc = CommaSeparatedString (summary.Envelope.Bcc);
+            emailMessage.To = summary.Envelope.To.ToString ();
+            emailMessage.Cc = summary.Envelope.Cc.ToString ();
+            emailMessage.Bcc = summary.Envelope.Bcc.ToString ();
 
             if (summary.Envelope.From.Count > 0) {
                 if (summary.Envelope.From.Count > 1) {
