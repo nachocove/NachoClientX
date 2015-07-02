@@ -20,6 +20,9 @@ namespace NachoCore.IMAP
         //    we only need MessageSummaryItems.Flags and MessageSummaryItems.UniqueId. This will give us a much faster
         //    server-response.
         //    Perhaps instead UID+Flags_headers, have a set of "check for new" and a set for "check for changes"?
+        // 2) strategy should remember which folder it's been working on and give it some preference. Otherwise we always
+        //    do a depth-first sync, always checking the front of the list of folders first, making the tail-end of the list
+        //    very slow to update.
 
         public enum MethodEnum
         {
