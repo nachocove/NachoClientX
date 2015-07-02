@@ -836,7 +836,6 @@ namespace NachoCore.IMAP
                 if (PushAssist.IsStartOrParked ()) {
                     PushAssist.Execute ();
                 }
-                PushAssist.SetDeviceToken (Convert.ToBase64String (Encoding.UTF8.GetBytes ("deviceTokenBytes")));
             }
         }
 
