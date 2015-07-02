@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using NachoCore.Model;
 using NachoCore.Utils;
+using System.Text.RegularExpressions;
 
 namespace NachoCore.ActiveSync
 {
@@ -21,7 +22,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             if (ProcessOptionsHeaders (response.Headers, BEContext)) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsOptionsSuccess));
@@ -40,12 +41,24 @@ namespace NachoCore.ActiveSync
             return "";
         }
 
+        public override bool IgnoreBody (AsHttpOperation Sender)
+        {
+            return true;
+        }
+
         internal static void SetOldestProtoVers (IBEContext beContext)
         {
-            McProtocolState update = beContext.ProtocolState;
-            update.AsProtocolVersion = "12.0";
-            beContext.ProtocolState = update;
+            McProtocolState protocolState = beContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)protocolState;
+                target.AsProtocolVersion = "12.0";
+                return true;
+            });
         }
+
+        // The ActiveSync protocol versions that are supported by this app, from newest to oldest
+        // (or from most preferred to least preferred).
+        private static string[] SupportedVersions = new string[] { "14.1", "14.0", "12.1", "12.0" };
 
         internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
         {
@@ -53,20 +66,41 @@ namespace NachoCore.ActiveSync
             McProtocolState protocolState = beContext.ProtocolState;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
             if (retval && null != values && 0 < values.Count ()) {
-                // numerically sort and pick the highest version.
                 if (1 != values.Count ()) {
                     Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
                 }
                 var value = values.First ();
-                Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions: {0}", value);
-                float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
-                Array.Sort (float_versions);
-                Array.Reverse (float_versions);
-                string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
-                protocolState.AsProtocolVersion = versions [0];
+                string[] serverVersions = Regex.Split (value, @"\s*,\s*");
+                // Loop through the protocol versions that the app understands, in the preferred order, until
+                // we find one that the server also supports.
+                bool foundMatch = false;
+                foreach (var supportedVersion in SupportedVersions) {
+                    if (serverVersions.Contains (supportedVersion)) {
+                        foundMatch = true;
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.AsProtocolVersion = supportedVersion;
+                            return true;
+                        });
+                        break;
+                    }
+                }
+                if (!foundMatch) {
+                    Log.Error (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions does not contain a version supported by this client. Defaulting to version 12.0.");
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsProtocolVersion = "12.0";
+                        return true;
+                    });
+                }
+                Log.Info (Log.LOG_AS, "AsOptionsCommand: Selected version {0} from MS-ASProtocolVersions: {1}", protocolState.AsProtocolVersion, value);
             } else {
                 Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
-                protocolState.AsProtocolVersion = "12.0";
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsProtocolVersion = "12.0";
+                    return true;
+                });
             }
             values = null;
             retval = headers.TryGetValues ("MS-ASProtocolCommands", out values);
@@ -79,10 +113,13 @@ namespace NachoCore.ActiveSync
                 string[] commands = value.Split (',');
                 // TODO: check for other potentially missing commands. ensure that all fundamental commands are listed.
                 if (!commands.Contains ("Provision")) {
-                    protocolState.DisableProvisionCommand = true;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.DisableProvisionCommand = true;
+                        return true;
+                    });
                 }
             }
-            beContext.ProtocolState = protocolState;
             // Rather than just fail, make conservative assumptions.
             return true;
         }

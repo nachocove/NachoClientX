@@ -11,6 +11,11 @@ namespace NachoCore.Model
 {
     public class McPending : McAbstrObjectPerAcc
     {
+        // Incremented on every table write.
+        private static int _Version = 0;
+
+        public static int Version { get { return _Version; } }
+
         // Parameterless constructor only here for use w/LINQ. Please only use w/accountId.
         public McPending ()
         {
@@ -19,12 +24,13 @@ namespace NachoCore.Model
             Token = Guid.NewGuid ().ToString ("N");
         }
 
-        public McPending (int accountId) : this ()
+        public McPending (int accountId, McAccount.AccountCapabilityEnum capability) : this ()
         {
             AccountId = accountId;
+            Capability = capability;
         }
 
-        public McPending (int accountId, McAbstrItem item) : this (accountId)
+        public McPending (int accountId, McAccount.AccountCapabilityEnum capability, McAbstrItem item) : this (accountId, capability)
         {
             Item = item;
         }
@@ -65,7 +71,11 @@ namespace NachoCore.Model
             TaskMove,
             TaskBodyDownload,
             AttachmentDownload,
-            Last = AttachmentDownload,
+            Sync,
+            CalForward,
+            // These values are persisted in the DB, so only add at the end.
+            EmailSearch,
+            Last = EmailSearch,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -135,6 +145,9 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
+
+        [Indexed]
+        public McAccount.AccountCapabilityEnum Capability { set; get; }
         // Valid when in Deferred state.
         [Indexed]
         public DeferredEnum DeferredReason { set; get; }
@@ -150,6 +163,7 @@ namespace NachoCore.Model
         [Indexed]
         // Always valid.
         public bool DelayNotAllowed { set; get; }
+
         public XmlStatusKindEnum ResponseXmlStatusKind { set; get; }
         // Valid when Deferred, Blocked, or Failed. 0 is unset.
         public uint ResponsegXmlStatus { set; get; }
@@ -214,10 +228,14 @@ namespace NachoCore.Model
 
         public DateTime EmailMarkFlagDone_DateCompleted { get; set; }
 
+        public bool CalUpdate_SendBody { get; set; }
+
         [Indexed]
         public string DisplayName { set; get; }
 
         public Xml.MeetingResp.UserResponseCode CalResponse { set; get; }
+
+        public DateTime CalResponseInstance { set; get; }
 
         [Indexed]
         public int AttachmentId { set; get; }
@@ -228,33 +246,138 @@ namespace NachoCore.Model
 
         public const string KSynchronouslyCompleted	= "synchronously completed";
 
+        public static bool Cancel (int accountId, string token)
+        {
+            var retval = false;
+            NcModel.Instance.RunInTransaction (() => {
+                var pendings = McPending.QueryByToken (accountId, token);
+                foreach (var iterPending in pendings) {
+                    var pending = iterPending;
+                    switch (pending.State) {
+                    case McPending.StateEnum.Eligible:
+                        pending.ResolveAsCancelled (false);
+                        retval = true;
+                        break;
+
+                    case McPending.StateEnum.Deferred:
+                    case McPending.StateEnum.Failed:
+                    case McPending.StateEnum.PredBlocked:
+                    case McPending.StateEnum.UserBlocked:
+                        if (McPending.Operations.ContactSearch == pending.Operation ||
+                            McPending.Operations.EmailSearch == pending.Operation) {
+                            McPending.ResolvePendingSearchReqs (accountId, token, false);
+                        } else {
+                            pending.ResolveAsCancelled (false);
+                        }
+                        retval = true;
+                        break;
+
+                    case McPending.StateEnum.Dispatched:
+                        // Prevent any more high-level attempts after Cancel().
+                        // TODO - need method to find executing Op/Cmd so we can prevent HTTP retries.
+                        pending.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.DefersRemaining = 0;
+                            return true;
+                        });
+                        retval = false;
+                        break;
+
+                    case McPending.StateEnum.Deleted:
+                        // Nothing to do.
+                        retval = true;
+                        break;
+
+                    default:
+                        NcAssert.CaseError (string.Format ("Unknown State {0}", pending.State));
+                        break;
+                    }
+                }
+            });
+            return retval;
+        }
+
+        public static McPending UnblockPending (int accountId, int pendingId)
+        {
+            McPending retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = McAbstrObject.QueryById<McPending> (pendingId);
+                if (null != pending) {
+                    NcAssert.True (accountId == pending.AccountId);
+                    NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
+                    retval = pending.UpdateWithOCApply<McPending> ((record) => {
+                        var target = (McPending)record;
+                        target.BlockReason = McPending.BlockReasonEnum.NotBlocked;
+                        target.State = McPending.StateEnum.Eligible;
+                        return true;
+                    });
+                }
+            });
+            return retval;
+        }
+
+        public virtual McPending DeletePendingCmd (int accountId, int pendingId)
+        {
+            McPending retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = McAbstrObject.QueryById<McPending> (pendingId);
+                if (null != pending) {
+                    NcAssert.True (accountId == pending.AccountId);
+                    retval = pending.ResolveAsCancelled (false);
+                }
+            });
+            return retval;
+        }
+
+        public static void Prioritize (int accountId, string token)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var pendings = McPending.QueryByToken (accountId, token);
+                foreach (var pending in pendings) {
+                    pending.Prioritize ();
+                }
+            });
+        }
+
         public void Prioritize ()
         {
-            PriorityStamp = DateTime.UtcNow;
-            DelayNotAllowed = true;
-            Update ();
+            UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.PriorityStamp = DateTime.UtcNow;
+                target.DelayNotAllowed = true;
+                return true;
+            });
         }
 
         // To be used by app/ui when dealing with McPending.
         // To be used by Commands when dealing with McPending.
-        public void MarkDispached ()
+        public McPending MarkDispached ()
         {
-            State = StateEnum.Dispatched;
-            Update ();
             Log.Info (Log.LOG_SYNC, "Pending:MarkDispached:{0}", Id);
+            return UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.State = StateEnum.Dispatched;
+                return true;
+            });
         }
 
-        public void MarkPredBlocked (int predPendingId)
+        public McPending MarkPredBlocked (int predPendingId)
         {
-            State = StateEnum.PredBlocked;
+            var retval = this;
             var dep = new McPendDep (AccountId, predPendingId, Id);
             dep.Insert ();
             if (0 == Id) {
+                State = StateEnum.PredBlocked;
                 Insert ();
             } else {
-                Update ();
+                retval = UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.PredBlocked;
+                    return true;
+                });
             }
             Log.Info (Log.LOG_SYNC, "Pending:MarkPredBlocked:{0}", Id);
+            return retval;
         }
 
         public bool IsDuplicate ()
@@ -287,6 +410,17 @@ namespace NachoCore.Model
                     if (pending.Operation == Operation &&
                         pending.ServerId == ServerId &&
                         pending.AttachmentId == AttachmentId) {
+                        dupRef = pending;
+                        return true;
+                    }
+                }
+                dupRef = null;
+                return false;
+
+            case Operations.Sync:
+                sameServerId = McPending.QueryByServerId (AccountId, ServerId).Where (x => x.State != StateEnum.Failed);
+                foreach (var pending in sameServerId) {
+                    if (pending.Operation == Operation) {
                         dupRef = pending;
                         return true;
                     }
@@ -398,7 +532,7 @@ namespace NachoCore.Model
             return false;
         }
 
-        public void ResolveAsSuccess (ProtoControl control)
+        public McPending ResolveAsSuccess (NcProtoControl control)
         {
             // Pick the default SubKind based on the Operation.
             // All Sync-command Ops must be covered. Non-Sync-commands need not be covered here.
@@ -448,61 +582,81 @@ namespace NachoCore.Model
                 subKind = NcResult.SubKindEnum.Info_TaskDeleteSucceeded;
                 break;
 
+            case Operations.Sync:
+                subKind = NcResult.SubKindEnum.Info_SyncSucceeded;
+                break;
+
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
             var result = NcResult.Info (subKind);
-            ResolveAsSuccess (control, result);
+            return ResolveAsSuccess (control, result);
         }
 
-        public void ResolveAsSuccess (ProtoControl control, NcResult result)
+        public McPending ResolveAsSuccess (NcProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsSuccess.
+            var retval = this;
             NcAssert.True (StateEnum.Dispatched == State);
             NcAssert.True (NcResult.KindEnum.Info == result.Kind);
-            ResultKind = result.Kind;
-            ResultSubKind = result.SubKind;
-            ResultWhy = result.Why;
+            if (Operation == Operations.EmailSend ||
+                Operation == Operations.EmailForward ||
+                Operation == Operations.EmailReply) {
+                control.Owner.SendEmailResp (control, ItemId, true);
+            }
             if (null != result) {
                 NcAssert.True (null != control);
                 control.StatusInd (result, new [] { Token });
             }
-            State = StateEnum.Deleted;
-            Update ();
+            retval = UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.ResultKind = result.Kind;
+                target.ResultSubKind = result.SubKind;
+                target.ResultWhy = result.Why;
+                target.State = StateEnum.Deleted;
+                return true;
+            });
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}:{1}", Id, Token);
             UnblockSuccessors (control, StateEnum.Eligible);
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
             // accurate.
             Delete ();
+            return retval;
         }
 
-        public void ResolveAsCancelled (bool onlyDispatched)
+        public McPending ResolveAsCancelled (bool onlyDispatched)
         {
+            var retval = this;
             NcAssert.True (StateEnum.Dispatched == State || !onlyDispatched);
-            State = StateEnum.Deleted;
+            retval = UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.State = StateEnum.Deleted;
+                return true;
+            });
             UnblockSuccessors (null, StateEnum.Eligible);
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}:{1}", Id, Token);
             Delete ();
+            return retval;
         }
 
-        public void ResolveAsCancelled ()
+        public McPending ResolveAsCancelled ()
         {
-            ResolveAsCancelled (true);
+            return ResolveAsCancelled (true);
         }
 
         private void EmailBodyError (int accountId, string serverId)
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", serverId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/EmailBodyError: can't find McEmailMessage with ServerId {0}", serverId);
                 return;
             }
             McBody body = null;
             if (0 != email.BodyId) {
                 body = McBody.QueryById<McBody> (email.BodyId);
                 if (null == body) {
-                    Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                    Log.Error (Log.LOG_AS, "ResolveAsHardFail/EmailBodyError: BodyId {0} has no body", email.BodyId);
                 }
             }
             if (null == body) {
@@ -519,7 +673,7 @@ namespace NachoCore.Model
         {
             var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
             if (null == email) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", serverId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/EmailBodyClear: can't find McEmailMessage with ServerId {0}", serverId);
                 return;
             }
             if (0 == email.BodyId) {
@@ -527,7 +681,7 @@ namespace NachoCore.Model
             }
             McBody body = McBody.QueryById<McBody> (email.BodyId);
             if (null == body) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                Log.Error (Log.LOG_AS, "ResolveAsHardFail/EailBodyClear: BodyId {0} has no body", email.BodyId);
                 return;
             }
             body.DeleteFile (); // Sets FilePresence to None and Updates the item
@@ -537,7 +691,7 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Error (Log.LOG_AS, "ResolveAsHardFail: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/AttachmentError: Attachment {0} does not exist", attachmentId);
                 return;
             }
             attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
@@ -548,22 +702,32 @@ namespace NachoCore.Model
         {
             var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
             if (null == attachment) {
-                Log.Error(Log.LOG_AS,"ResolveAsHardFail: Attachment {0} does not exist", attachmentId);
+                Log.Warn (Log.LOG_AS, "ResolveAsHardFail/AttachmentClear: Attachment {0} does not exist", attachmentId);
                 return;
             }
             attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
         }
 
-        public void ResolveAsHardFail (ProtoControl control, NcResult result)
+        public McPending ResolveAsHardFail (NcProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
+            var retval = this;
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
-            ResultKind = result.Kind;
-            ResultSubKind = result.SubKind;
-            ResultWhy = result.Why;
-            State = StateEnum.Failed;
+            control.StatusInd (result, new [] { Token });
+            if (Operation == Operations.EmailSend ||
+                Operation == Operations.EmailForward ||
+                Operation == Operations.EmailReply) {
+                control.Owner.SendEmailResp (control, ItemId, false);
+            }
             NcModel.Instance.RunInTransaction (() => {
-                Update ();
+                retval = UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.ResultKind = result.Kind;
+                    target.ResultSubKind = result.SubKind;
+                    target.ResultWhy = result.Why;
+                    target.State = StateEnum.Failed;
+                    return true;
+                });
                 if (McPending.Operations.EmailBodyDownload == Operation) {
                     if (NcResult.WhyEnum.InterruptedByAppExit == ResultWhy) {
                         EmailBodyClear (AccountId, ServerId);
@@ -579,8 +743,13 @@ namespace NachoCore.Model
                 }
                 UnblockSuccessors (control, DelayNotAllowed ? StateEnum.Eligible : StateEnum.Failed);
             });
-            control.StatusInd (result, new [] { Token });
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+
+            if (DelayNotAllowed) {
+                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+            } else {
+                Log.Warn (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+            }
+            return retval;
         }
 
         private NcResult.SubKindEnum DefaultErrorSubKind ()
@@ -624,6 +793,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_MeetingResponseFailed;
             case Operations.CalBodyDownload:
                 return NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed;
+            case Operations.CalForward:
+                return NcResult.SubKindEnum.Error_CalendarForwardFailed;
             case Operations.ContactCreate:
                 return NcResult.SubKindEnum.Error_ContactCreateFailed;
             case Operations.ContactUpdate:
@@ -638,30 +809,37 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_TaskUpdateFailed;
             case Operations.TaskDelete:
                 return NcResult.SubKindEnum.Error_TaskDeleteFailed;
+            case Operations.EmailSearch:
+                return NcResult.SubKindEnum.Error_EmailSearchCommandFailed;
             case Operations.ContactSearch:
-                return NcResult.SubKindEnum.Error_SearchCommandFailed;
+                return NcResult.SubKindEnum.Error_ContactSearchCommandFailed;
             case Operations.AttachmentDownload:
                 return NcResult.SubKindEnum.Error_AttDownloadFailed;
-
+            case Operations.Sync:
+                return NcResult.SubKindEnum.Error_SyncFailed;
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }
         }
 
         // PUBLIC FOR TEST USE ONLY. OTHERWISE CONSIDER IT PRIVATE.
-        public bool UnblockSuccessors (ProtoControl control, StateEnum toState)
+        public bool UnblockSuccessors (NcProtoControl control, StateEnum toState)
         {
             var successors = QuerySuccessors (AccountId, Id);
             McPendDep.DeleteAllSucc (Id);
-            foreach (var succ in successors) {
+            foreach (var iter in successors) {
+                var succ = iter;
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
                 Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
                 switch (toState) {
                 case StateEnum.Eligible:
                     if (0 == remaining.Count ()) {
                         // Just enable execution.
-                        succ.State = toState;
-                        succ.Update ();
+                        succ = succ.UpdateWithOCApply<McPending> ((record) => {
+                            var target = (McPending)record;
+                            target.State = toState;
+                            return true;
+                        });
                     }
                     break;
                 case StateEnum.Failed:
@@ -686,13 +864,16 @@ namespace NachoCore.Model
         public static bool MakeEligibleOnFSync (int accountId)
         {
             var makeEligible = QueryDeferredFSync (accountId);
-            foreach (var pending in makeEligible) {
-                if (DeferredEnum.UntilFSyncThenSync == pending.DeferredReason) {
-                    pending.DeferredReason = DeferredEnum.UntilSync;
-                } else {
-                    pending.State = StateEnum.Eligible;
-                }
-                pending.Update ();
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    if (DeferredEnum.UntilFSyncThenSync == target.DeferredReason) {
+                        target.DeferredReason = DeferredEnum.UntilSync;
+                    } else {
+                        target.State = StateEnum.Eligible;
+                    }
+                    return true;
+                });
                 Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFSync:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
@@ -701,81 +882,94 @@ namespace NachoCore.Model
         public static bool MakeEligibleOnSync (int accountId)
         {
             var makeEligible = QueryDeferredSync (accountId);
-            foreach (var pending in makeEligible) {
-                pending.State = StateEnum.Eligible;
-                pending.Update ();
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Eligible;
+                    return true;
+                });
                 Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnSync:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
         }
 
-        public static bool MakeEligibleOnTime (int accountId)
+        public static bool MakeEligibleOnTime ()
         {
-            var makeEligible = QueryDeferredUntilNow (accountId);
-            foreach (var pending in makeEligible) {
-                pending.State = StateEnum.Eligible;
-                pending.Update ();
+            var makeEligible = QueryDeferredUntilNow ();
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Eligible;
+                    return true;
+                });
                 Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnTime:{0}", pending.Id);
             }
             return (0 != makeEligible.Count);
         }
         // register for status-ind, look for FSync and Sync success.
-        public void ResolveAsHardFail (ProtoControl control, NcResult.WhyEnum why)
+        public McPending ResolveAsHardFail (NcProtoControl control, NcResult.WhyEnum why)
         {
             var result = NcResult.Error (DefaultErrorSubKind (), why);
-            ResolveAsHardFail (control, result);
+            return ResolveAsHardFail (control, result);
         }
 
-        public void ResolveAsDeferred (ProtoControl control, DeferredEnum reason, NcResult onFail)
+        public McPending ResolveAsDeferred (NcProtoControl control, DeferredEnum reason, NcResult onFail)
         {
             NcAssert.True (StateEnum.Dispatched == State);
             // Added check in case of any bug causing underflow.
             if (DelayNotAllowed || 0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
-                ResolveAsHardFail (control, onFail);
+                return ResolveAsHardFail (control, onFail);
             } else {
-                DefersRemaining--;
-                DeferredReason = reason;
-                State = StateEnum.Deferred;
-                Update ();
                 Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferred:{0}:{1}", Id, Token);
+                return UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.DefersRemaining--;
+                    target.DeferredReason = reason;
+                    target.State = StateEnum.Deferred;
+                    return true;
+                });
             }
         }
 
-        public void ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult onFail)
+        public void ResolveAsDeferred (NcProtoControl control, DateTime eligibleAfter, NcResult onFail)
         {
             DeferredReason = DeferredEnum.UntilTime;
             DeferredUntilTime = eligibleAfter;
             ResolveAsDeferred (control, DeferredEnum.UntilTime, onFail);
         }
 
-        public void ResolveAsDeferred (ProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why)
+        public void ResolveAsDeferred (NcProtoControl control, DateTime eligibleAfter, NcResult.WhyEnum why)
         {
             var result = NcResult.Error (DefaultErrorSubKind (), why);
             ResolveAsDeferred (control, eligibleAfter, result);
         }
 
-        public void ResolveAsDeferredForce (ProtoControl control)
+        public void ResolveAsDeferredForce (NcProtoControl control)
         {
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferredForce:{0}", Id);
             ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.NotSpecified);
         }
 
-        public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
+        public McPending ResolveAsUserBlocked (NcProtoControl control, BlockReasonEnum reason, NcResult result)
         {
             // This is the designated ResolveAsUserBlocked.
             NcAssert.True (StateEnum.Dispatched == State);
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
-            ResultKind = result.Kind;
-            ResultSubKind = result.SubKind;
-            ResultWhy = result.Why;
-            BlockReason = reason;
+
             control.StatusInd (result, new [] { Token });
             State = StateEnum.UserBlocked;
-            Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsUserBlocked:{0}:{1}", Id, Token);
+            return UpdateWithOCApply<McPending> ((record) => {
+                var target = (McPending)record;
+                target.ResultKind = result.Kind;
+                target.ResultSubKind = result.SubKind;
+                target.ResultWhy = result.Why;
+                target.BlockReason = reason;
+                return true;
+            });
         }
 
-        public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)
+        public void ResolveAsUserBlocked (NcProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)
         {
             ResolveAsUserBlocked (control, reason, NcResult.Error (DefaultErrorSubKind (), why));
         }
@@ -790,23 +984,24 @@ namespace NachoCore.Model
             }
             var killList = query.ToList ();
             foreach (var kill in killList) {
+                NcAssert.True (Operations.ContactSearch == kill.Operation || Operations.EmailSearch == kill.Operation);
                 kill.ResolveAsCancelled (false);
             }
         }
 
-        public static void ResolveAllDelayNotAllowedAsFailed (ProtoControl control, int accountId)
+        public static void ResolveAllDelayNotAllowedAsFailed (NcProtoControl control, int accountId)
         {
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.DelayNotAllowed &&
-                    rec.State != StateEnum.Failed).All (y => {
-                        y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
-                        return true;
-                    });
+            rec.DelayNotAllowed &&
+            rec.State != StateEnum.Failed).All (y => {
+                y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
+                return true;
+            });
         }
 
-        public static void ResolveAllDispatchedAsDeferred (ProtoControl control, int accountId)
+        public static void ResolveAllDispatchedAsDeferred (NcProtoControl control, int accountId)
         {
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
@@ -819,41 +1014,77 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            var predIds = new List<int> ();
+            using (var capture = CaptureWithStart ("Insert")) {
+                var predIds = new List<int> ();
 
-            NcModel.Instance.RunInTransaction (() => {
-                if (CanDepend ()) {
-                    // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
-                    // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
-                    var pendq = QueryNonFailedNonDeleted (AccountId).OrderByDescending (x => x.Priority);
-                    foreach (var elem in pendq) {
-                        if (DependsUpon (elem)) {
-                            predIds.Add (elem.Id);
+                NcModel.Instance.RunInTransaction (() => {
+                    if (CanDepend ()) {
+                        // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
+                        // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
+                        var pendq = QueryNonFailedNonDeleted (AccountId).OrderByDescending (x => x.Priority);
+                        foreach (var elem in pendq) {
+                            if (DependsUpon (elem)) {
+                                predIds.Add (elem.Id);
+                            }
+                        }
+                        if (0 != predIds.Count) {
+                            State = StateEnum.PredBlocked;
                         }
                     }
-                    if (0 != predIds.Count) {
-                        State = StateEnum.PredBlocked;
+                    if (null != Item) {
+                        ItemId = Item.Id;
+                        Item.PendingRefCount++;
+                        Item.Update ();
                     }
-                }
-                if (null != Item) {
-                    ItemId = Item.Id;
-                    Item.PendingRefCount++;
-                    Item.Update ();
-                }
-                base.Insert ();
-                Priority = Id;
-                base.Update ();
-                foreach (var predId in predIds) {
-                    var pendDep = new McPendDep (AccountId, predId, Id);
-                    pendDep.Insert ();
-                }
-            });
+                    base.Insert ();
+                    ++_Version;
+                    // Note that because Insert & Update are in the same transaction, we don't really need UpdateWithOCApply here.
+                    // But we must to avoid the assert in Update().
+                    base.UpdateWithOCApply<McPending> ((record) => {
+                        var target = (McPending)record;
+                        target.Priority = target.Id;
+                        return true;
+                    });
+                    foreach (var predId in predIds) {
+                        var pendDep = new McPendDep (AccountId, predId, Id);
+                        pendDep.Insert ();
+                    }
+                });
 
-            if (null != Item) {
-                Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
+                if (null != Item) {
+                    Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
+                }
+                Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
+                return 1;
             }
-            Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
-            return 1;
+        }
+
+        public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
+        {
+            T retval = null;
+            int innerCount = 0;
+            NcModel.Instance.RunInLock (() => {
+                retval = base.UpdateWithOCApply<T> (mutator, out innerCount, tries);
+                ++_Version;
+            });
+            count = innerCount;
+            return retval;
+        }
+
+        public override T UpdateWithOCApply<T> (Mutator mutator, int tries = 100)
+        {
+            T retval = null;
+            NcModel.Instance.RunInLock (() => {
+                retval = base.UpdateWithOCApply<T> (mutator, tries);
+                ++_Version;
+            });
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
         }
 
         public McAbstrItem QueryItemUsingServerId ()
@@ -876,60 +1107,64 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            McAbstrItem item = null;
+            using (var capture = CaptureWithStart ("Delete")) {
+                McAbstrItem item = null;
 
-            NcModel.Instance.RunInTransaction (() => {
-                // Deal with referenced McItem ref count if needed.
-                if (0 != ItemId) {
-                    switch (Operation) {
-                    case Operations.EmailSend:
-                    case Operations.EmailForward:
-                    case Operations.EmailReply:
-                        item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
-                        break;
+                NcModel.Instance.RunInTransaction (() => {
+                    // Deal with referenced McItem ref count if needed.
+                    if (0 != ItemId) {
+                        switch (Operation) {
+                        case Operations.EmailSend:
+                        case Operations.EmailForward:
+                        case Operations.EmailReply:
+                        case Operations.CalForward: // An e-mail message is used when forwarding a calendar item.
+                            item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
+                            break;
 
-                    case Operations.CalCreate:
-                    case Operations.CalUpdate:
-                        item = McAbstrObject.QueryById<McCalendar> (ItemId);
-                        break;
+                        case Operations.CalCreate:
+                        case Operations.CalUpdate:
+                            item = McAbstrObject.QueryById<McCalendar> (ItemId);
+                            break;
 
-                    case Operations.ContactCreate:
-                    case Operations.ContactUpdate:
-                        item = McAbstrObject.QueryById<McContact> (ItemId);
-                        break;
+                        case Operations.ContactCreate:
+                        case Operations.ContactUpdate:
+                            item = McAbstrObject.QueryById<McContact> (ItemId);
+                            break;
 
-                    case Operations.TaskCreate:
-                    case Operations.TaskUpdate:
-                        item = McAbstrObject.QueryById<McTask> (ItemId);
-                        break;
+                        case Operations.TaskCreate:
+                        case Operations.TaskUpdate:
+                            item = McAbstrObject.QueryById<McTask> (ItemId);
+                            break;
 
-                    default:
-                        Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
-                        NcAssert.True (false);
-                        break;
-                    }
-                    NcAssert.NotNull (item);
-                    NcAssert.True (0 < item.PendingRefCount);
-                    item.PendingRefCount--;
-                    item.Update ();
-                    Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
-                    if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
-                        item.Delete ();
-                    }
-                    // Deal with any dependent McPending (if there are any, it is an error).
-                    var successors = QuerySuccessors (AccountId, Id);
-                    if (0 != successors.Count) {
-                        Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
-                        foreach (var succ in successors) {
-                            succ.Delete();
+                        default:
+                            Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
+                            NcAssert.True (false);
+                            break;
+                        }
+                        NcAssert.NotNull (item);
+                        NcAssert.True (0 < item.PendingRefCount);
+                        item.PendingRefCount--;
+                        item.Update ();
+                        Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
+                        if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
+                            item.Delete ();
+                        }
+                        // Deal with any dependent McPending (if there are any, it is an error).
+                        var successors = QuerySuccessors (AccountId, Id);
+                        if (0 != successors.Count) {
+                            Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
+                            foreach (var succ in successors) {
+                                succ.Delete ();
+                            }
                         }
                     }
-                }
-                base.Delete ();
-            });
+                    base.Delete ();
+                    ++_Version;
+                });
             
-            Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
-            return 1;
+                Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
+                return 1;
+            }
         }
 
         // Query APIs for any & all to call.
@@ -948,23 +1183,25 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (x => x.AccountId == accountId &&
-                    StateEnum.Failed != x.State &&
-                    StateEnum.Deleted != x.State).ToList ();
+            StateEnum.Failed != x.State &&
+            StateEnum.Deleted != x.State).ToList ();
         }
 
-        public static IEnumerable<McPending> QueryEligible (int accountId)
+        public static IEnumerable<McPending> QueryEligible (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-            rec.State == StateEnum.Eligible
+            rec.State == StateEnum.Eligible &&
+            rec.Capability == (rec.Capability & capabilities)
             ).OrderBy (x => x.Priority);
         }
 
-        public static IEnumerable<McPending> QueryEligibleOrderByPriorityStamp (int accountId)
+        public static IEnumerable<McPending> QueryEligibleOrderByPriorityStamp (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.State == StateEnum.Eligible
+            rec.State == StateEnum.Eligible &&
+            rec.Capability == (rec.Capability & capabilities)
             ).OrderByDescending (x => x.PriorityStamp);
         }
 
@@ -1006,10 +1243,9 @@ namespace NachoCore.Model
             rec.DeferredReason == DeferredEnum.UntilSync).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static List<McPending> QueryDeferredUntilNow (int accountId)
+        public static List<McPending> QueryDeferredUntilNow ()
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
-                rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             rec.DeferredReason == DeferredEnum.UntilTime &&
             rec.DeferredUntilTime < DateTime.UtcNow
@@ -1028,8 +1264,8 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.Operation == operation &&
-                    rec.AttachmentId == attId).OrderBy (x => x.Priority);
+            rec.Operation == operation &&
+            rec.AttachmentId == attId).OrderBy (x => x.Priority);
         }
 
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)
@@ -1040,7 +1276,18 @@ namespace NachoCore.Model
             rec.Operation == operation).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static McPending QueryFirstEligibleByOperation (int accountId, McPending.Operations operation)
+        public static List<McPending> QueryFirstEligibleByOperation (int accountId, 
+                                                                     Operations operation1, Operations operation2, Operations operation3, Operations operation4,
+                                                                     int limit)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+            (rec.Operation == operation1 || rec.Operation == operation2 || rec.Operation == operation3 || rec.Operation == operation4) &&
+            rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).Take (limit).ToList ();
+        }
+
+        public static McPending QueryFirstEligibleByOperation (int accountId, Operations operation)
         {
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
@@ -1050,11 +1297,11 @@ namespace NachoCore.Model
         }
 
         public static IEnumerable<McPending> QueryFirstNEligibleByOperation (int accountId, 
-            McPending.Operations operation, int n)
+                                                                             McPending.Operations operation, int n)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
-                rec.Operation == operation &&
+            rec.Operation == operation &&
             rec.State == StateEnum.Eligible).OrderBy (x => x.Id).Take (n);
         }
 
@@ -1088,8 +1335,19 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.AttachmentId == AttachmentId
+            rec.AttachmentId == AttachmentId
             ).FirstOrDefault ();
+        }
+
+        public static McPending QueryByEmailMessageId (int accountId, int emailMessageId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+            rec.ItemId == emailMessageId &&
+            (rec.Operation == Operations.EmailSend ||
+            rec.Operation == Operations.EmailForward ||
+            rec.Operation == Operations.EmailReply)).FirstOrDefault ();
         }
 
         public static IEnumerable<McPending> QueryOlderThanByState (int accountId, DateTime olderThan, StateEnum state)
@@ -1097,8 +1355,8 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-                    rec.State == state &&
-                    rec.LastModified < olderThan);
+            rec.State == state &&
+            rec.LastModified < olderThan);
         }
 
         public class ReWrite
@@ -1189,7 +1447,6 @@ namespace NachoCore.Model
             case Operations.ContactCreate:
             case Operations.ContactDelete:
             case Operations.ContactMove:
-            case Operations.ContactSearch:
             case Operations.ContactUpdate:
                 return McContact.QueryById<McContact> (ItemId);
             case Operations.EmailClearFlag:
@@ -1201,6 +1458,7 @@ namespace NachoCore.Model
             case Operations.EmailReply:
             case Operations.EmailSend:
             case Operations.EmailSetFlag:
+            case Operations.CalForward: // An e-mail message is used when forwarding a calendar item
                 return McContact.QueryById<McEmailMessage> (ItemId);
             case Operations.TaskCreate:
             case Operations.TaskDelete:

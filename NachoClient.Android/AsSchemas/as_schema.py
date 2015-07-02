@@ -1,4 +1,5 @@
 import os
+import sys
 from xml.sax.handler import ContentHandler
 from object_stack import ObjectStack
 from as_xml import AsXmlElement
@@ -33,6 +34,9 @@ class AsSchemaElement(AsXmlElement):
 
 class AsSchema(AsXmlParser):
     REDACTION_TYPES = ['element_redaction', 'attribute_redaction']
+    # This list must match NcXmlFilter.cs:RedactionType
+    REDACTION_OPTIONS = (u'none', u'length', u'short_hash', u'full_hash', u'full')
+
     """
     This class represents an ActiveSync schema XML file. An AS schema XML
     file is a XML file that describes attributes of various ActiveSync XML
@@ -86,6 +90,11 @@ class AsSchema(AsXmlParser):
         return
 
     def redaction_end_handler(self, obj, content):
+        # Sanity check the value
+        if obj.name == u'element_redaction':
+            if content not in AsSchema.REDACTION_OPTIONS:
+                print 'ERROR: "%s" is not a valid element redaction type.' % content
+                sys.exit(1)
         self.current_element().set_attr(obj.name, content)
 
     def default_end_handler(self, name, attrs):

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -20,23 +21,27 @@ namespace NachoCore.ActiveSync
         {
             Attachments = new List<McAttachment> ();
             FetchKit = fetchKit;
-            PendingList.AddRange (FetchKit.Pendings);
-            foreach (var pending in PendingList) {
-                pending.MarkDispached ();
+            foreach (var pending in fetchKit.Pendings) {
+                pending.Pending.MarkDispached ();
+                PendingList.Add (pending.Pending);
             }
         }
 
-        private XElement ToEmailFetch (string parentId, string serverId)
+        private XElement ToEmailFetch (string parentId, string serverId, Xml.AirSync.TypeCode bodyPref)
         {
-            // TODO: we should let strategy determine the BodyPref.
+            if (0 == bodyPref) {
+                bodyPref = Xml.AirSync.TypeCode.Mime_4;
+            }
             return new XElement (m_ns + Xml.ItemOperations.Fetch,
                 new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
                 new XElement (AirSyncNs + Xml.AirSync.CollectionId, parentId),
                 new XElement (AirSyncNs + Xml.AirSync.ServerId, serverId),
                 new XElement (m_ns + Xml.ItemOperations.Options,
-                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
+                    new XElement (AirSyncNs + Xml.AirSync.MimeSupport,
+                        Xml.AirSync.TypeCode.Mime_4 == bodyPref ?
+                        (uint)Xml.AirSync.MimeSupportCode.AllMime_2 : (uint)Xml.AirSync.MimeSupportCode.NoMime_0),
                     new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                        new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)bodyPref),
                         new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000"),
                         new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"))));
         }
@@ -58,22 +63,27 @@ namespace NachoCore.ActiveSync
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns);
             XElement fetch = null;
             // Add in the pendings, if any.
-            foreach (var pending in PendingList) {
+            foreach (var pendingInfo in FetchKit.Pendings) {
+                var pending = pendingInfo.Pending;
+                fetch = null;
                 switch (pending.Operation) {
                 case McPending.Operations.AttachmentDownload:
                     var attachment = McAbstrObject.QueryById<McAttachment> (pending.AttachmentId);
-                    Attachments.Add (attachment);
-                    fetch = ToAttaFetch (attachment.FileReference);
+                    if (null != attachment) {
+                        Attachments.Add (attachment);
+                        fetch = ToAttaFetch (attachment.FileReference);
+                    }
                     break;
 
                 case McPending.Operations.EmailBodyDownload:
-                    fetch = ToEmailFetch (pending.ParentId, pending.ServerId);
+                    fetch = ToEmailFetch (pending.ParentId, pending.ServerId, pendingInfo.BodyPref);
                     break;
 
                 case McPending.Operations.CalBodyDownload:
                     fetch = new XElement (m_ns + Xml.ItemOperations.Fetch,
                         new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
                         new XElement (AirSyncNs + Xml.AirSync.ServerId, pending.ServerId),
+                        new XElement (AirSyncNs + Xml.AirSync.CollectionId, pending.ParentId),
                         new XElement (AirSyncNs + Xml.AirSync.Options,
                             new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2),
                             new XElement (m_baseNs + Xml.AirSync.BodyPreference,
@@ -105,11 +115,14 @@ namespace NachoCore.ActiveSync
                     NcAssert.True (false);
                     break;
                 }
-                itemOp.Add (fetch);
+                // The to-be-fetched attachment can be deleted before we get here.
+                if (null != fetch) {
+                    itemOp.Add (fetch);
+                }
             }
             // Add in the prefetches if any.
             foreach (var pfBody in FetchKit.FetchBodies) {
-                itemOp.Add (ToEmailFetch (pfBody.ParentId, pfBody.ServerId));
+                itemOp.Add (ToEmailFetch (pfBody.ParentId, pfBody.ServerId, pfBody.BodyPref));
             }
             foreach (var pfAtta in FetchKit.FetchAttachments) {
                 Attachments.Add (pfAtta);
@@ -187,8 +200,11 @@ namespace NachoCore.ActiveSync
             PendingList.Remove (pending);
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "IOPCANCEL");
+            }
             var xmlStatus = doc.Root.Element (m_ns + Xml.ItemOperations.Status);
             var outerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);
             if (Xml.ItemOperations.StatusCode.Success_1 != outerStatus) {
@@ -197,6 +213,12 @@ namespace NachoCore.ActiveSync
             switch (outerStatus) {
             case Xml.ItemOperations.StatusCode.Success_1:
                 var xmlResponse = doc.Root.Element (m_ns + Xml.ItemOperations.Response);
+                if (null == xmlResponse) {
+                    PendingResolveApply ((pending) => {
+                        pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
+                    });
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IONORESP");
+                }
                 var xmlFetches = xmlResponse.Elements (m_ns + Xml.ItemOperations.Fetch);
                 foreach (var xmlFetch in xmlFetches) {
                     var xmlFileReference = xmlFetch.Element (m_baseNs + Xml.AirSyncBase.FileReference);
@@ -227,6 +249,7 @@ namespace NachoCore.ActiveSync
                                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
                                 }
                             }
+                            // TODO - remove by the Id to avoid ambiguity if we use the result of ResolveAs...
                             PendingList.Remove (pending);
                         } else if (null != xmlServerId) {
                             // This means we are processing a body download response.
@@ -263,10 +286,14 @@ namespace NachoCore.ActiveSync
                                 NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
                                 break;
                             }
-                            // We are ignoring all the other crap that can come down (for now). We just want the Body.
-                            item.ApplyAsXmlBody (xmlBody);
-                            item.Update ();
-                            Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", item.ServerId, 
+                            if (null != item) {
+                                // We are ignoring all the other crap that can come down (for now). We just want the Body.
+                                // The item can be already deleted while we are waiting for this response.
+                                // TODO - make sure we're not leaking the body if it is already deleted.
+                                item.ApplyAsXmlBody (xmlBody);
+                                item.Update ();
+                            }
+                            Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", serverId, 
                                 (null == pending) ? "pre" : "");
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);

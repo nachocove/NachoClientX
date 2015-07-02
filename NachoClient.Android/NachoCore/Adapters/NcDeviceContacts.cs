@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -10,71 +10,114 @@ namespace NachoCore
 {
     public class NcDeviceContacts
     {
-        public static void Run ()
-        {
-            NcTask.Run (Process, "NcDeviceContacts");
-        }
+        private McFolder Folder;
+        private IEnumerator<PlatformContactRecord> DeviceContacts = null;
+        private IEnumerator<McMapFolderFolderEntry> Stale = null;
+        private List<McMapFolderFolderEntry> Present;
+        private int InsertCount = 0, UpdateCount = 0, PresentCount = 0;
 
-        private static void Process ()
+        public NcDeviceContacts ()
         {
-            var folder = McFolder.GetDeviceContactsFolder ();
-            NcAssert.NotNull (folder);
             var deviceContacts = Contacts.Instance.GetContacts ();
             if (null == deviceContacts) {
                 return;
             }
-            Func<PlatformContactRecord, McContact> inserter = (deviceContact) => {
-                var result = deviceContact.ToMcContact ();
-                if (result.isOK ()) {
-                    var contact = result.GetValue<McContact> ();
-                    NcModel.Instance.RunInTransaction(() => {
-                        contact.Insert ();
-                        folder.Link (contact);
-                    });
-                    return contact;
-                } else {
-                    Log.Error (Log.LOG_SYS, "Failed to create McContact from device contact {0}", deviceContact.UniqueId);
-                    return null;
-                }
-            };
-            List<McMapFolderFolderEntry> present = McMapFolderFolderEntry.QueryByFolderIdClassCode (folder.AccountId, folder.Id, 
+            DeviceContacts = deviceContacts.GetEnumerator ();
+            Folder = McFolder.GetDeviceContactsFolder ();
+            Present = McMapFolderFolderEntry.QueryByFolderIdClassCode (Folder.AccountId, Folder.Id, 
                 McAbstrFolderEntry.ClassCodeEnum.Contact);
-            foreach (var deviceContact in deviceContacts) {
-                // Use the TPL like iOS GCD here. Schedule chunks.
-                var task = NcTask.Run (() => {
-                    var existing = McContact.QueryByDeviceUniqueId (deviceContact.UniqueId);
-                    if (null == existing) {
-                        // If missing, insert it.
-                        inserter.Invoke (deviceContact);
-                    } else {
-                        NcAssert.True (1 == present.RemoveAll (x => x.FolderEntryId == existing.Id));
-                        // If present and stale, update it.
-                        if (deviceContact.LastUpdate > existing.DeviceLastUpdate) {
-                            NcModel.Instance.RunInTransaction(() => {
-                                if (null != inserter.Invoke (deviceContact)) {
-                                    folder.Unlink (existing);
-                                    existing.Delete ();
-                                }
-                            });
-                        }
-                    }
-                }, "NcDeviceContacts:Process", true);
-                task.Wait (NcTask.Cts.Token);
-                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+        }
+
+        public bool ProcessNextContact ()
+        {
+            if (null == DeviceContacts) {
+                return true;
             }
-            // If it isn't in the list of device contacts, it needs to be removed.
-            foreach (var map in present) {
-                // Use the TPL like iOS GCD here. Schedule chunks.
-                var task = NcTask.Run (() => {
-                    NcModel.Instance.RunInTransaction (() => {
-                        folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Contact);
-                        McContact.DeleteById<McContact> (map.FolderEntryId);
-                    });
-                }, "NcDeviceContacts:Delete", true);
-                task.Wait (NcTask.Cts.Token);
-                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+            if (!DeviceContacts.MoveNext ()) {
+                return true;
             }
+            var deviceContact = DeviceContacts.Current;
+            // defensive.
+            if (null == deviceContact) {
+                return true;
+            }
+            Func<McContact, McContact> inserter = (record) => {
+                NcModel.Instance.RunInTransaction (() => {
+                    record.Insert ();
+                    Folder.Link (record);
+                });
+                return record;
+            };
+            Func<McContact, McContact> updater = (record) => {
+                NcModel.Instance.RunInTransaction (() => {
+                    record.Update ();
+                });
+                return record;
+            };
+
+            var existing = McContact.QueryByServerId<McContact> (McAccount.GetDeviceAccount ().Id, deviceContact.ServerId);
+            if (null != existing) {
+                var removed = Present.RemoveAll (x => x.FolderEntryId == existing.Id);
+                NcAssert.AreEqual (1, removed);
+                if (deviceContact.LastUpdate <= existing.DeviceLastUpdate) {
+                    return false;
+                }
+            }
+            NcResult result;
+            try {
+                result = deviceContact.ToMcContact (existing);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SYS, "Exception during ToMcContact: {0}", ex.ToString ());
+                return false;
+            }
+            if (!result.isOK ()) {
+                Log.Error (Log.LOG_SYS, "Failed to create McContact from device contact {0}", deviceContact.ServerId);
+                return false;
+            }
+            var contact = result.GetValue<McContact> ();
+            if (null == existing) {
+                inserter.Invoke (contact);
+                ++ InsertCount;
+            } else {
+                updater.Invoke (contact);
+                ++ UpdateCount;
+            }
+            return false;
+        }
+
+        public bool RemoveNextStale ()
+        {
+            if (null == Stale) {
+                if (null == Present) {
+                    return true;
+                }
+                Stale = Present.GetEnumerator ();
+                PresentCount = Present.Count;
+            }
+            if (!Stale.MoveNext ()) {
+                return true;
+            }
+            var map = Stale.Current;
+            var contact = McContact.QueryById<McContact> (map.FolderEntryId);
+            if (null == contact) {
+                Log.Error (Log.LOG_SYS, "RemoveNextStale: can't find contact");
+            } else {
+                if (contact.IsAwaitingCreate) {
+                    return false;
+                }
+            }
+            NcModel.Instance.RunInTransaction (() => {
+                Folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Contact);
+                McContact.DeleteById<McContact> (map.FolderEntryId);
+            });
+            return false;
+        }
+
+        public void Report ()
+        {
+            NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_ContactSetChanged);
+            Log.Info (Log.LOG_SYS, "NcDeviceContacts: {0} inserted, {1} updated, cleaning up {2} dead links.", 
+                InsertCount, UpdateCount, PresentCount);
         }
     }
 }
-

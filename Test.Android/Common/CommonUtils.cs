@@ -1,7 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
+using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -100,7 +101,7 @@ namespace Test.iOS
                     new Node {State = (uint)St.Start,
                         On = new [] {
                             new Trans { 
-                                Event = (uint)AsProtoControl.CtlEvt.E.PendQ, 
+                                Event = (uint)NcProtoControl.PcEvt.E.PendQ, 
                                 Act = delegate () {
                                     // DoPick happens here in AsProtoControl
                                     // Stop the operation here: We don't need to go any further (item has already been added to pending queue)
@@ -108,7 +109,7 @@ namespace Test.iOS
                                 },
                                 State = (uint)St.Start },
                             new Trans { 
-                                Event = (uint)AsProtoControl.CtlEvt.E.PendQHot, 
+                                Event = (uint)NcProtoControl.PcEvt.E.PendQHot, 
                                 Act = delegate () {
                                     // DoPick happens here in AsProtoControl
                                     // Stop the operation here: We don't need to go any further (item has already been added to pending queue)
@@ -244,11 +245,12 @@ namespace Test.iOS
 
     public class PathOps : CommonTestOps
     {
-        public static McPath CreatePath (int accountId, string serverId = "", string parentId = "")
+        public static McPath CreatePath (int accountId, string serverId = "", string parentId = "", bool isFolder = false)
         {
             var path = new McPath (accountId);
             path.ServerId = serverId;
             path.ParentId = parentId;
+            path.IsFolder = isFolder;
             path.Insert ();
             return path;
         }
@@ -268,7 +270,7 @@ namespace Test.iOS
 
     public class CommonTestOps
     {
-        public const int defaultAccountId = 1;
+        public const int defaultAccountId = 2; // Device account is #1.
 
         public void SetUp ()
         {
@@ -283,6 +285,7 @@ namespace Test.iOS
             settings.Warn.DisableTelemetry ();
             settings.Info.DisableTelemetry ();
             settings.Debug.DisableTelemetry ();
+            NcTask.StartService ();
         }
 
         public void TestForNachoExceptionFailure (Action action, string message)

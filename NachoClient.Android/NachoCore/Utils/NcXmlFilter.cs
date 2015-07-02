@@ -1,6 +1,7 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Concurrent;
 using System.Xml;
 using System.Xml.Linq;
 using System.Threading;
@@ -16,24 +17,31 @@ namespace NachoCore.Wbxml
     // different for elements and attributes.
     //
     // NONE - No alteration from the original
-    // PARTIAL - Content is redacted by some hints are given
-    //           For elements, the length is given. For attributes,
-    //           a list of attributes are given.
+    // LENGTH - Content is redacted by some hints are given
+    //          For elements, the length is given. For attributes,
+    //          a list of attributes are given.
+    // SHORT_HASH - A truncated SHA-256 hash (to first 8-bytes) with
+    //              the length of the original content.
+    // FULL_HASH - A SHA-256 hash with the length of the original content.
     // FULL - Element content is removed. Attributes are removed and
     //        no hint of them ever being present.
-    public enum RedactionType {
+    public enum RedactionType
+    {
         NONE = 0,
-        PARTIAL = 1,
-        FULL = 2, 
+        LENGTH = 1,
+        SHORT_HASH = 2,
+        FULL_HASH = 3,
+        FULL = 4,
     };
 
     public class NcXmlFilterNode : XElement
     {
         public RedactionType ElementRedaction { get; set; }
+
         public RedactionType AttributeRedaction { get; set; }
 
         public NcXmlFilterNode (string name, RedactionType elementRedaction, RedactionType attributeRedaction) :
-        base(name)
+            base (name)
         {
             ElementRedaction = elementRedaction;
             AttributeRedaction = attributeRedaction;
@@ -56,6 +64,36 @@ namespace NachoCore.Wbxml
 
     public class NcXmlFilter
     {
+        public static string[] DEFAULT_NO_REDACTION_VALUES = new string[] {
+            "Inbox",
+            "Contact:DEFAULT",
+            "Event:DEFAULT",
+            "Mail:^sync_gmail_group",
+            "Mail:DEFAULT",
+            "Mail:^k",
+            "Mail:^r",
+            "Mail:^f",
+            "Mail:^t",
+            "Mail:^s",
+            "Mail:^all",
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002",
+            "00000000-0000-0000-0000-000000000003",
+            "00000000-0000-0000-0000-000000000004",
+            "00000000-0000-0000-0000-000000000005",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+        };
+
+        public string[] NoRedactionValues = DEFAULT_NO_REDACTION_VALUES;
+
+
         public NcXmlFilterSet ParentSet { set; get; }
 
         public NcXmlFilterNode Root { set; get; }
@@ -101,7 +139,7 @@ namespace NachoCore.Wbxml
             if (XmlNodeType.Element == node.NodeType) {
                 XElement element = (XElement)node;
                 for (XNode child = element.FirstNode; child != null; child = child.NextNode) {
-                    Walk (child, filterState, level+1);
+                    Walk (child, filterState, level + 1);
                 }
             }
         }
@@ -122,11 +160,14 @@ namespace NachoCore.Wbxml
         }
     }
 
-    public class NcXmlFilterState {
-        public class Frame {
+    public class NcXmlFilterState
+    {
+        public class Frame
+        {
             public NcXmlFilter Filter;
             public NcXmlFilterNode ParentNode;
             public XNode XmlNode;
+
             public RedactionType ElementRedaction {
                 get {
                     if (null == ParentNode) {
@@ -135,6 +176,7 @@ namespace NachoCore.Wbxml
                     return ParentNode.ElementRedaction;
                 }
             }
+
             public RedactionType AttributeRedaction {
                 get {
                     if (null == ParentNode) {
@@ -212,12 +254,12 @@ namespace NachoCore.Wbxml
             CToken = cToken;
         }
 
-        private Boolean IsElement (XNode node)
+        private static Boolean IsElement (XNode node)
         {
             return ((null != node) && (XmlNodeType.Element == node.NodeType));
         }
 
-        private Boolean IsContent (XNode node)
+        private static Boolean IsContent (XNode node)
         {
             return ((XmlNodeType.Text == node.NodeType) || (XmlNodeType.CDATA == node.NodeType));
         }
@@ -251,12 +293,16 @@ namespace NachoCore.Wbxml
             } else {
                 current = new Frame (FilterStack.Peek ());
 
-                if (IsElement(node)) {
+                if (IsElement (node)) {
                     XElement element = (XElement)node;
 
                     // Is there a namespace switch?
                     if (null != current.Filter) {
-                        if (current.Filter.NameSpace != element.Name.NamespaceName) {
+                        if ((current.Filter.NameSpace != element.Name.NamespaceName) &&
+                            // Do not do a namespace switch if we are already in redacted mode.
+                            // This is because it will put a non-null parent node and make it think
+                            // this is no longer in redacted mode. So, just ignore the namespace change
+                            !current.IsRedacted ()) {
                             current.Filter = FilterSet.FindFilter (element.Name.NamespaceName);
                             if (null != current.Filter) {
                                 current.ParentNode = current.Filter.Root;
@@ -270,9 +316,13 @@ namespace NachoCore.Wbxml
 
                     // Look for the filter node for this element
                     if (null != current.ParentNode) {
-                        current.ParentNode = current.ParentNode.FindChildNode (element);
-                        if (null == current.ParentNode) {
-                            Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}", element.Name);
+                        if (RedactionType.FULL != current.ParentNode.ElementRedaction) {
+                            current.ParentNode = current.ParentNode.FindChildNode (element);
+                            if (null == current.ParentNode) {
+                                Log.Warn (Log.LOG_XML_FILTER, "Unknown element tag {0}", element.Name);
+                            }
+                        } else {
+                            current.ParentNode = null;
                         }
                     }
                 }
@@ -280,7 +330,7 @@ namespace NachoCore.Wbxml
             return current;
         }
 
-        private XElement AddElement (XElement element, byte [] wbxml, Frame frame)
+        private XElement AddElement (XElement element, byte[] wbxml, Frame frame)
         {
             XElement newElement = null;
             if (GenerateWbxml) {
@@ -293,29 +343,66 @@ namespace NachoCore.Wbxml
                 } else {
                     Frame current = FilterStack.Peek ();
                     NcAssert.True (null != current.XmlNode);
-                    NcAssert.True (IsElement(current.XmlNode));
+                    NcAssert.True (IsElement (current.XmlNode));
                     XElement parentElement = (XElement)current.XmlNode;
-                    parentElement.Add(newElement);
+                    parentElement.Add (newElement);
                 }
                 frame.XmlNode = newElement;
             }
             return newElement;
         }
 
-        private int GetContentLength (XNode content)
+        private static string GetContentValue (XNode content)
         {
-            int contentLen = -1;
-            NcAssert.True (IsContent(content));
+            NcAssert.True (IsContent (content));
             if (XmlNodeType.Text == content.NodeType) {
                 XText text = (XText)content;
-                contentLen = text.Value.Length;
+                return text.Value;
             } else if (XmlNodeType.CDATA == content.NodeType) {
                 XCData data = (XCData)content;
-                contentLen = data.Value.Length;
+                return data.Value;
             } else {
                 NcAssert.True (false);
             }
-            return contentLen;
+            return null; // unreachable. but keep compiler happy
+        }
+
+        private static int GetContentLength (XNode content)
+        {
+            var value = GetContentValue (content);
+            return value.Length;
+        }
+
+        static ConcurrentDictionary<string,string> HashCache = new ConcurrentDictionary<string, string> ();
+
+        public static string ShortHash (XNode content, out int contentLen)
+        {
+            var value = GetContentValue (content);
+            contentLen = value.Length;
+            return ShortHash (value);
+        }
+
+        public static string ShortHash (string value)
+        {
+            var hash = FullHash (value).Substring (0, 6);
+            return hash;
+        }
+
+        public static string FullHash (XNode content, out int contentLen)
+        {
+            var value = GetContentValue (content);
+            contentLen = value.Length;
+            return FullHash (value);
+        }
+
+        public static string FullHash (string value)
+        {
+            string hash;
+            if (!HashCache.TryGetValue (value, out hash)) {
+                hash = HashHelper.Sha256 (value);
+                HashCache.TryAdd (value, hash);
+            }
+            return hash;
         }
 
         private void RedactElement (XElement newElement, XNode origContent, RedactionType type)
@@ -327,13 +414,28 @@ namespace NachoCore.Wbxml
 
             // Determine the redaction string
             string value = null;
-            if (RedactionType.FULL == type) {
-                return; // Full redaction has no content at all
-            } else if (RedactionType.PARTIAL == type) {
-                value = String.Format ("-redacted:{0} bytes-", GetContentLength(origContent));
-            } else {
+            int contentLen;
+            string hash;
+            switch (type) {
+            case RedactionType.FULL:
+                return;
+            case RedactionType.LENGTH:
+                value = String.Format ("[{0} redacted bytes]", GetContentLength (origContent));
+                break;
+            case RedactionType.SHORT_HASH:
+                hash = ShortHash (origContent, out contentLen);
+                value = String.Format ("[{0} redacted bytes] {1}", contentLen, hash);
+                break;
+            case RedactionType.FULL_HASH:
+                hash = FullHash (origContent, out contentLen);
+                value = String.Format ("[{0} redacted bytes] {1}", contentLen, hash);
+                break;
+            case RedactionType.NONE:
+                break;
+            default:
                 Log.Error (Log.LOG_XML_FILTER, "Unknown redaction type {0}", type);
                 NcAssert.True (false);
+                break;
             }
 
             // Encode the redaction string
@@ -345,18 +447,34 @@ namespace NachoCore.Wbxml
             }
         }
 
+        private bool IsInNoRedactionList (NcXmlFilter filter, XNode node)
+        {
+            if (0 == filter.NoRedactionValues.Length) {
+                return false;
+            }
+            var content = GetContentValue (node);
+            foreach (string value in filter.NoRedactionValues) {
+                if (content == value) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void AddContent (XNode node, byte[] wbxml, RedactionType type)
         {
             // Check the latest redaction policy. That should be the parent element
             Frame current = FilterStack.Peek ();
-            NcAssert.True (IsContent(node));
+            NcAssert.True (IsContent (node));
             NcAssert.True (null != current);
-            NcAssert.True (IsElement(current.XmlNode));
+            NcAssert.True (IsElement (current.XmlNode));
             XElement element = (XElement)current.XmlNode;
 
             if (RedactionType.NONE != current.ParentNode.ElementRedaction) {
-                RedactElement (element, node, type);
-                return;
+                if (!IsInNoRedactionList (current.Filter, node)) {
+                    RedactElement (element, node, type);
+                    return;
+                }
             }
 
             if (GenerateWbxml) {
@@ -385,8 +503,8 @@ namespace NachoCore.Wbxml
                 return;
             }
 
-            if ((XmlNodeType.Element != node.NodeType) && 
-                (XmlNodeType.Text != node.NodeType) && 
+            if ((XmlNodeType.Element != node.NodeType) &&
+                (XmlNodeType.Text != node.NodeType) &&
                 (XmlNodeType.CDATA != node.NodeType)) {
                 return;
             }
@@ -415,7 +533,7 @@ namespace NachoCore.Wbxml
                     }
                 }
             } else {
-                if (IsElement(node)) {
+                if (IsElement (node)) {
                     // Element - Find the redaction policy of this node from parent
                     XElement element = (XElement)node;
 

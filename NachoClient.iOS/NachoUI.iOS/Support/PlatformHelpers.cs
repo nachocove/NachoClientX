@@ -3,12 +3,12 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 using System.Linq;
-using MonoTouch.Foundation;
+using Foundation;
 
-using MonoTouch.UIKit;
+using UIKit;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
@@ -27,59 +27,82 @@ namespace NachoClient
         {
         }
 
+        static public string CheckCID (string cid, out int bodyId, out string value)
+        {
+            value = "";
+            bodyId = -1;
+            if (null == cid) {
+                return "null prefix for cid";
+            }
+            if (!cid.StartsWith ("//")) {
+                return "no prefix for cid";
+            }
+            if (2 == cid.Length) {
+                return "no body id for cid";
+            }
+            var index = cid.Substring (2).IndexOf ('/');
+            if (-1 == index) {
+                return "no trailing slash for cid";
+            }
+            if (cid.Length <= (index + 3)) {
+                return "no value for cid";
+            }
+            value = cid.Substring (index + 3);
+            try {
+                bodyId = Convert.ToInt32 (cid.Substring (2, index));
+            } catch (System.FormatException) {
+                return "malformed body id";
+            }
+            return null;
+        }
+
         // https://www.ietf.org/rfc/rfc2392.txt
         static public UIImage RenderContentId (string cid)
         {
             // In order to deal with gmail's logo.png CID, we encode
             // McBody id into the CID URL. The format is cid://[body_id]/[value]
-            NcAssert.True (cid.StartsWith ("//"));
-            var index = cid.Substring (2).IndexOf ('/');
-            var value = cid.Substring (index + 3);
-            var bodyId = Convert.ToInt32 (cid.Substring (2, index));
+            // NcAssert.True (cid.StartsWith ("//"));
+            // Unfortunately, when we are rendering email reply text we do not
+            // have the opportunity to set up the base url using NSAttributedString.
+            // TODO: Compose mail need to use uiwebview for display and/or editing.
+            int bodyId;
+            string value;
+            string message = CheckCID (cid, out bodyId, out value);
+            if (null != message) {
+                Log.Warn (Log.LOG_UTILS, "RenderContentId: {0} for cid {1}", message, cid ?? "");
+                return Draw1px ();
+            }
             McBody body = McBody.QueryById<McBody> (bodyId);
             MimePart p = null;
             if (null != body) {
                 var mime = MimeHelpers.LoadMessage (body);
-                p = MimeHelpers.EntityWithContentId (mime, value);
+                p = MimeHelpers.SearchMessage (value, mime);
             }
             if (null == p) {
-                Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0} for cid {1}", value, cid);
                 return RenderStringToImage (value);
             }
 
             var image = RenderImage (p);
             if (null == image) {
-                Log.Error (Log.LOG_UTILS, "RenderContentId: image is null: {0}", value);
+                Log.Error (Log.LOG_UTILS, "RenderContentId: image is null: {0} for {1}", value, cid);
                 return RenderStringToImage (value);
             }
             return image;
         }
 
         /// <summary>
-        /// Renders the image from a MIME part.
-        /// Supported Image Formats & Filename extensions
-        /// Tagged Image File Format (TIFF) .tiff, .tif
-        /// Joint Photographic Experts Group (JPEG) .jpg, .jpeg
-        /// Graphic Interchange Format (GIF) .gif
-        /// Portable Network Graphic (PNG) .png
-        /// Windows Bitmap Format (DIB) .bmp, .BMPf
-        /// Windows Icon Format .ico
-        /// Windows Cursor .cur
-        /// X Window System bitmap .xbm
+        /// Renders the image from a MIME part.  Just pass the data to UIImage.LoadFromData() and
+        /// see if that routine can parse the data as an image.  Don't check the MIME content type
+        /// or try to figure what kind of image it is.  (Not checking the content type is because
+        /// we have seen a real message where the sender put the image in an application/octet-stream
+        /// section instead of an image/jpeg section.)
         /// </summary>
         /// <returns>The image as a UIImage or null if the image type isn't supported.</returns>
         /// <param name="part">The MIME part.</param>
         static public UIImage RenderImage (MimePart part)
         {
-            if (!part.ContentType.Matches ("image", "*")) {
-                return null;
-            }
-            if (!RendersToUIImage (part)) {
-                return null;
-            }
-
             using (var content = new MemoryStream ()) {
-                // If the content is base64 encoded (which it probably is), decode it.
                 part.ContentObject.DecodeTo (content);
                 content.Seek (0, SeekOrigin.Begin);
                 var data = NSData.FromStream (content);
@@ -88,42 +111,35 @@ namespace NachoClient
             }
         }
 
-        static public bool RendersToUIImage (MimePart part)
-        {
-            string[] subtype = {
-                "tiff",
-                "jpeg",
-                "jpg",
-                "gif",
-                "png",
-                "x-icon",
-                " vnd.microsoft.ico",
-                "x-win-bitmap",
-                "x-xbitmap",
-            };
-
-            foreach (var s in subtype) {
-                if (part.ContentType.Matches ("image", s)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         static public UIImage RenderStringToImage (string value)
         {
             NSString text = new NSString (string.IsNullOrEmpty (value) ? " " : value);
             UIFont font = UIFont.SystemFontOfSize (20);
-            SizeF size = text.StringSize (font);
+            CGSize size = text.StringSize (font);
             UIGraphics.BeginImageContextWithOptions (size, false, 0.0f);
             UIColor.Red.SetColor ();
-            text.DrawString (new PointF (0, 0), font);
+            text.DrawString (new CGPoint (0, 0), font);
             UIImage image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
 
             return image;
         }
 
+        public static UIImage Draw1px ()
+        {
+            var size = new CGSize (1, 1);
+            var origin = new CGPoint (0, 0);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (UIColor.Clear.CGColor);
+            ctx.FillEllipseInRect (new CGRect (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
 
         public static void DisplayAttachment (UIViewController vc, McAttachment attachment)
         {
@@ -144,7 +160,7 @@ namespace NachoClient
             Preview.PresentPreview (true);
         }
 
-        public static string DownloadAttachment (McAttachment attachment)
+        public static NcResult DownloadAttachment (McAttachment attachment)
         {
             if (McAbstrFileDesc.FilePresenceEnum.Error == attachment.FilePresence) {
                 // Clear the error code so the download will be attempted again.
@@ -153,7 +169,9 @@ namespace NachoClient
             if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
                 return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true);
             } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+                var token = McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
+                var nr = NcResult.OK (token); // null is potentially ok; callers expect it.
+                return nr;
             } 
             NcAssert.True (false, "Should not try to download an already-downloaded attachment");
             return null;
@@ -178,7 +196,7 @@ namespace NachoClient
                 return viewC.View;
             }
 
-            public override RectangleF RectangleForPreview (UIDocumentInteractionController controller)
+            public override CGRect RectangleForPreview (UIDocumentInteractionController controller)
             {
                 return viewC.View.Frame;
             }

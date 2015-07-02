@@ -1,31 +1,31 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    [MonoTouch.Foundation.Register ("UIBlockMenu")]
+    [Foundation.Register ("UIBlockMenu")]
     public class UIBlockMenu : UIView
     {
 
         public event EventHandler MenuDidDisappear;
 
-        protected float ViewWidth;
+        protected nfloat ViewWidth;
 
         protected const int ROW_HEIGHT = 100;
         protected const int SEPARATOR_LENGTH = 64;
         protected const int Y_PADDING = 20;
-        protected float BLOCK_WIDTH;
+        protected nfloat BLOCK_WIDTH;
 
         protected List<Block> TheBlocks;
         protected List<BlockButton> TheBlockButtons = new List<BlockButton> ();
-        protected List<RectangleF> FrameGrid = new List<RectangleF> ();
+        protected List<CGRect> FrameGrid = new List<CGRect> ();
 
         protected UIBarButtonItem[] rightBarButtons;
         protected UIBarButtonItem[] leftBarButtons;
@@ -35,7 +35,7 @@ namespace NachoClient.iOS
         protected UIViewController owner;
         protected UIView menuView;
 
-        public UIBlockMenu (UIViewController owner, List<Block> TheBlocks, float width)
+        public UIBlockMenu (UIViewController owner, List<Block> TheBlocks, nfloat width)
         {
             NcAssert.NotNull (owner);
             this.owner = owner;
@@ -51,11 +51,11 @@ namespace NachoClient.iOS
 
         protected void InitFrameGrid ()
         {
-            float blockXVal = 0;
-            float blockYVal = 0;
+            nfloat blockXVal = 0;
+            nfloat blockYVal = 0;
 
             for (int i = 0; i < 6; i++) {
-                FrameGrid.Add (new RectangleF (blockXVal, blockYVal, BLOCK_WIDTH, ROW_HEIGHT));
+                FrameGrid.Add (new CGRect (blockXVal, blockYVal, BLOCK_WIDTH, ROW_HEIGHT));
                 blockXVal += BLOCK_WIDTH;
                 if (2 == i) {
                     blockXVal = 0;
@@ -66,8 +66,8 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-            float width = 0;
-            float height = 0;
+            nfloat width = 0;
+            nfloat height = 0;
 
             if (2 == TheBlocks.Count || 4 == TheBlocks.Count) {
                 width = BLOCK_WIDTH * 2;
@@ -81,11 +81,11 @@ namespace NachoClient.iOS
                 height = ROW_HEIGHT;
             }
 
-            this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
+            this.Frame = new CGRect (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
             this.BackgroundColor = UIColor.Clear;
             this.Alpha = 0.0f;
 
-            menuView = new UIView (new RectangleF (ViewWidth - width, -height, width, height));
+            menuView = new UIView (new CGRect (ViewWidth - width, -height, width, height));
             menuView.BackgroundColor = A.Color_NachoGreen;
             this.AddSubview (menuView);
 
@@ -93,11 +93,12 @@ namespace NachoClient.iOS
                 CreateBlockButton (b);
             }
 
-            menuButton = new UIBarButtonItem ();
+            menuButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (menuButton, "gen-more-active");
+            menuButton.AccessibilityLabel = "More";
             menuButton.Clicked += MenuButtonClicked;
 
-            UIView tapCoverView = new UIView (new RectangleF (0, height, ViewWidth, this.Frame.Height - height));
+            UIView tapCoverView = new UIView (new CGRect (0, height, ViewWidth, this.Frame.Height - height));
             UITapGestureRecognizer tap = new UITapGestureRecognizer (() => this.MenuTapped ());
             tapCoverView.AddGestureRecognizer (tap);
             this.AddSubview (tapCoverView);
@@ -162,7 +163,7 @@ namespace NachoClient.iOS
             MenuTapped ();
         }
 
-        public void MenuTapped (RectangleF rect)
+        public void MenuTapped (CGRect rect)
         {
             this.Frame = rect;
 
@@ -180,7 +181,7 @@ namespace NachoClient.iOS
 
                 UIView.Animate (.3, () => {
                     this.Alpha = 1.0f;
-                    menuView.Frame = new RectangleF (menuView.Frame.X, menuView.Frame.Y + menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
+                    menuView.Frame = new CGRect (menuView.Frame.X, menuView.Frame.Y + menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
                 });
 
             } else {
@@ -198,7 +199,7 @@ namespace NachoClient.iOS
 
                 UIView.Animate (.3, () => {
                     this.Alpha = 0.0f;
-                    menuView.Frame = new RectangleF (menuView.Frame.X, menuView.Frame.Y - menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
+                    menuView.Frame = new CGRect (menuView.Frame.X, menuView.Frame.Y - menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
                 },
                     () => {
                         var handler = MenuDidDisappear;
@@ -224,9 +225,10 @@ namespace NachoClient.iOS
 
         protected void CreateBlockButton (Block block)
         {
-            float yOffset = 20;
+            nfloat yOffset = 20;
 
-            var button = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
+            var button = new UIButton (new CGRect (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
+            button.AccessibilityLabel = block.blockLabel;
 
             NcAssert.NotNull (UIImage.FromBundle (block.blockImage), "This image is not a resource: " + block.blockImage);
             var blockIconImageView = new UIImageView (UIImage.FromBundle (block.blockImage));
@@ -236,7 +238,7 @@ namespace NachoClient.iOS
 
             yOffset = blockIconImageView.Frame.Bottom + 5;
 
-            UILabel iconLabel = new UILabel (new RectangleF (10, yOffset, button.Frame.Width - 20, (FormatBlockLabel (block.blockLabel).Contains ("\n") ? 40 : 30)));
+            UILabel iconLabel = new UILabel (new CGRect (10, yOffset, button.Frame.Width - 20, (FormatBlockLabel (block.blockLabel).Contains ("\n") ? 40 : 30)));
             iconLabel.Font = A.Font_AvenirNextMedium12;
             iconLabel.LineBreakMode = UILineBreakMode.WordWrap;
             iconLabel.Lines = 2;

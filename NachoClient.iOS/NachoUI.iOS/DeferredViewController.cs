@@ -2,8 +2,8 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 
 namespace NachoClient.iOS
@@ -12,12 +12,23 @@ namespace NachoClient.iOS
     {
         public DeferredViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (new NachoDeferredEmailMessages ());
+            SetEmailMessages (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id));
         }
 
-        protected override void CustomizeBackButton ()
+        protected override void SetRowHeight ()
         {
-            BackShouldSwitchToFolders ();
+            TableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
+            searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
         }
+
+        public override bool HasAccountSwitcher()
+        {
+            return true;
+        }
+
+//        protected override void CustomizeBackButton ()
+//        {
+//            BackShouldSwitchToFolders ();
+//        }
     }
 }

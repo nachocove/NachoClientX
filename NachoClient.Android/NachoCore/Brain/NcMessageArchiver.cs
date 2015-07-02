@@ -1,48 +1,117 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
 using System.Linq;
 
 namespace NachoCore
 {
-    public class NcEmailArchiver
+    public static class NcEmailArchiver
     {
-        protected const string ArchiveFolderName = "Archive";
+        private const string ArchiveFolderName = "Archive";
 
-        public NcEmailArchiver ()
+        // By our rule, if a user moves or deletes a deferred
+        // message, the deferral is removed. A deferral won't
+        // be removed when a message is re-sent (e.g. reply).
+        private static void RemoveDeferral (McEmailMessage message)
         {
+            if (message.IsDeferred ()) {
+                Brain.NcMessageDeferral.UndeferMessage (message);
+            }
         }
 
         public static void Move (McEmailMessage message, McFolder folder)
         {
-            var src = McFolder.QueryByFolderEntryId<McEmailMessage> (message.AccountId, message.Id).FirstOrDefault ();
-            if (src.Id == folder.Id) {
-                return;
-            }
-
+            RemoveDeferral (message);
             BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
         }
 
+        public static void Move (List<McEmailMessage> messages, McFolder folder)
+        {
+            if (0 == messages.Count) {
+                return;
+            }
+            var Ids = messages.Select (x => x.Id).ToList ();
+            BackEnd.Instance.MoveEmailsCmd (folder.AccountId, Ids, folder.Id);
+        }
+
+        public static void Move (McEmailMessageThread thread, McFolder folder)
+        {
+            var messages = new List<McEmailMessage> ();
+            foreach (var message in thread) {
+                messages.Add (message);
+            }
+            Move (messages, folder);
+        }
+
+        private static bool ShouldDeleteInsteadOfArchive(int accountId)
+        {
+            // Google doesn't archive. All messages are deemed 'archived' by being in the 'All Mails' folder (aka label).
+            // Archiving is simply deleting from the current folder (i.e. removing the label for the folder), and finding
+            // it via Search or directly in the All Mails folder. See https://support.google.com/mail/answer/6576?hl=en
+            return McAccount.QueryById<McAccount> (accountId).AccountService.HasFlag (McAccount.AccountServiceEnum.GoogleDefault);
+        }
+
+
         public static void Archive (McEmailMessage message)
         {
-            var type = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
-            var folderList = McFolder.GetUserFolders (message.AccountId, type, 0, ArchiveFolderName);
-            if (null == folderList) {
-                BackEnd.Instance.CreateFolderCmd (message.AccountId, ArchiveFolderName, type);
-                folderList = McFolder.GetUserFolders (message.AccountId, type, 0, ArchiveFolderName);
+            if (ShouldDeleteInsteadOfArchive(message.AccountId)) {
+                Delete (message);
+            } else {
+                McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
+                Move (message, archiveFolder); // Do not archive messages in Archive folder
             }
-            NcAssert.True (null != folderList);
-            var folder = folderList.First ();
+        }
 
-            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
+        public static void Archive (List<McEmailMessage> messages)
+        {
+            if (0 == messages.Count) {
+                return;
+            }
+            var Ids = messages.Select (x => x.Id).ToList ();
+            int accountId = messages [0].AccountId;
+            if (ShouldDeleteInsteadOfArchive (accountId)) {
+                BackEnd.Instance.DeleteEmailsCmd (accountId, Ids);
+            } else {
+                McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (accountId);
+                BackEnd.Instance.MoveEmailsCmd (accountId, Ids, archiveFolder.Id);
+            }
+        }
+
+        public static void Archive (McEmailMessageThread thread)
+        {
+            var messages = new List<McEmailMessage> ();
+            foreach (var message in thread) {
+                messages.Add (message);
+            }
+            Archive (messages);
         }
 
         public static void Delete (McEmailMessage message)
         {
+            RemoveDeferral (message);
             BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
+        }
+
+        public static void Delete (List<McEmailMessage> messages)
+        {
+            if (0 == messages.Count) {
+                return;
+            }
+            var Ids = messages.Select (x => x.Id).ToList ();
+            int accountId = messages [0].AccountId;
+            BackEnd.Instance.DeleteEmailsCmd (accountId, Ids);
+        }
+
+        public static void Delete (McEmailMessageThread thread)
+        {
+            var messages = new List<McEmailMessage> ();
+            foreach (var message in thread) {
+                messages.Add (message);
+            }
+            Delete (messages);
         }
     }
 }
-

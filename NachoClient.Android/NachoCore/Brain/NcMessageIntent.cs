@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -46,21 +46,6 @@ namespace NachoCore.Brain
             return MessageIntentList;
         }
 
-        public void SetType (MessageIntent intent)
-        {
-            intentType = intent;
-        }
-
-        public void SetMessageIntent (ref McEmailMessage emailMessage)
-        {
-            emailMessage.Intent = (int)intentType.type;
-        }
-
-        public void SetMessageIntentDate (ref McEmailMessage emailMessage, DateTime selectedDate)
-        {
-            emailMessage.IntentDate = selectedDate;
-        }
-
         public static string IntentEnumToString (McEmailMessage.IntentType type)
         {
             switch (type) {
@@ -82,53 +67,51 @@ namespace NachoCore.Brain
             }
         }
 
-        public static string GetIntentString (MessageDeferralType intentDateTypeEnum, McEmailMessage mcMessage)
+        public static string GetIntentString (McEmailMessage.IntentType intent, MessageDeferralType intentDateTypeEnum, DateTime intentDateTime)
         {
-            string intentString = IntentEnumToString ((McEmailMessage.IntentType)mcMessage.Intent);
+            string intentString = IntentEnumToString (intent);
 
-            if (MessageDeferralType.None != intentDateTypeEnum) {
-                switch (intentDateTypeEnum) {
-                case MessageDeferralType.None:
-                    intentString += "";
-                    break;
-                case MessageDeferralType.OneHour:
-                    intentString += " In One Hour";
-                    break;
-                case MessageDeferralType.TwoHours:
-                    intentString += " In Two Hours";
-                    break;
-                case MessageDeferralType.Later:
-                    intentString += " Later Today";
-                    break;
-                case MessageDeferralType.EndOfDay:
-                    intentString += " By End of Day";
-                    break;
-                case MessageDeferralType.Tonight:
-                    intentString += " By Tonight";
-                    break;
-                case MessageDeferralType.Tomorrow:
-                    intentString += " By Tomorrow";
-                    break;
-                case MessageDeferralType.NextWeek:
-                    intentString += " By Next Week";
-                    break;
-                case MessageDeferralType.MonthEnd:
-                    intentString += "By Month End";
-                    break;
-                case MessageDeferralType.NextMonth:
-                    intentString += " By Next Month";
-                    break;
-                case MessageDeferralType.Forever:
-                    intentString += "";
-                    break;
-                case MessageDeferralType.Custom:
-                    intentString += " By " + mcMessage.IntentDate.ToShortDateString ();
-                    break;
-                default:
-                    NcAssert.CaseError ("Not a recognzized deferral type.");
-                    break;
-                } 
-            }
+            switch (intentDateTypeEnum) {
+            case MessageDeferralType.None:
+                intentString += "";
+                break;
+            case MessageDeferralType.OneHour:
+                intentString += " In One Hour";
+                break;
+            case MessageDeferralType.TwoHours:
+                intentString += " In Two Hours";
+                break;
+            case MessageDeferralType.Later:
+                intentString += " Later Today";
+                break;
+            case MessageDeferralType.EndOfDay:
+                intentString += " By End of Day";
+                break;
+            case MessageDeferralType.Tonight:
+                intentString += " By Tonight";
+                break;
+            case MessageDeferralType.Tomorrow:
+                intentString += " By Tomorrow";
+                break;
+            case MessageDeferralType.NextWeek:
+                intentString += " By Next Week";
+                break;
+            case MessageDeferralType.MonthEnd:
+                intentString += "By Month End";
+                break;
+            case MessageDeferralType.NextMonth:
+                intentString += " By Next Month";
+                break;
+            case MessageDeferralType.Forever:
+                intentString += "";
+                break;
+            case MessageDeferralType.Custom:
+                intentString += " By " + intentDateTime.ToShortDateString ();
+                break;
+            default:
+                NcAssert.CaseError ("Not a recognzized deferral type.");
+                break;
+            } 
             return intentString;
         }
 
@@ -136,14 +119,14 @@ namespace NachoCore.Brain
         {
             public McEmailMessage.IntentType type { get; private set; }
 
-            public string value { get; private set; }
+            public string text { get; private set; }
 
             public bool dueDateAllowed { get; private set; }
 
-            public MessageIntent (McEmailMessage.IntentType type, string value, bool dueDateAllowed)
+            public MessageIntent (McEmailMessage.IntentType type, string text, bool dueDateAllowed)
             {
                 this.type = type;
-                this.value = value;
+                this.text = text;
                 this.dueDateAllowed = dueDateAllowed;
             }
         }

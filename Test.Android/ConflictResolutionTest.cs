@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NUnit.Framework;
@@ -45,10 +45,9 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                var protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
 
-                var server = McServer.Create (defaultAccountId, CommonMockData.MockUri);
-                Context = new MockContext (protoControl, server);
+                var server = McServer.Create (defaultAccountId, McAccount.ActiveSyncCapabilities, CommonMockData.MockUri);
+                Context = new MockContext (null, server);
 
                 FolderCmd = CreateFolderSyncCmd (Context);
             }
@@ -197,7 +196,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.CreateFolderCmd (-1, folderName, badType); 
+                    token = Context.ProtoControl.CreateFolderCmd (-1, folderName, badType).GetValue<string> (); 
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
@@ -219,7 +218,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.CreateFolderCmd (-1, folderName, type);
+                    token = Context.ProtoControl.CreateFolderCmd (-1, folderName, type).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
@@ -246,7 +245,7 @@ namespace Test.iOS
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
                     // Create a subFolder of the top folder before client receives message to delete top folder
-                    token = Context.ProtoControl.CreateFolderCmd (topFolder.Id, SubCalFolderName, TypeCode.UserCreatedCal_13); 
+                    token = Context.ProtoControl.CreateFolderCmd (topFolder.Id, SubCalFolderName, TypeCode.UserCreatedCal_13).GetValue<string> (); 
                 });
 
                 // deletes top folder
@@ -267,7 +266,7 @@ namespace Test.iOS
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
                     // Create a subFolder of the top folder before client receives message to delete top folder
-                    token = Context.ProtoControl.CreateFolderCmd (childFolder.Id, "GrandChild-Folder", TypeCode.UserCreatedGeneric_1); 
+                    token = Context.ProtoControl.CreateFolderCmd (childFolder.Id, "GrandChild-Folder", TypeCode.UserCreatedGeneric_1).GetValue<string> (); 
                 });
 
                 // deletes top folder
@@ -288,7 +287,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id);
+                    token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseAddSub);
@@ -313,7 +312,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id);
+                    token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
@@ -337,7 +336,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.DeleteFolderCmd (childFolder.Id);
+                    token = Context.ProtoControl.DeleteFolderCmd (childFolder.Id).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
@@ -361,7 +360,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id);
+                    token = Context.ProtoControl.DeleteFolderCmd (topFolder.Id).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteSub);
@@ -391,7 +390,7 @@ namespace Test.iOS
                 string newName = "Updated-Name";
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.RenameFolderCmd (childFolder.Id, newName);
+                    token = Context.ProtoControl.RenameFolderCmd (childFolder.Id, newName).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
@@ -417,7 +416,7 @@ namespace Test.iOS
                 string newName = "Top-Level-Folder (UPDATED BY CLIENT)";
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.RenameFolderCmd (topFolder.Id, newName);
+                    token = Context.ProtoControl.RenameFolderCmd (topFolder.Id, newName).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseUpdateRenameTop);
@@ -450,7 +449,7 @@ namespace Test.iOS
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
                     // make pending op; this op should never be executed
-                    token = Context.ProtoControl.RenameFolderCmd (topFolder.Id, renameString);
+                    token = Context.ProtoControl.RenameFolderCmd (topFolder.Id, renameString).GetValue<string> ();
                 });
 
                 // should move top folder into siblingFolder
@@ -485,7 +484,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.MoveFolderCmd (curChildOnClient.Id, topFolder.Id);
+                    token = Context.ProtoControl.MoveFolderCmd (curChildOnClient.Id, topFolder.Id).GetValue<string> ();
                 });
 
                 // should add equivalent folder to childFolder to topFolder
@@ -520,7 +519,7 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
-                    token = Context.ProtoControl.DnldAttCmd (att.Id);
+                    token = Context.ProtoControl.DnldAttCmd (att.Id).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
@@ -547,7 +546,16 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => { 
-                    token = Context.ProtoControl.RespondCalCmd (cal.Id, response);
+                    // if !Inbox && version < 14.1 then we'll get a CalUpdate, which
+                    // will result in the item getting moved to LAF (and still findable.
+                    // TODO - add test cases: !Inbox, < 14.1, email item.
+                    var protocolState = Context.ProtoControl.ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsProtocolVersion = "14.1";
+                        return true;
+                    });
+                    token = Context.ProtoControl.RespondCalCmd (cal.Id, response).GetValue<string> ();
                 });
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
@@ -567,7 +575,7 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                BackEnd.Instance.EstablishService (defaultAccountId);  // make L&F folder
+                BackEnd.Instance.CreateServices (defaultAccountId);  // make L&F folder
             }
 
             // create cal, contact, and task
@@ -575,15 +583,15 @@ namespace Test.iOS
             public void TestSyncAddMatchAllitems ()
             {
                 TestSyncMatch<McCalendar> (TypeCode.DefaultCal_8,
-                    (itemId, parentId) => Context.ProtoControl.CreateCalCmd (itemId, parentId)
+                    (itemId, parentId) => Context.ProtoControl.CreateCalCmd (itemId, parentId).GetValue<string> ()
                 );
 
                 TestSyncMatch<McContact> (TypeCode.DefaultContacts_9,
-                    (itemId, parentId) => Context.ProtoControl.CreateContactCmd (itemId, parentId)
+                    (itemId, parentId) => Context.ProtoControl.CreateContactCmd (itemId, parentId).GetValue<string> ()
                 );
 
                 TestSyncMatch<McTask> (TypeCode.DefaultTasks_7,
-                    (itemId, parentId) => Context.ProtoControl.CreateTaskCmd (itemId, parentId)
+                    (itemId, parentId) => Context.ProtoControl.CreateTaskCmd (itemId, parentId).GetValue<string> ()
                 );
             }
 
@@ -591,22 +599,22 @@ namespace Test.iOS
             public void TestSyncDeleteMatchAllItems ()
             {
                 TestSyncMatch<McCalendar> (TypeCode.DefaultCal_8,
-                    (itemId, parentId) => Context.ProtoControl.DeleteCalCmd (itemId),
+                    (itemId, parentId) => Context.ProtoControl.DeleteCalCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
 
                 TestSyncMatch<McContact> (TypeCode.DefaultContacts_9,
-                    (itemId, parentId) => Context.ProtoControl.DeleteContactCmd (itemId),
+                    (itemId, parentId) => Context.ProtoControl.DeleteContactCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
 
                 TestSyncMatch<McTask> (TypeCode.DefaultTasks_7,
-                    (itemId, parentId) => Context.ProtoControl.DeleteTaskCmd (itemId),
+                    (itemId, parentId) => Context.ProtoControl.DeleteTaskCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
 
                 TestSyncMatch<McEmailMessage> (TypeCode.DefaultInbox_2,
-                    (itemId, parentId) => Context.ProtoControl.DeleteEmailCmd (itemId),
+                    (itemId, parentId) => Context.ProtoControl.DeleteEmailCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
             }
@@ -615,15 +623,15 @@ namespace Test.iOS
             public void TestSyncUpdateMatchAllItems ()
             {
                 TestSyncMatch <McCalendar> (TypeCode.DefaultCal_8,
-                    (itemId, parentId) => Context.ProtoControl.UpdateCalCmd (itemId)
+                    (itemId, parentId) => Context.ProtoControl.UpdateCalCmd (itemId, false).GetValue<string> ()
                 );
 
                 TestSyncMatch <McContact> (TypeCode.DefaultContacts_9,
-                    (itemId, parentId) => Context.ProtoControl.UpdateContactCmd (itemId)
+                    (itemId, parentId) => Context.ProtoControl.UpdateContactCmd (itemId).GetValue<string> ()
                 );
 
                 TestSyncMatch <McTask> (TypeCode.DefaultTasks_7,
-                    (itemId, parentId) => Context.ProtoControl.UpdateTaskCmd (itemId)
+                    (itemId, parentId) => Context.ProtoControl.UpdateTaskCmd (itemId).GetValue<string> ()
                 );
             }
 
@@ -651,17 +659,17 @@ namespace Test.iOS
             {
                 TestSyncDom<McCalendar> (TypeCode.DefaultCal_8, 
                     () => CreateSubCalFolder (withPath: true), 
-                    (itemId, folderId) => Context.ProtoControl.CreateCalCmd (itemId, folderId)
+                    (itemId, folderId) => Context.ProtoControl.CreateCalCmd (itemId, folderId).GetValue<string> ()
                 );
 
                 TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
                     () => CreateSubContactFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.CreateContactCmd (itemId, folderId)
+                    (itemId, folderId) => Context.ProtoControl.CreateContactCmd (itemId, folderId).GetValue<string> ()
                 );
 
                 TestSyncDom<McTask> (TypeCode.DefaultTasks_7,
                     () => CreateSubTaskFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.CreateTaskCmd (itemId, folderId)
+                    (itemId, folderId) => Context.ProtoControl.CreateTaskCmd (itemId, folderId).GetValue<string> ()
                 );
             }
 
@@ -670,25 +678,25 @@ namespace Test.iOS
             {
                 TestSyncDom<McCalendar> (TypeCode.DefaultCal_8,
                     () => CreateSubCalFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.DeleteCalCmd (itemId),
+                    (itemId, folderId) => Context.ProtoControl.DeleteCalCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
 
                 TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
                     () => CreateSubContactFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.DeleteContactCmd (itemId),
+                    (itemId, folderId) => Context.ProtoControl.DeleteContactCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
 
                 TestSyncDom<McTask> (TypeCode.DefaultTasks_7,
                     () => CreateSubTaskFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.DeleteTaskCmd (itemId),
+                    (itemId, folderId) => Context.ProtoControl.DeleteTaskCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
 
                 TestSyncDom<McEmailMessage> (TypeCode.DefaultInbox_2,
                     () => CreateSubTaskFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.DeleteEmailCmd (itemId),
+                    (itemId, folderId) => Context.ProtoControl.DeleteEmailCmd (itemId).GetValue<string> (),
                     isDelete: true
                 );
             }
@@ -698,17 +706,17 @@ namespace Test.iOS
             {
                 TestSyncDom<McCalendar> (TypeCode.DefaultCal_8,
                     () => CreateSubCalFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.UpdateCalCmd (itemId)
+                    (itemId, folderId) => Context.ProtoControl.UpdateCalCmd (itemId, false).GetValue<string> ()
                 );
 
                 TestSyncDom<McContact> (TypeCode.DefaultContacts_9,
                     () => CreateSubContactFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.UpdateContactCmd (itemId)
+                    (itemId, folderId) => Context.ProtoControl.UpdateContactCmd (itemId).GetValue<string> ()
                 );
 
                 TestSyncDom<McTask> (TypeCode.DefaultTasks_7,
                     () => CreateSubTaskFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.UpdateTaskCmd (itemId)
+                    (itemId, folderId) => Context.ProtoControl.UpdateTaskCmd (itemId).GetValue<string> ()
                 );
             }
 

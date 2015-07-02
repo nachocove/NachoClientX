@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ namespace NachoCore.Utils
     {
         // Keep track of all instantiated NcCounter
         private static ConcurrentDictionary<string, NcCounter> ActiveList_;
+
         public static ConcurrentDictionary<string, NcCounter> ActiveList {
             get {
                 if (null == ActiveList_) {
@@ -20,12 +21,14 @@ namespace NachoCore.Utils
             }
         }
 
-        public string Name; // string used for reporting to telemetry
+        // String used for reporting to telemetry
+        public string Name;
 
         // Configuration of the counter
         // If true, clicking a counter automatically increment the parent (and all
         // ancestor) counters by the same amount.
         private bool _UpdateParent;
+
         public bool UpdateParent {
             get {
                 return _UpdateParent;
@@ -34,6 +37,7 @@ namespace NachoCore.Utils
 
         // If true, it automatically resets the count when timer fires
         private bool _AutoReset;
+
         public bool AutoReset {
             get {
                 if (!IsRoot ()) {
@@ -55,7 +59,9 @@ namespace NachoCore.Utils
 
         // If greater than 0, auto-reporting happens every N seconds as specified
         // by this propperty. If 0, auto-reporting is diabled.
-        private int _ReportPeriod; // time interval in seconds between auto-reporting
+        // Time interval in seconds between auto-reporting
+        private int _ReportPeriod;
+
         public int ReportPeriod {
             get {
                 if (!IsRoot ()) {
@@ -70,7 +76,7 @@ namespace NachoCore.Utils
                     return;
                 }
                 if (0 > value) {
-                    Log.Error(Log.LOG_UTILS, "Invalid second ({0})", value);
+                    Log.Error (Log.LOG_UTILS, "Invalid second ({0})", value);
                     return;
                 }
                 if (value == _ReportPeriod) {
@@ -111,7 +117,9 @@ namespace NachoCore.Utils
         }
 
         public delegate void NcCounterCallback ();
+
         private NcCounterCallback PreReportCallback_;
+
         public NcCounterCallback PreReportCallback {
             get {
                 return PreReportCallback_;
@@ -131,15 +139,17 @@ namespace NachoCore.Utils
         private List<NcCounter> Children;
         private NcPausableTimer Timer;
         private Int64 _Count;
+
         public Int64 Count {
             get {
                 return _Count;
             }
         }
+
         Mutex _Lock;
 
         // Time when the counter is initialized or last reset
-        public DateTime UtcStart; /// beginning of the count
+        public DateTime UtcStart;
 
         private bool IsRoot ()
         {
@@ -156,7 +166,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public NcCounter (string name, bool updateParent=false)
+        public NcCounter (string name, bool updateParent = false)
         {
             NcAssert.True (!ActiveList.ContainsKey (name));
             Name = name;
@@ -188,7 +198,7 @@ namespace NachoCore.Utils
                 NcCounter current = this;
                 while (null != current.Parent) {
                     current = current.Parent;
-                    current._Lock.WaitOne();
+                    current._Lock.WaitOne ();
                 }
             }
         }
@@ -200,7 +210,7 @@ namespace NachoCore.Utils
                 NcCounter current = this;
                 while (null != current.Parent) {
                     current = current.Parent;
-                    current._Lock.ReleaseMutex();
+                    current._Lock.ReleaseMutex ();
                 }
             }
         }
@@ -223,7 +233,7 @@ namespace NachoCore.Utils
 
         // Increase the count by an increment (default to 1 if omitted)
         // One can use a non-1 increment to count bytes for example.
-        public void Click (int increment=1)
+        public void Click (int increment = 1)
         {
             LockUpward ();
 
@@ -236,7 +246,7 @@ namespace NachoCore.Utils
                 }
             }
 
-            UnlockUpward();
+            UnlockUpward ();
         }
          
         // Reset the counter to 0.
@@ -249,7 +259,7 @@ namespace NachoCore.Utils
 
         // Internal rountine to reset a counter. This function is used to
         // allow all child counters to be reset using the same start time.
-        private void ResetInternal(DateTime utcStart)
+        private void ResetInternal (DateTime utcStart)
         {
             _Count = 0;
             UtcStart = utcStart;
@@ -279,10 +289,17 @@ namespace NachoCore.Utils
 
         public void Dispose ()
         {
-            Timer.Dispose ();
+            if (null != Timer) {
+                Timer.Dispose ();
+            }
             NcCounter counter;
             bool retval = ActiveList.TryRemove (Name, out counter);
             NcAssert.True (retval && (this == counter));
+            if (null != Children) {
+                foreach (var child in Children) {
+                    child.Dispose ();
+                }
+            }
         }
 
         public static void StopService ()

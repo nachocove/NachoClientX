@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using CoreGraphics;
+using UIKit;
+using Foundation;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
@@ -17,6 +17,8 @@ namespace NachoClient.iOS
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
 
         protected IMessageTableViewSourceDelegate owner;
+
+        public UIView footer;
 
         bool scrolling;
         // to control whether swiping is allowed or not
@@ -49,6 +51,12 @@ namespace NachoClient.iOS
         protected const int MESSAGE_HEADER_TAG = 99107;
         protected const int TOOLBAR_TAG = 99109;
         protected const int USER_MORE_TAG = 99110;
+        protected const int UNREAD_IMAGE_TAG = 99111;
+        protected const int CARD_VIEW_TAG = 99112;
+
+        protected const int NO_MESSAGES_VIEW = 99113;
+        protected const int HOT_LIST_LABEL = 99114;
+        protected const int UNREAD_MESSAGES_VIEW = 99115;
 
         public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
@@ -62,22 +70,18 @@ namespace NachoClient.iOS
         }
 
         /// Tableview delegate
-        public override int NumberOfSections (UITableView tableView)
+        public override nint NumberOfSections (UITableView tableView)
         {
             return 1;
         }
 
         /// The number of rows in the specified section.
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
-            if (NoMessageThreads ()) {
-                return 1; // "No messages"
-            } else {
-                return messageThreads.Count ();
-            }
+            return messageThreads.Count ();
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             return (tableView.Frame.Height - 30);
         }
@@ -98,7 +102,7 @@ namespace NachoClient.iOS
         protected UITableViewCell CreateCell (UITableView tableView)
         {
             var cell = new UITableViewCell (UITableViewCellStyle.Default, EmailMessageReuseIdentifier);
-            if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+            if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
                 cell.SeparatorInset = UIEdgeInsets.Zero;
             }
             cell.SelectionStyle = UITableViewCellSelectionStyle.None;
@@ -106,13 +110,13 @@ namespace NachoClient.iOS
 
             var cellWidth = tableView.Frame.Width;
 
-            var cardFrame = new RectangleF (7, 10, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 30);
+            var cardFrame = new CGRect (7, 10, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 30);
             var cardView = new UIView (cardFrame);
             cardView.BackgroundColor = A.Color_NachoBackgroundGray;
-
+            cardView.Tag = CARD_VIEW_TAG;
             cell.ContentView.AddSubview (cardView);
 
-            var frame = new RectangleF (0, 0, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 40);
+            var frame = new CGRect (0, 0, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 40);
             var view = new SwipeActionView (frame);
             view.Tag = SWIPE_TAG;
             view.BackgroundColor = UIColor.White;
@@ -135,14 +139,14 @@ namespace NachoClient.iOS
             var viewWidth = view.Frame.Width;
 
             // User image view
-            var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
+            var userImageView = new UIImageView (new CGRect (15, 15, 40, 40));
             userImageView.Layer.CornerRadius = 20;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = USER_IMAGE_TAG;
             view.AddSubview (userImageView);
 
             // User userLabelView view, if no image
-            var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+            var userLabelView = new UILabel (new CGRect (15, 15, 40, 40));
             userLabelView.Font = A.Font_AvenirNextRegular24;
             userLabelView.TextColor = UIColor.White;
             userLabelView.TextAlignment = UITextAlignment.Center;
@@ -152,19 +156,28 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_TAG;
             view.AddSubview (userLabelView);
 
-            var messageHeaderView = new MessageHeaderView (new RectangleF (65, 0, viewWidth - 65, 75));
+            // Unread message dot
+            var unreadMessageView = new UIImageView (new CGRect (5, 30, 9, 9));
+            using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
+                unreadMessageView.Image = image;
+            }
+            unreadMessageView.BackgroundColor = UIColor.White;
+            unreadMessageView.Tag = UNREAD_IMAGE_TAG;
+            view.AddSubview (unreadMessageView);
+
+            var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, viewWidth - 65, 75));
             messageHeaderView.CreateView ();
             messageHeaderView.Tag = MESSAGE_HEADER_TAG;
             messageHeaderView.SetAllBackgroundColors (UIColor.White);
             view.AddSubview (messageHeaderView);
             // Reminder image view
-            var reminderImageView = new UIImageView (new RectangleF (65, 75 + 4, 12, 12));
+            var reminderImageView = new UIImageView (new CGRect (65, 75 + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
             reminderImageView.Tag = REMINDER_ICON_TAG;
             view.AddSubview (reminderImageView);
 
             // Reminder label view
-            var reminderLabelView = new UILabel (new RectangleF (87, 75, 230, 20));
+            var reminderLabelView = new UILabel (new CGRect (87, 75, 230, 20));
             reminderLabelView.Font = A.Font_AvenirNextRegular14;
             reminderLabelView.TextColor = A.Color_9B9B9B;
             reminderLabelView.Tag = REMINDER_TEXT_TAG;
@@ -172,15 +185,15 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new ScrollableBodyView (new RectangleF (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128));
+            var previewLabelView = new ScrollableBodyView (new CGRect (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128), onLinkSelected);
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
 
-            var toolbar = new MessageToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
+            var toolbar = new MessageToolbar (new CGRect (0, frame.Height - 44, frame.Width, 44));
             toolbar.Tag = TOOLBAR_TAG;
             view.AddSubview (toolbar);
 
-            var moreImageView = new UIImageView (new RectangleF (view.Frame.Width - 40, frame.Height - 44 - 32, 18, 10));
+            var moreImageView = new UIImageView (new CGRect (view.Frame.Width - 40, frame.Height - 44 - 32, 18, 10));
             moreImageView.ContentMode = UIViewContentMode.Center;
             moreImageView.Image = UIImage.FromBundle ("gen-readmore");
             moreImageView.Tag = USER_MORE_TAG;
@@ -192,6 +205,21 @@ namespace NachoClient.iOS
             return cell;
         }
 
+        /// <summary>
+        /// The height of the parent table view can change after some of the cells have been created.
+        /// Adjust the height or location of any views as necessary to react to the change.
+        /// </summary>
+        protected void AdjustHeight (UITableViewCell cell, nfloat rowHeight)
+        {
+            if (rowHeight != cell.Frame.Height) {
+                ViewFramer.Create (cell).Height (rowHeight);
+                ViewFramer.Create (cell.ViewWithTag (CARD_VIEW_TAG)).Height (rowHeight);
+                ViewFramer.Create (cell.ViewWithTag (SWIPE_TAG)).Height (rowHeight - 10);
+                ViewFramer.Create (cell.ViewWithTag (TOOLBAR_TAG)).Y (rowHeight - 54);
+                ViewFramer.Create (cell.ViewWithTag (USER_MORE_TAG)).Y (rowHeight - 86);
+            }
+        }
+
         protected void ConfigureAsUnavailable (UITableViewCell cell)
         {
             foreach (var v in cell.ContentView.Subviews) {
@@ -199,31 +227,26 @@ namespace NachoClient.iOS
             }
             cell.TextLabel.Hidden = false;
             cell.TextLabel.Text = "Information temporarily unavailable";
+            cell.TextLabel.TextAlignment = UITextAlignment.Center;
+            cell.TextLabel.Font = A.Font_AvenirNextDemiBold14;
+            cell.TextLabel.TextColor = A.Color_NachoGreen;
             cell.TextLabel.ContentMode = UIViewContentMode.Center;
         }
 
-        protected void ConfigureAsNoMessages (UITableViewCell cell)
-        {
-            foreach (var v in cell.ContentView.Subviews) {
-                v.Hidden = true;
-            }
-            cell.TextLabel.Hidden = false;
-            cell.TextLabel.Text = "No Hot Messages";
-            cell.TextLabel.ContentMode = UIViewContentMode.Center;
-        }
 
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, bool isRefresh)
         {
+            AdjustHeight (cell, GetHeightForRow (tableView, indexPath));
+
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.DisableSwipe ();
             view.OnSwipe = null;
             view.OnClick = null;
 
             if (NoMessageThreads ()) {
-                ConfigureAsNoMessages (cell);
                 return;
             }
 
@@ -235,7 +258,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var message = messageThread.SingleMessageSpecialCase ();
+            var message = messageThread.FirstMessageSpecialCase ();
             if (null == message) {
                 ConfigureAsUnavailable (cell);
                 return;
@@ -270,7 +293,7 @@ namespace NachoClient.iOS
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
                 }
             };
-                
+
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
@@ -317,32 +340,29 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 
-            var userImage = Util.PortraitOfSender (message);
-            if (null == userImage) {
-                userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
-            }
+            var userImage = Util.MessageToPortraitImage (message);
 
             if (null != userImage) {
                 userImageView.Hidden = false;
                 userImageView.Image = userImage;
             } else {
                 userLabelView.Hidden = false;
-                if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 > message.cachedFromColor)) {
-                    Util.CacheUserMessageFields (message);
-                }
                 userLabelView.Text = message.cachedFromLetters;
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
+            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            unreadMessageView.Hidden = message.IsRead;
+
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
-            messageHeaderView.ConfigureView (message);
+            messageHeaderView.ConfigureMessageView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-                messageHeaderView.ConfigureView (message);
+                messageHeaderView.ConfigureMessageView (messageThread, message);
             };
 
-            float previewViewTop;
+            nfloat previewViewTop;
 
             // Reminder image view and label
             var reminderImageView = view.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -362,12 +382,154 @@ namespace NachoClient.iOS
             previewViewTop += 5;
 
             // The "more" image overlays the preview view
-            float previewViewBottom = view.Frame.Bottom - 44 - 5;
+            nfloat previewViewBottom = view.Frame.Bottom - 44 - 5;
 
             var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
             // X and Width remain the same, but Y and Height might change.
             previewView.ConfigureAndResize (message, isRefresh,
-                new RectangleF (previewView.Frame.X, previewViewTop, previewView.Frame.Width, previewViewBottom - previewViewTop));
+                new CGRect (previewView.Frame.X, previewViewTop, previewView.Frame.Width, previewViewBottom - previewViewTop));
+        }
+
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
+        {
+            return 0;
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
+        {
+            return new UIView (new CGRect (0, 0, 0, 0));
+        }
+
+        public override nfloat GetHeightForFooter (UITableView tableView, nint section)
+        {
+            return (tableView.Frame.Height - 30);
+        }
+
+        private nfloat GetFooterCardHeight (UITableView tableView)
+        {
+            return tableView.Frame.Height - 40;
+        }
+
+        public override UIView GetViewForFooter (UITableView tableView, nint section)
+        {
+            var noMessagesView = new UIView ();
+            noMessagesView.Frame = new CGRect (7.5f, 10, tableView.Frame.Width - 15.0f, GetFooterCardHeight (tableView));
+            noMessagesView.BackgroundColor = UIColor.White;
+            noMessagesView.AutoresizingMask = UIViewAutoresizing.None;
+            noMessagesView.ContentMode = UIViewContentMode.Center;
+            noMessagesView.Layer.CornerRadius = A.Card_Corner_Radius;
+            noMessagesView.Layer.MasksToBounds = true;
+            noMessagesView.Layer.BorderColor = A.Card_Border_Color;
+            noMessagesView.Layer.BorderWidth = A.Card_Border_Width;
+            noMessagesView.Tag = NO_MESSAGES_VIEW;
+
+            var cardWidth = noMessagesView.Frame.Width;
+
+            var minButtonsFrame = ((40 * 3) + (2 * A.Card_Vertical_Indent));
+            var messageFrameHeight = noMessagesView.Frame.Height - minButtonsFrame;
+
+            var isFourS = false;
+            var isSixOrGreater = false;
+            var isSixPlusOrGreater = false;
+
+            if (260 > noMessagesView.Frame.Height) {
+                isFourS = true;
+            } else {
+                if (360 <= noMessagesView.Frame.Width) {
+                    isSixOrGreater = true;
+                }
+                if (390 < noMessagesView.Frame.Width) {
+                    isSixPlusOrGreater = true;
+                }
+            }
+
+            // Nacho Mail icon
+            var nachoMailIcon = new UIImageView ();
+            nachoMailIcon.Frame = (isSixOrGreater ? new CGRect (cardWidth / 2 - 32.5f, A.Card_Vertical_Indent, 65, 65) : new CGRect (cardWidth / 2 - 22.5f, A.Card_Horizontal_Indent, 45, 45));
+            nachoMailIcon.Image = UIImage.FromBundle ("Bootscreen-1");
+            nachoMailIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (nachoMailIcon);
+
+            // Chips left
+            var chipsLeftIcon = new UIImageView ();
+            chipsLeftIcon.Frame = (isSixOrGreater ? new CGRect (0, messageFrameHeight - 45, 115, 45) : new CGRect (0, messageFrameHeight - 33, 85, 33));
+            chipsLeftIcon.Image = UIImage.FromBundle ("gen-nacholeft");
+            chipsLeftIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (chipsLeftIcon);
+
+            // Chips right
+            var chipsRightIcon = new UIImageView ();
+            chipsRightIcon.Frame = (isSixOrGreater ? new CGRect (cardWidth - 115, messageFrameHeight - 45, 115, 45) : new CGRect (cardWidth - 85, messageFrameHeight - 33, 85, 33));
+            chipsRightIcon.Image = UIImage.FromBundle ("gen-nachoright");
+            chipsRightIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (chipsRightIcon);
+
+            // Empty Hot list label
+            var stringAttributes = new UIStringAttributes {
+                ForegroundColor = A.Color_NachoGreen,
+                BackgroundColor = UIColor.White,
+                Font = (isSixPlusOrGreater ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextDemiBold14)
+            };
+
+            NSMutableAttributedString lastCardMessage = null;
+
+            if (NoMessageThreads ()) {
+                lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nYou can add Hot messages by tapping on the  ", stringAttributes);
+            } else {
+                lastCardMessage = new NSMutableAttributedString ("You can add Hot messages by tapping on the  ", stringAttributes);
+            }
+            var lastCardMessagePartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
+
+            var inlineIcon = new NachoInlineImageTextAttachment ();
+            inlineIcon.Image = UIImage.FromBundle ("email-not-hot");
+
+            var stringWithImage = NSAttributedString.CreateFrom (inlineIcon);
+            lastCardMessage.Append (stringWithImage);
+            lastCardMessage.Append (lastCardMessagePartTwo);
+
+            var messageWidth = (isSixPlusOrGreater ? noMessagesView.Frame.Width - 4 * A.Card_Horizontal_Indent : 320 - 4 * A.Card_Horizontal_Indent);
+
+            var hotListLabel = new UILabel (new CGRect (0, 0, messageWidth, 50));
+            hotListLabel.TextAlignment = UITextAlignment.Center;
+            hotListLabel.BackgroundColor = UIColor.White;
+            hotListLabel.Lines = 0;
+            hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
+            hotListLabel.AttributedText = lastCardMessage;
+            hotListLabel.SizeToFit ();
+            var hotListLabelYOffset = (isFourS ? messageFrameHeight / 2 : ((chipsLeftIcon.Frame.Top - nachoMailIcon.Frame.Bottom) / 2) + nachoMailIcon.Frame.Bottom + 5);
+            hotListLabel.Center = new CGPoint (noMessagesView.Frame.Width / 2, hotListLabelYOffset); 
+            hotListLabel.Hidden = true;
+            hotListLabel.Tag = HOT_LIST_LABEL;
+
+            noMessagesView.AddSubview (hotListLabel);
+
+            var cellHeight = (noMessagesView.Frame.Height - messageFrameHeight) / 3;
+            var unreadMessageViewFrame = new CGRect (A.Card_Horizontal_Indent, messageFrameHeight, cardWidth - A.Card_Horizontal_Indent, cellHeight);
+            var unreadMessagesView = new UnreadMessagesView (unreadMessageViewFrame, InboxClicked, DeadlinesClicked, DeferredClicked);
+            unreadMessagesView.Tag = UNREAD_MESSAGES_VIEW;
+
+            var cellFont = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
+            unreadMessagesView.SetFont (cellFont);
+
+            noMessagesView.AddSubview (unreadMessagesView);
+
+            footer = new UIView ();
+            footer.BackgroundColor = A.Color_NachoBackgroundGray;
+            footer.AddSubview (noMessagesView);
+
+            ConfigureFooter (tableView);
+
+            return footer;
+        }
+
+        public void ConfigureFooter (UITableView tableView)
+        {
+            if (null == footer) {
+                return;
+            }
+            footer.ViewWithTag (HOT_LIST_LABEL).Hidden = false;
+            var unreadMessagesView = (UnreadMessagesView) footer.ViewWithTag (UNREAD_MESSAGES_VIEW);
+            unreadMessagesView.Update (NcApplication.Instance.Account);
         }
 
         /// <summary>
@@ -390,16 +552,76 @@ namespace NachoClient.iOS
             }
         }
 
+        private int VisibleRow (UITableView tableView)
+        {
+            var visibleRows = tableView.IndexPathsForVisibleRows;
+            if (1 == visibleRows.Length) {
+                // Only one entry in the hot view.
+                return visibleRows [0].Row;
+            }
+            if (2 == visibleRows.Length) {
+                if (2 == messageThreads.Count ()) {
+                    // There isn't an easy way to tell which row is fully visible and which is only partially visible.
+                    // Pretend that no row is visible, so the caller will use the indexPath passed into RowSelected.
+                    return -1;
+                }
+                if (0 == visibleRows [0].Row) {
+                    // At the beginning.
+                    return 0;
+                } else {
+                    // At the end of the list.
+                    return visibleRows [1].Row;
+                }
+            }
+            if (3 == visibleRows.Length) {
+                // The normal case.  We are somewhere in the middle of the list.
+                return visibleRows [1].Row;
+            }
+            return -1;
+        }
+
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            // There appears to be a bug in Xamarin or iOS where the indexPath that is passed into RowSelected
+            // is sometimes incorrect.  I have not found the pattern for when the bug happens.  So we ignore
+            // the row that is passed in and figure out the message that is currently visible.  (This only works
+            // because the Hot view shows only one message at a time.  If the Hot view changes, this code will
+            // have to change.)
+            int selectedRow = VisibleRow (tableView);
+            if (0 > selectedRow) {
+                selectedRow = indexPath.Row;
+            }
+            if (selectedRow != indexPath.Row) {
+                Log.Warn (Log.LOG_UI, "HotListTableViewSource.RowSelected was passed a row index, {0}, that is not the currently visible cell, {1}", indexPath.Row, selectedRow);
+            }
             if (NoMessageThreads ()) {
                 return;
             }
-            var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+            var messageThread = messageThreads.GetEmailThread (selectedRow);
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+            if (messageThread.HasMultipleMessages ()) {
+                owner.PerformSegueForDelegate ("SegueToMessageThreadView", new SegueHolder (messageThread));
+            } else {
+                owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+            }
+        }
+
+        private void InboxClicked (object sender)
+        {
+            var nachoTabBar = Util.GetActiveTabBar ();
+            nachoTabBar.SwitchToInbox ();
+        }
+
+        private void DeferredClicked (object sender)
+        {
+            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id)));
+        }
+
+        private void DeadlinesClicked (object sender)
+        {
+            owner.PerformSegueForDelegate ("NachoNowToMessageList", new SegueHolder (new NachoDeadlineEmailMessages (NcApplication.Instance.Account.Id)));
         }
 
         /// INachoMessageEditorParent delegate
@@ -428,10 +650,7 @@ namespace NachoClient.iOS
 
             var messageThread = (McEmailMessageThread)h.value;
             NcAssert.NotNull (messageThread);
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
-                NcEmailArchiver.Move (message, folder);
-            }
+            NcEmailArchiver.Move (messageThread, folder);
         }
 
         /// INachoFolderChooserParent delegate
@@ -453,11 +672,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (messageThread);
         }
 
         void onDeferButtonClicked (McEmailMessageThread messageThread)
@@ -481,11 +696,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
-            NcEmailArchiver.Archive (message);
+            NcEmailArchiver.Archive (messageThread);
         }
 
         void onDeleteButtonClicked (McEmailMessageThread messageThread)
@@ -493,14 +704,10 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
-            NcEmailArchiver.Delete (message);
+            NcEmailArchiver.Delete (messageThread);
         }
 
-        protected PointF startingPoint;
+        protected CGPoint startingPoint;
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
@@ -531,26 +738,32 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void WillEndDragging (UIScrollView scrollView, PointF velocity, ref PointF targetContentOffset)
+        public override void WillEndDragging (UIScrollView scrollView, CGPoint velocity, ref CGPoint targetContentOffset)
         {
             if (NoMessageThreads ()) {
                 return;
             }
 
             var tableView = (UITableView)scrollView;
-            var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new PointF (tableView.Frame.X / 2, targetContentOffset.Y + 10));
+            var totalContentY = tableView.ContentSize.Height;
+
+            var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new CGPoint (tableView.Frame.X / 2, targetContentOffset.Y + 10));
 
             if (null == pathForTargetTopCell) {
                 return;
             }
 
+            // pull down, go to previous cell
             if (startingPoint.Y >= targetContentOffset.Y) {
                 targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
                 return;
             }
-                
+
             var nextRow = pathForTargetTopCell.Row + 1;
+
+            // push up, go to table footer if past the end
             if (nextRow >= RowsInSection (tableView, pathForTargetTopCell.Section)) {
+                targetContentOffset.Y = tableView.RectForFooterInSection (0).Location.Y - 10;
                 return;
             }
 
@@ -561,6 +774,16 @@ namespace NachoClient.iOS
             targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
         }
 
+        public void onLinkSelected (NSUrl url)
+        {
+            if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
+                owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+            } else {
+                UIApplication.SharedApplication.OpenUrl (url);
+            }
+        }
+
     }
+
 }
 

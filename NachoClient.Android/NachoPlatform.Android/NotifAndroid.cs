@@ -31,19 +31,35 @@ namespace NachoPlatform
             }
         }
 
-        public void ScheduleNotif (int handle, DateTime when, string message)
+        public void ImmediateNotification (int handle, string message)
         {
             NcAssert.True (false);
         }
 
-        public void CancelNotif (int handle)
+        public void ScheduleNotification (int handle, DateTime when, string message)
+        {
+            Log.Info (Log.LOG_CALENDAR, "ScheduleNotification not implemented for Android.");
+        }
+
+        public void ScheduleNotification (NotificationInfo notification)
+        {
+            ScheduleNotification (notification.Handle, notification.When, notification.Message);
+        }
+
+        public void ScheduleNotifications (List<NotificationInfo> notifications)
+        {
+            foreach (var notification in notifications) {
+                ScheduleNotification (notification);
+            }
+        }
+
+        public void CancelNotification (int handle)
         {
             NcAssert.True (false);
         }
 
-        public void CancelNotif (List<int> handles)
+        public static void DumpNotifications ()
         {
-            NcAssert.True (false);
         }
     }
 }

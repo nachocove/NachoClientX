@@ -5,12 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
     public partial class AsFolderSyncCommand : AsCommand
     {
-        private class ApplyFolderDelete : AsApplyServerCommand
+        private class ApplyFolderDelete : NcApplyServerCommand
         {
             public string ServerId { set; get; }
 
@@ -110,6 +111,15 @@ namespace NachoCore.ActiveSync
                     }
                     return null;
 
+                case McPending.Operations.CalForward:
+                    cancelCommand = false;
+                    if (pending.CommandDominatesItem (ServerId)) {
+                        action = McPending.DbActionEnum.Delete;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
                 case McPending.Operations.CalCreate:
                 case McPending.Operations.ContactCreate:
                 case McPending.Operations.TaskCreate:
@@ -151,7 +161,11 @@ namespace NachoCore.ActiveSync
             {
                 // Remove the folder and anything subordinate.
                 var folder = McAbstrFolderEntry.QueryByServerId<McFolder> (AccountId, ServerId);
-                folder.Delete ();
+                if (null != folder) {
+                    folder.Delete ();
+                } else {
+                    Log.Error (Log.LOG_AS, "ApplyFolderDelete:ApplyCommandToModel: ServerId missing in DB.");
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 
 using System;
@@ -44,7 +44,7 @@ namespace Test.iOS
         public static string SubHost = "foo.utopiasystems.net";
 
         // DNS tests depends on RedirectionUrl being exactly this because the certificate contains this url
-        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml"; 
+        public static string RedirectionUrl = "https://mail.utopiasystems.net./autodiscover/autodiscover.xml";
         public static string InvalidRedirUrl = "http://invalid.utopiasystems.net/autodiscover/autodiscover.xml";
         public static string PhonyAbsolutePath = "/Microsoft-Server-ActiveSync";
 
@@ -74,14 +74,17 @@ namespace Test.iOS
     {
         // TODO: do we need to go the factory route and get rid of the statics?
         public delegate void ExamineHttpRequestMessageDelegate (HttpRequestMessage request);
+
         public static ExamineHttpRequestMessageDelegate ExamineHttpRequestMessage { set; get; }
 
         // Provide the request message so that the type of auto-d can be checked
         public delegate HttpResponseMessage ProvideHttpResponseMessageDelegate (HttpRequestMessage request);
+
         public static ProvideHttpResponseMessageDelegate ProvideHttpResponseMessage { set; get; }
 
         // Turn on/off server certificate validation callback
         public delegate bool HasServerCertificateDelegate ();
+
         public static HasServerCertificateDelegate HasServerCertificate { set; get; }
 
         public static uint AsyncCalledCount { set; get; }
@@ -126,15 +129,15 @@ namespace Test.iOS
             }
 
             // Create and return a mock response
-            var mockResponse = new HttpResponseMessage () {};
+            var mockResponse = new HttpResponseMessage () { };
             return Task.Run<HttpResponseMessage> (delegate {
                 return mockResponse;
             });
         }
 
         public Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
-            HttpCompletionOption completionOption,
-            CancellationToken cancellationToken)
+                                                    HttpCompletionOption completionOption,
+                                                    CancellationToken cancellationToken)
         {
             AsyncCalledCount++;
 
@@ -150,11 +153,16 @@ namespace Test.iOS
 
     public class MockContext : IBEContext
     {
-        public IProtoControlOwner Owner { set; get; }
-        public AsProtoControl ProtoControl { set; get; }
+        public INcProtoControlOwner Owner { set; get; }
+
+        public NcProtoControl ProtoControl { set; get; }
+
         public McProtocolState ProtocolState { get; set; }
+
         public McServer Server { get; set; }
+
         public McAccount Account { set; get; }
+
         public McCred Cred { set; get; }
 
         public MockContext (AsProtoControl protoControl = null, McServer server = null)
@@ -165,38 +173,45 @@ namespace Test.iOS
             // R/W AsProtocolVersion
             // READ InitialProvisionCompleted
             Server = server; 
+
             Account = new McAccount () {
-                Id = 1,
                 EmailAddr = "johnd@foo.utopiasystems.net",
             };
+            Account.Insert ();
             var protoState = McProtocolState.QueryByAccountId<McProtocolState> (Account.Id).SingleOrDefault ();
             if (null == protoState) {
-
                 protoState = new McProtocolState () {
                     AccountId = Account.Id,
                 };
                 protoState.Insert ();
             }
             ProtocolState = protoState;
-            ProtoControl = protoControl;
+            if (null == protoControl) {
+                ProtoControl = new AsProtoControl (Owner, Account.Id);
+            } else {
+                ProtoControl = protoControl;
+            }
             Cred = new McCred () {
+                CredType = McCred.CredTypeEnum.Password,
                 AccountId = Account.Id,
                 Username = "dummy",
             };
+            Cred.Insert ();
         }
     }
 
-    public class MockOwner : IProtoControlOwner
+    public class MockOwner : INcProtoControlOwner
     {
         // register a callback in order to track StatusInd notifications
         public delegate void ViewStatusIndMessageDelegate (NcResult result);
+
         public static event ViewStatusIndMessageDelegate StatusIndCallback;
 
         // Helper property added for test purposes only
         public static NcResult Status { get; set; }
 
         // Use these to check which error code was posted
-        public void StatusInd (ProtoControl sender, NcResult status)
+        public void StatusInd (NcProtoControl sender, NcResult status)
         {
             if (StatusIndCallback != null) {
                 StatusIndCallback (status);
@@ -204,7 +219,7 @@ namespace Test.iOS
             Status = status;
         }
 
-        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+        public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
         {
             if (StatusIndCallback != null) {
                 StatusIndCallback (status);
@@ -218,17 +233,34 @@ namespace Test.iOS
         }
 
         // we aren't interested in these
-        public void CredReq (ProtoControl sender) {}
-        public void ServConfReq (ProtoControl sender) {}
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {}
-        public void SearchContactsResp (ProtoControl sender, string prefix, string token) {}
+        public void CredReq (NcProtoControl sender)
+        {
+        }
+
+        public void ServConfReq (NcProtoControl sender, object arg)
+        {
+        }
+
+        public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate)
+        {
+        }
+
+        public void SearchContactsResp (NcProtoControl sender, string prefix, string token)
+        {
+        }
+
+        public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
+        {
+        }
     }
 
     public class MockNcCommStatus : INcCommStatus
     {
         private static volatile MockNcCommStatus instance;
 
-        private MockNcCommStatus () {}
+        private MockNcCommStatus ()
+        {
+        }
 
         public static MockNcCommStatus Instance { 
             get {
@@ -236,7 +268,8 @@ namespace Test.iOS
                     instance = new MockNcCommStatus ();
                 }
                 return instance;
-            } set {
+            }
+            set {
                 // allow MockNcCommStatus to be reset to null between tests
                 instance = value;
             }
@@ -247,7 +280,9 @@ namespace Test.iOS
             return false;
         }
 
-        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
+        public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
+        {
+        }
 
         #pragma warning disable 067
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
@@ -258,8 +293,9 @@ namespace Test.iOS
         {
         }
 
-        public void ReportCommResult (string host, DateTime delayUntil)
+        public void ReportCommResult (int accountId, string host, DateTime delayUntil)
         {
+            AccountId = accountId;
             Host = host;
             DelayUntil = delayUntil;
         }
@@ -268,18 +304,28 @@ namespace Test.iOS
         {
         }
 
-        public void ReportCommResult (string host, bool didFailGenerally)
+        public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
+            AccountId = accountId;
             Host = host;
             DidFailGenerally = didFailGenerally;
         }
 
+        public int AccountId { get; set; }
+
         public string Host { get; set; }
+
         public bool DidFailGenerally { get; set; }
+
         public DateTime DelayUntil;
 
-        public void Reset (int serverId) {}
-        public void Refresh () {}
+        public void Reset (int serverId)
+        {
+        }
+
+        public void Refresh ()
+        {
+        }
     }
 
     public class MockStrategy : IAsStrategy
@@ -297,7 +343,17 @@ namespace Test.iOS
             Folder = folder;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
+        public MoveKit GenMoveKit (int accountId)
+        {
+            return null;
+        }
+
+        public FetchKit GenFetchKit (int accountId)
+        {
+            return null;
+        }
+
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState)
         {
             return new NachoCore.ActiveSync.SyncKit () {
                 OverallWindowSize = 1,
@@ -313,9 +369,34 @@ namespace Test.iOS
             };
         }
 
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected)
+        {
+            return new NachoCore.ActiveSync.PingKit () {
+                MaxHeartbeatInterval = 600,
+                Folders = new List<McFolder> (),
+            };
+        }
+
+        public Tuple<PickActionEnum, AsCommand> PickUserDemand ()
+        {
+            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);
+        }
+
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
             return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);
         }
+
+        public int UploadTimeoutSecs (long length)
+        {
+            return DefaultTimeoutSecs;
+        }
+
+        public int DownloadTimeoutSecs (long length)
+        {
+            return DefaultTimeoutSecs;
+        }
+
+        public int DefaultTimeoutSecs { get { return 30; } }
     }
 }

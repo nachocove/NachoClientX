@@ -1,0 +1,11 @@
+New features since the 1.0 release:
+
+. Support for Gmail, Yahoo, iCloud, and other IMAP e-mail servers.
+
+. Support for multiple accounts within the app simultaneously.
+
+. Displaying events from the device's calendar in the app's calendar.
+
+Known limitations:
+
+. No calendar support for IMAP servers.

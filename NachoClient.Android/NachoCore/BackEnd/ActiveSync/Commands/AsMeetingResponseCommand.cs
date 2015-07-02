@@ -1,7 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -24,18 +25,29 @@ namespace NachoCore.ActiveSync
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse,
-                                  new XElement (m_ns + Xml.MeetingResp.Request,
-                                      new XElement (m_ns + Xml.MeetingResp.UserResponse, (uint)PendingSingle.CalResponse),
-                                      new XElement (m_ns + Xml.MeetingResp.CollectionId, PendingSingle.ParentId),
-                                      new XElement (m_ns + Xml.MeetingResp.RequestId, PendingSingle.ServerId)));
+            var request = new XElement (m_ns + Xml.MeetingResp.Request,
+                              new XElement (m_ns + Xml.MeetingResp.UserResponse, (uint)PendingSingle.CalResponse),
+                              new XElement (m_ns + Xml.MeetingResp.CollectionId, PendingSingle.ParentId),
+                              new XElement (m_ns + Xml.MeetingResp.RequestId, PendingSingle.ServerId));
+            if (DateTime.MinValue != PendingSingle.CalResponseInstance) {
+                if ("14.1" == BEContext.ProtocolState.AsProtocolVersion) {
+                    request.Add (new XElement (m_ns + Xml.MeetingResp.InstanceId, 
+                        PendingSingle.CalResponseInstance.ToAsUtcString ()));
+                } else {
+                    Log.Error (Log.LOG_AS, "AsMeetingResponseCommand:InstanceId specified without protocol support.");
+                }
+            }
+            var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse, request);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (meetingResp);
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "MRESPCANCEL");
+            }
             var xmlMeetingResp = doc.Root;
             var xmlResult = xmlMeetingResp.Element (m_ns + Xml.MeetingResp.Result);
             var xmlStatus = xmlResult.Element (m_ns + Xml.MeetingResp.Status);
@@ -55,7 +67,7 @@ namespace NachoCore.ActiveSync
 
             default:
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_MeetingResponseFailed,
                         NcResult.WhyEnum.Unknown));
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAIL2");

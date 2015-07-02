@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
-    public class McNote : McAbstrObject, IFilesViewItem
+    public class McNote : McAbstrObjectPerAcc, IFilesViewItem
     {
         public enum NoteType
         {

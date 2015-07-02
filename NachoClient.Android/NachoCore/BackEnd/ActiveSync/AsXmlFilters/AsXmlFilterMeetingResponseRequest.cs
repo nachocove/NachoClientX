@@ -22,7 +22,7 @@ namespace NachoCore.Wbxml
             node3 = new NcXmlFilterNode ("UserResponse", RedactionType.FULL, RedactionType.FULL);
             node2.Add(node3); // Request -> UserResponse
             // CollectionId
-            node3 = new NcXmlFilterNode ("CollectionId", RedactionType.NONE, RedactionType.NONE);
+            node3 = new NcXmlFilterNode ("CollectionId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node2.Add(node3); // Request -> CollectionId
             // RequestId
             node3 = new NcXmlFilterNode ("RequestId", RedactionType.NONE, RedactionType.NONE);

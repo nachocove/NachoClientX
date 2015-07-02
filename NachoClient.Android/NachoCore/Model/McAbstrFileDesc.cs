@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -152,12 +152,15 @@ namespace NachoCore.Model
 
         public void SetDisplayName (string displayName)
         {
+            DisplayName = displayName;
+            LocalFileName = null;
+            if (null == displayName) {
+                return;
+            }
             string oldPath = null;
             if (0 < Id) {
                 oldPath = GetFilePath ();
             }
-            DisplayName = displayName;
-            LocalFileName = null;
             // See if we can make a legit LocalFileName. If we can't, leave it null.
             var tmp = NcModel.Instance.TmpPath (AccountId);
             Directory.CreateDirectory (tmp);
@@ -375,7 +378,7 @@ namespace NachoCore.Model
             return (FilePresenceEnum.Complete == FilePresence);
         }
 
-        public static bool IsNontruncatedBodyComplete(McAbstrFileDesc file)
+        public static bool IsNontruncatedBodyComplete (McAbstrFileDesc file)
         {
             return (IsComplete (file) && !file.Truncated);
         }

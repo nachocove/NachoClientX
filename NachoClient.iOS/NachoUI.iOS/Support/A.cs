@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
-using MonoTouch.CoreGraphics;
+using UIKit;
+using Foundation;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -21,6 +21,7 @@ namespace NachoClient.iOS
         protected static UIFont _Font_AvenirNextRegular10 = null;
         protected static UIFont _Font_AvenirNextRegular8 = null;
         protected static UIFont _Font_AvenirNextMedium24 = null;
+        protected static UIFont _Font_AvenirNextMedium17 = null;
         protected static UIFont _Font_AvenirNextMedium14 = null;
         protected static UIFont _Font_AvenirNextMedium12 = null;
         protected static UIFont _Font_AvenirNextMedium10 = null;
@@ -207,6 +208,15 @@ namespace NachoClient.iOS
             }
         }
 
+        public static UIFont Font_AvenirNextMedium17 {
+            get {
+                if (null == _Font_AvenirNextMedium17) {
+                    _Font_AvenirNextMedium17 = UIFont.FromName ("AvenirNext-Medium", 17);
+                }
+                return _Font_AvenirNextMedium17;
+            }
+        }
+
         public static UIFont Font_AvenirNextMedium14 {
             get {
                 if (null == _Font_AvenirNextMedium14) {
@@ -372,7 +382,7 @@ namespace NachoClient.iOS
         public static UIColor Color_009E85 {
             get {
                 if (null == _Color_009E85) {
-                    _Color_009E85 = UIColor.FromRGB (0x00, 0x89E, 0x85);
+                    _Color_009E85 = UIColor.FromRGB (0x00, 0x9E, 0x85);
                 }
                 return _Color_009E85;
             }
@@ -417,7 +427,7 @@ namespace NachoClient.iOS
         public static UIColor Color_NachoBlack {
             get {
                 if (null == _Color_NachoBlack) {
-                    _Color_NachoBlack = UIColor.FromRGB (0x0b, 032, 0x39);
+                    _Color_NachoBlack = UIColor.FromRGB (0x0b, 0x32, 0x39);
                 }
                 return _Color_NachoBlack;
             }

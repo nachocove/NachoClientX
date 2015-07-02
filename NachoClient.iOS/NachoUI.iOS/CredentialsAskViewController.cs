@@ -3,65 +3,60 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Drawing;
+using CoreGraphics;
 using NachoCore.Model;
 using NachoCore.Utils;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoPlatform;
 using NachoCore;
 
 namespace NachoClient.iOS
 {
     public partial class CredentialsAskViewController : NcUIViewController, INachoCertificateResponderParent
-	{
-        protected float yOffset = 0;
-        protected float keyboardHeight;
+    {
+        protected nfloat yOffset = 0;
         protected const int EMAIL_FIELD_TAG = 100;
         protected const int PASSWORD_FIELD_TAG = 101;
         protected const int SUBMIT_BUTTON_TAG = 102;
         CertificateView certificateView;
-        protected NachoTabBarController sendersTabBar;
 
-		public CredentialsAskViewController (IntPtr handle) : base (handle)
-		{
-		}
+        int theAccountId;
 
-        public override void ViewDidLoad()
+        public CredentialsAskViewController (IntPtr handle) : base (handle)
+        {
+        }
+
+        public void SetAccountId(int accountId)
+        {
+            theAccountId = accountId;
+        }
+
+        public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
             CreateView ();
             LayoutView ();
             ConfigureView ();
 
-            certificateView = new CertificateView (View.Frame);
-            certificateView.SetOwner (this);
-            certificateView.CreateView ();
+            certificateView = new CertificateView (View.Frame, this);
             View.Add (certificateView);
-        }
-
-        public void SetTabBarController(NachoTabBarController tabBar)
-        {
-            this.sendersTabBar = tabBar;
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
-            }
+            NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
 
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+            // FIXME STEVE
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccountId, McAccount.AccountCapabilityEnum.EmailSender);
             if (BackEndStateEnum.CertAskWait == backEndState) {
-                certificateView.SetCertificateInformation ();
+                certificateView.SetCertificateInformation (theAccountId);
                 certificateView.ShowView ();
             }
         }
-            
-        protected void CreateView()
+
+        protected void CreateView ()
         {
             scrollView.BackgroundColor = A.Color_NachoGreen;
             View.Add (scrollView);
@@ -69,17 +64,18 @@ namespace NachoClient.iOS
 
             yOffset = 40;
 
-            UIButton escape = new UIButton (new RectangleF (20, yOffset, 20, 20));
-            escape.SetImage(UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
+            UIButton escape = new UIButton (new CGRect (20, yOffset, 20, 20));
+            escape.AccessibilityLabel = "Close";
+            escape.SetImage (UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
             escape.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing(true);
-                DismissViewController(true, null);
+                View.EndEditing (true);
+                DismissViewController (true, null);
             };
             contentView.Add (escape);
 
             yOffset = escape.Frame.Bottom + 40;
 
-            UILabel errorMessage = new UILabel (new RectangleF (25, yOffset, View.Frame.Width - 50, 70));
+            UILabel errorMessage = new UILabel (new CGRect (25, yOffset, View.Frame.Width - 50, 70));
             errorMessage.TextAlignment = UITextAlignment.Center;
             errorMessage.Lines = 3;
             errorMessage.Text = "Your credentials are no longer valid. Please update your credentials.";
@@ -89,10 +85,10 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom + 20;
 
-            UIView emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 44));
+            UIView emailBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 44));
             emailBox.BackgroundColor = UIColor.White;
 
-            var emailField = new UITextField (new RectangleF (100, 0, emailBox.Frame.Width - 100, emailBox.Frame.Height));
+            var emailField = new UITextField (new CGRect (100, 0, emailBox.Frame.Width - 100, emailBox.Frame.Height));
             emailField.BackgroundColor = UIColor.White;
             emailField.Placeholder = "email@company.com";
             emailField.Font = A.Font_AvenirNextRegular14;
@@ -104,7 +100,7 @@ namespace NachoClient.iOS
             emailField.Tag = EMAIL_FIELD_TAG;
             emailBox.AddSubview (emailField);
 
-            UILabel emailLabel = new UILabel (new RectangleF (10, 0, 60, 44));
+            UILabel emailLabel = new UILabel (new CGRect (10, 0, 60, 44));
             emailLabel.Text = "Email";
             emailLabel.BackgroundColor = UIColor.White;
             emailLabel.TextColor = A.Color_NachoGreen;
@@ -115,10 +111,10 @@ namespace NachoClient.iOS
 
             yOffset = emailBox.Frame.Bottom + 5f;
 
-            UIView passwordBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 44));
+            UIView passwordBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 44));
             passwordBox.BackgroundColor = UIColor.White;
 
-            var passwordField = new UITextField (new RectangleF (100, 0, passwordBox.Frame.Width - 100, passwordBox.Frame.Height));
+            var passwordField = new UITextField (new CGRect (100, 0, passwordBox.Frame.Width - 100, passwordBox.Frame.Height));
             passwordField.BackgroundColor = UIColor.White;
             passwordField.Placeholder = "Required";
             passwordField.Font = A.Font_AvenirNextRegular14;
@@ -130,13 +126,13 @@ namespace NachoClient.iOS
             passwordField.AutocorrectionType = UITextAutocorrectionType.No;
             passwordField.Tag = PASSWORD_FIELD_TAG;
             passwordField.ShouldReturn += ((textField) => {
-                textField.ResignFirstResponder();
+                textField.ResignFirstResponder ();
                 return true;
             });
             passwordBox.AddSubview (passwordField);
             passwordBox.UserInteractionEnabled = true;
 
-            UILabel passwordLabel = new UILabel (new RectangleF (10, 0, 80, 44));
+            UILabel passwordLabel = new UILabel (new CGRect (10, 0, 80, 44));
             passwordLabel.Text = "Password";
             passwordLabel.BackgroundColor = UIColor.White;
             passwordLabel.TextColor = A.Color_NachoGreen;
@@ -146,34 +142,35 @@ namespace NachoClient.iOS
 
             yOffset = passwordBox.Frame.Bottom + 5f;
 
-            var submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 45));
+            var submitButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 45));
             submitButton.BackgroundColor = A.Color_NachoBlue;
             submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             submitButton.SetTitle ("Connect", UIControlState.Normal);
+            submitButton.AccessibilityLabel = "Connect";
             submitButton.TitleLabel.TextColor = UIColor.White;
             submitButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             submitButton.Tag = SUBMIT_BUTTON_TAG;
             contentView.AddSubview (submitButton);
 
             submitButton.TouchUpInside += delegate {
-                if(EmailHelper.IsValidEmail(emailField.Text)){
-                    McAccount UsersAccount = McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId());
-                    McCred UsersCredentials = McCred.QueryByAccountId<McCred>(UsersAccount.Id).SingleOrDefault ();
+                if (!EmailHelper.IsValidEmail (emailField.Text)) {
+                    errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
+                } else if (null != McAccount.QueryByEmailAddr (emailField.Text).FirstOrDefault ()) {
+                    errorMessage.Text = "That email address is already in use. Duplicate accounts are not supported.";
+                } else {
+                    McCred UsersCredentials = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
                     UsersCredentials.UpdatePassword (passwordField.Text);
                     UsersCredentials.Update ();
-                    BackEnd.Instance.CredResp(UsersAccount.Id);
-                    View.EndEditing(true);
-                    DismissViewController(true, null);
-                    this.sendersTabBar.SetSettingsBadge(false);
-                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-                }else{
-                    errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
+                    BackEnd.Instance.CredResp (theAccountId);
+                    View.EndEditing (true);
+                    DismissViewController (true, null);
+                    LoginHelpers.SetDoesBackEndHaveIssues (theAccountId, false);
                 }
             };
 
             emailField.ShouldReturn += ((textField) => {
-                passwordField.BecomeFirstResponder();
+                passwordField.BecomeFirstResponder ();
                 return true;
             });
             yOffset = submitButton.Frame.Bottom + 20f;
@@ -182,13 +179,13 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        public void ConfigureView()
+        public void ConfigureView ()
         {
             UITextField emailField = (UITextField)View.ViewWithTag (EMAIL_FIELD_TAG);
             emailField.Text = GetUsername ();
@@ -201,28 +198,15 @@ namespace NachoClient.iOS
 
         protected string GetUsername ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                McCred Cred = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
-                return Cred.Username;
-            } else {
-                return "";
-            }
+            var cred = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
+            return cred.Username;
         }
 
         protected string GetPassword ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                McCred Cred = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
-                return Cred.GetPassword ();
-            } else {
-                return "";
-            }
-        }
 
-        protected virtual bool HandlesKeyboardNotifications {
-            get { return true; }
+            var cred = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
+            return cred.GetPassword ();
         }
 
         private void OnTextFieldChanged (NSNotification notification)
@@ -245,63 +229,31 @@ namespace NachoClient.iOS
             submitButton.Alpha = (shouldWe ? 1.0f : 0.5f);
         }
 
-        private void OnKeyboardNotification (NSNotification notification)
+        // INachoCertificateResponderParent
+        public void DontAcceptCertificate (int accountId)
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
+            // FIXME STEVE
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
+            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
+            View.EndEditing (true);
+            DismissViewController (true, null);
         }
 
-        protected void OnKeyboardChangeCompleted ()
+        // INachoCertificateResponderParent
+        public void AcceptCertificate (int accountId)
         {
-
+            // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
+            LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
+            View.EndEditing (true);
+            DismissViewController (true, null);
         }
 
-        public void DontAcceptCertificate()
+        protected override void OnKeyboardChanged ()
         {
-            View.EndEditing(true);
-            DismissViewController(true, null);
-        }
-
-        public void AcceptCertificate ()
-        {
-            NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
-            Util.GetActiveTabBar().SetSettingsBadge(false);
-            LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-            View.EndEditing(true);
-            DismissViewController(true, null);
-        }
-
-        protected virtual void OnKeyboardChanged (bool visible, float height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
             LayoutView ();
-
             var connectbutton = contentView.ViewWithTag (SUBMIT_BUTTON_TAG);
             scrollView.ScrollRectToVisible (connectbutton.Frame, false);
         }
-	}
+    }
 }

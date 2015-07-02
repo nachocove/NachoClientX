@@ -1,13 +1,12 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 using System.Linq;
 
-using MonoTouch.UIKit;
-using MonoTouch.CoreGraphics;
-using MonoTouch.Foundation;
+using UIKit;
+using Foundation;
 
 using NachoCore.Utils;
 
@@ -28,7 +27,7 @@ namespace NachoClient.iOS
     /// </summary>
     public class SwipeActionDescriptor
     {
-        public float WidthDelta { get; protected set; }
+        public nfloat WidthDelta { get; protected set; }
 
         public UIImage Image { get; protected set; }
 
@@ -38,7 +37,7 @@ namespace NachoClient.iOS
         // This is not the tag for an UI object. Instead, it is for identifying the action during callback
         public int Tag { get; protected set; }
 
-        public SwipeActionDescriptor (int tag, float widthDelta, UIImage image, string text, UIColor color = null)
+        public SwipeActionDescriptor (int tag, nfloat widthDelta, UIImage image, string text, UIColor color = null)
         {
             NcAssert.True (0.9 >= widthDelta); // FIXME: max width check, dependent on # of items per side 
             WidthDelta = widthDelta;
@@ -62,20 +61,24 @@ namespace NachoClient.iOS
             BackgroundColor = Config.Color;
             Enabled = true;
             UserInteractionEnabled = true;
+            AccessibilityLabel = Config.Text;
 
             if (null != Config.Image) {
                 UIImage image = Config.Image;
                 if (UIImageRenderingMode.AlwaysTemplate != image.RenderingMode) {
                     // Make sure it is a template so we can use tint to match the icon color to that of the title
-                    image = image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
+                    using (var templateImage = image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+                        SetImage (templateImage, UIControlState.Normal);
+                    }
+                } else {
+                    SetImage (image, UIControlState.Normal);
                 }
-                SetImage (image, UIControlState.Normal);
                 ImageView.TintColor = UIColor.White;
 
                 // Move the image on top of the title and center it
                 SizeToFit ();
-                float deltaX = Frame.Width - ImageView.Frame.X - ImageView.Frame.Width;
-                float deltaY = (ImageView.Frame.Height / 2.0f) + 1.0f;
+                nfloat deltaX = Frame.Width - ImageView.Frame.X - ImageView.Frame.Width;
+                nfloat deltaY = (ImageView.Frame.Height / 2.0f) + 1.0f;
                 ImageEdgeInsets = new UIEdgeInsets (-deltaY, -ImageView.Frame.X, deltaY, -deltaX);
                 deltaX = Frame.Width - TitleLabel.Frame.X - TitleLabel.Frame.Width;
                 deltaY = (TitleLabel.Frame.Height / 2.0f) + 1.0f;
@@ -85,7 +88,7 @@ namespace NachoClient.iOS
             ViewFramer.Create (this)
                 .X (0)
                 .Y (0)
-                .Width ((float)Math.Round (parentView.Frame.Width * descriptor.WidthDelta))
+                .Width (NMath.Round (parentView.Frame.Width * descriptor.WidthDelta))
                 .Height (parentView.Frame.Height);
         }
     }
@@ -112,6 +115,12 @@ namespace NachoClient.iOS
         {
             return ((Count - 1) == i);
         }
+
+        public new void Clear()
+        {
+            NcAssert.CaseError ("invalid operation; call ClearActions instead");
+        }
+
     }
 
     /// <summary>
@@ -121,11 +130,11 @@ namespace NachoClient.iOS
     /// </summary>
     public class SwipeActionSwipingView : UIView
     {
-        float[] leftOffsets;
-        float[] rightOffsets;
+        nfloat[] leftOffsets;
+        nfloat[] rightOffsets;
 
-        float maxLeftDelta;
-        float maxRightDelta;
+        nfloat maxLeftDelta;
+        nfloat maxRightDelta;
 
         SwipeActionButtonList leftActionButtons;
         SwipeActionButtonList rightActionButtons;
@@ -134,17 +143,17 @@ namespace NachoClient.iOS
         Action OnClear;
         // when user taps on the body part to clear all buttons
 
-        public float LastScreenDelta { get; protected set; }
+        public nfloat LastScreenDelta { get; protected set; }
 
-        public float BaseMovePercentage { get; protected set; }
+        public nfloat BaseMovePercentage { get; protected set; }
 
-        public float LastMovePercentage {
+        public nfloat LastMovePercentage {
             get {
                 return ClipMovePercentage (UnclippedLastMovePercentage);
             }
         }
 
-        public float UnclippedLastMovePercentage {
+        public nfloat UnclippedLastMovePercentage {
             get {
                 return GetMovePercentage (LastScreenDelta);
             }
@@ -191,8 +200,8 @@ namespace NachoClient.iOS
 
             // Compute the amount of shift required for each button
             maxRightDelta = 0.0f;
-            leftOffsets = new float[leftActionButtons.Count];
-            float total = 0.0f;
+            leftOffsets = new nfloat[leftActionButtons.Count];
+            nfloat total = 0.0f;
             for (int i = leftActionButtons.Count - 1; i >= 0; i--) {
                 total += leftActionButtons [i].Frame.Width;
                 leftOffsets [i] = total;
@@ -200,7 +209,7 @@ namespace NachoClient.iOS
             }
 
             maxLeftDelta = 0.0f;
-            rightOffsets = new float[rightActionButtons.Count];
+            rightOffsets = new nfloat[rightActionButtons.Count];
             total = 0.0f;
             for (int i = rightActionButtons.Count - 1; i >= 0; i--) {
                 total += rightActionButtons [i].Frame.Width;
@@ -222,9 +231,9 @@ namespace NachoClient.iOS
         /// </summary>
         /// <returns>The full move percentage.</returns>
         /// <param name="screenPercentage">Screen percentage.</param>
-        private float GetMovePercentage (float screenDelta)
+        private nfloat GetMovePercentage (nfloat screenDelta)
         {
-            float movePercentage = 0.0f;
+            nfloat movePercentage = 0.0f;
             if (0 > screenDelta) {
                 movePercentage = 0 != maxLeftDelta ? screenDelta / maxLeftDelta : 0.0f;
             }
@@ -235,7 +244,7 @@ namespace NachoClient.iOS
             return movePercentage;
         }
 
-        private float ClipMovePercentage (float movePercentage)
+        private nfloat ClipMovePercentage (nfloat movePercentage)
         {
             // If the full move percentage is greater than 100% in either directions,
             // we must clip it at 100% (+/-) and update because we could be at -90%
@@ -250,16 +259,16 @@ namespace NachoClient.iOS
             return movePercentage;
         }
 
-        public void MoveByDelta (float delta, float x)
+        public void MoveByDelta (nfloat delta, nfloat x)
         {
             MoveByMovePercentage (GetMovePercentage (delta), x);
             LastScreenDelta = delta;
         }
 
-        public void MoveByMovePercentage (float movePercentage, float x)
+        public void MoveByMovePercentage (nfloat movePercentage, nfloat x)
         {
             SwipeActionButton button;
-            float clippedPercentage = ClipMovePercentage (movePercentage);
+            nfloat clippedPercentage = ClipMovePercentage (movePercentage);
 
             if (0.0 == movePercentage) {
                 ViewFramer.Create (snapshotView).X (0);
@@ -282,7 +291,7 @@ namespace NachoClient.iOS
             //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
         }
 
-        private float MovePercentToDelta (float movePercentage)
+        private nfloat MovePercentToDelta (nfloat movePercentage)
         {
             if (0 < movePercentage) {
                 return movePercentage * maxRightDelta;
@@ -304,16 +313,16 @@ namespace NachoClient.iOS
         /// </summary>
         /// <returns>The animate duration.</returns>
         /// <param name="finalMovePercentage">Final move percentage.</param>
-        private float ComputeAnimationDuration (float finalMovePercentage)
+        private nfloat ComputeAnimationDuration (nfloat finalMovePercentage)
         {
-            float total = MovePercentToDelta (finalMovePercentage) - MovePercentToDelta (LastMovePercentage);
-            float rate = 1.0f; // 1 sec to move across the entire screen
-            return rate * Math.Abs (total);
+            nfloat total = MovePercentToDelta (finalMovePercentage) - MovePercentToDelta (LastMovePercentage);
+            nfloat rate = 1.0f; // 1 sec to move across the entire screen
+            return rate * NMath.Abs (total);
         }
 
-        private void SnapToPosition (float finalMovePercentage, float finalLocation, Action onComplete)
+        private void SnapToPosition (nfloat finalMovePercentage, nfloat finalLocation, Action onComplete)
         {
-            float duration = ComputeAnimationDuration (finalMovePercentage);
+            nfloat duration = ComputeAnimationDuration (finalMovePercentage);
             UIView.Animate (duration, 0, UIViewAnimationOptions.CurveLinear, () => {
                 MoveByMovePercentage (finalMovePercentage, finalLocation);
                 //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
@@ -330,7 +339,7 @@ namespace NachoClient.iOS
 
         public void SnapToAllButtonsShown (Action onComplete)
         {
-            SnapToPosition ((float)Math.Sign (LastMovePercentage) * 1.0f, 0.0f, onComplete);
+            SnapToPosition (NMath.Sign (LastMovePercentage) * 1.0f, 0.0f, onComplete);
         }
 
         public bool SnapToLastButtonOnly (Action onComplete)
@@ -339,8 +348,8 @@ namespace NachoClient.iOS
                 return false;
             }
 
-            float finalMovePercentage = 1.0f / (0.0 < LastMovePercentage ? maxLeftDelta : maxRightDelta);
-            float finalLocation =
+            nfloat finalMovePercentage = 1.0f / (0.0 < LastMovePercentage ? maxLeftDelta : maxRightDelta);
+            nfloat finalLocation =
                 (0.0f < LastMovePercentage ? 1.0f - leftActionButtons.Last ().Config.WidthDelta : 0.0f);
             SnapToPosition (finalMovePercentage, finalLocation, onComplete);
             return true;
@@ -351,7 +360,7 @@ namespace NachoClient.iOS
             BaseMovePercentage = LastMovePercentage;
         }
 
-        public bool PointOnActionButtons (PointF point)
+        public bool PointOnActionButtons (CGPoint point)
         {
             foreach (var view in Subviews) {
                 var actionButton = view as SwipeActionButton;
@@ -370,29 +379,6 @@ namespace NachoClient.iOS
     {
         LEFT,
         RIGHT
-    }
-
-    /// <summary>
-    /// Cover view create a view that intended to cover
-    /// an area (like the whole screen) but to create a
-    /// hole to let events pass throught.
-    /// </summary>
-    public class CoverView : UIView
-    {
-        RectangleF hole;
-
-        public CoverView (UIView view, RectangleF hole) : base (view.Frame)
-        {
-            this.hole = hole;
-            this.UserInteractionEnabled = true;
-            this.BackgroundColor = UIColor.Clear;
-            // this.BackgroundColor = UIColor.FromWhiteAlpha (0.3f, 0.3f); // DEBUG
-        }
-
-        public override bool PointInside (PointF point, UIEvent uievent)
-        {
-            return !hole.Contains (point);
-        }
     }
 
     /// <summary>
@@ -464,7 +450,7 @@ namespace NachoClient.iOS
         /// </summary>
         public delegate void SwipeCallback (SwipeActionView activeView, SwipeState state);
 
-        public float SnapAllShownThreshold = 0.5f;
+        public nfloat SnapAllShownThreshold = 0.5f;
 
         public ButtonCallback OnClick;
         public SwipeCallback OnSwipe;
@@ -492,7 +478,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public SwipeActionView (RectangleF frame) : base (frame)
+        public SwipeActionView (CGRect frame) : base (frame)
         {
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_VIEW;
 
@@ -518,7 +504,7 @@ namespace NachoClient.iOS
             swipeRecognizer.ShouldBegin = delegate(UIGestureRecognizer obj) {
                 var recognizer = (UIPanGestureRecognizer)obj;
                 var velocity = recognizer.VelocityInView (this);
-                return Math.Abs (velocity.X) > Math.Abs (velocity.Y); 
+                return NMath.Abs (velocity.X) > NMath.Abs (velocity.Y); 
             };
             swipeRecognizer.MinimumNumberOfTouches = 1;
             swipeRecognizer.MaximumNumberOfTouches = 1;
@@ -548,7 +534,7 @@ namespace NachoClient.iOS
                         // Where is swiping view on the  screen?
                         var topView = Util.FindOutermostView (this);
                         var screenLocation = this.ConvertPointToView (this.Frame.Location, null);
-                        var adjustedFrame = new RectangleF (screenLocation.X, screenLocation.Y, this.Frame.Width, this.Frame.Height);
+                        var adjustedFrame = new CGRect (screenLocation.X, screenLocation.Y, this.Frame.Width, this.Frame.Height);
                         coverView = new CoverView (topView, adjustedFrame);
                         topView.AddSubview (coverView);
                         this.AddSubview (swipingView);
@@ -565,8 +551,8 @@ namespace NachoClient.iOS
             case UIGestureRecognizerState.Changed:
                 {
                     // Move the swiping view
-                    float deltaPercentage = obj.TranslationInView (this).X / Frame.Width;
-                    float locationPercentage = obj.LocationInView (this).X / Frame.Width;
+                    nfloat deltaPercentage = obj.TranslationInView (this).X / Frame.Width;
+                    nfloat locationPercentage = obj.LocationInView (this).X / Frame.Width;
                     swipingView.MoveByDelta (deltaPercentage, locationPercentage);
                     break;
                 }
@@ -655,7 +641,11 @@ namespace NachoClient.iOS
 
         protected bool MayRemoveSwipingView ()
         {
-            if (SnapAllShownThreshold > Math.Abs (swipingView.LastMovePercentage)) {
+            if (null == swipingView) {
+                // Disabled before view created
+                return false;
+            }
+            if (SnapAllShownThreshold > NMath.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsHidden (() => {
                     RemoveSwipingView ();
                     TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
@@ -680,9 +670,30 @@ namespace NachoClient.iOS
             swipeRecognizer.Enabled = false;
         }
 
+        public bool IsSwipeEnabled ()
+        {
+            if (null == swipeRecognizer) {
+                return false;
+            }
+            return swipeRecognizer.Enabled;
+        }
+
+        public void ClearActions (SwipeSide whatSide)
+        {
+            int numCurrentActions = 0;
+            if (SwipeSide.LEFT == whatSide) {
+                numCurrentActions = LeftSwipeActionButtons.Count;
+            } else {
+                numCurrentActions = RightSwipeActionButtons.Count;
+            }
+            for (int i = 0; i < numCurrentActions; i++) {
+                SetAction (null, whatSide, 0);
+            }
+        }
+
         protected void MayCompletePullOut ()
         {
-            if (SnapAllShownThreshold <= Math.Abs (swipingView.LastMovePercentage)) {
+            if (SnapAllShownThreshold <= NMath.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsShown (() => {
                     if (null == swipingView) {
                         return;
@@ -713,7 +724,7 @@ namespace NachoClient.iOS
             SetNeedsDisplay ();
         }
 
-        protected PointF SingleTouchInView (NSSet touches)
+        protected CGPoint SingleTouchInView (NSSet touches)
         {
             NcAssert.True (1 == touches.Count);
             UITouch touch = touches.AnyObject as UITouch;

@@ -1,14 +1,18 @@
-﻿using System;
-using System.Drawing;
-using MonoTouch.CoreAnimation;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using System;
+using CoreGraphics;
+using CoreAnimation;
+using Foundation;
+using UIKit;
 
 [Register ("FadeCustomSegue")]
 public class FadeCustomSegue : UIStoryboardSegue
 {
 
-    public  FadeCustomSegue( IntPtr i) : base(i)
+    public FadeCustomSegue (IntPtr i) : base (i)
+    {
+    }
+
+    public FadeCustomSegue (string identifier, UIViewController source, UIViewController destination) : base (identifier, source, destination)
     {
     }
 

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -268,13 +268,16 @@ namespace NachoCore.Wbxml
             writer.Write (publicIdentifierByte);
             writer.Write (characterSetByte);
             writer.Write (stringTableLengthByte);
+            Log.Info (Log.LOG_HTTP, "ToWbxmlStream: EmitNode (#1313)");
             EmitNode (writer, XmlDoc.Root, 0, filter);
+            Log.Info (Log.LOG_HTTP, "ToWbxmlStream: EmitNode done (#1313)");
 
             if (doFiltering ?? DEFAULT_FILTERING) {
                 // TODO - Need to feed the redacted XML into a storage that
                 // can hold and forward to the telemetry server.
                 Log.Info (Log.LOG_XML, "request_debug_XML = \n{0}", filter.FinalizeXml ());
                 //Log.Info ("request_debug_WBXML = \n{0}", LogHelpers.BytesDump (filter.Finalize ()));
+                Log.Info (Log.LOG_HTTP, "ToWbxmlStream: RecordWbxmlEvent (#1313)");
                 Telemetry.RecordWbxmlEvent (true, filter.Finalize ());
             }
         }
@@ -353,13 +356,12 @@ namespace NachoCore.Wbxml
                 var text = (XText)node;
                 if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
                     writer.Write ((byte)GlobalTokens.OPAQUE);
-                    byte[] opaque = EncodeOpaque (text.Value);
+                    byte[] opaque = EncodeOpaqueString (text.Value);
                     writer.Write (opaque);
                     filter.Update (level, node);
                 } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
                     writer.Write ((byte)GlobalTokens.OPAQUE);
-                    byte[] opaqueB64 = EncodeOpaque (Convert.ToBase64String 
-                        (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value)));
+                    byte[] opaqueB64 = EncodeBase64String (text.Value);
                     writer.Write (opaqueB64);
                     filter.Update (level, node);
                 } else {
@@ -373,8 +375,8 @@ namespace NachoCore.Wbxml
             case XmlNodeType.CDATA:
                 var cdata = (XCData)node;
                 writer.Write ((byte)GlobalTokens.OPAQUE);
-                byte[] opaqueCdata = EncodeOpaque (cdata.Value);
-                writer.Write (opaqueCdata, 0, opaqueCdata.Length);
+                byte[] opaqueCdata = EncodeOpaqueString (cdata.Value);
+                writer.Write (opaqueCdata);
                 filter.Update (level, node);
                 break;
             default:
@@ -413,7 +415,7 @@ namespace NachoCore.Wbxml
 
                 if (null != fileAttr) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
-                    byteList.AddRange (EncodeOpaque (File.ReadAllText (fileAttr.Value)));
+                    byteList.AddRange (EncodeOpaqueBytes (File.ReadAllBytes (fileAttr.Value)));
                     byteList.Add ((byte)GlobalTokens.END);
                     fileAttr.Remove ();
                 } else if (element.HasElements || !element.IsEmpty) {
@@ -427,12 +429,11 @@ namespace NachoCore.Wbxml
                 var text = (XText)node;
                 if (codePages [currentCodePage].GetIsOpaque (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
-                    byteList.AddRange (EncodeOpaque (text.Value));
+                    byteList.AddRange (EncodeOpaqueString (text.Value));
                     filter.Update (level, node);
                 } else if (codePages [currentCodePage].GetIsOpaqueBase64 (text.Parent.Name.LocalName)) {
                     byteList.Add ((byte)GlobalTokens.OPAQUE);
-                    byteList.AddRange (EncodeOpaque (Convert.ToBase64String 
-                        (System.Text.UTF8Encoding.UTF8.GetBytes (text.Value))));
+                    byteList.AddRange (EncodeBase64String (text.Value));
                     filter.Update (level, node);
                 } else {
                     byteList.Add ((byte)GlobalTokens.STR_I);
@@ -443,7 +444,7 @@ namespace NachoCore.Wbxml
             case XmlNodeType.CDATA:
                 var cdata = (XCData)node;
                 byteList.Add ((byte)GlobalTokens.OPAQUE);
-                byteList.AddRange (EncodeOpaque (cdata.Value));
+                byteList.AddRange (EncodeOpaqueString (cdata.Value));
                 filter.Update (level, node);
                 break;
             default:
@@ -526,12 +527,7 @@ namespace NachoCore.Wbxml
         {
             List<byte> byteList = new List<byte> ();
 
-            char[] charArray = value.ToCharArray ();
-
-            for (int i = 0; i < charArray.Length; i++) {
-                byteList.Add ((byte)charArray [i]);
-            }
-
+            byteList.AddRange (System.Text.UTF8Encoding.UTF8.GetBytes (value));
             byteList.Add (0x00);
 
             return byteList.ToArray ();
@@ -545,19 +541,29 @@ namespace NachoCore.Wbxml
             stream.CopyTo (writer.BaseStream);
         }
 
-        private byte[] EncodeOpaque (string value)
+        private byte[] EncodeOpaqueBytes (byte[] bytes)
         {
             List<byte> byteList = new List<byte> ();
 
-            char[] charArray = value.ToCharArray ();
-
-            byteList.AddRange (EncodeMultiByteInteger (charArray.Length));
-
-            for (int i = 0; i < charArray.Length; i++) {
-                byteList.Add ((byte)charArray [i]);
-            }
+            byteList.AddRange (EncodeMultiByteInteger (bytes.Length));
+            byteList.AddRange (bytes);
 
             return byteList.ToArray ();
+        }
+
+        private byte[] EncodeOpaqueString (string value)
+        {
+            return EncodeOpaqueBytes (System.Text.Encoding.UTF8.GetBytes (value));
+        }
+
+        private byte[] EncodeBase64String (string value)
+        {
+            try {
+                return EncodeOpaqueBytes (Convert.FromBase64String (value));
+            } catch (FormatException) {
+                Log.Error (Log.LOG_UTILS, "Internal error: The string passed to WBXML.EncodeBase64String is not a valid base-64 string: {0}", value);
+                return EncodeOpaqueString (value);
+            }
         }
 
         private byte[] EncodeMultiByteInteger (int value)

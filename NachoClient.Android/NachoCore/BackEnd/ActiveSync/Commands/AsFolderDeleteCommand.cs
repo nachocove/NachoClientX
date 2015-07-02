@@ -1,9 +1,10 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -34,16 +35,22 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "FLDDELCANCEL");
+            }
             McProtocolState protocolState = BEContext.ProtocolState;
             var xmlFolderDelete = doc.Root;
             var pathElem = McPath.QueryByServerId (BEContext.Account.Id, PendingSingle.ServerId);
             var folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
             switch ((Xml.FolderHierarchy.FolderDeleteStatusCode)Convert.ToUInt32 (xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.Status).Value)) {
             case Xml.FolderHierarchy.FolderDeleteStatusCode.Success_1:
-                protocolState.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncKey = xmlFolderDelete.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                    return true;
+                });
                 pathElem.Delete ();
                 folder.Delete ();
                 PendingResolveApply ((pending) => {
@@ -85,16 +92,22 @@ namespace NachoCore.ActiveSync
                  * consider returning to synchronization key zero (0)."
                  * Right now, we don't retry - we just slam the key to 0.
                  */
-                protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC2");
 
             case Xml.FolderHierarchy.FolderDeleteStatusCode.ReSync_9:
-                protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });

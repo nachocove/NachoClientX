@@ -4,7 +4,8 @@ using System;
 
 namespace NachoCore.Utils
 {
-    public enum TelemetryEventType {
+    public enum TelemetryEventType
+    {
         UNKNOWN = 0,
         ERROR,
         WARN,
@@ -22,7 +23,7 @@ namespace NachoCore.Utils
         {
         }
 
-        public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
+        public static void RecordLogEvent (int threadId, TelemetryEventType type, string fmt, params object[] list)
         {
         }
 

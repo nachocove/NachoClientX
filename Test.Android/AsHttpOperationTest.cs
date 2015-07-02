@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -56,12 +56,12 @@ namespace Test.iOS
             return null;
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response)
+        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, CancellationToken cToken)
         {
             return Event.Create ((uint)SmEvt.E.Success, "MOCKSUCCESS");
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, XDocument doc)
+        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             if (null != ProcessResponseStandin) {
                 return ProcessResponseStandin (sender, response, doc);
@@ -73,7 +73,7 @@ namespace Test.iOS
         {
         }
 
-        public virtual Event ProcessTopLevelStatus (AsHttpOperation sender, uint status)
+        public virtual Event ProcessTopLevelStatus (AsHttpOperation sender, uint status, XDocument doc)
         {
             return null;
         }
@@ -94,7 +94,7 @@ namespace Test.iOS
             return true;
         }
 
-        public virtual Uri ServerUri (AsHttpOperation sender)
+        public virtual Uri ServerUri (AsHttpOperation sender, bool isEmailRedacted = false)
         {
             return ProvidedUri;
         }
@@ -112,6 +112,11 @@ namespace Test.iOS
         public virtual bool UseWbxml (AsHttpOperation sender)
         {
             return true;
+        }
+
+        public virtual bool IgnoreBody (AsHttpOperation Sender)
+        {
+            return false;
         }
 
         public virtual bool IsContentLarge (AsHttpOperation Sender)
@@ -155,29 +160,18 @@ namespace Test.iOS
 
 
     [TestFixture]
-    public class AsHttpOperationTest
+    public class AsHttpOperationTest : CommonTestOps
     {
         private MockContext Context;
 
         [SetUp]
-        public void SetUp ()
+        public new void SetUp ()
         {
+            base.SetUp ();
             Context = null;
 
             // reset the comm status singleton before each test
             MockNcCommStatus.Instance = null;
-        }
-
-        private class HttpOpEvt : SmEvt
-        {
-            new public enum E : uint
-            {
-                Cancel = (SmEvt.E.Last + 1),
-                Delay,
-                Timeout,
-                Rephrase,
-                Final,
-            };
         }
 
         static string WBXMLContentType = "application/vnd.ms-sync.wbxml";
@@ -229,7 +223,7 @@ namespace Test.iOS
         {
             bool isExpiryNotified = false;
             Tuple<int,Uri> value = null;
-            const string match = "http://nacho.com";
+            const string match = "http://nacho.com/";
 
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
@@ -251,11 +245,13 @@ namespace Test.iOS
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
                 Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
             });
-
+            Context.Cred = McCred.QueryById<McCred> (Context.Cred.Id);
             Assert.True (isExpiryNotified);
             Assert.NotNull (value);
             Assert.AreEqual (new Uri(match), value.Item2);
             Assert.AreEqual (-1, value.Item1);
+            Assert.IsNotNull (Context.Cred.RectificationUrl);
+            Assert.AreEqual (match, Context.Cred.RectificationUrl);
             DoReportCommResultWithNonGeneralFailure ();
         }
 
@@ -286,10 +282,12 @@ namespace Test.iOS
                 Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
             });
             
+            Context.Cred = McCred.QueryById<McCred> (Context.Cred.Id);
             Assert.True (isExpiryNotified);
             Assert.NotNull (value);
             Assert.IsNull (value.Item2);
             Assert.AreEqual (2, value.Item1);
+            Assert.AreNotEqual (DateTime.MaxValue, Context.Cred.Expiry);
             DoReportCommResultWithNonGeneralFailure ();
         }
 
@@ -426,8 +424,6 @@ namespace Test.iOS
         }
 
         // Content-Type is not required if Content-Length is missing or zero
-        /* TODO: Both of these tests currently fail. An exception is thrown in AsHttpOperation.cs
-         * Need to inspect */
         [Test]
         public void ContentTypeNotRequired ()
         {
@@ -437,7 +433,6 @@ namespace Test.iOS
             string mockResponseLength = 0.ToString ();
 
             PerformHttpOperationWithSettings (sm => {
-
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
@@ -447,7 +442,6 @@ namespace Test.iOS
 
             /* Content-Length is missing --> must not require content type */
             PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
             }, request => {
@@ -502,6 +496,7 @@ namespace Test.iOS
         {
             // Status Code -- Forbidden (403)
             PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.Forbidden;
             }, request => {
@@ -579,8 +574,8 @@ namespace Test.iOS
         public void StatusCode503 ()
         {
             // A 503 with no retry-after and no X-MS-ASThrottle.
-            McMutables.Set (1, "HTTP", "DelaySeconds", (1).ToString ());
-            McMutables.Set (1, "HTTP", "MaxDelaySeconds", (3).ToString ());
+            McMutables.Set (2, "HTTP", "DelaySeconds", (1).ToString ());
+            McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
 
             uint retryCount = 0;
             PerformHttpOperationWithSettings (sm => {
@@ -597,8 +592,8 @@ namespace Test.iOS
         public void StatusCode503RetryAfter ()
         {
             // A 503 with retry-after.
-            McMutables.Set (1, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
-            McMutables.Set (1, "HTTP", "MaxDelaySeconds", (3).ToString ());
+            McMutables.Set (2, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
+            McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
             string retryAfterSecs = (1).ToString ();
 
             string HeaderRetryAfter = "Retry-After";
@@ -639,8 +634,8 @@ namespace Test.iOS
         public void StatusCode503Throttle ()
         {
             // A 503 with no retry-after and X-MS-ASThrottle.
-            McMutables.Set (1, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
-            McMutables.Set (1, "HTTP", "MaxDelaySeconds", (3).ToString ());
+            McMutables.Set (2, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
+            McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
 
             string HeaderXMsThrottle = "X-MS-ASThrottle";
 
@@ -728,11 +723,16 @@ namespace Test.iOS
         private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var autoResetEvent = new AutoResetEvent(false);
-
+            string errorString = null;
             // setup
-            NcStateMachine sm = CreatePhonySM (() => {
-                autoResetEvent.Set ();
-            });
+            NcStateMachine sm = CreatePhonySM (
+                () => {
+                    autoResetEvent.Set ();
+                },
+                (message) => {
+                    errorString = message;
+                }
+            );
 
             provideSm (sm);
 
@@ -750,7 +750,11 @@ namespace Test.iOS
                 });
             };
 
-            Context = new MockContext ();
+            McServer server = new McServer () {
+                Capabilities = McAccount.ActiveSyncCapabilities,
+                Host = "foo.utopiasystems.net",
+            };
+            Context = new MockContext ( protoControl : null, server : server);
 
             // provides the mock owner
             BaseMockOwner owner = CreateMockOwner (CommonMockData.MockUri, CommonMockData.MockRequestXml);
@@ -768,18 +772,40 @@ namespace Test.iOS
             op.Execute (sm);
 
             bool didFinish = autoResetEvent.WaitOne (6000);
+            Assert.IsNull (errorString, errorString);
             Assert.IsTrue (didFinish, "Operation did not finish");
         }
 
         // Action Delegate for creating a state machine
-        private NcStateMachine CreatePhonySM (Action action)
+        private NcStateMachine CreatePhonySM (Action action, Action<string> errorIndicator)
         {
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
                 LocalStateType = typeof(PhonySt),
                 TransTable = new [] {
+                    // the "start" state is used for tests where we expect not to fail.
                     new Node {State = (uint)St.Start,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetCred,
+                            (uint)AsProtoControl.CtlEvt.E.GetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.GetCertOk,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkYes,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkNo,
+                            (uint)AsProtoControl.CtlEvt.E.ReFSync,
+                            (uint)AsProtoControl.CtlEvt.E.PkFetch,
+                            (uint)AsProtoControl.CtlEvt.E.PkHotQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkPing,
+                            (uint)AsProtoControl.CtlEvt.E.PkQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkWait,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { 
                                 Event = (uint)SmEvt.E.Launch, 
@@ -790,6 +816,12 @@ namespace Test.iOS
                                 Act = delegate () {
                                     action();
                                 }, 
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = delegate () {
+                                    errorIndicator ("Unexpected HardFail event");
+                                },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -803,39 +835,71 @@ namespace Test.iOS
                                     action();
                                 },
                                 State = (uint)St.Start },
-                            new Trans {
-                                Event = (uint)HttpOpEvt.E.Rephrase,
-                                Act = delegate () {
-                                    action();
-                                },
-                                State = (uint)St.Start },
                         }
                     },
+                    // The "FailureTests" state is used for tests where the HTTP operation fails in some manner.
                     new Node {State = (uint)PhonySt.FailureTests,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Launch,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetCred,
+                            (uint)AsProtoControl.CtlEvt.E.GetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.UiSetServConf,
+                            (uint)AsProtoControl.CtlEvt.E.GetCertOk,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkYes,
+                            (uint)AsProtoControl.CtlEvt.E.UiCertOkNo,
+                            (uint)AsProtoControl.CtlEvt.E.ReFSync,
+                            (uint)AsProtoControl.CtlEvt.E.PkFetch,
+                            (uint)AsProtoControl.CtlEvt.E.PkHotQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkPing,
+                            (uint)AsProtoControl.CtlEvt.E.PkQOp,
+                            (uint)AsProtoControl.CtlEvt.E.PkWait,
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
                                 Act = delegate () {
                                     action();
                                 },
-                                State = (uint)St.Start },
+                                State = (uint)St.Start,
+                            },
+                            new Trans {
+                                Event = (uint)SmEvt.E.Success,
+                                Act = delegate () {
+                                    errorIndicator ("Unexpected Success event");
+                                },
+                                State = (uint)St.Start,
+                            },
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
                                     action();
                                 },
-                                State = (uint)St.Start },
+                                State = (uint)St.Start,
+                            },
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                Act = delegate () {
+                                    action ();
+                                },
+                                State = (uint)St.Start,
+                            },
                         }
                     },
                 }
             };
-
+            sm.Validate ();
             return sm;
         }
 
         public enum PhonySt : uint
         {
-            FailureTests = (AsProtoControl.Lst.QOpW + 1),
+            FailureTests = (St.Last + 1),
             Last = FailureTests,
         };
            

@@ -12,8 +12,7 @@ namespace NachoCore.Utils
 {
     // Model of use is that it is instantiated with an
     // "owner" (aka delegate in the Obj-C sense of the word).
-    // Signature of event handling callback.
-    public delegate void Cb ();
+
     // This is the list of must-support events (not-ActiveSync specific).
     // Each user starts creating event codes at Last+1.
     // Types of failure:
@@ -60,7 +59,7 @@ namespace NachoCore.Utils
     {
         public uint State { set; get; }
 
-        public Cb Act { set; get; }
+        public Action Act { set; get; }
 
         public uint Event { set; get; }
 
@@ -122,13 +121,13 @@ namespace NachoCore.Utils
 
         public uint FireEventCode { set; get; }
 
-        public Cb Action { set; get; }
+        public Action Action { set; get; }
 
         public object Arg { set; get; }
 
         public string Message { set; get; }
 
-        public Cb StateChangeIndication { set; get; }
+        public Action StateChangeIndication { set; get; }
 
         private string PseudoKlass;
         private Dictionary<string,uint> EventCode;
@@ -182,6 +181,11 @@ namespace NachoCore.Utils
             }
         }
 
+        public int EventQueueDepth ()
+        {
+            return EventQ.Count;
+        }
+
         public void PostEvent (uint eventCode, string mnemonic)
         {
             PostEvent (eventCode, mnemonic, null, null);
@@ -200,7 +204,7 @@ namespace NachoCore.Utils
         public void PostEvent (Event smEvent)
         {
             BuildEventDicts ();
-
+            bool addFailed = false;
             lock (LockObj) {
                 // Enter critical section.
                 if ((uint)SmEvt.Sequence == smEvent.EventCode) {
@@ -210,7 +214,12 @@ namespace NachoCore.Utils
                     }
                 } else {
                     NcAssert.True (null == smEvent.Sequence);
-                    EventQ.Add (smEvent);
+                    if (!EventQ.TryAdd (smEvent)) {
+                        addFailed = true;
+                    }
+                }
+                if (addFailed) {
+                    Log.Error (Log.LOG_STATE, "EventQ.TryAdd failed");
                 }
                 if (InProcess) {
                     // If another thread is already working on this SM, then let it process
@@ -248,7 +257,11 @@ namespace NachoCore.Utils
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         goto PossiblyLeave;
                     }
-                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
+                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).SingleOrDefault ();
+                    if (null == hotTrans) {
+                        Log.Error (Log.LOG_STATE, "No transition for SM {0} on {1}", Name, FireEventCode);
+                        NcAssert.True (false);
+                    }
                     if (!hotTrans.ActSetsState) {
                         Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
@@ -301,14 +314,16 @@ namespace NachoCore.Utils
                     case 1:
                         // Ensure not in Drop nor Invalid.
                         if (null != stateNode.Drop && Array.Exists (stateNode.Drop, y => eventCode == y)) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists both in Drop and Node.", 
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Drop and Node.", 
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         }
                         if (null != stateNode.Invalid && Array.Exists (stateNode.Invalid, y => eventCode == y)) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists both in Invalid and Node.", 
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Node.", 
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         }
                         break;
                     case 0:
@@ -321,20 +336,23 @@ namespace NachoCore.Utils
                         }
                         // Make sure in either Drop or Invalid, but not both.
                         if (inDrop && inInvalid) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists both in Invalid and Drop.",
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists both in Invalid and Drop.",
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         } else if (!inDrop && !inInvalid) {
-                            errors.Add (string.Format ("State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
+                            errors.Add (string.Format ("{2}: State {0}, event code {1} exists in none of Node, Drop nor Invalid.",
                                 StateName (stateNode.State),
-                                EventName [eventCode]));
+                                EventName [eventCode],
+                                Name));
                         }
                         break;
                     default:
                         // Event is in Node multiple times.
-                        errors.Add (string.Format ("State {0}, event code {1} exists in multiple Trans in same Node.",
+                        errors.Add (string.Format ("{2}: State {0}, event code {1} exists in multiple Trans in same Node.",
                             StateName (stateNode.State),
-                            EventName [eventCode]));
+                            EventName [eventCode],
+                            Name));
                         break;
                     }
                 }

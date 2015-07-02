@@ -15,6 +15,7 @@ namespace NachoCore.Utils
             Error,
         };
 
+        // NOTE: Always append to the end some of these values may be persisted in db
         public enum SubKindEnum
         {
             NotSpecified = 0,
@@ -30,6 +31,7 @@ namespace NachoCore.Utils
             Info_CalendarChanged,
             Info_TaskChanged,
             Info_EventSetChanged,
+            Info_StatusBarHeightChanged,
 
             Info_NewUnreadEmailMessageInInbox,
             Info_EmailMessageMarkedReadSucceeded,
@@ -62,7 +64,7 @@ namespace NachoCore.Utils
             Info_SyncSucceeded,
             Info_FolderSyncSucceeded,
             Info_MeetingResponseSucceeded,
-            Info_SearchCommandSucceeded,
+            Info_ContactSearchCommandSucceeded,
             Info_BackgroundAbateStarted,
             Info_BackgroundAbateStopped,
             Info_ServiceUnavailable,
@@ -129,7 +131,7 @@ namespace NachoCore.Utils
             Error_SyncFailedToComplete,
             Error_FolderSyncFailed,
             Error_MeetingResponseFailed,
-            Error_SearchCommandFailed,
+            Error_ContactSearchCommandFailed,
             Error_AuthFailBlocked,
             Error_AuthFailPasswordExpired,
             Error_PasswordWillExpire,
@@ -144,15 +146,49 @@ namespace NachoCore.Utils
             Error_CertAskReqCallback,
             Error_AutoDUserMessage,
             Error_AutoDAdminMessage,
+
+            // Since these can be persisted in the DB, we can only add to the end from now on!
+            Info_MigrationProgress,
+            Info_MigrationDescription,
+            Error_CalendarForwardFailed,
+            Error_AccountDoesNotExist,
+            Error_ItemMissing,
+            Error_FolderMissing,
+            Error_ClientOwned,
+            Error_FilePresenceIsComplete,
+            Error_AttMissing,
+            Error_FilePresenceNotNone,
+            Error_IsNontruncatedBodyComplete,
+            Error_InvalidResponseType,
+            Error_IsDistinguished,
+            Error_IsAwaitingDelete,
+            Info_EmailSearchCommandSucceeded,
+            Error_EmailSearchCommandFailed,
+            Info_ServerStatus,
+            Info_NetworkStatus,
+            Info_PushAssistDeviceToken,
+            // This is now obsolete. ClientToken is the device id which is always available.
+            Info_PushAssistClientToken,
+            Info_PushAssistArmed,
+            Info_UserInterventionFlagChanged,
+            Info_SystemTimeZoneChanged,
+            Info_FastNotificationChanged,
+            Info_McCredPasswordChanged,
+            Info_UserIdChanged,
+            Error_NoCapableService,
+            Info_AccountBeaconChanged,
+            Info_MdmConfigMayHaveChanged,
         };
 
-        public enum WhyEnum {
+        public enum WhyEnum
+        {
             NotSpecified = 0,
             Unknown,
             ProtocolError,
             ServerError,
             ServerOffline,
-            QuotaExceeded, // Other than storage capacity.
+            QuotaExceeded,
+            // Other than storage capacity.
             NoSpace,
             ConflictWithServer,
             InvalidDest,
@@ -171,6 +207,8 @@ namespace NachoCore.Utils
             UnavoidableDelay,
             InterruptedByAppExit,
             PredecessorFailed,
+            Unsupported,
+            WrongController,
         };
 
         public KindEnum Kind { get; set; }

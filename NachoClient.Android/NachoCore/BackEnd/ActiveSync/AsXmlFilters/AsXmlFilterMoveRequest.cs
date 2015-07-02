@@ -22,10 +22,10 @@ namespace NachoCore.Wbxml
             node3 = new NcXmlFilterNode ("SrcMsgId", RedactionType.NONE, RedactionType.NONE);
             node2.Add(node3); // Move -> SrcMsgId
             // SrcFldId
-            node3 = new NcXmlFilterNode ("SrcFldId", RedactionType.NONE, RedactionType.NONE);
+            node3 = new NcXmlFilterNode ("SrcFldId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node2.Add(node3); // Move -> SrcFldId
             // DstFldId
-            node3 = new NcXmlFilterNode ("DstFldId", RedactionType.NONE, RedactionType.NONE);
+            node3 = new NcXmlFilterNode ("DstFldId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node2.Add(node3); // Move -> DstFldId
             node1.Add(node2); // MoveItems -> Move
             node0.Add(node1); // xml -> MoveItems

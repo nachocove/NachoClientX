@@ -25,7 +25,7 @@ namespace NachoCore.Wbxml
             node1 = new NcXmlFilterNode ("From", RedactionType.FULL, RedactionType.FULL);
             node0.Add(node1); // xml -> From
             // Subject
-            node1 = new NcXmlFilterNode ("Subject", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("Subject", RedactionType.FULL_HASH, RedactionType.FULL);
             node0.Add(node1); // xml -> Subject
             // ReplyTo
             node1 = new NcXmlFilterNode ("ReplyTo", RedactionType.FULL, RedactionType.FULL);
@@ -34,7 +34,7 @@ namespace NachoCore.Wbxml
             node1 = new NcXmlFilterNode ("DateReceived", RedactionType.FULL, RedactionType.FULL);
             node0.Add(node1); // xml -> DateReceived
             // DisplayTo
-            node1 = new NcXmlFilterNode ("DisplayTo", RedactionType.FULL, RedactionType.FULL);
+            node1 = new NcXmlFilterNode ("DisplayTo", RedactionType.SHORT_HASH, RedactionType.FULL);
             node0.Add(node1); // xml -> DisplayTo
             // ThreadTopic
             node1 = new NcXmlFilterNode ("ThreadTopic", RedactionType.FULL, RedactionType.FULL);
@@ -150,7 +150,6 @@ namespace NachoCore.Wbxml
             node2 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
             node1.Add(node2); // Categories -> Category
             node0.Add(node1); // xml -> Categories
-
             
             Root = node0;
         }

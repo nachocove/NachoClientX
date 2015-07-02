@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014, 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
@@ -12,221 +12,67 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public partial class AsProtoControl : ProtoControl, IBEContext
+    public partial class AsProtoControl : NcProtoControl, IBEContext
     {
-        public override void UnblockPendingCmd (int pendingId)
-        {
-            var pending = McAbstrObject.QueryById<McPending> (pendingId);
-            if (null != pending) {
-                NcAssert.True (Account.Id == pending.AccountId);
-                NcAssert.True (McPending.StateEnum.UserBlocked == pending.State);
-                pending.BlockReason = McPending.BlockReasonEnum.NotBlocked;
-                pending.State = McPending.StateEnum.Eligible;
-                NcTask.Run (delegate {
-                    Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCUNBLK");
-                }, "UnblockPendingCmd");
-            }
-        }
-
-        public override void DeletePendingCmd (int pendingId)
-        {
-            NcModel.Instance.RunInTransaction (() => {
-                var pending = McAbstrObject.QueryById<McPending> (pendingId);
-                if (null != pending) {
-                    NcAssert.True (Account.Id == pending.AccountId);
-                    pending.ResolveAsCancelled (false);
-                }
-            });
-        }
-
-        public override void Prioritize (string token)
-        {
-            var pendings = McPending.QueryByToken (Account.Id, token);
-            foreach (var pending in pendings) {
-                pending.Prioritize ();
-            }
-        }
-
-        public override void Cancel (string token)
-        {
-            var pendings = McPending.QueryByToken (Account.Id, token);
-            foreach (var iterPending in pendings) {
-                var pending = iterPending;
-                switch (pending.State) {
-                case McPending.StateEnum.Eligible:
-                    pending.Delete ();
-                    break;
-
-                case McPending.StateEnum.Deferred:
-                case McPending.StateEnum.Failed:
-                case McPending.StateEnum.PredBlocked:
-                case McPending.StateEnum.UserBlocked:
-                    if (McPending.Operations.ContactSearch == pending.Operation) {
-                        McPending.ResolvePendingSearchReqs (Account.Id, token, false);
-                    } else {
-                        pending.ResolveAsCancelled ();
-                    }
-                    break;
-
-                case McPending.StateEnum.Dispatched:
-                    // TODO: find a way to remove this pending from PendingList for any re-try.
-                    break;
-
-                case McPending.StateEnum.Deleted:
-                    // Nothing to do.
-                    break;
-
-                default:
-                    throw new Exception (string.Format ("Unknown State {0}", pending.State));
-                }
-            }
-        }
-
-        public override string StartSearchContactsReq (string prefix, uint? maxResults)
-        {
-            var token = Guid.NewGuid ().ToString ();
-            SearchContactsReq (prefix, maxResults, token);
-            return token;
-        }
-
-        public override void SearchContactsReq (string prefix, uint? maxResults, string token)
-        {
-            McPending.ResolvePendingSearchReqs (Account.Id, token, true);
-            var newSearch = new McPending (Account.Id) {
-                Operation = McPending.Operations.ContactSearch,
-                Search_Prefix = prefix,
-                Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
-                Token = token
-            };
-            newSearch.DoNotDelay ();
-            newSearch.Insert ();
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
-            }, "SearchContactsReq");
-        }
-
-        public override string SendEmailCmd (int emailMessageId)
-        {
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0})", emailMessageId);
-            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
-            if (null == emailMessage) {
-                return null;
-            }
-
-            var pending = new McPending (Account.Id, emailMessage) {
-                Operation = McPending.Operations.EmailSend,
-            };
-            pending.Insert ();
-
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSEND");
-            }, "SendEmailCmd");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning", emailMessageId);
-            return pending.Token;
-        }
-
-        public override string SendEmailCmd (int emailMessageId, int calId)
-        {
-            McPending pending = null;
-            bool failure = false;
-            NcModel.Instance.RunInTransaction (() => {
-                var cal = McAbstrObject.QueryById<McCalendar> (calId);
-                var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
-                if (null == cal || null == emailMessage) {
-                    failure = true;
-                    return;
-                }
-
-                var pendingCalCre = NcModel.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
-                var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
-
-                pending = new McPending (Account.Id, emailMessage) {
-                    Operation = McPending.Operations.EmailSend,
-                };
-                pending.Insert ();
-
-                // 0 means pending has already been completed & deleted.
-                if (0 != pendingCalCreId) {
-                    switch (pendingCalCre.State) {
-                    case McPending.StateEnum.Deferred:
-                    case McPending.StateEnum.Dispatched:
-                    case McPending.StateEnum.Eligible:
-                    case McPending.StateEnum.PredBlocked:
-                    case McPending.StateEnum.UserBlocked:
-                        pending.MarkPredBlocked (pendingCalCreId);
-                        break;
-
-                    case McPending.StateEnum.Failed:
-                        failure = true;
-                        return;
-
-                    case McPending.StateEnum.Deleted:
-                        // On server already.
-                        break;
-
-                    default:
-                        NcAssert.True (false);
-                        break;
-                    }
-                }
-            });
-
-            if (failure) {
-                return null;
-            }
-
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
-            }, "SendEmailCmd(cal)");
-            return pending.Token;
-        }
-
-        private string SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
+        
+        private NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
                                       int folderId, bool originalEmailIsEmbedded)
         {
-            if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4})", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
+            if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return SendEmailCmd (newEmailMessageId);
             }
             McFolder folder;
-
-            var refdEmailMessage = McAbstrObject.QueryById<McEmailMessage> (refdEmailMessageId);
-            var newEmailMessage = McAbstrObject.QueryById<McEmailMessage> (newEmailMessageId);
-            folder = McAbstrObject.QueryById<McFolder> (folderId);
-            if (null == refdEmailMessage || null == newEmailMessage || null == folder) {
-                return null;
-            }
-
-            var pending = new McPending (Account.Id, newEmailMessage) {
-                Operation = Op,
-                ServerId = refdEmailMessage.ServerId,
-                ParentId = folder.ServerId,
-                Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
-            };
-            pending.Insert ();
-
+            NcModel.Instance.RunInTransaction (() => {
+                var refdEmailMessage = McEmailMessage.QueryById<McEmailMessage> (refdEmailMessageId);
+                var newEmailMessage = McEmailMessage.QueryById<McEmailMessage> (newEmailMessageId);
+                folder = McFolder.QueryById<McFolder> (folderId);
+                if (null == refdEmailMessage || null == newEmailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, newEmailMessage) {
+                    Operation = Op,
+                    ServerId = refdEmailMessage.ServerId,
+                    ParentId = folder.ServerId,
+                    Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSMF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCSMF");
             }, "SmartEmailCmd");
-            return pending.Token;
+            Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
+            return result;
         }
 
-        public override string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+        public override NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
                                               int folderId, bool originalEmailIsEmbedded)
         {
+            Log.Info (Log.LOG_AS, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
             return SmartEmailCmd (McPending.Operations.EmailReply,
                 newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
-        public override string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+        public override NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
                                                 int folderId, bool originalEmailIsEmbedded)
         {
+            Log.Info (Log.LOG_AS, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
             if (originalEmailIsEmbedded) {
                 var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
+                Log.Info (Log.LOG_AS, "ForwardEmailCmd: attachments = {0}", attachments.Count);
                 foreach (var attach in attachments) {
                     if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
                         var token = DnldAttCmd (attach.Id);
                         if (null == token) {
-                            return null;
+                            // FIXME - is this correct behavior in this case?
+                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
                         }
                     }
                 }
@@ -235,861 +81,480 @@ namespace NachoCore.ActiveSync
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
-        public override string DeleteEmailCmd (int emailMessageId)
-        {
-            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
-            if (null == emailMessage) {
-                return null;
-            }
 
-            var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "Should not delete items in client-owned folders");
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailDelete,
-                ParentId = primeFolder.ServerId,
-                ServerId = emailMessage.ServerId
-            };   
-            pending.Insert ();
-
-            // Delete the actual item.
-            Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
-                emailMessage.Id, emailMessage.ServerId, pending.Token);
-            emailMessage.Delete ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-            Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
-            }, "DeleteEmailCmd");
-            return pending.Token;
-        }
-
-        private string MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
-                                    McAbstrItem item, McFolder srcFolder, int destFolderId)
-        {
-            if (null == srcFolder) {
-                return null;
-            }
-
-            NcAssert.True (srcFolder.IsClientOwned != true, "Back end should not modify client-owned folders");
-
-            var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
-            if (null == destFolder) {
-                return null;
-            }
-
-            NcAssert.True (destFolder.IsClientOwned != true, "Back end should not modify client-owned folders");
-
-            McPending markUpdate = null;
-            if (McPending.Operations.EmailMove == op && Server.HostIsGMail ()) {
-                // Need to make sure the email is marked read to get it out of GFE Inbox.
-                var emailMessage = item as McEmailMessage;
-                if (null != emailMessage && !emailMessage.IsRead) {
-                    markUpdate = new McPending (Account.Id) {
-                        Operation = McPending.Operations.EmailMarkRead,
-                        ServerId = emailMessage.ServerId,
-                        ParentId = srcFolder.ServerId,
-                    };   
-                    markUpdate.Insert ();
-
-                    // Mark the actual item.
-                    emailMessage.IsRead = true;
-                    emailMessage.Update ();
-                }
-            }
-            var move = new McPending (Account.Id) {
-                Operation = op,
-                ServerId = item.ServerId,
-                ParentId = srcFolder.ServerId,
-                DestParentId = destFolder.ServerId,
-            };
-
-            move.Insert ();
-            // Move the actual item.
-            destFolder.Link (item);
-            srcFolder.Unlink (item);
-
-            StatusInd (NcResult.Info (subKind));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
-            }, "MoveItemCmd");
-            return move.Token;
-        }
-
-        public override string MoveEmailCmd (int emailMessageId, int destFolderId)
-        {
-            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
-            if (null == emailMessage) {
-                return null;
-            }
-            var srcFolder = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId).FirstOrDefault ();
-
-            return MoveItemCmd (McPending.Operations.EmailMove, NcResult.SubKindEnum.Info_EmailMessageSetChanged,
-                emailMessage, srcFolder, destFolderId);
-        }
-
-        private bool GetItemAndFolder<T> (int itemId, 
-                                          out T item,
-                                          int folderId,
-                                          out McFolder folder) where T : McAbstrItem, new()
-        {
-            folder = null;
-            item = McAbstrObject.QueryById<T> (itemId);
-            if (null == item) {
-                return false;
-            }
-
-            var folders = McFolder.QueryByFolderEntryId<T> (Account.Id, itemId);
-            foreach (var maybe in folders) {
-                NcAssert.True (maybe.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
-                if (-1 == folderId || maybe.Id == folderId) {
-                    folder = maybe;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public override string MarkEmailReadCmd (int emailMessageId)
-        {
-            McEmailMessage emailMessage;
-            McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
-                return null;
-            }
-
-            var markUpdate = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailMarkRead,
-                ServerId = emailMessage.ServerId,
-                ParentId = folder.ServerId,
-            };   
-            markUpdate.Insert ();
-
-            // Mark the actual item.
-            emailMessage.IsRead = true;
-            emailMessage.Update ();
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCMRMSG");
-            }, "MarkEmailReadCmd");
-            return markUpdate.Token;
-        }
-
-        public override string SetEmailFlagCmd (int emailMessageId, string flagType, 
+        public override NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 
                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
-                return null;
-            }
-
-            var setFlag = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailSetFlag,
-                ServerId = emailMessage.ServerId,
-                ParentId = folder.ServerId,
-                EmailSetFlag_FlagType = flagType,
-                EmailSetFlag_Start = start,
-                EmailSetFlag_UtcStart = utcStart,
-                EmailSetFlag_Due = due,
-                EmailSetFlag_UtcDue = utcDue,
-            };
-            setFlag.Insert ();
-
-            // Set the Flag info in the DB item.
-            emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
-            emailMessage.FlagType = flagType;
-            emailMessage.FlagStartDate = start;
-            emailMessage.FlagUtcStartDate = utcStart;
-            emailMessage.FlagDue = due;
-            emailMessage.FlagUtcDue = utcDue;
-            emailMessage.Update ();
+            NcModel.Instance.RunInTransaction (() => {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                    Operation = McPending.Operations.EmailSetFlag,
+                    ServerId = emailMessage.ServerId,
+                    ParentId = folder.ServerId,
+                    EmailSetFlag_FlagType = flagType,
+                    EmailSetFlag_Start = start,
+                    EmailSetFlag_UtcStart = utcStart,
+                    EmailSetFlag_Due = due,
+                    EmailSetFlag_UtcDue = utcDue,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+                // Set the Flag info in the DB item.
+                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
+                emailMessage.FlagType = flagType;
+                emailMessage.FlagStartDate = start;
+                emailMessage.FlagUtcStartDate = utcStart;
+                emailMessage.FlagDue = due;
+                emailMessage.FlagUtcDue = utcDue;
+                emailMessage.Update ();
+            });
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCSF");
             }, "SetEmailFlagCmd");
-            return setFlag.Token;
+            return result;
         }
 
-        public override string ClearEmailFlagCmd (int emailMessageId)
+        public override NcResult ClearEmailFlagCmd (int emailMessageId)
         {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
-                return null;
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
 
-            var clearFlag = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailClearFlag,
-                ServerId = emailMessage.ServerId,
-                ParentId = folder.ServerId,
-            };
-            clearFlag.Insert ();
-
-            emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
-            emailMessage.Update ();
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                    Operation = McPending.Operations.EmailClearFlag,
+                    ServerId = emailMessage.ServerId,
+                    ParentId = folder.ServerId,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                emailMessage.Update ();
+            });
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCF");
             }, "ClearEmailFlagCmd");
-            return clearFlag.Token;
+            return result;
         }
 
-        public override string MarkEmailFlagDone (int emailMessageId,
+        public override NcResult MarkEmailFlagDone (int emailMessageId,
                                                   DateTime completeTime, DateTime dateCompleted)
         {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
-                return null;
-            }
-
-            var markFlagDone = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailMarkFlagDone,
-                ServerId = emailMessage.ServerId,
-                ParentId = folder.ServerId,
-                EmailMarkFlagDone_CompleteTime = completeTime,
-                EmailMarkFlagDone_DateCompleted = dateCompleted,
-            };
-            markFlagDone.Insert ();
-
-            emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
-            emailMessage.FlagCompleteTime = completeTime;
-            emailMessage.FlagDateCompleted = dateCompleted;
-            emailMessage.Update ();
+            NcModel.Instance.RunInTransaction (() => {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                    Operation = McPending.Operations.EmailMarkFlagDone,
+                    ServerId = emailMessage.ServerId,
+                    ParentId = folder.ServerId,
+                    EmailMarkFlagDone_CompleteTime = completeTime,
+                    EmailMarkFlagDone_DateCompleted = dateCompleted,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
+                emailMessage.FlagCompleteTime = completeTime;
+                emailMessage.FlagDateCompleted = dateCompleted;
+                emailMessage.Update ();
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCF");
             }, "MarkEmailFlagDone");
-            return markFlagDone.Token;
+            return result;
         }
 
-        public override string DnldEmailBodyCmd (int emailMessageId, bool doNotDefer = false)
+        public override NcResult DnldAttCmd (int attId, bool doNotDelay = false)
         {
-            McEmailMessage emailMessage;
-            McFolder folder;
-            if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
-                Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: can't find McEmailMessage and/or McFolder");
-                return null;
-            }
-            var body = emailMessage.GetBody ();
-            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
-                Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: FilePresence is Complete");
-                return null;
-            }
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.EmailBodyDownload,
-                ServerId = emailMessage.ServerId,
-                ParentId = folder.ServerId,
-            };
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcModel.Instance.RunInTransaction (() => {
+                var att = McAttachment.QueryById<McAttachment> (attId);
+                if (null == att) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_AttMissing);
+                    return;
+                }
+                if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
+                    return;
+                }
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> (att.ItemId);
+                if (null == emailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                    Operation = McPending.Operations.AttachmentDownload,
+                    ServerId = emailMessage.ServerId,
+                    AttachmentId = attId,
+                };
+                McPending dup;
+                if (pending.IsDuplicate (out dup)) {
+                    // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
+                    Log.Info (Log.LOG_AS, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    result = NcResult.OK (dup.Token);
+                    return;
+                }
 
-            McPending dup;
-            if (pending.IsDuplicate (out dup)) {
-                // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                Log.Info (Log.LOG_AS, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
-                return dup.Token;
-            }
-
-            if (doNotDefer) {
-                pending.DoNotDelay ();
-            }
-            pending.Insert ();
-
+                if (doNotDelay) {
+                    pending.DoNotDelay ();
+                }
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+                att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
+                att.Update ();
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDEBOD");
-            }, "DnldEmailBodyCmd");
-            return pending.Token;
-        }
-
-        public override string DnldAttCmd (int attId, bool doNotDefer = false)
-        {
-            var att = McAbstrObject.QueryById<McAttachment> (attId);
-            if (null == att) {
-                return null;
-            }
-            if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
-                return null;
-            }
-            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (att.ItemId);
-            if (null == emailMessage) {
-                return null;
-            }
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.AttachmentDownload,
-                ServerId = emailMessage.ServerId,
-                AttachmentId = attId,
-            };
-
-            McPending dup;
-            if (pending.IsDuplicate (out dup)) {
-                // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                Log.Info (Log.LOG_AS, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
-                return dup.Token;
-            }
-
-            if (doNotDefer) {
-                pending.DoNotDelay ();
-            }
-            pending.Insert ();
-
-            att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
-            att.Update ();
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDATT");
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCDNLDATT");
             }, "DnldAttCmd");
-            return pending.Token;
+            return result;
         }
 
-        public override string CreateCalCmd (int calId, int folderId)
+        public override NcResult DnldCalBodyCmd (int calId)
         {
+            // I can't get this command to work.  The server always responds with "Bad or malformed request."
+            // Return an error immediately.  The code to run the command is left here, commented out, in case
+            // we want to try again.
+            Log.Error (Log.LOG_AS, "DnldCalBody command is not supported.");
+            return NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            #if false
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McCalendar cal;
             McFolder folder;
-            if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder)) {
-                return null;
-            }
-
-            var pending = new McPending (Account.Id, cal) {
-                Operation = McPending.Operations.CalCreate,
-                ParentId = folder.ServerId,
-                ClientId = cal.ClientId,
-            };
-            pending.Insert ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECAL");
-            }, "CreateCalCmd");
-            return pending.Token;
-        }
-
-        public override string UpdateCalCmd (int calId)
-        {
-            var cal = McAbstrObject.QueryById<McCalendar> (calId);
-            if (null == cal) {
-                return null;
-            }
-
-            var folders = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
-
-            var pending = new McPending (Account.Id, cal) {
-                Operation = McPending.Operations.CalUpdate,
-                ParentId = primeFolder.ServerId,
-                ServerId = cal.ServerId,
-            };   
-            pending.Insert ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCAL");
-            }, "UpdateCalCmd");
-            return pending.Token;
-        }
-
-        public override string DeleteCalCmd (int calId)
-        {
-            var cal = McAbstrObject.QueryById<McCalendar> (calId);
-            if (null == cal) {
-                return null;
-            }
-
-            var folders = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "Should not delete items in client-owned folders");
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.CalDelete,
-                ParentId = primeFolder.ServerId,
-                ServerId = cal.ServerId,
-            };   
-            pending.Insert ();
-
-            // Delete the actual item.
-            cal.Delete ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCAL");
-            }, "DeleteCalCmd");
-            return pending.Token;
-        }
-
-        public override string MoveCalCmd (int calId, int destFolderId)
-        {
-            var cal = McAbstrObject.QueryById<McCalendar> (calId);
-            if (null == cal) {
-                return null;
-            }
-            var srcFolder = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId).FirstOrDefault ();
-
-            return MoveItemCmd (McPending.Operations.CalMove, NcResult.SubKindEnum.Info_CalendarSetChanged,
-                cal, srcFolder, destFolderId);
-        }
-
-        public override string DnldCalBodyCmd (int calId)
-        {
-            McCalendar cal;
-            McFolder folder;
-            if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
-                return null;
-            }
-            var body = cal.GetBody ();
-            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
-                return null;
-            }
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.CalBodyDownload,
-                ServerId = cal.ServerId,
-            };
-            pending.Insert ();
-
+            NcModel.Instance.RunInTransaction (() => {
+                if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
+                var pending = new McPending (Account.Id) {
+                    Operation = McPending.Operations.CalBodyDownload,
+                    ServerId = cal.ServerId,
+                    ParentId = folder.ServerId,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCALBOD");
             }, "DnldCalBodyCmd");
-            return pending.Token;
+            return result;
+            #endif
         }
 
-        public override string CreateContactCmd (int contactId, int folderId)
+        public override NcResult ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
         {
-            McContact contact;
-
-            McFolder folder;
-            if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder)) {
-                return null;
-            }
-
-            var pending = new McPending (Account.Id, contact) {
-                Operation = McPending.Operations.ContactCreate,
-                ParentId = folder.ServerId,
-                ClientId = contact.ClientId,
-            };
-            pending.Insert ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcModel.Instance.RunInTransaction (() => {
+                var refdCalEvent = McCalendar.QueryById<McCalendar> (forwardedCalId);
+                var newEmailMessage = McEmailMessage.QueryById<McEmailMessage> (newEmailMessageId);
+                var folder = McFolder.QueryById<McFolder> (folderId);
+                if (null == refdCalEvent || null == newEmailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalReader, newEmailMessage) {
+                    Operation = McPending.Operations.CalForward,
+                    ServerId = refdCalEvent.ServerId,
+                    ParentId = folder.ServerId,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECNT");
-            }, "CreateContactCmd");
-            return pending.Token;
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCCALF");
+            }, "ForwardCalCmd");
+            return result;
         }
 
-        public override string UpdateContactCmd (int contactId)
+        public override NcResult DnldContactBodyCmd (int contactId)
         {
-            var contact = McAbstrObject.QueryById<McContact> (contactId);
-            if (null == contact) {
-                return null;
-            }
-
-            var folders = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
-
-            var pending = new McPending (Account.Id, contact) {
-                Operation = McPending.Operations.ContactUpdate,
-                ParentId = primeFolder.ServerId,
-                ServerId = contact.ServerId,
-            };   
-            pending.Insert ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
-            }, "UpdateContactCmd");
-            return pending.Token;
-        }
-
-        public override string DeleteContactCmd (int contactId)
-        {
-            var contact = McAbstrObject.QueryById<McContact> (contactId);
-            if (null == contact) {
-                return null;
-            }
-
-            var folders = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "Should not delete items in client-owned folders");
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.ContactDelete,
-                ParentId = primeFolder.ServerId,
-                ServerId = contact.ServerId,
-            };   
-            pending.Insert ();
-
-            // Delete the actual item.
-            contact.Delete ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCTC");
-            }, "DeleteContactCmd");
-            return pending.Token;
-        }
-
-        public override string MoveContactCmd (int contactId, int destFolderId)
-        {
-            var contact = McAbstrObject.QueryById<McContact> (contactId);
-            if (null == contact) {
-                return null;
-            }
-            var srcFolder = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId).FirstOrDefault ();
-
-            return MoveItemCmd (McPending.Operations.ContactMove, NcResult.SubKindEnum.Info_ContactSetChanged,
-                contact, srcFolder, destFolderId);
-        }
-
-        public override string DnldContactBodyCmd (int contactId)
-        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McContact contact;
             McFolder folder;
-            if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder)) {
-                return null;
-            }
-            var body = contact.GetBody ();
-            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
-                return null;
-            }
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.ContactBodyDownload,
-                ServerId = contact.ServerId,
-            };
-            pending.Insert ();
-
+            NcModel.Instance.RunInTransaction (() => {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
+                var body = contact.GetBody ();
+                if (McBody.IsNontruncatedBodyComplete (body)) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsNontruncatedBodyComplete);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactReader) {
+                    Operation = McPending.Operations.ContactBodyDownload,
+                    ServerId = contact.ServerId,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCONBOD");
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCDNLDCONBOD");
             }, "DnldContactBodyCmd");
-            return pending.Token;
+            return result;
         }
 
-        public override string CreateTaskCmd (int taskId, int folderId)
+        public override NcResult CreateTaskCmd (int taskId, int folderId)
         {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McTask task;
             McFolder folder;
-            if (!GetItemAndFolder<McTask> (taskId, out task, folderId, out folder)) {
-                return null;
-            }
-
-            var pending = new McPending (Account.Id, task) {
-                Operation = McPending.Operations.TaskCreate,
-                ParentId = folder.ServerId,
-                ClientId = task.ClientId,
-            };
-            pending.Insert ();
-
+            NcModel.Instance.RunInTransaction (() => {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McTask> (taskId, out task, folderId, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.TaskWriter, task) {
+                    Operation = McPending.Operations.TaskCreate,
+                    ParentId = folder.ServerId,
+                    ClientId = task.ClientId,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCRETSK");
+                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCRETSK");
             }, "CreateTaskCmd");
-            return pending.Token;
+            return result;
         }
 
-        public override string UpdateTaskCmd (int taskId)
+        public override NcResult UpdateTaskCmd (int taskId)
         {
-            var task = McAbstrObject.QueryById<McTask> (taskId);
-            if (null == task) {
-                return null;
-            }
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcModel.Instance.RunInTransaction (() => {
+                var task = McTask.QueryById<McTask> (taskId);
+                if (null == task) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
+                if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                var primeFolder = folders.First ();
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
-            var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
-
-            var pending = new McPending (Account.Id, task) {
-                Operation = McPending.Operations.TaskUpdate,
-                ParentId = primeFolder.ServerId,
-                ServerId = task.ServerId,
-            };   
-            pending.Insert ();
-
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.TaskWriter, task) {
+                    Operation = McPending.Operations.TaskUpdate,
+                    ParentId = primeFolder.ServerId,
+                    ServerId = task.ServerId,
+                };   
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGTSK");
+                Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCHGTSK");
             }, "UpdateTaskCmd");
-            return pending.Token;
+            return result;
         }
 
-        public override string DeleteTaskCmd (int taskId)
+        public override NcResult DeleteTaskCmd (int taskId, bool lastInSeq = true)
         {
-            var task = McAbstrObject.QueryById<McTask> (taskId);
-            if (null == task) {
-                return null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcModel.Instance.RunInTransaction (() => {
+                var task = McTask.QueryById<McTask> (taskId);
+                if (null == task) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
+                if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                var primeFolder = folders.First ();
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
+
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.TaskWriter) {
+                    Operation = McPending.Operations.ContactDelete,
+                    ParentId = primeFolder.ServerId,
+                    ServerId = task.ServerId,
+                };   
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+                task.Delete ();
+            });
+            if (lastInSeq) {
+                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCDELTSK");
+                }, "DeleteTaskCmd");
             }
-
-            var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
-            if (null == folders || 0 == folders.Count) {
-                return null;
-            }
-
-            var primeFolder = folders.First ();
-            NcAssert.True (primeFolder.IsClientOwned == false, "Should not delete items in client-owned folders");
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.ContactDelete,
-                ParentId = primeFolder.ServerId,
-                ServerId = task.ServerId,
-            };   
-            pending.Insert ();
-
-            // Delete the actual item.
-            task.Delete ();
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
-            }, "DeleteTaskCmd");
-            return pending.Token;
+            return result;
         }
 
-        public override string MoveTaskCmd (int taskId, int destFolderId)
+        public override NcResult MoveTaskCmd (int taskId, int destFolderId, bool lastInSeq = true)
         {
-            var task = McAbstrObject.QueryById<McTask> (taskId);
+            var task = McTask.QueryById<McTask> (taskId);
             if (null == task) {
-                return null;
+                return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
             var srcFolder = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId).FirstOrDefault ();
 
-            return MoveItemCmd (McPending.Operations.TaskMove, NcResult.SubKindEnum.Info_TaskSetChanged,
-                task, srcFolder, destFolderId);
+            return MoveItemCmd (McPending.Operations.TaskMove, McAccount.AccountCapabilityEnum.TaskWriter,
+                NcResult.SubKindEnum.Info_TaskSetChanged,
+                task, srcFolder, destFolderId, lastInSeq);
         }
 
-        public override string DnldTaskBodyCmd (int taskId)
+        public override NcResult DnldTaskBodyCmd (int taskId)
         {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McTask task;
             McFolder folder;
-            if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder)) {
-                return null;
-            }
-            var body = task.GetBody ();
-            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
-                return null;
-            }
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.TaskBodyDownload,
-                ServerId = task.ServerId,
-            };
-            pending.Insert ();
-
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDTBOD");
-            }, "DnldTaskBodyCmd");
-            return pending.Token;
-        }
-
-        public override string RespondCalCmd (int calId, NcResponseType response)
-        {
-            McCalendar cal;
-            McFolder folder;
-            if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
-                return null;
-            }
-
-            Xml.MeetingResp.UserResponseCode apiResponse;
-            switch (response) {
-            case NcResponseType.Accepted:
-                apiResponse = Xml.MeetingResp.UserResponseCode.Accepted_1;
-                break;
-
-            case NcResponseType.Tentative:
-                apiResponse = Xml.MeetingResp.UserResponseCode.Tentatively_2;
-                break;
-
-            case NcResponseType.Declined:
-                apiResponse = Xml.MeetingResp.UserResponseCode.Declined_3;
-                break;
-
-            default:
-                return null;
-            }
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.CalRespond,
-                ServerId = cal.ServerId,
-                ParentId = folder.ServerId,
-                CalResponse = apiResponse,
-            };
-
-            pending.Insert ();
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
-            }, "RespondCalCmd");
-
-            return pending.Token;
-        }
-
-        public override string CreateFolderCmd (int destFolderId, string displayName, 
-                                                Xml.FolderHierarchy.TypeCode folderType)
-        {
-            var serverId = DateTime.UtcNow.Ticks.ToString ();
-            string destFldServerId;
-
-            if (0 > destFolderId) {
-                // Root case.
-                destFldServerId = "0";
-            } else {
-                // Sub-folder case.
-                var destFld = McAbstrObject.QueryById<McFolder> (destFolderId);
-                if (null == destFld) {
-                    return null;
+            NcModel.Instance.RunInTransaction (() => {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
                 }
-                NcAssert.True (destFld.IsClientOwned == false, "BackEnd should not modify client-owned folders");
-                destFldServerId = destFld.ServerId;
-            }
-
-            var folder = McFolder.Create (Account.Id,
-                             false,
-                             false,
-                             false,
-                             destFldServerId,
-                             serverId,
-                             displayName,
-                             folderType);
-            folder.IsAwaitingCreate = true;
-            folder.Insert ();
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
-
-            var createFolder = new McPending (Account.Id) {
-                Operation = McPending.Operations.FolderCreate,
-                ServerId = serverId,
-                ParentId = destFldServerId,
-                DisplayName = displayName,
-                Folder_Type = folderType,
-                // Epoch intentionally not set.
-            };
-
-            createFolder.Insert ();
-
+                var body = task.GetBody ();
+                if (McBody.IsNontruncatedBodyComplete (body)) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsNontruncatedBodyComplete);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.TaskReader) {
+                    Operation = McPending.Operations.TaskBodyDownload,
+                    ServerId = task.ServerId,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFCRE");
-            }, "CreateFolderCmd");
-
-            return createFolder.Token;
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCDNLDTBOD");
+            }, "DnldTaskBodyCmd");
+            return result;
         }
 
-        public override string CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public override NcResult RespondEmailCmd (int emailMessageId, NcResponseType response)
         {
-            return CreateFolderCmd (-1, displayName, folderType);
+            return RespondItemCmd<McEmailMessage> (emailMessageId, response);
         }
 
-        public override string DeleteFolderCmd (int folderId)
+        public override NcResult RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
         {
-            var folder = McAbstrObject.QueryById<McFolder> (folderId);
-            NcAssert.False (folder.IsDistinguished, "BackEnd must not delete distinguished folders");
-            NcAssert.False (folder.IsClientOwned, "BackEnd must not delete folders in client-owned folders.");
-            NcAssert.False (folder.IsAwaitingDelete, "BackEnd must not try to delete folder that has been already deleted.");
+            return RespondItemCmd<McCalendar> (calId, response, instance);
+        }
 
-            var delFolder = new McPending (Account.Id) {
-                Operation = McPending.Operations.FolderDelete,
-                ServerId = folder.ServerId,
-                ParentId = folder.ParentId,
-            };
+        private NcResult RespondItemCmd<T> (int itemId, NcResponseType response, DateTime? instance = null)
+            where T : McAbstrItem, new ()
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            McPending pending;
+            NcModel.Instance.RunInTransaction (() => {
+                T item;
+                McFolder folder;
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<T> (itemId, out item, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
+                    return;
+                }
+                // From MS-ASCMD:
+                // When protocol versions 2.5, 12.0, 12.1, or 14.0 are used, the MeetingResponse command cannot be used to modify meeting requests in the Calendar folder.
+                // AND
+                // In Exchange 2007, the MeetingResponse command is used to accept, tentatively accept, or decline a meeting request only in the user's Inbox folder.
+                // 
+                // In this (these?) scenarios, update the Cal item in the DB, and Sync the change to the server.
+                //
+                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 != folder.Type &&
+                    14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
+                    var cal = item as McCalendar;
+                    if (null == cal) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                        Log.Error (Log.LOG_AS, "Cannot respond to an email-invite message not in Inbox for older EAS ({0})", folder.Type);
+                        return;
+                    }
+                    switch (response) {
+                    case NcResponseType.Accepted:
+                        cal.ResponseType = NcResponseType.Accepted;
+                        break;
+                    case NcResponseType.Tentative:
+                        cal.ResponseType = NcResponseType.Tentative;
+                        break;
+                    case NcResponseType.Declined:
+                        cal.ResponseType = NcResponseType.Declined;
+                        break;
+                    default:
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_InvalidResponseType);
+                        return;
+                    }
+                    cal.ResponseTypeIsSet = true;
+                    cal.Update ();
+                    pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter, cal) {
+                        Operation = McPending.Operations.CalUpdate,
+                        ParentId = folder.ServerId,
+                        ServerId = cal.ServerId,
+                        CalUpdate_SendBody = false,
+                    }; 
+                } else {
+                    Xml.MeetingResp.UserResponseCode apiResponse;
+                    switch (response) {
+                    case NcResponseType.Accepted:
+                        apiResponse = Xml.MeetingResp.UserResponseCode.Accepted_1;
+                        break;
 
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
-            MarkFoldersAwaitingDelete (folder);
+                    case NcResponseType.Tentative:
+                        apiResponse = Xml.MeetingResp.UserResponseCode.Tentatively_2;
+                        break;
 
-            delFolder.Insert ();
+                    case NcResponseType.Declined:
+                        apiResponse = Xml.MeetingResp.UserResponseCode.Declined_3;
+                        break;
 
+                    default:
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_InvalidResponseType);
+                        return;
+                    }
+
+                    pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.CalWriter) {
+                        Operation = McPending.Operations.CalRespond,
+                        ServerId = item.ServerId,
+                        ParentId = folder.ServerId,
+                        CalResponse = apiResponse,
+                    };
+                    if (null != instance) {
+                        pending.CalResponseInstance = (DateTime)instance;
+                    }
+                }
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFDEL");
-            }, "DeleteFolderCmd");
-
-            return delFolder.Token;
-        }
-
-        // recursively mark param and its children with isAwaitingDelete == true
-        public void MarkFoldersAwaitingDelete (McFolder folder)
-        {
-            folder = folder.UpdateSet_IsAwaitingDelete (true);
-            var children = McFolder.QueryByParentId (folder.AccountId, folder.ServerId);
-            foreach (McFolder child in children) {
-                MarkFoldersAwaitingDelete (child);
-            }
-        }
-
-        public override string MoveFolderCmd (int folderId, int destFolderId)
-        {
-            var folder = McAbstrObject.QueryById<McFolder> (folderId);
-            var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
-            NcAssert.False (folder.IsDistinguished, "BackEnd must not move distinguished folders");
-            NcAssert.False (folder.IsClientOwned, "BackEnd must not move client-owned folders");
-            NcAssert.False (destFolder.IsClientOwned, "BackEnd must not modify client-owned folders");
-
-            folder = folder.UpdateSet_ParentId (destFolder.ServerId);
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
-
-            if (folder.IsClientOwned) {
-                return McPending.KSynchronouslyCompleted;
-            }
-
-            var upFolder = new McPending (Account.Id) {
-                Operation = McPending.Operations.FolderUpdate,
-                ServerId = folder.ServerId,
-                ParentId = folder.ParentId,
-                DestParentId = destFolder.ServerId,
-                DisplayName = folder.DisplayName,
-                Folder_Type = folder.Type,
-            };
-
-            upFolder.Insert ();
-
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFUP1");
-            }, "MoveFolderCmd");
-
-            return upFolder.Token;
-        }
-
-        public override string RenameFolderCmd (int folderId, string displayName)
-        {
-            var folder = McAbstrObject.QueryById<McFolder> (folderId);
-            NcAssert.False (folder.IsDistinguished, "BackEnd must not delete distinguished folders");
-            NcAssert.False (folder.IsClientOwned, "BackEnd must not modify client-owned folders");
-
-            folder = folder.UpdateSet_DisplayName (displayName);
-
-            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
-
-            if (folder.IsClientOwned) {
-                return McPending.KSynchronouslyCompleted;
-            }
-
-            var upFolder = new McPending (Account.Id) {
-                Operation = McPending.Operations.FolderUpdate,
-                ServerId = folder.ServerId,
-                ParentId = folder.ParentId,
-                DestParentId = folder.ParentId, // Set only because Move & Rename map to the same EAS command.
-                DisplayName = displayName,
-                Folder_Type = folder.Type,
-            };
-
-            upFolder.Insert ();
-
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFUP2");
-            }, "RenameFolderCmd");
-            return upFolder.Token;
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCRESPCAL");
+            }, "RespondItemCmd");
+            return result;
         }
     }
 }

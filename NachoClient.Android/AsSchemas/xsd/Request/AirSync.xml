@@ -20,7 +20,7 @@
       <attribute_redaction>none</attribute_redaction>
    </Class>
    <CollectionId>
-      <element_redaction>none</element_redaction>
+      <element_redaction>short_hash</element_redaction>
       <attribute_redaction>none</attribute_redaction>
    </CollectionId>
    <GetChanges>
@@ -133,7 +133,7 @@
                <attribute_redaction>none</attribute_redaction>
             </SyncKey>
             <CollectionId>
-               <element_redaction>none</element_redaction>
+               <element_redaction>short_hash</element_redaction>
                <attribute_redaction>none</attribute_redaction>
             </CollectionId>
             <Supported>

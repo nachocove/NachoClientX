@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -40,7 +40,7 @@ namespace NachoCore.Utils
             DelayUntil = DateTime.MinValue;
             ServerId = serverId;
             // TODO: we will want to vary the parameters by protcol & server.
-            Throttle = new NcRateLimter (0.2, 2 * 60);
+            Throttle = new NcRateLimter (0.4, 1 * 60);
             Throttle.Enabled = true;
             Reset ();
         }

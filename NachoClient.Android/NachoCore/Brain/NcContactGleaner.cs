@@ -12,16 +12,27 @@ using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
+    public class NcGleaningInterruptedException : Exception
+    {
+        public NcGleaningInterruptedException ()
+        {
+        }
+    }
+
+    public delegate void NcContactGleanerAction (bool obeyAbatement);
+
     public class NcContactGleaner
     {
-        public const int GLEAN_PERIOD = 10;
+        public const int GLEAN_PERIOD = 4;
         private const uint MaxSaneAddressLength = 40;
+
         #pragma warning disable 414
         private static NcTimer Invoker;
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
-            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+            if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
+                NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
                 // TODO - This is a temporary solution. We should not process any event other 
                 return;
             }
@@ -52,12 +63,6 @@ namespace NachoCore.Brain
         {
         }
 
-        protected static void MarkAsGleaned (McEmailMessage emailMessage)
-        {
-            emailMessage.HasBeenGleaned = true;
-            emailMessage.Update ();
-        }
-
         /// TODO: I wanna be table driven!
         protected static bool DoNotGlean (string address)
         {
@@ -76,199 +81,95 @@ namespace NachoCore.Brain
             return false;
         }
 
-        private static void GleanContact (MailboxAddress mbAddr, int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
+        protected static void CreateGleanContact (MailboxAddress mbAddr, int accountId, McFolder gleanedFolder)
         {
-            // Don't glean when scrolling
-            var contacts = McContact.QueryByEmailAddress (accountId, mbAddr.Address);
-            if (0 == contacts.Count && !DoNotGlean (mbAddr.Address)) {
-                // Create a new gleaned contact.
-                var contact = new McContact () {
-                    AccountId = accountId,
-                    Source = McAbstrItem.ItemSource.Internal,
-                    RefCount = 1,
-                };
-                NcEmailAddress.SplitName (mbAddr, ref contact);
-
-                contact.Insert ();
-                gleanedFolder.Link (contact);
-
-                McEmailAddress emailAddress;
-                McEmailAddress.Get (accountId, mbAddr, out emailAddress);
-
-                var strattr = new McContactEmailAddressAttribute () {
-                    AccountId = accountId,
-                    Name = "Email1Address",
-                    Value = mbAddr.Address,
-                    ContactId = contact.Id,
-                    EmailAddress = emailAddress.Id,
-                };
-
-                // TODO - Get the reply state
-                strattr.Insert ();
-            } else {
-                // Update the refcount on the existing contact.
-                foreach (var contact in contacts) {
-                    // TODO: need update count using timestamp check.
-                    contact.RefCount += 1;
-                    contact.Update ();
-                }
+            if (DoNotGlean (mbAddr.Address)) {
+                return;
             }
-        }
-
-        public static void GleanContact (string address, int accountId)
-        {
-            var gleanedFolder = McFolder.GetGleanedFolder (accountId);
-            // Create a new gleaned contact.
-            var contact = new McContact () {
+            if (null == gleanedFolder) {
+                Log.Warn (Log.LOG_BRAIN, "gleaning folder is null");
+                return;
+            }
+            var gleanedContact = new McContact () {
                 AccountId = accountId,
                 Source = McAbstrItem.ItemSource.Internal,
-                RefCount = 1,
             };
 
-            contact.Insert ();
-            gleanedFolder.Link (contact);
+            gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
+            NcEmailAddress.ParseName (mbAddr, ref gleanedContact);
 
-            McEmailAddress emailAddress;
-            McEmailAddress.Get (accountId, address, out emailAddress);
-
-            var strattr = new McContactEmailAddressAttribute () {
-                AccountId = accountId,
-                Name = "Email1Address",
-                Value = address,
-                ContactId = contact.Id,
-                EmailAddress = emailAddress.Id,
-            };
-            strattr.Insert ();
+            NcModel.Instance.RunInTransaction (() => {
+                // Check if the contact is a duplicate
+                var isDup = false;
+                var contactList = McContact.QueryGleanedContactsByEmailAddress (accountId, mbAddr.Address);
+                foreach (var contact in contactList) {
+                    if (gleanedContact.HasSameName (contact)) {
+                        isDup = true;
+                        break;
+                    }
+                }
+                if (!isDup) {
+                    gleanedContact.Insert ();
+                    gleanedFolder.Link (gleanedContact);
+                }
+            });
         }
 
-        public static void GleanContacts (int accountId, McEmailMessage emailMessage)
+
+        public static void GleanContacts (string address, int accountId, bool obeyAbatement)
         {
+            if (String.IsNullOrEmpty (address)) {
+                return;
+            }
+            var addressList = NcEmailAddress.ParseAddressListString (address);
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);
-            if (null == gleanedFolder) {
-                NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContacts gleandedFolder is null for account id {0}", accountId);
-                MarkAsGleaned (emailMessage);
-                return;
-            }
-            var body = McBody.QueryById<McBody> (emailMessage.BodyId);
-            if (McAbstrFileDesc.IsComplete (body) && (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType)) {
-                GleanContactsFromMime (accountId, gleanedFolder, emailMessage, body);
-            } else {
-                GleanContactsFromMcEmailMessage (accountId, gleanedFolder, emailMessage);
-            }
-            MarkAsGleaned (emailMessage);
-        }
-
-        public static void GleanContactsFromMcEmailMessage (int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
-        {
-            List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
-            if (null != emailMessage.To) {
-                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.To));
-            }
-            if (null != emailMessage.From) {
-                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.From));
-            }
-            if (null != emailMessage.Cc) {
-                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.Cc));
-            }
-            if (null != emailMessage.ReplyTo) {
-                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.ReplyTo));
-            }
-            if (null != emailMessage.Sender) {
-                addrsLists.Add (NcEmailAddress.ParseAddressListString (emailMessage.Sender));
-            }
-            foreach (var addrsList in addrsLists) {
-                foreach (var addr in addrsList) {
-                    if (NcApplication.Instance.IsBackgroundAbateRequired) {
-                        return;
-                    }
-                    if (addr is MailboxAddress) {
-                        GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
-                    }
+            foreach (var mbAddr in addressList) {
+                if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
+                    throw new NcGleaningInterruptedException ();
                 }
+                CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
             }
         }
 
-        public static void GleanContactsFromMime (int accountId, McFolder gleanedFolder, McEmailMessage emailMessage, McAbstrFileDesc body)
+        protected static bool InterruptibleGleaning (NcContactGleanerAction action, bool obeyAbatement)
         {
-            var path = body.GetFilePath ();
-            if (null == path) {
-                MarkAsGleaned (emailMessage);
-                return;
-            }
-            if (!File.Exists (path)) {
-                var e2 = McEmailMessage.QueryById<McEmailMessage> (emailMessage.Id);
-                var b2 = McBody.QueryById<McBody> (e2.BodyId);
-                Log.Error (Log.LOG_BRAIN, "Lost body: {0} == {1} and {2} == {3}", emailMessage.BodyId, body.Id, e2.BodyId, b2.Id);
-                // FIXME: Let's not crash at the moment
-                MarkAsGleaned (emailMessage);
-                return;
-            }
             try {
-                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
-                    MimeMessage mimeMsg;
-                    try {
-                        var mimeParser = new MimeParser (fileStream, true);
-                        mimeMsg = mimeParser.ParseMessage ();
-                    } catch (Exception e) {
-                        // TODO: Find root cause
-                        MarkAsGleaned (emailMessage);
-                        NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContactsFromMime exception ignored:\n{0}", e);
-                        return;
-                    }
-                    List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
-                    if (null != mimeMsg.To) {
-                        addrsLists.Add (mimeMsg.To);
-                    }
-                    if (null != mimeMsg.From) {
-                        addrsLists.Add (mimeMsg.From);
-                    }
-                    if (null != mimeMsg.Cc) {
-                        addrsLists.Add (mimeMsg.Cc);
-                    }
-                    if (null != mimeMsg.Bcc) {
-                        addrsLists.Add (mimeMsg.Bcc);
-                    }
-                    if (null != mimeMsg.ReplyTo) {
-                        addrsLists.Add (mimeMsg.ReplyTo);
-                    }
-                    if (null != mimeMsg.Sender) {
-                        var senderAsList = new InternetAddressList ();
-                        senderAsList.Add (mimeMsg.Sender);
-                        addrsLists.Add (senderAsList);
-                    }
-                    if (null != mimeMsg.MessageId) {
-                        emailMessage.MessageID = mimeMsg.MessageId;
-                    }
-                    if (null != mimeMsg.InReplyTo) {
-                        emailMessage.InReplyTo = mimeMsg.InReplyTo;
-                    }
-                    if (null != mimeMsg.References) {
-                        emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
-                    }
-                    foreach (var addrsList in addrsLists) {
-                        foreach (var addr in addrsList) {
-                            if (NcApplication.Instance.IsBackgroundAbateRequired) {
-                                return;
-                            }
-                            if (addr is MailboxAddress) {
-                                GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
-                            }
-                        }
-                    }
-                }
-            } catch (AggregateException ae) {
-                if (ae.InnerException is DirectoryNotFoundException) {
-                    Log.Warn (Log.LOG_BRAIN, "Directory {0} no longer exists", path);
-                } else if (ae.InnerException is FileNotFoundException) {
-                    Log.Warn (Log.LOG_BRAIN, "File {0} no longer exists", path);
-                } else {
-                    throw;
-                }
-            } catch (DirectoryNotFoundException) {
-                Log.Warn (Log.LOG_BRAIN, "Directory {0} no longer exists", path);
-            } catch (FileNotFoundException) {
-                Log.Warn (Log.LOG_BRAIN, "File {0} no longer exists", path);
+                action (obeyAbatement);
+            } catch (NcGleaningInterruptedException) {
+                return false;
             }
+            return true;
+        }
+
+        public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage)
+        {
+            // Caller is responsible for making sure that this is not in a junk folder.
+            // We do not check here in order to avoid a lot of db queries just for
+            // gleaning.
+            bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
+                GleanContacts (emailMessage.To, emailMessage.AccountId, obeyAbatement);
+                GleanContacts (emailMessage.From, emailMessage.AccountId, obeyAbatement);
+            }, false);
+            if (gleaned) {
+                emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
+            }
+            return gleaned;
+        }
+
+        public static bool GleanContactsHeaderPart2 (McEmailMessage emailMessage)
+        {
+            // McEmailMessage.QueryNeedGleaning() should filter out all ungleaned emails
+            // in any of the junk folders. So, we don't do the junk folder check again
+            // because it costs an additional query (on McMapFolderFolderEntry) per email.
+            bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
+                GleanContacts (emailMessage.Cc, emailMessage.AccountId, obeyAbatement);
+                GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId, obeyAbatement);
+                GleanContacts (emailMessage.Sender, emailMessage.AccountId, obeyAbatement);
+            }, true);
+            if (gleaned) {
+                emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
+            }
+            return gleaned;
         }
     }
 }

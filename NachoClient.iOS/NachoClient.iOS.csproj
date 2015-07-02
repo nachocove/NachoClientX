@@ -6,12 +6,14 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7B5D1554-2619-4B46-BE91-585C896047AC}</ProjectGuid>
-    <ProjectTypeGuids>{6BC8ED88-2882-458C-8E55-DFD12B67127B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Exe</OutputType>
     <RootNamespace>NachoClient.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <AssemblyName>NachoClientiOS</AssemblyName>
     <SynchReleaseVersion>false</SynchReleaseVersion>
+    <TargetFrameworkIdentifier>Xamarin.iOS</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v1.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
     <DebugSymbols>true</DebugSymbols>
@@ -24,19 +26,23 @@
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
     <MtouchDebug>true</MtouchDebug>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <MtouchI18n>west</MtouchI18n>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchI18n>cjk,west</MtouchI18n>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
-    <MtouchArch>i386</MtouchArch>
+    <MtouchArch>i386, x86_64</MtouchArch>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -45,19 +51,23 @@
     <WarningLevel>4</WarningLevel>
     <MtouchLink>None</MtouchLink>
     <ConsolePause>false</ConsolePause>
-    <MtouchI18n>west</MtouchI18n>
-    <MtouchArch>i386</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchI18n>cjk,west</MtouchI18n>
+    <MtouchArch>i386, x86_64</MtouchArch>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
+        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignKey>iPhone Developer</CodesignKey>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
     <DebugSymbols>true</DebugSymbols>
@@ -72,14 +82,14 @@
     <CodesignKey>iPhone Developer</CodesignKey>
     <IpaPackageName>
     </IpaPackageName>
-    <MtouchI18n>west</MtouchI18n>
-    <MtouchArch>ARMv7</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchI18n>cjk,west</MtouchI18n>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
-        <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
@@ -87,8 +97,8 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>092e4558-294a-451d-bd26-d96e0f3ae748</CodesignProvision>
-    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
+    <MtouchProfiling>true</MtouchProfiling>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -97,13 +107,14 @@
     <WarningLevel>4</WarningLevel>
     <CodesignKey>iPhone Developer</CodesignKey>
     <ConsolePause>false</ConsolePause>
-    <MtouchI18n>west</MtouchI18n>
-    <MtouchArch>ARMv7</MtouchArch>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchI18n>cjk,west</MtouchI18n>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <IpaPackageName>
     </IpaPackageName>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
@@ -114,35 +125,38 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodesignKey>iPhone Distribution</CodesignKey>
     <BuildIpa>true</BuildIpa>
     <ConsolePause>false</ConsolePause>
-    <MtouchI18n>west</MtouchI18n>
-    <MtouchArch>ARMv7</MtouchArch>
+    <MtouchI18n>cjk,west</MtouchI18n>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
     <IpaPackageName>
     </IpaPackageName>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
-    <DefineConstants>DEBUG; BETA_BUILD</DefineConstants>
-    <MtouchDebug>true</MtouchDebug>
+    <DefineConstants>BETA_BUILD</DefineConstants>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -153,46 +167,47 @@
     <CodesignKey>iPhone Distribution</CodesignKey>
     <ConsolePause>false</ConsolePause>
     <CodesignProvision>Automatic:AppStore</CodesignProvision>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework StoreKit -framework AudioToolbox -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -framework Social -framework Accounts -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
-    <MtouchI18n>west</MtouchI18n>
-    <MtouchArch>ARMv7</MtouchArch>
+    <MtouchExtraArgs>-gcc_flags "-ObjC -L${ProjectDir}/../native.iOS -lNachoPlatformSDK -lresolv -lcrypto -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchI18n>cjk,west</MtouchI18n>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
     <CustomCommands>
       <CustomCommands>
+        <Command type="BeforeBuild" command="git update-index --assume-unchanged NachoClient.userprefs" workingdir="${SolutionDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
       </CustomCommands>
     </CustomCommands>
     <IpaPackageName>
     </IpaPackageName>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="monotouch" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Net" />
-    <Reference Include="MimeKit">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
-    </Reference>
-    <Reference Include="HockeyApp.iOS">
-      <HintPath>HockeyApp\hockeyappios-3.5.5\lib\ios\HockeyApp.iOS.dll</HintPath>
-    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
     <Reference Include="BouncyCastle">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\BouncyCastle.dll</HintPath>
+      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\Xamarin.iOS\BouncyCastle.dll</HintPath>
     </Reference>
+    <Reference Include="HockeyApp.iOS">
+      <HintPath>HockeyApp\hockeyappios-3.5.5.2\lib\ios-unified\HockeyApp.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.iOS" />
+    <Reference Include="System.Web.Services" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -222,12 +237,18 @@
     <Folder Include="NachoCore\Model\McContact\" />
     <Folder Include="NachoCore\Model\McEmailMessage\" />
     <Folder Include="NachoCore\Index\" />
+    <Folder Include="NachoCore\Model\Migration\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\" />
+    <Folder Include="NachoCore\BackEnd\SMTP\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
+    <Folder Include="NachoCore\BackEnd\Device\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
     <None Include="..\NachoClient.Android\NachoCore\Model\README.md">
       <Link>NachoCore\Model\README.md</Link>
     </None>
+    <None Include="Entitlements.plist" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -280,6 +301,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McServer.cs">
       <Link>NachoCore\Model\McServer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McSQLiteMaster.cs">
+      <Link>NachoCore\Model\McSQLiteMaster.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
@@ -364,7 +388,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
       <Link>NachoCore\Adapters\INachoContacts.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Adapters\DeviceCalendar.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\BackEnd.cs">
       <Link>NachoCore\BackEnd\BackEnd.cs</Link>
     </Compile>
@@ -376,9 +399,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IProtoControlOwner.cs">
       <Link>NachoCore\BackEnd\IProtoControlOwner.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ProtoControl.cs">
-      <Link>NachoCore\BackEnd\ProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\StatusIndEventArgs.cs">
       <Link>NachoCore\BackEnd\StatusIndEventArgs.cs</Link>
@@ -418,9 +438,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSettingsCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSettingsCommand.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\IAsCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\IAsCommand.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsAutodiscoverCommand\AsAutodiscoverCommand.cs</Link>
@@ -525,9 +542,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcContactManager.cs">
       <Link>NachoCore\Adapters\NcContactManager.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\IBEContext.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\IBEContext.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\MessageViewController.cs" />
     <Compile Include="NachoUI.iOS\MessageViewController.designer.cs">
@@ -723,7 +737,7 @@
       <Link>NachoCore\Utils\NcEmailAddress.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
-      <Link>NachoCore\NcApplication.cs</Link>
+      <Link>NcApplication.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry.cs">
       <Link>NachoCore\Utils\Telemetry.cs</Link>
@@ -817,7 +831,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
       <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
     </Compile>
-    <Compile Include="PushAssist.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ITimer.cs">
       <Link>NachoCore\Utils\ITimer.cs</Link>
     </Compile>
@@ -829,9 +842,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcDistribution.cs">
       <Link>NachoCore\Utils\NcDistribution.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\AsApplyServerCommand.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemAdd.cs</Link>
@@ -851,9 +861,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress.cs">
       <Link>NachoCore\Model\McEmailAddress.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapContactEmail.cs">
-      <Link>NachoCore\Model\McMapContactEmail.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McConference.cs">
       <Link>NachoCore\Model\McConference.cs</Link>
@@ -947,12 +954,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\EmailAddressScore.cs">
       <Link>NachoCore\Model\EmailAddressScore.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs">
-      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScoreSyncInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScoreSyncInfo.cs">
-      <Link>NachoCore\Model\McEmailAddressScoreSyncInfo.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\IContactsTableViewSourceDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\ContactsTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\ContactDetailViewController.cs" />
@@ -978,7 +979,6 @@
       <Link>NachoCore\Model\McNote.cs</Link>
     </Compile>
     <Compile Include="NachoPlatform.iOS\PoweriOS.cs" />
-    <Compile Include="NachoUI.iOS\Support\LoginHelpers.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\RegexUtilities.cs">
       <Link>NachoCore\Utils\RegexUtilities.cs</Link>
     </Compile>
@@ -1030,12 +1030,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEvents.cs">
-      <Link>NachoCore\Adapters\NachoEvents.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCommon.cs">
-      <Link>NachoCore\Adapters\NcEventsCommon.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INcEventProvider.cs">
       <Link>NachoCore\Adapters\INcEventProvider.cs</Link>
     </Compile>
@@ -1051,9 +1045,6 @@
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs">
-      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
       <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>
@@ -1090,10 +1081,6 @@
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
-    <Compile Include="NachoUI.iOS\AttachmentsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AttachmentsViewController.designer.cs">
-      <DependentUpon>AttachmentsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.designer.cs">
       <DependentUpon>IntentSelectionViewController.cs</DependentUpon>
@@ -1117,7 +1104,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCertificateResponder.cs" />
     <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
-    <Compile Include="NachoUI.iOS\Support\BodyTextView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
     <Compile Include="WebCache.cs" />
@@ -1133,7 +1119,6 @@
     <Compile Include="NachoUI.iOS\AboutUsViewController.designer.cs">
       <DependentUpon>AboutUsViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\AttachmentsTableViewSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
       <Link>NachoCore\Utils\CertificateHelper.cs</Link>
     </Compile>
@@ -1170,16 +1155,396 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
-    <Compile Include="NachoUI.iOS\Support\EmailServiceTableViewSource.cs" />
-    <Compile Include="NachoCore\Utils\EmailHelper.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailHelper.cs">
+      <Link>NachoCore\Utils\EmailHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
+      <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\DeadlinesViewController.cs" />
+    <Compile Include="NachoUI.iOS\DeadlinesViewController.designer.cs">
+      <DependentUpon>DeadlinesViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
+    <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
+      <Link>NachoCore\Utils\HashHelper.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SetHelper.cs">
+      <Link>NachoCore\Utils\SetHelper.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration.cs">
+      <Link>NachoCore\Model\Migration\NcMigration.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration1.cs">
+      <Link>NachoCore\Model\Migration\NcMigration1.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMigration.cs">
+      <Link>NachoCore\Model\McMigration.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration2.cs">
+      <Link>NachoCore\Model\Migration\NcMigration2.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapEmailAddressEntry.cs">
+      <Link>NachoCore\Model\McMapEmailAddressEntry.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration3.cs">
+      <Link>NachoCore\Model\Migration\NcMigration3.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcObjectParser.cs">
+      <Link>NachoCore\Brain\NcObjectParser.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTokenizer.cs">
+      <Link>NachoCore\Brain\NcTokenizer.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
+      <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IBEContext.cs">
+      <Link>NachoCore\BackEnd\IBEContext.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssist.cs">
+      <Link>NachoCore\BackEnd\PushAssist.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IPushAssistOwner.cs">
+      <Link>NachoCore\BackEnd\IPushAssistOwner.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssistJson.cs">
+      <Link>NachoCore\BackEnd\PushAssistJson.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCalendarMap.cs">
+      <Link>NachoCore\Adapters\NcEventsCalendarMap.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration5.cs">
+      <Link>NachoCore\Model\Migration\NcMigration5.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainActions.cs">
+      <Link>NachoCore\Brain\NcBrainActions.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\MessageThreadViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageThreadViewController.designer.cs">
+      <DependentUpon>MessageThreadViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoThreadedEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoMessageSearchResults.cs">
+      <Link>NachoCore\Adapters\NachoMessageSearchResults.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration7.cs">
+      <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\NotesViewerViewController.cs" />
+    <Compile Include="NachoUI.iOS\NotesViewerViewController.designer.cs">
+      <DependentUpon>NotesViewerViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration6.cs">
+      <Link>NachoCore\Model\Migration\NcMigration6.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration8.cs">
+      <Link>NachoCore\Model\Migration\NcMigration8.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration9.cs">
+      <Link>NachoCore\Model\Migration\NcMigration9.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ManageItemsViewController.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ManageItems.cs">
+      <Link>NachoCore\Utils\ManageItems.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration10.cs">
+      <Link>NachoCore\Model\Migration\NcMigration10.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CrlMonitor.cs">
+      <Link>NachoCore\Utils\CrlMonitor.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration11.cs">
+      <Link>NachoCore\Model\Migration\NcMigration11.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration12.cs">
+      <Link>NachoCore\Model\Migration\NcMigration12.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration13.cs">
+      <Link>NachoCore\Model\Migration\NcMigration13.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountHandler.cs">
+      <Link>NachoCore\Utils\NcAccountHandler.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\NcUIRedirectoriOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\BuildInfoHelper.cs">
+      <Link>NachoCore\Utils\BuildInfoHelper.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\StoreHandleriOS.cs" />
+    <Compile Include="NachoPlatform.iOS\CloudHandlerIOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Extensions\String+ToDateTime.cs">
+      <Link>NachoCore\Extensions\String+ToDateTime.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginHelpers.cs">
+      <Link>NachoCore\Utils\LoginHelpers.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration14.cs">
+      <Link>NachoCore\Model\Migration\NcMigration14.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcTextView.cs" />
+    <Compile Include="NachoPlatform.iOS\NcFileHandleriOS.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcNameValuePair.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAlertView.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcActionSheet.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAlertAction.cs" />
+    <Compile Include="NachoPlatform.iOS\DataFileMigrationiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration15.cs">
+      <Link>NachoCore\Model\Migration\NcMigration15.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoDraftMessages.cs">
+      <Link>NachoCore\Adapters\NachoDraftMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
+    <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
+      <DependentUpon>DraftsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McLicenseInformation.cs">
+      <Link>NachoCore\Model\McLicenseInformation.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration16.cs">
+      <Link>NachoCore\Model\Migration\NcMigration16.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\NotificationChooserViewController.cs" />
+    <Compile Include="NachoUI.iOS\NotificationChooserViewController.designer.cs">
+      <DependentUpon>NotificationChooserViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcUIBarButtonItem.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McBrainEvent.cs">
+      <Link>NachoCore\Model\McBrainEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainApi.cs">
+      <Link>NachoCore\Brain\NcBrainApi.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration17.cs">
+      <Link>NachoCore\Model\Migration\NcMigration17.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration18.cs">
+      <Link>NachoCore\Model\Migration\NcMigration18.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\UcLocationView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NotificationHelper.cs">
+      <Link>NachoCore\Utils\NotificationHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration19.cs">
+      <Link>NachoCore\Model\Migration\NcMigration19.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ErrorHelper.cs">
+      <Link>NachoCore\Utils\ErrorHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration20.cs">
+      <Link>NachoCore\Model\Migration\NcMigration20.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration21.cs">
+      <Link>NachoCore\Model\Migration\NcMigration21.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\AttachmentHelper.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration22.cs">
+      <Link>NachoCore\Model\Migration\NcMigration22.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration23.cs">
+      <Link>NachoCore\Model\Migration\NcMigration23.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\FileListViewController.cs" />
+    <Compile Include="NachoUI.iOS\FileListViewController.designer.cs">
+      <DependentUpon>FileListViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\FilesTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Support\AccountsTableViewSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcProtoControl.cs">
+      <Link>NachoCore\BackEnd\NcProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration24.cs">
+      <Link>NachoCore\Model\Migration\NcMigration24.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration25.cs">
+      <Link>NachoCore\Model\Migration\NcMigration25.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\PermissionManager.cs">
+      <Link>NachoCore\Utils\PermissionManager.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapProtoControl.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryEvent.cs">
+      <Link>NachoCore\Utils\TelemetryEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonEvent.cs">
+      <Link>NachoCore\Utils\TelemetryJsonEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcSamples.cs">
+      <Link>NachoCore\Utils\NcSamples.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
+      <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
+      <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountButton.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcStrategy.cs">
+      <Link>NachoCore\BackEnd\NcStrategy.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\CoverView.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoAccountsTableDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\UcIconLabelPair.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcApplyServerCommand.cs">
+      <Link>NachoCore\BackEnd\NcApplyServerCommand.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SwitchAccountViewController.cs" />
+    <Compile Include="NachoUI.iOS\SwitchAccountViewController.designer.cs">
+      <DependentUpon>SwitchAccountViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\SwitchAccountCustomSegue.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\IImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\IImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountTypeViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountTypeViewController.designer.cs">
+      <DependentUpon>AccountTypeViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\AdvancedTextField.cs" />
+    <Compile Include="NachoUI.iOS\Support\ExchangeFields.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration27.cs">
+      <Link>NachoCore\Model\Migration\NcMigration27.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration28.cs">
+      <Link>NachoCore\Model\Migration\NcMigration28.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.designer.cs">
+      <DependentUpon>AccountCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoCredentials.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
+    <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommand.cs">
+      <Link>NachoCore\BackEnd\NcCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\INcCommand.cs">
+      <Link>NachoCore\BackEnd\INcCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchAttachmentCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchAttachmentCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMarkReadCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailMoveCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapEmailDeleteCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration30.cs">
+      <Link>NachoCore\Model\Migration\NcMigration30.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainHelpers.cs">
+      <Link>NachoCore\Brain\NcBrainHelpers.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainEventHandler.cs">
+      <Link>NachoCore\Brain\NcBrainEventHandler.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\UnreadMessagesView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAccountMonitor.cs">
+      <Link>NachoCore\Utils\NcAccountMonitor.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddressScore.cs">
+      <Link>NachoCore\Model\McEmailAddressScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageScore.cs">
+      <Link>NachoCore\Model\McEmailMessage\McEmailMessageScore.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\IScoreStates.cs">
+      <Link>NachoCore\Model\IScoreStates.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDiscoverCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration29.cs">
+      <Link>NachoCore\Model\Migration\NcMigration29.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\Device\DeviceProtoControl.cs">
+      <Link>NachoCore\BackEnd\Device\DeviceProtoControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcMdmConfig.cs">
+      <Link>NachoCore\Adapters\NcMdmConfig.cs</Link>
+    </Compile>
+    <Compile Include="NachoPlatform.iOS\MdmConfigiOS.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\NcImapClient.cs">
+      <Link>NachoCore\BackEnd\IMAP\NcImapClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\NcSmtpClient.cs">
+      <Link>NachoCore\BackEnd\SMTP\NcSmtpClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcMailKitProtocolLogger.cs">
+      <Link>NachoCore\Utils\NcMailKitProtocolLogger.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\ILoginProtocol.cs">
+      <Link>NachoCore\Adapters\ILoginProtocol.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LoginProtocolControl.cs">
+      <Link>NachoCore\Utils\LoginProtocolControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration31.cs">
+      <Link>NachoCore\Model\Migration\NcMigration31.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration32.cs">
+      <Link>NachoCore\Model\Migration\NcMigration32.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration33.cs">
+      <Link>NachoCore\Model\Migration\NcMigration33.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Xamarin.ObjcBinding.CSharp.targets" />
-  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
     <BundleResource Include="Resources\Icon.png" />
     <BundleResource Include="Resources\Icon%402x.png" />
@@ -1257,9 +1622,6 @@
     <BundleResource Include="Resources\Loginscreen-2.png" />
     <BundleResource Include="Resources\Loginscreen-3.png" />
     <BundleResource Include="Resources\Loginscreen-BG.png" />
-    <BundleResource Include="Resources\Default.png" />
-    <BundleResource Include="Resources\Default-568h%402x.png" />
-    <BundleResource Include="Resources\Default%402x.png" />
     <BundleResource Include="Resources\cal-add%402x.png" />
     <BundleResource Include="Resources\cal-dialintomeeting%402x.png" />
     <BundleResource Include="Resources\contact-newemail%402x.png" />
@@ -1377,8 +1739,6 @@
     <BundleResource Include="Resources\modal-readmore%402x.png" />
     <BundleResource Include="Resources\Slide02MessageDown%402x.png" />
     <BundleResource Include="Resources\Slide02MessageUp%402x.png" />
-    <BundleResource Include="Resources\Slide03BG%402x.png" />
-    <BundleResource Include="Resources\Slide03MidBG%402x.png" />
     <BundleResource Include="Resources\Slide04MessageUp%402x.png" />
     <BundleResource Include="Resources\Slide05BG%402x.png" />
     <BundleResource Include="Resources\Slide05Email%402x.png" />
@@ -1386,8 +1746,6 @@
     <BundleResource Include="Resources\BG-S01%402x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%402x.png" />
     <BundleResource Include="Resources\Slide02BG%402x.png" />
-    <BundleResource Include="Resources\Slide03Card01%402x.png" />
-    <BundleResource Include="Resources\Slide03Card02%402x.png" />
     <BundleResource Include="Resources\Slide04BG%402x.png" />
     <BundleResource Include="Resources\Slide05SwipeRight%402x.png" />
     <BundleResource Include="Resources\contacts-icn-email%402x.png" />
@@ -1483,42 +1841,6 @@
     <BundleResource Include="Resources\contacts-icn-url%402x.png" />
     <BundleResource Include="Resources\contacts-attendees%402x.png" />
     <BundleResource Include="Resources\contacts-description%402x.png" />
-    <BundleResource Include="Resources\login-dropdown%402x.png" />
-    <BundleResource Include="Resources\login-dropdown%403x.png" />
-    <BundleResource Include="Resources\login-dropdown%404x.png" />
-    <BundleResource Include="Resources\login-dropdown%406x.png" />
-    <BundleResource Include="Resources\login-google-min%402x.png" />
-    <BundleResource Include="Resources\login-google-min%403x.png" />
-    <BundleResource Include="Resources\login-google-min%404x.png" />
-    <BundleResource Include="Resources\login-google-min%406x.png" />
-    <BundleResource Include="Resources\login-google%402x.png" />
-    <BundleResource Include="Resources\login-google%403x.png" />
-    <BundleResource Include="Resources\login-google%404x.png" />
-    <BundleResource Include="Resources\login-google%406x.png" />
-    <BundleResource Include="Resources\login-hotmail-min%402x.png" />
-    <BundleResource Include="Resources\login-hotmail-min%403x.png" />
-    <BundleResource Include="Resources\login-hotmail-min%404x.png" />
-    <BundleResource Include="Resources\login-hotmail-min%406x.png" />
-    <BundleResource Include="Resources\login-hotmail%402x.png" />
-    <BundleResource Include="Resources\login-hotmail%403x.png" />
-    <BundleResource Include="Resources\login-hotmail%404x.png" />
-    <BundleResource Include="Resources\login-hotmail%406x.png" />
-    <BundleResource Include="Resources\login-mex-min%402x.png" />
-    <BundleResource Include="Resources\login-mex-min%403x.png" />
-    <BundleResource Include="Resources\login-mex-min%404x.png" />
-    <BundleResource Include="Resources\login-mex-min%406x.png" />
-    <BundleResource Include="Resources\login-mex%402x.png" />
-    <BundleResource Include="Resources\login-mex%403x.png" />
-    <BundleResource Include="Resources\login-mex%404x.png" />
-    <BundleResource Include="Resources\login-mex%406x.png" />
-    <BundleResource Include="Resources\login-outlook-min%402x.png" />
-    <BundleResource Include="Resources\login-outlook-min%403x.png" />
-    <BundleResource Include="Resources\login-outlook-min%404x.png" />
-    <BundleResource Include="Resources\login-outlook-min%406x.png" />
-    <BundleResource Include="Resources\login-outlook%402x.png" />
-    <BundleResource Include="Resources\login-outlook%403x.png" />
-    <BundleResource Include="Resources\login-outlook%404x.png" />
-    <BundleResource Include="Resources\login-outlook%406x.png" />
     <BundleResource Include="Resources\calendar-empty-cal-alt%402x.png" />
     <BundleResource Include="Resources\calendar-add-attendee-bottom%403x.png" />
     <BundleResource Include="Resources\calendar-add-attendee%403x.png" />
@@ -1854,36 +2176,12 @@
     <BundleResource Include="Resources\now-newemail%406x.png" />
     <BundleResource Include="Resources\Launch Image %28iPhone 6 Plus%29%403x.png" />
     <BundleResource Include="Resources\Launch Image %28iPhone 6%29%402x.png" />
-    <BundleResource Include="Resources\BG-S01%403x.png" />
-    <BundleResource Include="Resources\BG-S02Left%403x.png" />
-    <BundleResource Include="Resources\BG-S02Right%403x.png" />
-    <BundleResource Include="Resources\BG-S03Left%403x.png" />
-    <BundleResource Include="Resources\BG-S03Right%403x.png" />
-    <BundleResource Include="Resources\BG-S04Left%403x.png" />
-    <BundleResource Include="Resources\BG-S04Right%403x.png" />
-    <BundleResource Include="Resources\Bootscreen-1%403x.png" />
-    <BundleResource Include="Resources\Bootscreen-2%403x.png" />
-    <BundleResource Include="Resources\Bootscreen-3%403x.png" />
-    <BundleResource Include="Resources\Bootscreen-4%403x.png" />
-    <BundleResource Include="Resources\Bootscreen-5%403x.png" />
     <BundleResource Include="Resources\Loginscreen-1%403x.png" />
     <BundleResource Include="Resources\Loginscreen-2%403x.png" />
     <BundleResource Include="Resources\Loginscreen-3%403x.png" />
     <BundleResource Include="Resources\Loginscreen-BG%403x.png" />
     <BundleResource Include="Resources\Loginscreen-Mail%403x.png" />
-    <BundleResource Include="Resources\Slide02BG%403x.png" />
-    <BundleResource Include="Resources\Slide02MessageDown%403x.png" />
-    <BundleResource Include="Resources\Slide02MessageUp%403x.png" />
-    <BundleResource Include="Resources\Slide03BG%403x.png" />
-    <BundleResource Include="Resources\Slide03Card01%403x.png" />
-    <BundleResource Include="Resources\Slide03Card02%403x.png" />
-    <BundleResource Include="Resources\Slide03MidBG%403x.png" />
-    <BundleResource Include="Resources\Slide04BG%403x.png" />
     <BundleResource Include="Resources\Slide04MessageUp%403x.png" />
-    <BundleResource Include="Resources\Slide05BG%403x.png" />
-    <BundleResource Include="Resources\Slide05Email%403x.png" />
-    <BundleResource Include="Resources\Slide05SwipeLeft%403x.png" />
-    <BundleResource Include="Resources\Slide05SwipeRight%403x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%403x.png" />
     <BundleResource Include="Resources\Spinner-1%403x.png" />
     <BundleResource Include="Resources\BG-S01%404x.png" />
@@ -1907,8 +2205,6 @@
     <BundleResource Include="Resources\Slide02MessageDown%404x.png" />
     <BundleResource Include="Resources\Slide02MessageUp%404x.png" />
     <BundleResource Include="Resources\Slide03BG%404x.png" />
-    <BundleResource Include="Resources\Slide03Card01%404x.png" />
-    <BundleResource Include="Resources\Slide03Card02%404x.png" />
     <BundleResource Include="Resources\Slide03MidBG%404x.png" />
     <BundleResource Include="Resources\Slide04BG%404x.png" />
     <BundleResource Include="Resources\Slide04MessageUp%404x.png" />
@@ -1932,15 +2228,12 @@
     <BundleResource Include="Resources\Bootscreen-5%406x.png" />
     <BundleResource Include="Resources\Loginscreen-1%406x.png" />
     <BundleResource Include="Resources\Loginscreen-2%406x.png" />
-    <BundleResource Include="Resources\Loginscreen-6%406x.png" />
     <BundleResource Include="Resources\Loginscreen-BG%406x.png" />
     <BundleResource Include="Resources\Loginscreen-Mail%406x.png" />
     <BundleResource Include="Resources\Slide02BG%406x.png" />
     <BundleResource Include="Resources\Slide02MessageDown%406x.png" />
     <BundleResource Include="Resources\Slide02MessageUp%406x.png" />
     <BundleResource Include="Resources\Slide03BG%406x.png" />
-    <BundleResource Include="Resources\Slide03Card01%406x.png" />
-    <BundleResource Include="Resources\Slide03Card02%406x.png" />
     <BundleResource Include="Resources\Slide03MidBG%406x.png" />
     <BundleResource Include="Resources\Slide04BG%406x.png" />
     <BundleResource Include="Resources\Slide04MessageUp%406x.png" />
@@ -1950,15 +2243,240 @@
     <BundleResource Include="Resources\Slide05SwipeRight%406x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%406x.png" />
     <BundleResource Include="Resources\Spinner-1%406x.png" />
+    <BundleResource Include="Resources\ReleaseNotes.txt" />
+    <BundleResource Include="Resources\SlideNav-Btn%402x.png" />
+    <BundleResource Include="Resources\SlideNav-Btn%403x.png" />
+    <BundleResource Include="Resources\SlideNav-Btn%404x.png" />
+    <BundleResource Include="Resources\SlideNav-Btn%406x.png" />
+    <BundleResource Include="Resources\BG-S01%403x.png" />
+    <BundleResource Include="Resources\BG-S02Left%403x.png" />
+    <BundleResource Include="Resources\BG-S02Right%403x.png" />
+    <BundleResource Include="Resources\BG-S05Left%403x.png" />
+    <BundleResource Include="Resources\BG-S05Right%403x.png" />
+    <BundleResource Include="Resources\Slide02BG%403x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown%403x.png" />
+    <BundleResource Include="Resources\Slide02MessageUp%403x.png" />
+    <BundleResource Include="Resources\BG-S01-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S02Left-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S02Right-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S03Left-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S03Right-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S04Left-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S04Right-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S05Left-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S05Right-667h%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-5-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02BG-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageUp-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02RedMarker-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02TealMarker-667h%402x.png" />
+    <BundleResource Include="Resources\Slide03MidBG-667h%402x.png" />
+    <BundleResource Include="Resources\Slide04BG-667h%402x.png" />
+    <BundleResource Include="Resources\Slide04MessageUp-667h%402x.png" />
+    <BundleResource Include="Resources\Slide05BG-667h%402x.png" />
+    <BundleResource Include="Resources\Slide05Email-667h%402x.png" />
+    <BundleResource Include="Resources\Slide05SwipeLeft-667h%402x.png" />
+    <BundleResource Include="Resources\Slide05SwipeRight-667h%402x.png" />
+    <BundleResource Include="Resources\SlideNav-Arrow-667h%402x.png" />
+    <BundleResource Include="Resources\SlideNav-Btn-667h%402x.png" />
+    <BundleResource Include="Resources\SlideNav-BtnHover-667h%402x.png" />
+    <BundleResource Include="Resources\SlideNav-SwipeArrow-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02RedMarker%402x.png" />
+    <BundleResource Include="Resources\Slide02TealMarker%402x.png" />
+    <BundleResource Include="Resources\Slide02RedMarker%403x.png" />
+    <BundleResource Include="Resources\Slide02TealMarker%403x.png" />
+    <BundleResource Include="Resources\BG-S05Left%402x.png" />
+    <BundleResource Include="Resources\BG-S05Right%402x.png" />
+    <BundleResource Include="Resources\Slide03BG-667h%402x.png" />
+    <BundleResource Include="Resources\BG-S03Left%403x.png" />
+    <BundleResource Include="Resources\BG-S03Right%403x.png" />
+    <BundleResource Include="Resources\BG-S04Left%403x.png" />
+    <BundleResource Include="Resources\BG-S04Right%403x.png" />
+    <BundleResource Include="Resources\Slide03MidBG%402x.png" />
+    <BundleResource Include="Resources\Slide03MidBG%403x.png" />
+    <BundleResource Include="Resources\Slide03BG%403x.png" />
+    <BundleResource Include="Resources\Slide03BG%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-1-667h%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-2-667h%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-3-667h%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-4-667h%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-1%403x.png" />
+    <BundleResource Include="Resources\Bootscreen-2%403x.png" />
+    <BundleResource Include="Resources\Bootscreen-3%403x.png" />
+    <BundleResource Include="Resources\Bootscreen-4%403x.png" />
+    <BundleResource Include="Resources\Bootscreen-5%403x.png" />
+    <BundleResource Include="Resources\Slide03Card01-667h%402x.png" />
+    <BundleResource Include="Resources\Slide03Card02-667h%402x.png" />
+    <BundleResource Include="Resources\Slide03Card01%403x.png" />
+    <BundleResource Include="Resources\Slide03Card02%403x.png" />
+    <BundleResource Include="Resources\Slide03Card01%402x.png" />
+    <BundleResource Include="Resources\Slide03Card02%402x.png" />
+    <BundleResource Include="Resources\Slide05BG%403x.png" />
+    <BundleResource Include="Resources\Slide05Email%403x.png" />
+    <BundleResource Include="Resources\Slide05SwipeLeft%403x.png" />
+    <BundleResource Include="Resources\Slide05SwipeRight%403x.png" />
+    <BundleResource Include="Resources\Slide04BG%403x.png" />
+    <BundleResource Include="Resources\gen-deadline%402x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%402x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%402x.png" />
+    <BundleResource Include="Resources\gen-deadline%403x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%403x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%403x.png" />
+    <BundleResource Include="Resources\gen-deadline%404x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%404x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%404x.png" />
+    <BundleResource Include="Resources\gen-deadline%406x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%406x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%406x.png" />
+    <BundleResource Include="Resources\gen-inbox%402x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%402x.png" />
+    <BundleResource Include="Resources\gen-nachoright%402x.png" />
+    <BundleResource Include="Resources\gen-inbox%403x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%403x.png" />
+    <BundleResource Include="Resources\gen-nachoright%403x.png" />
+    <BundleResource Include="Resources\gen-inbox%404x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%404x.png" />
+    <BundleResource Include="Resources\gen-nachoright%404x.png" />
+    <BundleResource Include="Resources\gen-inbox%406x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%406x.png" />
+    <BundleResource Include="Resources\gen-nachoright%406x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%402x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%402x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%402x.png" />
+    <BundleResource Include="Resources\modal-weekend%402x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%403x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%403x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%403x.png" />
+    <BundleResource Include="Resources\modal-weekend%403x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%404x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%404x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%404x.png" />
+    <BundleResource Include="Resources\modal-weekend%404x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%406x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%406x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%406x.png" />
+    <BundleResource Include="Resources\modal-weekend%406x.png" />
+    <BundleResource Include="Resources\email-hotthread%402x.png" />
+    <BundleResource Include="Resources\email-hotthread%403x.png" />
+    <BundleResource Include="Resources\email-hotthread%404x.png" />
+    <BundleResource Include="Resources\email-hotthread%406x.png" />
+    <BundleResource Include="Resources\email-nothothread%402x.png" />
+    <BundleResource Include="Resources\email-nothothread%403x.png" />
+    <BundleResource Include="Resources\email-nothothread%404x.png" />
+    <BundleResource Include="Resources\email-nothothread%406x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%402x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%403x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%404x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%406x.png" />
+    <BundleResource Include="Resources\silent.wav" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings-667h%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%403x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%404x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown-Meetings%406x.png" />
+    <BundleResource Include="Resources\more-policy-active%402x.png" />
+    <BundleResource Include="Resources\more-policy-active%403x.png" />
+    <BundleResource Include="Resources\more-policy-active%404x.png" />
+    <BundleResource Include="Resources\more-policy-active%406x.png" />
+    <BundleResource Include="Resources\more-policy%402x.png" />
+    <BundleResource Include="Resources\more-policy%403x.png" />
+    <BundleResource Include="Resources\more-policy%404x.png" />
+    <BundleResource Include="Resources\more-policy%406x.png" />
+    <BundleResource Include="Resources\avatar-gmail%402x.png" />
+    <BundleResource Include="Resources\avatar-gmail%403x.png" />
+    <BundleResource Include="Resources\avatar-gmail%404x.png" />
+    <BundleResource Include="Resources\avatar-gmail%406x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%402x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%403x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%404x.png" />
+    <BundleResource Include="Resources\avatar-googleapps%406x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%402x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%403x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%404x.png" />
+    <BundleResource Include="Resources\avatar-hotmail%406x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%402x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%403x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%404x.png" />
+    <BundleResource Include="Resources\avatar-msexchange%406x.png" />
+    <BundleResource Include="Resources\avatar-office365%402x.png" />
+    <BundleResource Include="Resources\avatar-office365%403x.png" />
+    <BundleResource Include="Resources\avatar-office365%404x.png" />
+    <BundleResource Include="Resources\avatar-office365%406x.png" />
+    <BundleResource Include="Resources\avatar-outlook%402x.png" />
+    <BundleResource Include="Resources\avatar-outlook%403x.png" />
+    <BundleResource Include="Resources\avatar-outlook%404x.png" />
+    <BundleResource Include="Resources\avatar-outlook%406x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%402x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%403x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%404x.png" />
+    <BundleResource Include="Resources\avatar-yahoo%406x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%402x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%403x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%404x.png" />
+    <BundleResource Include="Resources\gen-avatar-backarrow%406x.png" />
+    <BundleResource Include="Resources\avatar-icloud%402x.png" />
+    <BundleResource Include="Resources\avatar-icloud%403x.png" />
+    <BundleResource Include="Resources\avatar-icloud%404x.png" />
+    <BundleResource Include="Resources\avatar-icloud%406x.png" />
+    <BundleResource Include="Resources\avatar-iphone%402x.png" />
+    <BundleResource Include="Resources\avatar-iphone%403x.png" />
+    <BundleResource Include="Resources\avatar-iphone%404x.png" />
+    <BundleResource Include="Resources\avatar-iphone%406x.png" />
+    <BundleResource Include="Resources\avatar-imap%402x.png" />
+    <BundleResource Include="Resources\avatar-imap%403x.png" />
+    <BundleResource Include="Resources\avatar-imap%404x.png" />
+    <BundleResource Include="Resources\avatar-imap%406x.png" />
+    <BundleResource Include="Resources\Loginscreen-3%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
       <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
       <Name>UIImageEffectsBinding</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">
+      <Project>{B516077B-652E-4AC9-B728-AB64B65044F4}</Project>
+      <Name>NachoUIMonitor.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj">
+      <Project>{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}</Project>
+      <Name>SwipeViewBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj">
+      <Project>{35BDE52C-1FAD-42BB-841B-9298F354AFE8}</Project>
+      <Name>Lucene.Net.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.iOS.csproj">
+      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
+      <Name>MimeKit.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK_iOS\AWSSDK_iOS.csproj">
+      <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
+      <Name>AWSSDK_iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
+      <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
+      <Name>DnDns.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS64.csproj">
+      <Project>{6941F069-AC02-40EE-BBF3-9FE3331030EF}</Project>
+      <Name>ModernHttpClient.iOS64</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
       <Name>NachoPlatformBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.iOS.csproj">
+      <Project>{60B5D72B-8219-48B6-B688-AD0FE284A96A}</Project>
+      <Name>MailKit.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CSharp-Name-Parser\CSharpNameParser\CSharpNameParser.csproj">
+      <Project>{BCCFA67D-78B7-4D93-85F2-A03704165A93}</Project>
+      <Name>CSharpNameParser</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.iOS\antlr.runtime.iOS.csproj">
       <Project>{3043ADD2-B6EF-4392-B5E4-983B63260039}</Project>
@@ -1972,33 +2490,9 @@
       <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
       <Name>DDay.iCal.iOS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">
-      <Project>{B516077B-652E-4AC9-B728-AB64B65044F4}</Project>
-      <Name>NachoUIMonitor.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj">
-      <Project>{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}</Project>
-      <Name>SwipeViewBinding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK.iOS\AWSSDK_iOS.csproj">
-      <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
-      <Name>AWSSDK_iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj">
-      <Project>{35BDE52C-1FAD-42BB-841B-9298F354AFE8}</Project>
-      <Name>Lucene.Net.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.iOS.csproj">
-      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
-      <Name>MimeKit.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS.csproj">
-      <Project>{0F2A1CC8-4168-4CB4-B334-28C28BA51ECB}</Project>
-      <Name>ModernHttpClient.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
-      <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
-      <Name>DnDns.iOS</Name>
+    <ProjectReference Include="..\..\Google.iOS\GoogleAPIs\Google.iOS.csproj">
+      <Project>{C6741CA8-619D-4FF3-8CBA-108CFC3447A0}</Project>
+      <Name>Google.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -2011,9 +2505,20 @@
     <Content Include="Content\PageFive.png" />
     <Content Include="Content\PageSix.png" />
     <Content Include="Content\PageSeven.png" />
+    <Content Include="GoogleService-Info.plist">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ITunesArtwork Include="iTunesArtwork" />
     <ITunesArtwork Include="iTunesArtwork%402x" />
+  </ItemGroup>
+  <ItemGroup>
+    <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-568h%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-667h%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-736h%403x.png" />
   </ItemGroup>
 </Project>

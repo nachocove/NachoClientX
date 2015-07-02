@@ -12,7 +12,7 @@
       <attribute_redaction>full</attribute_redaction>
    </From>
    <Subject>
-      <element_redaction>full</element_redaction>
+      <element_redaction>full_hash</element_redaction>
       <attribute_redaction>full</attribute_redaction>
    </Subject>
    <ReplyTo>
@@ -24,7 +24,7 @@
       <attribute_redaction>full</attribute_redaction>
    </DateReceived>
    <DisplayTo>
-      <element_redaction>full</element_redaction>
+      <element_redaction>short_hash</element_redaction>
       <attribute_redaction>full</attribute_redaction>
    </DisplayTo>
    <ThreadTopic>

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -30,7 +30,16 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return NcModel.Instance.Db.Get<McContact> (ContactId);
+            return McContact.QueryById<McContact> ((int)ContactId);
+        }
+
+        public static List<T> QueryByContactId<T> (int contactId) where T : McAbstrContactAttribute, new()
+        {
+            return NcModel.Instance.Db.Table<T> ().Where (x => contactId == x.ContactId).ToList ();
+        }
+
+        public McAbstrContactAttribute ()
+        {
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
+using Foundation;
 using NachoCore.Model;
 using NachoCore.Brain;
 
@@ -10,7 +10,7 @@ namespace NachoClient.iOS
     public interface INachoIntentChooser
     {
         void SetOwner (INachoIntentChooserParent owner);
-        void DismissIntentChooser (bool animated, NSAction action);
+        void DismissIntentChooser (bool animated, Action action);
     }
 
     public interface INachoIntentChooserParent

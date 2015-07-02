@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -29,17 +30,27 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "FSYNCCANCEL");
+            }
             McProtocolState protocolState = BEContext.ProtocolState;
             var status = (Xml.FolderHierarchy.FolderSyncStatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.FolderHierarchy.Status).Value);
-
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsLastFolderSync = DateTime.UtcNow;
+                return true;
+            });
             switch (status) {
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
                 Log.Info (Log.LOG_AS, "AsFolderSyncCommand process response: SyncKey=" + syncKey);
-                protocolState.AsSyncKey = syncKey;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncKey = syncKey;
+                    return true;
+                });
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
                     foreach (var change in changes) {
@@ -57,6 +68,7 @@ namespace NachoCore.ActiveSync
                             pathElem = new McPath (BEContext.Account.Id);
                             pathElem.ServerId = serverId;
                             pathElem.ParentId = parentId;
+                            pathElem.IsFolder = true;
                             pathElem.Insert ();
                             var applyAdd = new ApplyFolderAdd (BEContext.Account.Id) {
                                 ServerId = serverId, 
@@ -98,8 +110,11 @@ namespace NachoCore.ActiveSync
 
                 if (protocolState.AsFolderSyncEpochScrubNeeded) {
                     PerformFolderSyncEpochScrub ();
-                    protocolState.AsFolderSyncEpochScrubNeeded = false;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsFolderSyncEpochScrubNeeded = false;
+                        return true;
+                    });
                 }
 
                 if (HadFolderChanges) {
@@ -115,7 +130,11 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderSyncStatusCode.ReSync_9:
                 // "Delete items added since last synchronization." <= Let conflict resolution deal with this.
                 protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FSYNCAGAIN2");
 
             case Xml.FolderHierarchy.FolderSyncStatusCode.ServerFail_12:
@@ -145,7 +164,7 @@ namespace NachoCore.ActiveSync
             Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: {0} folders.", orphaned.Count);
             foreach (var iterFolder in orphaned) {
                 var folder = iterFolder;
-                Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old {0} under LAF.", folder.DisplayName);
+                Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old folder {0} under LAF.", folder.Id);
                 // If an Add command from the server re-used this folder's ServerId, then
                 // we changed that server id to a GUID when applying the Add to the model.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {

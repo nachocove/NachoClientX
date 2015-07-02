@@ -21,7 +21,7 @@ namespace Test.Common
             {
                 NcXmlFilterNode node0 = new NcXmlFilterNode ("xml", RedactionType.NONE, RedactionType.NONE);
                 node0.Add (new NcXmlFilterNode ("full", RedactionType.FULL, RedactionType.FULL));
-                node0.Add (new NcXmlFilterNode ("partial", RedactionType.PARTIAL, RedactionType.PARTIAL));
+                node0.Add (new NcXmlFilterNode ("length", RedactionType.LENGTH, RedactionType.LENGTH));
                 node0.Add (new NcXmlFilterNode ("none", RedactionType.NONE, RedactionType.NONE));
 
                 Root = node0;
@@ -39,10 +39,10 @@ namespace Test.Common
                 node0.Add (node1);
                 node1.Add (new NcXmlFilterNode ("name", RedactionType.NONE, RedactionType.NONE));
                 node1.Add (new NcXmlFilterNode ("salary", RedactionType.FULL, RedactionType.FULL));
-                node1.Add (new NcXmlFilterNode ("title", RedactionType.PARTIAL, RedactionType.PARTIAL));
+                node1.Add (new NcXmlFilterNode ("title", RedactionType.LENGTH, RedactionType.LENGTH));
                 node2 = new NcXmlFilterNode ("team", RedactionType.NONE, RedactionType.NONE);
                 node1.Add (node2);
-                node2.Add (new NcXmlFilterNode ("secret_member", RedactionType.PARTIAL, RedactionType.PARTIAL));
+                node2.Add (new NcXmlFilterNode ("secret_member", RedactionType.LENGTH, RedactionType.LENGTH));
                 node2.Add (new NcXmlFilterNode ("member", RedactionType.NONE, RedactionType.NONE));
                 Root = node0;
             }

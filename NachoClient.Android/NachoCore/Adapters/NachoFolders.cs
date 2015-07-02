@@ -6,6 +6,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -37,6 +38,7 @@ namespace NachoCore
             Xml.FolderHierarchy.TypeCode.DefaultSent_5,
             Xml.FolderHierarchy.TypeCode.DefaultOutbox_6,
             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
+            Xml.FolderHierarchy.TypeCode.Unknown_18,
         };
 
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForCalendars = {
@@ -49,41 +51,31 @@ namespace NachoCore
             Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14,
         };
 
-        List<McFolder> list;
+        int accountId;
+        List<McFolder> FoldersList;
         Xml.FolderHierarchy.TypeCode[] types;
 
         // TODO: Should use Nacho type
-        public NachoFolders (Xml.FolderHierarchy.TypeCode[] types)
+        public NachoFolders (int accountId, Xml.FolderHierarchy.TypeCode[] types)
         {
+            this.accountId = accountId;
             this.types = types;
             Refresh ();
         }
 
         public void Refresh()
         {
-            // TODO: Make this a query
-            list = new List<McFolder> ();
-            var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            var temp = NcModel.Instance.Db.Table<McFolder> ().Where (f => (f.AccountId == account.Id) && (f.IsClientOwned == false)).OrderBy (f => f.DisplayName).ToList ();
-            foreach (var l in temp) {
-                if (!l.IsHidden) {
-                    // TODO: Need a matching enumeration
-                    var match = (Xml.FolderHierarchy.TypeCode)l.Type;
-                    if (Array.IndexOf (types, match) >= 0) {
-                        list.Add (l);
-                    }
-                }
-            } 
+            FoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, types);
         }
 
         public int Count ()
         {
-            return list.Count;
+            return FoldersList.Count;
         }
 
         public McFolder GetFolder (int i)
         {
-            return list.ElementAt (i);
+            return FoldersList.ElementAt (i);
         }
 
         public McFolder GetFolderByFolderID(int id)

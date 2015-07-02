@@ -22,22 +22,22 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
-using MonoTouch.CoreLocation;
-using System.Globalization;
-using System.Drawing;
-using NachoCore.Model;
-using NachoCore;
-using NachoCore.Utils;
-using System.Collections.Generic;
-using MonoTouch.CoreGraphics;
+using CoreGraphics;
+using CoreLocation;
+using CoreText;
+using Foundation;
 using NachoClient.iOS;
-using MonoTouch.CoreText;
+using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
+using UIKit;
 
 namespace NachoClient
 {
@@ -235,14 +235,6 @@ namespace NachoClient
             }
         }
 
-        static UIActionSheet sheet;
-
-        public static UIActionSheet GetSheet (string title)
-        {
-            sheet = new UIActionSheet (title);
-            return sheet;
-        }
-
         static CultureInfo americanCulture;
 
         public static CultureInfo AmericanCulture {
@@ -338,49 +330,106 @@ namespace NachoClient
 
         public static UIColor ColorForUser (int index)
         {
-            NcAssert.True (0 < index);
+            if (0 > index) {
+                NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_UI, "ColorForUser not set");
+                index = 1;
+            }
             return colors [index];
         }
 
-        public static NachoTabBarController GetActiveTabBar ()
+        public static UIColor GetContactColor (McContact contact)
+        {
+            if (0 == contact.CircleColor) {
+                contact.CircleColor = PickRandomColorForUser ();
+            }
+            return ColorForUser (contact.CircleColor);
+        }
+
+
+        public static NachoTabBarController GetActiveTabBarOrNull ()
         {
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
             NachoTabBarController activeTabBar;
             if (appDelegate.Window.RootViewController is NachoTabBarController) {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController;
+            } else if (null == appDelegate.Window.RootViewController.PresentedViewController) {
+                return null;
             } else if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController.TabBarController;
             } else {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController;
             }
-            NcAssert.NotNull (activeTabBar);
+            return activeTabBar;
+        }
 
+        public static NachoTabBarController GetActiveTabBar ()
+        {
+            var activeTabBar = GetActiveTabBarOrNull ();
+            NcAssert.NotNull (activeTabBar);
             return activeTabBar;
         }
 
         public static UIImage DotWithColor (UIColor color)
         {
-            UIGraphics.BeginImageContext (new SizeF (22, 22));
+            UIGraphics.BeginImageContext (new CGSize (22, 22));
             var ctx = UIGraphics.GetCurrentContext ();
 
             ctx.SetFillColor (color.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (5, 5, 12, 12));
+            ctx.FillEllipseInRect (new CGRect (5, 5, 12, 12));
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
             return image;
         }
 
-        public static UIImage DrawCalDot (UIColor circleColor, SizeF size)
+        /// <summary>
+        /// Colors to use to identify calendar folders.  These are temporary.  The final set of colors
+        /// has not been decided yet.
+        /// </summary>
+        private static UIColor[] calendarColors = {
+            UIColor.Blue,
+            UIColor.Red,
+            UIColor.Green,
+            UIColor.Orange,
+            UIColor.Purple,
+            UIColor.Brown,
+            UIColor.Gray,
+            UIColor.Black,
+        };
+
+        public static UIColor CalendarColor (int colorIndex)
         {
-            var origin = new PointF (0, 0);
+            if (0 == colorIndex) {
+                return UIColor.White;
+            }
+            return calendarColors [(colorIndex - 1) % calendarColors.Length];
+        }
+
+        public static UIImage DrawCalDot (UIColor circleColor, CGSize size)
+        {
+            var origin = new CGPoint (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
 
             ctx.SetFillColor (circleColor.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (origin, size));
+            ctx.FillEllipseInRect (new CGRect (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
+        public static UIImage DrawButtonBackgroundImage (UIColor color, CGSize size)
+        {
+            var origin = new CGPoint (0, 0);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (color.CGColor);
+            ctx.FillRect (new CGRect (origin, size));
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
@@ -389,8 +438,8 @@ namespace NachoClient
 
         public static UIImage DrawTodayButtonImage (string day)
         {
-            var size = new SizeF (24, 24);
-            var origin = new PointF (0, 0);
+            var size = new CGSize (24, 24);
+            var origin = new CGPoint (0, 0);
 
             var todayImage = UIImage.FromBundle ("calendar-empty-cal-alt");
 
@@ -403,9 +452,9 @@ namespace NachoClient
             var ctx = UIGraphics.GetCurrentContext ();
             ctx.TranslateCTM (0, todayImage.Size.Height);
             ctx.ScaleCTM (1, -1);
-            ctx.DrawImage (new RectangleF (origin, size), todayImage.CGImage);
+            ctx.DrawImage (new CGRect (origin, size), todayImage.CGImage);
 
-            ctx.TranslateCTM ((todayImage.Size.Width/2) - (attributedString.Size.Width/2) , (todayImage.Size.Height/2) - (attributedString.Size.Height/2) + 5);
+            ctx.TranslateCTM ((todayImage.Size.Width / 2) - (attributedString.Size.Width / 2), (todayImage.Size.Height / 2) - (attributedString.Size.Height / 2) + 5);
             using (var textLine = new CTLine (attributedString)) {
                 textLine.Draw (ctx);
             }
@@ -427,16 +476,6 @@ namespace NachoClient
             return capturedImage;
         }
 
-        public static void CacheUserMessageFields (McEmailMessage emailMessage)
-        {
-            int ColorIndex;
-            string Initials;
-            UserMessageField (emailMessage.From, emailMessage.AccountId, out ColorIndex, out Initials);
-            emailMessage.cachedFromColor = ColorIndex;
-            emailMessage.cachedFromLetters = Initials;
-            emailMessage.Update ();
-        }
-
         public static void UserMessageField (string from, int accountId, out int ColorIndex, out string Initials)
         {
             // Parse the from address
@@ -455,33 +494,10 @@ namespace NachoClient
             }
             // Cache the color
             ColorIndex = emailAddress.ColorIndex;
-            // Let create the initials
-            McContact contact = new McContact ();
-            NcEmailAddress.SplitName (mailboxAddress, ref contact);
-            // Using the name
-            string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
-            if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
-            }
-            // Or, failing that, the first char
-            if (String.IsNullOrEmpty (initials)) {
-                if (!String.IsNullOrEmpty (from)) {
-                    foreach (char c in from) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
-            }
-            // Save it to the db
-            Initials = initials;
+            Initials = EmailHelper.Initials (from);
         }
 
-        public static UIImage ImageOfContact (McContact contact)
+        public static UIImage ContactToPortraitImage (McContact contact)
         {
             if (null == contact) {
                 return null;
@@ -489,11 +505,14 @@ namespace NachoClient
             if (0 == contact.PortraitId) {
                 return null;
             }
-            return ImageOfPortrait (contact.PortraitId);
+            return PortraitToImage (contact.PortraitId);
         }
 
-        public static UIImage ImageOfPortrait (int portraitId)
+        public static UIImage PortraitToImage (int portraitId)
         {
+            if (0 == portraitId) {
+                return null;
+            }
             var data = McPortrait.GetContentsByteArray (portraitId);
             if (null == data) {
                 return null;
@@ -510,7 +529,7 @@ namespace NachoClient
             // There may be more than one contact that matches an email address.
             // Search thru all of them and look for the first one that has a portrait.
             foreach (var contact in contacts) {
-                UIImage image = ImageOfContact (contact);
+                UIImage image = ContactToPortraitImage (contact);
                 if (null != image) {
                     return image;
                 }
@@ -518,17 +537,13 @@ namespace NachoClient
             return null;
         }
 
-        public static UIImage PortraitOfSender (McEmailMessage message)
+        public static UIImage MessageToPortraitImage (McEmailMessage message)
         {
             if (0 == message.cachedPortraitId) {
-                return null;
+                return ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+            } else {
+                return PortraitToImage (message.cachedPortraitId);
             }
-            var image = ImageOfPortrait (message.cachedPortraitId);
-            if (null == image) {
-                message.cachedPortraitId = 0;
-                message.Update ();
-            }
-            return image;
         }
 
         public static void PerformAction (string action, string number)
@@ -590,9 +605,18 @@ namespace NachoClient
             return names [0].ToUpper ();
         }
 
+        public static string GetImage (string image)
+        {
+            if (UIScreen.MainScreen.Bounds.Height > 600 && UIScreen.MainScreen.Bounds.Height < 700) {
+                return image + "-667h";
+            } else {
+                return image;
+            }
+        }
+
         public static UIImage MakeCheckmark (UIColor checkColor)
         {
-            var size = new SizeF (15, 15);
+            var size = new CGSize (15, 15);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var g = UIGraphics.GetCurrentContext ();
@@ -606,10 +630,10 @@ namespace NachoClient
             //create geometry
             var checkmark = new CGPath ();
 
-            checkmark.AddLines (new PointF[] {
-                new PointF (0, 10),
-                new PointF (5, 15), 
-                new PointF (15, 0)
+            checkmark.AddLines (new CGPoint[] {
+                new CGPoint (0, 10),
+                new CGPoint (5, 15), 
+                new CGPoint (15, 0)
             });
 
             //checkmark.CloseSubpath ();
@@ -626,7 +650,7 @@ namespace NachoClient
 
         public static UIImage MakeArrow (UIColor arrowColor)
         {
-            var size = new SizeF (15, 15);
+            var size = new CGSize (15, 15);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var g = UIGraphics.GetCurrentContext ();
@@ -635,10 +659,10 @@ namespace NachoClient
             arrowColor.SetStroke ();
             var arrow = new CGPath ();
 
-            arrow.AddLines (new PointF[] {
-                new PointF (6, 2),
-                new PointF (15, 8), 
-                new PointF (6, 13)
+            arrow.AddLines (new CGPoint[] {
+                new CGPoint (6, 2),
+                new CGPoint (15, 8), 
+                new CGPoint (6, 13)
             });
             g.AddPath (arrow);
             g.DrawPath (CGPathDrawingMode.Stroke);
@@ -649,33 +673,31 @@ namespace NachoClient
 
         }
 
-        public static void AddArrowAccessory (float xOffset, float yOffset, float size, UIView parentView)
+        public static UIImageView AddArrowAccessory (nfloat xOffset, nfloat yOffset, nfloat size, UIView parentView = null)
         {
-            UIImageView ArrowAcccessoryImage = new UIImageView (new RectangleF (xOffset, yOffset, size, size));
+            UIImageView ArrowAcccessoryImage = new UIImageView (new CGRect (xOffset, yOffset, size, size));
             using (var image = UIImage.FromBundle ("gen-more-arrow")) {
                 ArrowAcccessoryImage.Image = image;
             }
-            parentView.AddSubview (ArrowAcccessoryImage);
+            if (null != parentView) {
+                parentView.AddSubview (ArrowAcccessoryImage);
+            }
+            return ArrowAcccessoryImage;
         }
 
-        public static UIView AddHorizontalLineView (float offset, float yVal, float width, UIColor color)
+        public static UIView AddHorizontalLine (nfloat offset, nfloat yVal, nfloat width, UIColor color, UIView parentView = null)
         {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            var lineUIView = new UIView (new CGRect (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
+            if (null != parentView) {
+                parentView.Add (lineUIView);
+            }
             return lineUIView;
         }
 
-        public static UIView AddHorizontalLine (float offset, float yVal, float width, UIColor color, UIView parentView)
+        public static UIView AddVerticalLine (nfloat offset, nfloat yVal, nfloat height, UIColor color, UIView parentView)
         {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            parentView.Add (lineUIView);
-            return lineUIView;
-        }
-
-        public static UIView AddVerticalLine (float offset, float yVal, float height, UIColor color, UIView parentView)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, .5f, height));
+            var lineUIView = new UIView (new CGRect (offset, yVal, .5f, height));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
             return lineUIView;
@@ -698,62 +720,11 @@ namespace NachoClient
             }
         }
 
-        public static void SetViewHeight (UIView view, float height)
+        public static void SetViewHeight (UIView view, nfloat height)
         {
             var frame = view.Frame;
             frame.Height = height;
             view.Frame = frame;
-        }
-
-        public static string GlobalObjIdToUID (string GlobalObjId)
-        {
-            string UID;
-            bool OutlookID = false;
-
-            byte[] data = Convert.FromBase64String (GlobalObjId);
-
-            StringBuilder sb = new StringBuilder ();
-            for (int i = 40; i < 48; i++) {
-                sb.Append (Convert.ToChar (data [i]));
-            }
-            string vCalHolder = sb.ToString ();
-
-            int uidHolderLength = 0;
-            for (int i = 36; i < 40; i++) {
-                uidHolderLength += data [i];
-            }
-
-            int remainingLength = 0;
-            for (int i = 40; i < data.Length; i++) {
-                remainingLength += 1;
-            }
-
-            if (53 > data.Length) {
-                OutlookID = true;
-            } else if ("vCal-Uid" != vCalHolder) {
-                OutlookID = true;
-            } else if (13 > uidHolderLength || remainingLength < uidHolderLength) {
-                OutlookID = true;
-            }
-
-            if (OutlookID) {
-                for (int i = 16; i < 20; i++) {
-                    data [i] = 0;
-                }
-                UID = BitConverter.ToString (data);
-            } else {
-                sb.Clear ();
-                int uidLength = uidHolderLength - 13;
-                for (int i = 0; i < uidLength; i++) {
-                    sb.Append (Convert.ToChar (data [52 + i]));
-                }
-                UID = sb.ToString ();
-            }
-
-            UID = UID.Replace ("-", "");
-            UID = UID.Replace ("{", "");
-            UID = UID.Replace ("}", "");
-            return UID;
         }
 
         public static void SetAutomaticImageForButton (UIBarButtonItem button, string iconName)
@@ -777,16 +748,18 @@ namespace NachoClient
             }
         }
 
-        public static void SetOriginalImagesForButton (UIButton button, string iconName, string activeIconName)
+        public static void SetOriginalImagesForButton (UIButton button, string iconName, string activeIconName = null)
         {
             using (var rawImage = UIImage.FromBundle (iconName)) {
                 using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     button.SetImage (originalImage, UIControlState.Normal);
                 }
             }
-            using (var rawImage = UIImage.FromBundle (activeIconName)) {
-                using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                    button.SetImage (originalImage, UIControlState.Selected);
+            if (null != activeIconName) {
+                using (var rawImage = UIImage.FromBundle (activeIconName)) {
+                    using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                        button.SetImage (originalImage, UIControlState.Selected);
+                    }
                 }
             }
         }
@@ -794,9 +767,10 @@ namespace NachoClient
         public static void SetBackButton (UINavigationController nc, UINavigationItem ni, UIColor tintColor)
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
-                    nc.PopViewControllerAnimated (true);
+                UIBarButtonItem backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+                    nc.PopViewController (true);
                 });
+                backButton.AccessibilityLabel = "Back";
                 backButton.TintColor = tintColor;
                 ni.SetLeftBarButtonItem (backButton, true);
             }
@@ -810,12 +784,6 @@ namespace NachoClient
             }
         }
 
-        public static void HideBlackNavigationControllerLine (UINavigationBar navBar)
-        {
-            navBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-            navBar.ShadowImage = new UIImage ();
-        }
-
         public static bool IsVisible (this UIViewController vc)
         {
             return(vc.IsViewLoaded && (null != vc.View.Window));
@@ -823,26 +791,10 @@ namespace NachoClient
 
         public static string GetVersionNumber ()
         {
-            var devBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail");
-            var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
-            var alphaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.alpha");
-
-            if (devBundleId != null) {
-                var build = devBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-                return String.Format ("{0} ({1})", version, build);
-            } 
-            if (betaBundleId != null) {
-                var build = betaBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-                return String.Format ("{0} ({1})", version, build);
-            } 
-            if (alphaBundleId != null) {
-                var build = alphaBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = alphaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
-                return String.Format ("{0} ({1})", version, build);
-            } 
-            return "Unknown version";
+            var bundle = NSBundle.MainBundle;
+            var build = bundle.InfoDictionary ["CFBundleVersion"].ToString ();
+            var version = bundle.InfoDictionary ["CFBundleShortVersionString"].ToString ();
+            return String.Format ("{0} ({1})", version, build);
         }
 
         public static UITableView FindEnclosingTableView (UIView view)
@@ -911,31 +863,33 @@ namespace NachoClient
         public static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
         {
             using (var buttonImage = UIImage.FromBundle (imageName)) {
-                button.SetImage (buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), buttonState);
+                using (var originalImage = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                    button.SetImage (originalImage, buttonState);
+                }
             }
         }
 
-        public static void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
+        public static void AddTextLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, string text, UIView parentView)
         {
-            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            var textLabel = new UILabel (new CGRect (xOffset, yOffset, width, height));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoLightText;
             parentView.AddSubview (textLabel);
         }
 
-        public static void AddTextLabelWithImageView (float yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
+        public static void AddTextLabelWithImageView (nfloat yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
         {
-            var view = new UIView (new RectangleF (0, yOffset, parentView.Frame.Width, 16));
+            var view = new UIView (new CGRect (0, yOffset, parentView.Frame.Width, 16));
             view.Tag = (int)tag;
 
-            var textLabel = new UILabel (new RectangleF (42, 0, 100, 16));
+            var textLabel = new UILabel (new CGRect (42, 0, 100, 16));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextMedium12;
             textLabel.TextColor = A.Color_NachoLightText;
             view.AddSubview (textLabel);
 
-            var imageView = new UIImageView (new RectangleF (18, 0, 16, 16));
+            var imageView = new UIImageView (new CGRect (18, 0, 16, 16));
             using (var image = UIImage.FromBundle (imageName)) {
                 imageView.Image = image;
             }
@@ -944,21 +898,21 @@ namespace NachoClient
             parentView.AddSubview (view);
         }
 
-        public static void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, EventViewController.TagType tag, UIView parentView)
+        public static void AddDetailTextLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, EventViewController.TagType tag, UIView parentView)
         {
-            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            var textLabel = new UILabel (new CGRect (xOffset, yOffset, width, height));
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.Tag = (int)tag;
             parentView.AddSubview (textLabel);
         }
 
-        public static void CreateAttendeeButton (float attendeeImageDiameter, float spacing, float titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer, UIView parentView)
+        public static void CreateAttendeeButton (nfloat attendeeImageDiameter, nfloat spacing, nfloat titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer, UIView parentView)
         {
             var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
             attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
             attendeeButton.Layer.MasksToBounds = true;
-            attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+            attendeeButton.Frame = new CGRect (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
             var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), attendee.Email);
 
             if (null != userImage) {
@@ -976,6 +930,7 @@ namespace NachoClient
                 attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                 attendeeButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_TAG + attendeeNum;
                 attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                attendeeButton.AccessibilityLabel = "Attendee";
                 attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId ()).CGColor;
             }
 
@@ -984,7 +939,7 @@ namespace NachoClient
             attendeeButton.UserInteractionEnabled = false;
             parentView.AddSubview (attendeeButton);
 
-            var attendeeName = new UILabel (new RectangleF (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
+            var attendeeName = new UILabel (new CGRect (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
             attendeeName.Font = A.Font_AvenirNextRegular14;
             attendeeName.TextColor = UIColor.LightGray;
             attendeeName.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
@@ -997,18 +952,18 @@ namespace NachoClient
             // can be displayed.  If the user is not the organizer, then the attendees'
             // status is not known, so we don't want to display a blank circle.
             if (isOrganizer) {
-                var responseView = new UIView (new RectangleF (42 + spacing + 27, 37 + titleOffset, 20, 20));
+                var responseView = new UIView (new CGRect (42 + spacing + 27, 37 + titleOffset, 20, 20));
                 responseView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
                 responseView.BackgroundColor = UIColor.White;
                 responseView.Layer.CornerRadius = 10;
                 parentView.AddSubview (responseView);
-                var circleView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+                var circleView = new UIView (new CGRect (2.5f, 2.5f, 15, 15));
                 circleView.BackgroundColor = UIColor.White;
                 circleView.Layer.CornerRadius = 15 / 2;
                 circleView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
                 circleView.Layer.BorderWidth = 1;
                 responseView.AddSubview (circleView);
-                var responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                var responseImageView = new UIImageView (new CGRect (2.5f, 2.5f, 15, 15));
                 responseImageView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 100;
                 using (var image = GetImageForAttendeeResponse (attendee.AttendeeStatus)) {
                     if (null != image) {
@@ -1044,9 +999,13 @@ namespace NachoClient
         public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.PhoneNumbers.Count) {
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+                if (contact.CanUserEdit ()) {
+                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+                } else {
+                    ComplainAbout ("No Phone Number", "This contact does not have a phone number, and we are unable to modify the contact.");
+                }
             } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPhoneNumber ());
+                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
@@ -1061,7 +1020,11 @@ namespace NachoClient
         public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.EmailAddresses.Count) {
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                if (contact.CanUserEdit ()) {
+                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                } else {
+                    ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                }
             } else if (1 == contact.EmailAddresses.Count) {
                 owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
             } else {
@@ -1089,6 +1052,212 @@ namespace NachoClient
 
             return Util.ColorForUser (colorIndex);
         }
+
+        public static void UpdateTable (UITableView tableView, List<int> adds, List<int> deletes)
+        {
+            var deletePaths = new List<NSIndexPath> ();
+            if (null != deletes) {
+                foreach (var i in deletes) {
+                    var path = NSIndexPath.FromItemSection (i, 0);
+                    deletePaths.Add (path);
+                }
+            }
+            var addPaths = new List<NSIndexPath> ();
+            if (null != adds) {
+                foreach (var i in adds) {
+                    addPaths.Add (NSIndexPath.FromItemSection (i, 0));
+                }
+            }
+            if ((0 == deletePaths.Count) && (0 == addPaths.Count)) {
+                tableView.ReloadData ();
+                return;
+            }
+            tableView.BeginUpdates ();
+            if (0 != deletePaths.Count) {
+                tableView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
+            }
+            if (0 != addPaths.Count) {
+                tableView.InsertRows (addPaths.ToArray (), UITableViewRowAnimation.Top);
+            }
+            tableView.EndUpdates ();
+        }
+
+        public static bool AttributedStringEndsWith (NSAttributedString target, NSAttributedString match)
+        {
+            if (null == match) {
+                return true;
+            }
+            if (null == target) {
+                return (null == match);
+            }
+            if (target.Length < match.Length) {
+                return false;
+            }
+            var t = target.Substring (target.Length - match.Length, match.Length);
+            return match.IsEqual (t);
+        }
+
+        public static int ToMcModelIndex (this NSNumber number)
+        {
+            return number.Int32Value;
+        }
+
+        public static int ToArrayIndex (this nint n)
+        {
+            return (int)n;
+        }
+
+        public static NSDate ToNSDate (this DateTime dateTime)
+        {
+            return NSDate.FromTimeIntervalSinceReferenceDate ((dateTime - (new DateTime (2001, 1, 1, 0, 0, 0))).TotalSeconds);
+        }
+
+        public static DateTime ToDateTime (this NSDate nsDate)
+        {
+            // TODO: Why not just a cast?
+            return (new DateTime (2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+        }
+
+        /// <summary>
+        /// Set the minimum and maximum dates for a date picker.  By default, the range is from ten years
+        /// in the past to 100 years in the future.  But extend that range as necessary so it includes the
+        /// year surrounding a given date.
+        /// </summary>
+        public static void ConstrainDatePicker (UIDatePicker datePicker, DateTime referenceDate)
+        {
+            DateTime pickerMin = DateTime.UtcNow.AddYears (-10);
+            DateTime pickerMax = DateTime.UtcNow.AddYears (100);
+            if (DateTime.MinValue != referenceDate) {
+                DateTime referenceMin = referenceDate.AddYears (-1);
+                if (referenceMin < pickerMin) {
+                    pickerMin = referenceMin;
+                }
+                DateTime referenceMax = referenceDate.AddYears (1);
+                if (referenceMax > pickerMax) {
+                    pickerMax = referenceMax;
+                }
+            }
+            datePicker.MinimumDate = pickerMin.ToNSDate ();
+            datePicker.MaximumDate = pickerMax.ToNSDate ();
+        }
+
+        public static string PrettyPointF (CGPoint p)
+        {
+            return String.Format ("({0},{1})", p.X, p.Y);
+        }
+
+        public static string PrettySizeF (CGSize s)
+        {
+            return String.Format ("({0},{1})", s.Width, s.Height);
+        }
+
+        public static string GetAccountServiceImageName (McAccount.AccountServiceEnum service)
+        {
+            string imageName;
+
+            switch (service) {
+            case McAccount.AccountServiceEnum.Exchange:
+                imageName = "avatar-msexchange";
+                break;
+            case McAccount.AccountServiceEnum.GoogleDefault:
+                imageName = "avatar-gmail";
+                break;
+            case McAccount.AccountServiceEnum.GoogleExchange:
+                imageName = "avatar-googleapps";
+                break;
+            case McAccount.AccountServiceEnum.HotmailExchange:
+                imageName = "avatar-hotmail";
+                break;
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
+                imageName = "avatar-imap";
+                break;
+            case McAccount.AccountServiceEnum.OutlookExchange:
+                imageName = "avatar-outlook";
+                break;
+            case McAccount.AccountServiceEnum.Office365Exchange:
+                imageName = "avatar-office365";
+                break;
+            case McAccount.AccountServiceEnum.Device:
+                imageName = "avatar-iphone";
+                break;
+            case McAccount.AccountServiceEnum.iCloud:
+                imageName = "avatar-icloud";
+                break;
+            case McAccount.AccountServiceEnum.Yahoo:
+                imageName = "avatar-yahoo";
+                break;
+            case McAccount.AccountServiceEnum.Aol:
+                imageName = "Icon";
+                break;
+            default:
+                imageName = "Icon";
+                break;
+            }
+            return imageName;
+        }
+
+        public static UIImage ImageForAccount (McAccount account)
+        {
+            if (0 == account.DisplayPortraitId) {
+                return UIImage.FromBundle (GetAccountServiceImageName (account.AccountService));
+            } else {
+                return Util.PortraitToImage (account.DisplayPortraitId);
+            }
+        }
+
+        public static UIButton BlueButton (string title, nfloat frameWidth)
+        {
+            var rect = new CGRect (25, 0, frameWidth - 50, 46);
+            var blueButton = new UIButton (rect);
+            blueButton.BackgroundColor = A.Color_NachoSubmitButton;
+            blueButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            blueButton.SetTitle (title, UIControlState.Normal);
+            blueButton.TitleLabel.TextColor = UIColor.White;
+            blueButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            blueButton.Layer.CornerRadius = 4f;
+            blueButton.Layer.MasksToBounds = true;
+            blueButton.AccessibilityLabel = title;
+            return blueButton;
+        }
+
+        // Rectangle for contents inside of rectangle at (0,0)
+        public static CGRect CardContentRectangle (nfloat width, nfloat height)
+        {
+            return new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, width - (2 * A.Card_Horizontal_Indent), height);
+        }
+
+        /// <summary>
+        /// Convert formatted text to plain text.
+        /// </summary>
+        /// <remarks>
+        /// This really should be in a platform-generic location.  But the simplest code for doing the conversion
+        /// is iOS-specific.  So this will sit in an iOS-specific class for now.
+        /// </remarks>
+        public static string ConvertToPlainText (string formattedText, NSDocumentType type)
+        {
+            try {
+                NSError error = null;
+                var descriptionData = NSData.FromString (formattedText);
+                var descriptionAttributed = new NSAttributedString (descriptionData, new NSAttributedStringDocumentAttributes {
+                    DocumentType = type
+                }, ref error);
+                return descriptionAttributed.Value;
+            } catch (Exception e) {
+                // The NSAttributedString init: routine will fail if formattedText is not the specified type.
+                // We don't want to crash the app in this case.
+                NachoCore.Utils.Log.Warn (NachoCore.Utils.Log.LOG_CALENDAR,
+                    "Calendar body has unexpected format and will be treated as plain text: {0}", e.ToString());
+                return formattedText;
+            }
+        }
+
+        public static void SetHidden(bool hidden, params UIView[] views)
+        {
+            foreach(var view in views) {
+                view.Hidden = hidden;
+            }
+        }
+
 
         #endregion
     }

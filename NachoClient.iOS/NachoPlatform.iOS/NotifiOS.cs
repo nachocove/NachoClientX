@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 
 namespace NachoPlatform
@@ -28,82 +28,135 @@ namespace NachoPlatform
                 return instance;
             }
         }
-            
-        public UILocalNotification FindNotif (int handle)
+
+        /// <summary>
+        /// Find the UILocalNotification with the given handle. Returns null if
+        /// none exists. This may only be called on the UI thread.
+        /// </summary>
+        private UILocalNotification FindNotification (int handle)
         {
-            foreach (var notif in UIApplication.SharedApplication.ScheduledLocalNotifications) {
-                if (null != notif.UserInfo) {
-                    var value = notif.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
-                    if (null != value && value is NSNumber && handle == ((NSNumber)value).IntValue) {
-                        return notif;
+            foreach (var notification in UIApplication.SharedApplication.ScheduledLocalNotifications) {
+                if (null != notification.UserInfo) {
+                    var value = notification.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
+                    if (null != value && value is NSNumber && handle == ((NSNumber)value).NIntValue) {
+                        return notification;
                     }
                 }
             }
             return null;
         }
 
-        public void ScheduleNotif (int handle, DateTime when, string message)
+        /// <summary>
+        /// Create a UILocalNotification object with the given information.  The notification
+        /// is not scheduled; this method just creates the object. This may only be called on
+        /// the UI thread.
+        /// </summary>
+        private UILocalNotification CreateUILocalNotification (int handle, DateTime when, string message)
+        {
+            return new UILocalNotification () {
+                AlertAction = null,
+                AlertBody = message,
+                FireDate = when.ToNSDate (),
+                TimeZone = null,
+                SoundName = UILocalNotification.DefaultSoundName,
+                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NachoClient.iOS.AppDelegate.EventNotificationKey),
+            };
+        }
+
+        public void ImmediateNotification (int handle, string message)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                var notif = FindNotif (handle);
-                NcAssert.True (null == notif, string.Format ("ScheduleNotif: attempt schedule another notif with same handle {0}.", handle));
-                notif = new UILocalNotification () {
-                    AlertAction = null,
-                    AlertBody = message,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NachoClient.iOS.AppDelegate.EventNotificationKey),
-                    SoundName = UILocalNotification.DefaultSoundName,
-                    FireDate = when.ToNSDate (),
-                    //Commented out timezone because:
-
-                    //Apple Doc: The date specified in fireDate is interpreted according to the value of this property. 
-                    //If you specify nil (the default), the fire date is interpreted as an absolute GMT time, 
-                    //which is suitable for cases such as countdown timers. If you assign a valid NSTimeZone object to 
-                    //this property, the fire date is interpreted as a wall-clock time that is automatically adjusted 
-                    //when there are changes in time zones; an example suitable for this case is an an alarm clock.
-
-                    //TimeZone = NSTimeZone.FromAbbreviation ("UTC"),
-                };
-                UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+                UIApplication.SharedApplication.PresentLocalNotificationNow (CreateUILocalNotification (handle, DateTime.UtcNow, message));
             });
         }
 
-
-        public void CancelNotif (int handle)
-        {
-            CancelNotif (new List<int> () { handle });
-        }
-
-        public void CancelNotif (List<int> handles)
+        public void ScheduleNotification (int handle, DateTime when, string message)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                // TODO: O(N**2).
-                foreach (var handle in handles) {
-                    var notif = FindNotif (handle);
-                    if (null != notif) {
-                        UIApplication.SharedApplication.CancelLocalNotification (notif);
+                DoCancelNotification (handle);
+                UIApplication.SharedApplication.ScheduleLocalNotification (CreateUILocalNotification (handle, when, message));
+            });
+        }
+
+        public void ScheduleNotification (NotificationInfo notification)
+        {
+            ScheduleNotification (notification.Handle, notification.When, notification.Message);
+        }
+
+        public void ScheduleNotifications (List<NotificationInfo> notifications)
+        {
+            InvokeOnUIThread.Instance.Invoke (delegate {
+                UILocalNotification[] iosNotifications = new UILocalNotification[notifications.Count];
+                int index = 0;
+                foreach (var notification in notifications) {
+                    iosNotifications [index++] = CreateUILocalNotification (notification.Handle, notification.When, notification.Message);
+                }
+                // This gets rid of all existing local notifications, replacing them with the new ones.
+                UIApplication.SharedApplication.ScheduledLocalNotifications = iosNotifications;
+            });
+        }
+
+        /// <summary>
+        /// Cancel a notification with the given handle. This must be run
+        /// on the UI thread.
+        /// </summary>
+        private void DoCancelNotification (int handle)
+        {
+            var existing = FindNotification (handle);
+            if (null != existing) {
+                UIApplication.SharedApplication.CancelLocalNotification (existing);
+            }
+        }
+
+        public void CancelNotification (int handle)
+        {
+            InvokeOnUIThread.Instance.Invoke (delegate {
+                DoCancelNotification (handle);
+            });
+        }
+
+        public static void DumpNotifications ()
+        {
+            InvokeOnUIThread.Instance.Invoke (delegate {
+                UILocalNotification[] notifications = UIApplication.SharedApplication.ScheduledLocalNotifications;
+                Log.Info (Log.LOG_CALENDAR, "LocalNotificationManager: currently scheduled: {0}:", notifications.Length);
+                foreach (var notification in notifications) {
+                    var handleValue = notification.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
+                    nint handle = -1;
+                    if (null != handleValue && handleValue is NSNumber) {
+                        handle = ((NSNumber)handleValue).NIntValue;
                     }
+                    Log.Info (Log.LOG_CALENDAR, "Handle: {0}", handle);
                 }
             });
         }
     }
 
+    /// <summary>
+    /// Conversions between DateTime and NSDate.  This code comes from http://developer.xamarin.com/guides/cross-platform/macios/unified/
+    /// </summary>
     public static class DateExtensions
     {
         public static NSDate ToNSDate (this DateTime dateTime)
         {
-            return NSDate.FromTimeIntervalSinceReferenceDate ((dateTime - (new DateTime (2001, 1, 1, 0, 0, 0))).TotalSeconds);
-        }
-
-        public static NSDate ShiftToUTC (this NSDate nsDate, NSTimeZone nsTimeZone)
-        {
-            var deltaSecs = nsTimeZone.SecondsFromGMT (nsDate);
-            var origSecs = nsDate.SecondsSinceReferenceDate;
-            return NSDate.FromTimeIntervalSinceReferenceDate (origSecs + deltaSecs);
+            if (DateTimeKind.Unspecified == dateTime.Kind) {
+                dateTime = DateTime.SpecifyKind (dateTime, DateTimeKind.Utc);
+            }
+            return (NSDate)dateTime;
         }
 
         public static DateTime ToDateTime (this NSDate nsDate)
         {
-            return (new DateTime (2001, 1, 1, 0, 0, 0)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+            // NSDate has a wider range than DateTime.  If the given NSDate is outside DateTime's range,
+            // return DateTime.MinValue or DateTime.MaxValue.
+            double seconds = nsDate.SecondsSinceReferenceDate;
+            if (seconds < -63113904000) {
+                return DateTime.MinValue;
+            }
+            if (seconds > 252423993599) {
+                return DateTime.MaxValue;
+            }
+            return (DateTime)nsDate;
         }
     }
 }

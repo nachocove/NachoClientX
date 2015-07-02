@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -22,16 +23,23 @@ namespace NachoCore.Utils
             edit,
         };
 
-        /// In what list does this NcEmailAddress reside?
+        /// These enums are persisted in db's McMapEmailAddressEntry. Must not modify existing values (unless
+        /// you do a migration.)
         public enum Kind
         {
-            To,
-            Cc,
-            Bcc,
-            Required,
-            Optional,
-            Resource,
-            Unknown,
+            Unknown = 0,
+            // McEmailMessage
+            To = 1,
+            Cc = 2,
+            Bcc = 3,
+            Sender = 4,
+            From = 5,
+            // McAttendee
+            Required = 6,
+            Optional = 7,
+            Resource = 8,
+            // McCalendar
+            Organizer = 9,
         };
 
         /// Which list?
@@ -80,6 +88,12 @@ namespace NachoCore.Utils
         // TODO: Localize!
         public static Kind ToKind (string prefix)
         {
+            if (prefix.StartsWith ("From")) {
+                return Kind.From;
+            }
+            if (prefix.StartsWith ("Sender")) {
+                return Kind.Sender;
+            }
             if (prefix.StartsWith ("To")) {
                 return Kind.To;
             }
@@ -108,6 +122,10 @@ namespace NachoCore.Utils
         public static string ToPrefix (Kind kind)
         {
             switch (kind) {
+            case Kind.From:
+                return "From";
+            case Kind.Sender:
+                return "Sender";
             case Kind.To:
                 return "To";
             case Kind.Cc:
@@ -126,6 +144,24 @@ namespace NachoCore.Utils
                 NcAssert.CaseError ();
                 return"";
             }
+        }
+
+        public static Kind ToKind (NcAttendeeType attendeeType)
+        {
+            switch (attendeeType) {
+            case NcAttendeeType.Unknown:
+                return Kind.Unknown;
+            case NcAttendeeType.Optional:
+                return Kind.Optional;
+            case NcAttendeeType.Required:
+                return Kind.Required;
+            case NcAttendeeType.Resource:
+                return Kind.Resource;
+            default:
+                NcAssert.CaseError (String.Format ("Unknown NcAttendeeType {0}", (int)attendeeType));
+                break;
+            }
+            return Kind.Unknown;
         }
 
         public static Kind FromAttendeeType (NcAttendeeType type)
@@ -162,7 +198,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public MailboxAddress ToMailboxAddress ()
+        public MailboxAddress ToMailboxAddress (bool mustUseAddress = false)
         {
             // Must have a contact or an address
             NcAssert.True ((null != this.contact) || (null != this.address));
@@ -170,10 +206,10 @@ namespace NachoCore.Utils
             string candidate;
             MailboxAddress mailbox;
 
-            if (null != this.contact) {
-                candidate = this.contact.GetEmailAddress();
-            } else {
+            if (mustUseAddress || (null == this.contact)) {
                 candidate = this.address;
+            } else {
+                candidate = this.contact.GetEmailAddress ();
             }
 
             if (!MailboxAddress.TryParse (candidate, out mailbox)) {
@@ -187,7 +223,7 @@ namespace NachoCore.Utils
             }
 
             if (null == mailbox.Name) {
-                mailbox.Name = this.contact.GetDisplayName();
+                mailbox.Name = this.contact.GetDisplayName ();
             }
 
             return mailbox;
@@ -211,8 +247,8 @@ namespace NachoCore.Utils
             }
         }
 
-        private static List<NcEmailAddress> ParseAddressListString (string addressString,
-            Kind addressKind)
+        public static List<NcEmailAddress> ParseAddressListString (string addressString,
+                                                                   Kind addressKind)
         {
             List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
             if (null == addressString) {
@@ -239,6 +275,11 @@ namespace NachoCore.Utils
             return ParseAddressListString (ccAddressString, Kind.Cc);
         }
 
+        public static List<NcEmailAddress> ParseBccAddressListString (string bccAddressString)
+        {
+            return ParseAddressListString (bccAddressString, Kind.Bcc);
+        }
+
         /// <summary>
         /// Parses the mailbox address string.
         /// </summary>
@@ -256,30 +297,40 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void SplitName (MailboxAddress address, ref McContact contact)
+        public static void ParseName (MailboxAddress address, ref McContact contact)
         {
-            // Try to parse the display name into first / middle / last name
-            string[] items = address.Name.Split (new char [] { ',', ' ' });
-            switch (items.Length) {
-            case 2:
-                if (0 < address.Name.IndexOf (',')) {
-                    // Last name, First name
-                    contact.LastName = items [0];
-                    contact.FirstName = items [1];
-                } else {
-                    // First name, Last name
-                    contact.FirstName = items [0];
-                    contact.LastName = items [1];
+            var parser = new CSharpNameParser.NameParser ();
+            CSharpNameParser.Name parsedName = parser.Parse (address.Name);
+            if (!String.IsNullOrEmpty (parsedName.FirstName)) {
+                contact.FirstName = parsedName.FirstName;
+                if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) {
+                    contact.MiddleName = parsedName.MiddleInitials;
                 }
-                break;
-            case 3:
-                if (-1 == address.Name.IndexOf (',')) {
-                    contact.FirstName = items [0];
-                    contact.MiddleName = items [1];
-                    contact.LastName = items [2];
-                }
-                break;
+            } else if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) { //use middle name if first name is missing
+                contact.FirstName = parsedName.MiddleInitials;
             }
+            if (!String.IsNullOrEmpty (parsedName.LastName)) {
+                contact.LastName = parsedName.LastName;
+            }
+            if (!String.IsNullOrEmpty (parsedName.Suffix)) {
+                contact.Suffix = parsedName.Suffix;
+            }
+        }
+
+        public static InternetAddressList ToInternetAddressList (List<NcEmailAddress> addressList, Kind kind)
+        {
+            var list = new InternetAddressList ();
+            if (null == addressList) {
+                return list;
+            }
+            foreach (var a in addressList) {
+                NcAssert.True (kind == a.kind);
+                var mailbox = a.ToMailboxAddress ();
+                if (null != mailbox) {
+                    list.Add (mailbox);
+                }
+            }
+            return list;
         }
     }
 }

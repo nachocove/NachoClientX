@@ -2,9 +2,9 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using System.Drawing;
+using Foundation;
+using UIKit;
+using CoreGraphics;
 using System.Net;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -22,7 +22,7 @@ namespace NachoClient.iOS
         protected bool loadFromWeb;
 
         protected string urlSourceCode;
-        protected float yOffset;
+        protected nfloat yOffset;
 
         protected const string CACHE_MODULE = "CACHE";
 
@@ -32,8 +32,6 @@ namespace NachoClient.iOS
         protected const int WEB_VIEW_TAG = 100;
         protected const int INTERIOR_VIEW_TAG = 101;
         protected const int TEXT_VIEW_TAG = 102;
-
-        protected UIBarButtonItem backButton;
 
         public SettingsLegalViewController (IntPtr handle) : base (handle)
         {
@@ -53,17 +51,11 @@ namespace NachoClient.iOS
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
 
-            backButton = new UIBarButtonItem ();
-            backButton.Clicked += BackButtonClicked;
-            backButton.Image = UIImage.FromBundle ("nav-backarrow");
-            backButton.TintColor = A.Color_NachoBlue;
-            NavigationItem.LeftBarButtonItem = backButton;
-
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             yOffset = A.Card_Vertical_Indent;
 
-            UIView interiorView = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), View.Frame.Height - 100));
+            UIView interiorView = new UIView (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), View.Frame.Height - 100));
             interiorView.BackgroundColor = UIColor.White;
             interiorView.Layer.BorderColor = A.Card_Border_Color;
             interiorView.Layer.BorderWidth = A.Card_Border_Width;
@@ -73,13 +65,13 @@ namespace NachoClient.iOS
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
-            nachoLogoImageView.Frame = new RectangleF (interiorView.Frame.Width / 2 - 40, 18, 80, 80);
+            nachoLogoImageView.Frame = new CGRect (interiorView.Frame.Width / 2 - 40, 18, 80, 80);
             interiorView.Add (nachoLogoImageView);
 
             yOffset = nachoLogoImageView.Frame.Bottom + 15;
 
             if (loadFromWeb) {
-                UIWebView webView = new UIWebView (new RectangleF (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
+                UIWebView webView = new UIWebView (new CGRect (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
                 webView.LoadError += HandleLoadError;
                 webView.LoadFinished += CacheUrlHtml;
                 webView.Tag = WEB_VIEW_TAG;
@@ -96,11 +88,11 @@ namespace NachoClient.iOS
                     HandleLoadError (this, null);
                 }
             } else {
-                UITextView textView = new UITextView (new RectangleF (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
+                UITextView textView = new UITextView (new CGRect (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
                 textView.Tag = TEXT_VIEW_TAG; 
                 textView.Text = System.IO.File.ReadAllText (url);
-                SizeF newSize = textView.SizeThatFits (new SizeF (textView.Frame.Width, float.MaxValue));
-                textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, newSize.Height);
+                CGSize newSize = textView.SizeThatFits (new CGSize (textView.Frame.Width, nfloat.MaxValue));
+                textView.Frame = new CGRect (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, newSize.Height);
                 interiorView.Add (textView);
                 contentView.AddSubview (interiorView);
                 LayoutView ();
@@ -108,10 +100,16 @@ namespace NachoClient.iOS
             yOffset += 20;
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         void CacheUrlHtml (object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty (urlSourceCode)) {
-                McMutables.Set (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, urlSourceCode);
+                McMutables.Set (LoginHelpers.GlobalAccountId, CACHE_MODULE, key, urlSourceCode);
             }
             LayoutView ();
         }
@@ -119,7 +117,7 @@ namespace NachoClient.iOS
         void HandleLoadError (object sender, UIWebErrorArgs e)
         {
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            string urlHtml = McMutables.GetOrCreate (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, "");
+            string urlHtml = McMutables.GetOrCreate (LoginHelpers.GlobalAccountId, CACHE_MODULE, key, "");
             if (!string.IsNullOrEmpty (urlHtml)) {
                 webView.LoadHtmlString (urlHtml, new NSUrl ("about:blank"));
             } else if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
@@ -139,43 +137,37 @@ namespace NachoClient.iOS
             int textViewPadding = 0;
             UIWebView theWebView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
             UITextView theTextView = (UITextView)View.ViewWithTag (TEXT_VIEW_TAG);
-            SizeF dynamicSize = new SizeF (0, 0);
+            CGSize dynamicSize = new CGSize (0, 0);
 
             if (null != theWebView) {
-                RectangleF tempFrame = theWebView.Frame;
-                tempFrame.Size = new SizeF (tempFrame.Width, 1);
+                CGRect tempFrame = theWebView.Frame;
+                tempFrame.Size = new CGSize (tempFrame.Width, 1);
                 theWebView.Frame = tempFrame;
-                dynamicSize = theWebView.SizeThatFits (SizeF.Empty);
+                dynamicSize = theWebView.SizeThatFits (CGSize.Empty);
                 tempFrame.Size = dynamicSize;
                 theWebView.Frame = tempFrame;
             }
 
             if (null != theTextView) {
-                dynamicSize = new SizeF (0, theTextView.Frame.Height);
+                dynamicSize = new CGSize (0, theTextView.Frame.Height);
                 textViewPadding = 60;
             }
 
             UIView interiorView = (UIView)View.ViewWithTag (INTERIOR_VIEW_TAG);
-            interiorView.Frame = new RectangleF (interiorView.Frame.X, interiorView.Frame.Y, interiorView.Frame.Width, yOffset + dynamicSize.Height);
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
-            scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset + dynamicSize.Height + 40 + textViewPadding);
+            interiorView.Frame = new CGRect (interiorView.Frame.X, interiorView.Frame.Y, interiorView.Frame.Width, yOffset + dynamicSize.Height);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.ContentSize = new CGSize (View.Frame.Width, yOffset + dynamicSize.Height + 40 + textViewPadding);
         }
 
         protected override void Cleanup ()
         {
-            backButton.Clicked -= BackButtonClicked;
-            backButton = null;
-
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            webView.StopLoading ();
-            webView.LoadError -= HandleLoadError;
-            webView.LoadFinished -= CacheUrlHtml;
-            webView = null;
-        }
-
-        protected void BackButtonClicked (object sender, EventArgs e)
-        {
-            DismissViewController (true, null);
+            if (null != webView) {
+                webView.StopLoading ();
+                webView.LoadError -= HandleLoadError;
+                webView.LoadFinished -= CacheUrlHtml;
+                webView = null;
+            }
         }
     }
 }

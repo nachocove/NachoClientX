@@ -69,10 +69,6 @@ namespace NachoCore.Model
             }
         }
 
-        private static OperationCaptures InsertCaptures;
-        private static OperationCaptures DeleteCaptures;
-        private static OperationCaptures UpdateCaptures;
-
         [PrimaryKey, AutoIncrement, Unique]
         public virtual int Id { get; set; }
         // Optimistic concurrency control.
@@ -82,27 +78,27 @@ namespace NachoCore.Model
 
         public int RowVersion { get; set; }
 
+        [Indexed]
+        public int MigrationVersion { get; set; }
+
         protected Boolean isDeleted;
+
+        protected string CaptureName (string opName)
+        {
+            return "NcModel." + ClassName () + "." + opName;
+        }
+
+        protected NcCapture CaptureWithStart (string opName)
+        {
+            return NcCapture.CreateAndStart (CaptureName (opName));
+        }
 
         public McAbstrObject ()
         {
             Id = 0;
             LastModified = DateTime.MinValue;
             isDeleted = false;
-
-            string className = ClassName ();
-            if (null == InsertCaptures) {
-                InsertCaptures = new OperationCaptures ("Insert");
-                InsertCaptures.Add (className);
-            }
-            if (null == DeleteCaptures) {
-                DeleteCaptures = new OperationCaptures ("Delete");
-                DeleteCaptures.Add (className);
-            }
-            if (null == UpdateCaptures) {
-                UpdateCaptures = new OperationCaptures ("Update");
-                UpdateCaptures.Add (className);
-            }
+            MigrationVersion = NcMigration.CurrentVersion;
         }
 
         public string ClassName ()
@@ -112,37 +108,34 @@ namespace NachoCore.Model
 
         public virtual int Insert ()
         {
-            NcAssert.True (0 == Id);
-            NcAssert.True (!isDeleted);
-            NcModel.Instance.TakeTokenOrSleep ();
-            LastModified = DateTime.UtcNow;
-            CreatedAt = LastModified;
-            NcCapture capture = InsertCaptures.Find (ClassName ());
-            capture.Start ();
-            int rc = NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Insert (this);
-            });
-            capture.Stop ();
-            capture.Reset ();
-            return rc;
+            using (var capture = CaptureWithStart ("Insert")) {
+                NcAssert.True (0 == Id);
+                NcAssert.True (!isDeleted);
+                NcModel.Instance.TakeTokenOrSleep ();
+                LastModified = DateTime.UtcNow;
+                CreatedAt = LastModified;
+                int rc = NcModel.Instance.BusyProtect (() => {
+                    return NcModel.Instance.Db.Insert (this);
+                });
+                return rc;
+            }
         }
 
         public virtual int Delete ()
         {
-            NcAssert.True (0 < Id);
-            isDeleted = true;
-            NcModel.Instance.TakeTokenOrSleep ();
-            NcCapture capture = DeleteCaptures.Find (ClassName ());
-            capture.Start ();
-            int rc = NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Delete (this);
-            });
-            capture.Stop ();
-            capture.Reset ();
-            return rc;
+            using (var capture = CaptureWithStart ("Delete")) {
+                NcAssert.True (0 < Id);
+                isDeleted = true;
+                NcModel.Instance.TakeTokenOrSleep ();
+                int rc = NcModel.Instance.BusyProtect (() => {
+                    return NcModel.Instance.Db.Delete (this);
+                });
+                return rc;
+            }
         }
 
         public delegate bool Mutator (McAbstrObject record);
+
         /// <summary>
         /// Update() with optimistic concurrency.
         /// </summary>
@@ -151,7 +144,7 @@ namespace NachoCore.Model
         /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
-        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100) where T : McAbstrObject, new ()
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100) where T : McAbstrObject, new()
         {
             NcAssert.True (typeof(T) == this.GetType ());
             var record = this;
@@ -164,11 +157,26 @@ namespace NachoCore.Model
                 }
                 int priorVersion = record.RowVersion;
                 record.RowVersion = priorVersion + 1;
-                count = NcModel.Instance.Update (record, record.GetType (), true, priorVersion);
+                try {
+                    count = NcModel.Instance.Update (record, record.GetType (), true, priorVersion);
+                } catch (SQLiteException ex) {
+                    if (ex.Result == SQLite3.Result.Busy) {
+                        Log.Warn (Log.LOG_DB, "UpdateWithOCApply: Busy");
+                        count = 0;
+                    } else {
+                        throw;
+                    }
+                }
                 if (0 < count) {
                     break;
                 }
-                record = NcModel.Instance.Db.Get<T> (record.Id);
+                try {
+                    record = NcModel.Instance.Db.Get<T> (record.Id);
+                } catch {
+                    Log.Warn (Log.LOG_DB, "UpdateWithOCApply: unable to fetch record");
+                    record = null;
+                    break;
+                }
             }
             if (10 < totalTries - tries) {
                 Log.Warn (Log.LOG_DB, "UpdateWithOCApply: too many tries: {0}", totalTries - tries);
@@ -184,46 +192,46 @@ namespace NachoCore.Model
         /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
-        public virtual T UpdateWithOCApply<T> (Mutator mutator, int tries = 100) where T : McAbstrObject, new ()
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, int tries = 100) where T : McAbstrObject, new()
         {
             int count = 0;
             var record = UpdateWithOCApply<T> (mutator, out count, tries);
-            NcAssert.True (0 < count);
+            NcAssert.True (0 < count || null == record);
             return record;
         }
 
         public virtual int Update ()
         {
-            NcAssert.True (0 < Id);
-            NcAssert.True (!isDeleted);
-            NcModel.Instance.TakeTokenOrSleep ();
-            LastModified = DateTime.UtcNow;
-            NcCapture capture = UpdateCaptures.Find (ClassName ());
-            capture.Start ();
-            int rc = NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Update (this);
-            });
-            capture.Stop ();
-            capture.Reset ();
-            return rc;
+            using (var capture = CaptureWithStart ("Update")) {
+                NcAssert.True (0 < Id);
+                NcAssert.True (!isDeleted);
+                NcModel.Instance.TakeTokenOrSleep ();
+                LastModified = DateTime.UtcNow;
+                int rc = NcModel.Instance.BusyProtect (() => {
+                    return NcModel.Instance.Db.Update (this);
+                });
+                return rc;
+            }
         }
 
         public static T QueryById<T> (int id) where T : McAbstrObject, new()
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " f.Id = ? ", 
+                " f.Id = ? ", 
                     typeof(T).Name), 
                 id).SingleOrDefault ();
         }
 
         public static int DeleteById<T> (int id) where T : McAbstrObject, new()
         {
-            return NcModel.Instance.Db.Execute (
-                string.Format ("DELETE FROM {0} WHERE " +
+            return NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute (
+                    string.Format ("DELETE FROM {0} WHERE " +
                     " Id = ? ", 
-                    typeof(T).Name), 
-                id);
+                        typeof(T).Name), 
+                    id);
+            });
         }
     }
 }

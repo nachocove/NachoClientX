@@ -16,7 +16,7 @@
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
     <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
     <AssemblyName>Test.Android</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -49,12 +49,6 @@
     <Reference Include="Xamarin.Android.NUnitLite" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="Xamarin.Android.Support.v4">
-      <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v4.dll</HintPath>
-    </Reference>
-    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
-      <HintPath>..\Components\xamandroidsupportv7appcompat-7.18.0\lib\android\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
-    </Reference>
     <Reference Include="MimeKit">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\MimeKit.dll</HintPath>
     </Reference>
@@ -66,6 +60,24 @@
     </Reference>
     <Reference Include="ModernHttpClient">
       <HintPath>..\..\ModernHttpClient\build\MonoAndroid\ModernHttpClient.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.Collections.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.Collections.Android\obj\Debug\DDay.Collections.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.iCal.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.Android\obj\Debug\DDay.iCal.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="antlr.runtime.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\antlr.runtime.Android\obj\Debug\antlr.runtime.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json.NET\json.net-4.5.11\lib\android\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v4">
+      <HintPath>..\packages\Xamarin.Android.Support.v4.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -111,11 +123,33 @@
     <Compile Include="McAttachmentTest.cs" />
     <Compile Include="McEmailMessageTest.cs" />
     <Compile Include="NcEventsCommonTest.cs" />
+    <Compile Include="NcDeferralTests.cs" />
+    <Compile Include="NcMessageThreadsTest.cs" />
+    <Compile Include="EmailHelperTest.cs" />
+    <Compile Include="McServerTest.cs" />
+    <Compile Include="McCalendarTest.cs" />
+    <Compile Include="McMapEmailAddressEntryTest.cs" />
+    <Compile Include="NcContactGleanerTest.cs" />
+    <Compile Include="McEventTest.cs" />
+    <Compile Include="PushAssistTest.cs" />
+    <Compile Include="HashHelperTest.cs" />
+    <Compile Include="CrlMonitorTest.cs" />
+    <Compile Include="RemoveAccountTest.cs" />
+    <Compile Include="McTelemetryEventTest.cs" />
+    <Compile Include="NcEmailAddressTest.cs" />
+    <Compile Include="ErrorHelperTest.cs" />
+    <Compile Include="TelemetryJsonEventTest.cs" />
+    <Compile Include="TelemetryJsonFileTest.cs" />
+    <Compile Include="NcBrainHelpersTest.cs" />
+    <Compile Include="ImapOperationTest.cs" />
+    <Compile Include="McEmailMessageScoreTest.cs" />
+    <Compile Include="EmailMessageScoreTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Icon.png" />
@@ -125,6 +159,14 @@
     <ProjectReference Include="..\NachoClient.Android\NachoClient.Android.csproj">
       <Project>{D1408661-612A-4362-B534-5BF16C7A8BE0}</Project>
       <Name>NachoClient.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.Android\NachoPlatformBinding.Android.csproj">
+      <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
+      <Name>NachoPlatformBinding.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MailKit\MailKit\MailKit.Android.csproj">
+      <Project>{9BF818C3-C20E-4EFB-9426-F0A6C2EDC627}</Project>
+      <Name>MailKit.Android</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

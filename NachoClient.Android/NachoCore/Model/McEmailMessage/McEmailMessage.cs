@@ -13,6 +13,7 @@ using MimeKit;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Index;
 
 namespace NachoCore.Model
 {
@@ -30,6 +31,8 @@ namespace NachoCore.Model
         NextMonth,
         Forever,
         Custom,
+        Weekend,
+        ThisWeek,
     };
 
     public enum NcImportance
@@ -52,9 +55,32 @@ namespace NachoCore.Model
     {
         public int Id { set; get; }
 
+        public NcEmailMessageIndex ()
+        {
+        }
+
+        public NcEmailMessageIndex (int Id)
+        {
+            this.Id = Id;
+        }
+
         public McEmailMessage GetMessage ()
         {
             return McEmailMessage.QueryById<McEmailMessage> (Id);
+        }
+
+    }
+
+    public class NcEmailMessageIndexComparer : IEqualityComparer<NcEmailMessageIndex>
+    {
+        public bool Equals (NcEmailMessageIndex a, NcEmailMessageIndex b)
+        {
+            return a.Id == b.Id;
+        }
+
+        public int GetHashCode (NcEmailMessageIndex i)
+        {
+            return i.Id;
         }
     }
 
@@ -68,6 +94,9 @@ namespace NachoCore.Model
 
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
+
+        /// All Bcc addresses, comma separated (optional, for drafts)
+        public string Bcc { set; get; }
 
         /// Email address of the sender (optional)
         public string From { set; get; }
@@ -95,15 +124,22 @@ namespace NachoCore.Model
         }
 
         // Intent of the message (default None (0))
-        public int Intent { set; get; }
+        public IntentType Intent { set; get; }
 
         // Due date of selected intent (optional)
         public DateTime IntentDate { set; get; }
+
+        // Type of the due date for the selected intent (optional)
+        public MessageDeferralType IntentDateType { set; get; }
+
+        // QRType of the message (optional, for drafts)
+        public NcQuickResponse.QRTypeEnum QRType { set; get; }
 
         /// Email addresses for replies, semi-colon separated (optional)
         public string ReplyTo { set; get; }
 
         /// When the message was received by the current recipient (optional)
+        [Indexed]
         public DateTime DateReceived { set; get; }
 
         /// List of display names, semi-colon separated (optional)
@@ -125,6 +161,9 @@ namespace NachoCore.Model
 
         /// Sender, maybe not the same as From (optional)
         public string Sender { set; get; }
+
+        /// McEmailAddress Index of Sender
+        public int SenderEmailAddressId { set; get; }
 
         /// The user is on the bcc list (optional)
         public bool ReceivedAsBcc { set; get; }
@@ -170,14 +209,6 @@ namespace NachoCore.Model
         /// Indicates that a forwarded message is waiting for attachments to be downloaded so they can
         /// be included in the outgoing message.
         public bool WaitingForAttachmentsToDownload { set; get; }
-
-        [Ignore]
-        /// Internal list of category elements
-        protected List<McEmailMessageCategory> _Categories{ get; set; }
-
-        [Ignore]
-        /// Internal copy of McMeetingRequest
-        protected McMeetingRequest _MeetingRequest { get; set; }
 
         [Ignore]
         /// List of xml attachments for the email
@@ -238,23 +269,31 @@ namespace NachoCore.Model
 
         public DateTime FlagSubOrdinalDate { set; get; }
 
-        public bool IsIndexed { set; get; }
+        // This field was original a boolean. But in order to support versioning and partial indexing
+        // (i.e. indexing of an email message without its body downloaded), it is changed to an int.
+        // I didn't want to rename it to IndexVersion (like McContact) in order to avoid a migration.
+        //
+        // For partially indexed messagess, the field has the value of EmailMessageIndexDocument.Version-1.
+        // For fully indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
+        // just increment the version # and implement the new version of EmailMessageIndexDocument.
+        // Brain will unindex all old version documents and re-index them using the new schema.
+        public int IsIndexed { set; get; }
 
         ///
         /// </Flag> STUFF.
         ///
 
+        // Whether the email should be notified subjected to the current notification settings.
+        // Note that this boolean is only meaningful within the context of a background duration;
+        // as the settings can change during foreground.
+        public bool ShouldNotify { get; set; }
+
         /// Attachments are separate
 
-        //This is strictly used for testing purposes
-        public List<McEmailMessageCategory> getInternalCategoriesList ()
-        {
-            return _Categories;
-        }
-
         /// TODO: Support other types besides mime!
-        public Stream ToMime ()
+        public Stream ToMime (out long length)
         {
+            length = 0;
             var bodyPath = MimePath ();
             if (null == bodyPath) {
                 return null;
@@ -264,6 +303,7 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_EMAIL, "BodyPath {0} doesn't find a file.", bodyPath);
                 return null;
             }
+            length = new FileInfo (bodyPath).Length;
             return fileStream;
         }
 
@@ -339,37 +379,61 @@ namespace NachoCore.Model
             }
         }
 
-        public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
+        public static List<McEmailMessageThread> QueryInteractions (int accountId, McContact contact)
         {
-            if (!string.IsNullOrEmpty(contact.GetPrimaryCanonicalEmailAddress())) {
-
-                string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress() + "%";
-                McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
-
-                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                    "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
-                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                    " JOIN McFolder AS f ON m.FolderId = f.Id " +
-                    " WHERE " +
-                    " e.AccountId = ? AND " +
-                    " e.IsAwaitingDelete = 0 AND " +
-                    " f.IsClientOwned != 1 AND " +
-                    " m.ClassCode = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " m.FolderId != ? AND " +
-                    " e.[From] LIKE ? OR " +
-                    " e.[To] Like ? ORDER BY e.DateReceived DESC",
-                    accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
+            if (String.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
+                return new List<McEmailMessageThread> ();
             }
-            return new List<NcEmailMessageIndex> ();
+
+            string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress () + "%";
+
+            // Not all accounts have deleted folder (e.g. Device). Using '0' is a trick.
+            McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
+            var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
+
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT DISTINCT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.IsClientOwned != 1, 0.9) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.FolderId != ?, 0.5) AND " +
+                " likelihood (e.[From] LIKE ?, 0.05) OR " +
+                " likelihood (e.[To] Like ?, 0.05) " +
+                " ORDER BY e.DateReceived DESC",
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
+        public static List<McEmailMessageThread> QueryActiveMessageItems (int accountId, int folderId, bool groupBy = true)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, " +
+                (groupBy ? " Count(e.Id)" : "1") +
+                " as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.5) AND " +
+                " e.FlagUtcStartDate < ? " +
+                (groupBy ? " GROUP BY e.ConversationId " : "") +
+                " ORDER BY e.DateReceived DESC ",
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+        }
+
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByThreadId (int accountId, int folderId, string threadId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " e.ConversationId = ? AND " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " m.AccountId = ? AND " +
@@ -377,6 +441,22 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? " +
                 " ORDER BY e.DateReceived DESC",
+                threadId, accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+        }
+
+        public static int CountOfUnreadMessageItems (int accountId, int folderId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McEmailMessage AS e " +
+                "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                "WHERE " +
+                " likelihood (e.AccountId = ?, 1.0)  AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
+                " e.FlagUtcStartDate < ? AND " +
+                "e.IsRead = 0", 
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
@@ -386,8 +466,8 @@ namespace NachoCore.Model
                 "SELECT e.* FROM McEmailMessage AS e " +
                 " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 " e.UserAction > -1 AND " +
                 " (e.Score > ? OR e.UserAction = 1) AND " +
@@ -400,8 +480,8 @@ namespace NachoCore.Model
                 " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
                 " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) AND " +
                 " ((b.FilePresence != ? AND " +
                 "   b.FilePresence != ? AND " +
@@ -419,78 +499,161 @@ namespace NachoCore.Model
                 limit);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
+        public static List<McEmailMessageThread> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT FirstMessageId, Count(FirstMessageId) as MessageCount, DateReceived, ConversationId FROM " +
+                " ( " +
+                " SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
-                " e.FlagUtcStartDate < ? AND " +
-                " e.UserAction > -1 AND " +
-                " (e.Score > ? OR e.UserAction = 1) " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
+                " likelihood (e.FlagUtcStartDate < ?, 0.99) AND " +
+                " likelihood (e.UserAction > -1, 0.99) AND " +
+                " (likelihood (e.Score >= ?, 0.1) OR likelihood (e.UserAction = 1, 0.01)) " +
                 "UNION " +
-                "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
+                "SELECT e.Id as FirstMessageId, e.DateReceived as DateReceived, e.ConversationId as ConversationId FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
                 " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
-                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
-                " ORDER BY e.DateReceived DESC",
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) AND " +
+                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE likelihood (a.IsVip != 0, 0.01)) " +
+                " ) " +
+                " GROUP BY ConversationId " +
+                " ORDER BY DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, hotScore,
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
-        {
-            return QueryActiveMessageItemsByScore (accountId, folderId, minHotScore);
-        }
-
-        /// TODO: Need account id
         /// TODO: Delete needs to clean up deferred
-        public static List<NcEmailMessageIndex> QueryDeferredMessageItemsAllAccounts ()
+        public static List<McEmailMessageThread> QueryDeferredMessageItems (int accountId)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
                 " WHERE " +
-                " e.IsAwaitingDelete = 0 AND " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                 " e.FlagStatus <> 0 AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
-                DateTime.UtcNow);
+                accountId, DateTime.UtcNow);
+        }
+
+        /// TODO: Delete needs to clean up deferred
+        public static List<McEmailMessageThread> QueryDeferredMessageItemsByThreadId (int accountId, string threadId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.ConversationId = ?, 0.01) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " e.FlagStatus <> 0 AND " +
+                " e.FlagUtcStartDate > ? " +
+                " ORDER BY e.DateReceived DESC",
+                accountId, threadId, DateTime.UtcNow);
+        }
+
+        public static List<McEmailMessageThread> QueryDueDateMessageItems (int accountId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
+                " e.FlagStatus <> 0 AND" +
+                " e.FlagType <> ?", 
+                accountId, "Defer until");
+        }
+
+        public static List<McEmailMessageThread> QueryDueDateMessageItemsByThreadId (int accountId, string threadId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessageThread> (
+                "SELECT  e.Id as FirstMessageId, 1 as MessageCount FROM McEmailMessage AS e " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " e.ConversationId = ? AND" +
+                " e.IsAwaitingDelete = 0 AND" +
+                " e.FlagStatus <> 0 AND" +
+                " e.FlagType <> ?", 
+                accountId, threadId, "Defer until");
         }
 
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT * FROM McEmailMessage as e " +
-                " where e.IsIndexed = 0 AND e.BodyId != 0 " +
-                " ORDER BY e.DateReceived DESC LIMIT ?",
-                maxMessages
+                "SELECT e.* FROM McEmailMessage as e " +
+                " LEFT JOIN McBody as b ON b.Id == e.BodyId " +
+                " WHERE likelihood (e.IsIndexed < ?, 0.5) OR " +
+                "  (likelihood (e.IsIndexed < ?, 0.5) AND " +
+                "   (likelihood (e.BodyId = 0, 0.2) OR " +
+                "    (likelihood (b.FilePresence = ?, 0.5) AND likelihood (b.BodyType = ?, 0.9))))" +
+                " ORDER BY e.DateReceived DESC " +
+                " LIMIT ?",
+                EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version, 
+                McAbstrFileDesc.FilePresenceEnum.Complete, McAbstrFileDesc.BodyTypeEnum.MIME_4, maxMessages
             );
+        }
+
+        public static List<object> QueryNeedsIndexingObjects (int count)
+        {
+            return new List<object> (QueryNeedsIndexing (count));
+        }
+
+        public static List<McEmailMessage> QueryForSet (List<int> indexList)
+        {
+            var set = String.Format ("( {0} )", String.Join (",", indexList.ToArray<int> ()));
+            var cmd = String.Format ("SELECT e.* FROM McEmailMessage as e WHERE e.ID IN {0}", set);
+            return NcModel.Instance.Db.Query<McEmailMessage> (cmd);
         }
 
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (
-                x => x.AccountId == accountId &&
-                x.IsAwaitingDelete == false &&
-                x.ThreadTopic == topic).ToList ();
+            return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
+            " likelihood (AccountId = ?, 1.0) AND " +
+            " likelihood (IsAwaitingDelete = ?, 1.0) AND " +
+            " likelihood (ThreadTopic = ?, 0.01) ",
+                accountId, false, topic);
         }
 
-        public static IEnumerable<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
+        public static List<McEmailMessage>  QueryUnreadAndHotAfter (DateTime since)
         {
             var retardedSince = since.AddDays (-1.0);
-            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => 
-                false == x.IsRead && since < x.CreatedAt && retardedSince < x.DateReceived).OrderByDescending (x => x.CreatedAt);
+            return NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE " +
+            " (HasBeenNotified = 0 OR ShouldNotify = 1) AND " +
+            " likelihood (IsRead = 0, 0.5) AND " +
+            " CreatedAt > ? AND " +
+            " likelihood (DateReceived > ?, 0.01) " +
+            " ORDER BY DateReceived ASC ",
+                since, retardedSince);
+        }
+
+        public static List<NcEmailMessageIndex> QueryByDateReceivedAndFrom (int accountId, DateTime dateRecv, string from)
+        {
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (e.DateReceived = ?, 0.01) AND " +
+                " likelihood (e.[From] = ?, 0.01) ",
+                accountId, dateRecv, from);
+        }
+
+        public static List<McEmailMessage> QueryUnnotified (int accountId = 0)
+        {
+            var emailMessageList = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified);
+            if (0 != accountId) {
+                emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
+            }
+            return emailMessageList.ToList ();
         }
 
         public override ClassCodeEnum GetClassCode ()
@@ -514,7 +677,7 @@ namespace NachoCore.Model
             if (0 > UserAction) {
                 return false;
             }
-            return (minHotScore < this.Score);
+            return (minHotScore <= this.Score);
         }
 
         public bool IsDeferred ()
@@ -571,171 +734,360 @@ namespace NachoCore.Model
 
     public class McEmailMessageThread
     {
-        List<NcEmailMessageIndex> thread;
+        public int MessageCount { set; get; }
 
-        public McEmailMessageThread ()
+        public int FirstMessageId { set; get; }
+
+        public INachoEmailMessages Source;
+
+        // Filled on demand
+        List<McEmailMessageThread> thread;
+
+        public McEmailMessage FirstMessageSpecialCase ()
         {
-            thread = new List<NcEmailMessageIndex> ();
+            return McEmailMessage.QueryById<McEmailMessage> (FirstMessageId);
         }
 
-        public void Add (NcEmailMessageIndex index)
+        public int FirstMessageSpecialCaseIndex ()
         {
-            thread.Add (index);
+            return FirstMessageId;
         }
 
-        public int GetEmailMessageIndex (int i)
-        {
-            return thread.ElementAt (i).Id;
-        }
-
-        public McEmailMessage GetEmailMessage (int i)
-        {
-            return thread.ElementAt (i).GetMessage ();
-        }
-
+        /// <summary>
+        /// Implies that the thread has only a single messages
+        /// </summary>
         public McEmailMessage SingleMessageSpecialCase ()
         {
-            var message = GetEmailMessage (0);
-            return message;
-        }
-
-        public int SingleMessageSpecialCaseIndex ()
-        {
-            return GetEmailMessageIndex (0);
+//            NcAssert.True (1 == thread.Count);
+            return FirstMessageSpecialCase ();
         }
 
         public int Count {
             get {
-                return thread.Count;
+                return MessageCount;
             }
+        }
+
+        public bool HasMultipleMessages ()
+        {
+            return (1 < Count);
+        }
+
+        public string GetThreadId ()
+        {
+            return FirstMessageSpecialCase ().ConversationId;
+        }
+
+        public string GetSubject ()
+        {
+            return FirstMessageSpecialCase ().Subject;
         }
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
         {
-            using (IEnumerator<NcEmailMessageIndex> ie = thread.GetEnumerator ()) {
+            NcAssert.NotNull (Source);
+
+            if (null == thread) {
+                thread = Source.GetEmailThreadMessages (FirstMessageId);
+            }
+            using (IEnumerator<McEmailMessageThread> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
-                    yield return ie.Current.GetMessage ();
+                    var message = ie.Current.SingleMessageSpecialCase ();
+                    if (null != message) {
+                        yield return message;
+                    }
                 }
             }
         }
     }
 
+    public class McEmailMessageThreadIndexComparer : IEqualityComparer<McEmailMessageThread>
+    {
+        public bool Equals (McEmailMessageThread a, McEmailMessageThread b)
+        {
+            return a.FirstMessageId == b.FirstMessageId;
+        }
+
+        public int GetHashCode (McEmailMessageThread i)
+        {
+            return i.FirstMessageId;
+        }
+    }
+
     public partial class McEmailMessage
     {
-        protected Boolean isAncillaryInMemory;
+        private bool emailAddressesChanged = false;
 
-        public McEmailMessage () : base ()
-        {
-            _Categories = new List<McEmailMessageCategory> ();
-            _MeetingRequest = null;
-            isAncillaryInMemory = false;
-        }
+        /// Indexes of To in McEmailAddress table
+        private List<int> dbToEmailAddressId = null;
+
+        /// Indexes of Cc in McEmailAddress table
+        private List<int> dbCcEmailAddressId = null;
+
+        private List<McEmailMessageCategory> dbCategories = null;
+        private IList<McEmailMessageCategory> appCategories = null;
 
         [Ignore]
-        public List<McEmailMessageCategory> Categories {
+        public IList<McEmailMessageCategory> Categories {
             get {
-                ReadAncillaryData ();
-                return _Categories;
+                return GetAncillaryCollection (appCategories, ref dbCategories, ReadDbCategories);
             }
             set {
-                ReadAncillaryData ();
-                _Categories = value;
+                NcAssert.NotNull (value, "To clear the categories, use an empty list instead of null.");
+                appCategories = value;
             }
         }
+
+        private List<McEmailMessageCategory> ReadDbCategories ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+        }
+
+        private void DeleteDbCategories ()
+        {
+            DeleteAncillaryCollection (ref dbCategories, ReadDbCategories);
+        }
+
+        private void SaveCategories ()
+        {
+            SaveAncillaryCollection (ref appCategories, ref dbCategories, ReadDbCategories, (McEmailMessageCategory category) => {
+                category.SetParent (this);
+            }, (McEmailMessageCategory category) => {
+                return category.ParentId == this.Id;
+            });
+        }
+
+        private void InsertCategories ()
+        {
+            InsertAncillaryCollection (ref appCategories, ref dbCategories, (McEmailMessageCategory category) => {
+                category.SetParent (this);
+            });
+        }
+
+        private McMeetingRequest dbMeetingRequest = null;
+        private McMeetingRequest appMeetingRequest = null;
+        private bool dbMeetingRequestRead = false;
+        private bool appMeetingRequestSet = false;
 
         [Ignore]
         public McMeetingRequest MeetingRequest {
             get {
-                ReadAncillaryData ();
-                return _MeetingRequest;
+                if (appMeetingRequestSet) {
+                    return appMeetingRequest;
+                }
+                ReadDbMeetingRequest ();
+                return dbMeetingRequest;
             }
             set {
-                ReadAncillaryData ();
-                _MeetingRequest = value;
+                appMeetingRequest = value;
+                appMeetingRequestSet = true;
             }
         }
 
-        protected NcResult ReadAncillaryData ()
+        private void ReadDbMeetingRequest ()
         {
-            NcAssert.True (!isDeleted);
-            if (isAncillaryInMemory) {
-                return NcResult.OK ();
+            if (!dbMeetingRequestRead) {
+                if (0 != this.Id) {
+                    dbMeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
+                }
+                dbMeetingRequestRead = true;
             }
-            if (0 == Id) {
-                isAncillaryInMemory = true;
-                return NcResult.OK ();
-            }
-            _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
-            _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
-            isAncillaryInMemory = true;
-            return NcResult.OK ();
         }
 
-        protected NcResult InsertAncillaryData (SQLiteConnection db)
+        private void DeleteDbMeetingRequest ()
         {
-            NcAssert.True (0 != Id);
-
-            InsertCategories (db);
-
-            if (null != _MeetingRequest) {
-                _MeetingRequest.Id = 0;
-                _MeetingRequest.EmailMessageId = Id;
-                _MeetingRequest.AccountId = AccountId;
-                _MeetingRequest.Insert ();
+            ReadDbMeetingRequest ();
+            if (null != dbMeetingRequest) {
+                dbMeetingRequest.Delete ();
+                dbMeetingRequest = null;
             }
-
-            return NcResult.OK ();
         }
 
-        protected NcResult InsertCategories (SQLiteConnection db)
+        private void InsertMeetingRequest ()
         {
-            foreach (var c in _Categories) {
-                c.Id = 0;
-                c.SetParent (this);
-                c.Insert ();
+            NcAssert.True (null == dbMeetingRequest);
+            if (!appMeetingRequestSet) {
+                dbMeetingRequestRead = true;
+                return;
             }
-            return NcResult.OK ();
+            if (null != appMeetingRequest) {
+                NcAssert.True (0 == appMeetingRequest.Id);
+                appMeetingRequest.AccountId = this.AccountId;
+                appMeetingRequest.EmailMessageId = this.Id;
+                appMeetingRequest.Insert ();
+            }
+            dbMeetingRequest = appMeetingRequest;
+            dbMeetingRequestRead = true;
+            appMeetingRequest = null;
+            appMeetingRequestSet = false;
         }
 
-        protected void DeleteAncillaryData (SQLiteConnection db)
+        private void SaveMeetingRequest ()
         {
-            NcAssert.True (0 != Id);
-            db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
-            db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
+            if (!appMeetingRequestSet) {
+                return;
+            }
+            ReadDbMeetingRequest ();
+            if (null == appMeetingRequest) {
+                DeleteDbMeetingRequest ();
+            } else if (0 == appMeetingRequest.Id) {
+                DeleteDbMeetingRequest ();
+                appMeetingRequest.AccountId = this.AccountId;
+                appMeetingRequest.EmailMessageId = this.Id;
+                appMeetingRequest.Insert ();
+            } else {
+                NcAssert.True (appMeetingRequest.EmailMessageId == this.Id);
+                appMeetingRequest.Update ();
+            }
+            dbMeetingRequest = appMeetingRequest;
+            dbMeetingRequestRead = true;
+            appMeetingRequest = null;
+            appMeetingRequestSet = false;
+        }
+
+        [Ignore]
+        public List<int> ToEmailAddressId {
+            get {
+                ReadAddressMaps ();
+                return dbToEmailAddressId;
+            }
+            set {
+                emailAddressesChanged = true;
+                dbToEmailAddressId = value;
+            }
+        }
+
+        [Ignore]
+        public List<int> CcEmailAddressId {
+            get {
+                ReadAddressMaps ();
+                return dbCcEmailAddressId;
+            }
+            set {
+                emailAddressesChanged = true;
+                dbCcEmailAddressId = value;
+            }
+        }
+
+        protected void ReadAddressMaps ()
+        {
+            if (null == dbToEmailAddressId) {
+                if (0 == this.Id) {
+                    dbToEmailAddressId = new List<int> ();
+                } else {
+                    dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
+                }
+            }
+            if (null == dbCcEmailAddressId) {
+                if (0 == this.Id) {
+                    dbCcEmailAddressId = new List<int> ();
+                } else {
+                    dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
+                }
+            }
+        }
+
+        private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
+        {
+            if (null != addressIdList) {
+                foreach (var addressId in addressIdList) {
+                    var map = CreateAddressMap ();
+                    map.EmailAddressId = addressId;
+                    map.AddressType = kind;
+                    map.Insert ();
+                }
+            }
+        }
+
+        private void InsertAddressMaps ()
+        {
+            if (0 < FromEmailAddressId) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = FromEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.From;
+                map.Insert ();
+            }
+            if (0 < SenderEmailAddressId) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = SenderEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.Sender;
+                map.Insert ();
+            }
+            InsertAddressList (dbToEmailAddressId, NcEmailAddress.Kind.To);
+            InsertAddressList (dbCcEmailAddressId, NcEmailAddress.Kind.Cc);
+            emailAddressesChanged = false;
+        }
+
+        private void DeleteAddressMaps ()
+        {
+            McMapEmailAddressEntry.DeleteMessageMapEntries (AccountId, Id);
         }
 
         public override int Insert ()
         {
-            int returnVal = -1; 
+            using (var capture = CaptureWithStart ("Insert")) {
+                int returnVal = -1; 
 
-            if (0 == ScoreVersion) {
-                // Try to use the contact score for initial email message score
-                McEmailAddress emailAddress = GetFromAddress ();
-                if (null != emailAddress) {
-                    Score = emailAddress.Score;
+                if (0 == ScoreVersion) {
+                    // Try to use the address score for initial email message score
+                    // TODO - Should refactor IScorable to include a quick score function in Brain 2.0
+                    McEmailAddress emailAddress = GetFromAddress ();
+                    if (null != emailAddress) {
+                        if (emailAddress.IsVip || (0 < UserAction)) {
+                            Score = minHotScore;
+                        } else if (0 > UserAction) {
+                            Score = minHotScore - 0.1;
+                        } else if (0 < emailAddress.ScoreVersion) {
+                            Score = emailAddress.Score;
+                        } else {
+                            Score = 0.0;
+                        }
+                    }
                 }
-            }
+                HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
 
-            NcModel.Instance.RunInTransaction (() => {
-                returnVal = base.Insert ();
-                InsertAncillaryData (NcModel.Instance.Db);
-            });
+                NcModel.Instance.RunInTransaction (() => {
+                    returnVal = base.Insert ();
+                    InsertAddressMaps ();
+                    InsertMeetingRequest ();
+                    InsertCategories ();
+                    InsertScoreStates ();
+                });
               
-            return returnVal;
+                return returnVal;
+            }
         }
 
         public override int Update ()
         {
-            int returnVal = -1;  
+            using (var capture = CaptureWithStart ("Update")) {
+                int returnVal = -1;  
+                if (!HasBeenNotified) {
+                    HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
+                }
 
-            NcModel.Instance.RunInTransaction (() => {
-                returnVal = base.Update ();
-                ReadAncillaryData ();
-                DeleteAncillaryData (NcModel.Instance.Db);
-                InsertAncillaryData (NcModel.Instance.Db);
+                NcModel.Instance.RunInTransaction (() => {
+                    returnVal = base.Update ();
+                    SaveMeetingRequest ();
+                    SaveCategories ();
+                    if (emailAddressesChanged) {
+                        DeleteAddressMaps ();
+                        InsertAddressMaps ();
+                    }
+                    // Score states are only affected by brain which uses the score states Update() method.
+                    // So, no need to update score states here
+                });
+
+                return returnVal;
+            }
+        }
+
+        public void UpdateIsIndex ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ? WHERE Id = ?",
+                    IsIndexed, Id);
             });
-
-            return returnVal;
         }
 
         public override void DeleteAncillary ()
@@ -752,15 +1104,20 @@ namespace NachoCore.Model
                     }
                 }
             }
+            DeleteDbMeetingRequest ();
+            DeleteDbCategories ();
             DeleteAttachments ();
-            DeleteAncillaryData (NcModel.Instance.Db);
+            DeleteAddressMaps ();
         }
 
         public override int Delete ()
         {
-            int returnVal = base.Delete ();
-
-            return returnVal;
+            using (var capture = CaptureWithStart ("Delete")) {
+                int returnVal = base.Delete ();
+                NcBrain.UnindexEmailMessage (this);
+                DeleteScoreStates ();
+                return returnVal;
+            }
         }
 
         public McEmailAddress GetFromAddress ()
@@ -791,6 +1148,21 @@ namespace NachoCore.Model
                 return true;
             }
             return false;
+        }
+
+        public void SetIndexVersion ()
+        {
+            if (0 == BodyId) {
+                // No body to index. This message is fully indexed.
+                IsIndexed = EmailMessageIndexDocument.Version;
+            } else {
+                var body = GetBody ();
+                if ((null != body) && body.IsComplete ()) {
+                    IsIndexed = EmailMessageIndexDocument.Version;
+                } else {
+                    IsIndexed = EmailMessageIndexDocument.Version - 1;
+                }
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using UIImageEffectsBinding;
 
 namespace NachoClient.iOS
@@ -37,14 +37,14 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            backgroundBlurredImageView = new UIImageView (new RectangleF (0.0f, 0.0f, 0.0f, 0.0f));
+            backgroundBlurredImageView = new UIImageView (new CGRect (0.0f, 0.0f, 0.0f, 0.0f));
             backgroundBlurredImageView.ContentMode = UIViewContentMode.Center;
             backgroundBlurredImageView.ClipsToBounds = true;
             backgroundBlurredImageView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             View.AddSubview (backgroundBlurredImageView);
             View.SendSubviewToBack (backgroundBlurredImageView);
 
-            backgroundOverlayView = new UIView (new RectangleF (0.0f, 0.0f, 0.0f, 0.0f));
+            backgroundOverlayView = new UIView (new CGRect (0.0f, 0.0f, 0.0f, 0.0f));
             backgroundOverlayView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             backgroundOverlayView.ClipsToBounds = true;
             backgroundBlurredImageView.AddSubview (backgroundOverlayView);

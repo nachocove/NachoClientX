@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Xml.Linq;
@@ -25,9 +25,9 @@ namespace Test.Common
     {
         public class MockDataSource : IBEContext
         {
-            public IProtoControlOwner Owner { set; get; }
+            public INcProtoControlOwner Owner { set; get; }
 
-            public AsProtoControl ProtoControl { set; get; }
+            public NcProtoControl ProtoControl { set; get; }
 
             public McProtocolState ProtocolState { get; set; }
 
@@ -45,34 +45,86 @@ namespace Test.Common
             }
         }
 
-        public class MockProtoControlOwner : IProtoControlOwner
+        public class MockProtoControlOwner : INcProtoControlOwner
         {
             public string AttachmentsDir { set; get; }
 
-            public void CredReq (ProtoControl sender)
+            public void CredReq (NcProtoControl sender)
             {
             }
 
-            public void ServConfReq (ProtoControl sender)
+            public void ServConfReq (NcProtoControl sender, object arg)
             {
             }
 
-            public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+            public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate)
             {
             }
 
-            public void StatusInd (ProtoControl sender, NcResult status)
+            public void StatusInd (NcProtoControl sender, NcResult status)
             {
             }
 
-            public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+            public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
             {
             }
 
-            public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+            public void SearchContactsResp (NcProtoControl sender, string prefix, string token)
+            {
+            }
+
+            public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
             {
             }
         }
+
+        [Test]
+        public void ParseMailTo()
+        {
+            List<NcEmailAddress> addresses;
+            string subject;
+            string body;
+
+            string urlString;
+
+            urlString = "mailto:someone@example.com";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (1, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:someone@example.com?subject=This%20is%20the%20subject&cc=someone_else@example.com&body=This%20is%20the%20body";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.AreEqual ("This is the subject", subject);
+            Assert.AreEqual ("This is the body", body);
+
+            urlString = "mailto:someone@example.com,someoneelse@example.com";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:someone@example.com,someoneelse@example.com?";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:someone@example.com,someoneelse@example.com?&&";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:?to=&subject=mailto%20with%20examples&body=http://en.wikipedia.org/wiki/Mailto";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (0, addresses.Count);
+            Assert.AreEqual ("mailto with examples", subject);
+            Assert.AreEqual ("http://en.wikipedia.org/wiki/Mailto", body);
+
+        }
+
         //Creates a string that represents an XML email
         public string createXMLEmail (string serverID, List<McEmailMessageCategory> categories)
         {
@@ -168,15 +220,13 @@ namespace Test.Common
         [Test]
         public void SetOptionalFields ()
         {
-            var mds = new MockDataSource ();
-            CreateMcBody (mds, 1);
             var setOptionalsXML = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             McEmailMessage setOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (setOptionalsXML, new MockNcFolder ());
-            Assert.NotNull (setOptionalsEmail.To);
-            Assert.NotNull (setOptionalsEmail.From);
-            Assert.NotNull (setOptionalsEmail.DisplayTo);
-            Assert.NotNull (setOptionalsEmail.Importance);
-            Assert.NotNull (setOptionalsEmail.Categories);
+            Assert.NotNull (setOptionalsEmail.To, "To");
+            Assert.NotNull (setOptionalsEmail.From, "From");
+            Assert.NotNull (setOptionalsEmail.DisplayTo, "DisplayTo");
+            Assert.NotNull (setOptionalsEmail.Importance, "Importance");
+            Assert.NotNull (setOptionalsEmail.Categories, "Categories");
         }
 
         [Test]
@@ -231,7 +281,7 @@ namespace Test.Common
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories (1)));
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
-            List<McEmailMessageCategory> categories = email1.Categories;
+            IList<McEmailMessageCategory> categories = email1.Categories;
 
             AssertListsAreEquals (categories, email1.Categories);
             email1.Categories = categories;
@@ -246,7 +296,6 @@ namespace Test.Common
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
-            Assert.True (email1.getInternalCategoriesList ().Count == 6);
 
             email1.AccountId = 1;
             email1.Update ();
@@ -280,18 +329,9 @@ namespace Test.Common
             McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
-            email1.Categories.Clear ();
+            email1.Categories = new List<McEmailMessageCategory> ();
             email1.Update ();
             Assert.True (email1.Categories.Count == 0);
-        }
-        //Check this
-        [Test]
-        public void ReadRecordWithoutAncillary ()
-        {
-            var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories (1)));
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
-            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
-            Assert.True (email2.getInternalCategoriesList ().Count () == 0);
         }
 
         [Test]
@@ -306,7 +346,7 @@ namespace Test.Common
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             Assert.True (email2.Categories.Count == 6);
-            email2.Categories.Clear ();
+            email2.Categories = new List<McEmailMessageCategory> ();
             email2.Update ();
             Assert.True (email2.Categories.Count == 0);
             email2.Categories = oneItem;
@@ -314,7 +354,9 @@ namespace Test.Common
             Assert.True (email2.Categories.Count == 1);
 
             email2.To = "No Recip.";
-            email2.Categories.Add (getCategories (1) [2]);
+            var email2Categories = new List<McEmailMessageCategory> (email2.Categories);
+            email2Categories.Add (getCategories (1) [2]);
+            email2.Categories = email2Categories;
             email2.Update ();
 
             McEmailMessage email3 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
@@ -346,9 +388,9 @@ namespace Test.Common
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             email2.Cc = "ChangedTheCC";
-            List<McEmailMessageCategory> listPreUpdate = email2.Categories;
+            IList<McEmailMessageCategory> listPreUpdate = email2.Categories;
             email2.Update ();
-            List<McEmailMessageCategory> listPostUpdate = email2.Categories;
+            IList<McEmailMessageCategory> listPostUpdate = email2.Categories;
 
             AssertListsAreEquals (listPreUpdate, listPostUpdate);
         }
@@ -366,7 +408,7 @@ namespace Test.Common
             Assert.True (email2.Categories [0].Name.Trim ().Equals ("ChangedTheName"));
         }
 
-        private static void AssertListsAreEquals (IList actualList, IList expectedList)
+        private static void AssertListsAreEquals<T> (IList<T> actualList, IList<T> expectedList)
         {
             if (actualList.Count != expectedList.Count)
                 Assert.Fail ("Property {0}.{1} does not match. Expected IList containing {2} elements but was IList containing {3} elements", expectedList.Count, actualList.Count);
@@ -403,36 +445,6 @@ namespace Test.Common
             }
 
             return serverIDs;
-        }
-
-        [Test]
-        public void UpdateEmailSet ()
-        {
-            List<McEmailMessageCategory> categories = getCategories (1);
-            List<McEmailMessage> email = new List<McEmailMessage> ();
-            List<McEmailMessageCategory> updatedCategories = new List<McEmailMessageCategory> ();
-            updatedCategories.Add (categories [0]);
-            updatedCategories.Add (categories [1]);
-            List<string> serverIds = getServerIDs (6);
-            for (int i = 0; i < 6; i++) {
-                email.Add (InsertEmailIntoDB (serverIds [i], categories));
-
-                for (int j = 0; j < email [i].Categories.Count (); j++) {
-                    string spaces = "".PadRight (10 - email [i].Categories [j].Name.Length);
-                    Console.WriteLine ("DB: " + email [i].Categories [j].Name + spaces + " ORIGINAL: " + categories [j].Name);
-                }
-     
-                email [i].Categories = updatedCategories;
-                email [i].Update ();
-
-                for (int j = 0; j < email [i].Categories.Count (); j++) {
-                    string spaces = "".PadRight (10 - email [i].Categories [j].Name.Length);
-                    Console.WriteLine ("DB: " + email [i].Categories [j].Name + spaces + " ORIGINAL: " + updatedCategories [j].Name);
-                    string word1 = email [i].Categories [j].Name.Trim ();
-                    string word2 = updatedCategories [j].Name.Trim ();
-                    Assert.True (word1.CompareTo (word2) == 0);
-                }
-            }
         }
 
         [Test]
@@ -503,7 +515,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void BodyTouch()
+        public void BodyTouch ()
         {
             var mds = new MockDataSource ();
             CreateMcBody (mds, 1);
@@ -515,8 +527,6 @@ namespace Test.Common
         [Test]
         public void EmailCategoriesTest ()
         {
-            var mds = new MockDataSource ();
-            CreateMcBody (mds, 1);
             var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             Assert.IsNotNull (categoriesXMLCommand);
             Assert.AreEqual (categoriesXMLCommand.Name.LocalName, Xml.AirSync.Add);
@@ -674,7 +684,7 @@ namespace Test.Common
             <Body xmlns=""AirSyncBase"">
               <Type>4</Type>
               <EstimatedDataSize>308849</EstimatedDataSize>
-              <Data nacho-body-id=""1"" />
+              <Preview>This is the preview</Preview>
             </Body>
             <MessageClass xmlns=""Email"">IPM.Note</MessageClass>
             <Importance xmlns=""Email"">1</Importance>

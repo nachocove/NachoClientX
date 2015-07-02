@@ -4,7 +4,7 @@
       <attribute_redaction>none</attribute_redaction>
    </ServerId>
    <ParentId>
-      <element_redaction>none</element_redaction>
+      <element_redaction>short_hash</element_redaction>
       <attribute_redaction>none</attribute_redaction>
    </ParentId>
    <Status>
@@ -81,7 +81,7 @@
                <attribute_redaction>none</attribute_redaction>
             </ServerId>
             <ParentId>
-               <element_redaction>none</element_redaction>
+               <element_redaction>short_hash</element_redaction>
                <attribute_redaction>none</attribute_redaction>
             </ParentId>
             <DisplayName>
@@ -109,7 +109,7 @@
                <attribute_redaction>none</attribute_redaction>
             </ServerId>
             <ParentId>
-               <element_redaction>none</element_redaction>
+               <element_redaction>short_hash</element_redaction>
                <attribute_redaction>none</attribute_redaction>
             </ParentId>
             <DisplayName>

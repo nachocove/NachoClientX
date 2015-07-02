@@ -2,11 +2,11 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using System.IO;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 
 namespace NachoClient.iOS
@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         UIButton myConferenceButton;
 
         UIColor separatorColor = A.Color_NachoBorderGray;
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
         protected int NAV_BAR_HEIGHT = 44;
@@ -31,7 +31,7 @@ namespace NachoClient.iOS
         protected int PHONE_OFFSET = 0;
         //        protected int START_PICKER_HEIGHT = 0;
         //        protected int END_PICKER_HEIGHT = 0;
-        protected float TEXT_LINE_HEIGHT = 19.124f;
+        protected nfloat TEXT_LINE_HEIGHT = 19.124f;
         //        protected float DESCRIPTION_OFFSET = 0f;
         //        protected bool suppressLayout = false;
         //        protected bool startDateOpen = false;
@@ -70,8 +70,10 @@ namespace NachoClient.iOS
 
             doneButton.Clicked += (object sender, EventArgs e) => {
                 Phone = phoneField.Text;
-                NavigationController.PopViewControllerAnimated (true);
+                NavigationController.PopViewController (true);
             };
+
+            doneButton.AccessibilityLabel = "Done";
 
             CreatePhoneView ();
 
@@ -106,36 +108,38 @@ namespace NachoClient.iOS
         protected void CreatePhoneView ()
         {
             myNumberButton = UIButton.FromType (UIButtonType.System);
-            myNumberButton.Frame = new RectangleF (0, LINE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
+            myNumberButton.Frame = new CGRect (0, LINE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
             myNumberButton.Font = A.Font_AvenirNextRegular14;
             myNumberButton.SetTitle ("Use My Phone Number", UIControlState.Normal);
+            myNumberButton.AccessibilityLabel = "Use my phone number";
             myNumberButton.SetTitleColor (solidTextColor, UIControlState.Normal);
             myNumberButton.BackgroundColor = UIColor.White;
             myNumberButton.TouchUpInside += (sender, e) => {
                 Phone = "My phone number";
-                NavigationController.PopViewControllerAnimated (true);
+                NavigationController.PopViewController (true);
             };
 
             myConferenceButton = UIButton.FromType (UIButtonType.System);
-            myConferenceButton.Frame = new RectangleF (0, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
+            myConferenceButton.Frame = new CGRect (0, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
             myConferenceButton.Font = A.Font_AvenirNextRegular14;
             myConferenceButton.SetTitle ("Use My Conference Call Number", UIControlState.Normal);
+            myConferenceButton.AccessibilityLabel = "Use my conference call number";
             myConferenceButton.SetTitleColor (solidTextColor, UIControlState.Normal);
             myConferenceButton.BackgroundColor = UIColor.White;
             myConferenceButton.TouchUpInside += (sender, e) => {
                 Phone = "My conference number";
-                NavigationController.PopViewControllerAnimated (true);
+                NavigationController.PopViewController (true);
             };
 
             //Phone Number
-            phoneView = new UIView (new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
+            phoneView = new UIView (new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
             phoneView.BackgroundColor = UIColor.White;
 
-            UIImageView phoneImage = new UIImageView (new RectangleF (15, 14.5f, 15, 15));
+            UIImageView phoneImage = new UIImageView (new CGRect (15, 14.5f, 15, 15));
             phoneImage.Image = UIImage.FromBundle ("icn-mtng-phone");
             phoneView.AddSubview (phoneImage);
 
-            phoneField = new UITextField (new RectangleF (LINE_OFFSET + 7, 12.438f, SCREEN_WIDTH - 52, TEXT_LINE_HEIGHT));
+            phoneField = new UITextField (new CGRect (LINE_OFFSET + 7, 12.438f, SCREEN_WIDTH - 52, TEXT_LINE_HEIGHT));
             phoneField.Font = A.Font_AvenirNextRegular14;
             phoneField.TextColor = A.Color_808080;
             phoneField.Placeholder = "Phone Number or Contact";
@@ -168,7 +172,7 @@ namespace NachoClient.iOS
             //Content View
 
             var bottom = phoneView.Frame.Bottom + LINE_OFFSET;
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, bottom + 100);
+            contentView.Frame = new CGRect (0, 0, SCREEN_WIDTH, bottom + 100);
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             contentView.AddSubviews (new UIView[] {
                 myNumberButton,
@@ -204,9 +208,9 @@ namespace NachoClient.iOS
         }
             
 
-        public UIView AddLine (float offset, float yVal, float width, UIColor color)
+        public UIView AddLine (nfloat offset, nfloat yVal, nfloat width, UIColor color)
         {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            var lineUIView = new UIView (new CGRect (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             return (lineUIView);
         }
@@ -217,19 +221,19 @@ namespace NachoClient.iOS
 
             UIView.Animate (0.2, () => {
 
-                phoneView.Frame = new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + PHONE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
+                phoneView.Frame = new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + PHONE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
                 //conferenceView.Frame = new RectangleF (0, (LINE_OFFSET * 2) + CELL_HEIGHT + CONFERENCE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
 
 //                line1.Frame = new RectangleF (0, LINE_OFFSET + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET, SCREEN_WIDTH, .5f);
 //                line2.Frame = new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET, SCREEN_WIDTH, .5f);
-                line3.Frame = new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + PHONE_OFFSET, SCREEN_WIDTH, .5f);
-                line4.Frame = new RectangleF (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + PHONE_OFFSET, SCREEN_WIDTH, .5f);
+                line3.Frame = new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + PHONE_OFFSET, SCREEN_WIDTH, .5f);
+                line4.Frame = new CGRect (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + PHONE_OFFSET, SCREEN_WIDTH, .5f);
 
             },
                 () => {
 
                 });
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + PHONE_OFFSET);
+            contentView.Frame = new CGRect (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + PHONE_OFFSET);
             scrollView.ContentSize = contentView.Frame.Size;
         }
 

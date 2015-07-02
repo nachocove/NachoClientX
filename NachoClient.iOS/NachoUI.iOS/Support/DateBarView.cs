@@ -1,12 +1,11 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using UIImageEffectsBinding;
-using MonoTouch.CoreGraphics;
 using NachoCore.Utils;
 using NachoCore;
 
@@ -27,6 +26,8 @@ namespace NachoClient.iOS
             "Friday",
             "Saturday"
         });
+
+        UIView parentView;
         INcEventProvider calendar;
         public DateTime ViewDate = new DateTime ();
         CalendarViewController owner;
@@ -38,11 +39,7 @@ namespace NachoClient.iOS
 
         public DateBarView (UIView parentView, INcEventProvider calendar)
         {
-            monthLabelView = new UILabel (new RectangleF (0, 2, parentView.Frame.Width, 20));
-            this.Frame = (new RectangleF (0, 0, parentView.Frame.Width, dateBarHeight + (dateBarRowHeight * 5)));
-            this.BackgroundColor = UIColor.White;
-            this.MakeDayLabels ();
-            this.MakeDateDotButtons ();
+            this.parentView = parentView;
             this.calendar = calendar;
         }
 
@@ -54,6 +51,15 @@ namespace NachoClient.iOS
         public void SetOwner (CalendarViewController owner)
         {
             this.owner = owner;
+        }
+
+        public void InitializeDateBar ()
+        {
+            monthLabelView = new UILabel (new CGRect (0, 2, parentView.Frame.Width, 20));
+            this.Frame = (new CGRect (0, 0, parentView.Frame.Width, dateBarHeight + (dateBarRowHeight * 5)));
+            this.BackgroundColor = UIColor.White;
+            this.MakeDayLabels ();
+            this.MakeDateDotButtons ();
         }
 
         public static int IndexOfDayOfWeek (string dayOfWeek)
@@ -73,18 +79,19 @@ namespace NachoClient.iOS
         public void MakeDayLabels ()
         {
             int i = 0;
-            int spacing = 0;
+            nfloat spacing = 0;
+            nfloat spacer = (owner.View.Frame.Width - (24 * 2) - 12) / 6f;
+            nfloat startingX = 24f;
             while (i < 7) {
-                var daysLabelView = new UILabel (new RectangleF (24 + spacing, 18 + 5, 12, 12));
+                var daysLabelView = new UILabel (new CGRect (startingX + spacing, 18 + 5, 12, 12));
                 daysLabelView.TextColor = A.Color_NachoIconGray;
                 daysLabelView.Tag = 99 - i;
                 daysLabelView.Text = Days [i].Substring (0, 1);
                 daysLabelView.Font = (A.Font_AvenirNextMedium10);
                 daysLabelView.TextAlignment = UITextAlignment.Center;
                 this.Add (daysLabelView);
-                spacing += 43;
+                spacing += spacer;
                 i++;
-
             }
         }
 
@@ -93,10 +100,13 @@ namespace NachoClient.iOS
             monthLabelView.TextColor = A.Color_NachoIconGray;
             monthLabelView.Font = A.Font_AvenirNextMedium12;
             monthLabelView.TextAlignment = UITextAlignment.Center;
+
             this.AddSubview (monthLabelView);
             this.ViewDate = DateTime.Today;
             int i = 0;
-            int spacing = 0;
+            nfloat spacing = 0;
+            nfloat spacerWidth = (owner.View.Frame.Width - (12 * 2) - 36) / 6f;
+            nfloat startingX = 12;
             int j = 0;
             var tagIncrement = 0;
             int row = 0;
@@ -105,7 +115,7 @@ namespace NachoClient.iOS
                 spacing = 0;
                 while (i < 7) {
                     var buttonRect = UIButton.FromType (UIButtonType.RoundedRect);
-                    buttonRect.Frame = new RectangleF (12 + spacing, 5 + 34 + row, 36, 36);
+                    buttonRect.Frame = new CGRect (startingX + spacing, 5 + 34 + row, 36, 36);
                     buttonRect.Tag = tagIncrement + 100;
                     buttonRect.Layer.CornerRadius = 18;
                     buttonRect.Layer.BorderColor = A.Card_Border_Color;
@@ -113,19 +123,20 @@ namespace NachoClient.iOS
                     buttonRect.Layer.MasksToBounds = true;
                     buttonRect.TintColor = UIColor.Clear;
                     buttonRect.BackgroundColor = UIColor.White;
+                    buttonRect.AccessibilityLabel = "Date";
                     buttonRect.TouchUpInside += (sender, e) => {
                         ToggleButtons (buttonRect.Tag);
                         owner.ScrollToDate (this, buttonRect);
                     };
                     this.AddSubview (buttonRect);
 
-                    var eventIndicatorDot = new UIImageView (new RectangleF (buttonRect.Center.X - 2, buttonRect.Center.Y + 24, 4, 4));
-                    eventIndicatorDot.Image = Util.DrawCalDot (A.Color_NachoBorderGray, new SizeF (4, 4));
+                    var eventIndicatorDot = new UIImageView (new CGRect (buttonRect.Center.X - 2, buttonRect.Center.Y + 24, 4, 4));
+                    eventIndicatorDot.Image = Util.DrawCalDot (A.Color_NachoBorderGray, new CGSize (4, 4));
                     eventIndicatorDot.Hidden = true;
                     eventIndicatorDot.Tag = tagIncrement + 200;
                     this.AddSubview (eventIndicatorDot);
 
-                    spacing += 43;
+                    spacing += spacerWidth;
                     i++;
                     tagIncrement++;
                 }
@@ -292,7 +303,7 @@ namespace NachoClient.iOS
 
         }
 
-        public void ToggleButtons (int selectedButtonTag)
+        public void ToggleButtons (nint selectedButtonTag)
         {
             if (!CalendarViewController.BasicView) {
                 var firstDate = GetFirstDay (this.ViewDate);
@@ -387,10 +398,10 @@ namespace NachoClient.iOS
 
         }
 
-        public int IsButtonInWeek (int baseButtonTag, DateTime baseButtonDate, DateTime newDate)
+        public int IsButtonInWeek (nint baseButtonTag, DateTime baseButtonDate, DateTime newDate)
         {
             TimeSpan difference = baseButtonDate - newDate;
-            var tempTag = baseButtonTag + (int)difference.Days;
+            var tempTag = baseButtonTag + difference.Days;
             if (99 >= tempTag) {
                 return -1;
             }
@@ -400,10 +411,10 @@ namespace NachoClient.iOS
             return 0;
         }
 
-        public int IsButtonInMonth (int baseButtonTag, DateTime baseButtonDate, DateTime newDate)
+        public int IsButtonInMonth (nint baseButtonTag, DateTime baseButtonDate, DateTime newDate)
         {
-            TimeSpan difference = baseButtonDate - newDate;
-            var tempTag = baseButtonTag + (int)difference.Days;
+            TimeSpan difference = newDate - baseButtonDate;
+            var tempTag = baseButtonTag + difference.Days;
             int rows = RowsInAMonth (baseButtonDate);
             if (99 >= tempTag) {
                 return -1;
@@ -424,7 +435,7 @@ namespace NachoClient.iOS
             return 0;
         }
 
-        public int GetMonthTag (DateTime date)
+        public nint GetMonthTag (DateTime date)
         {
             int dayOffset = IndexOfDayOfWeek ((GetFirstDay (date)).DayOfWeek.ToString ());
             return dayOffset + date.Day + 99;

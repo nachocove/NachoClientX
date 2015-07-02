@@ -232,6 +232,18 @@
                   <attribute_redaction>full</attribute_redaction>
                </BodyType>
             </OofMessage>
+            <EmailAddresses>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
+               <SMTPAddress>
+                  <element_redaction>full</element_redaction>
+                  <attribute_redaction>full</attribute_redaction>
+               </SMTPAddress>
+               <PrimarySmtpAddress>
+                  <element_redaction>full</element_redaction>
+                  <attribute_redaction>full</attribute_redaction>
+               </PrimarySmtpAddress>
+            </EmailAddresses>
          </Set>
       </Oof>
       <DevicePassword>

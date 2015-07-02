@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
-using MonoTouch.CoreAnimation;
-using System.Drawing;
+using CoreAnimation;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -52,7 +52,7 @@ namespace NachoClient.iOS
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = A.Color_NachoGreen;
 
-            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
             navBar.BarStyle = UIBarStyle.Default;
             navBar.Opaque = true;
             navBar.Translucent = false;
@@ -64,9 +64,10 @@ namespace NachoClient.iOS
                 navItem.Title = "Set Deadline";
             }
             using (var image = UIImage.FromBundle ("modal-close")) {
-                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                var dismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton.AccessibilityLabel = "Dismiss";
                 dismissButton.Clicked += (object sender, EventArgs e) => {
-                    DismissDateController(true, null);
+                    DismissDateController (true, null);
                 };
                 navItem.LeftBarButtonItem = dismissButton;
             }
@@ -74,17 +75,22 @@ namespace NachoClient.iOS
 
             priorityView.AddSubview (navBar);
 
-            float yOffset = 64;
+            nfloat yOffset = 64;
 
-            UIView sectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, .5f));
+            UIView sectionSeparator = new UIView (new CGRect (0, yOffset, View.Frame.Width, .5f));
             sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.6f);
             priorityView.AddSubview (sectionSeparator);
 
             yOffset = sectionSeparator.Frame.Bottom + 20;
 
             if (DateControllerType.Defer == dateControllerType) {
-                UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
-                messageSubject.Text = thread.GetEmailMessage (0).Subject;
+                UILabel messageSubject = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 25));
+                var subject = thread.GetSubject ();
+                if (null != subject) {
+                    messageSubject.Text = Pretty.SubjectString (subject);
+                } else {
+                    messageSubject.Text = "";
+                }
                 messageSubject.Font = A.Font_AvenirNextRegular17;
                 messageSubject.TextColor = UIColor.White;
                 priorityView.Add (messageSubject);
@@ -102,7 +108,7 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Tonight", "modal-tonight", () => DateSelected (MessageDeferralType.Tonight, DateTime.MinValue)),
                     new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
-                    new ButtonInfo ("This Week", "modal-this-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
+                    new ButtonInfo ("Weekend", "modal-weekend", () => DateSelected (MessageDeferralType.Weekend, DateTime.MinValue)),
                     new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
                     new ButtonInfo ("Forever", "modal-forever", () => DateSelected (MessageDeferralType.Forever, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
@@ -118,8 +124,8 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Today", "modal-later-today", () => DateSelected (MessageDeferralType.EndOfDay, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
-                    new ButtonInfo ("Next Week", "modal-this-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
-                    new ButtonInfo ("Next Month", "modal-next-week", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
+                    new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
+                    new ButtonInfo ("Next Month", "modal-nextmonth", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     null,
                     new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
@@ -154,11 +160,12 @@ namespace NachoClient.iOS
                 buttonRect.Layer.MasksToBounds = true;
                 buttonRect.Layer.BorderColor = UIColor.LightGray.CGColor;
                 buttonRect.Layer.BorderWidth = .5f;                 
-                buttonRect.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
-                buttonRect.Center = new PointF (xOffset, yOffset);
+                buttonRect.Frame = new CGRect (0, 0, BUTTON_SIZE, BUTTON_SIZE);
+                buttonRect.Center = new CGPoint (xOffset, yOffset);
                 using (var image = UIImage.FromBundle (buttonInfo.buttonIcon).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     buttonRect.SetImage (image, UIControlState.Normal);
                 }
+                buttonRect.AccessibilityLabel = buttonInfo.buttonLabel;
                 buttonRect.TouchUpInside += (object sender, EventArgs e) => {
                     buttonInfo.buttonAction ();
                 };
@@ -170,7 +177,7 @@ namespace NachoClient.iOS
                 label.Font = A.Font_AvenirNextMedium14;
                 label.TextAlignment = UITextAlignment.Center;
                 label.SizeToFit ();
-                label.Center = new PointF (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
+                label.Center = new CGPoint (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
                 priorityView.Add (label);
 
                 xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
@@ -179,7 +186,7 @@ namespace NachoClient.iOS
             View.AddSubview (priorityView);
         }
 
-        public void DismissDateController (bool animated, NSAction action)
+        public void DismissDateController (bool animated, Action action)
         {
             owner = null;
             DismissViewController (animated, action);
@@ -196,16 +203,21 @@ namespace NachoClient.iOS
                 var vc = (DatePickerViewController)segue.DestinationViewController;
                 vc.owner = this;
             }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
         {
             if (DateTime.UtcNow > chosenDateTime) {
+                NcAlertView.ShowMessage (this, "Date in the Past",
+                    "The chosen date is in the past. You must select a date in the future.");
                 return;
             }
 
             vc.owner = null;
-            vc.DismissViewController (false, new NSAction (delegate {
+            vc.DismissViewController (false, new Action (delegate {
                 DateSelected (MessageDeferralType.Custom, chosenDateTime);
             }));
         }

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NachoPlatform;
@@ -15,9 +15,9 @@ namespace NachoCore.Utils
 
         void ReportCommResult (int serverId, DateTime delayUntil);
 
-        void ReportCommResult (string host, bool didFailGenerally);
+        void ReportCommResult (int accountId, string host, bool didFailGenerally);
 
-        void ReportCommResult (string host, DateTime delayUntil);
+        void ReportCommResult (int accountId, string host, DateTime delayUntil);
 
         void Reset (int serverId);
 

@@ -1,42 +1,35 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public class BodyWebView : UIWebView, IBodyRender
+    /// <summary>
+    /// Abstract class for managing a UIWebView within a BodyView.  This class handles everything about
+    /// the UIWebView except for the actual data to be displayed.  The derived classes should be customized
+    /// for specific formats for the data, such as HTML or RTF.
+    /// </summary>
+    public abstract class BodyWebView : UIWebView, IBodyRender
     {
-        private string html;
-        private NSUrl baseUrl;
-        private float preferredWidth;
+        protected NSUrl baseUrl;
+        protected nfloat preferredWidth;
         private Action sizeChangedCallback;
         private bool loadingComplete;
+        private BodyView.LinkSelectedCallback onLinkSelected;
 
-        private const string magic = @"
-            var style = document.createElement(""style""); 
-            document.head.appendChild(style); 
-            style.innerHTML = ""html{{-webkit-text-size-adjust: auto; word-wrap: break-word;}}"";
-            var viewPortTag=document.createElement('meta');
-            viewPortTag.id=""viewport"";
-            viewPortTag.name = ""viewport"";
-            viewPortTag.content = ""width={0}; initial-scale=1.0;"";
-            document.getElementsByTagName('head')[0].appendChild(viewPortTag);
-        ";
-        private const string disableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
-        private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
-
-        public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl)
-            : base (new RectangleF(0, Y, preferredWidth, initialHeight))
+        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (new CGRect(0, Y, preferredWidth, initialHeight))
         {
-            this.html = html;
             this.baseUrl = baseUrl;
             this.preferredWidth = preferredWidth;
             this.sizeChangedCallback = sizeChangedCallback;
+            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
+            this.onLinkSelected = onLinkSelected;
 
             ScrollView.ScrollEnabled = false;
             LoadFinished += OnLoadFinished;
@@ -44,15 +37,22 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             loadingComplete = false;
-
-            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                LoadHtmlString (disableJavaScript + wrapPre + html, baseUrl);
-            }
         }
+
+        /// <summary>
+        /// Have the UIWebView load the content to be displayed.
+        /// </summary>
+        protected abstract void LoadContent ();
+
+        /// <summary>
+        /// Make any necessary adjustments to the content or the layout after the initial loading is complete.
+        /// </summary>
+        protected abstract void PostLoadAdjustment ();
 
         protected override void Dispose (bool disposing)
         {
             StopLoading ();
+            onLinkSelected = null;
             LoadFinished -= OnLoadFinished;
             ShouldStartLoad -= OnShouldStartLoad;
             if (!loadingComplete) {
@@ -66,18 +66,18 @@ namespace NachoClient.iOS
             return this;
         }
 
-        public SizeF ContentSize {
+        public CGSize ContentSize {
             get {
                 return ScrollView.ContentSize;
             }
         }
 
-        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
+        public void ScrollingAdjustment (CGRect frame, CGPoint contentOffset)
         {
             if (frame.Width < preferredWidth) {
                 // Changing the width of the UIWebView will change the layout.
                 // Making the width more narrow can have disastrous effects.
-                float expandWidthBy = preferredWidth - frame.Width;
+                nfloat expandWidthBy = preferredWidth - frame.Width;
                 frame.X -= expandWidthBy;
                 contentOffset.X -= expandWidthBy;
                 frame.Width += expandWidthBy;
@@ -94,12 +94,19 @@ namespace NachoClient.iOS
         {
             loadingComplete = true;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            EvaluateJavascript (string.Format(magic, preferredWidth));
+            PostLoadAdjustment ();
             // Force a re-layout of this web view now that the JavaScript magic has been applied.
-            ViewFramer.Create (this).Height (Frame.Height - 1);
-            // And force a re-layout of the entire BodyView now that the size of this web view is known.
+            // The ScrollView.ContentSize is never smaller than the frame size, so in order to
+            // figure out how big the content really is, we have to set the frame height to a
+            // small number.
+            ViewFramer.Create (this).Height (1);
+            // Force a re-layout of the entire BodyView now that the size of this web view is known.
+            // This web view's frame will be adjusted as part of that.
             if (null != sizeChangedCallback) {
                 sizeChangedCallback ();
+            } else {
+                // There is no callback to force the BodyView to re-layout.
+                ViewFramer.Create (this).Height (ScrollView.ContentSize.Height);
             }
         }
 
@@ -107,7 +114,9 @@ namespace NachoClient.iOS
             UIWebViewNavigationType navigationType)
         {
             if (UIWebViewNavigationType.LinkClicked == navigationType) {
-                UIApplication.SharedApplication.OpenUrl (request.Url);
+                if (null != onLinkSelected) {
+                    onLinkSelected (request.Url);
+                }
                 return false;
             }
             return true;
@@ -122,7 +131,7 @@ namespace NachoClient.iOS
                     // If the web view loading was interrupted by the app going into
                     // the background, then restart it.
                     if (!loadingComplete && !base.IsLoading) {
-                        LoadHtmlString (disableJavaScript + wrapPre + html, baseUrl);
+                        LoadContent ();
                     }
                 } else {
                     // The app is going into the background.  Stop any loading that
@@ -131,6 +140,112 @@ namespace NachoClient.iOS
                     StopLoading ();
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Display HTML in a UIWebView.
+    /// </summary>
+    public class BodyHtmlWebView : BodyWebView
+    {
+        private string html;
+
+        private const string magic = @"
+            var style = document.createElement(""style"");
+            document.head.appendChild(style);
+            style.innerHTML = ""html{{-webkit-text-size-adjust: auto; word-wrap: break-word;}}"";
+            var viewPortTag=document.createElement('meta');
+            viewPortTag.id=""viewport"";
+            viewPortTag.name = ""viewport"";
+            viewPortTag.content = ""width={0}; initial-scale=1.0;"";
+            document.getElementsByTagName('head')[0].appendChild(viewPortTag);
+        ";
+        private const string disableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
+        private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
+
+        public BodyHtmlWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
+        {
+            this.html = html;
+
+            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                LoadContent ();
+            }
+        }
+
+        protected override void LoadContent ()
+        {
+            LoadHtmlString (disableJavaScript + wrapPre + html, baseUrl);
+        }
+
+        protected override void PostLoadAdjustment ()
+        {
+            EvaluateJavascript (string.Format (magic, preferredWidth));
+        }
+    }
+
+    /// <summary>
+    /// Display RTF in a UIWebView.
+    /// </summary>
+    public class BodyRtfWebView : BodyWebView
+    {
+        private string rtf;
+
+        public BodyRtfWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string rtf, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
+        {
+            this.rtf = rtf;
+
+            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                LoadContent ();
+            }
+        }
+
+        protected override void LoadContent ()
+        {
+            LoadData (NSData.FromString (rtf, NSStringEncoding.UTF8), "text/rtf", "utf-8", baseUrl);
+        }
+
+        protected override void PostLoadAdjustment ()
+        {
+            // No adjustment is necessary.
+        }
+    }
+
+    /// <summary>
+    /// Display plain text within a UIWebView, using our own custom font instead of the default fixed-space font.
+    /// </summary>
+    public class BodyPlainWebView : BodyWebView
+    {
+        private string text;
+
+        // JavaScript that will change the font within <pre> tags.  This has to be done through CSS;
+        // changing the <pre> tag directly doesn't work.
+        private const string setFont = @"
+            var css = document.createElement(""style"");
+            css.type = ""text/css"";
+            css.innerHTML = ""pre { font-family: AvenirNext-Regular,Helvetia,sans-serif; font-size: 17px; }"";
+            document.getElementsByTagName('head')[0].appendChild(css);";
+
+        public BodyPlainWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string text, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (Y, preferredWidth, initialHeight, sizeChangedCallback, baseUrl, onLinkSelected)
+        {
+            this.text = text;
+
+            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                LoadContent ();
+            }
+        }
+
+        protected override void LoadContent ()
+        {
+            LoadData (NSData.FromString (text, NSStringEncoding.UTF8), "text/plain", "utf-8", baseUrl);
+        }
+
+        protected override void PostLoadAdjustment ()
+        {
+            // Change the font.
+            EvaluateJavascript (setFont);
         }
     }
 }

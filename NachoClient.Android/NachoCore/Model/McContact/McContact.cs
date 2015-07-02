@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Text;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using NachoCore.Brain;
+using NachoCore.Index;
 
 namespace NachoCore.Model
 {
@@ -17,7 +19,7 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return NcModel.Instance.Db.Get<McContact> (Id);
+            return McContact.QueryById<McContact> (Id);
         }
     }
 
@@ -31,7 +33,54 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return NcModel.Instance.Db.Get<McContact> (ContactId);
+            return McContact.QueryById<McContact> (Id);
+        }
+    }
+
+    public class NcContactPortraitIndex
+    {
+        public int PortraitId { set; get; }
+
+        public int EmailAddress { set; get; }
+    }
+
+    public class McContactComparer : IEqualityComparer<McContact>
+    {
+        public bool Equals (McContact a, McContact b)
+        {
+            return a.Id == b.Id;
+        }
+
+        public int GetHashCode (McContact c)
+        {
+            return c.Id;
+        }
+    }
+
+    public class McContactNameComparer : IComparer<McContact>
+    {
+        public int Compare (McContact a, McContact b)
+        {
+            int result = String.Compare (a.FirstName, b.FirstName);
+            if (0 != result) {
+                return result;
+            }
+            result = String.Compare (a.MiddleName, b.MiddleName);
+            if (0 != result) {
+                return result;
+            }
+            return String.Compare (a.LastName, b.LastName);
+        }
+    }
+
+    public class McContactRicCache : Dictionary<int, bool>
+    {
+        public bool Get (int contactId, out bool isRic)
+        {
+            if (TryGetValue (contactId, out isRic)) {
+                return true;
+            }
+            return false;
         }
     }
 
@@ -43,11 +92,28 @@ namespace NachoCore.Model
         /// </summary>
         /// 
 
+        public enum McContactAncillaryDataEnum
+        {
+            READ_NONE = 0,
+            READ_DATES = 1,
+            READ_ADDRESSES = 2,
+            READ_EMAILADDRESSES = 4,
+            READ_RELATIONSHIPS = 8,
+            READ_PHONENUMBERS = 16,
+            READ_IMADDRESSES = 32,
+            READ_CATEGORIES = 64,
+            READ_ALL = 127,
+        }
+
+        public enum McContactOpEnum
+        {
+            Insert,
+            Update,
+            Delete,
+        }
+
         /// ActiveSync or Device
         public McAbstrItem.ItemSource Source { get; set; }
-
-        /// Set only for Device contacts
-        public string DeviceUniqueId { get; set; }
 
         /// Set only for Device contacts
         public DateTime DeviceCreation { get; set; }
@@ -59,8 +125,14 @@ namespace NachoCore.Model
         private List<McContactDateAttribute> DbDates;
         /// The collection addresses associated with the contact
         private List<McContactAddressAttribute> DbAddresses;
+
+        public bool PhoneNumbersEclipsed { get; set; }
+
         /// The collection of phone numbers associated with the contact
         private List<McContactStringAttribute> DbPhoneNumbers;
+
+        public bool EmailAddressesEclipsed { get; set; }
+
         /// The collection of email addresses associated with the contact
         private List<McContactEmailAddressAttribute> DbEmailAddresses;
         /// The collection of instant messaging addresses associated with the contact
@@ -71,10 +143,6 @@ namespace NachoCore.Model
         private List<McContactStringAttribute> DbCategories;
         // Valid only for GAL-cache entries.
         public string GalCacheToken { get; set; }
-
-        /// Reference count.
-        [Indexed]
-        public uint RefCount { get; set; }
 
         /// First name of the contact
         [Indexed]
@@ -156,6 +224,10 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsVip { get; set; }
 
+        // 0 means unindexed. If IndexedVersion < ContactIndexDocument.Version, it needs to be re-indexed.
+        [Indexed]
+        public int IndexVersion { get; set; }
+
         public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Contact;
@@ -167,7 +239,7 @@ namespace NachoCore.Model
         /// </summary>
         public McContact ()
         {
-            HasReadAncillaryData = false;
+            HasReadAncillaryData = McContactAncillaryDataEnum.READ_NONE;
             DbDates = new List<McContactDateAttribute> ();
             DbAddresses = new List<McContactAddressAttribute> ();
             DbPhoneNumbers = new List<McContactStringAttribute> ();
@@ -185,11 +257,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactDateAttribute> Dates {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_DATES);
                 return DbDates;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_DATES);
                 DbDates = value;
             }
         }
@@ -197,11 +269,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactAddressAttribute> Addresses {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_ADDRESSES);
                 return DbAddresses;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_ADDRESSES);
                 DbAddresses = value;
             }
         }
@@ -209,11 +281,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> PhoneNumbers {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
                 return DbPhoneNumbers;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
                 DbPhoneNumbers = value;
             }
         }
@@ -221,11 +293,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactEmailAddressAttribute> EmailAddresses {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_EMAILADDRESSES);
                 return DbEmailAddresses;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_EMAILADDRESSES);
                 DbEmailAddresses = value;
             }
         }
@@ -233,11 +305,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> IMAddresses {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_IMADDRESSES);
                 return DbIMAddresses;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_IMADDRESSES);
                 DbIMAddresses = value;
             }
         }
@@ -245,11 +317,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> Relationships {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
                 return DbRelationships;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
                 DbRelationships = value;
             }
         }
@@ -257,11 +329,11 @@ namespace NachoCore.Model
         [Ignore]
         public List<McContactStringAttribute> Categories {
             get {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_CATEGORIES);
                 return DbCategories;
             }
             set {
-                ReadAncillaryData ();
+                ReadAncillaryData (McContactAncillaryDataEnum.READ_CATEGORIES);
                 DbCategories = value;
             }
         }
@@ -413,6 +485,9 @@ namespace NachoCore.Model
             McEmailAddress emailAddress;
             if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
                 f.EmailAddress = emailAddress.Id;
+                if (0 == this.CircleColor) {
+                    this.CircleColor = emailAddress.ColorIndex;
+                }
             }
             EmailAddresses.Add (f);
             return f;
@@ -447,49 +522,49 @@ namespace NachoCore.Model
 
         public McContactStringAttribute AddPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public McContactStringAttribute AddDefaultPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public McContactStringAttribute AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public McContactStringAttribute AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value, bool isDefault)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_PHONENUMBERS);
             return AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value, isDefault);
         }
 
         public McContactStringAttribute AddIMAddressAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_IMADDRESSES);
             return AddOrUpdateStringAttribute (ref DbIMAddresses, accountId, McContactStringType.IMAddress, name, label, value);
         }
 
         public McContactStringAttribute AddRelationshipAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
             return AddOrUpdateStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
         public McContactStringAttribute AddChildAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_RELATIONSHIPS);
             return AddStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
         public McContactStringAttribute AddCategoryAttribute (int accountId, string name)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_CATEGORIES);
             return AddOrUpdateStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
         }
 
@@ -536,7 +611,7 @@ namespace NachoCore.Model
 
         public McContactEmailAddressAttribute AddOrUpdateEmailAddressAttribute (int accountId, string name, string label, string value)
         {
-            ReadAncillaryData ();
+            ReadAncillaryData (McContactAncillaryDataEnum.READ_EMAILADDRESSES);
             var f = EmailAddresses.Where (attr => attr.Name.Equals (name)).SingleOrDefault ();
             if (null != f) {
                 f.Label = label;
@@ -566,82 +641,114 @@ namespace NachoCore.Model
         /// </summary>
         /// 
       
-        protected bool HasReadAncillaryData;
+        protected McContactAncillaryDataEnum HasReadAncillaryData;
 
-        private NcResult ReadAncillaryData ()
+        // For unit test only
+        public McContactAncillaryDataEnum TestHasReadAncillaryData {
+            get {
+                return HasReadAncillaryData;
+            }
+        }
+
+        private NcResult ReadAncillaryData (McContactAncillaryDataEnum flags)
         {
             if (0 == Id) {
                 return NcResult.OK ();
             }
-            if (HasReadAncillaryData) {
+            if (HasReadAncillaryData.HasFlag (flags)) {
                 return NcResult.OK ();
             }
-            HasReadAncillaryData = true;
-            return ForceReadAncillaryData ();
+            var missingFlags = flags & (~HasReadAncillaryData);
+            HasReadAncillaryData |= flags;
+            return ForceReadAncillaryData (missingFlags);
         }
 
-        public NcResult ForceReadAncillaryData ()
+        public NcResult ForceReadAncillaryData (McContactAncillaryDataEnum flags)
         {
-            var db = NcModel.Instance.Db;
             NcAssert.True (0 < Id);
-            DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbEmailAddresses = db.Table<McContactEmailAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbRelationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
-            DbPhoneNumbers = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
-            DbIMAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
-            DbCategories = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                DbDates = McContactDateAttribute.QueryByContactId<McContactDateAttribute> (Id);
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                DbAddresses = McContactAddressAttribute.QueryByContactId<McContactAddressAttribute> (Id);
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                DbEmailAddresses = McContactEmailAddressAttribute.QueryByContactId<McContactEmailAddressAttribute> (Id);
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
+                DbRelationships = McContactStringAttribute.QueryByContactIdAndType (Id, McContactStringType.Relationship).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_PHONENUMBERS)) {
+                DbPhoneNumbers = McContactStringAttribute.QueryByContactIdAndType (Id, McContactStringType.PhoneNumber).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_IMADDRESSES)) {
+                DbIMAddresses = McContactStringAttribute.QueryByContactIdAndType (Id, McContactStringType.IMAddress).ToList ();
+            }
+            if (flags.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
+                DbCategories = McContactStringAttribute.QueryByContactIdAndType (Id, McContactStringType.Category).ToList ();
+            }
 
             // FIXME: Error handling
             return NcResult.OK ();
         }
 
-        public NcResult InsertAncillaryData (SQLiteConnection db)
+        public NcResult InsertAncillaryData ()
         {
             NcAssert.True (0 < Id);
-
-            // Don't read what will be deleted
-            HasReadAncillaryData = true;
 
             // FIXME: Fix this hammer?
             // FIXME: For update, Id may not be zero. Insert() asserts that Id is zero, so zero it.
             // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
-            DeleteAncillaryData (db);
+            DeleteAncillaryData ();
 
-            foreach (var o in Dates) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                foreach (var o in Dates) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in Addresses) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                foreach (var o in Addresses) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in Relationships) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
+                foreach (var o in Relationships) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in EmailAddresses) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                foreach (var o in EmailAddresses) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in PhoneNumbers) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_PHONENUMBERS)) {
+                foreach (var o in PhoneNumbers) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in IMAddresses) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_IMADDRESSES)) {
+                foreach (var o in IMAddresses) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
-            foreach (var o in Categories) {
-                o.Id = 0;
-                o.ContactId = Id;
-                o.Insert ();
+            if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
+                foreach (var o in Categories) {
+                    o.Id = 0;
+                    o.ContactId = Id;
+                    o.Insert ();
+                }
             }
     
             // FIXME: Error handling
@@ -650,33 +757,193 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            // FIXME db transaction.
-            int retval = base.Insert ();
-            InsertAncillaryData (NcModel.Instance.Db);
-            return retval;
+            using (var capture = CaptureWithStart ("Insert")) {
+                if (0 == CircleColor) {
+                    CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+                }
+                EvaluateSelfEclipsing ();
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    retval = base.Insert ();
+                    HasReadAncillaryData = McContactAncillaryDataEnum.READ_ALL;
+                    InsertAncillaryData ();
+                    EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Insert);
+                });
+                return retval;
+            }
         }
 
         public override int Update ()
         {
-            int retval = base.Update ();
-            if (HasReadAncillaryData) {
-                InsertAncillaryData (NcModel.Instance.Db);
+            using (var capture = CaptureWithStart ("Update")) {
+                EvaluateSelfEclipsing ();
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    // Delete the old index document. Brain will re-index it in the background.
+                    IndexVersion = 0;
+                    NcBrain.UnindexContact (this);
+
+                    retval = base.Update ();
+                    if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
+                        InsertAncillaryData ();
+                    }
+                    EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
+                });
+                return retval;
             }
-            return retval;
+        }
+
+        public void UpdateEmailAddressesEclipsing ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET EmailAddressesEclipsed = ? WHERE Id = ?",
+                    EmailAddressesEclipsed, Id);
+            });
+        }
+
+        public void UpdatePhoneNumbersEclipsing ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET PhoneNumbersEclipsed = ? WHERE Id = ?",
+                    PhoneNumbersEclipsed, Id);
+            });
+        }
+
+        // We need a specialized version of Update() because the normal Update()
+        // assumes there is a change in content and un-index the message. This would lead
+        // to a perpetual loop of indexing and un-indexing.
+        public void UpdateIndexVersion ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET IndexVersion = ? WHERE Id = ?",
+                    IndexVersion, Id);
+            });
+        }
+
+        public override int Delete ()
+        {
+            using (var capture = CaptureWithStart ("Delete")) {
+                // Force an auxilary read
+                var addressList = EmailAddresses;
+                var phoneList = PhoneNumbers;
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    NcBrain.UnindexContact (this);
+                    retval = base.Delete ();
+                    EvaluateOthersEclipsing (addressList, phoneList, McContactOpEnum.Delete);
+                });
+                return retval;
+            }
+        }
+
+        private void EvaluateEmailAddressEclipsing (List<McContactEmailAddressAttribute> addressList, McContactOpEnum op)
+        {
+            foreach (var address in addressList) {
+                var contactList =
+                    QueryByEmailAddress (AccountId, address.Value)
+                        .Where (x => (x.Id != Id) && (HasSameName (x) || x.IsAnonymous ()));
+                var count = contactList.Count ();
+                if (6 < count) {
+                    Log.Warn (Log.LOG_DB, "EvaluateEmailAddressEclipsing: {0} contacts", count);
+                }
+                foreach (var contact in contactList) {
+                    count++;
+                    if (contact.EmailAddressesEclipsed && (McContactOpEnum.Insert == op)) {
+                        continue; // insertion can never cause an eclipsed contact to become uneclipsed
+                    }
+                    if (!contact.EmailAddressesEclipsed && (McContactOpEnum.Delete == op)) {
+                        continue; // deletion can never cuase an uneclipsed contact to become eclipsed
+                    }
+                    var newEclipsed = contact.ShouldEmailAddressesBeEclipsed ();
+                    if (newEclipsed != contact.EmailAddressesEclipsed) {
+                        contact.EmailAddressesEclipsed = newEclipsed;
+                        contact.UpdateEmailAddressesEclipsing ();
+                    }
+                }
+            }
+        }
+
+        private void EvaluatePhoneNumberEclipsing (List<McContactStringAttribute> phoneList, McContactOpEnum op)
+        {
+            foreach (var phone in phoneList) {
+                if (McContactStringType.PhoneNumber != phone.Type) {
+                    continue;
+                }
+                var contactList =
+                    QueryByPhoneNumber (AccountId, phone.Value)
+                        .Where (x => (x.Id != Id) && (HasSameName (x) || x.IsAnonymous ()));
+                var count = contactList.Count ();
+                if (6 < count) {
+                    Log.Warn (Log.LOG_DB, "EvaluatePhoneNumberEclipsing: {0} contacts", count);
+                }
+                foreach (var contact in contactList) {
+                    if (contact.PhoneNumbersEclipsed && (McContactOpEnum.Insert == op)) {
+                        continue; // insertion can never cause an eclipsed contact to become uneclipsed
+                    }
+                    if (!contact.PhoneNumbersEclipsed && (McContactOpEnum.Delete == op)) {
+                        continue; // deletion can never cuase an uneclipsed contact to become eclipsed
+                    }
+                    var newEclipsed = contact.ShouldPhoneNumbersBeEclipsed ();
+                    if (newEclipsed != contact.PhoneNumbersEclipsed) {
+                        contact.PhoneNumbersEclipsed = newEclipsed;
+                        contact.UpdatePhoneNumbersEclipsing ();
+                    }
+                }
+            }
+        }
+
+        private void EvaluateOthersEclipsing (List<McContactEmailAddressAttribute> addressList,
+                                              List<McContactStringAttribute> phoneList,
+                                              McContactOpEnum op)
+        {
+            SetupRicCache ();
+            EvaluateEmailAddressEclipsing (addressList, op);
+            EvaluatePhoneNumberEclipsing (phoneList, op);
+            ResetRicCache ();
+        }
+
+        private void EvaluateSelfEclipsing ()
+        {
+            EmailAddressesEclipsed = ShouldEmailAddressesBeEclipsed ();
+            PhoneNumbersEclipsed = ShouldPhoneNumbersBeEclipsed ();
         }
 
         public override void DeleteAncillary ()
         {
-            NcAssert.True (NcModel.Instance.IsInTransaction ());
-            DeleteAncillaryData (NcModel.Instance.Db);
+            DeleteAncillaryData ();
         }
 
-        private NcResult DeleteAncillaryData (SQLiteConnection db)
+        private void DeleteStringAttribute (McContactStringType stringType)
         {
-            db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
-            db.Query<McContactStringAttribute> ("DELETE FROM McContactStringAttribute WHERE ContactId=?", Id);
-            db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
-            db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
+            NcModel.Instance.Db.Query<McContactStringAttribute> (
+                "DELETE FROM McContactStringAttribute WHERE ContactId = ? AND Type = ?", Id, (int)stringType);
+        }
+
+        private NcResult DeleteAncillaryData ()
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_DATES)) {
+                    NcModel.Instance.Db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_RELATIONSHIPS)) {
+                    DeleteStringAttribute (McContactStringType.Relationship);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_PHONENUMBERS)) {
+                    DeleteStringAttribute (McContactStringType.PhoneNumber);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_IMADDRESSES)) {
+                    DeleteStringAttribute (McContactStringType.IMAddress);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_CATEGORIES)) {
+                    DeleteStringAttribute (McContactStringType.Category);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_ADDRESSES)) {
+                    NcModel.Instance.Db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
+                }
+                if (HasReadAncillaryData.HasFlag (McContactAncillaryDataEnum.READ_EMAILADDRESSES)) {
+                    NcModel.Instance.Db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
+                }
+            });
             return NcResult.OK ();
         }
 
@@ -741,6 +1008,10 @@ namespace NachoCore.Model
                         var portrait = McPortrait.InsertFile (AccountId, data);
                         PortraitId = portrait.Id;
                     }
+                    break;
+ 
+                case Xml.Gal.Title:
+                    Title = prop.Value;
                     break;
 
                 default:
@@ -970,11 +1241,54 @@ namespace NachoCore.Model
                                               "SELECT c.* FROM McContact AS c " +
                                               " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
                                               " WHERE " +
-                                              "s.Value = ? AND " +
-                                              " c.AccountId = ? AND " +
-                                              " c.IsAwaitingDelete = 0 ",
-                                              emailAddress, accountId).ToList ();
+                                              " s.Value = ? AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                                              emailAddress, accountId);
             return contactList;
+        }
+
+        public static List<NcContactPortraitIndex> QueryForPortraits (List<int> emailAddressIndexList)
+        {
+            var set = String.Format ("( {0} )", String.Join (",", emailAddressIndexList.ToArray<int> ()));
+            var cmd = String.Format (
+                          "Select s.EmailAddress, c.PortraitId From McContact AS c" +
+                          " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                          " WHERE " +
+                          " s.EmailAddress IN {0} AND " +
+                          " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (c.PortraitId <> 0, 0.1)", set);
+            return NcModel.Instance.Db.Query<NcContactPortraitIndex> (cmd);
+        }
+
+        public static List<McContact> QueryGleanedContactsByEmailAddress (int accountId, string emailAddress)
+        {
+            // TODO - When we use Source = Internal for something other than gleaned, we need to fix this
+            //        query to use McMapFolderFolderEntry to look for only internal contacts in the 
+            //        gleaned folder
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              "WHERE " +
+                                              " s.Value = ? AND " +
+                                              " c.Source = ? AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                                              emailAddress, (int)McAbstrItem.ItemSource.Internal, accountId);
+            return contactList;
+        }
+
+        public static List<McContact> QueryByPhoneNumber (int accountId, string phoneNumber)
+        {
+            return NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact AS c " +
+                " JOIN McContactStringAttribute AS s ON c.Id = s.ContactId " +
+                " WHERE " +
+                " s.Value = ? AND " +
+                " s.Type = ? AND " +
+                " likelihood (c.AccountId = ?, 1.0) AND " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                phoneNumber, (int)McContactStringType.PhoneNumber, accountId);
         }
 
         public static List<McContact> QueryLikeEmailAddress (int accountId, string emailAddress)
@@ -984,10 +1298,10 @@ namespace NachoCore.Model
                                               "SELECT c.* FROM McContact AS c " +
                                               " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
                                               " WHERE " +
-                                              "s.Value LIKE ? AND " +
-                                              " c.AccountId = ? AND " +
-                                              " c.IsAwaitingDelete = 0 ",
-                                              emailWildcard, accountId).ToList ();
+                                              " s.Value LIKE ? AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) ",
+                                              emailWildcard, accountId);
             return contactList;
         }
 
@@ -998,13 +1312,13 @@ namespace NachoCore.Model
                                               " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
                                               " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                                               " WHERE " +
-                                              " c.AccountId = m.AccountId AND " +
-                                              " c.AccountId = ? AND " +
-                                              " c.IsAwaitingDelete = 0 AND " +
+                                              " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
                                               " s.Value = ? AND " +
-                                              " m.ClassCode = ? AND " +
-                                              " m.FolderId = ? ",
-                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId).ToList ();
+                                              " likelihood (m.ClassCode = ?, 0.2) AND " +
+                                              " likelihood (m.FolderId = ?, 0.05) ",
+                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
             return contactList;
         }
 
@@ -1016,41 +1330,15 @@ namespace NachoCore.Model
                                               " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                                               " JOIN McFolder AS f ON f.Id = m.FolderId " +
                                               " WHERE " +
-                                              " c.AccountId = m.AccountId AND " +
-                                              " c.AccountId = f.AccountId AND " +
-                                              " c.AccountId = ? AND " +
-                                              " c.IsAwaitingDelete = 0 AND " +
+                                              " likelihood (c.AccountId = m.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = f.AccountId, 1.0) AND " +
+                                              " likelihood (c.AccountId = ?, 1.0) AND " +
+                                              " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
                                               " s.Value = ? AND " +
-                                              " m.ClassCode = ? AND " +
+                                              " likelihood (m.ClassCode = ?, 0.2) AND " +
                                               " f.IsClientOwned = false ",
-                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+                                              accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
             return contactList;
-        }
-
-        public static List<NcContactIndex> QueryAllContactItems ()
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.AccountId = ? AND " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ?  " +
-                " m.AccountId = ? AND " +
-                " ORDER BY c.FirstName",
-                McAbstrFolderEntry.ClassCodeEnum.Contact);
-        }
-
-        public static List<NcContactIndex> QueryAllContactItems (int accountId)
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ?  " +
-                " ORDER BY c.FirstName",
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
@@ -1059,11 +1347,11 @@ namespace NachoCore.Model
                 "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
-                " c.AccountId = ? AND " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? " +
+                " likelihood (c.AccountId = ?, 1.0) AND " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) " +
                 " ORDER BY c.FirstName",
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, folderId);
         }
@@ -1111,15 +1399,15 @@ namespace NachoCore.Model
                 "SELECT c.* FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
-                " c.AccountId = ? AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? " +
+                " likelihood (c.AccountId = ?, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) " +
                 " ORDER BY c.WeightedRank DESC",
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)
+        public static List<McContactEmailAddressAttribute> SearchAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
@@ -1135,8 +1423,9 @@ namespace NachoCore.Model
                 "JOIN McContact AS c ON s.ContactId = c.Id " +
                 "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 "WHERE " +
-                "m.ClassCode=? AND " +
-                "c.IsAwaitingDelete = 0 AND " +
+                " likelihood (m.ClassCode=?, 0.2) AND " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0) AND " +
+                (withEclipsing ? "(c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
                 "( " +
                 "  c.FirstName LIKE ? OR c.LastName LIKE ?  OR s.Value LIKE ? OR s.Value LIKE ? " +
                 ") " +
@@ -1144,40 +1433,109 @@ namespace NachoCore.Model
                 (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName (int accountId)
+        public static List<McContact> QueryByIds (List<string> ids)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
-                "SELECT c.Id, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
-                "FROM McContactEmailAddressAttribute AS s " +
-                "JOIN McContact AS c ON s.ContactId = c.Id " +
-                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                "WHERE " +
-                "m.ClassCode = ? AND " +
-                "c.AccountId = ? AND " +
-                "c.IsAwaitingDelete = 0 AND " +
-                "c.AccountId = m.AccountId " +
-                "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
-                ")",
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact, accountId
-            );
+            var query = String.Format ("SELECT c.* FROM McContact AS c WHERE c.Id IN ({0})", String.Join (",", ids));
+            return NcModel.Instance.Db.Query<McContact> (query);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName ()
+        public static List<McContactEmailAddressAttribute> SearchIndexAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
-                "SELECT c.Id, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
-                "FROM McContactEmailAddressAttribute AS s " +
-                "JOIN McContact AS c ON s.ContactId = c.Id " +
-                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                "WHERE " +
-                "m.ClassCode = ? AND " +
-                "c.IsAwaitingDelete = 0 " +
-                "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
-                ")",
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact
-            );
+            var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
+            if (String.IsNullOrEmpty (searchFor)) {
+                return emailAddressAttributes;
+            }
+
+            // Query the index for contacts up to 100 of them
+            foreach (var account in McAccount.GetAllAccounts()) {
+                var index = NcBrain.SharedInstance.Index (account.Id);
+                var escapedSearchFor = Lucene.Net.QueryParsers.QueryParser.Escape (searchFor);
+                var matches = index.SearchAllContactFields ("*" + escapedSearchFor + "*", 100);
+                if (0 == matches.Count) {
+                    continue;
+                }
+                var contacts = McContact.QueryByIds (matches.Select (x => x.Id).ToList ());
+                if (matches.Count > contacts.Count) {
+                    // Some ids in the index are no longer value. We need to remove those entries in the index
+                    var hash = new HashSet<int> ();
+                    contacts.ForEach ((x) => {
+                        hash.Add (x.Id);
+                    });
+                    foreach (var match in matches) {
+                        var id = int.Parse (match.Id);
+                        if (!hash.Contains (id)) {
+                            NcBrain.UnindexContact (new McContact () {
+                                Id = int.Parse (match.Id),
+                                AccountId = account.Id,
+                            });
+                        }
+                    }
+                } else {
+                    NcAssert.True (matches.Count == contacts.Count);
+                }
+
+                contacts.Sort (new McContactNameComparer ());
+
+                // Get all matching email addresses
+                int count = 0;
+                foreach (var contact in contacts) {
+                    if (withEclipsing && contact.EmailAddressesEclipsed) {
+                        continue;
+                    }
+                    foreach (var emailAddress in contact.EmailAddresses) {
+                        emailAddressAttributes.Add (emailAddress);
+                        count += 1;
+                        if (100 < count) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return emailAddressAttributes;
+        }
+
+        static string GetAllContactsQueryString (bool withEclipsing, int accountId = 0)
+        {
+            string fmt =
+                " SELECT DISTINCT Id, substr(FullIndex, 1, 1) as FirstLetter FROM " +
+                " ( " +
+                " SELECT " +
+                "     c.Id as Id, FirstName, LastName, s.Value, CompanyName, " +
+                "     ltrim( " +
+                "         ifnull(c.FirstName,'') || ' ' || " +
+                "         ifnull(c.LastName,'') || ' ' || " +
+                "         ifnull(ltrim(s.Value,'\"'),'') || ' ' || " +
+                "         ifnull(c.CompanyName,'') " +
+                "         , ' '''" +
+                "      ) as FullIndex " +
+                " FROM McContact AS c   " +
+                " LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId   " +
+                " WHERE  " +
+                (withEclipsing ? " (c.EmailAddressesEclipsed = 0 OR c.PhoneNumbersEclipsed = 0) AND " : "") +
+                " {0} " +
+                " likelihood (c.IsAwaitingDelete = 0, 1.0)   " +
+                " ORDER BY " +
+                " FullIndex " +
+                " COLLATE NOCASE ASC" +
+                " ) ";
+
+            if (0 == accountId) {
+                return String.Format (fmt, "");
+            } else {
+                var selectAccount = String.Format ("    c.AccountId = {0} AND ", accountId);
+                return String.Format (fmt, selectAccount);
+            }
+        }
+
+        public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+        }
+
+        public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false)
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (GetAllContactsQueryString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> RicContactsSortedByRank (int accountId, int limit)
@@ -1193,21 +1551,32 @@ namespace NachoCore.Model
                 "SELECT c.Id as Id, \" \" FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
-                " c.AccountId = ? AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? " +
+                " likelihood (c.AccountId = ?, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05) " +
                 " ORDER BY c.WeightedRank DESC LIMIT ?",
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id, limit);
         }
 
-        public static McContact QueryByDeviceUniqueId (string deviceUniqueId)
+        public static List<McContact> QueryNeedIndexing (int maxContact)
         {
-            var account = McAccount.GetDeviceAccount ();
-            return NcModel.Instance.Db.Table<McContact> ().Where (x => 
-                x.DeviceUniqueId == deviceUniqueId &&
-            x.AccountId == account.Id
-            ).SingleOrDefault ();
+            return NcModel.Instance.Db.Query<McContact> (
+                "SELECT c.* FROM McContact as c " +
+                " LEFT JOIN McBody as b ON b.Id == c.BodyId " +
+                " WHERE likelihood (c.IndexVersion < ?, 0.5) OR " +
+                " (likelihood (c.BodyId > 0, 0.2) AND " +
+                "  likelihood (b.FilePresence = ?, 0.5) AND " +
+                "  likelihood (c.IndexVersion < ?, 0.5)) " +
+                " LIMIT ?",
+                ContactIndexDocument.Version - 1, McAbstrFileDesc.FilePresenceEnum.Complete,
+                ContactIndexDocument.Version, maxContact
+            );
+        }
+
+        public static List<object> QueryNeedIndexingObjects (int maxContacts)
+        {
+            return new List<object> (QueryNeedIndexing (maxContacts));
         }
 
         public string GetDisplayName ()
@@ -1225,7 +1594,14 @@ namespace NachoCore.Model
             if (!String.IsNullOrEmpty (LastName)) {
                 value.Add (LastName);
             }
-            return String.Join (" ", value);
+            if (!String.IsNullOrEmpty (Suffix)) {
+                value.Add (Suffix);
+            }
+            var name = String.Join (" ", value);
+            if (String.IsNullOrEmpty (name)) {
+                name = CompanyName;
+            }
+            return name;
         }
 
         public string GetEmailAddress ()
@@ -1271,14 +1647,19 @@ namespace NachoCore.Model
             return "";
         }
 
-
-        public string GetPhoneNumber ()
+        public string GetPrimaryPhoneNumber ()
         {
             if (null == PhoneNumbers) {
                 return "";
             }
             if (0 == PhoneNumbers.Count ()) {
                 return "";
+            }
+
+            foreach (var p in PhoneNumbers) {
+                if (p.IsDefault) {
+                    return p.Value;
+                }
             }
             return PhoneNumbers.First ().Value;
         }
@@ -1287,7 +1668,7 @@ namespace NachoCore.Model
         {
             var displayName = GetDisplayName ();
             if (String.IsNullOrEmpty (displayName)) {
-                return GetEmailAddress ();
+                return GetPrimaryCanonicalEmailAddress ();
             } else {
                 return displayName;
             }
@@ -1303,7 +1684,214 @@ namespace NachoCore.Model
                 if (null != emailAddress) {
                     emailAddress.IsVip = this.IsVip;
                     emailAddress.Update ();
-                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.Id, true);
+                    NachoCore.Brain.NcBrain.UpdateAddressScore (emailAddress.AccountId, emailAddress.Id, true);
+                }
+            }
+        }
+
+        public bool CanUserEdit ()
+        {
+            if (McAbstrItem.ItemSource.ActiveSync != Source) {
+                return false;
+            }
+            var ric = McFolder.GetRicContactFolder (AccountId);
+            var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (AccountId, Id, GetClassCode ());
+            foreach (var map in maps) {
+                if ((null != ric) && (map.FolderId == ric.Id)) {
+                    return false;
+                }
+                var folder = McFolder.QueryById<McFolder> (map.FolderId);
+                if (folder.IsClientOwned) {
+                    Log.Info (Log.LOG_CONTACTS, "cannot edit contact from client-owned folder {0}", folder.DisplayName);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool IsDevice ()
+        {
+            return (ItemSource.Device == Source);
+        }
+
+        public bool IsSynced ()
+        {
+            if (ItemSource.ActiveSync != Source) {
+                return false;
+            }
+            return (!IsGal () && !IsRic ());
+        }
+
+        public bool IsGleaned ()
+        {
+            return ((ItemSource.Internal == Source) && (1 == EmailAddresses.Count));
+        }
+
+        public bool IsGal ()
+        {
+            return ((ItemSource.ActiveSync == Source) && (!String.IsNullOrEmpty (GalCacheToken)));
+        }
+
+        // IsRic() requires a db query and is called quite a bit during contact eclipsing evaluation.
+        // In orer to speed this up, we create a "Is RIC" cache. You must use this inside a transaction
+        // (RunInTransaction) in order to guarantee thread safety.
+        private McContactRicCache ricCache = null;
+
+        public bool IsRic ()
+        {
+            if (null != ricCache) {
+                bool isRic;
+                if (ricCache.Get (Id, out isRic)) {
+                    return isRic;
+                }
+            }
+
+            int ricFolderId = McFolder.GetRicFolderId (AccountId);
+            if (-1 == ricFolderId) {
+                if (null != ricCache) {
+                    ricCache.Add (Id, false);
+                }
+                return false;
+            }
+            var map =
+                McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (
+                    AccountId,
+                    ricFolderId,
+                    Id,
+                    ClassCodeEnum.Contact);
+            bool result = (null != map);
+            if (null != ricCache) {
+                ricCache.Add (Id, result);
+            }
+            return result;
+        }
+
+        private int GetContactTypeIndex ()
+        {
+            if (IsDevice ()) {
+                return 5;
+            } else if (IsSynced ()) {
+                return 4;
+            } else if (IsGal ()) {
+                return 3;
+            } else if (IsRic ()) {
+                return 2;
+            } else if (IsGleaned ()) {
+                return 1;
+            }
+            Log.Error (Log.LOG_CONTACTS, 
+                "unknown contact type: source={0}, accountId={1}, galCacheToken={2}, # email addresses={3}",
+                Source, AccountId, GalCacheToken, EmailAddresses.Count);
+            // Make contacts of unknown type the highest priority so they are never eclipsed by mistake
+            return 6;
+        }
+
+        private static bool ShouldSuperceded (McContact a, McContact b)
+        {
+            return (a.GetContactTypeIndex () > b.GetContactTypeIndex ());
+        }
+
+        private bool ShouldBeSupercededBy (McContact c)
+        {
+            return ShouldSuperceded (c, this);
+        }
+
+        private delegate bool CheckAttributeEclipsingFunc (McContact c);
+
+        private bool ShouldAttributeBeEclipsed (List<McContact> contactList, CheckAttributeEclipsingFunc checkFunc)
+        {
+            foreach (var contact in contactList.Distinct(new McContactComparer ())) {
+                if (checkFunc (contact)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool ShouldEmailAddressesBeEclipsed ()
+        {
+            if (!IsGleaned () && !IsGal () && !IsRic ()) {
+                return false;
+            }
+            if (0 == EmailAddresses.Count) {
+                return true;
+            }
+
+            List<McContact> contactList = new List<McContact> ();
+            foreach (var address in EmailAddresses) {
+                var contacts = McContact.QueryByEmailAddress (AccountId, address.Value).Where (x => x.Id != Id);
+                contactList.AddRange (contacts);
+            }
+
+            var isAnonymous = IsAnonymous () && (IsRic () || IsGleaned ());
+            return ShouldAttributeBeEclipsed (contactList, (c) => {
+                if (isAnonymous && !c.IsAnonymous ()) {
+                    return true;
+                }
+                return HasSameName (c) && ShouldBeSupercededBy (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
+            });
+        }
+
+        public bool ShouldPhoneNumbersBeEclipsed ()
+        {
+            if (!IsGleaned () && !IsGal () && !IsRic ()) {
+                return false;
+            }
+            if (0 == PhoneNumbers.Count) {
+                return true;
+            }
+
+            List<McContact> contactList = new List<McContact> ();
+            foreach (var address in PhoneNumbers) {
+                var contacts = McContact.QueryByPhoneNumber (AccountId, address.Value).Where (x => x.Id != Id);
+                contactList.AddRange (contacts);
+            }
+
+            return ShouldAttributeBeEclipsed (contactList, (c) => {
+                return HasSameName (c) && ShouldBeSupercededBy (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
+            });
+        }
+
+        public bool HasSameName (McContact other)
+        {
+            return (
+                (FirstName == other.FirstName) &&
+                (MiddleName == other.MiddleName) &&
+                (LastName == other.LastName) &&
+                (Suffix == other.Suffix));
+        }
+
+        public bool IsAnonymous ()
+        {
+            return (
+                String.IsNullOrEmpty (FirstName) &&
+                String.IsNullOrEmpty (MiddleName) &&
+                String.IsNullOrEmpty (LastName)
+            );
+        }
+
+        private void SetupRicCache ()
+        {
+            NcAssert.True (NcModel.Instance.Db.IsInTransaction);
+            ricCache = new McContactRicCache ();
+        }
+
+        private void ResetRicCache ()
+        {
+            NcAssert.True (NcModel.Instance.Db.IsInTransaction);
+            ricCache = null;
+        }
+
+        public void SetIndexVersion ()
+        {
+            if (0 == BodyId) {
+                IndexVersion = ContactIndexDocument.Version;
+            } else {
+                var body = GetBody ();
+                if ((null != body) && body.IsComplete ()) {
+                    IndexVersion = ContactIndexDocument.Version;
+                } else {
+                    IndexVersion = ContactIndexDocument.Version - 1;
                 }
             }
         }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -23,7 +24,7 @@ namespace NachoCore.ActiveSync
 
         public override Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender)
         {
-            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return null;
             }
 
@@ -36,10 +37,12 @@ namespace NachoCore.ActiveSync
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return null;
             }
-
+            var mimePath = EmailMessage.MimePath ();
+            var length = new FileInfo (mimePath).Length;
+            Timeout = new TimeSpan (0, 0, ((AsProtoControl)BEContext.ProtoControl).Strategy.UploadTimeoutSecs (length));
             var smartMail = new XElement (m_ns + CommandName, 
                                 new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                 new XElement (m_ns + Xml.ComposeMail.Source,
@@ -47,7 +50,7 @@ namespace NachoCore.ActiveSync
                                     new XElement (m_ns + Xml.ComposeMail.ItemId, PendingSingle.ServerId)),
                                 new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                 new XElement (m_ns + Xml.ComposeMail.Mime, 
-                                    new XAttribute ("nacho-body-path", EmailMessage.MimePath ())));
+                    new XAttribute ("nacho-body-path", mimePath)));
             if (PendingSingle.Smart_OriginalEmailIsEmbedded) {
                 smartMail.Add (new XElement (m_ns + Xml.ComposeMail.ReplaceMime));
             }
@@ -58,20 +61,24 @@ namespace NachoCore.ActiveSync
 
         protected override Stream ToMime (AsHttpOperation Sender)
         {
-            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                return EmailMessage.ToMime ();
+            if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
+                long length;
+                var stream = EmailMessage.ToMime (out length);
+                Timeout = new TimeSpan (0, 0, ((AsProtoControl)BEContext.ProtoControl).Strategy.UploadTimeoutSecs (length));
+                return stream;
             }
             return null;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SMARTCANCEL0");
+            }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
-
-            EmailMessage.Delete ();
 
             var sentFolder = McFolder.GetDefaultSentFolder (BEContext.Account.Id);
             if (null != sentFolder) {
@@ -80,8 +87,11 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.Success, "SESUCC");
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "SMARTCANCEL1");
+            }
             PendingResolveApply ((pending) => {
                 pending.ResolveAsHardFail (BEContext.ProtoControl, 
                     NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,

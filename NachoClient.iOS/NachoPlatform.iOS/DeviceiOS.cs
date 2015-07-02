@@ -1,7 +1,7 @@
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using MonoTouch.ObjCRuntime;
-using MonoTouch.CoreFoundation;
+using Foundation;
+using UIKit;
+using ObjCRuntime;
+using CoreFoundation;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using SQLite;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -127,7 +128,16 @@ namespace NachoPlatform
                 IdForVendorChars -= BunIdHashChars;
                 suffix = BitConverter.ToString (new SHA256Managed ().ComputeHash (Encoding.UTF8.GetBytes (bunId))).Replace ("-", "").Substring (0, BunIdHashChars);
             }
-            _IdentityMemoize = "Ncho" + UIDevice.CurrentDevice.IdentifierForVendor.AsString ().Replace ('-', 'X').Substring (0, IdForVendorChars) + suffix;
+            var ident = Keychain.Instance.GetIdentifierForVendor ();
+            if (null == ident) {
+                ident = UIDevice.CurrentDevice.IdentifierForVendor.AsString ();
+            }
+            NcAssert.NotNull (ident, "Could not create ident.");
+            // Set this before any logs, since otherwise we loop/recurse forever
+            _IdentityMemoize = "Ncho" + ident.Replace ('-', 'X').Substring (0, IdForVendorChars) + suffix;
+            if (!Keychain.Instance.SetIdentifierForVendor (ident)) {
+                Log.Error (Log.LOG_SYS, "Identity: unable to save IdentifierForVendor in KeyChain.");
+            }
             return _IdentityMemoize;
         }
 
@@ -189,10 +199,10 @@ namespace NachoPlatform
             return nacho_set_handlers_and_boom (home);
         }
 
-        [MonoTouch.MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
+        [MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
         public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
         {
-            if (!zMsg.Contains ("cfurl_cache_response")) {
+            if (!zMsg.Contains ("frames from WAL file")) {
                 ReverseSQLite3ErrorCallback (iErrCode, zMsg);
             }
         }

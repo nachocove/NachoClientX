@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014-2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.IO;
@@ -9,63 +9,7 @@ using Lucene.Net.Documents;
 
 namespace NachoCore.Index
 {
-    /// <summary>
-    /// In order to keep this class totally portable across Nacho Mail client and test harness,
-    /// we cannot use NachoCore.Utils.Log. Instead, we define some vanila interface and let each
-    /// host to glue their own logging API to these API.
-    /// </summary>
-    public class Log
-    {
-        public delegate void ErrorFunc (string fmt, params object[] args);
-
-        public delegate void WarnFunc (string fmt, params object[] args);
-
-        public delegate void InfoFunc (string fmt, params object[] args);
-
-        public delegate void DebugFunc (string fmt, params object[] args);
-
-        public static ErrorFunc PlatformError;
-
-        public static WarnFunc PlatformWarn;
-
-        public static InfoFunc PlatformInfo;
-
-        public static DebugFunc PlatformDebug;
-
-        public static void Error (string fmt, params object[] args)
-        {
-            if (null == PlatformError) {
-                return;
-            }
-            PlatformError (fmt, args);
-        }
-
-        public static void Warn (string fmt, params object[] args)
-        {
-            if (null == PlatformWarn) {
-                return;
-            }
-            PlatformWarn (fmt, args);
-        }
-
-        public static void Info (string fmt, params object[] args)
-        {
-            if (null == PlatformInfo) {
-                return;
-            }
-            PlatformInfo (fmt, args);
-        }
-
-        public static void Debug (string fmt, params object[] args)
-        {
-            if (null == PlatformDebug) {
-                return;
-            }
-            PlatformDebug (fmt, args);
-        }
-    }
-
-    public class IndexDocument
+    public class NcIndexDocument
     {
         protected Document _Doc { set; get; }
 
@@ -82,13 +26,13 @@ namespace NachoCore.Index
 
         public long BytesIndexed { protected set; get; }
 
-        public IndexDocument (string type, string id)
+        public NcIndexDocument (string type, string id, string body)
         {
             BytesIndexed = 0;
             Doc = new Document ();
-            Doc.Add (GetExactMatchOnlyField ("type", type));
-            Doc.Add (GetExactMatchOnlyField ("id", id));
-            BytesIndexed += type.Length + id.Length;
+            AddExactMatchOnlyField ("type", type);
+            AddExactMatchOnlyField ("id", id);
+            AddIndexedField ("body", body);
         }
 
         protected Field GetExactMatchOnlyField (string field, string value)
@@ -105,118 +49,127 @@ namespace NachoCore.Index
         {
             foreach (var address in addressList) {
                 var addressString = address.ToString ();
-                Doc.Add (GetIndexedField (field, addressString));
-                BytesIndexed += addressString.Length;
+                AddIndexedField (field, addressString);
             }
+        }
+
+        protected void AddExactMatchOnlyField (string field, string value)
+        {
+            if (String.IsNullOrEmpty (value)) {
+                return;
+            }
+            Doc.Add (GetExactMatchOnlyField (field, value));
+            BytesIndexed += value.Length;
+        }
+
+        protected void AddIndexedField (string field, string value)
+        {
+            if (String.IsNullOrEmpty (value)) {
+                return;
+            }
+            Doc.Add (GetIndexedField (field, value));
+            BytesIndexed += value.Length;
         }
     }
 
-    public class IndexMimeDocument : IndexDocument
+    public class MimeIndexDocument : NcIndexDocument
     {
         protected MimeMessage Message;
 
-        public IndexMimeDocument (string messageBodyPath, string type, string id) : base (type, id)
+        public MimeIndexDocument (string type, string id, string content, MimeMessage message) :
+            base (type, id, content)
         {
-            // MIME parse the message 
-            using (var fileStream = new FileStream (messageBodyPath, FileMode.Open, FileAccess.Read)) {
-                Message = MimeMessage.Load (fileStream);
-            }
-
-            // Dig thru all MIME part and index those we can:
-            // 1. text/html - HTML doc
-            // 2. text/plain - plain text
-            // 3. multipart/mixed - Index every subpart that can be indexed.
-            // 4. multipart/alternatives - Index only the preferred part.
-            ProcessMimeEntity (Message.Body);
+            Message = message;
         }
-
-        private bool ProcessMimeEntity (MimeEntity part)
-        {
-            bool processed = false;
-            if (part is MessagePart) {
-                var message = (MessagePart)part;
-                processed |= ProcessMimeEntity (message.Message.Body);
-                return processed;
-            }
-            if (part is Multipart) {
-                var multipart = (Multipart)part;
-                if (multipart.ContentType.Matches ("multipart", "alternative")) {
-                    processed |= ProcessAlternativeMultipart (multipart);
-                } else if (multipart.ContentType.Matches ("multipart", "mixed")) {
-                    processed |= ProcessMixedMultipart (multipart);
-                } else {
-                    // Unsupported multipart
-                    Log.Warn ("unsupported multipart type {0}", multipart.ContentType.Name);
-                }
-                return processed;
-            }
-            return ProcessMimePart ((MimePart)part);
-        }
-
-        private bool ProcessAlternativeMultipart (Multipart multipart)
-        {
-            // We start from the last part and iterate backward until we find something that works
-            for (int n = multipart.Count - 1; n >= 0; n--) {
-                if (ProcessMimeEntity (multipart [n])) {
-                    return true;
-                }
-            }
-            Log.Warn ("no suitable alternative part ({0} parts total)", multipart.Count);
-            return false;
-        }
-
-        private bool ProcessMixedMultipart (Multipart multipart)
-        {
-            bool processed = false;
-            foreach (var subpart in multipart) {
-                processed |= ProcessMimeEntity (subpart);
-            }
-            return processed;
-        }
-
-        private bool ProcessMimePart (MimePart part)
-        {
-            // TODO - The only thing we support now is plain text. For HTML, we need a HTML tokenizer
-            // But most email client will send a plain text alternative. So, we should be ok for most
-            // cases.
-            if ("plain" == part.ContentType.MediaSubtype) {
-                TextPart body = (TextPart)part;
-                if (null != body.Text) {
-                    Log.Debug ("body = {0}", body.Text);
-                    var bodyField = GetIndexedField ("body", body.Text);
-                    Doc.Add (bodyField);
-                    return true;
-                }
-            }
-            return false;
-        }
-
     }
 
-    public class IndexEmailMessage : IndexMimeDocument
+    public class EmailMessageIndexParameters
     {
-        public IndexEmailMessage (string messageBodyPath, string id) : base (messageBodyPath, "message", id)
-        {
-            Doc.Add (GetIndexedField ("subject", Message.Subject));
-            BytesIndexed += Message.Subject.Length;
+        public InternetAddressList From;
+        public InternetAddressList To;
+        public InternetAddressList Cc;
+        public InternetAddressList Bcc;
+        public string Subject;
+        public string Content;
+        public DateTime ReceivedDate;
+    }
 
-            var dateString = DateTools.DateToString (Message.Date.DateTime, DateTools.Resolution.SECOND);
+    public class EmailMessageIndexDocument : MimeIndexDocument
+    {
+        public const int Version = 2;
+
+        public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters, MimeMessage message) :
+            base ("message", id, parameters.Content, message)
+        {
+            AddIndexedField ("subject", parameters.Subject);
+
+            var dateString = DateTools.DateToString (parameters.ReceivedDate, DateTools.Resolution.SECOND);
             var dateField = GetExactMatchOnlyField ("received_date", dateString);
             Doc.Add (dateField);
+            BytesIndexed += dateString.Length;
 
             // Index the addresses
-            AddAddressList ("from", Message.From);
-            AddAddressList ("to", Message.To);
-            AddAddressList ("cc", Message.Cc);
-            AddAddressList ("bcc", Message.Bcc);
+            AddAddressList ("from", parameters.From);
+            AddAddressList ("to", parameters.To);
+            AddAddressList ("cc", parameters.Cc);
+            AddAddressList ("bcc", parameters.Bcc);
         }
     }
 
-    public class IndexEvent : IndexMimeDocument
+    /// <summary>
+    /// This class is used for McContact to convert to a model agnostic format so we don't 
+    /// need to include NachoCove.Model here.
+    /// </summary>
+    public class ContactIndexParameters
     {
-        public IndexEvent (string eventBodyPath, string id) : base (eventBodyPath, "event", id)
+        public string FirstName;
+        public string MiddleName;
+        public string LastName;
+        public List<string> EmailAddresses;
+        public List<string> PhoneNumbers;
+        public List<string> Addresses;
+        public string Note;
+        public string CompanyName;
+
+        public ContactIndexParameters ()
         {
-            // MIME parse the message
+            EmailAddresses = new List<string> ();
+            PhoneNumbers = new List<string> ();
+            Addresses = new List<string> ();
+        }
+    }
+
+    public class ContactIndexDocument : NcIndexDocument
+    {
+        // We support versioned indexing in case we want to add some field to the index
+        // later. Initially, there are two versions. V1 is for all non-body field. V2
+        // is for body field. The reason for this is that we want to index contact's
+        // name, emails and etc ASAP and body is not downloaded until the user selects
+        // the contact. I believe most contacts do not have a body. So, we index
+        // everything else (in v1). When the body is downloaded, we re-index.
+        //
+        // If in the future, we need to add a new indexed field. That will become v2
+        // and v3 is when body (really notes) is indexed. A migration will be needed
+        // to set all v1 and v2 to v1. They will be re-indexed to v2 or v3.
+        public const int Version = 2;
+
+        public ContactIndexDocument (string id, ContactIndexParameters contact)
+            : base ("contact", id, null)
+        {
+            AddIndexedField ("first_name", contact.FirstName);
+            AddIndexedField ("middle_name", contact.MiddleName);
+            AddIndexedField ("last_name", contact.LastName);
+            AddIndexedField ("company_name", contact.CompanyName);
+            foreach (var emailAddress in contact.EmailAddresses) {
+                AddIndexedField ("email_address", emailAddress);
+            }
+            foreach (var phoneNumber in contact.PhoneNumbers) {
+                AddIndexedField ("phone_number", phoneNumber);
+            }
+            foreach (var address in contact.Addresses) {
+                AddIndexedField ("address", address);
+            }
+            AddIndexedField ("note", contact.Note);
         }
     }
 }

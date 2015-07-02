@@ -1,15 +1,16 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Linq;
 using System.Collections.Generic;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -20,6 +21,7 @@ namespace NachoClient.iOS
         private const int SUBJECT_TAG = 3902;
         private const int ICON_TAG = 3903;
         private const int TEXT_TAG = 3904;
+        private const int NO_MESSAGES_TAG = 3905;
 
         public const int DIAL_IN_TAG = 1;
         public const int NAVIGATE_TO_TAG = 2;
@@ -31,8 +33,9 @@ namespace NachoClient.iOS
 
         public ButtonCallback OnClick;
 
-        McEvent currentEvent;
+        protected McEvent currentEvent;
         protected UITapGestureRecognizer tapRecognizer;
+        protected NcTimer eventEndTimer = null;
 
         // Pre-made swipe action descriptors
 //        private static SwipeActionDescriptor DIAL_IN_BUTTON =
@@ -48,7 +51,7 @@ namespace NachoClient.iOS
             new SwipeActionDescriptor (FORWARD_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeForward),
                 "Forward", A.Color_NachoeSwipeForward);
 
-        public HotEventView (RectangleF rect) : base (rect)
+        public HotEventView (CGRect rect) : base (rect)
         {
             var cellWidth = rect.Width;
 
@@ -63,31 +66,39 @@ namespace NachoClient.iOS
             view.SetAction (FORWARD_BUTTON, SwipeSide.RIGHT);
 
             // Dot image view
-            var dotView = new UIImageView (new RectangleF (30, 20, 9, 9));
+            var dotView = new UIImageView (new CGRect (30, 20, 9, 9));
             dotView.Tag = DOT_TAG;
             view.AddSubview (dotView);
 
             // Subject label view
-            var subjectLabelView = new UILabel (new RectangleF (56, 15, cellWidth - 56, 20));
+            var subjectLabelView = new UILabel (new CGRect (56, 15, cellWidth - 56, 20));
             subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
             view.AddSubview (subjectLabelView);
 
+            // No messages label view
+            var noMessagesLabelView = new UILabel (rect);
+            noMessagesLabelView.Font = A.Font_AvenirNextDemiBold17;
+            noMessagesLabelView.TextColor = A.Color_0F424C;
+            noMessagesLabelView.Tag = NO_MESSAGES_TAG;
+            noMessagesLabelView.TextAlignment = UITextAlignment.Center;
+            view.AddSubview (noMessagesLabelView);
+
             // Location image view
-            var iconView = new UIImageView (new RectangleF (30, 40, 12, 12));
+            var iconView = new UIImageView (new CGRect (30, 40, 12, 12));
             iconView.Tag = ICON_TAG;
             iconView.Image = UIImage.FromBundle ("cal-icn-pin");
             view.AddSubview (iconView);
 
             // Location label view
-            var labelView = new UILabel (new RectangleF (56, 37, cellWidth - 56, 20));
+            var labelView = new UILabel (new CGRect (56, 37, cellWidth - 56, 20));
             labelView.Font = A.Font_AvenirNextRegular14;
             labelView.TextColor = A.Color_0F424C;
             labelView.Tag = TEXT_TAG;
             view.AddSubview (labelView);
 
-            var bottomLine = new UIView (new RectangleF (0, this.Frame.Height - 1, this.Frame.Width, 1));
+            var bottomLine = new UIView (new CGRect (0, this.Frame.Height - 1, this.Frame.Width, 1));
             bottomLine.BackgroundColor = A.Color_NachoBackgroundGray;
             view.AddSubview (bottomLine);
 
@@ -96,30 +107,62 @@ namespace NachoClient.iOS
             });
             this.AddGestureRecognizer (tapRecognizer);
 
-            Configure ();
+            // Have the event manager keep the McEvents accurate for at least the next seven days.
+            NcEventManager.AddEventWindow (this, new TimeSpan (7, 0, 0, 0));
+        }
 
+        public void ViewWillAppear ()
+        {
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            Configure ();
+        }
+
+        public void ViewWillDisappear ()
+        {
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            if (null != eventEndTimer) {
+                eventEndTimer.Dispose ();
+                eventEndTimer = null;
+            }
         }
 
         public void Configure ()
         {
             currentEvent = McEvent.GetCurrentOrNextEvent ();
             ConfigureCurrentEvent ();
+
+            if (null != eventEndTimer) {
+                eventEndTimer.Dispose ();
+                eventEndTimer = null;
+            }
+
+            // Set a timer to fire at the end of the currently displayed event, so the view can
+            // be reconfigured to show the next event.
+            if (null != currentEvent) {
+                TimeSpan timerDuration = currentEvent.GetEndTimeUtc () - DateTime.UtcNow;
+                if (timerDuration < TimeSpan.Zero) {
+                    // The event ended in between GetCurrentOrNextEvent running its query and now.
+                    // Configure the timer to fire immediately.
+                    timerDuration = TimeSpan.Zero;
+                }
+                eventEndTimer = new NcTimer ("HotEventView", (state) => {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        Configure ();
+                    });
+                }, null, timerDuration, TimeSpan.Zero);
+            }
         }
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var statusEvent = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_CalendarSetChanged == statusEvent.Status.SubKind) {
-                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays (7));
+
+            switch (statusEvent.Status.SubKind) {
+
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+            case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 Configure ();
-            }
-            if (NcResult.SubKindEnum.Info_CalendarChanged == statusEvent.Status.SubKind) {
-                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays (7));
-                Configure ();
-            }
-            if (NcResult.SubKindEnum.Info_EventSetChanged == statusEvent.Status.SubKind) {
-                Configure ();
+                break;
             }
         }
 
@@ -141,6 +184,7 @@ namespace NachoClient.iOS
             }
 
             var view = (SwipeActionView)this.ViewWithTag (SWIPE_TAG);
+            var noMessagesLabelView = (UILabel)this.ViewWithTag (NO_MESSAGES_TAG);
             var subjectLabelView = (UILabel)this.ViewWithTag (SUBJECT_TAG);
             var labelView = (UILabel)this.ViewWithTag (TEXT_TAG);
             var dotView = (UIImageView)this.ViewWithTag (DOT_TAG);
@@ -149,8 +193,9 @@ namespace NachoClient.iOS
             view.EnableSwipe ((null != c) && (null != cRoot) && (!String.IsNullOrEmpty(cRoot.OrganizerEmail)));
 
             if (null == c) {
-                subjectLabelView.Text = "No upcoming events";
-                subjectLabelView.Hidden = false;
+                noMessagesLabelView.Text = "No upcoming events";
+                noMessagesLabelView.Hidden = false;
+                subjectLabelView.Hidden = true;
                 labelView.Hidden = true;
                 iconView.Hidden = true;
                 dotView.Hidden = true;
@@ -159,32 +204,34 @@ namespace NachoClient.iOS
                 return;
             }
 
-            // Subject label view
-            var subject = Pretty.SubjectString (c.Subject);
-            subjectLabelView.Text = subject;
+            noMessagesLabelView.Hidden = true;
 
-            var size = new SizeF (10, 10);
-            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
+            // Subject label view
+            var subject = Pretty.SubjectString (c.GetSubject ());
+            subjectLabelView.Text = subject;
+            subjectLabelView.Hidden = false;
+
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            dotView.Image = Util.DrawCalDot (Util.CalendarColor (colorIndex), new CGSize (10, 10));
             dotView.Hidden = false;
 
             var startString = "";
             if (c.AllDayEvent) {
-                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.StartTime);
+                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.GetStartTimeUtc ());
             } else {
-                if ((currentEvent.StartTime - DateTime.UtcNow).TotalHours < 12) {
-                    startString = Pretty.ShortTimeString (currentEvent.StartTime);
+                if ((currentEvent.GetStartTimeUtc () - DateTime.UtcNow).TotalHours < 12) {
+                    startString = Pretty.ShortTimeString (currentEvent.GetStartTimeUtc ());
                 } else {
-                    startString = Pretty.ShortDayTimeString (currentEvent.StartTime);
+                    startString = Pretty.ShortDayTimeString (currentEvent.GetStartTimeUtc ());
                 }
             }
 
-            var locationString = "";
-            if (!String.IsNullOrEmpty (c.Location)) {
-                locationString = Pretty.SubjectString (c.Location);
-            }
-
-            var eventString = "";
-            eventString = Pretty.Join (startString, locationString, " : ");
+            var locationString = Pretty.SubjectString (c.GetLocation ());
+            var eventString = Pretty.Join (startString, locationString, " : ");
 
             iconView.Hidden = String.IsNullOrEmpty (eventString);
             labelView.Text = eventString;
@@ -221,12 +268,6 @@ namespace NachoClient.iOS
                 }
             };
         }
-
-        public void Cleanup ()
-        {
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
     }
 }
 

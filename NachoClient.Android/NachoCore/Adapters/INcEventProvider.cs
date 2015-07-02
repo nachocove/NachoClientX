@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NachoCore.Model;
@@ -14,7 +14,7 @@ namespace NachoCore
     /// </summary>
     public interface INcEventProvider
     {
-        void Refresh ();
+        void Refresh (Action completionAction);
 
         int NumberOfDays ();
 
@@ -32,5 +32,6 @@ namespace NachoCore
 
         bool FindEventNearestTo (DateTime date, out int item, out int section);
 
+        void StopTrackingEventChanges ();
     }
 }

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NUnit.Framework;
@@ -20,7 +20,7 @@ namespace Test.iOS
         // returns the root node
         public McPathNode CreateTree (int accountId, uint numSubChildren = 3)
         {
-            var root = CreatePath (accountId, serverId: "1", parentId: "0");
+            var root = CreatePath (accountId, serverId: "1", parentId: "0", isFolder: true);
             var node = new McPathNode (root);
 
             // create children, each with a different serverId
@@ -39,7 +39,11 @@ namespace Test.iOS
             }
 
             for (int i = 0; i < 3; ++i) {
-                var newPath = CreatePath (accountId, parentId: parent.Root.ServerId, serverId: serverId.ToString ());
+                var newPath = CreatePath (accountId, 
+                    parentId: parent.Root.ServerId, 
+                    serverId: serverId.ToString (),
+                    isFolder: (numLayers - 1) > 0
+                );
                 var newNode = new McPathNode (newPath);
                 parent.Children.Add (newNode);
                 serverId++;
@@ -59,9 +63,14 @@ namespace Test.iOS
             // find root
             var foundRoot = McPath.QueryById<McPath> (node.Root.Id);
             Assert.NotNull (foundRoot, "Root should not have been deleted");
-
+            if (childrenExpected) {
+                Assert.IsTrue (foundRoot.IsFolder);
+            }
             // find children
-            var foundChildren = McPath.QueryByParentId (accountId, node.Root.ServerId);
+            var foundFolders = McPath.QueryByParentId (accountId, node.Root.ServerId, true);
+            var foundItems = McPath.QueryByParentId (accountId, node.Root.ServerId, false);
+            var foundChildren = foundFolders.ToList ();
+            foundChildren.AddRange (foundItems);
             Assert.AreEqual (3, foundChildren.ToList ().Count, "Should have correct number of children");
 
             var sortedChildren = foundChildren.OrderBy (c => Convert.ToInt32 (c.ServerId)).ToList ();
@@ -153,6 +162,31 @@ namespace Test.iOS
                 compare (top, bottom);
                 TraverseTreeWithOp (bottom, compare);
             }
+        }
+
+        [Test]
+        public void TestDeleteNonFolderByParentId ()
+        {
+            int accountId = 99;
+            var tree1 = CreateTree (accountId);
+            var tree2 = CreateTree (accountId + 1);
+            McPath.DeleteNonFolderByParentId (accountId, tree1.Root.ServerId);
+            var folders = McPath.QueryByParentId (accountId, tree1.Root.ServerId, true);
+            Assert.AreEqual (3, folders.ToList ().Count);
+            var leaves = McPath.QueryByParentId (accountId, tree1.Root.ServerId, false);
+            Assert.AreEqual (0, leaves.ToList ().Count);
+            // All children of root are folders.
+            ValidateTree (accountId, tree1);
+            var lowestFolder0 = tree1.Children [0];
+            var lowestFolder1 = tree1.Children [1];
+            leaves = McPath.QueryByParentId (accountId, lowestFolder0.Root.ServerId, false);
+            Assert.AreEqual (3, leaves.ToList ().Count);
+            McPath.DeleteNonFolderByParentId (accountId, lowestFolder0.Root.ServerId);
+            leaves = McPath.QueryByParentId (accountId, lowestFolder0.Root.ServerId, false);
+            Assert.AreEqual (0, leaves.ToList ().Count);
+            ValidateTree (accountId + 1, tree2);
+            leaves = McPath.QueryByParentId (accountId, lowestFolder1.Root.ServerId, false);
+            Assert.AreEqual (3, leaves.ToList ().Count);
         }
     }
 

@@ -69,27 +69,32 @@ namespace NachoCore.ActiveSync
             // for an event seems to change over time, but we don't know what triggers it.  It is
             // hoped that these error messages will identify the source of the issue.
             if (string.IsNullOrEmpty (newItem.UID)) {
-                Log.Error (Log.LOG_SYNC, "ActiveSync command sent an event (with subject \"{0}\") without a UID.", newItem.Subject);
+                if (null != newItem.attendees && 0 < newItem.attendees.Count) {
+                    // An appointment without a UID is OK.  A meeting without a UID is a problem.
+                    Log.Error (Log.LOG_SYNC, "ActiveSync command sent a meeting without a UID.");
+                }
             } else {
-                var sameUid = McCalendar.QueryByUID (newItem.UID);
-                if (null != sameUid && (sameUid.AccountId != newItem.AccountId || sameUid.ServerId != newItem.ServerId)) {
-                    Log.Error (Log.LOG_SYNC, "Two events have the same UID ({0}) but different AccountId/ServerId ({1}/{2} and {3}/{4}). This will likely result in a duplicate event.",
-                        newItem.UID, sameUid.AccountId, sameUid.ServerId, newItem.AccountId, newItem.ServerId);
+                var sameUid = McCalendar.QueryByUID (newItem.AccountId, newItem.UID);
+                if (null != sameUid && sameUid.ServerId != newItem.ServerId) {
+                    // It is normal for there to be duplicate UIDs for a short period of time when the server
+                    // changes an event using an add/delete.  So this is probably not an error.
+                    Log.Info (Log.LOG_SYNC, "Two events have the same UID ({0}) but different ServerId ({1} and {2}). This will likely result in a duplicate event.",
+                        newItem.UID, sameUid.ServerId, newItem.ServerId);
                 }
                 if (null != oldItem && oldItem.UID != newItem.UID) {
-                    Log.Error (Log.LOG_SYNC, "The UID for event \"{0}\" is changing from {1} to {2}",
-                        newItem.Subject, oldItem.UID, newItem.UID);
+                    Log.Error (Log.LOG_SYNC, "The UID for event {0} is changing from {1} to {2}",
+                        newItem.ServerId, oldItem.UID, newItem.UID);
                 }
             }
 
             // If there is no match, insert the new item.
             if (null == oldItem) {
                 newItem.AccountId = folder.AccountId;
-                int ir = newItem.Insert ();
-                InsertExceptions (newItem);
-                NcAssert.True (0 < ir, "newItem.Insert");
-                folder.Link (newItem);
-                CalendarHelper.UpdateRecurrences (newItem);
+                NcModel.Instance.RunInTransaction (() => {
+                    int ir = newItem.Insert ();
+                    NcAssert.True (0 < ir, "newItem.Insert");
+                    folder.Link (newItem);
+                });
                 return;
             }
 
@@ -108,16 +113,10 @@ namespace NachoCore.ActiveSync
             newItem.Id = oldItem.Id;
             newItem.AccountId = oldItem.AccountId;
             newItem.CreatedAt = oldItem.CreatedAt;
+            newItem.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
+            folder.UpdateLink (newItem);
             int ur = newItem.Update ();
-            InsertExceptions (newItem);
             NcAssert.True (0 < ur, "newItem.Update");
-            CalendarHelper.UpdateRecurrences (newItem);
-        }
-
-        protected static void InsertExceptions(McCalendar c)
-        {
-            c.DeleteRelatedExceptions ();
-            c.SaveExceptions (c.exceptions);
         }
     }
 }

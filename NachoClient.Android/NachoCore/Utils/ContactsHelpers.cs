@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -53,7 +53,7 @@ namespace NachoCore.Utils
             "Other"
         };
 
-        public List<string> MiscNames = new List<string>(){
+        public List<string> MiscNames = new List<string> () {
             Xml.Contacts.Alias,
             Xml.Contacts.Department,
             Xml.Contacts.FileAs,
@@ -79,69 +79,84 @@ namespace NachoCore.Utils
         };
 
         public Dictionary<string, string> ExchangeLabelDictionary = new Dictionary<string, string> () {
-            {Xml.Contacts.Email1Address, "Email"},
-            {Xml.Contacts.Email2Address, "Email Two"},
-            {Xml.Contacts.Email3Address, "Email Three"},
-            {Xml.Contacts.AssistantPhoneNumber, "Assistant"},
-            {Xml.Contacts.BusinessPhoneNumber, "Work"},
-            {Xml.Contacts.Business2PhoneNumber, "Work Two"},
-            {Xml.Contacts.BusinessFaxNumber, "Business Fax"},
-            {Xml.Contacts.CarPhoneNumber, "Car"},
-            {Xml.Contacts.Home2PhoneNumber, "Home Two"},
-            {Xml.Contacts.HomePhoneNumber, "Home"},
-            {Xml.Contacts.HomeFaxNumber, "Home Fax"},
-            {Xml.Contacts.MobilePhoneNumber, "Mobile"},
-            {Xml.Contacts.PagerNumber, "Pager"},
-            {Xml.Contacts.RadioPhoneNumber, "Radio"},
-            {Xml.Contacts2.CompanyMainPhone, "Company Main"},
-            {Xml.Contacts.Anniversary, "Anniversary"},
-            {Xml.Contacts.Birthday, "Birthday"},
-            {"Home", "Home"},
-            {"Business", "Business"},
-            {"Other", "Other"},
-            {Xml.Contacts2.IMAddress, "Primary IM"},
-            {Xml.Contacts2.IMAddress2, "Second IM"},
-            {Xml.Contacts2.IMAddress3, "Third IM"},
-            {Xml.Contacts.Child, "Child"},
-            {Xml.Contacts.Spouse, "Spouse"},
-            {Xml.Contacts.AssistantName, "Assistant"},
-            {Xml.Contacts2.ManagerName, "Manager"},
-            {Xml.Contacts.Alias, "Alias"},
-            {Xml.Contacts.Department, "Department"},
-            {Xml.Contacts.FileAs, "File As"},
-            {Xml.Contacts.JobTitle, "Job Title"},
-            {Xml.Contacts.OfficeLocation, "Office Location"},
-            {Xml.Contacts.Title, "Title"},
-            {Xml.Contacts.WebPage, "Web Page"},
-            {Xml.Contacts2.AccountName, "Account Name"},
-            {Xml.Contacts2.CustomerId, "Customer ID"},
-            {Xml.Contacts2.GovernmentId, "Government ID"},
-            {Xml.Contacts2.MMS, "MMS"},
-            {Xml.Contacts2.NickName, "Nickname"},
-            {Xml.Contacts.YomiCompanyName, "Yomi Company Name"},
-            {Xml.Contacts.YomiFirstName, "Yomi First Name"},
-            {Xml.Contacts.YomiLastName, "Yomi Last Name"},
+            { Xml.Contacts.Email1Address, "Email" },
+            { Xml.Contacts.Email2Address, "Email Two" },
+            { Xml.Contacts.Email3Address, "Email Three" },
+            { Xml.Contacts.AssistantPhoneNumber, "Assistant" },
+            { Xml.Contacts.BusinessPhoneNumber, "Work" },
+            { Xml.Contacts.Business2PhoneNumber, "Work Two" },
+            { Xml.Contacts.BusinessFaxNumber, "Business Fax" },
+            { Xml.Contacts.CarPhoneNumber, "Car" },
+            { Xml.Contacts.Home2PhoneNumber, "Home Two" },
+            { Xml.Contacts.HomePhoneNumber, "Home" },
+            { Xml.Contacts.HomeFaxNumber, "Home Fax" },
+            { Xml.Contacts.MobilePhoneNumber, "Mobile" },
+            { Xml.Contacts.PagerNumber, "Pager" },
+            { Xml.Contacts.RadioPhoneNumber, "Radio" },
+            { Xml.Contacts2.CompanyMainPhone, "Company Main" },
+            { Xml.Contacts.Anniversary, "Anniversary" },
+            { Xml.Contacts.Birthday, "Birthday" },
+            { "Home", "Home" },
+            { "Business", "Business" },
+            { "Other", "Other" },
+            { Xml.Contacts2.IMAddress, "Primary IM" },
+            { Xml.Contacts2.IMAddress2, "Second IM" },
+            { Xml.Contacts2.IMAddress3, "Third IM" },
+            { Xml.Contacts.Child, "Child" },
+            { Xml.Contacts.Children, "Children" },
+            { Xml.Contacts.Spouse, "Spouse" },
+            { Xml.Contacts.AssistantName, "Assistant" },
+            { Xml.Contacts2.ManagerName, "Manager" },
+            { Xml.Contacts.Alias, "Alias" },
+            { Xml.Contacts.Department, "Department" },
+            { Xml.Contacts.FileAs, "File As" },
+            { Xml.Contacts.JobTitle, "Job Title" },
+            { Xml.Contacts.OfficeLocation, "Office Location" },
+            { Xml.Contacts.Title, "Title" },
+            { Xml.Contacts.WebPage, "Web Page" },
+            { Xml.Contacts2.AccountName, "Account Name" },
+            { Xml.Contacts2.CustomerId, "Customer ID" },
+            { Xml.Contacts2.GovernmentId, "Government ID" },
+            { Xml.Contacts2.MMS, "MMS" },
+            { Xml.Contacts2.NickName, "Nickname" },
+            { Xml.Contacts.YomiCompanyName, "Yomi Company Name" },
+            { Xml.Contacts.YomiFirstName, "Yomi First Name" },
+            { Xml.Contacts.YomiLastName, "Yomi Last Name" },
         };
+
+        private static string GetFirstLetterOrDigit (string src)
+        {
+            string initial = "";
+            if (!String.IsNullOrEmpty (src)) {
+                foreach (char c in src) {
+                    if (Char.IsLetterOrDigit (c)) {
+                        initial += Char.ToUpper (c);
+                        break;
+                    }
+                }
+            }
+            return initial;
+        }
 
         public static string GetInitials (McContact contact)
         {
             string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
+            // First try the user's name
+            initials += GetFirstLetterOrDigit (contact.FirstName);
             if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
-            }
-            // Or, failing that, the first char
-            if (String.IsNullOrEmpty (initials)) {
-                if (!string.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
-                    foreach (char c in contact.GetPrimaryCanonicalEmailAddress()) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
+                if (Char.IsLetter (contact.LastName [0])) {
+                    initials += Char.ToUpper (contact.LastName [0]);
+                } else if (!String.IsNullOrEmpty (contact.MiddleName)) {
+                    initials += GetFirstLetterOrDigit (contact.MiddleName);
                 }
+            }
+            // Or, failing that, email address
+            if (String.IsNullOrEmpty (initials)) {
+                initials = GetFirstLetterOrDigit (contact.GetPrimaryCanonicalEmailAddress ());
+            }
+            // Or, finally, anything we've got
+            if (String.IsNullOrEmpty (initials)) {
+                initials = GetFirstLetterOrDigit (contact.GetDisplayName ());
             }
             return initials;
         }
@@ -150,6 +165,7 @@ namespace NachoCore.Utils
         {
             copy.ServerId = orig.ServerId;
 
+            copy.CircleColor = orig.CircleColor;
             copy.PortraitId = orig.PortraitId;
             copy.NativeBodyType = orig.NativeBodyType;
 
@@ -187,7 +203,7 @@ namespace NachoCore.Utils
                 copyContactBody.UpdateData (originalBodyString);
             } else {
                 copy.BodyId = McBody.InsertFile (copy.AccountId
-                    ,McAbstrFileDesc.BodyTypeEnum.PlainText_1,
+                    , McAbstrFileDesc.BodyTypeEnum.PlainText_1,
                     originalBodyString).Id;
             }
 
@@ -287,7 +303,7 @@ namespace NachoCore.Utils
                 takenNames.Add (p.Name);
             }
 
-            return EmailNames.Except (takenNames).ToList();
+            return EmailNames.Except (takenNames).ToList ();
         }
 
         public List<string> GetAvailableDateNames (McContact contact)
@@ -322,7 +338,7 @@ namespace NachoCore.Utils
         public List<string> GetAvailableRelationshipNames (McContact contact)
         {
             List<string> takenNames = new List<string> ();
-            List<string> availableNames = new List<string>(RelationshipNames);
+            List<string> availableNames = new List<string> (RelationshipNames);
             foreach (var a in contact.Relationships) {
                 takenNames.Add (a.Name);
             }
@@ -340,51 +356,51 @@ namespace NachoCore.Utils
         {
             List<string> takenNames = new List<string> ();
 
-            if(!string.IsNullOrEmpty(contact.Alias)){
+            if (!string.IsNullOrEmpty (contact.Alias)) {
                 takenNames.Add (Xml.Contacts.Alias);
             }
 
-            if(!string.IsNullOrEmpty(contact.Department)){
+            if (!string.IsNullOrEmpty (contact.Department)) {
                 takenNames.Add (Xml.Contacts.Department);
             }
 
-            if(!string.IsNullOrEmpty(contact.FileAs)){
+            if (!string.IsNullOrEmpty (contact.FileAs)) {
                 takenNames.Add (Xml.Contacts.FileAs);
             }
 
-            if(!string.IsNullOrEmpty(contact.JobTitle)){
+            if (!string.IsNullOrEmpty (contact.JobTitle)) {
                 takenNames.Add (Xml.Contacts.JobTitle);
             }
 
-            if(!string.IsNullOrEmpty(contact.OfficeLocation)){
+            if (!string.IsNullOrEmpty (contact.OfficeLocation)) {
                 takenNames.Add (Xml.Contacts.OfficeLocation);
             }
 
-            if(!string.IsNullOrEmpty(contact.Title)){
+            if (!string.IsNullOrEmpty (contact.Title)) {
                 takenNames.Add (Xml.Contacts.Title);
             }
 
-            if(!string.IsNullOrEmpty(contact.WebPage)){
+            if (!string.IsNullOrEmpty (contact.WebPage)) {
                 takenNames.Add (Xml.Contacts.WebPage);
             }
 
-            if(!string.IsNullOrEmpty(contact.AccountName)){
+            if (!string.IsNullOrEmpty (contact.AccountName)) {
                 takenNames.Add (Xml.Contacts2.AccountName);
             }
 
-            if(!string.IsNullOrEmpty(contact.CustomerId)){
+            if (!string.IsNullOrEmpty (contact.CustomerId)) {
                 takenNames.Add (Xml.Contacts2.CustomerId);
             }
 
-            if(!string.IsNullOrEmpty(contact.GovernmentId)){
+            if (!string.IsNullOrEmpty (contact.GovernmentId)) {
                 takenNames.Add (Xml.Contacts2.GovernmentId);
             }
 
-            if(!string.IsNullOrEmpty(contact.MMS)){
+            if (!string.IsNullOrEmpty (contact.MMS)) {
                 takenNames.Add (Xml.Contacts2.MMS);
             }
 
-            if(!string.IsNullOrEmpty(contact.NickName)){
+            if (!string.IsNullOrEmpty (contact.NickName)) {
                 takenNames.Add (Xml.Contacts2.NickName);
             }
 

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Net;
@@ -98,12 +98,12 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public IProtoControlOwner Owner {
+        public INcProtoControlOwner Owner {
             get { return BEContext.Owner; }
             set { BEContext.Owner = value; }
         }
 
-        public AsProtoControl ProtoControl {
+        public NcProtoControl ProtoControl {
             get { return BEContext.ProtoControl; }
             set { BEContext.ProtoControl = value; }
         }

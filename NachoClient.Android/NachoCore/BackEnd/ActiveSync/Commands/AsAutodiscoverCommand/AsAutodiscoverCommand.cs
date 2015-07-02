@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Xml.Linq;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -86,17 +87,26 @@ namespace NachoCore.ActiveSync
             };
         };
 
+        public enum AutoDFailureReason : uint
+        {
+            CannotConnectToServer,
+            CannotFindServer
+        };
+
         public const string RequestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
+        public const int TestTimeoutSecs = 30;
         private List<StepRobot> Robots;
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
+        private ConcurrentQueue<Event> RobotEventsQ;
         private AsCommand TestCmd;
         private ConcurrentBag<object> DisposedJunk;
         private string Domain;
         private string BaseDomain;
         private McServer ServerCandidate;
         private bool AutoDSucceeded;
+        private volatile bool SubdomainComplete;
         public uint ReDirsLeft;
 
         public NcStateMachine Sm { get; set; }
@@ -116,10 +126,21 @@ namespace NachoCore.ActiveSync
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                             (uint)TlEvt.E.CredSet
                         },
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail, 
+                            (uint)SmEvt.E.HardFail, 
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync, 
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty, 
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -132,9 +153,16 @@ namespace NachoCore.ActiveSync
 
                     // Robots ARE running in this state.
                     new Node {State = (uint)Lst.RobotW,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                            (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)SharedEvt.E.SrvCertN, 
+                            (uint)SharedEvt.E.SrvCertY,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -150,7 +178,11 @@ namespace NachoCore.ActiveSync
                                 State = (uint)Lst.CredW1
                             },
                             // Stop robots and start over.
-                            new Trans { Event = (uint)SharedEvt.E.ReStart, Act = DoStepsPll, State = (uint)Lst.RobotW },
+                            new Trans {
+                                Event = (uint)SharedEvt.E.ReStart,
+                                Act = DoStepsPllRestart,
+                                State = (uint)Lst.RobotW
+                            },
                             // Stop and re-start robots, then wait.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // Stop robots, test, and wait for test results.
@@ -182,9 +214,17 @@ namespace NachoCore.ActiveSync
                     },
 
                     new Node {State = (uint)Lst.AskW,
-                        Invalid = new [] {(uint)SmEvt.E.TempFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.TestDefaultServer,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -224,8 +264,14 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.TestW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk,
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Test the new server config.
@@ -239,7 +285,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -285,8 +331,14 @@ namespace NachoCore.ActiveSync
 
                     new Node {State = (uint)Lst.TestW2,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Test the new server config.
@@ -300,7 +352,7 @@ namespace NachoCore.ActiveSync
                             // It failed. Ask app for server config again.
                             new Trans {
                                 Event = (uint)SmEvt.E.TempFail,
-                                Act = DoUiGetServer,
+                                Act = DoUiGetServerTempFail,
                                 State = (uint)Lst.SrvConfW
                             },
                             new Trans {
@@ -347,10 +399,19 @@ namespace NachoCore.ActiveSync
                     // Treat a 404 differently - as an auth-fail due to username.
                     new Node {State = (uint)Lst.Peek404,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success, 
+                            (uint)SmEvt.E.TempFail, 
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv,
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty, 
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, ActSetsState = true },
@@ -377,10 +438,21 @@ namespace NachoCore.ActiveSync
                     // Waiting for new creds before server config set or robot success.
                     new Node {State = (uint)Lst.CredW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync, 
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk,
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Ask app for creds.
@@ -396,10 +468,21 @@ namespace NachoCore.ActiveSync
                     // Waiting for new creds during server config testing.
                     new Node {State = (uint)Lst.CredW2,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.Success, 
+                            (uint)SmEvt.E.HardFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc,
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk,
+                            (uint)TlEvt.E.Empty, 
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new [] {
                             // Ask app for creds.
@@ -415,10 +498,21 @@ namespace NachoCore.ActiveSync
                     // Asked the app for a server config, waiting now...
                     new Node {State = (uint)Lst.SrvConfW, 
                         Drop = new [] { (uint)TlEvt.E.CredSet, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
-                        Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] { 
+                            (uint)SmEvt.E.Success, 
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                            (uint)AsProtoControl.AsEvt.E.ReDisc,
+                            (uint)AsProtoControl.AsEvt.E.ReProv, 
+                            (uint)AsProtoControl.AsEvt.E.ReSync,
+                            (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
+                            (uint)TlEvt.E.ServerCertAsk, 
+                            (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Ask again and wait.
@@ -436,7 +530,7 @@ namespace NachoCore.ActiveSync
         // TODO: replace this code with data that gets pushed to the app.
         private string KnownServer (string domain)
         {
-            switch (domain) {
+            switch (domain.ToLower ()) {
             case "outlook.com":
             case "live.com":
             case "hotmail.com":
@@ -455,6 +549,7 @@ namespace NachoCore.ActiveSync
             if (null == BEContext.Server && null != known) {
                 var server = new McServer () {
                     AccountId = Account.Id,
+                    Capabilities = McAccount.ActiveSyncCapabilities,
                     Host = known,
                 };
                 server.Insert ();
@@ -468,15 +563,17 @@ namespace NachoCore.ActiveSync
             }
         }
         // UTILITY METHODS.
-        private void AddAndStartRobot (StepRobot.Steps step, string domain)
+        private void AddAndStartRobot (StepRobot.Steps step, string domain, bool isUserSpecifiedDomain)
         {
-            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain);
+            Log.Info (Log.LOG_AS, "AUTOD:{0}:BEGIN:Starting discovery for {1}/step {2}", step, domain, step);
+            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain, isUserSpecifiedDomain);
             Robots.Add (robot);
             robot.Execute ();
         }
 
         private void KillAllRobots ()
         {
+            Log.Info (Log.LOG_AS, "AUTOD::END:Stopping all robots.");
             if (null != Robots) {
                 foreach (var robot in Robots) {
                     robot.Cancel ();
@@ -542,10 +639,45 @@ namespace NachoCore.ActiveSync
             KillAllRobots ();
             AskingRobotQ = null;
             SuccessfulRobotQ = null;
+            RobotEventsQ = null;
+            SubdomainComplete = false;
             if (null != TestCmd) {
                 TestCmd.Cancel ();
                 DisposedJunk.Add (TestCmd);
                 TestCmd = null;
+            }
+        }
+
+        private void UpdateEmailAddressToAccount (string newEmailAddr)
+        {
+            var cred = BEContext.Cred;
+            var account = BEContext.Account;
+            if (cred.Username.Equals (account.EmailAddr, StringComparison.Ordinal)) {
+                // cred.Username is the same as the current account.EmailAddr
+                cred.Username = newEmailAddr;
+                cred.Update ();
+            }
+            account.EmailAddr = newEmailAddr;
+            account.Update ();
+        }
+
+        private void DoStepsPllRestart ()
+        {
+            if (Sm.Arg != null) {
+                StepRobot robot = (StepRobot)Sm.Arg;
+                if (!robot.SrEmailAddr.Equals (BEContext.Account.EmailAddr, StringComparison.Ordinal)) {
+                    Log.Info (Log.LOG_AS, "AUTOD::Will restart auto discovery with new email address/domain {0}", robot.SrDomain);                   
+                    UpdateEmailAddressToAccount (robot.SrEmailAddr);
+                    Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
+                    BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
+                }
+                DoStepsPll ();
+            } else {
+                Log.Error (Log.LOG_AS, "AUTOD::Restart event doesn't have Sm.Arg value.");  
+                // Didn't do a hard fail since it doesn't report an error back to user. Posted a cannot connect to server. 
+                // Sm.PostEvent ((uint)SmEvt.E.HardFail, "AUTODRESTARTFAIL");
+                OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODRESTARTFAIL", AutoDFailureReason.CannotConnectToServer);
+
             }
         }
 
@@ -561,17 +693,20 @@ namespace NachoCore.ActiveSync
             Robots = new List<StepRobot> ();
             AskingRobotQ = new Queue<StepRobot> ();
             SuccessfulRobotQ = new Queue<StepRobot> ();
-            AddAndStartRobot (StepRobot.Steps.S1, Domain);
-            AddAndStartRobot (StepRobot.Steps.S2, Domain);
-            AddAndStartRobot (StepRobot.Steps.S3, Domain);
-            AddAndStartRobot (StepRobot.Steps.S4, Domain);
-            AddAndStartRobot (StepRobot.Steps.S5, Domain);
+            RobotEventsQ = new ConcurrentQueue<Event> ();
+            SubdomainComplete = false;
+            Log.Info (Log.LOG_AS, "AUTOD::BEGIN:Starting all robots for domain {0}...", Domain);
+            AddAndStartRobot (StepRobot.Steps.S1, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S2, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S3, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S4, Domain, true);
+            AddAndStartRobot (StepRobot.Steps.S5, Domain, true);
             if (BaseDomain != Domain) {
-                AddAndStartRobot (StepRobot.Steps.S1, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S2, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S3, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S4, BaseDomain);
-                AddAndStartRobot (StepRobot.Steps.S5, BaseDomain);
+                AddAndStartRobot (StepRobot.Steps.S1, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S2, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S3, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S4, BaseDomain, false);
+                AddAndStartRobot (StepRobot.Steps.S5, BaseDomain, false);
             }
         }
 
@@ -580,6 +715,14 @@ namespace NachoCore.ActiveSync
             StepRobot robot = (StepRobot)Sm.Arg;
             // Robot can't be on either ask or success queue, or it would not be reporting failure.
             Robots.Remove (robot);
+            lock (Robots) {
+                if (ShouldDeQueueRobotEvents ()) {
+                    SubdomainComplete = true;
+                }
+            }
+            if (SubdomainComplete) {
+                DeQueueRobotEvents ();
+            }
             if (0 == Robots.Count) {
                 // This can never happen in AskW - there is still the asking robot in the list.
                 if (McAccount.AccountServiceEnum.GoogleExchange == Account.AccountService) {
@@ -590,6 +733,52 @@ namespace NachoCore.ActiveSync
                     Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
                 }
             }
+        }
+
+        private bool ShouldDeQueueRobotEvents ()
+        {
+            // if base domain is same as domain, no events should have queued up. remove this check if events can be queued up for different reasons
+            if (BaseDomain.Equals (Domain, StringComparison.Ordinal)) {
+                return false;
+            }
+            // if subdomain robots are done, flush robot event Q
+            return AreSubDomainRobotsDone ();
+        }
+
+        // check if robots are still doing subdomain discovery
+        private bool AreSubDomainRobotsDone ()
+        {
+            return(!Robots.Any (x => x.IsUserSpecifiedDomain));
+        }
+
+        // DeQueue all queued events that the base domain robots may have sent
+        private void DeQueueRobotEvents ()
+        {
+            Event Event;
+            while (RobotEventsQ.TryDequeue (out Event)) {
+                Log.Info (Log.LOG_AS, "AUTOD::Sending queued Event to SM for base domain {0}", BaseDomain);
+                Sm.PostEvent (Event);
+            }
+        }
+
+        // handle event from Robot
+        private void ProcessEventFromRobot (Event Event, StepRobot Robot)
+        {
+            lock (Robots) {
+                if (ShouldEnQueueRobotEvent (Event, Robot)) {
+                    Log.Info (Log.LOG_AS, "AUTOD:{0}:Enqueuing Event for base domain {1}", Robot.Step, Robot.SrDomain);
+                    RobotEventsQ.Enqueue (Event);
+                    return;
+                }
+            }
+            Sm.PostEvent (Event);
+        }
+
+        private bool ShouldEnQueueRobotEvent (Event Event, StepRobot Robot)
+        {
+            // if robot domain is not the user specified domain, the robot reporting is running discovery for base domain
+            // enqueue base domain robot events only if subdomain robots are not done 
+            return !Robot.IsUserSpecifiedDomain && !SubdomainComplete;
         }
 
         private void DoQueueSuccess ()
@@ -622,14 +811,14 @@ namespace NachoCore.ActiveSync
             if (ProtocolState.DisableProvisionCommand) {
                 TestCmd = new AsSettingsCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, 15),
+                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                     OmitDeviceInformation = true,
                 };
             } else {
                 TestCmd = new AsProvisionCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, 15),
+                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                 };
             }
@@ -641,7 +830,7 @@ namespace NachoCore.ActiveSync
             DoCancel ();
             TestCmd = new AsOptionsCommand (this) {
                 DontReportCommResult = true,
-                Timeout = new TimeSpan (0, 0, 15),
+                Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                 MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.
@@ -661,9 +850,10 @@ namespace NachoCore.ActiveSync
         private void DoTestFromRobot ()
         {
             AutoDSucceeded = true;
+            Log.Info (Log.LOG_AS, "AUTOD::END: Auto discovery succeeded.");
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
-            ServerCandidate = McServer.Create (Account.Id, robot.SrServerUri);
+            ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, robot.SrServerUri);
             // Must shut down any remaining robots so they don't post events to TL SM.
             KillAllRobots ();
             // Must clear event Q for TL SM of anything a robot may have posted (threads).
@@ -678,7 +868,8 @@ namespace NachoCore.ActiveSync
         private void DoTestDefaultServer ()
         {
             AutoDSucceeded = false;
-            ServerCandidate = McServer.Create (Account.Id, McServer.BaseUriForHost (McServer.GMail_Host));
+            ServerCandidate = McServer.Create (Account.Id, McAccount.ActiveSyncCapabilities, 
+                McServer.BaseUriForHost (McServer.GMail_Host));
             DoTest ();
         }
 
@@ -693,7 +884,12 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", AutoDFailureReason.CannotFindServer);
+        }
+
+        private void DoUiGetServerTempFail ()
+        {
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGSTF", AutoDFailureReason.CannotConnectToServer);
         }
 
         private void DoUiServerCertAsk ()
@@ -706,8 +902,11 @@ namespace NachoCore.ActiveSync
         private void DoAcceptServerConf ()
         {
             var protocolState = BEContext.ProtocolState;
-            protocolState.LastAutoDSucceeded = AutoDSucceeded;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastAutoDSucceeded = AutoDSucceeded;
+                return true;
+            });
 
             // Save validated server config in DB.
             NcModel.Instance.RunInTransaction (() => {
@@ -728,12 +927,12 @@ namespace NachoCore.ActiveSync
             OwnerSm.PostEvent ((uint)SmEvt.E.Success, "AUTODDASC");
         }
         // IBEContext proxying.
-        public IProtoControlOwner Owner {
+        public INcProtoControlOwner Owner {
             get { return BEContext.Owner; }
             set { BEContext.Owner = value; }
         }
 
-        public AsProtoControl ProtoControl {
+        public NcProtoControl ProtoControl {
             get { return BEContext.ProtoControl; }
             set { BEContext.ProtoControl = value; }
         }

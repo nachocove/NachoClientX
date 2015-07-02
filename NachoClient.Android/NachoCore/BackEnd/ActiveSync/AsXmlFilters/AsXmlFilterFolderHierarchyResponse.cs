@@ -19,7 +19,7 @@ namespace NachoCore.Wbxml
             node1 = new NcXmlFilterNode ("ServerId", RedactionType.NONE, RedactionType.NONE);
             node0.Add(node1); // xml -> ServerId
             // ParentId
-            node1 = new NcXmlFilterNode ("ParentId", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("ParentId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node0.Add(node1); // xml -> ParentId
             // Status
             node1 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.NONE);
@@ -76,7 +76,7 @@ namespace NachoCore.Wbxml
             node4 = new NcXmlFilterNode ("ServerId", RedactionType.NONE, RedactionType.NONE);
             node3.Add(node4); // Update -> ServerId
             // ParentId
-            node4 = new NcXmlFilterNode ("ParentId", RedactionType.NONE, RedactionType.NONE);
+            node4 = new NcXmlFilterNode ("ParentId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node3.Add(node4); // Update -> ParentId
             // DisplayName
             node4 = new NcXmlFilterNode ("DisplayName", RedactionType.FULL, RedactionType.FULL);
@@ -97,7 +97,7 @@ namespace NachoCore.Wbxml
             node4 = new NcXmlFilterNode ("ServerId", RedactionType.NONE, RedactionType.NONE);
             node3.Add(node4); // Add -> ServerId
             // ParentId
-            node4 = new NcXmlFilterNode ("ParentId", RedactionType.NONE, RedactionType.NONE);
+            node4 = new NcXmlFilterNode ("ParentId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node3.Add(node4); // Add -> ParentId
             // DisplayName
             node4 = new NcXmlFilterNode ("DisplayName", RedactionType.FULL, RedactionType.FULL);

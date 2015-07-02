@@ -171,6 +171,9 @@
       <Link>NachoCore\Utils\NcAssert.cs</Link>
     </Compile>
     <Compile Include="MockNachoPlatformBinding.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
+      <Link>NachoCore\Utils\HashHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

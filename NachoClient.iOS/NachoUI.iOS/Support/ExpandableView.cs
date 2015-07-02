@@ -1,10 +1,10 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using UIKit;
+using Foundation;
 
 using NachoCore.Utils;
 
@@ -12,9 +12,9 @@ namespace NachoClient.iOS
 {
     public class ExpandableView : UIView
     {
-        const float EXPAND_INSET = 16.0f;
-        public const float EXPAND_BUTTON_WIDTH = 16.0f;
-        public const float EXPAND_BUTTON_HEIGHT = 16.0f;
+        static readonly nfloat EXPAND_INSET = 16.0f;
+        public static readonly nfloat EXPAND_BUTTON_WIDTH = 16.0f;
+        public static readonly nfloat EXPAND_BUTTON_HEIGHT = 16.0f;
 
         private bool isExpanded;
         private UIView gestureView;
@@ -22,9 +22,9 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
         private UIImageView buttonImageView;
 
-        private float _CollapsedHeight;
+        private nfloat _CollapsedHeight;
 
-        public float CollapsedHeight {
+        public nfloat CollapsedHeight {
             get {
                 return _CollapsedHeight;
             }
@@ -37,9 +37,9 @@ namespace NachoClient.iOS
             }
         }
 
-        private float _ExpandedHeight;
+        private nfloat _ExpandedHeight;
 
-        public float ExpandedHeight {
+        public nfloat ExpandedHeight {
             get {
                 return _ExpandedHeight;
             }
@@ -53,7 +53,7 @@ namespace NachoClient.iOS
 
         public ExpandButton.StateChangedCallback OnStateChanged;
 
-        public ExpandableView (RectangleF initialFrame, bool isExpanded) : base (initialFrame)
+        public ExpandableView (CGRect initialFrame, bool isExpanded) : base (initialFrame)
         {
             CheckFrameSize (initialFrame);
 
@@ -61,7 +61,7 @@ namespace NachoClient.iOS
             BackgroundColor = UIColor.Clear;
             UserInteractionEnabled = true;
 
-            gestureView = new UIView (new RectangleF(0, 0, initialFrame.Width, initialFrame.Height));
+            gestureView = new UIView (new CGRect(0, 0, initialFrame.Width, initialFrame.Height));
             gestureView.BackgroundColor = UIColor.Clear;
             gestureView.UserInteractionEnabled = true;
             this.AddSubview (gestureView);
@@ -76,12 +76,12 @@ namespace NachoClient.iOS
 
             var buttonX = initialFrame.Width - EXPAND_INSET - EXPAND_BUTTON_WIDTH;
             var buttonY = (initialFrame.Height / 2) - (EXPAND_BUTTON_HEIGHT / 2);
-            buttonImageView = new UIImageView (new RectangleF (buttonX, buttonY, EXPAND_BUTTON_WIDTH, EXPAND_BUTTON_HEIGHT));
+            buttonImageView = new UIImageView (new CGRect (buttonX, buttonY, EXPAND_BUTTON_WIDTH, EXPAND_BUTTON_HEIGHT));
             this.AddSubview (buttonImageView);
             UpdateImage ();
         }
 
-        void CheckFrameSize (RectangleF frame)
+        void CheckFrameSize (CGRect frame)
         {
             NcAssert.True ((ExpandButton.WIDTH + EXPAND_INSET) < frame.Width);
             NcAssert.True ((ExpandButton.HEIGHT + EXPAND_INSET) < frame.Height);

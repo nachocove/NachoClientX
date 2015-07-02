@@ -1,13 +1,12 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
+using NachoCore;
 using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
-    public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait };
-
     public class PingKit
     {
         public uint MaxHeartbeatInterval { get; set; }
@@ -35,15 +34,35 @@ namespace NachoCore.ActiveSync
         {
             public string ParentId { get; set; }
             public string ServerId { get; set; }
+            public Xml.AirSync.TypeCode BodyPref { get; set; }
+        }
+        public class FetchPending
+        {
+            public McPending Pending { get; set; }
+            public Xml.AirSync.TypeCode BodyPref { get; set; }
         }
         public List<FetchBody> FetchBodies { get; set; }
         public List<McAttachment> FetchAttachments { get; set; }
+        public List<FetchPending> Pendings { get; set; }
+    }
+
+    public class MoveKit
+    {
+        public List<McAbstrFolderEntry.ClassCodeEnum> ClassCodes { get; set; }
         public List<McPending> Pendings { get; set; }
     }
 
+    // This interface is here for mocking, unlikely to be useful beyond that.
     public interface IAsStrategy
     {
-        SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty);
+        MoveKit GenMoveKit (int accountId);
+        FetchKit GenFetchKit (int accountId);
+        SyncKit GenSyncKit (int accountId, McProtocolState protocolState);
+        PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders, bool ignoreToClientExpected);
         Tuple<PickActionEnum, AsCommand> Pick ();
+        Tuple<PickActionEnum, AsCommand> PickUserDemand ();
+        int UploadTimeoutSecs (long length);
+        int DownloadTimeoutSecs (long length);
+        int DefaultTimeoutSecs { get; }
     }
 }

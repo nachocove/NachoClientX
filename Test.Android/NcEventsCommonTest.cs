@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NUnit.Framework;
@@ -21,17 +21,17 @@ namespace Test.Common
             account.Insert ();
         }
 
-        public class EmptyInstance : NcEventsCommon
+        public class EmptyInstance : NcEventsCalendarMapCommon
         {
-            protected override void Reload ()
+            protected override System.Collections.Generic.List<McEvent> GetEvents ()
             {
-                list = new System.Collections.Generic.List<NachoCore.Model.McEvent> ();
+                return new System.Collections.Generic.List<NachoCore.Model.McEvent> ();
             }
         }
 
-        public class Instance1 : NcEventsCommon
+        public class Instance1 : NcEventsCalendarMapCommon
         {
-            protected override void Reload ()
+            protected override System.Collections.Generic.List<McEvent> GetEvents ()
             {
                 var id = account.Id;
 
@@ -39,12 +39,13 @@ namespace Test.Common
                 cg.AccountId = id;
                 cg.Insert ();
 
-                list = new System.Collections.Generic.List<NachoCore.Model.McEvent> ();
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-60), DateTime.Now.AddDays (-60).AddHours (1), cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-30), DateTime.Now.AddDays (-30).AddHours (1), cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (0), DateTime.Now.AddDays (0).AddHours (1), cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (30), DateTime.Now.AddDays (30).AddHours (1), cg.Id, 0));
-                list.Add (McEvent.Create (id, DateTime.Now.AddDays (60), DateTime.Now.AddDays (60).AddHours (1), cg.Id, 0));
+                var list = new System.Collections.Generic.List<NachoCore.Model.McEvent> ();
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-60), DateTime.Now.AddDays (-60).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (-30), DateTime.Now.AddDays (-30).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (0), DateTime.Now.AddDays (0).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (30), DateTime.Now.AddDays (30).AddHours (1), "a", false, cg.Id, 0));
+                list.Add (McEvent.Create (id, DateTime.Now.AddDays (60), DateTime.Now.AddDays (60).AddHours (1), "a", false, cg.Id, 0));
+                return list;
             }
                  
         }

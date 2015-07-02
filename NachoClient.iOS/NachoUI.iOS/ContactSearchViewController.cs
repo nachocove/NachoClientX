@@ -2,12 +2,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using CoreGraphics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -26,19 +26,22 @@ namespace NachoClient.iOS
         // Interface
         protected INachoContactChooserDelegate owner;
         protected NcEmailAddress address;
+        protected McAccount account;
         protected string initialSearchString;
         // Internal state
         ContactsTableViewSource contactTableViewSource;
 
         UIBarButtonItem cancelButton;
+        UIBarButtonItem searchButton;
 
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType type)
+        public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType type)
         {
             this.owner = owner;
+            this.account = account;
             this.address = address;
             this.initialSearchString = "";
         }
@@ -46,6 +49,8 @@ namespace NachoClient.iOS
         public void Cleanup ()
         {
             this.owner = null;
+            this.contactTableViewSource.Dispose ();
+            this.contactTableViewSource = null;
         }
 
         public override void ViewDidLoad ()
@@ -54,15 +59,24 @@ namespace NachoClient.iOS
 
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, false, SearchDisplayController);
+            contactTableViewSource.SetOwner (this, account, false, SearchDisplayController);
 
-            cancelButton = new UIBarButtonItem ();
+            cancelButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Cancel";
             NavigationItem.LeftBarButtonItem = cancelButton;
 
             cancelButton.Clicked += (sender, e) => {
                 owner = null;
-                NavigationController.PopViewControllerAnimated (true); 
+                NavigationController.PopViewController (true); 
+            };
+
+            searchButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.AccessibilityLabel = "Search";
+            searchButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.RightBarButtonItem = searchButton;
+            searchButton.Clicked += (object sender, EventArgs e) => {
+                SearchDisplayController.SearchBar.BecomeFirstResponder ();
             };
 
             TableView.Source = contactTableViewSource;
@@ -90,18 +104,37 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 LoadContacts ();
             }
+            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
+                LoadContacts ();
+                var sb = SearchDisplayController.SearchBar;
+                contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
+                SearchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+
+            PermissionManager.DealWithContactsPermission ();
         }
 
         protected void LoadContacts ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactSearchViewController LoadContacts");
-            var contacts = McContact.AllContactsSortedByName ();
+            var contacts = McContact.AllContactsSortedByName (true);
             contactTableViewSource.SetContacts (null, contacts, false);
             TableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactSearchViewController LoadContacts");

@@ -54,10 +54,17 @@ namespace NachoPlatform
             // NOTE: The native email client uses "Android". The NitroDesk client uses "Touchdown".
             return "Android";
         }
+
         public string Identity() {
             // NOTE: The native email client uses "android1325419235512".
             // The NitroDesk client uses "49515649525250545154575557495751".
-            return "android" + Settings.Secure.AndroidId;
+            var androidId = Settings.Secure.AndroidId;
+            if (androidId.Contains ("_") || 16 != androidId.Length) {
+                // FIXME need to save a GUID.
+                return "android1325419235511";
+            } else {
+                return "android" + androidId;
+            }
         }
         public string Os () {
             return "Android " + Build.VERSION.Release;

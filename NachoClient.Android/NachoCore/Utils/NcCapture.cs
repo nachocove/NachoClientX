@@ -2,168 +2,129 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading;
 using System.Diagnostics;
 using System.Text;
 using NachoCore.Utils;
 
 namespace NachoCore.Utils
 {
-
-
-    public class NcCapture : IDisposable
+    /// <summary>
+    /// First and second order statistics for a capture kind.
+    /// </summary>
+    public class Statistics2
     {
-        private class Summary
-        {
-            bool IsTop;
-            uint _Min;
+        private int _Min;
 
-            uint Min {
-                get {
-                    return (0 == Count ? 0 : _Min);
-                }
-            }
-
-            uint _Max;
-
-            uint Max {
-                get {
-                    return (0 == Count ? 0 : _Max);
-                }
-            }
-
-            uint Average {
-                // Only compute average when asked to save some divide
-                get {
-                    return (0 == Count ? 0 : (uint)(Total / Count));
-                }
-            }
-
-            uint StdDev {
-                get {
-                    if (0 == Count) {
-                        return 0;
-                    }
-                    double variance = -((double)Total * (double)Total) / (double)Count;
-                    variance += (double)Total2;
-                    variance /= (double)Count;
-                    return (uint)Math.Sqrt (variance);
-                }
-            }
-
-            uint Count;
-            UInt64 Total;
-            UInt64 Total2;
-            Dictionary <string, Summary> Xtra;
-
-            public Summary (bool isTop)
-            {
-                IsTop = isTop;
-                _Min = uint.MaxValue;
-                _Max = uint.MinValue;
-                Count = 0;
-                Total = 0;
-                Total2 = 0;
-            }
-
-            public void Update (uint value, Dictionary<string,uint> xtra)
-            {
-                Count += 1;
-                Total += value;
-                Total2 += value * value;
-                if (value < _Min) {
-                    _Min = value;
-                }
-                if (value > _Max) {
-                    _Max = value;
-                }
-                if (null != xtra) {
-                    if (null == Xtra) {
-                        Xtra = new Dictionary<string, Summary> ();
-                    }
-                    foreach (var key in xtra.Keys) {
-                        Summary summary;
-                        if (!Xtra.TryGetValue (key, out summary)) {
-                            summary = new Summary (false);
-                            Xtra.Add (key, summary);
-                        }
-                        summary.Update (xtra [key], null);
-                    }
-                }
-            }
-
-            public void Update (uint value)
-            {
-                Update (value, null);
-            }
-
-            public void Reset ()
-            {
-                _Min = uint.MaxValue;
-                _Max = uint.MinValue;
-                Count = 0;
-                Total = 0;
-                Total2 = 0;
-                if (null != Xtra) {
-                    foreach (var kind in Xtra.Keys) {
-                        Xtra [kind].Reset ();
-                    }
-                }
-            }
-
-            public override string ToString ()
-            {
-                if (IsTop) {
-                    var top = string.Format ("Count = {0}, Min = {1}ms, Max = {2}ms, Average = {3}ms, StdDev = {4}ms",
-                                  Count, Min, Max, Average, StdDev);
-                    if (null == Xtra) {
-                        return top;
-                    } else {
-                        StringBuilder sb = new StringBuilder (top);
-                        foreach (var key in Xtra.Keys) {
-                            sb.Append (Environment.NewLine);
-                            sb.Append (string.Format ("    Key: {0}", key));
-                            sb.Append (Xtra [key].ToString ());
-                        }
-                        return sb.ToString ();
-                    }
-                } else {
-                    return string.Format ("Count = {0}, Min = {1}, Max = {2}, Average = {3}, StdDev = {4}",
-                        Count, Min, Max, Average, StdDev);
-                }
-            }
-
-            public void Report (string kind)
-            {
-                Telemetry.RecordCapture (kind, Count, Min, Max, Total, Total2);
-                if (null != Xtra) {
-                    foreach (var key in Xtra.Keys) {
-                        Xtra [key].Report (key);
-                    }
-                }
-                Reset ();
+        public int Min {
+            get {
+                return (0 == Count ? 0 : _Min);
             }
         }
 
+        private int _Max;
+
+        public int Max {
+            get {
+                return (0 == Count ? 0 : _Max);
+            }
+        }
+
+        public int Average {
+            // Only compute average when asked to save some divide
+            get {
+                return (0 == Count ? 0 : (int)(Total / Count));
+            }
+        }
+
+        public int StdDev {
+            get {
+                if (0 == Count) {
+                    return 0;
+                }
+                double variance = -((double)Total * (double)Total) / (double)Count;
+                variance += (double)Total2;
+                variance /= (double)Count;
+                return (int)Math.Sqrt (variance);
+            }
+        }
+
+        public int Count { get; protected set; }
+
+        protected long Total;
+        protected long Total2;
+
+        public Statistics2 ()
+        {
+            Reset ();
+        }
+
+        public void Update (int value)
+        {
+            Count += 1;
+            Total += value;
+            Total2 += value * value;
+            if (value < _Min) {
+                _Min = value;
+            }
+            if (value > _Max) {
+                _Max = value;
+            }
+        }
+
+        public void Reset ()
+        {
+            _Min = int.MaxValue;
+            _Max = int.MinValue;
+            Count = 0;
+            Total = 0;
+            Total2 = 0;
+        }
+
+        public override string ToString ()
+        {
+            var top = string.Format ("Count = {0}, Min = {1}, Max = {2}, Average = {3}, StdDev = {4}",
+                          Count, Min, Max, Average, StdDev);
+            return top;
+        }
+
+        public void Report (string kind)
+        {
+            Telemetry.RecordStatistics2 (kind, Count, Min, Max, Total, Total2);
+            Reset ();
+        }
+    }
+
+    public class NcCapture : IDisposable
+    {
         private class NcCaptureKind
         {
-            public Summary Summary;
-            public List<NcCapture> CaptureList;
+            public Statistics2 Statistics;
+            public ConcurrentDictionary<int, NcCapture> CaptureList;
 
             public NcCaptureKind ()
             {
-                Summary = new Summary (true);
-                CaptureList = new List<NcCapture> ();
+                Statistics = new Statistics2 ();
+                CaptureList = new ConcurrentDictionary<int, NcCapture> ();
             }
 
             public void Add (NcCapture capture)
             {
-                CaptureList.Add (capture);
+                var added = CaptureList.TryAdd (Thread.CurrentThread.ManagedThreadId, capture);
+                NcAssert.True (added);
             }
 
             public void Remove (NcCapture capture)
             {
-                bool result = CaptureList.Remove (capture);
+                NcCapture dummy;
+                bool result = CaptureList.TryRemove (Thread.CurrentThread.ManagedThreadId, out dummy);
                 NcAssert.True (result);
+            }
+
+            public bool HasThread (int threadId)
+            {
+                return CaptureList.ContainsKey (threadId);
             }
         }
 
@@ -172,55 +133,71 @@ namespace NachoCore.Utils
         // Note that we cannot use Stopwatch.IsRunning property because when going
         // to background, we need to stop the capture but remember that it
         // needs to restart when waking up.
-        private bool _IsRunning;
+        public bool IsRunning { get; protected set; }
 
-        public bool IsRunning {
-            get {
-                return _IsRunning;
-            }
-        }
+        // If true, this means the capture supports recursion and this is not
+        // the first capture in the stack. In that case, no timer is actually
+        // started.
+        public bool IsRecursive { get; protected set; }
 
-        private static object ClassLockObj;
-        private static Dictionary<string, NcCaptureKind> PerKind;
+        public long ElapsedMilliseconds { get { return Watch.ElapsedMilliseconds; } }
+
+        private static object ClassLockObj = new object ();
+        private static Dictionary<string, NcCaptureKind> PerKind = new Dictionary<string, NcCaptureKind> ();
         public static Type StopwatchClass = typeof(PlatformStopwatch);
         // For periodically report to telemetry
         private static NcTimer ReportTimer;
         // For keep track of how long the sleep is
         private static IStopwatch SleepWatch;
+        private bool IsDisposed;
 
         private NcCapture (string kind)
         {
             NcAssert.True (null != ClassLockObj);
             lock (ClassLockObj) {
-                NcAssert.True (PerKind.ContainsKey (kind));
+                if (!PerKind.ContainsKey (kind)) {
+                    AddKind (kind);
+                }
 
                 Kind = kind;
-                _IsRunning = false;
+                IsRunning = false;
                 Watch = (IStopwatch)Activator.CreateInstance (StopwatchClass);
 
                 // Add to the global tracking list
-                NcAssert.True (PerKind.ContainsKey (kind));
-                PerKind [kind].Add (this);
+                var captureKind = PerKind [kind];
+                if (captureKind.HasThread (Thread.CurrentThread.ManagedThreadId)) {
+                    IsRecursive = true;
+                } else {
+                    captureKind.Add (this);
+                }
             }
         }
 
         public void Dispose ()
         {
-            lock (ClassLockObj) {
-                // Remove self from the global tracking list
-                PerKind [Kind].Remove (this);
+            Dispose (true);
+        }
+
+        protected virtual void Dispose (bool disposing)
+        {
+            if (IsDisposed) {
+                return;
+            }
+            if (disposing) {
+                if (!IsRecursive) {
+                    Stop ();
+                    lock (ClassLockObj) {
+                        // Remove self from the global tracking list
+                        PerKind [Kind].Remove (this);
+                    }
+                }
+                IsDisposed = true;
             }
         }
 
         public static bool AddKind (string kind)
         {
-            if (null == ClassLockObj) {
-                ClassLockObj = new object ();
-            }
             lock (ClassLockObj) {
-                if (null == PerKind) {
-                    PerKind = new Dictionary<string, NcCaptureKind> ();
-                }
                 if (PerKind.ContainsKey (kind)) {
                     return false;
                 } else {
@@ -242,7 +219,7 @@ namespace NachoCore.Utils
                 }
                 NcCaptureKind captureKind = PerKind [kind];
                 if (0 < captureKind.CaptureList.Count) {
-                    return false;
+                    return false; // someone is still using it
                 }
                 PerKind.Remove (kind);
                 return true;
@@ -253,7 +230,7 @@ namespace NachoCore.Utils
         {
             // Note that we don't take ClassLockObj here because there is no
             // way to delete a kind.
-            return string.Format ("[Kind: {0}] ", kind) + PerKind [kind].Summary.ToString ();
+            return string.Format ("[Kind: {0}] ", kind) + PerKind [kind].Statistics.ToString ();
         }
 
         public static string Summarize ()
@@ -282,41 +259,47 @@ namespace NachoCore.Utils
 
         public void Start ()
         {
-            Watch.Start ();
-            _IsRunning = true;
+            if (IsDisposed) {
+                throw new ObjectDisposedException ("NcCapture already disposed");
+            }
+            if (IsRunning) {
+                Watch.Reset ();
+            }
+            if (!IsRecursive) {
+                Watch.Start ();
+                IsRunning = true;
+            }
         }
 
         public void Pause ()
         {
-            if (IsRunning) {
+            if (!IsRecursive && IsRunning) {
                 Watch.Stop ();
             }
         }
 
         public void Resume ()
         {
-            if (IsRunning) {
+            if (!IsRecursive && IsRunning) {
                 Watch.Start ();
             }
         }
 
         public void Stop ()
         {
-            Stop (null);
-        }
-
-        public void Stop (Dictionary<string,int> xtra)
-        {
-            Watch.Stop ();
-            var summary = PerKind [Kind].Summary;
-            summary.Update ((uint)Watch.ElapsedMilliseconds);
-            _IsRunning = false;
+            if (!IsRecursive && IsRunning) {
+                Watch.Stop ();
+                PerKind [Kind].Statistics.Update ((int)Watch.ElapsedMilliseconds);
+                Reset ();
+            }
         }
 
         public void Reset ()
         {
-            Watch.Reset ();
-            _IsRunning = false;
+            if (!IsRecursive) {
+                Watch.Reset ();
+                IsRunning = false;
+            }
         }
 
         public static void ReportKind (string Kind)
@@ -324,7 +307,7 @@ namespace NachoCore.Utils
             if (!PerKind.ContainsKey (Kind)) {
                 return;
             }
-            Summary summary = PerKind [Kind].Summary;
+            Statistics2 summary = PerKind [Kind].Statistics;
             summary.Report (Kind);
         }
 
@@ -345,7 +328,7 @@ namespace NachoCore.Utils
                 if (!PerKind.ContainsKey (Kind)) {
                     return;
                 }
-                foreach (NcCapture capture in PerKind [Kind].CaptureList) {
+                foreach (NcCapture capture in PerKind [Kind].CaptureList.Values) {
                     walker (capture);
                 }
             }
@@ -403,6 +386,17 @@ namespace NachoCore.Utils
                 }
                 NcAssert.True (null != SleepWatch);
                 SleepWatch.Start ();
+            }
+        }
+
+        public static Statistics2 GetStatistics (string kind)
+        {
+            lock (ClassLockObj) {
+                NcCaptureKind captureKind;
+                if (!PerKind.TryGetValue (kind, out captureKind)) {
+                    return null;
+                }
+                return captureKind.Statistics;
             }
         }
     }

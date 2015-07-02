@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Threading.Tasks;
@@ -17,6 +17,7 @@ namespace Test.Common
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
             var server = new McServer () {
                 AccountId = 1,
+                Capabilities = McAccount.ActiveSyncCapabilities,
                 Host = "example.com"
             };
             server.Insert ();

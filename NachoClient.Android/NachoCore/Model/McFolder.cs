@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using SQLite;
 using NachoCore.Utils;
@@ -18,15 +19,20 @@ namespace NachoCore.Model
         [Indexed]
         public string ParentId { get; set; }
 
-        [Indexed]
-        public bool IsAwaitingCreate { get; set; }
-
         public const string AsSyncKey_Initial = "0";
         public const string AsRootServerId = "0";
 
         public string AsSyncKey { get; set; }
 
+        // Keep track of certian back-to-back Sync failures. If N happen in a row, we will reset the SyncKey.
+        public int AsSyncFailRun { get; set; }
+
+        // For keeping old folders around through a forced re-FolderSync from 0.
         public uint AsFolderSyncEpoch { get; set; }
+        // For keeping old items around through a forced re-Sync from 0.
+        public int AsSyncEpoch { get; set; }
+
+        public bool AsSyncEpochScrubNeeded { get; set; }
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
         public bool AsSyncMetaToClientExpected { get; set; }
         // Updated when a Sync works on this folder. When we hit MaxFolders limit, this decides who goes next.
@@ -37,6 +43,41 @@ namespace NachoCore.Model
         public int SyncAttemptCount { get; set; }
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
+
+
+        #region IMAP Folder metadata
+
+        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
+        // technically this isn't part of the actual IMAP metadata (that the server provides), but we'll treat it as such, since
+        // it really never should be modified by any code (other than the McFolder initializer).
+        public string ImapGuid { get; set; }
+
+        // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
+        public bool ImapNoSelect { get; set; }
+        // The folder's UIDVALIDITY value
+        public uint ImapUidValidity { get; set; }
+        // the folders UIDNEXT value
+        public uint ImapUidNext { get; set; }
+
+        #endregion
+
+        #region IMAP Sync helper variables
+
+        // DateTime we last examined the folder.
+        public DateTime ImapLastExamine { get; set; }
+
+        public bool ImapNeedFullSync { get; set; }
+
+        // The lowest UID we've synced in the current round of syncing
+        public uint ImapUidLowestUidSynced { get; set; }
+        // The highest UID we've synced in the current round of syncing
+        public uint ImapUidHighestUidSynced { get; set; }
+        // The current sync-point in the current round of syncing
+        public uint ImapLastUidSynced { get; set; }
+        // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
+        public string ImapUidSet { get; set; }
+
+        #endregion
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -61,10 +102,33 @@ namespace NachoCore.Model
 
         public const string GMail_All_ServerId = "Mail:^all";
 
+        //Used for display name when creating the folder (if it doesn't already exist)"
+        public const string DRAFTS_DISPLAY_NAME = "Drafts";
+        public const string ARCHIVE_DISPLAY_NAME = "Archive";
+
+        private static ConcurrentDictionary<int, string> JunkFolderIds = new ConcurrentDictionary<int, string> ();
+
+        // A dictionary mapping account id to the RIC folder id of the account. (-1 if there is none locally)
+        private static ConcurrentDictionary<int, int> RicFolderIds = new ConcurrentDictionary<int, int> ();
+
+        public McFolder ()
+        {
+            ImapUidLowestUidSynced = uint.MaxValue;
+            ImapLastUidSynced = uint.MinValue;
+            ImapUidHighestUidSynced = uint.MinValue;
+            ImapGuid = Guid.NewGuid ().ToString ("N");
+        }
+
         public override string ToString ()
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
+
+        public string ImapFolderNameRedacted ()
+        {
+            return string.Format ("{0}/{1}", ImapGuid, IsDistinguished ? ServerId : "User Folder");
+        }
+
         // "factory" to create folders.
         public static McFolder Create (int accountId, 
                                        bool isClientOwned,
@@ -102,7 +166,6 @@ namespace NachoCore.Model
             return folder;
         }
 
-        // TODO - is there a good way not to specify tries here?
         public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
             if (IsHidden) {
@@ -125,6 +188,13 @@ namespace NachoCore.Model
             return 0;
         }
 
+        public static List<McFolder> GetClientOwnedFolders (string serverId)
+        {
+            return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
+                serverId == x.ServerId &&
+            true == x.IsClientOwned).ToList ();
+        }
+
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Table<McFolder> ().Where (x => 
@@ -132,6 +202,7 @@ namespace NachoCore.Model
             serverId == x.ServerId &&
             true == x.IsClientOwned).SingleOrDefault ();
         }
+
         /*
          * SYNCED FOLDERS:
          * Folder Get...Folder functions for distinguished folders that aren't going to 
@@ -151,9 +222,24 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (McAccount.GetDeviceAccount ().Id, ClientOwned_DeviceCalendars);
         }
 
-        public static McFolder GetOutboxFolder (int accountId)
+        public static McFolder GetClientOwnedOutboxFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
+        }
+
+        public static McFolder GetClientOwnedDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_EmailDrafts);
+        }
+
+        public static List<McFolder> GetClientOwnedDraftsFolders ()
+        {
+            return McFolder.GetClientOwnedFolders (ClientOwned_EmailDrafts);
+        }
+
+        public static McFolder GetCalDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_CalDrafts);
         }
 
         public static McFolder GetGalCacheFolder (int accountId)
@@ -171,28 +257,55 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
 
-        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
+        public bool IsClientOwnedDraftsFolder ()
+        {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+                if (ClientOwned_EmailDrafts == this.ServerId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool IsClientOwnedOutboxFolder ()
+        {
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == this.Type) {
+                if (ClientOwned_Outbox == this.ServerId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool IsJunkFolder ()
+        {
+            return JunkFolderIds.ContainsKey (this.Id);
+        }
+
+        public static bool IsJunkFolder (int folderId)
+        {
+            return JunkFolderIds.ContainsKey (folderId);
+        }
+
+        public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, string parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.Type = ? AND " +
-                          " f.ParentId = ? AND " +
-                          " f.DisplayName = ?",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.Type = ?, 0.2) AND " +
+                          " likelihood (f.ParentId = ?, 0.05) AND " +
+                          " likelihood (f.DisplayName = ?, 0.05) ",
                               accountId, (uint)typeCode, parentId, name);
-            if (0 == folders.Count) {
-                return null;
-            }
             return folders.ToList ();
         }
 
-        private static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
+        public static McFolder GetDistinguishedFolder (int accountId, Xml.FolderHierarchy.TypeCode typeCode)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.IsClientOwned = 0 AND " +
-                          " f.Type = ? ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.IsClientOwned = 0, 1.0) AND " +
+                          " likelihood (f.Type = ?, 0.05) ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {
                 return null;
@@ -236,30 +349,90 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
+        public static McFolder GetOrCreateArchiveFolder (int accountId)
+        {
+            var archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
+            if (null == archiveFolder) {
+                BackEnd.Instance.CreateFolderCmd (accountId, ARCHIVE_DISPLAY_NAME, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                archiveFolder = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, "0", ARCHIVE_DISPLAY_NAME).FirstOrDefault ();
+            }
+            NcAssert.NotNull (archiveFolder);
+            return archiveFolder;
+        }
+
+        public static int GetRicFolderId (int accountId)
+        {
+            int folderId;
+            if (!RicFolderIds.TryGetValue (accountId, out folderId)) {
+                var ricFolder = GetRicContactFolder (accountId);
+                if (null == ricFolder) {
+                    return -1;
+                }
+                folderId = ricFolder.Id;
+                RicFolderIds.TryAdd (accountId, folderId);
+            }
+            return folderId;
+        }
+
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.ParentId = ?, 0.05) ",
+                              accountId, parentId);
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryByMostRecentlyAccessedVisibleFolders (int accountId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                          "WHERE f.AccountId = ? AND f.LastAccessed > ? AND f.IsHidden = 0 " +
+                          "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears (-1));
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                          " WHERE f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
+                          " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
+                          " f.IsHidden = 0 " +
+                          " ORDER BY f.DisplayName ", 
+                              accountId);
+            return folders.ToList ();
+        }
+
+        public static McFolder QueryByServerId (int accountId, string serverId)
+        {
+            var f = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                    " likelihood (f.AccountId = ?, 1.0) AND " +
+                    " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (f.IsHidden = 0, 0.9) AND " +
+                    " likelihood (f.ServerId = ?, 0.5) ",
+                        accountId, serverId).ToList ();
+            NcAssert.True (2 > f.Count ());
+            return f.SingleOrDefault ();
+        }
+
+        public static List<McFolder> QueryVisibleChildrenOfParentId (int accountId, string parentId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
+                          " f.IsHidden = 0 AND " +
                           " f.IsAwaitingDelete = 0 AND " +
                           " f.ParentId = ? ",
                               accountId, parentId);
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryByMostRecentlyAccessedFolders (int accountId)
-        {
-            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
-                "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
-            return folders.ToList ();
-        }
-
         public static List<McFolder> ServerEndQueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingCreate = 0 AND " +
-                          " f.ParentId = ? ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
+                          " likelihood (f.ParentId = ?, 0.05) ",
                               accountId, parentId);
             return folders.ToList ();
         }
@@ -268,19 +441,19 @@ namespace NachoCore.Model
         {
             var classCode = new T ().GetClassCode ();
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f JOIN McMapFolderFolderEntry AS m ON f.Id = m.FolderId WHERE " +
-            " m.AccountId = ? AND " +
-            " m.FolderEntryId = ? AND " +
-            " f.IsAwaitingDelete = 0 AND " +
-            " m.ClassCode = ? ",
+            " likelihood (m.AccountId = ?, 1.0) AND " +
+            " likelihood (m.FolderEntryId = ?, 0.001) AND " +
+            " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+            " likelihood (m.ClassCode = ?, 0.2) ",
                 accountId, folderEntryId, (uint)classCode).ToList ();
         }
 
         public static List<McFolder> QueryByIsClientOwned (int accountId, bool isClientOwned)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsAwaitingDelete = 0 AND " +
-                          " f.IsClientOwned = ? ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                          " likelihood (f.IsClientOwned = ?, 0.2) ",
                               accountId, isClientOwned);
             return folders.ToList ();
         }
@@ -291,18 +464,18 @@ namespace NachoCore.Model
         public static McFolder ServerEndQueryByServerId (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-            " f.AccountId = ? AND " +
-            " f.IsAwaitingCreate = 0 AND " +
-            " f.ServerId = ? ", 
+            " likelihood (f.AccountId = ?, 1.0) AND " +
+            " likelihood (f.IsAwaitingCreate = 0, 1.0) AND " +
+            " likelihood (f.ServerId = ?, 0.05) ", 
                 accountId, serverId).SingleOrDefault ();
         }
 
         public static List<McFolder> ServerEndQueryAll (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND " +
-                          " f.IsClientOwned = 0 AND " +
-                          " f.IsAwaitingCreate = 0 ",
+                          " likelihood (f.AccountId = ?, 1.0) AND " +
+                          " likelihood (f.IsClientOwned = 0, 0.8) AND " +
+                          " likelihood (f.IsAwaitingCreate = 0, 1.0) ",
                               accountId);
             return folders.ToList ();
         }
@@ -310,8 +483,8 @@ namespace NachoCore.Model
         public static McFolder ServerEndQueryById (int folderId)
         {
             return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-            " f.Id = ? AND " +
-            " f.IsAwaitingCreate = 0 ", folderId).SingleOrDefault ();
+            " likelihood (f.Id = ?, 0.05) AND " +
+            " likelihood (f.IsAwaitingCreate = 0, 1.0) ", folderId).SingleOrDefault ();
         }
 
         public static void ServerEndMoveToClientOwned (int accountId, string serverId, string destParentId)
@@ -348,6 +521,42 @@ namespace NachoCore.Model
             }
         }
 
+        public void PerformSyncEpochScrub (bool testRunSync = false)
+        {
+            const int perIter = 100;
+            Action action = () => {
+                Log.Info (Log.LOG_AS, "PerformSyncEpochScrub {0}", Id);
+                while (true) {
+                    var orphanedEmails = McEmailMessage.QueryOldEpochByFolderId<McEmailMessage> (AccountId, Id, AsSyncEpoch, perIter);
+                    var orphanedCals = McCalendar.QueryOldEpochByFolderId<McCalendar> (AccountId, Id, AsSyncEpoch, perIter);
+                    var orphanedContacts = McContact.QueryOldEpochByFolderId<McContact> (AccountId, Id, AsSyncEpoch, perIter);
+                    var orphanedTasks = McTask.QueryOldEpochByFolderId<McTask> (AccountId, Id, AsSyncEpoch, perIter);
+                    var whackem = new List<McAbstrItem> ();
+                    whackem.AddRange (orphanedEmails);
+                    whackem.AddRange (orphanedCals);
+                    whackem.AddRange (orphanedContacts);
+                    whackem.AddRange (orphanedTasks);
+                    if (0 == whackem.Count) {
+                        break;
+                    }
+                    foreach (var item in whackem) {
+                        item.Delete ();
+                    }
+                }
+                UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.AsSyncEpochScrubNeeded = false;
+                    return true;
+                });
+                // after UpdateWithOCApply, "this" can be a stale version of the folder!
+            };
+            if (testRunSync) {
+                action ();
+            } else {
+                NcTask.Run (action, "PerformSyncEpochScrub");
+            }
+        }
+
         public void DeleteItems ()
         {
             var contentMaps = McMapFolderFolderEntry.QueryByFolderId (AccountId, Id);
@@ -356,22 +565,30 @@ namespace NachoCore.Model
                 switch (map.ClassCode) {
                 case McAbstrItem.ClassCodeEnum.Email:
                     var emailMessage = McAbstrFolderEntry.QueryById<McEmailMessage> (map.FolderEntryId);
-                    emailMessage.Delete ();
+                    if (null != emailMessage) {
+                        emailMessage.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Calendar:
                     var cal = McAbstrFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
-                    cal.Delete ();
+                    if (null != cal) {
+                        cal.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Contact:
                     var contact = McAbstrFolderEntry.QueryById<McContact> (map.FolderEntryId);
-                    contact.Delete ();
+                    if (null != contact) {
+                        contact.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Tasks:
                     var task = McAbstrFolderEntry.QueryById<McTask> (map.FolderEntryId);
-                    task.Delete ();
+                    if (null != task) {
+                        task.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Folder:
@@ -385,18 +602,84 @@ namespace NachoCore.Model
             }
         }
 
+        public override int Insert ()
+        {
+            using (var capture = CaptureWithStart ("Insert")) {
+                int result = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    // If this is a calendar folder, give it a unique index that can be used to give it a color.
+                    // This doesn't seem like the right place for this code.  McFolder.Insert() shouldn't have
+                    // code that is specific to calendar folders.  But on the other hand, McFolder.Insert() is
+                    // the only place that the code can go that guarantees that DisplayColor is set and that its
+                    // value is unique.
+                    if (NachoFolders.FilterForCalendars.Contains(this.Type) && 0 == DisplayColor) {
+                        // This code will work even if the app UI allows the user to select the color for a folder,
+                        // which could result in a gap in the index numbers.  The next folder to be created will
+                        // start filling in the gap.  That is why we don't just look for the largest existing index.
+                        int nextColor = 1;
+                        var calFolders = NcModel.Instance.Db.Query<McFolder> (
+                            "SELECT f.* FROM McFolder AS f " +
+                            " WHERE f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (NachoFolders.FilterForCalendars) +
+                            " ORDER BY f.DisplayColor ");
+                        foreach (var folder in calFolders) {
+                            if (nextColor == folder.DisplayColor) {
+                                ++nextColor;
+                            } else if (nextColor != folder.DisplayColor + 1) {
+                                break;
+                            }
+                        }
+                        this.DisplayColor = nextColor;
+                    }
+                    result = base.Insert ();
+                    if (MaybeJunkFolder (DisplayName)) {
+                        JunkFolderIds.TryAdd (Id, DisplayName);
+                    }
+                });
+                return result;
+            }
+        }
+
         public override int Delete ()
         {
-            // Delete anything in the folder and any sub-folders/map entries (recursively).
-            DeleteItems ();
+            using (var capture = CaptureWithStart ("Delete")) {
+                // Delete anything in the folder and any sub-folders/map entries (recursively).
+                DeleteItems ();
 
-            // Delete any sub-folders.
-            var subs = McFolder.QueryByParentId (AccountId, ServerId);
-            foreach (var sub in subs) {
-                // Recusion.
-                sub.Delete ();
+                // Delete any sub-folders.
+                var subs = McFolder.QueryByParentId (AccountId, ServerId);
+                foreach (var sub in subs) {
+                    // Recusion.
+                    sub.Delete ();
+                }
+                int rows = base.Delete ();
+
+                string dummy;
+                JunkFolderIds.TryRemove (Id, out dummy);
+                if (Xml.FolderHierarchy.TypeCode.Ric_19 == Type) {
+                    int folderId;
+                    RicFolderIds.TryRemove (AccountId, out folderId);
+                }
+
+                return rows;
             }
-            return base.Delete ();
+        }
+
+        public NcResult UpdateLink (McAbstrItem obj)
+        {
+            var classCode = obj.GetClassCode ();
+            NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
+            NcAssert.True (classCode != ClassCodeEnum.NeverInFolder);
+            NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+                (AccountId, Id, obj.Id, classCode);
+            if (null == existing) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
+            }
+            if (existing.AsSyncEpoch != AsSyncEpoch) {
+                existing.AsSyncEpoch = AsSyncEpoch;
+                existing.Update ();
+            }
+            return NcResult.OK ();
         }
 
         public NcResult Link (McAbstrItem obj)
@@ -414,8 +697,17 @@ namespace NachoCore.Model
                 FolderId = Id,
                 FolderEntryId = obj.Id,
                 ClassCode = classCode,
+                AsSyncEpoch = AsSyncEpoch,
             };
-            map.Insert ();
+            NcModel.Instance.RunInTransaction (() => {
+                map.Insert ();
+
+                // if it is a contact, re-evaluate the eclipsing status
+                if (obj is McContact) {
+                    var contact = (McContact)obj;
+                    contact.Update ();
+                }
+            });
             return NcResult.OK ();
         }
 
@@ -452,11 +744,32 @@ namespace NachoCore.Model
         public static void UpdateSet_AsSyncMetaToClientExpected (int accountId, bool toClientExpected)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND f.IsClientOwned = 0",
-                accountId);
+                          " f.AccountId = ? AND f.IsClientOwned = 0",
+                              accountId);
             foreach (var folder in folders) {
                 folder.UpdateSet_AsSyncMetaToClientExpected (toClientExpected);
             }
+        }
+
+        public McFolder UpdateReset_AsSyncFailRun ()
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncFailRun = 0;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateIncrement_AsSyncFailRunToClientExpected (bool toClientExpected)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncFailRun++;
+                target.AsSyncMetaToClientExpected = toClientExpected;
+                return true;
+            });
+            return folder;
         }
 
         public McFolder UpdateSet_AsSyncMetaToClientExpected (bool toClientExpected)
@@ -577,17 +890,18 @@ namespace NachoCore.Model
             var folder = UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.ResetSyncState ();
+                target.AsSyncEpoch++;
+                target.AsSyncEpochScrubNeeded = true;
                 return true;
             });
-            folder.DeleteItems ();
             return folder;
         }
 
         public static void UpdateResetSyncState (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? ",
-                accountId);
+                          " f.AccountId = ? ",
+                              accountId);
             foreach (var iterFolder in folders) {
                 iterFolder.UpdateResetSyncState ();
             }
@@ -631,6 +945,61 @@ namespace NachoCore.Model
                 "f.DisplayName LIKE ? " +
                 "ORDER BY f.DisplayName DESC",
                 searchFor);
+        }
+
+        private static bool MaybeJunkFolder (string folderName)
+        {
+            // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
+            string[] tags = {
+                "junk",
+                "spam"
+            };
+            var folderLower = folderName.ToLower ();
+            for (int n = 0; n < tags.Length; n++) {
+                if (folderLower.Contains (tags [n])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void InitializeJunkFolders ()
+        {
+            ConcurrentDictionary<int, string> junkFolderIds = new ConcurrentDictionary<int, string> ();
+            foreach (var folder in NcModel.Instance.Db.Table<McFolder> ()) {
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    JunkFolderIds = junkFolderIds; // keep what we have so far
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
+                if (MaybeJunkFolder (folder.DisplayName)) {
+                    junkFolderIds.TryAdd (folder.Id, folder.DisplayName);
+                }
+            }
+            JunkFolderIds = junkFolderIds;
+        }
+
+        public static string JunkFolderListSqlString ()
+        {
+            if (0 == JunkFolderIds.Count) {
+                return null;
+            }
+            return "(" + string.Join (",", JunkFolderIds.Keys) + ")";
+        }
+
+        public static string GleaningExemptedFolderListSqlString ()
+        {
+            var folderList = new List<int> ();
+            if (0 < JunkFolderIds.Count) {
+                folderList.AddRange (JunkFolderIds.Keys);
+            }
+            var draftFolders = GetClientOwnedDraftsFolders ();
+            if (0 < draftFolders.Count) {
+                folderList.AddRange (draftFolders.Select (x => x.Id));
+            }
+            if (0 == folderList.Count) {
+                return null;
+            }
+            return "(" + string.Join (",", folderList) + ")";
         }
     }
 }

@@ -1,11 +1,11 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.IO;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -21,23 +21,38 @@ namespace NachoClient.iOS
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
         protected const int REMOVE_BUTTON_TAG = 1100;
 
+        public delegate void UcAttachmentCellAction (UcAttachmentCell cell);
+
+        protected UcAttachmentCellAction tapAction;
+        protected UcAttachmentCellAction removeAction;
+
+        protected UITapGestureRecognizer viewTapped;
+        protected UITapGestureRecognizer.Token viewTappedToken;
+
         public McAttachment attachment;
 
-        public UcAttachmentCell (McAttachment attachment, float parentWidth, bool editable) : base (new RectangleF (0, 0, parentWidth, LINE_HEIGHT))
+        public UcAttachmentCell (McAttachment attachment, nfloat parentWidth, bool editable, UcAttachmentCellAction tapAction, UcAttachmentCellAction removeAction)
+            : base (new CGRect (0, 0, parentWidth, LINE_HEIGHT))
         {
             this.attachment = attachment;
+            this.tapAction = tapAction;
+            this.removeAction = editable ? removeAction : null;
             CreateView (parentWidth, editable);
         }
 
-        public void CreateView (float parentWidth, bool editable)
+        public void CreateView (nfloat parentWidth, bool editable)
         {
-            var xOffset = 0;
+            nfloat xOffset = 0;
             if (editable) {
                 //Remove icon
                 var removeButton = new UIButton ();
+                removeButton.AccessibilityLabel = "Remove";
                 removeButton.Tag = REMOVE_BUTTON_TAG;
                 removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
-                removeButton.Frame = new RectangleF (9, (LINE_HEIGHT / 2) - 17, 34, 34);
+                removeButton.Frame = new CGRect (9, (LINE_HEIGHT / 2) - 17, 34, 34);
+                if (null != removeAction) {
+                    removeButton.TouchUpInside += RemoveClicked;
+                }
                 this.AddSubview (removeButton);
                 xOffset += 34;
             }
@@ -45,7 +60,7 @@ namespace NachoClient.iOS
             //Cell icon
             var cellIconImageView = new UIImageView (); 
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            cellIconImageView.Frame = new RectangleF (xOffset + 18, 18, 24, 24);
+            cellIconImageView.Frame = new CGRect (xOffset + 18, 18, 24, 24);
             this.AddSubview (cellIconImageView);
 
             //Text label
@@ -53,7 +68,7 @@ namespace NachoClient.iOS
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            textLabel.Frame = new RectangleF (xOffset + 60, 11, parentWidth - 60 - 52, 19.5f);
+            textLabel.Frame = new CGRect (xOffset + 60, 11, parentWidth - 60 - 52, 19.5f);
             this.AddSubview (textLabel);
 
             //Detail text label
@@ -61,12 +76,16 @@ namespace NachoClient.iOS
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
-            detailTextlabel.Frame = new RectangleF (xOffset + 60, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
+            detailTextlabel.Frame = new CGRect (xOffset + 60, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
             this.AddSubview (detailTextlabel);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLineView (xOffset + 60, 60, parentWidth - 60, A.Color_NachoBorderGray);
+            var separatorLine = Util.AddHorizontalLine (xOffset + 60, 60, parentWidth - 60, A.Color_NachoBorderGray);
             this.AddSubview (separatorLine);
+
+            viewTapped = new UITapGestureRecognizer ();
+            viewTappedToken = viewTapped.AddTarget (ViewTapped);
+            this.AddGestureRecognizer (viewTapped);
 
             ConfigureView (attachment, cellIconImageView, textLabel, detailTextlabel);
         }
@@ -98,13 +117,35 @@ namespace NachoClient.iOS
                 textLabel.Text = "File no longer exists"; 
             }
         }
+
+        private void RemoveClicked (object sender, EventArgs e)
+        {
+            removeAction (this);
+        }
+
+        private void ViewTapped ()
+        {
+            if (null != tapAction) {
+                tapAction (this);
+            }
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            if (null != removeAction) {
+                ((UIButton)this.ViewWithTag (REMOVE_BUTTON_TAG)).TouchUpInside -= RemoveClicked;
+            }
+            viewTapped.RemoveTarget (viewTappedToken);
+            this.RemoveGestureRecognizer (viewTapped);
+            base.Dispose (disposing);
+        }
     }
 
     public class UcAttachmentBlock : UIView
     {
         protected int accountId;
         protected IUcAttachmentBlockDelegate owner;
-        protected float parentWidth;
+        protected nfloat parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
 
         protected int CELL_HEIGHT;
@@ -120,7 +161,10 @@ namespace NachoClient.iOS
         UILabel mainLabel;
         UIButton chooserButton;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth, int cellHeight, bool editable)
+        protected UITapGestureRecognizer toggleCompactTapped;
+        protected UITapGestureRecognizer.Token toggleCompactTappedToken;
+
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, nfloat parentWidth, int cellHeight, bool editable)
         {
             this.owner = owner;
             this.accountId = accountId;
@@ -150,6 +194,16 @@ namespace NachoClient.iOS
             }
         }
 
+        public void ReplaceAttachment(McAttachment original, McAttachment replacement)
+        {
+            foreach(var a in list) {
+                if (original == a.attachment) {
+                    a.attachment = replacement;
+                    original.Delete ();
+                }
+            }
+        }
+
         public void CreateView ()
         {
             contentView = new UIView ();
@@ -164,46 +218,31 @@ namespace NachoClient.iOS
 
             if (editable) {
                 chooserButton = UIButton.FromType (UIButtonType.System);
+                chooserButton.AccessibilityLabel = "Add attachment";
                 Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
                 chooserButton.SizeToFit ();
-                chooserButton.Frame = new RectangleF (parentWidth - 43, 0, 40, CELL_HEIGHT);
-                chooserButton.TouchUpInside += (object sender, EventArgs e) => {
-                    if (null != owner) {
-                        owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
-                    }
-                };
+                chooserButton.Frame = new CGRect (parentWidth - 43, 0, 40, CELL_HEIGHT);
+                chooserButton.TouchUpInside += ChooserButtonClicked;
                 contentView.AddSubview (chooserButton);
             }
 
-            // Enabled & disable 'compact view' with a tap
-            var tap = new UITapGestureRecognizer ();
-            tap.AddTarget (() => {
-                isCompact = !isCompact;
-                ConfigureView ();
-            });
-            contentView.AddGestureRecognizer (tap);
+            // Tapping on the view toggles between compact and regular size
+            toggleCompactTapped = new UITapGestureRecognizer ();
+            toggleCompactTappedToken = toggleCompactTapped.AddTarget (ToggleCompactness);
+            contentView.AddGestureRecognizer (toggleCompactTapped);
         }
 
         public void Append (McAttachment attachment)
         {
-            var c = new UcAttachmentCell (attachment, parentWidth, editable);
+            var c = new UcAttachmentCell (attachment, parentWidth, editable, (UcAttachmentCell cell) => {
+                if (null != owner) {
+                    owner.DisplayAttachmentForAttachmentBlock (cell.attachment);
+                }
+            }, (UcAttachmentCell cell) => {
+                Remove (cell);
+            });
             contentView.AddSubview (c);
             list.Add (c);
-
-            var tap = new UITapGestureRecognizer ();
-            tap.AddTarget (() => {
-                if (null != owner) {
-                    owner.DisplayAttachmentForAttachmentBlock (c.attachment);
-                }
-            });
-            c.AddGestureRecognizer (tap);
-
-            if (editable) {
-                var RemoveButton = c.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
-                RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
-                    Remove (c);
-                };
-            }
 
             Layout ();
             ConfigureView ();
@@ -213,15 +252,16 @@ namespace NachoClient.iOS
         {
             list.Remove (c);
             c.RemoveFromSuperview ();
+            c.Dispose ();
 
             Layout ();
             ConfigureView ();
         }
 
         /// Adjusts x & y on the top line of a view
-        protected void AdjustXY (UIView view, float X, float Y)
+        protected void AdjustXY (UIView view, nfloat X, nfloat Y)
         {
-            view.Center = new PointF (X + (view.Frame.Width / 2), CELL_HEIGHT / 2);
+            view.Center = new CGPoint (X + (view.Frame.Width / 2), CELL_HEIGHT / 2);
         }
 
         public void ConfigureView ()
@@ -243,23 +283,47 @@ namespace NachoClient.iOS
 
         public void Layout ()
         {
-            float yOffset = 0;
+            nfloat yOffset = 0;
 
-            var mainLabelSize = mainLabel.StringSize (mainLabel.Text, mainLabel.Font);
-            mainLabel.Frame = new RectangleF (mainLabel.Frame.Location, mainLabelSize);
+            var mainLabelSize = mainLabel.Text.StringSize (mainLabel.Font);
+            mainLabel.Frame = new CGRect (mainLabel.Frame.Location, mainLabelSize);
             AdjustXY (mainLabel, LEFT_INDENT, yOffset);
 
             yOffset += CELL_HEIGHT;
 
             foreach (var c in list) {
                 if (!c.Hidden) {
-                    c.Frame = new RectangleF (0, yOffset, c.Frame.Width, c.Frame.Height);
+                    c.Frame = new CGRect (0, yOffset, c.Frame.Width, c.Frame.Height);
                     yOffset += LINE_HEIGHT;
                 }
             }
 
-            contentView.Frame = new RectangleF (0, 0, parentWidth, yOffset);
-            this.Frame = new RectangleF (this.Frame.Location, contentView.Frame.Size);
+            contentView.Frame = new CGRect (0, 0, parentWidth, yOffset);
+            this.Frame = new CGRect (this.Frame.Location, contentView.Frame.Size);
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            if (null != chooserButton) {
+                chooserButton.TouchUpInside -= ChooserButtonClicked;
+            }
+            toggleCompactTapped.RemoveTarget (toggleCompactTappedToken);
+            contentView.RemoveGestureRecognizer (toggleCompactTapped);
+            owner = null;
+            base.Dispose (disposing);
+        }
+
+        private void ChooserButtonClicked (object sender, EventArgs e)
+        {
+            if (null != owner) {
+                owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
+            }
+        }
+
+        private void ToggleCompactness ()
+        {
+            isCompact = !isCompact;
+            ConfigureView ();
         }
     }
 }

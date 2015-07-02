@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore.Utils;
 
@@ -21,13 +21,15 @@ namespace NachoClient.iOS
 
     public class MessageToolbar : UIToolbar
     {
-        public enum ActionType {
+        public enum ActionType
+        {
             REPLY,
             REPLY_ALL,
             FORWARD,
             ARCHIVE,
-            DELETE
-        };
+            DELETE}
+
+        ;
 
         public EventHandler OnClick;
 
@@ -63,42 +65,47 @@ namespace NachoClient.iOS
 
         private void DeleteButtonClicked (object sender, EventArgs e)
         {
-            OnClick (sender, new MessageToolbarEventArgs(ActionType.DELETE));
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.DELETE));
         }
 
-        public MessageToolbar (RectangleF frame) : base (frame)
+        public MessageToolbar (CGRect frame) : base (frame)
         {
             Translucent = false;
             BarTintColor = UIColor.White;
 
-            replyButton = new UIBarButtonItem ();
+            replyButton = new NcUIBarButtonItem ();
             replyButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
+            replyButton.AccessibilityLabel = "Reply";
             replyButton.Clicked += ReplyButtonClicked;
 
-            replyAllButton = new UIBarButtonItem ();
+            replyAllButton = new NcUIBarButtonItem ();
             replyAllButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyAllButton, "toolbar-icn-reply-all");
+            replyAllButton.AccessibilityLabel = "Reply all";
             replyAllButton.Clicked += ReplyAllButtonClicked;
 
-            forwardButton = new UIBarButtonItem ();
+            forwardButton = new NcUIBarButtonItem ();
             forwardButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (forwardButton, "toolbar-icn-fwd");
+            forwardButton.AccessibilityLabel = "Forward";
             forwardButton.Clicked += ForwardButtonClicked;
 
-            archiveButton = new UIBarButtonItem ();
+            archiveButton = new NcUIBarButtonItem ();
             archiveButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
+            archiveButton.AccessibilityLabel = "Archive";
             archiveButton.Clicked += ArchiveButtonClicked;
 
-            flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+            flexibleSpace = new NcUIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
 
-            fixedSpace = new UIBarButtonItem (UIBarButtonSystemItem.FixedSpace);
+            fixedSpace = new NcUIBarButtonItem (UIBarButtonSystemItem.FixedSpace);
             fixedSpace.Width = 10;
 
-            deleteButton = new UIBarButtonItem ();
+            deleteButton = new NcUIBarButtonItem ();
             deleteButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (deleteButton, "email-delete");
+            deleteButton.AccessibilityLabel = "Delete";
             deleteButton.Clicked += DeleteButtonClicked;
 
             SetItems (new UIBarButtonItem[] {
@@ -114,7 +121,7 @@ namespace NachoClient.iOS
             }, false);
         }
 
-        public void Cleanup()
+        public void Cleanup ()
         {
             replyButton.Clicked -= ReplyButtonClicked;
             replyAllButton.Clicked -= ReplyAllButtonClicked;

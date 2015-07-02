@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
@@ -20,40 +20,42 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        // Create a new McCalendar item.
-        //
-        // The start time and end time parameters are used solely for
-        // the start and end dates, not the meeting time. The meeting
-        // start time is set for Now rounded up to the next 30-minute
-        // boundary.  The meeting end time is 60 minutes later but on
-        // the date given by the end time parameter.
-        //
-        // This behavior is specifically designed to help toggling an
-        // all-day meeting on and off present reasonable results.
+        /// Create a new McCalendar item.  The only fields that are initialized are the start time and end time.
+        /// If no start or end dates are specified, then the events starts on the next half hour and runs for an
+        /// hour.  If start and end dates are specified, then the event starts on the next half hour on that date
+        /// and ends an hour later on the given end date.
         /// </summary>
-        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd)
+        /// <param name="startDate">Start date. Only the date is significant; the time portion is ignored.</param>
+        /// <param name="endDate">End date. Only the date is significant; the time portion is ignored.</param>
+        public static McCalendar DefaultMeeting (DateTime startDate = default (DateTime), DateTime endDate = default (DateTime))
         {
-            var c = new McCalendar ();
+            var cal = new McCalendar ();
 
-            var start = DateTime.Now.AddMinutes (30.0);
-            var localTime = new DateTime (presetStart.Year, presetStart.Month, presetStart.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
-            var utcTime = localTime.ToUniversalTime ();
-            if (start.Minute >= 30.0) {
-                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
+            DateTime localNow = DateTime.Now;
+            DateTime halfHour = new DateTime (localNow.Year, localNow.Month, localNow.Day, localNow.Hour, localNow.Minute >= 30 ? 30 : 0, 0, DateTimeKind.Local);
+            DateTime localStart = halfHour.AddMinutes (30);
+
+            if (default (DateTime) == startDate) {
+                cal.StartTime = localStart.ToUniversalTime ();
             } else {
-                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
+                cal.StartTime = new DateTime (startDate.Year, startDate.Month, startDate.Day, localStart.Hour, localStart.Minute, 0, DateTimeKind.Local).ToUniversalTime ();
             }
 
-            var end = DateTime.Now.AddMinutes (90.0);
-            var endLocalTime = new DateTime (presetEnd.Year, presetEnd.Month, presetEnd.Day, end.Hour, end.Minute, 0, DateTimeKind.Local);
-            var endUtcTime = endLocalTime.ToUniversalTime ();
-            if (end.Minute >= 30.0) {
-                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 30, 0, DateTimeKind.Utc);
+            if (default (DateTime) == endDate) {
+                cal.EndTime = cal.StartTime.AddHours (1);
             } else {
-                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 0, 0, DateTimeKind.Utc);
+                DateTime localEnd = localStart.AddHours (1);
+                DateTime utcEnd = new DateTime (endDate.Year, endDate.Month, endDate.Day, localEnd.Hour, localEnd.Minute, 0, DateTimeKind.Local).ToUniversalTime ();
+                if (utcEnd < cal.StartTime) {
+                    // This can happen if the arguments startDate and endDate are on the same day
+                    // and the local time is between 22:30 and 23:30.  In this case, behave as if
+                    // the endDate had not been specified.
+                    utcEnd = cal.StartTime.AddHours (1);
+                }
+                cal.EndTime = utcEnd;
             }
 
-            return c;
+            return cal;
         }
 
         public static McTask DefaultTask ()
@@ -62,78 +64,9 @@ namespace NachoCore.Utils
             return t;
         }
 
-        /// <summary>
-        /// Return the starting time for the event in UTC, without triggering the DDay.iCal
-        /// time zone code that would cause the app to crash.
-        /// </summary>
-        public static DateTime EventStartTime (DDay.iCal.Event evt, McCalendar c)
-        {
-            if (null != c) {
-                return c.StartTime;
-            }
-            // This isn't an error.  But we want to log a message to track how often this
-            // happens.  If it happens a lot, me might invest more in calculating correct
-            // times.
-            Log.Error (Log.LOG_CALENDAR, "Extracting the time from the iCalendar object in the message because the corresponding McCalendar object could not be found.");
-            return TimeZoneAdjustment (
-                evt.Parent as IICalendar,
-                evt.Start.Parameters.Get ("TZID"),
-                evt.Start.Value);
-        }
-
-        /// <summary>
-        /// Return the ending time for the event in UTC, without triggering the DDay.iCal
-        /// time zone code that would cause the app to crash.
-        /// </summary>
-        public static DateTime EventEndTime (DDay.iCal.Event evt, McCalendar c)
-        {
-            if (null != c) {
-                return c.EndTime;
-            }
-            return TimeZoneAdjustment (
-                evt.Parent as IICalendar,
-                evt.End.Parameters.Get ("TZID"),
-                evt.End.Value);
-        }
-
-        /// <summary>
-        /// Make a basic attempt to adjust the event time to UTC using the time zone
-        /// information in the calendar item, without using DDay.iCal's time zone
-        /// calculations. Calling Event.Start.UTC will cause a crash on iOS devices
-        /// due to a <a href="http://developer.xamarin.com/guides/ios/advanced_topics/limitations/">limitation</a>
-        /// in the way Mono runs on iOS. The calculation should be correct most of the
-        /// time, but it might be off by an hour or two when it guesses incorrectly
-        /// about whether or not the time in question is daylight saving time.
-        /// </summary>
-        private static DateTime TimeZoneAdjustment (IICalendar iCal, string tzid, DateTime time)
-        {
-            if (null == iCal || string.IsNullOrEmpty (tzid)) {
-                return time;
-            }
-            bool isDaylight = DateTime.SpecifyKind (time, DateTimeKind.Unspecified).IsDaylightSavingTime ();
-            foreach (var timeZone in iCal.TimeZones) {
-                if (timeZone.TZID == tzid) {
-                    foreach (var tzi in timeZone.TimeZoneInfos) {
-                        if (tzi.Name == (isDaylight ? "DAYLIGHT" : "STANDARD")) {
-                            var offset = tzi.OffsetTo;
-                            return DateTime.SpecifyKind (
-                                time.AddHours (offset.Positive ? -offset.Hours : offset.Hours)
-                                    .AddMinutes (offset.Positive ? -offset.Minutes : offset.Minutes)
-                                    .AddSeconds (offset.Positive ? -offset.Seconds : offset.Seconds),
-                                DateTimeKind.Utc);
-                        }
-                    }
-                }
-            }
-            return time;
-        }
-
         public static bool IsOrganizer (string organizerEmail, string userEmail)
         {
-            if (organizerEmail == userEmail) {
-                return true;
-            }
-            return false;
+            return organizerEmail == userEmail;
         }
 
         public static DateTime ReturnAllDayEventEndTime (DateTime date)
@@ -154,36 +87,114 @@ namespace NachoCore.Utils
             return c;
         }
 
-        public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
+        public static void CancelOccurrence (McCalendar cal, DateTime occurrence)
         {
-            var iCal = iCalendarFromMcCalendarCommon (c);
-            iCal.Method = DDay.iCal.CalendarMethods.Reply;
-            var vEvent = iCal.Events [0];
-            var iAttendee = new Attendee ("MAILTO:" + account.EmailAddr);
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                iAttendee.CommonName = account.DisplayName;
+            var exceptions = new List<McException> (cal.exceptions);
+            McException exception = null;
+            foreach (var e in exceptions) {
+                if (e.ExceptionStartTime == occurrence) {
+                    exception = e;
+                    break;
+                }
             }
-            iAttendee.ParticipationStatus = iCalResponseString (response);
-            vEvent.Attendees.Add (iAttendee);
-            vEvent.Summary = ResponseSubjectPrefix (response) + ": " + c.Subject;
-            return iCal;
+            if (null == exception) {
+                exception = new McException () {
+                    AccountId = cal.AccountId,
+                    CalendarId = cal.Id,
+                    ExceptionStartTime = occurrence,
+                    Deleted = 1,
+                };
+                exceptions.Add (exception);
+            } else {
+                exception.Deleted = 1;
+            }
+            cal.exceptions = exceptions;
+            cal.RecurrencesGeneratedUntil = DateTime.MinValue;
+            cal.Update ();
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
         }
 
-        public static IICalendar iCalendarFromMcCalendar (McAccount account, McCalendar c)
+        public static void MarkEventAsCancelled (McMeetingRequest eventInfo)
         {
-            var iCal = iCalendarFromMcCalendarCommon (c);
-            iCal.Method = DDay.iCal.CalendarMethods.Request;
-
-            var evt = iCal.Events [0];
-            evt.Summary = c.Subject;
-            evt.Organizer = new Organizer (account.EmailAddr);
-            evt.Organizer.SentBy = new Uri ("MAILTO:" + account.EmailAddr);
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                evt.Organizer.CommonName = account.DisplayName;
+            var cal = McCalendar.QueryByUID (eventInfo.AccountId, eventInfo.GetUID ());
+            if (null == cal) {
+                // Google servers delete the event as soon at is sees the cancellation notice.
+                // Or this could be the cancelation notice for a meeting that the user has declined.
+                // So this is a normal case and should not result in an error message.
+                return;
             }
+            var account = McAccount.QueryById<McAccount> (eventInfo.AccountId);
+            if (null == account || account.EmailAddr == cal.OrganizerEmail) {
+                // The user owns the meeting being processed.  Most likely, this is the outgoing cancelation
+                // notice showing up in the Sent folder.  Processing this would normally have no effect, since
+                // the meeting has already been deleted locally.  But there is a bug on some of the servers
+                // that causes a bad effect.  When canceling a single occurrence of a recurring meeting, the
+                // server leaves out the RecurrenceId from the MeetingRequest element.  This results in the
+                // entire meeting being canceled rather than the one occurrence.  To work around this bug,
+                // ignore messages where the user is the organizer.
+                return;
+            }
+            if (DateTime.MinValue == eventInfo.RecurrenceId) {
+                // Cancel the entire meeting, not just one occurrence.  This is the easy case.
+                if (cal.MeetingStatusIsSet && (NcMeetingStatus.MeetingOrganizerCancelled == cal.MeetingStatus || NcMeetingStatus.MeetingAttendeeCancelled == cal.MeetingStatus)) {
+                    // Someone, most likely the server, has already marked the meeting as cancelled.
+                    // No need to update the item again.
+                    return;
+                }
+                cal.MeetingStatusIsSet = true;
+                cal.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
+                cal.Subject = "Canceled: " + cal.Subject;
+            } else {
+                // Only one occurrence of a recurring meeting has been cancelled.
+                var allExceptions = new List<McException> (cal.exceptions);
+                var exceptions = allExceptions.Where (x => x.ExceptionStartTime == eventInfo.RecurrenceId).ToList ();
+                if (0 == exceptions.Count) {
+                    var exception = new McException () {
+                        AccountId = cal.AccountId,
+                        ExceptionStartTime = eventInfo.RecurrenceId,
+                        StartTime = eventInfo.StartTime,
+                        EndTime = eventInfo.EndTime,
+                        Subject = "Canceled: " + cal.Subject,
+                        MeetingStatusIsSet = true,
+                        MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled,
+                    };
+                    allExceptions.Add (exception);
+                } else {
+                    if (1 < exceptions.Count) {
+                        Log.Error (Log.LOG_CALENDAR,
+                            "{0} exceptions were found for calendar item {1} ({2}) with recurrence ID {3}. There should be at most one exception.",
+                            exceptions.Count, cal.Id, cal.ServerId, eventInfo.RecurrenceId);
+                    }
+                    foreach (var exception in exceptions) {
+                        if (0 == exception.Deleted &&
+                            (!exception.MeetingStatusIsSet ||
+                                (NcMeetingStatus.MeetingOrganizerCancelled != exception.MeetingStatus && NcMeetingStatus.MeetingAttendeeCancelled != exception.MeetingStatus)))
+                        {
+                            exception.MeetingStatusIsSet = true;
+                            exception.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
+                            exception.Subject = "Canceled: " + exception.GetSubject ();
+                        }
+                    }
+                }
+                cal.exceptions = allExceptions;
+            }
+            cal.RecurrencesGeneratedUntil = DateTime.MinValue;
+            cal.Update ();
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
+        }
 
-            foreach (var mcAttendee in c.attendees) {
-                var iAttendee = new Attendee ("MAILTO:" + mcAttendee.Email);
+        private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McCalendar c, IList<McAttendee> attendees)
+        {
+            evt.Organizer = new Organizer (c.OrganizerEmail);
+            evt.Organizer.CommonName = c.OrganizerName;
+            foreach (var mcAttendee in attendees) {
+                var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
                 NcAssert.True (null != mcAttendee.Name);
                 iAttendee.CommonName = mcAttendee.Name;
                 NcAssert.True (mcAttendee.AttendeeTypeIsSet);
@@ -206,44 +217,6 @@ namespace NachoCore.Utils
                 }
                 evt.Attendees.Add (iAttendee);
             }
-            return iCal;
-        }
-
-        /// <summary>
-        /// The parts of iCalendar that are common to both meeting requests and meeting responses.
-        /// </summary>
-        private static IICalendar iCalendarFromMcCalendarCommon (McCalendar c)
-        {
-            var iCal = new iCalendar ();
-            iCal.ProductID = "Nacho Mail";
-
-            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
-            var timezone = FromSystemTimeZone (tzi, c.StartTime.AddYears (-1), false);
-            var localTimeZone = iCal.AddTimeZone (timezone);
-            if (null != tzi.StandardName) {
-                timezone.TZID = tzi.StandardName;
-                localTimeZone.TZID = tzi.StandardName;
-            }
-
-            var vEvent = iCal.Create<DDay.iCal.Event> ();
-            vEvent.UID = c.UID;
-            vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
-            vEvent.Start = new iCalDateTime (c.StartTime.LocalT (), localTimeZone.TZID);
-            vEvent.End = new iCalDateTime (c.EndTime.LocalT (), localTimeZone.TZID);
-            vEvent.IsAllDay = c.AllDayEvent;
-            vEvent.Priority = 5;
-            if (c.AllDayEvent) {
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "TRUE");
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "FREE");
-            } else {
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
-            }
-            vEvent.Location = c.Location;
-            vEvent.Status = EventStatus.Confirmed;
-            vEvent.Class = "PUBLIC";
-            vEvent.Transparency = TransparencyType.Opaque;
-            return iCal;
         }
 
         /// <summary>
@@ -426,7 +399,7 @@ namespace NachoCore.Utils
         {
             var mimeMessage = new MimeMessage ();
 
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
 
             mimeMessage.Subject = Pretty.SubjectString (c.Subject);
@@ -445,7 +418,7 @@ namespace NachoCore.Utils
             NcAssert.True (!String.IsNullOrEmpty (c.OrganizerName) || !String.IsNullOrEmpty (c.OrganizerEmail));
 
             var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (c.OrganizerName, c.OrganizerEmail));
             mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + c.Subject);
             mimeMessage.Date = DateTime.UtcNow;
@@ -456,33 +429,194 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
-        /// <summary>
-        /// Create a text/calendar MIME part with a meeting request for the given event.
-        /// </summary>
-        public static TextPart iCalToMimePart (McAccount account, McCalendar c)
+        public static void SendMeetingResponse (McAccount account, MailboxAddress to, string subject, string token, MimeEntity mimeBody, NcResponseType response)
         {
-            return iCalToMimePartCommon (
-                CalendarHelper.iCalendarFromMcCalendar (account, c),
-                DDay.iCal.CalendarMethods.Request);
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
+            mimeMessage.To.Add (to);
+            mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + subject);
+            mimeMessage.Date = DateTime.UtcNow;
+            mimeMessage.Body = mimeBody;
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
+            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+            mcMessage.Delete ();
+        }
+
+        public static void SendMeetingCancelations (McAccount account, McCalendar c, string subjectOverride, MimeEntity mimeBody)
+        {
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), account.EmailAddr));
+            foreach (var a in c.attendees) {
+                mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
+            }
+            mimeMessage.Subject = Pretty.SubjectString (subjectOverride ?? "Canceled: " + c.GetSubject ());
+            mimeMessage.Date = DateTime.UtcNow;
+            mimeMessage.Body = mimeBody;
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
+            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+            mcMessage.Delete ();
+        }
+
+        private static iCalendar iCalendarCommon (McAbstrCalendarRoot cal)
+        {
+            var iCal = new iCalendar ();
+            iCal.ProductID = "Nacho Mail";
+
+            var vEvent = iCal.Create<DDay.iCal.Event> ();
+            vEvent.UID = cal.GetUID ();
+            vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
+            vEvent.IsAllDay = cal.AllDayEvent;
+            vEvent.Priority = 5;
+            if (cal.AllDayEvent) {
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "TRUE");
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "FREE");
+            } else {
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
+            }
+            vEvent.Properties.Set ("X-MICROSOFT-CDO-IMPORTANCE", 1);
+            vEvent.Location = cal.GetLocation ();
+            vEvent.Class = "PUBLIC";
+            vEvent.Transparency = TransparencyType.Opaque;
+            return iCal;
+        }
+
+        private static IICalendar iCalendarAddStartEndTimes (iCalendar iCal, McAbstrCalendarRoot cal, DateTime occurrence = default (DateTime))
+        {
+            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
+            var timezone = FromSystemTimeZone (tzi, cal.StartTime.AddYears (-1), false);
+            var localTimeZone = iCal.AddTimeZone (timezone);
+            if (null != tzi.StandardName) {
+                timezone.TZID = tzi.StandardName;
+                localTimeZone.TZID = tzi.StandardName;
+            }
+
+            var vEvent = iCal.Events [0];
+            vEvent.Start = new iCalDateTime (cal.StartTime.LocalT (), localTimeZone.TZID);
+            vEvent.End = new iCalDateTime (cal.EndTime.LocalT (), localTimeZone.TZID);
+            if (default (DateTime) != occurrence) {
+                vEvent.RecurrenceID = new iCalDateTime (occurrence.LocalT (), localTimeZone.TZID);
+            }
+            return iCal;
+        }
+
+        private static IICalendar iCalendarAddStartEndTimes (iCalendar iCal, McEvent mcEvent, DateTime occurrence)
+        {
+            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
+            var timezone = FromSystemTimeZone (tzi, mcEvent.StartTime.AddYears (-1), false);
+            var localTimeZone = iCal.AddTimeZone (timezone);
+            if (null != tzi.StandardName) {
+                timezone.TZID = tzi.StandardName;
+                localTimeZone.TZID = tzi.StandardName;
+            }
+
+            var vEvent = iCal.Events [0];
+            vEvent.Start = new iCalDateTime (mcEvent.StartTime.LocalT (), localTimeZone.TZID);
+            vEvent.End = new iCalDateTime (mcEvent.EndTime.LocalT (), localTimeZone.TZID);
+            if (default (DateTime) != occurrence) {
+                vEvent.RecurrenceID = new iCalDateTime (occurrence.LocalT (), localTimeZone.TZID);
+            }
+            return iCal;
         }
 
         /// <summary>
-        /// Create a text/calendar MIME part with a meeting response for the given event.
+        /// Create an iCalendar from either a McCalendar object or a McMeetingRequest object.
         /// </summary>
-        public static TextPart iCalResponseToMimePart (McAccount account, McCalendar c, NcResponseType response)
+        private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal, DateTime occurrence = default (DateTime))
         {
-            return iCalToMimePartCommon (
-                CalendarHelper.iCalendarFromMcCalendarWithResponse (account, c, response),
-                DDay.iCal.CalendarMethods.Reply);
+            return iCalendarAddStartEndTimes (iCalendarCommon (cal), cal, occurrence);
         }
 
         /// <summary>
-        /// Create a text/calendar MIME part from the given iCalendar object.
+        /// Create an iCalendar meeting request from a McCalendar object.
         /// </summary>
-        private static TextPart iCalToMimePartCommon (IICalendar iCal, string method)
+        /// <returns>The calendar request from mc calendar.</returns>
+        /// <param name="cal">Cal.</param>
+        private static IICalendar iCalendarRequestFromMcCalendar (McCalendar cal)
+        {
+            var iCal = iCalendarCommonFromAbstrCal (cal);
+            iCal.Method = DDay.iCal.CalendarMethods.Request;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Confirmed;
+            evt.Summary = cal.Subject;
+            AddAttendeesAndOrganizerToiCalEvent (evt, cal, cal.attendees);
+            return iCal;
+        }
+
+        /// <summary>
+        /// Set the fields in the iCalendar object that make it a meeting response.
+        /// </summary>
+        private static void FillOutICalResponse (McAccount account, IICalendar iCal, NcResponseType response, string subject)
+        {
+            iCal.Method = DDay.iCal.CalendarMethods.Reply;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Confirmed;
+            evt.Summary = ResponseSubjectPrefix (response) + ": " + subject;
+            var iAttendee = new Attendee (EmailHelper.MailToUri (account.EmailAddr));
+            if (!string.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                iAttendee.CommonName = Pretty.UserNameForAccount (account);
+            }
+            iAttendee.ParticipationStatus = iCalResponseString (response);
+            evt.Attendees.Add (iAttendee);
+        }
+
+        /// <summary>
+        /// Create an iCalendar meeting response from a McCalendar object.
+        /// </summary>
+        private static IICalendar iCalendarResponseFromMcCalendar (McCalendar cal, NcResponseType response, DateTime occurrence = default (DateTime))
+        {
+            var iCal = iCalendarCommonFromAbstrCal (cal, occurrence);
+            FillOutICalResponse (McAccount.QueryById<McAccount> (cal.AccountId), iCal, response, cal.Subject);
+            return iCal;
+        }
+
+        /// <summary>
+        /// Create an iCalendar meeting cancelation notice for a McCalendar object.
+        /// </summary>
+        private static IICalendar iCalendarCancelFromMcCalendar (McCalendar cal)
+        {
+            var iCal = iCalendarCommonFromAbstrCal (cal);
+            iCal.Method = DDay.iCal.CalendarMethods.Cancel;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Cancelled;
+            evt.Summary = "Canceled: " + cal.Subject;
+            AddAttendeesAndOrganizerToiCalEvent (evt, cal, cal.attendees);
+            return iCal;
+        }
+
+        /// <summary>
+        /// Create an iCalendar meeting cancelation notice for an occurrence of an event.
+        /// </summary>
+        private static IICalendar iCalendarCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent mcEvent, DateTime occurrence)
+        {
+            var iCal = iCalendarAddStartEndTimes (iCalendarCommon (cal), mcEvent, occurrence);
+            iCal.Method = DDay.iCal.CalendarMethods.Cancel;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Cancelled;
+            evt.Summary = "Canceled: " + cal.GetSubject ();
+            AddAttendeesAndOrganizerToiCalEvent (evt, root, cal.attendees);
+            return iCal;
+        }
+
+        /// <summary>
+        /// Create an iCalendar meeting response from a McMeetingRequest object.
+        /// </summary>
+        private static IICalendar iCalendarResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject, DateTime occurrence = default (DateTime))
+        {
+            var iCal = iCalendarCommonFromAbstrCal (mail, occurrence);
+            FillOutICalResponse (McAccount.QueryById<McAccount> (mail.AccountId), iCal, response, subject);
+            return iCal;
+        }
+
+        /// <summary>
+        /// Create a text/calendar MIME part that holds the given iCalendar event.
+        /// </summary>
+        private static TextPart MimeCalFromICalendar (IICalendar iCal)
         {
             var iCalPart = new TextPart ("calendar");
-            iCalPart.ContentType.Parameters.Add ("METHOD", method);
+            iCalPart.ContentType.Parameters.Add ("METHOD", iCal.Method);
             using (var iCalStream = new MemoryStream ()) {
                 var serializer = new iCalendarSerializer ();
                 serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
@@ -495,7 +629,45 @@ namespace NachoCore.Utils
             return iCalPart;
         }
 
-        public static MimeEntity CreateMime (string description, TextPart iCalPart, List<McAttachment> attachments)
+        /// <summary>
+        /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting request.
+        /// </summary>
+        public static TextPart MimeRequestFromCalendar (McCalendar cal)
+        {
+            return MimeCalFromICalendar (iCalendarRequestFromMcCalendar (cal));
+        }
+
+        /// <summary>
+        /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting response.
+        /// </summary>
+        public static TextPart MimeResponseFromCalendar (McCalendar cal, NcResponseType response, DateTime occurrence = default (DateTime))
+        {
+            return MimeCalFromICalendar (iCalendarResponseFromMcCalendar (cal, response, occurrence));
+        }
+
+        /// <summary>
+        /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting cancellation.
+        /// </summary>
+        public static TextPart MimeCancelFromCalendar (McCalendar cal)
+        {
+            return MimeCalFromICalendar (iCalendarCancelFromMcCalendar (cal));
+        }
+
+        public static TextPart MimeCancelFromOccurrence (McCalendar root, McAbstrCalendarRoot cal, McEvent evt, DateTime occurrence)
+        {
+            return MimeCalFromICalendar (iCalendarCancelFromOccurrence (root, cal, evt, occurrence));
+        }
+
+        /// <summary>
+        /// Using a McMeetingRequest object attached to an e-mail message, create a text/calendar MIME part that
+        /// holds an iCalendar meeting response.
+        /// </summary>
+        public static TextPart MimeResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject, DateTime occurrence = default (DateTime))
+        {
+            return MimeCalFromICalendar (iCalendarResponseFromEmail (mail, response, subject, occurrence));
+        }
+
+        public static MimeEntity CreateMime (string description, TextPart iCalPart, IList<McAttachment> attachments)
         {
             // attachments
             var attachmentCollection = new MimeKit.AttachmentCollection ();
@@ -561,21 +733,24 @@ namespace NachoCore.Utils
 
         public static McCalendar CreateMeeting (McEmailMessage message)
         {
-            var c = DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
+            var c = DefaultMeeting ();
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
 //            c.BodyId = dupBody.Id;
 
-            //Instead of grabbing the whole body from the email message, only the
-            //text part (if there exists one) is added to the event description.
-            if (null != MimeHelpers.ExtractTextPart (message.GetBody ())) {
-                c.Description = MimeHelpers.ExtractTextPart (message.GetBody ());
+            // Instead of grabbing the whole body from the email message, only the
+            // text part (if there exists one) is added to the event description.
+            // TODO Extract formatted text instead of just plain text.
+            var textPart = MimeHelpers.ExtractTextPart (message.GetBody ());
+            if (null != textPart) {
+                c.SetDescription (textPart, McAbstrFileDesc.BodyTypeEnum.PlainText_1);
             }
-            c.attendees = new System.Collections.Generic.List<McAttendee> ();
-            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));
-            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.To, NcAttendeeType.Required));
-            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.Cc, NcAttendeeType.Optional));
+            var attendees = new List<McAttendee> ();
+            attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));
+            attendees.AddRange (CreateAttendeeList (message.AccountId, message.To, NcAttendeeType.Required));
+            attendees.AddRange (CreateAttendeeList (message.AccountId, message.Cc, NcAttendeeType.Optional));
+            c.attendees = attendees;
             return c;
         }
 
@@ -731,7 +906,7 @@ namespace NachoCore.Utils
         /// <summary>
         /// Convert from a C# DayOfWeek value to the DayOfWeek field within a recurrence.
         /// </summary>
-        protected static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
+        public static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
         {
             switch (day) {
             case DayOfWeek.Sunday:
@@ -884,12 +1059,12 @@ namespace NachoCore.Utils
             DateTime eventEnd = ConvertTimeFromUtc (c.EndTime, timeZone);
             var duration = eventEnd - eventStart;
 
-            int maxOccurrences = r.OccurencesIsSet ? r.Occurences : int.MaxValue;
-            DateTime lastOccurence = r.Until == default(DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
+            int maxOccurrences = r.OccurrencesIsSet ? r.Occurrences : int.MaxValue;
+            DateTime lastOccurrence = r.Until == default(DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
 
             int occurrence = 0;
 
-            while (occurrence < maxOccurrences && eventStart <= lastOccurence) {
+            while (occurrence < maxOccurrences && eventStart <= lastOccurrence) {
                 DateTime eventStartUtc = ConvertTimeToUtc (eventStart, timeZone);
                 if (eventStartUtc > startingTime) {
                     DateTime eventEndUtc = ConvertTimeToUtc (eventStart + duration, timeZone);
@@ -909,8 +1084,21 @@ namespace NachoCore.Utils
             return DateTime.MaxValue;
         }
 
-        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end)
+        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end, McException exception = null)
         {
+            if (null == exception) {
+                // Look for any exceptions for this particular occurrence.
+                var exceptions = McException.QueryForExceptionId (c.Id, start);
+                if (0 < exceptions.Count) {
+                    foreach (var ex in exceptions) {
+                        DateTime exceptionStart = DateTime.MinValue == ex.StartTime ? start : ex.StartTime;
+                        DateTime exceptionEnd = DateTime.MinValue == ex.EndTime ? end : ex.EndTime;
+                        ExpandAllDayEvent (c, exceptionStart, exceptionEnd, ex);
+                    }
+                    return;
+                }
+            }
+
             // Create local events for an all-day calendar item.  Figure out the starting
             // day of the event in the organizer's time zone.  Create a local event that
             // starts at midnight local time on the same day.  If the original item is
@@ -918,79 +1106,101 @@ namespace NachoCore.Utils
 
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
             DateTime organizersTime = ConvertTimeFromUtc (start, timeZone);
-            DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
+            DateTime dayStart = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Utc);
             double days = (end - start).TotalDays;
+
             // Use a do/while loop so we will always create at least one event, even if
             // the original item is improperly less than one day long.  If the all-day
             // event spans the transition from daylight saving time to standard time,
             // then it will have an extra hour in its duration.  So the cutoff for
             // creating an extra event is a quarter of a day.
+            McAbstrCalendarRoot reminderItem = (McAbstrCalendarRoot)exception ?? c;
+            bool needsReminder = reminderItem.HasReminder ();
+            int exceptionId = null == exception ? 0 : exception.Id;
             do {
-                DateTime nextDay = localStartTime.AddDays (1.0);
-                CreateEventRecord (c, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime ());
-                localStartTime = nextDay;
+                DateTime nextDay = dayStart.AddDays (1.0);
+                var ev = McEvent.Create (c.AccountId, dayStart, nextDay, c.UID, true, c.Id, exceptionId);
+                if (needsReminder) {
+                    ev.SetReminder (reminderItem.GetReminder ());
+                    needsReminder = false; // Only the first day should have a reminder.
+                }
+                dayStart = nextDay;
                 days -= 1.0;
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
             } while (days > 0.25);
         }
 
-        public static bool ExpandRecurrences (DateTime untilDate)
+        private static object expandRecurrencesLock = new object ();
+
+        /// <summary>
+        /// Create McEvents as necessary so that McEvents are accurate up through the given date.  If there
+        /// are any changes to the McEvents, an EventSetChanged status will be sent.  All work is done as a
+        /// task on a background thread; this method always returns immediately.
+        /// </summary>
+        public static void ExpandRecurrences (DateTime untilDate)
         {
-//            // Debug
-//            NcModel.Instance.Db.DeleteAll<McEvent> ();
-//            FIXME - if we choose to use DeleteAll, we need to add support for it in NcModel.
-//
-//            // Debug
-//            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
-//            foreach (var e in l) {
-//                e.RecurrencesGeneratedUntil = DateTime.MinValue;
-//                e.Update ();
-//            }
-//
-            // Decide how long into the future we are going to generate recurrences
-            DateTime GenerateUntil = untilDate;
+            NcTask.Run (delegate {
 
-            // Fetch calendar entries that haven't been generated that far in advance
-            var list = McCalendar.QueryOutOfDateRecurrences (GenerateUntil);
+                // Duplicate events may result if two instances of ExpandRecurrences are running at the same time.
+                lock (expandRecurrencesLock) {
 
-            // Abandon if nothing to do
-            if ((null == list) || (0 == list.Count)) {
-                return false;
-            }
+                    // Fetch calendar entries that haven't been generated that far in advance
+                    var list = McCalendar.QueryOutOfDateRecurrences (untilDate);
 
-            // Loop thru 'em, generating recurrences
-            foreach (var calendarItem in list) {
-                // Just add entries that don't have recurrences
-                if (0 == calendarItem.recurrences.Count) {
-                    if (calendarItem.AllDayEvent) {
-                        ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
-                    } else {
-                        CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                    if (0 == list.Count) {
+                        // McEvents are up to date.  Nothing to do.
+                        return;
                     }
-                    calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
-                    calendarItem.Update ();
-                    continue;
-                }
-                var lastOneGeneratedAggregate = DateTime.MaxValue;
-                foreach (var recurrence in calendarItem.recurrences) {
-                    var lastOneGenerated = ExpandRecurrences (calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, GenerateUntil);
-                    if (lastOneGeneratedAggregate > lastOneGenerated) {
-                        lastOneGeneratedAggregate = lastOneGenerated;
+
+                    foreach (var calendarItem in list) {
+
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+
+                        // Delete any existing events that are later than calendarItem.RecurrencesGeneratedUntil.
+                        // These events can exist for two reasons: (1) The app was killed while generating events
+                        // for this item. (2) The calendar item was edited and its RecurrencesGeneratedUntil was
+                        // reset.
+                        foreach (var evt in McEvent.QueryEventsForCalendarItemAfter (calendarItem.Id, calendarItem.RecurrencesGeneratedUntil)) {
+                            evt.Delete ();
+                        }
+
+                        if (0 == calendarItem.recurrences.Count) {
+
+                            // Non-recurring event.  Create one McEvent.
+                            if (calendarItem.AllDayEvent) {
+                                ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                            } else {
+                                CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                            }
+                            calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
+                            calendarItem.Update ();
+
+                        } else {
+
+                            // Recurring event.  Create McEvents up through untilDate.
+                            var lastOneGeneratedAggregate = DateTime.MaxValue;
+                            foreach (var recurrence in calendarItem.recurrences) {
+                                var lastOneGenerated = ExpandRecurrences (
+                                    calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, untilDate);
+                                if (lastOneGeneratedAggregate > lastOneGenerated) {
+                                    lastOneGeneratedAggregate = lastOneGenerated;
+                                }
+                            }
+                            calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
+                            calendarItem.Update ();
+                        }
                     }
                 }
-                calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
-                calendarItem.Update ();
-            }
 
-            var el = NcModel.Instance.Db.Table<McEvent> ().ToList ();
-            Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
+                var el = NcModel.Instance.Db.Table<McEvent> ().Count ();
+                Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el);
 
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
-                Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-                Tokens = new String[] { DateTime.Now.ToString () },
-            });
-
-            return true;
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                    Tokens = new string[] { DateTime.Now.ToString () },
+                });
+            }, "ExpandRecurrences");
         }
 
         protected static void CreateEventRecord (McCalendar c, DateTime startTime, DateTime endTime)
@@ -998,46 +1208,27 @@ namespace NachoCore.Utils
             var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
-                var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
+                var e = McEvent.Create (c.AccountId, startTime, endTime, c.UID, false, c.Id, 0);
                 if (c.ReminderIsSet) {
-                    ScheduleNotification (e, c.Reminder);
+                    e.SetReminder (c.Reminder);
                 }
             } else {
                 foreach (var exception in exceptions) {
-                    if (DateTime.MinValue == exception.StartTime) {
-                        exception.StartTime = startTime;
-                    }
-                    if (DateTime.MinValue == exception.EndTime) {
-                        exception.EndTime = endTime;
-                    }
-                    var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
-                    if (exception.ReminderIsSet) {
-                        ScheduleNotification (e, exception.Reminder);
+                    if (0 == exception.Deleted) {
+                        DateTime exceptionStart = exception.StartTime;
+                        if (DateTime.MinValue == exceptionStart) {
+                            exceptionStart = startTime;
+                        }
+                        DateTime exceptionEnd = exception.EndTime;
+                        if (DateTime.MinValue == exceptionEnd) {
+                            exceptionEnd = endTime;
+                        }
+                        var e = McEvent.Create (c.AccountId, exceptionStart, exceptionEnd, c.UID, false, c.Id, exception.Id);
+                        if (exception.HasReminder ()) {
+                            e.SetReminder (exception.GetReminder ());
+                        }
                     }
                 }
-            }
-        }
-
-        public static void UpdateRecurrences (McCalendar c)
-        {
-            c.DeleteRelatedEvents ();
-            c.RecurrencesGeneratedUntil = DateTime.MinValue;
-            c.Update ();
-            NcEventManager.Instance.ExpandRecurrences ();
-        }
-
-        /// Note that McEvent Ids are not immutable; they change often as the
-        /// calendar event changes. Thus we push the immutable calendar ID into
-        /// the notification. The 'calendar view' event will show the proper view.
-        protected static void ScheduleNotification (McEvent e, uint reminder)
-        {
-            var notifier = NachoPlatform.Notif.Instance;
-            notifier.CancelNotif (e.Id);
-            var notificationTime = e.StartTime.AddMinutes (-reminder);
-            var calendarItem = e.GetCalendarItemforEvent ();
-            var message = Pretty.Join (Pretty.SubjectString (calendarItem.Subject), Pretty.FormatAlert (reminder));
-            if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), message);
             }
         }
 
@@ -1054,8 +1245,22 @@ namespace NachoCore.Utils
         /// </remarks>
         public static TimeZoneInfo SimplifiedLocalTimeZone ()
         {
-            TimeZoneInfo local = TimeZoneInfo.Local;
+            return SimplifiedTimeZone (TimeZoneInfo.Local);
+        }
 
+        /// <summary>
+        /// Convert the given time zone information into a form that can be represented in
+        /// Exchange's time zone format.
+        /// </summary>
+        /// <remarks>
+        /// Exchange's time zone information has very limited flexability for specifying
+        /// daylight saving rules.  There is room for just one floating rule, e.g. second
+        /// Sunday in March.  Take the local time zone and simplify its rules to fit within
+        /// Exchange's limitations.  If the current year has a fixed date rule, deduce a
+        /// floating rule and assume that it applies to all years.
+        /// </remarks>
+        public static TimeZoneInfo SimplifiedTimeZone (TimeZoneInfo local)
+        {
             if (!local.SupportsDaylightSavingTime) {
                 // No problem.
                 return local;
@@ -1149,19 +1354,20 @@ namespace NachoCore.Utils
             // Construct a custom time zone where daylight saving time starts on the
             // 2nd Sunday in March.
             var transitionToDaylight = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
-                new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
+                                           new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
             var transitionToStandard = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
-                new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
+                                           new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
             var adjustment = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
-                DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
-                transitionToDaylight, transitionToStandard);
+                                 DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
+                                 transitionToDaylight, transitionToStandard);
             var timeZone = TimeZoneInfo.CreateCustomTimeZone (
-                "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
-                new TimeZoneInfo.AdjustmentRule[] { adjustment });
+                               "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
+                               new TimeZoneInfo.AdjustmentRule[] { adjustment });
             // See if March 7, 2014 is listed as being during daylight saving time.
             // If it is DST, then the runtime has the bug that we are looking for.
             return !timeZone.IsDaylightSavingTime (new DateTime (2014, 3, 7, 12, 0, 0, DateTimeKind.Unspecified));
         }
+
         private static bool daylightSavingIsCorrect = DaylightSavingCorrectnessCheck ();
 
         /// <summary>
@@ -1195,8 +1401,8 @@ namespace NachoCore.Utils
             }
             TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
             if (null == adjustment ||
-                    (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
-                     !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
+                (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
+                !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
                 return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
             }
             DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
@@ -1252,7 +1458,7 @@ namespace NachoCore.Utils
         private static bool IsDaylightTime (DateTime local, TimeZoneInfo.AdjustmentRule adjustment)
         {
             return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
-                (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
+            (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NUnit.Framework;
@@ -10,11 +10,11 @@ namespace Test.Common
     public class NcTestBase
     {
         [SetUp]
-        public void Setup ()
+        public void SetUp ()
         {
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-            NcModel.Instance.InitalizeDirs (1);
-            NcModel.Instance.InitalizeDirs (2);
+            NcModel.Instance.InitializeDirs (1);
+            NcModel.Instance.InitializeDirs (2);
         }
     }
 }

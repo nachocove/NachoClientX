@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -15,6 +15,21 @@ namespace Test.iOS
     [TestFixture]
     public class AsStrategyTest : NcTestBase
     {
+        private AsStrategy Strategy;
+        private McAccount Account;
+
+        [SetUp]
+        public new void SetUp ()
+        {
+            base.SetUp ();
+            var context = new MockContext ();
+            Account = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Exchange,
+            };
+            Account.Insert ();
+            Strategy = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
+        }
+
         // Note: many of these tests rely on the underlying Ladder definition.
         [Test]
         public void TestScopeFlagIsSet ()
@@ -75,32 +90,40 @@ namespace Test.iOS
         [Test]
         public void TestEmailFolderListProvider ()
         {
-            var context = new MockContext ();
             McFolder folder;
             List<McFolder> result;
-            var account = new McAccount () {
-                AccountType = McAccount.AccountTypeEnum.Exchange,
-            };
-            account.Insert ();
-            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
-            folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
-            folder.Insert ();
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.None, true);
-            Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.None, false);
+            // Check missing folder scenarios.
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.None, true);
             Assert.AreEqual (0, result.Count);
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.Def1w, false);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.None, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.Def2w, true);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.Def2w, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, true);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, false);
+            Assert.AreEqual (0, result.Count);
+            // Normal conditions testing.
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder.Insert ();
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.None, true);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.AllInf, true);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.None, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.Def1w, false);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.AllInf, false);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, true);
+            Assert.AreEqual (1, result.Count);
+            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
+            result = Strategy.EmailFolderListProvider (Account.Id, AsStrategy.Scope.EmailEnum.AllInf, false);
             Assert.AreEqual (2, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
@@ -109,32 +132,40 @@ namespace Test.iOS
         [Test]
         public void TestCalFolderListProvider ()
         {
-            var context = new MockContext ();
             McFolder folder;
             List<McFolder> result;
-            var account = new McAccount () {
-                AccountType = McAccount.AccountTypeEnum.Exchange,
-            };
-            account.Insert ();
-            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
-            folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
-            folder.Insert ();
-            result = strat.CalFolderListProvider (account.Id, AsStrategy.Scope.CalEnum.None, true);
-            Assert.AreEqual (1, result.Count);
-            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
-            result = strat.CalFolderListProvider (account.Id, AsStrategy.Scope.CalEnum.None, false);
+            // Check missing folder scenarios.
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.None, true);
             Assert.AreEqual (0, result.Count);
-            result = strat.CalFolderListProvider (account.Id, AsStrategy.Scope.CalEnum.Def2w, false);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.None, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.Def2w, true);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.Def2w, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.AllInf, true);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.AllInf, false);
+            Assert.AreEqual (0, result.Count);
+            // Normal conditions testing.
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            folder.Insert ();
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.None, true);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
-            result = strat.CalFolderListProvider (account.Id, AsStrategy.Scope.CalEnum.All3m, true);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.None, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.Def2w, false);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
-            result = strat.CalFolderListProvider (account.Id, AsStrategy.Scope.CalEnum.All3m, false);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.All3m, true);
+            Assert.AreEqual (1, result.Count);
+            Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultCal_8, result [0].Type);
+            result = Strategy.CalFolderListProvider (Account.Id, AsStrategy.Scope.CalEnum.All3m, false);
             Assert.AreEqual (2, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedCal_13 == x.Type));
@@ -143,40 +174,40 @@ namespace Test.iOS
         [Test]
         public void TestContactFolderListProvider ()
         {
-            var context = new MockContext ();
             McFolder folder;
             List<McFolder> result;
-            var account = new McAccount () {
-                AccountType = McAccount.AccountTypeEnum.Exchange,
-            };
-            account.Insert ();
-            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
-            folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
-            folder.Insert ();
-            folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
-            folder.Insert ();
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.None, true);
+            // Check missing folder scenarios.
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, true);
             Assert.AreEqual (0, result.Count);
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.None, false);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, false);
             Assert.AreEqual (0, result.Count);
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.RicInf, true);
+            // Normal conditions testing.
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            folder.Insert ();
+            folder = McFolder.Create (Account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            folder.Insert ();
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.None, true);
             Assert.AreEqual (0, result.Count);
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.RicInf, false);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.None, false);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.RicInf, true);
+            Assert.AreEqual (0, result.Count);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.RicInf, false);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.Ric_19, result [0].Type);
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, true);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, true);
             Assert.AreEqual (0, result.Count);
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, false);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.DefRicInf, false);
             Assert.AreEqual (2, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.AllInf, true);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.AllInf, true);
             Assert.AreEqual (0, result.Count);
-            result = strat.ContactFolderListProvider (account.Id, AsStrategy.Scope.ContactEnum.AllInf, false);
+            result = Strategy.ContactFolderListProvider (Account.Id, AsStrategy.Scope.ContactEnum.AllInf, false);
             Assert.AreEqual (3, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultContacts_9 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Type));
@@ -186,43 +217,45 @@ namespace Test.iOS
         [Test]
         public void TestCanAdvance ()
         {
-            var context = new MockContext ();
             bool result;
-            var account = new McAccount () {
-                AccountType = McAccount.AccountTypeEnum.Exchange,
-            };
-            account.Insert ();
-            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
-            var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            var emailFolder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
-            var calFolder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            var calFolder = McFolder.Create (Account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
             calFolder.AsSyncMetaToClientExpected = true;
             calFolder.Insert ();
             // Create folders.
-            var conFolder = McFolder.Create (account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            var conFolder = McFolder.Create (Account.Id, false, false, true, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
             conFolder.AsSyncMetaToClientExpected = false;
             conFolder.Insert ();
-            var ricFolder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            var ricFolder = McFolder.Create (Account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
             ricFolder.AsSyncMetaToClientExpected = false;
             ricFolder.Insert ();
-            result = strat.CanAdvance (account.Id, 5);
+            result = Strategy.CanAdvance (Account.Id, 5);
             Assert.False (result);
             calFolder.UpdateSet_AsSyncMetaToClientExpected (false);
             conFolder.UpdateSet_AsSyncMetaToClientExpected (true);
-            result = strat.CanAdvance (account.Id, 5);
+            result = Strategy.CanAdvance (Account.Id, 5);
             Assert.False (result);
             conFolder.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = strat.CanAdvance (account.Id, 5);
+            result = Strategy.CanAdvance (Account.Id, 5);
             Assert.True (result);
+            result = Strategy.CanAdvance (Account.Id, 6);
+            Assert.False (result);
+            Account.DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.SyncAll_0;
+            Account.Update ();
+            result = Strategy.CanAdvance (Account.Id, 6);
+            Assert.True (result);
+            Account.DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
+            Account.Update ();
             // Add a McPending.
-            var pending = new McPending (account.Id) {
+            var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactWriter) {
                 Operation = McPending.Operations.ContactDelete,
                 ParentId = conFolder.ServerId,
                 ServerId = "bogus",
             };   
             pending.Insert ();
-            result = strat.CanAdvance (account.Id, 5);
+            result = Strategy.CanAdvance (Account.Id, 5);
             Assert.False (result);
         }
 
@@ -231,7 +264,7 @@ namespace Test.iOS
 
         private class MockProtoControl : AsProtoControl
         {
-            public MockProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
+            public MockProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
             {
             }
 
@@ -255,8 +288,11 @@ namespace Test.iOS
             account.Insert ();
             var context = new MockContext ();
             context.ProtoControl = new MockProtoControl (context.Owner, account.Id);
-            context.ProtocolState.StrategyRung = 5;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 5;
+                return true;
+            });
             int result;
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var emailFolder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
@@ -296,6 +332,10 @@ namespace Test.iOS
             };
             account.Insert ();
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
+            // Test folders missing scenario.
+            result = strat.FolderListProvider (account.Id, 6, true);
+            Assert.AreEqual (0, result.Count);
+            // Normal conditions testing.
             folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
@@ -484,6 +524,10 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
+            // Test with folders missing.
+            var result = strat.GenNarrowSyncKit (new List<McFolder> (), 0, 50);
+            Assert.IsNull (result);
+            // Normal conditions testing.
             var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
@@ -498,7 +542,7 @@ namespace Test.iOS
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
             folder.Insert ();
-            var result = strat.GenNarrowSyncKit (strat.FolderListProvider (account.Id, 0, true), 0, 50);
+            result = strat.GenNarrowSyncKit (strat.FolderListProvider (account.Id, 0, true), 0, 50);
             Assert.AreEqual (50, result.OverallWindowSize);
             Assert.AreEqual (2, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
@@ -529,16 +573,23 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
+            var result = strat.ANarrowFolderHasToClientExpected (account.Id);
+            Assert.IsFalse (result);
             var folder = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
+            result = strat.ANarrowFolderHasToClientExpected (account.Id);
+            Assert.IsFalse (result);
             folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.AsSyncMetaToClientExpected = true;
             folder.Insert ();
-            var result = !strat.ANarrowFolderHasToClientExpected (account.Id);
-            Assert.False (result);
-            folder.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = !strat.ANarrowFolderHasToClientExpected (account.Id);
+            result = strat.ANarrowFolderHasToClientExpected (account.Id);
             Assert.True (result);
+            folder.UpdateSet_AsSyncMetaToClientExpected (false);
+            result = strat.ANarrowFolderHasToClientExpected (account.Id);
+            Assert.False (result);
+            folder.Delete ();
+            result = strat.ANarrowFolderHasToClientExpected (account.Id);
+            Assert.False (result);
         }
 
         [Test]
@@ -551,6 +602,10 @@ namespace Test.iOS
             };
             account.Insert ();
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
+            var result = strat.GenPingKit (account.Id, context.ProtocolState, true, false, false);
+            Assert.IsNull (result);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
+            Assert.IsNull (result);
             var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncLastPing = DateTime.UtcNow;
             inbox.Insert ();
@@ -572,24 +627,30 @@ namespace Test.iOS
             folder = McFolder.Create (account.Id, false, false, true, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
             folder.AsSyncLastPing = DateTime.UtcNow.AddDays (-3);
             folder.Insert ();
-            context.ProtocolState.StrategyRung = 6;
-            context.ProtocolState.MaxFolders = 7;
-            context.ProtocolState.Update ();
-            var result = strat.GenPingKit (account.Id, context.ProtocolState, true, false);
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 6;
+                target.MaxFolders = 7;
+                return true;
+            });
+            result = strat.GenPingKit (account.Id, context.ProtocolState, true, false, false);
             Assert.AreEqual (2, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
             inbox.UpdateSet_AsSyncMetaToClientExpected (true);
-            result = strat.GenPingKit (account.Id, context.ProtocolState, true, false);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, true, false, false);
             Assert.IsNull (result);
-            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.IsNull (result);
             inbox.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.AreEqual (7, result.Folders.Count);
-            context.ProtocolState.MaxFolders = 3;
-            context.ProtocolState.Update ();
-            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false);
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.MaxFolders = 3;
+                return true;
+            });
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false, false);
             Assert.AreEqual (3, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
@@ -704,23 +765,23 @@ namespace Test.iOS
             Fetch_InjectEmails (account.Id, 11);
             result = strat.GenFetchKit (account.Id);
             Assert.AreEqual (0, result.FetchAttachments.Count);
-            Assert.AreEqual (10, result.FetchBodies.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize, result.FetchBodies.Count);
             Assert.NotNull (result.Pendings);
             Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteEmails (account.Id);
 
             Fetch_InjectAtts (account.Id, 11);
             result = strat.GenFetchKit (account.Id);
-            Assert.AreEqual (10, result.FetchAttachments.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize, result.FetchAttachments.Count);
             Assert.AreEqual (0, result.FetchBodies.Count);
             Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteAtts (account.Id);
 
-            Fetch_InjectEmails (account.Id, 5);
-            Fetch_InjectAtts (account.Id, 6);
+            Fetch_InjectEmails (account.Id, AsStrategy.KBaseFetchSize / 2);
+            Fetch_InjectAtts (account.Id, AsStrategy.KBaseFetchSize / 2);
             result = strat.GenFetchKit (account.Id);
-            Assert.AreEqual (5, result.FetchAttachments.Count);
-            Assert.AreEqual (5, result.FetchBodies.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize / 2, result.FetchAttachments.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize / 2, result.FetchBodies.Count);
             Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteEmails (account.Id);
             Fetch_DeleteAtts (account.Id);
@@ -736,10 +797,24 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            context.ProtocolState.StrategyRung = 6;
-            context.ProtocolState.AsSyncLimit = 5;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 6;
+                target.AsSyncLimit = 5;
+                return true;
+            });
+            var dummy = new McPending (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
+                Operation = McPending.Operations.Sync,
+                ServerId = "bogus",
+            };
+            dummy.Insert ();
             var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
+            var result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Directed, dummy);
+            Assert.IsNull (result);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Narrow);
+            Assert.IsNull (result);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
+            Assert.IsNull (result);
             var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncKey = "1";
             inbox.Insert ();
@@ -762,22 +837,11 @@ namespace Test.iOS
             folders.Add (folder);
 
             // Test of null result.
-            var result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             Assert.IsNull (result);
 
-            // Test cant-be-null.
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, true);
-            Assert.IsNotNull (result);
-            Assert.AreEqual (2, result.PerFolders.Count);
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
-            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
-            Assert.True (AsStrategy.KBaseOverallWindowSize <= result.OverallWindowSize);
-            foreach (var rst in folders) {
-                rst.UpdateSet_AsSyncMetaToClientExpected (false);
-            }
-
             // Test of narrow.
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, true, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Narrow);
             Assert.AreEqual (2, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
@@ -787,7 +851,7 @@ namespace Test.iOS
 
             // Test simple more-available case.
             folder.UpdateSet_AsSyncMetaToClientExpected (true);
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             Assert.AreEqual (1, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
 
@@ -795,8 +859,11 @@ namespace Test.iOS
             foreach (var rst in folders) {
                 rst.UpdateSet_AsSyncMetaToClientExpected (true);
             }
-            context.ProtocolState.AsSyncLimit = 4;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsSyncLimit = 4;
+                return true;
+            });
             // Verify inbox does not have getChanges or pending attached.
             inbox = inbox.UpdateResetSyncState ();
             var pending = new McPending () {
@@ -844,7 +911,7 @@ namespace Test.iOS
                 ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             Assert.AreEqual (4, result.PerFolders.Count);
             var pfInbox = result.PerFolders.Single (x => "inbox" == x.Folder.ServerId);
             Assert.False (pfInbox.GetChanges);
@@ -862,7 +929,7 @@ namespace Test.iOS
             var pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
             Assert.AreEqual (0, pfContact.Commands.Count);
             contact.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
             Assert.AreEqual (1, pfContact.Commands.Count);
             Assert.AreEqual (1, pfContact.Commands.Count (
@@ -898,7 +965,7 @@ namespace Test.iOS
                 ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
             Assert.False (pfUsermail.GetChanges);
             Assert.AreEqual (2, pfUsermail.Commands.Count);
@@ -928,7 +995,7 @@ namespace Test.iOS
                 ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide);
             pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
             Assert.False (pfUsermail.GetChanges);
             Assert.AreEqual (1, pfUsermail.Commands.Count);
@@ -958,8 +1025,11 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            context.ProtocolState.StrategyRung = 3;
-            context.ProtocolState.Update ();
+            context.ProtocolState = context.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.StrategyRung = 3;
+                return true;
+            });
             var folders = new List<McFolder> ();
             var inbox = McFolder.Create (account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncKey = "1";
@@ -986,6 +1056,46 @@ namespace Test.iOS
              * m) in FG/BG see narrow ping. disable narrow ping.
              * n) in FG/BG see wait.
              */
+        }
+
+        [Test]
+        public void TestUploadTimeoutSecs ()
+        {
+            var context = new MockContext ();
+            var account = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Exchange,
+            };
+            account.Insert ();
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
+            var secs = strat.UploadTimeoutSecs (-1);
+            Assert.IsTrue (secs > AsStrategy.KMinTimeout);
+            secs = strat.UploadTimeoutSecs (0);
+            Assert.IsTrue (secs > AsStrategy.KMinTimeout);
+            secs = strat.UploadTimeoutSecs (1);
+            Assert.AreEqual (secs, AsStrategy.KMinTimeout);
+            secs = strat.UploadTimeoutSecs (10000000);
+            Assert.IsTrue (secs > AsStrategy.KMinTimeout);
+            Assert.IsTrue (secs < 999);
+        }
+
+        [Test]
+        public void TestDownloadTimeoutSecs ()
+        {
+            var context = new MockContext ();
+            var account = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Exchange,
+            };
+            account.Insert ();
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
+            var secs = strat.UploadTimeoutSecs (-1);
+            Assert.IsTrue (secs > AsStrategy.KMinTimeout);
+            secs = strat.DownloadTimeoutSecs (0);
+            Assert.IsTrue (secs > AsStrategy.KMinTimeout);
+            secs = strat.DownloadTimeoutSecs (1);
+            Assert.AreEqual (secs, AsStrategy.KMinTimeout);
+            secs = strat.DownloadTimeoutSecs (10000000);
+            Assert.IsTrue (secs > AsStrategy.KMinTimeout);
+            Assert.IsTrue (secs < 999);
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
+using Foundation;
 using NachoCore.Model;
 
 namespace NachoClient.iOS
@@ -13,7 +13,7 @@ namespace NachoClient.iOS
 
     public interface INachoNotesControllerParent
     {
-        void SaveNote (int accountId, string noteText);
+        void SaveNote (string noteText);
         string GetNoteText ();
     }
 }

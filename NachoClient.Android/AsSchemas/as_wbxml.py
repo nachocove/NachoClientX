@@ -15,12 +15,16 @@ class XMLElement:
     def parse_start(self, name, attrs):
         if name not in self.start_table:
             return
-        self.start_table[name](name, attrs)
+        fn = self.start_table[name]
+        assert callable(fn)
+        fn(name, attrs)
 
     def parse_data(self, tag, value):
         if tag not in self.parse_table:
             print 'WARNING: unknown tag %s for class %s' % (tag, self.__class__.__name__)
-        self.parse_table[tag](value)
+        fn = self.parse_table[tag]
+        assert callable(fn)
+        fn(value)
 
     def get_xml_tag(self):
         return self.xml_tag
@@ -162,7 +166,8 @@ class Token(XMLElement):
                    Token.OPAQUE_BASE64: 'AddOpaqueBase64Token',
                    Token.PEEL_OFF: 'AddPeelOffToken',
                    }
-        return '            codePages [%d].%s (0x%02X, "%s");\n' % (self.codepage_id, methods[self.type], self.token_id, self.name)
+        return '            codePages [%d].%s (0x%02X, "%s");\n' % \
+               (self.codepage_id, methods[self.type], self.token_id, self.name)
 
 
 class GlobalToken(XMLElement):
@@ -193,7 +198,9 @@ class XMLSchemaParser(ContentHandler):
                 obj.parse_start(name, attrs)
             return
         print 'START: %s' % name
-        obj = self.start_handlers[name](name, attrs)
+        fn = self.start_handlers[name]
+        assert callable(fn)
+        obj = fn(name, attrs)
         self.stack.push(obj)
 
     def characters(self, content):
@@ -212,7 +219,9 @@ class XMLSchemaParser(ContentHandler):
         print 'END: %s' % name
         obj = self.stack.pop()
         assert obj.get_xml_tag() == name
-        self.end_handlers[name](obj)
+        fn = self.end_handlers[name]
+        assert callable(fn)
+        fn(obj)
 
     def parse(self, xml_fname):
         xml.sax.parse(xml_fname, self)

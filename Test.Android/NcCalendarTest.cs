@@ -9,14 +9,18 @@ using NachoCore.Model;
 using NachoCore.ActiveSync;
 using System.Security.Cryptography.X509Certificates;
 using SQLite;
+using DDay.iCal;
+using DDay.iCal.Serialization;
+using DDay.iCal.Serialization.iCalendar;
+using System.IO;
 
 namespace Test.Common
 {
     public class MockDataSource : IBEContext
     {
-        public IProtoControlOwner Owner { set; get; }
+        public INcProtoControlOwner Owner { set; get; }
 
-        public AsProtoControl ProtoControl { set; get; }
+        public NcProtoControl ProtoControl { set; get; }
 
         public McProtocolState ProtocolState { get; set; }
 
@@ -34,31 +38,35 @@ namespace Test.Common
         }
     }
 
-    public class MockProtoControlOwner : IProtoControlOwner
+    public class MockProtoControlOwner : INcProtoControlOwner
     {
         public string AttachmentsDir { set; get; }
 
-        public void CredReq (ProtoControl sender)
+        public void CredReq (NcProtoControl sender)
         {
         }
 
-        public void ServConfReq (ProtoControl sender)
+        public void ServConfReq (NcProtoControl sender, object arg)
         {
         }
 
-        public void CertAskReq (ProtoControl sender, X509Certificate2 certificate)
+        public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate)
         {
         }
 
-        public void StatusInd (ProtoControl sender, NcResult status)
+        public void StatusInd (NcProtoControl sender, NcResult status)
         {
         }
 
-        public void StatusInd (ProtoControl sender, NcResult status, string[] tokens)
+        public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens)
         {
         }
 
-        public void SearchContactsResp (ProtoControl sender, string prefix, string token)
+        public void SearchContactsResp (NcProtoControl sender, string prefix, string token)
+        {
+        }
+
+        public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend)
         {
         }
     }
@@ -146,13 +154,13 @@ namespace Test.Common
             Assert.IsTrue (s.Equals (e));
         }
 
-        public void CreateMcBody(MockDataSource mds, int id)
+        public void CreateMcBody (MockDataSource mds, int id)
         {
             var body = new McBody () {
                 AccountId = mds.Account.Id,
             };
             body.Insert ();
-            Assert.AreEqual(id, body.Id);
+            Assert.AreEqual (id, body.Id);
         }
 
         [Test]
@@ -226,6 +234,7 @@ namespace Test.Common
         {
             var c01 = new McAttendee (1, "Steve", "rascal2210@hotmail.com");
             c01.ParentId = 5;
+            c01.AttendeeType = NcAttendeeType.Required;
             c01.Insert ();
 
             var c02 = NcModel.Instance.Db.Get<McAttendee> (x => x.ParentId == 5);
@@ -265,10 +274,12 @@ namespace Test.Common
 
 
             var c06 = new McAttendee (1, "Chris", "chrisp@nachocove.com");
+            c06.AttendeeType = NcAttendeeType.Optional;
             c06.ParentId = 5;
             c06.Insert ();
             var c07 = new McAttendee (1, "Jeff", "jeffe@nachocove.com");
             c07.ParentId = 6;
+            c07.AttendeeType = NcAttendeeType.Optional;
             c07.Insert ();
 
             Assert.AreEqual (3, NcModel.Instance.Db.Table<McAttendee> ().Count ());
@@ -284,7 +295,7 @@ namespace Test.Common
         [Test]
         public void CaledarAttachments ()
         {
-            McCalendar cal = InsertSimpleEvent("");
+            McCalendar cal = InsertSimpleEvent ("");
 
             // Create three unowned attachments.
             McAttachment attachment1 = new McAttachment () {
@@ -321,8 +332,7 @@ namespace Test.Common
             // but they should be findable though the event.
             attachments = McAttachment.QueryByItemId (cal);
             Assert.AreEqual (0, attachments.Count, "attachments are assigned to the event before they should be");
-            attachments = cal.attachments;
-            Assert.AreEqual (2, attachments.Count, "The event is not reporting the correct number of attachments.");
+            Assert.AreEqual (2, cal.attachments.Count, "The event is not reporting the correct number of attachments.");
 
             // Update the event, which should update the attachments to be owned by event.
             cal.Update ();
@@ -365,7 +375,7 @@ namespace Test.Common
             Assert.AreNotEqual (NcRecurrenceType.YearlyOnDay, "0".ParseInteger<NcRecurrenceType> ());
             Assert.AreNotEqual (NcResponseType.Tentative, "3".ParseInteger<NcResponseType> ());
             Assert.AreNotEqual (NcSensitivity.Private, "3".ParseInteger<NcSensitivity> ());
-            Assert.AreNotEqual (NcMeetingStatus.MeetingCancelled, "0".ParseInteger<NcMeetingStatus> ());
+            Assert.AreNotEqual (NcMeetingStatus.MeetingOrganizerCancelled, "0".ParseInteger<NcMeetingStatus> ());
             Assert.AreNotEqual (NcDayOfWeek.Tuesday, "32".ParseInteger<NcDayOfWeek> ());
             Assert.AreNotEqual (NcCalendarType.UmalQuraReservedMustNotBeUsed, "15".ParseInteger<NcCalendarType> ());
             Assert.AreNotEqual (NcBusyStatus.Tentative, "2".ParseInteger<NcBusyStatus> ());
@@ -496,7 +506,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void ExceptionParse01()
+        public void ExceptionParse01 ()
         {
             var mds = new MockDataSource ();
             CreateMcBody (mds, 1);
@@ -518,8 +528,12 @@ namespace Test.Common
 
             if (type.Equals ("attendees")) {
                 List<McAttendee> attendees = new List<McAttendee> ();
-                attendees.Add (new McAttendee (1, "Bob", "bob@foo.com"));
-                attendees.Add (new McAttendee (1, "Joe", "joe@foo.com"));
+                attendees.Add (new McAttendee (1, "Bob", "bob@foo.com") {
+                    AttendeeType = NcAttendeeType.Required,
+                });
+                attendees.Add (new McAttendee (1, "Joe", "joe@foo.com") {
+                    AttendeeType = NcAttendeeType.Optional,
+                });
                 c.attendees = attendees;
             }
             if (type.Equals ("categories")) {
@@ -536,14 +550,18 @@ namespace Test.Common
             }
             if (type.Equals ("exceptions")) {
                 List<McException> exceptions = new List<McException> ();
-                exceptions.Add (new McException () { AccountId = c.AccountId, ExceptionStartTime = new DateTime(2011, 3, 17), });
-                exceptions.Add (new McException () { AccountId = c.AccountId, ExceptionStartTime = new DateTime(2011, 3, 18), });
+                exceptions.Add (new McException () {
+                    AccountId = c.AccountId,
+                    ExceptionStartTime = new DateTime (2011, 3, 17),
+                });
+                exceptions.Add (new McException () {
+                    AccountId = c.AccountId,
+                    ExceptionStartTime = new DateTime (2011, 3, 18),
+                });
                 c.exceptions = exceptions;
-                // Not in db; exceptions are not ancillary
             }
 
             c.Insert ();
-            c.SaveExceptions (c.exceptions);
             var e = McCalendar.QueryById<McCalendar> (c.Id);
 
             if (type.Equals ("attendees")) {
@@ -572,8 +590,10 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("attendees");
 
-            var attendees = c.attendees;
-            attendees.Add (new McAttendee (1, "Harry", "harry@foo.com"));
+            var attendees = new List<McAttendee> (c.attendees);
+            attendees.Add (new McAttendee (1, "Harry", "harry@foo.com") {
+                AttendeeType = NcAttendeeType.Resource,
+            });
             c.attendees = attendees;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -586,7 +606,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("attendees");
 
-            var attendees = c.attendees;
+            var attendees = new List<McAttendee> (c.attendees);
             attendees.RemoveAt (0);
             c.attendees = attendees;
             c.Update ();
@@ -600,8 +620,6 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("attendees");
 
-            var attendees = c.attendees;
-            attendees.RemoveAt (0);
             c.attendees = new List<McAttendee> ();
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -614,7 +632,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("categories");
 
-            var categories = c.categories;
+            var categories = new List<McCalendarCategory> (c.categories);
             categories.Add (new McCalendarCategory (1, "green"));
             c.categories = categories;
             c.Update ();
@@ -628,7 +646,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("categories");
 
-            var categories = c.categories;
+            var categories = new List<McCalendarCategory> (c.categories);
             categories.RemoveAt (0);
             c.categories = categories;
             c.Update ();
@@ -642,8 +660,6 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("categories");
 
-            var categories = c.categories;
-            categories.RemoveAt (0);
             c.categories = new List<McCalendarCategory> ();
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -657,7 +673,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("recurs");
 
-            var recurrences = c.recurrences;
+            var recurrences = new List<McRecurrence> (c.recurrences);
             recurrences.Add (new McRecurrence (1));
             c.recurrences = recurrences;
             c.Update ();
@@ -671,7 +687,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("recurs");
 
-            var recurrences = c.recurrences;
+            var recurrences = new List<McRecurrence> (c.recurrences);
             recurrences.RemoveAt (0);
             c.recurrences = recurrences;
             c.Update ();
@@ -685,8 +701,6 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("recurs");
 
-            var recurrences = c.recurrences;
-            recurrences.RemoveAt (0);
             c.recurrences = new List<McRecurrence> ();
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -694,24 +708,15 @@ namespace Test.Common
             Assert.AreEqual (0, f.recurrences.Count);
         }
 
-        protected void ClearExceptionList(List<McException> list)
-        {
-            foreach(var e in list) {
-                e.Id = 0;
-            }
-        }
-
         [Test]
         public void CreateNcCalendarExceptionAdd ()
         {
             var c = InsertSimpleEvent ("exceptions");
 
-            var exceptions = c.exceptions;
+            var exceptions = new List<McException> (c.exceptions);
             exceptions.Add (new McException () { AccountId = c.AccountId });
+            c.exceptions = exceptions;
             c.Update ();
-            c.DeleteRelatedExceptions ();
-            ClearExceptionList (exceptions);
-            c.SaveExceptions (exceptions);
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (3, c.exceptions.Count);
             f.exceptions = f.QueryRelatedExceptions ();
@@ -723,13 +728,10 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("exceptions");
 
-            var exceptions = c.exceptions;
+            var exceptions = new List<McException> (c.exceptions);
             exceptions.RemoveAt (0);
             c.exceptions = exceptions;
             c.Update ();
-            c.DeleteRelatedExceptions ();
-            ClearExceptionList (exceptions);
-            c.SaveExceptions (exceptions);
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (1, c.exceptions.Count);
             f.exceptions = f.QueryRelatedExceptions ();
@@ -741,12 +743,8 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("exceptions");
 
-            var exceptions = c.exceptions;
-            exceptions.RemoveAt (0);
             c.exceptions = new List<McException> ();
             c.Update ();
-            c.DeleteRelatedExceptions ();
-            c.SaveExceptions (c.exceptions);
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (0, c.exceptions.Count);
             f.exceptions = f.QueryRelatedExceptions ();
@@ -754,7 +752,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void QueryExceptionDateLimits()
+        public void QueryExceptionDateLimits ()
         {
             var e0 = McException.QueryForExceptionId (0, DateTime.MinValue);
             Assert.AreEqual (0, e0.Count);
@@ -771,7 +769,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void QueryExceptionDuplicate()
+        public void QueryExceptionDuplicate ()
         {
             var c = InsertSimpleEvent ("exceptions");
             foreach (var e in c.exceptions) {
@@ -781,6 +779,128 @@ namespace Test.Common
             var e5 = McException.QueryForExceptionId (c.Id, new DateTime (2011, 3, 17));
             Assert.IsNotNull (e5);
         }
+
+        [Test]
+        public void iCalParse ()
+        {
+            IICalendar iCal;
+            using (var stringReader = new StringReader (ical_string01_good)) {
+                iCal = iCalendar.LoadFromStream (stringReader) [0];
+            }
+
+//            Issue https://github.com/nachocove/NachoClientX/issues/1298
+//            using (var stringReader = new StringReader (ical_string01_bad)) {
+//                iCal = iCalendar.LoadFromStream (stringReader) [0];
+//            }
+
+        }
+
+        String ical_string01_good = @"
+BEGIN:VCALENDAR
+METHOD:REQUEST
+PRODID:Microsoft Exchange Server 2010
+VERSION:2.0
+BEGIN:VTIMEZONE
+TZID:Greenwich Standard Time
+BEGIN:STANDARD
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+ORGANIZER;CN=Cole Britton:MAILTO:coleb@nachocove.com
+ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=timedout@d
+ 2.officeburrito.com:MAILTO:timedout@d2.officeburrito.com
+DESCRIPTION;LANGUAGE=en-US:Your meeting was found to be out of date and has
+  been automatically updated.\n\n________________________________\nSent by 
+ Microsoft Exchange Server 2013\n
+UID:F0913F5194204D4B8E9EC350258932E4
+SUMMARY;LANGUAGE=en-US:Fw: Zurfs ⬆️ 🏄
+DTSTART;TZID=Greenwich Standard Time:20150110T190000
+DTEND;TZID=Greenwich Standard Time:20150110T200000
+CLASS:PUBLIC
+PRIORITY:5
+DTSTAMP:20150109T191927Z
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+SEQUENCE:1
+LOCATION;LANGUAGE=en-US:Da beach
+X-MICROSOFT-CDO-APPT-SEQUENCE:1
+X-MICROSOFT-CDO-OWNERAPPTID:2112965529
+X-MICROSOFT-CDO-BUSYSTATUS:FREE
+X-MICROSOFT-CDO-INTENDEDSTATUS:FREE
+X-MICROSOFT-CDO-ALLDAYEVENT:FALSE
+X-MICROSOFT-CDO-IMPORTANCE:1
+X-MICROSOFT-CDO-INSTTYPE:0
+X-MICROSOFT-DISALLOW-COUNTER:FALSE
+BEGIN:VALARM
+DESCRIPTION:REMINDER
+TRIGGER;RELATED=START:-PT15M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR
+";
+
+        String ical_string01_bad = @"
+BEGIN:VCALENDAR
+METHOD:REQUEST
+PRODID:Microsoft Exchange Server 2010
+VERSION:2.0
+BEGIN:VTIMEZONE
+TZID:Greenwich Standard Time
+BEGIN:STANDARD
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+ORGANIZER;CN=Cole Britton:MAILTO:coleb@nachocove.com
+ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=timedout@d
+ 2.officeburrito.com:MAILTO:timedout@d2.officeburrito.com
+DESCRIPTION;LANGUAGE=en-US:Your meeting was found to be out of date and has
+  been automatically updated.\n\n________________________________\nSent by 
+ Microsoft Exchange Server 2013\n
+UID:F0913F5194204D4B8E9EC350258932E4
+SUMMARY;LANGUAGE=en-US:Zurfs  <�
+DTSTART;TZID=Greenwich Standard Time:20150110T190000
+DTEND;TZID=Greenwich Standard Time:20150110T200000
+CLASS:PUBLIC
+PRIORITY:5
+DTSTAMP:20150109T191927Z
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+SEQUENCE:1
+LOCATION;LANGUAGE=en-US:Da beach
+X-MICROSOFT-CDO-APPT-SEQUENCE:1
+X-MICROSOFT-CDO-OWNERAPPTID:2112965529
+X-MICROSOFT-CDO-BUSYSTATUS:FREE
+X-MICROSOFT-CDO-INTENDEDSTATUS:FREE
+X-MICROSOFT-CDO-ALLDAYEVENT:FALSE
+X-MICROSOFT-CDO-IMPORTANCE:1
+X-MICROSOFT-CDO-INSTTYPE:0
+X-MICROSOFT-DISALLOW-COUNTER:FALSE
+BEGIN:VALARM
+DESCRIPTION:REMINDER
+TRIGGER;RELATED=START:-PT15M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR
+";
+
 
         String addString_01 = @"
                 <Add xmlns=""AirSync"">

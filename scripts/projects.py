@@ -1,3 +1,11 @@
+# This file lists all build-configurable parameters of Nacho Mail.
+# Most of the parameters go into BuildInfo.cs
+#
+# The following are the dictionary keys:
+# 1. Build target - dev, alpha, beta, appstore
+# 2. Component - Often a particular endpoints - hockeyapp, aws, pinger. But it can be anything that groups a set of
+#                parameters.
+
 projects = {
     'dev': {
         'ios': {
@@ -10,10 +18,19 @@ projects = {
         },
         'aws': {
             'prefix': 'dev',
-            'account_id': '610813048224',
-            'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
-            'unauth_role_arn': 'arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
+            'account_id': '263277746520',
+            'identity_pool_id': 'us-east-1:b3323849-deda-440a-a225-03043e591ec7',
+            'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_dev_UnAuth_DefaultRole',
+            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            's3_bucket': 'c6ae00d0-dev-t3-',
+        },
+        'pinger': {
+            'hostname': 'pinger.officetaco.com',
+            'root_cert': 'pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-l44k46h09u2obl3upnchl9lt3nicfd52.apps.googleusercontent.com',
+            'client_secret': '3NKmUHorCm8_IS4lkOWuN_7i',
         }
     },
     'alpha': {
@@ -28,10 +45,19 @@ projects = {
         },
         'aws': {
             'prefix': 'alpha',
-            'account_id': '610813048224',
-            'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
-            'unauth_role_arn': 'arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
+            'account_id': '263277746520',
+            'identity_pool_id': 'us-east-1:667b2a39-05d8-4035-a078-2f5afb82a6b8',
+            'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_alpha_UnAuth_DefaultRole',
+            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            's3_bucket': 'd3daf3ef-alpha-t3-',
+        },
+        'pinger': {
+            'hostname': 'alphapinger.officetaco.com',
+            'root_cert': 'beta-pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-ggdpk07n9rd91j9479u685ud6usqodrq.apps.googleusercontent.com',
+            'client_secret': 'uCnNdx_SuZnsa9UZkhlUcbf6',
         }
     },
     'beta': {
@@ -49,7 +75,43 @@ projects = {
             'account_id': '610813048224',
             'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
             'unauth_role_arn': 'arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole',
-            'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
+            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            's3_bucket': '',
+        },
+        'pinger': {
+            'hostname': 'dk65t.pxs001.com',
+            'root_cert': 'beta-pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-d6o0v1h299isdh155thlo01r7d1sj22v.apps.googleusercontent.com',
+            'client_secret': 'w_STpstIgIVrPYcCEYclC3KT',
+        }
+    },
+    'appstore': {
+        'ios': {
+            'bundle_id': 'com.nachocove.mail',
+            'display_name': 'Nacho Mail',
+            'icon_script': 'appstore/copy.sh'
+        },
+        'hockeyapp': {
+            'app_id': 'df752a5c4c7bb503fac6e26b0f0dcafa',
+            'api_token': '0344908b24aa498288268a726d028332'
+        },
+        'aws': {
+            'prefix': 'prod',
+            'account_id': '610813048224',
+            'identity_pool_id': 'us-east-1:2e5f8d44-3f75-4f94-9539-696849b9bca5',
+            'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_prod_UnAuth_DefaultRole',
+            'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
+            's3_bucket': '',
+        },
+        'pinger': {
+            'hostname': 'p745x.pxs001.com',
+            'root_cert': 'beta-pinger.pem'
+        },
+        'google': {
+            'client_id': '135541750674-f307j8582mi397cd0hcsbtn8ts1djmdv.apps.googleusercontent.com',
+            'client_secret': '5iBJeVUWnYs4jkHbDZziV0Gl',
         }
     },
 }

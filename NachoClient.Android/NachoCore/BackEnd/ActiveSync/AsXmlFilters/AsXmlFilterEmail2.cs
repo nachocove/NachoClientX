@@ -57,13 +57,7 @@ namespace NachoCore.Wbxml
             // MeetingMessageType
             node1 = new NcXmlFilterNode ("MeetingMessageType", RedactionType.FULL, RedactionType.FULL);
             node0.Add(node1); // xml -> MeetingMessageType
-            //LastVerbExecuted
-            node1 = new NcXmlFilterNode ("LastVerbExecuted", RedactionType.FULL, RedactionType.FULL);
-            node0.Add (node1); // xml -> LastVerbExecuted
-            //LastVerbExecutionTime
-            node1 = new NcXmlFilterNode ("LastVerbExecutionTime", RedactionType.FULL, RedactionType.FULL);
-            node0.Add (node1); //xml -> LastVerbExecutionTime
-
+            
             Root = node0;
         }
     }

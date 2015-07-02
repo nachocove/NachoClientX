@@ -1,16 +1,15 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
-using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using CoreGraphics;
+using UIKit;
+using Foundation;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Brain;
 using NachoCore.Utils;
-using MonoTouch.CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -20,6 +19,7 @@ namespace NachoClient.iOS
         protected McAccount Account;
         protected bool editing = false;
         protected bool organizer = false;
+        protected bool recurring = false;
         public IAttendeeTableViewSourceDelegate owner;
         protected bool isMultiSelecting;
         protected Dictionary<NSIndexPath,McAttendee> multiSelect = null;
@@ -83,27 +83,18 @@ namespace NachoClient.iOS
             this.owner = owner;
         }
 
-        public void SetAttendeeList (List<McAttendee> attendees)
+        public void Setup (IList<McAttendee> attendees, McAccount account, bool editing, bool organizer, bool recurring)
         {
-            this.AttendeeList = new List<McAttendee> ();
-            foreach (var attendee in attendees) {
-                this.AttendeeList.Add (attendee);
-            }
-        }
-
-        public void SetEditing (bool editing)
-        {
-            this.editing = editing;
-        }
-
-        public void SetOrganizer (bool organizer)
-        {
-            this.organizer = organizer;
-        }
-
-        public void SetAccount (McAccount account)
-        {
+            SetAttendeeList (attendees);
             this.Account = account;
+            this.editing = editing;
+            this.organizer = organizer;
+            this.recurring = recurring;
+        }
+
+        public void SetAttendeeList (IList<McAttendee> attendees)
+        {
+            this.AttendeeList = new List<McAttendee> (attendees);
         }
 
         public List<McAttendee> GetAttendeeList ()
@@ -114,7 +105,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Tableview delegate
         /// </summary>
-        public override int NumberOfSections (UITableView tableView)
+        public override nint NumberOfSections (UITableView tableView)
         {
             return 1;
         }
@@ -122,7 +113,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// The number of rows in the specified section.
         /// </summary>
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
             return AttendeeList.Count;
         }
@@ -132,7 +123,7 @@ namespace NachoClient.iOS
             var attendee = AttendeeList [indexPath.Row];
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
@@ -156,15 +147,15 @@ namespace NachoClient.iOS
             label.SizeToFit ();
             var labelView = new UIView ();
             if ("left" == side) {
-                labelView.Frame = new RectangleF (0, 0, label.Frame.Width + 50, label.Frame.Height);
+                labelView.Frame = new CGRect (0, 0, label.Frame.Width + 50, label.Frame.Height);
             } else {
-                labelView.Frame = new RectangleF (65, 0, label.Frame.Width + 50, label.Frame.Height);
+                labelView.Frame = new CGRect (65, 0, label.Frame.Width + 50, label.Frame.Height);
             }
             labelView.Add (label);
             return labelView;
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             return 80;
         }
@@ -196,7 +187,7 @@ namespace NachoClient.iOS
             if (null == cell) {
                 cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
             }
-            if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+            if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
                 cell.SeparatorInset = UIEdgeInsets.Zero;
             }
             cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
@@ -204,7 +195,7 @@ namespace NachoClient.iOS
 
             var cellWidth = tableView.Frame.Width;
 
-            var frame = new RectangleF (0, 0, tableView.Frame.Width, 80);
+            var frame = new CGRect (0, 0, tableView.Frame.Width, 80);
             var view = new SwipeActionView (frame);
 
             cell.AddSubview (view);
@@ -215,31 +206,31 @@ namespace NachoClient.iOS
             var multiSelectImageView = new UIImageView ();
             multiSelectImageView.Tag = MULTI_ICON_TAG;
             multiSelectImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            multiSelectImageView.Frame = new RectangleF (18, (view.Frame.Height / 2) - 8, 16, 16);
+            multiSelectImageView.Frame = new CGRect (18, (view.Frame.Height / 2) - 8, 16, 16);
             multiSelectImageView.Hidden = true;
             view.AddSubview (multiSelectImageView);
 
             //User Name
-            var userNameLabel = new UILabel (new RectangleF (70, 22 - 2.5f, 320 - 15 - 65, 20));
+            var userNameLabel = new UILabel (new CGRect (70, 22 - 2.5f, cellWidth - 15 - 65, 20));
             userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             userNameLabel.Tag = USER_NAME_TAG;
             view.AddSubview (userNameLabel);
 
             //User Email
-            var userEmailView = new UILabel (new RectangleF (70, 40 - 2.5f, 320 - 15 - 65, 20));
+            var userEmailView = new UILabel (new CGRect (70, 40 - 2.5f, cellWidth - 15 - 65, 20));
             userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
             userEmailView.Tag = USER_EMAIL_TAG;
             view.AddSubview (userEmailView);
 
             // User image
-            var userImageView = new UIImageView (new RectangleF (15, 15 - 2.5f, 45, 45));
+            var userImageView = new UIImageView (new CGRect (15, 15 - 2.5f, 45, 45));
             userImageView.Layer.CornerRadius = (45.0f / 2.0f);
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = USER_IMAGE_TAG;
             view.AddSubview (userImageView);
 
             // User userLabelView view, if no image
-            var userLabelView = new UILabel (new RectangleF (15, 15 - 2.5f, 45, 45));
+            var userLabelView = new UILabel (new CGRect (15, 15 - 2.5f, 45, 45));
             userLabelView.Font = A.Font_AvenirNextRegular24;
             userLabelView.TextColor = CELL_COMPONENT_BG_COLOR;
             userLabelView.TextAlignment = UITextAlignment.Center;
@@ -250,19 +241,19 @@ namespace NachoClient.iOS
             view.AddSubview (userLabelView);
 
             //User response indicator
-            var attendeeResponseView = new UIView (new RectangleF (15 + 27, 42 - 2.5f, 20, 20));
+            var attendeeResponseView = new UIView (new CGRect (15 + 27, 42 - 2.5f, 20, 20));
             attendeeResponseView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             attendeeResponseView.Layer.CornerRadius = 10;
             attendeeResponseView.Tag = USER_RESPONSE_VIEW_TAG;
             MakeEmptyCircle (attendeeResponseView);
-            UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+            UIImageView responseImageView = new UIImageView (new CGRect (2.5f, 2.5f, 15, 15));
                 
             responseImageView.Tag = USER_RESPONSE_TAG;
             attendeeResponseView.Add (responseImageView);
             view.AddSubview (attendeeResponseView);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLineView (70, 80, cell.Frame.Width - 60, A.Color_NachoBorderGray);
+            var separatorLine = Util.AddHorizontalLine (70, 80, cell.Frame.Width - 60, A.Color_NachoBorderGray);
             separatorLine.Tag = SEPARATOR_LINE_TAG;
             view.AddSubview (separatorLine);
 
@@ -272,7 +263,7 @@ namespace NachoClient.iOS
 
         public void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            float xOffset = isMultiSelecting ? 34 : 0;
+            nfloat xOffset = isMultiSelecting ? 34 : 0;
 
             //Attendee
             McAttendee attendee = AttendeeList [indexPath.Row];
@@ -292,20 +283,22 @@ namespace NachoClient.iOS
 
             //Swipe view
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.LeftSwipeActionButtons.Clear ();
-            view.RightSwipeActionButtons.Clear ();
+            view.ClearActions (SwipeSide.LEFT);
+            view.ClearActions (SwipeSide.RIGHT);
             if (organizer) {
                 if (!editing) {
                     view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
                     view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
                 }
-                if (NcAttendeeType.Required == attendee.AttendeeType) {
-                    view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
-                } else {
-                    view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
-                }
-                if (editing) {
-                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                if (!recurring) {
+                    if (NcAttendeeType.Required == attendee.AttendeeType) {
+                        view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
+                    } else {
+                        view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
+                    }
+                    if (editing) {
+                        view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                    }
                 }
                 view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
 
@@ -384,20 +377,20 @@ namespace NachoClient.iOS
             SetMultiSelectIcon (multiSelectImageView, indexPath);
 
             var textLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
-            textLabel.Frame = new RectangleF (70 + xOffset, 22 - 2.5f, tableView.Frame.Width - 80 - xOffset, 20);
+            textLabel.Frame = new CGRect (70 + xOffset, 22 - 2.5f, tableView.Frame.Width - 80 - xOffset, 20);
 
             var detailTextLabel = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
-            detailTextLabel.Frame = new RectangleF (70 + xOffset, 40 - 2.5f, tableView.Frame.Width - 80 - xOffset, 20);
+            detailTextLabel.Frame = new CGRect (70 + xOffset, 40 - 2.5f, tableView.Frame.Width - 80 - xOffset, 20);
 
             var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
-            labelView.Frame = new RectangleF (15 + xOffset, 15 - 2.5f, 45, 45);
+            labelView.Frame = new CGRect (15 + xOffset, 15 - 2.5f, 45, 45);
 
             var imageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            imageView.Frame = new RectangleF (15 + xOffset, 15 - 2.5f, 45, 45);
+            imageView.Frame = new CGRect (15 + xOffset, 15 - 2.5f, 45, 45);
             bool hasImage = false;
 
             var responseCircle = cell.ViewWithTag (USER_RESPONSE_VIEW_TAG) as UIView;
-            responseCircle.Frame = new RectangleF (15 + 27 + xOffset, 42 - 2.5f, 20, 20);
+            responseCircle.Frame = new CGRect (15 + 27 + xOffset, 42 - 2.5f, 20, 20);
 
             using (UIImage image = Util.ImageOfSender ((int)owner.GetAccountId (), attendee.Email)) {
                 if (null != image) {
@@ -467,9 +460,9 @@ namespace NachoClient.iOS
             var separatorLine = view.ViewWithTag (SEPARATOR_LINE_TAG);
             var totalRow = tableView.NumberOfRowsInSection (indexPath.Section);
             if (totalRow - 1 == indexPath.Row) {
-                separatorLine.Frame = new RectangleF (0, 79.5f, cell.Frame.Width, .5f);
+                separatorLine.Frame = new CGRect (0, 79.5f, cell.Frame.Width, .5f);
             } else {
-                separatorLine.Frame = new RectangleF (70 + xOffset, 79.5f, cell.Frame.Width - 60 - xOffset, .5f);
+                separatorLine.Frame = new CGRect (70 + xOffset, 79.5f, cell.Frame.Width - 60 - xOffset, .5f);
             }
 
         }
@@ -485,23 +478,23 @@ namespace NachoClient.iOS
             }
         }
 
-//        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-//        {
-//            UITableViewCell cell = tableView.CellAt (indexPath);
-//            if (isMultiSelecting) {
-//                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
-//                ToggleMultiSelectIcon (iv);
-//
-//                var attendee = AttendeeList [indexPath.Row];
-//                if (multiSelect.ContainsKey (indexPath)) {
-//                    multiSelect.Remove (indexPath);
-//                } else {
-//                    multiSelect.Add (indexPath, attendee);
-//                }
-//                vc.ConfigureNavBar (multiSelect.Count);
-//            } 
-//            tableView.DeselectRow (indexPath, true);
-//        }
+        //        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        //        {
+        //            UITableViewCell cell = tableView.CellAt (indexPath);
+        //            if (isMultiSelecting) {
+        //                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
+        //                ToggleMultiSelectIcon (iv);
+        //
+        //                var attendee = AttendeeList [indexPath.Row];
+        //                if (multiSelect.ContainsKey (indexPath)) {
+        //                    multiSelect.Remove (indexPath);
+        //                } else {
+        //                    multiSelect.Add (indexPath, attendee);
+        //                }
+        //                vc.ConfigureNavBar (multiSelect.Count);
+        //            }
+        //            tableView.DeselectRow (indexPath, true);
+        //        }
 
         protected void ToggleMultiSelectIcon (UIImageView iv)
         {
@@ -534,7 +527,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.CallSwipeHandler (contact);
@@ -544,7 +537,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.EmailSwipeHandler (contact);
@@ -552,10 +545,10 @@ namespace NachoClient.iOS
 
         public void ChangeAttendeeType (UITableViewCell cell, McAttendee attendee)
         {
-            if (NcAttendeeType.Optional == attendee.AttendeeType) {
-                attendee.AttendeeType = NcAttendeeType.Required;
-            } else {
+            if (NcAttendeeType.Required == attendee.AttendeeType) {
                 attendee.AttendeeType = NcAttendeeType.Optional;
+            } else {
+                attendee.AttendeeType = NcAttendeeType.Required;
             }
             owner.UpdateLists ();
             owner.ConfigureAttendeeTable ();
@@ -590,7 +583,7 @@ namespace NachoClient.iOS
 
         public void MakeEmptyCircle (UIView parentView)
         {
-            var attendeeResponseView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+            var attendeeResponseView = new UIView (new CGRect (2.5f, 2.5f, 15, 15));
             attendeeResponseView.BackgroundColor = UIColor.White;
             attendeeResponseView.Layer.CornerRadius = 15 / 2;
             attendeeResponseView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;

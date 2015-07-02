@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -11,7 +11,8 @@ using NachoCore.Brain;
 namespace NachoCore.Model
 {
     public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable
-    {   
+    {
+        //////////////////// IScorable members ////////////////////
         // Score version of this object
         [Indexed]
         public int ScoreVersion { get; set; }
@@ -26,164 +27,225 @@ namespace NachoCore.Model
         public double Score { get; set; }
 
         [Indexed]
-        public bool NeedUpdate { get; set; }
+        public int NeedUpdate { get; set; }
 
-        // DO NOT update these fields directly. Use IncrementXXX methods instead.
-        // Otherwise, the delta will not be saved correctly. ORM does not allow
-        // private property so there is no way to use a public property with 
-        // customized getters to read of a private property.
+        private AnalysisFunctionsTable _AnalysisFunctions;
 
-        // Number of emails receivied
-        public int EmailsReceived { get; set; }
+        [Ignore]
+        public AnalysisFunctionsTable AnalysisFunctions {
+            get {
+                if (null == _AnalysisFunctions) {
+                    _AnalysisFunctions = new AnalysisFunctionsTable () {
+                    };
+                }
+                return _AnalysisFunctions;
+            }
+            set {
+                _AnalysisFunctions = value;
+            }
+        }
 
-        // Number of emails read
-        public int EmailsRead { get; set; }
+        // Synced score states
+        private McEmailAddressScore DbScoreStates;
 
-        // Number of emails replied
-        public int EmailsReplied { get; set; }
+        [Ignore]
+        public McEmailAddressScore ScoreStates {
+            get {
+                if (null == DbScoreStates) {
+                    ReadScoreStates ();
+                }
+                return DbScoreStates;
+            }
+            set {
+                DbScoreStates = value;
+            }
+        }
 
-        // Number of emails archived
-        public int EmailsArchived { get; set; }
-
-        // Number of emails sent to this contact
-        public int EmailsSent { get; set; }
-
-        // Number of emails deleted without being read
-        public int EmailsDeleted { get; set; }
-
-        // If there is update that is not uploaded to the synchronization server,
-        // this object is non-null and holds the update.
-        private McEmailAddressScoreSyncInfo SyncInfo { get; set; }
-
-        public double GetScore ()
+        public bool ShouldUpdate ()
         {
-            int total = EmailsReceived + EmailsSent + EmailsDeleted;
+            return (0 < NeedUpdate);
+        }
+
+        public double Classify ()
+        {
+            int total = ScoreStates.EmailsReceived + ScoreStates.EmailsSent + ScoreStates.EmailsDeleted;
             if (0 == total) {
                 return 0.0;
             }
-            return (double)(EmailsRead + EmailsReplied + EmailsSent) / (double)total;
+            return (double)(ScoreStates.EmailsRead + ScoreStates.EmailsReplied + ScoreStates.EmailsSent) / (double)total;
         }
 
-        public void ScoreObject ()
+        public void Analyze ()
         {
-            if (0 == ScoreVersion) {
-                if (!DownloadScore ()) {
-                    // Version 1 statistics are updated by emails. Nothing to do here
-                }
-                ScoreVersion++;
-            }
-            if (1 == ScoreVersion) {
-                // Version 2 statistics are updated by emails. Nothing to do here
-                ScoreVersion++;
-            }
-            if (2 == ScoreVersion) {
-                // No statisitcs are updated in v3. Just need to recompute the score
-                // using the new function.
-                ScoreVersion++;
-            }
-            NcAssert.True (Scoring.Version == ScoreVersion);
-            Score = GetScore ();
+            ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            Score = Classify ();
             UpdateByBrain ();
         }
 
-        private void GetScoreSyncInfo ()
+        public void MarkDependencies (NcEmailAddress.Kind addressType, int delta = 1)
         {
-            if (null != SyncInfo) {
-                return;
+            switch (addressType) {
+            case NcEmailAddress.Kind.From:
+            case NcEmailAddress.Kind.To:
+            case NcEmailAddress.Kind.Cc:
+            case NcEmailAddress.Kind.Bcc:
+            case NcEmailAddress.Kind.Sender:
+                MarkDependentEmailMessages (addressType, delta);
+                break;
+            default:
+                break;
             }
-            SyncInfo = NcModel.Instance.Db.Table<McEmailAddressScoreSyncInfo> ()
-                .Where (x => x.EmailAddressId == Id)
-                .FirstOrDefault ();
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = new McEmailAddressScoreSyncInfo ();
-            SyncInfo.AccountId = AccountId;
-            SyncInfo.EmailAddressId = Id;
-            SyncInfo.InsertByBrain ();
+
         }
 
-        private void ClearScoreSyncInfo ()
+        ///////////////////// From address methods /////////////////////
+        public void IncrementEmailsReceived (int count = 1)
         {
-            if (null == SyncInfo) {
-                return;
-            }
-            SyncInfo.DeleteByBrain ();
-            SyncInfo = null;
+            ScoreStates.EmailsReceived += count;
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void MarkDependencies ()
+        public void IncrementEmailsRead (int count = 1)
         {
-            MarkDependentEmailMessages ();
-            // TODO - mark dependent meetings later
+            ScoreStates.EmailsRead += count;
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void IncrementEmailsReceived (int count=1)
+        public void IncrementEmailsReplied (int count = 1)
         {
-            EmailsReceived += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsReceived += count;
-            MarkDependencies ();
+            ScoreStates.EmailsReplied += count;
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void IncrementEmailsRead (int count=1)
+        public void IncrementEmailsArchived (int count = 1)
         {
-            EmailsRead += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsRead += count;
-            MarkDependencies ();
+            ScoreStates.EmailsArchived += count;
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void IncrementEmailsReplied (int count=1)
+        public void IncrementEmailsDeleted (int count = 1)
         {
-            EmailsReplied += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsReplied += count;
-            MarkDependencies ();
+            ScoreStates.EmailsDeleted += count;
+            MarkDependencies (NcEmailAddress.Kind.From);
         }
 
-        public void IncrementEmailsArchived (int count=1)
+        ///////////////////// To address methods /////////////////////
+        public void IncrementToEmailsReceived (int count = 1, bool markDependencies = true)
         {
-            EmailsArchived += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsArchived += count;
-            MarkDependencies ();
-        }
-
-        public void IncrementEmailsDeleted (int count=1)
-        {
-            EmailsDeleted += count;
-            GetScoreSyncInfo ();
-            SyncInfo.EmailsDeleted += count;
-            MarkDependencies ();
-        }
-
-        public void UploadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "contact id = {0}", Id);
-            if (null != SyncInfo) {
-                // TODO - Add real implementation. Currently, just clear the delta
-                ClearScoreSyncInfo ();
+            ScoreStates.ToEmailsReceived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
             }
         }
 
-        public bool DownloadScore ()
+        public void IncrementToEmailsRead (int count = 1, bool markDependencies = true)
         {
-            Log.Debug (Log.LOG_BRAIN, "contact id = {0}", Id);
-            return false;
+            ScoreStates.ToEmailsRead += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
         }
 
-        public void MarkDependentEmailMessages ()
+        public void IncrementToEmailsReplied (int count = 1, bool markDependencies = true)
         {
-            // TODO - It seems that SQLite cannot do an INNER JOIN in UPDATE. Do it the sledge hammer
-            // now and figure out how to do it efficiently later
-            List<McEmailMessage> emailMesageList = McEmailMessageDependency.QueryNonUpdatedDependenciesByEmailAddressId (Id);
-            if (null != emailMesageList) {
-                foreach (McEmailMessage m in emailMesageList) {
-                    NcAssert.True (!m.NeedUpdate);
-                    m.NeedUpdate = true;
-                    m.UpdateScoreAndNeedUpdate ();
-                }
+            ScoreStates.ToEmailsReplied += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        public void IncrementToEmailsArchived (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.ToEmailsArchived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        public void IncrementToEmailsDeleted (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.ToEmailsDeleted += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.To);
+            }
+        }
+
+        ///////////////////// Cc address methods /////////////////////
+        public void IncrementCcEmailsReceived (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.CcEmailsReceived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsRead (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.CcEmailsRead += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsReplied (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.CcEmailsReplied += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsArchived (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.CcEmailsArchived += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void IncrementCcEmailsDeleted (int count = 1, bool markDependencies = true)
+        {
+            ScoreStates.CcEmailsDeleted += count;
+            if (markDependencies) {
+                MarkDependencies (NcEmailAddress.Kind.Cc);
+            }
+        }
+
+        public void MarkDependentEmailMessages (NcEmailAddress.Kind addressKind, int delta)
+        {
+            if (1 > delta) {
+                delta = 1;
+            }
+            var queryString = String.Format (
+                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0} WHERE Id IN " +
+                                  " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
+                                  "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta);
+            NcModel.Instance.RunInLock (() => {
+                NcModel.Instance.Db.Execute (queryString, Id, (int)addressKind);
+            });
+        }
+
+        public override int Insert ()
+        {
+            using (var capture = CaptureWithStart ("Insert")) {
+                int rc = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    rc = base.Insert ();
+                    InsertScoreStates ();
+                });
+                return rc;
+            }
+        }
+
+        public override int Delete ()
+        {
+            using (var capture = CaptureWithStart ("Delete")) {
+                int rc = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    rc = base.Delete ();
+                    DeleteScoreStates ();
+                });
+                return rc;
             }
         }
 
@@ -204,9 +266,6 @@ namespace NachoCore.Model
                 NcBrain brain = NcBrain.SharedInstance;
                 brain.McEmailAddressCounters.Update.Click ();
                 brain.NotifyEmailAddressUpdates ();
-                if (null != SyncInfo) {
-                    SyncInfo.Update ();
-                }
             }
         }
 
@@ -223,15 +282,42 @@ namespace NachoCore.Model
         public static McEmailAddress QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.NeedUpdate)
+                .Where (x => x.NeedUpdate > 0 && x.ScoreVersion == Scoring.Version)
                 .FirstOrDefault ();
         }
 
-        public static McEmailAddress QueryNeedAnalysis ()
+        public static List<McEmailAddress> QueryNeedAnalysis (int count, int version = Scoring.Version)
         {
-            return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.ScoreVersion < Scoring.Version)
-                .FirstOrDefault ();
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " WHERE a.ScoreVersion < ? " +
+                " LIMIT ?", version, count);
+        }
+
+        protected void InsertScoreStates ()
+        {
+            NcAssert.True ((0 < AccountId) && (0 < Id));
+            DbScoreStates = new McEmailAddressScore () {
+                AccountId = AccountId,
+                ParentId = Id,
+            };
+            DbScoreStates.Insert ();
+        }
+
+        protected void ReadScoreStates ()
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                DbScoreStates = McEmailAddressScore.QueryByParentId (Id);
+                if (null == DbScoreStates) {
+                    Log.Error (Log.LOG_BRAIN, "fail to find score states for email address {0}. Create one", Id);
+                    InsertScoreStates ();
+                }
+            });
+        }
+
+        protected void DeleteScoreStates ()
+        {
+            McEmailAddressScore.DeleteByParentId (Id);
         }
     }
 }

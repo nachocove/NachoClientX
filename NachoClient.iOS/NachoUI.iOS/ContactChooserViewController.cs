@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using CoreGraphics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
@@ -28,15 +28,14 @@ namespace NachoClient.iOS
         // Internal state
         List<McContactEmailAddressAttribute> searchResults;
         // ContactTableViewSource is used solely to create & config a cell
-        ContactsTableViewSource contactTableViewSource;
         string contactSearchToken;
-        float keyboardHeight;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
-        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType contactType)
+        public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType contactType)
         {
             this.owner = owner;
+            this.account = account;
             this.address = address;
             this.contactType = contactType;
         }
@@ -61,11 +60,9 @@ namespace NachoClient.iOS
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
 
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-
-            contactTableViewSource = new ContactsTableViewSource ();
-
             CreateView ();
+
+            PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -78,10 +75,6 @@ namespace NachoClient.iOS
             NachoCore.Utils.NcAbate.HighPriority ("ContactChooser ViewWillAppear");
             resultsTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser ViewWillAppear");
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
             autoCompleteTextField.BecomeFirstResponder ();
         }
 
@@ -90,37 +83,32 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
-                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+        }
+
+        public override bool ShouldEndEditing {
+            get {
+                return false;
             }
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-        }
-
-        public virtual bool HandlesKeyboardNotifications {
-            get { return true; }
         }
 
         public void CreateView ()
         {
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            UIView inputView = new UIView (new RectangleF (0, 0, View.Frame.Width, 44));
+            UIView inputView = new UIView (new CGRect (0, 0, View.Frame.Width, 44));
             inputView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             keyboardHeight = NcKeyboardSpy.Instance.keyboardHeight;
-            resultsTableView = new UITableView (new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight));
+            resultsTableView = new UITableView (new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight));
 
             resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
             resultsTableView.Source = new ContactChooserDataSource (this);
+            resultsTableView.AccessibilityLabel = "Contact chooser results";
 
             cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
-            cancelSearchButton.Frame = new RectangleF (View.Frame.Width - 58, 6, 50, 32);
+            cancelSearchButton.Frame = new CGRect (View.Frame.Width - 58, 6, 50, 32);
             cancelSearchButton.SetTitle ("Cancel", UIControlState.Normal);
+            cancelSearchButton.AccessibilityLabel = "Cancel";
             cancelSearchButton.Font = A.Font_AvenirNextMedium14;
             cancelSearchButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
             cancelSearchButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -128,11 +116,11 @@ namespace NachoClient.iOS
             };
             inputView.AddSubviews (cancelSearchButton);
 
-            UIView textInputView = new UIView (new RectangleF (8, 6, 246, 32));
+            UIView textInputView = new UIView (new CGRect (8, 6, 246, 32));
             textInputView.BackgroundColor = UIColor.White;
             textInputView.Layer.CornerRadius = 4;
 
-            autoCompleteTextField = new UITextField (new RectangleF (6, 0, 234, 32));
+            autoCompleteTextField = new UITextField (new CGRect (6, 0, 234, 32));
             autoCompleteTextField.BackgroundColor = UIColor.White;
             autoCompleteTextField.Font = A.Font_AvenirNextMedium14;
             autoCompleteTextField.ClearButtonMode = UITextFieldViewMode.Always;
@@ -166,13 +154,13 @@ namespace NachoClient.iOS
         public override void ViewDidLayoutSubviews ()
         {
             base.ViewDidLayoutSubviews ();
-            resultsTableView.Frame = new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_SearchCommandSucceeded");
                 UpdateAutocompleteResults (0, autoCompleteTextField.Text);
             }
@@ -182,9 +170,18 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("ContactChooserToContactSearch")) {
                 var dvc = (INachoContactChooser)segue.DestinationViewController;
-                dvc.SetOwner (this, address, NachoContactType.EmailRequired);
+                dvc.SetOwner (this, account, address, NachoContactType.EmailRequired);
                 return;
             }
+
+            if (segue.Identifier.Equals ("SegueToContactEdit")) {
+                var dvc = (ContactEditViewController)segue.DestinationViewController;
+                var holder = (SegueHolder)sender;
+                var contact = (McContact)holder.value;
+                dvc.contact = contact;
+                return;
+            }
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -193,8 +190,12 @@ namespace NachoClient.iOS
         {
             this.address.contact = contact;
             this.address.address = address;
-            owner.UpdateEmailAddress (this, this.address);
-            owner.DismissINachoContactChooser (this);
+            if (owner != null) {
+                owner.UpdateEmailAddress (this, this.address);
+                owner.DismissINachoContactChooser (this);
+            } else {
+                Log.Error (Log.LOG_UI, "ContactChooserViewController: null in update email address");
+            }
         }
 
         /// <summary>
@@ -212,7 +213,9 @@ namespace NachoClient.iOS
 
         public void CancelSelected ()
         {
-            owner.DismissINachoContactChooser (this);
+            if (null != owner) {
+                owner.DismissINachoContactChooser (this);
+            }
         }
 
         /// <summary>
@@ -228,17 +231,32 @@ namespace NachoClient.iOS
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
-                searchResults = McContact.SearchAllContactItems (forSearchString);
+                searchResults = McContact.SearchIndexAllContactsWithEmailAddresses (forSearchString, true);
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
+
+                /// This is a simple test code that issues a prefix search and print the results
+                /// in console. Once the real search window is done, please remove this chunk of code
+                /// HACK ALERT - TEST / DEMO CODE FOR INDEXING!!!!
+//                if (!String.IsNullOrEmpty (forSearchString)) {
+//                    var indexPath = NcModel.Instance.GetFileDirPath (2, "index");
+//                    NachoCore.Index.Index index = new NachoCore.Index.Index (indexPath);
+//                    var matches = index.Search (forSearchString + "*");
+//                    int n = 1;
+//                    foreach (var match in matches) {
+//                        Console.WriteLine (">>> {0}: {1} {2}", n, match.Type, match.Id);
+//                        n += 1;
+//                    }
+//                }
             }
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
+            // TODO: Think about whether we want to users about errors during GAL search
             if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
             } else {
                 BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
             }
@@ -265,49 +283,9 @@ namespace NachoClient.iOS
             owner.DismissINachoContactChooser (this);
         }
 
-        private void OnKeyboardNotification (NSNotification notification)
+        protected override void OnKeyboardChanged ()
         {
-            if (IsViewLoaded) {
-                //Check if the keyboard is becoming visible
-                bool visible = notification.Name == UIKeyboard.WillShowNotification;
-                //Start an animation, using values from the keyboard
-                UIView.BeginAnimations ("AnimateForKeyboard");
-                UIView.SetAnimationBeginsFromCurrentState (true);
-                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
-                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
-                //Pass the notification, calculating keyboard height, etc.
-                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
-                if (visible) {
-                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                } else {
-                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
-                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
-                }
-                //Commit the animation
-                UIView.CommitAnimations (); 
-            }
-        }
-
-        /// <summary>
-        /// Override this method to apply custom logic when the keyboard is shown/hidden
-        /// </summary>
-        /// <param name='visible'>
-        /// If the keyboard is visible
-        /// </param>
-        /// <param name='height'>
-        /// Calculated height of the keyboard (width not generally needed here)
-        /// </param>
-        protected virtual void OnKeyboardChanged (bool visible, float height)
-        {
-            var newHeight = (visible ? height : 0);
-
-            if (newHeight == keyboardHeight) {
-                return;
-            }
-            keyboardHeight = newHeight;
-
-            resultsTableView.Frame = new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
         public class ContactChooserDataSource : UITableViewSource
@@ -319,12 +297,12 @@ namespace NachoClient.iOS
                 Owner = owner;
             }
 
-            public override int NumberOfSections (UITableView tableView)
+            public override nint NumberOfSections (UITableView tableView)
             {
                 return 1;
             }
 
-            public override int RowsInSection (UITableView tableview, int section)
+            public override nint RowsInSection (UITableView tableview, nint section)
             {
                 if (null != Owner.searchResults) {
                     return Owner.searchResults.Count;
@@ -333,19 +311,20 @@ namespace NachoClient.iOS
                 }
             }
 
-            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
-                return Owner.contactTableViewSource.GetHeightForRow (tableView, indexPath);
+                return ContactCell.ROW_HEIGHT;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
                 var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
                 if (null == cell) {
-                    cell = Owner.contactTableViewSource.CreateCell (tableView, VipButtonTouched);
+                    cell = ContactCell.CreateCell (tableView, VipButtonTouched);
                 }
-                var contact = Owner.searchResults [indexPath.Row].GetContact ();
-                Owner.contactTableViewSource.ConfigureCell (tableView, cell, contact);
+                var contactAddress = Owner.searchResults [indexPath.Row];
+                var contact = contactAddress.GetContact ();
+                ContactCell.ConfigureCell (tableView, cell, contact, null, false, contactAddress.Value);
                 return cell;
             }
 
@@ -360,13 +339,17 @@ namespace NachoClient.iOS
                 using (var image = UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
                     vipButton.SetImage (image, UIControlState.Normal);
                 }
+                vipButton.AccessibilityLabel = "VIP";
             }
 
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
-                McContact contact;
+                var cell = tableView.CellAt (indexPath);
+                if (null != cell) {
+                    cell.Selected = false;
+                }
 
-                contact = Owner.searchResults [indexPath.Row].GetContact ();
+                var contact = Owner.searchResults [indexPath.Row].GetContact ();
 
                 Owner.CancelSearchIfActive ();
 
@@ -386,29 +369,30 @@ namespace NachoClient.iOS
                     }
                 }
 
-                Owner.UpdateEmailAddress (contact, contact.GetEmailAddress ());
+                Owner.UpdateEmailAddress (contact, Owner.searchResults [indexPath.Row].Value);
             }
 
         }
 
-        string complaintTitle = "Email Address Missing";
-        string complaintMessage = "You've selected a contact who does not have an email address.  Would you like to edit this contact?";
-
         void ComplainAboutMissingEmailAddress (McContact contact)
         {
-            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "No", new string[] { "Edit contact" });
-            alert.Clicked += (s, b) => {
-                if (1 == b.ButtonIndex) {
-                    PerformSegue ("ContactChooserToContactView", new SegueHolder (contact));
-                }
-            };
-            alert.Show ();
+            if (contact.CanUserEdit ()) {
+                NcAlertView.Show (this, "E-mail Address Missing",
+                    "You have selected a contact without an e-mail address. Would you like to edit this contact?",
+                    new NcAlertAction ("No", NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction ("Edit Contact", () => {
+                        PerformSegue ("SegueToContactEdit", new SegueHolder (contact));
+                    }));
+            } else {
+                NcAlertView.ShowMessage (this, "E-mail Address Missing",
+                    "You have selected a contact without an e-mail address.");
+            }
         }
 
         protected void CancelSearchIfActive ()
         {
             if (!String.IsNullOrEmpty (contactSearchToken)) {
-                BackEnd.Instance.Cancel (account.Id, contactSearchToken);
+                McPending.Cancel (account.Id, contactSearchToken);
                 contactSearchToken = null;
             }
         }

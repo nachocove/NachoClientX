@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 import plistlib
 import argparse
 import subprocess
@@ -118,14 +119,24 @@ def main():
         if 'RELEASE' in os.environ:
             assert 'VERSION' in os.environ and 'BUILD' in os.environ
             release = os.environ['RELEASE']
-            ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
+            # For alpha and beta builds, we also upload .ipa. For app store builds,
+            # there is no need to upload .ipa because the .ipa is submitted to the
+            # official app store.
+            if release in ['alpha', 'beta']:
+                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
+                if not os.path.exists(os.path.join(options.target_dir, ipa_file)):
+                    # The new format of .ipa file is not found. Try the old format.
+                    ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['VERSION']
+                    if not os.path.exists(os.path.join(options.target_dir, ipa_file)):
+                        print 'ERROR: Cannot find .ipa file in %s' % options.target_dir
+                        sys.exit(1)
         else:
             release = 'dev'
         if release not in projects:
             raise ValueError('unknown release type %s' % release)
-        hockeyapp = projects[release]['hockeyapp']
-        api_token = hockeyapp['api_token']
-        app_id = hockeyapp['app_id']
+        hockeyapp_params = projects[release]['hockeyapp']
+        api_token = hockeyapp_params['api_token']
+        app_id = hockeyapp_params['app_id']
         print 'Uploading to HockeyApp %s' % app_id
         hockey_app = HockeyappUploadIos(api_token=api_token, app_id=app_id)
     else:

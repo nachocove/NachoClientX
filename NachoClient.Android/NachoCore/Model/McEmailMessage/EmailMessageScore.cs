@@ -1,9 +1,12 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
+using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
 
@@ -11,17 +14,39 @@ namespace NachoCore.Model
 {
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
+        public enum GleanPhaseEnum
+        {
+            NOT_GLEANED = 0,
+            GLEAN_PHASE1 = 1,
+            GLEAN_PHASE2 = 2,
+        };
+
         [Indexed]
         public int ScoreVersion { get; set; }
 
+        private AnalysisFunctionsTable _AnalysisFunctions;
+
+        [Ignore]
+        public AnalysisFunctionsTable AnalysisFunctions {
+            get {
+                if (null == _AnalysisFunctions) {
+                    _AnalysisFunctions = new AnalysisFunctionsTable () {
+                        { 1, AnalyzeFromAddress },
+                        { 2, AnalyzeReplyStatistics },
+                        // Version 3 - No statistics is updated. Just need to re-compute the score which
+                        // will be done at the end of Analyze().
+                        { 4, AnalyzeOtherAddresses },
+                    };
+                }
+                return _AnalysisFunctions;
+            }
+            set {
+                _AnalysisFunctions = value;
+            }
+        }
+
         /// Did the user take explicit action?
         public int UserAction { get; set; }
-
-        /// How many times the email is read
-        public int TimesRead { get; set; }
-
-        /// How long the user read the email
-        public int SecondsRead { get; set; }
 
         [Indexed] /// Time variance state machine type
         public int TimeVarianceType { get; set; }
@@ -33,23 +58,74 @@ namespace NachoCore.Model
         public double Score { get; set; }
 
         [Indexed]
-        public bool NeedUpdate { get; set; }
-
-        [Indexed]
-        public bool ScoreIsRead { get; set; }
-
-        [Indexed]
-        public bool ScoreIsReplied { get; set; }
-
-        /// If there is update that is not uploaded to the synchronization server,
-        /// this object is non-null and holds the update.
-        private McEmailMessageScoreSyncInfo SyncInfo { get; set; }
+        public int NeedUpdate { get; set; }
 
         public const double VipScore = 1.0;
 
-        public double GetScore ()
+        private McEmailMessageScore DbScoreStates;
+
+        [Ignore]
+        public McEmailMessageScore ScoreStates {
+            get {
+                if (null == DbScoreStates) {
+                    ReadScoreStates ();
+                }
+                return DbScoreStates;
+            }
+            set {
+                DbScoreStates = value;
+            }
+        }
+
+        private ConcurrentDictionary<int, string> _AccountAddresses = new ConcurrentDictionary<int, string> ();
+
+        private string AccountAddress (int accountId)
+        {
+            string accountAddress = null;
+            if (_AccountAddresses.TryGetValue (accountId, out accountAddress)) {
+                return accountAddress;
+            }
+            // This account's address is not in the cache yet. Look it up
+            var account = McAccount.QueryById<McAccount> (accountId);
+            if (null == account) {
+                return null;
+            }
+            if (!_AccountAddresses.TryAdd (accountId, account.EmailAddr)) {
+                _AccountAddresses.TryGetValue (accountId, out accountAddress);
+                return accountAddress;
+            }
+            return accountAddress;
+        }
+
+        public bool ShouldUpdate ()
+        {
+            return (0 < NeedUpdate);
+        }
+
+        public double Classify ()
         {
             double score = 0.0;
+
+            if ((0 == ScoreVersion) && (0.0 == Score)) {
+                // Version 0 quick scoring
+                var accountAddress = AccountAddress (AccountId);
+                if (null != accountAddress) {
+                    InternetAddressList addressList = NcEmailAddress.ParseAddressListString (To);
+                    foreach (var addr in addressList) {
+                        if (!(addr is MailboxAddress)) {
+                            continue;
+                        }
+                        if (((MailboxAddress)addr).Address == accountAddress) {
+                            return McEmailMessage.minHotScore;
+                        }
+                    }
+                }
+                // Assign a non-zero value that it is effectively 0 but it prevents
+                // the same items to quanlify for quick score again.
+                Score = 0.00000001;
+                UpdateByBrain ();
+                return Score;
+            }
 
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -69,7 +145,7 @@ namespace NachoCore.Model
             } else if (0 < UserAction) {
                 score = VipScore;
             } else {
-                score = emailAddress.GetScore ();
+                score = emailAddress.Classify ();
                 NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
                 if (0 < tvList.Count) {
                     DateTime now = DateTime.UtcNow;
@@ -87,7 +163,7 @@ namespace NachoCore.Model
             return score;
         }
 
-        private void ScoreObject_V1 ()
+        public void AnalyzeFromAddress ()
         {
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -99,20 +175,16 @@ namespace NachoCore.Model
                     if (IsRead) {
                         emailAddress.IncrementEmailsRead ();
                     }
-                    emailAddress.Score = emailAddress.GetScore ();
-                    emailAddress.UpdateByBrain ();
-
-                    // Add Sender dependency
-                    McEmailMessageDependency dep = new McEmailMessageDependency (AccountId);
-                    dep.EmailMessageId = Id;
-                    dep.EmailAddressId = emailAddress.Id;
-                    dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
-                    dep.InsertByBrain ();
+                    emailAddress.Score = emailAddress.Classify ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        emailAddress.ScoreStates.Update ();
+                        emailAddress.UpdateByBrain ();
+                    });
                 } else {
-                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
+                    Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address", Id);
                 }
             } else {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address ({1})", Id, From);
+                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] no valid From address", Id);
             }
 
             ScoreVersion++;
@@ -124,7 +196,7 @@ namespace NachoCore.Model
             ((int)AsLastVerbExecutedType.REPLYTOSENDER == LastVerbExecuted));
         }
 
-        private void ScoreObject_V2 ()
+        public void AnalyzeReplyStatistics ()
         {
             McEmailAddress emailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
@@ -137,8 +209,11 @@ namespace NachoCore.Model
                             emailAddress.IncrementEmailsRead (-1);
                         }
                         emailAddress.IncrementEmailsReplied ();
-                        emailAddress.Score = emailAddress.GetScore ();
-                        emailAddress.UpdateByBrain ();
+                        emailAddress.Score = emailAddress.Classify ();
+                        NcModel.Instance.RunInTransaction (() => {
+                            emailAddress.ScoreStates.Update ();
+                            emailAddress.UpdateByBrain ();
+                        });
                     }
 
                     // Initialize new columns
@@ -153,103 +228,112 @@ namespace NachoCore.Model
             ScoreVersion++;
         }
 
-        private void ScoreObject_V3 ()
+        public void AnalyzeOtherAddresses ()
         {
-            // No statistics is updated. Just need to re-compute the score which
-            // will be done at the end of ScoreObject().
-            ScoreVersion++;
-            NcAssert.True (3 == ScoreVersion);
+            bool fromUpdated = false, toUpdated = false, ccUpdated = false;
+            if (!String.IsNullOrEmpty (From) && (0 == FromEmailAddressId)) {
+                FromEmailAddressId = McEmailAddress.Get (AccountId, From);
+                if (0 < FromEmailAddressId) {
+                    fromUpdated = true;
+                }
+            }
+            if (!String.IsNullOrEmpty (To)) {
+                ToEmailAddressId = McEmailAddress.GetList (AccountId, To);
+                if (0 < ToEmailAddressId.Count) {
+                    toUpdated = true;
+                }
+            }
+            if (!String.IsNullOrEmpty (Cc)) {
+                CcEmailAddressId = McEmailAddress.GetList (AccountId, Cc);
+                if (0 < CcEmailAddressId.Count) {
+                    ccUpdated = true;
+                }
+            }
+
+            // Insert the address maps for to and cc address lists before we update the to / cc statistics
+            // so that MarkDependencies() can correctly update emails NeedUpdate flag.
+            if (fromUpdated) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = FromEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.From;
+                map.Insert ();
+            }
+            if (toUpdated) {
+                InsertAddressList (ToEmailAddressId, NcEmailAddress.Kind.To);
+            }
+            if (ccUpdated) {
+                InsertAddressList (CcEmailAddressId, NcEmailAddress.Kind.Cc);
+            }
+
+            // Update statistics for email addresses
+            McEmailAddress emailAddress;
+            foreach (var toAddressId in ToEmailAddressId) {
+                emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
+                if (null == emailAddress) {
+                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
+                    continue;
+                }
+                emailAddress.IncrementToEmailsReceived (markDependencies: false);
+                if (IsReplied ()) {
+                    emailAddress.IncrementToEmailsReplied (markDependencies: false);
+                } else if (IsRead) {
+                    emailAddress.IncrementToEmailsRead (markDependencies: false);
+                }
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.To);
+                emailAddress.ScoreStates.Update ();
+                emailAddress.UpdateByBrain ();
+            }
+            foreach (var ccAddressId in CcEmailAddressId) {
+                emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
+                if (null == emailAddress) {
+                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
+                    continue;
+                }
+                emailAddress.IncrementCcEmailsReceived (markDependencies: false);
+                if (IsReplied ()) {
+                    emailAddress.IncrementCcEmailsReplied (markDependencies: false);
+                } else if (IsRead) {
+                    emailAddress.IncrementCcEmailsRead (markDependencies: false);
+                }
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.Cc);
+                emailAddress.ScoreStates.Update ();
+                emailAddress.UpdateByBrain ();
+            }
         }
 
-        public void ScoreObject ()
+        public void Analyze ()
         {
-            NcAssert.True (Scoring.Version > ScoreVersion);
-            if (0 == ScoreVersion) {
-                ScoreObject_V1 ();
-            }
-            if (1 == ScoreVersion) {
-                ScoreObject_V2 ();
-            }
-            if (2 == ScoreVersion) {
-                ScoreObject_V3 ();
-            }
-            NcAssert.True (Scoring.Version == ScoreVersion);
+            ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
             InitializeTimeVariance ();
-            Score = GetScore ();
-            NeedUpdate = false;
+            Score = Classify ();
+            NeedUpdate = 0;
             UpdateByBrain ();
-        }
-
-        private void GetScoreSyncInfo ()
-        {
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = NcModel.Instance.Db.Table<McEmailMessageScoreSyncInfo> ().Where (x => x.EmailMessageId == Id).FirstOrDefault ();
-            if (null != SyncInfo) {
-                return;
-            }
-            SyncInfo = new McEmailMessageScoreSyncInfo ();
-            SyncInfo.EmailMessageId = Id;
-            SyncInfo.InsertByBrain ();
-        }
-
-        private void ClearScoreSyncInfo ()
-        {
-            if (null == SyncInfo) {
-                return;
-            }
-            SyncInfo.DeleteByBrain ();
-            SyncInfo = null;
         }
 
         public void IncrementTimesRead (int count = 1)
         {
-            TimesRead += count;
-            GetScoreSyncInfo ();
-            SyncInfo.TimesRead += count;
+            ScoreStates.TimesRead += count;
         }
 
         public void IncrementSecondsRead (int seconds)
         {
-            SecondsRead += seconds;
-            GetScoreSyncInfo ();
-            SyncInfo.SecondsRead += seconds;
+            ScoreStates.SecondsRead += seconds;
         }
 
         public void SetScoreIsRead (bool value)
         {
-            if (value == ScoreIsRead) {
+            if (value == ScoreStates.IsRead) {
                 return;
             }
-            ScoreIsRead = value;
-            GetScoreSyncInfo ();
-            SyncInfo.ScoreIsRead = value;
+            ScoreStates.IsRead = value;
         }
 
         public void SetScoreIsReplied (bool value)
         {
-            if (value == ScoreIsReplied) {
+            if (value == ScoreStates.IsReplied) {
                 return;
             }
-            ScoreIsReplied = value;
-            GetScoreSyncInfo ();
-            SyncInfo.ScoreIsReplied = value;
-        }
-
-        public void UploadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "email message id = {0}", Id);
-            if (null != SyncInfo) {
-                // TODO - Add real implementation. Currently, just clear the delta
-                ClearScoreSyncInfo ();
-            }
-        }
-
-        public bool DownloadScore ()
-        {
-            Log.Debug (Log.LOG_BRAIN, "email message id = {0}", Id);
-            return false;
+            ScoreStates.IsReplied = value;
         }
 
         private string TimeVarianceDescription ()
@@ -275,26 +359,83 @@ namespace NachoCore.Model
             }
         }
 
-        public static McEmailMessage QueryNeedUpdate ()
+        public static List<McEmailMessage> QueryNeedUpdate (int count, bool above, int threshold = 20)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.NeedUpdate)
-                .FirstOrDefault ();
+            string query;
+            if (above) {
+                query = String.Format (
+                    "SELECT e.* FROM McEmailMessage AS e " +
+                    " WHERE e.NeedUpdate > ? AND e.ScoreVersion = ? " +
+                    " LIMIT ?");
+            } else {
+                query = String.Format (
+                    "SELECT e.* FROM McEmailMessage AS e " +
+                    " WHERE e.NeedUpdate <= ? AND e.NeedUpdate > 0 AND e.ScoreVersion = ? " +
+                    " LIMIT ?");
+            }
+            return NcModel.Instance.Db.Query<McEmailMessage> (query, threshold, Scoring.Version, count);
         }
 
-        public static McEmailMessage QueryNeedAnalysis ()
+        public static List<object> QueryNeedUpdateObjectsAbove (int count)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.ScoreVersion < Scoring.Version && x.HasBeenGleaned == true)
-                .FirstOrDefault ();
+            return new List<object> (QueryNeedUpdate (count, above: true));
         }
 
-        public static McEmailMessage QueryNeedGleaning ()
+        public static List<object> QueryNeedUpdateObjectsBelow (int count)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.HasBeenGleaned == false)
-                .FirstOrDefault ();
+            return new List<object> (QueryNeedUpdate (count, above: false));
         }
+
+        public static List<McEmailMessage> QueryNeedAnalysis (int count, int version = Scoring.Version)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " WHERE e.ScoreVersion < ? AND e.HasBeenGleaned > 0 " +
+                " ORDER BY Id DESC " +
+                " LIMIT ?", version, count);
+        }
+
+        public static List<object> QueryNeedAnalysisObjects (int count)
+        {
+            return new List<object> (QueryNeedAnalysis (count));
+        }
+
+        public static List<McEmailMessage> QueryNeedGleaning (Int64 accountId, int count)
+        {
+            var query = "SELECT e.* FROM McEmailMessage AS e " +
+                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                        " WHERE likelihood (HasBeenGleaned < ?, 0.1) ";
+            var sqlSet = McFolder.GleaningExemptedFolderListSqlString (); 
+            if (null != sqlSet) {
+                query += String.Format (" AND likelihood (m.FolderId NOT IN {0}, 0.9) ", sqlSet);
+            }
+            if (0 <= accountId) {
+                query += " AND likelihood (e.AccountId = ?, 1.0) LIMIT ?";
+                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, accountId, count);
+            } else {
+                query += " LIMIT ?";
+                return NcModel.Instance.Db.Query<McEmailMessage> (query, GleanPhaseEnum.GLEAN_PHASE2, count);
+            }
+        }
+
+        public static List<McEmailMessage> QueryNeedQuickScoring (int accountId, int count)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " WHERE e.ScoreVersion = 0 AND e.Score = 0 AND e.AccountId = ? " +
+                " LIMIT ?", accountId, count);
+        }
+
+        public static int CountByVersion (int version)
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion == version).Count ();
+        }
+
+        public static int Count ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Count ();
+        }
+
 
         /// <summary>
         /// Evaluate the parameters in McEmailMessage and produce a list of 
@@ -388,7 +529,7 @@ namespace NachoCore.Model
                     tv.Start ();
                 }
             } else {
-                Score = GetScore ();
+                Score = Classify ();
             }
 
             if (UpdateTimeVarianceStates (tvList, now)) {
@@ -434,14 +575,24 @@ namespace NachoCore.Model
 
         public void UpdateScoreAndNeedUpdate ()
         {
-            int rc = NcModel.Instance.Db.Execute (
-                         "UPDATE McEmailMessage " +
-                         "SET Score = ?,  NeedUpdate = ? " +
-                         "WHERE Id = ?", Score, NeedUpdate, Id);
+            int rc = NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute (
+                    "UPDATE McEmailMessage " +
+                    "SET Score = ?,  NeedUpdate = ? " +
+                    "WHERE Id = ?", Score, NeedUpdate, Id);
+            });
             if (0 < rc) {
                 NcBrain brain = NcBrain.SharedInstance;
                 brain.McEmailMessageCounters.Update.Click ();
                 brain.NotifyEmailMessageUpdates ();
+            }
+        }
+
+        public void MarkAsGleaned (GleanPhaseEnum phase)
+        {
+            HasBeenGleaned = (int)phase;
+            if (0 < Id) {
+                Update ();
             }
         }
 
@@ -460,13 +611,13 @@ namespace NachoCore.Model
 
             // Recompute a new score and update it in the cache
             bool scoreChanged = false;
-            double newScore = emailMessage.GetScore ();
+            double newScore = emailMessage.Classify ();
             if (newScore != emailMessage.Score) {
                 emailMessage.Score = newScore;
                 scoreChanged = true;
             }
             if (fullUpdateNeeded || scoreChanged) {
-                emailMessage.NeedUpdate = false;
+                emailMessage.NeedUpdate = 0;
                 if (fullUpdateNeeded) {
                     emailMessage.UpdateByBrain ();
                 } else {
@@ -481,13 +632,22 @@ namespace NachoCore.Model
             ///
             // 1. ScoreVersion is non-zero
             // 2. TimeVarianceType is not DONE
-            List<McEmailMessage> emailMessageList =
-                NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage AS m " +
+            List<NcEmailMessageIndex> emailMessageIdList = 
+                NcModel.Instance.Db.Query<NcEmailMessageIndex> ("SELECT m.Id FROM McEmailMessage AS m " +
                 "WHERE m.ScoreVersion > 0 AND m.TimeVarianceType != ? ORDER BY DateReceived ASC", NcTimeVarianceType.DONE);
             int n = 0;
+            int numStarted = 0;
             Log.Info (Log.LOG_BRAIN, "Starting all time variances");
-            foreach (McEmailMessage emailMessage in emailMessageList) {
+            foreach (var emailMessageId in emailMessageIdList) {
+                if (token.IsCancellationRequested) {
+                    return;
+                }
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> (emailMessageId.Id);
+                if (null == emailMessage) {
+                    continue;
+                }
                 emailMessage.UpdateTimeVariance ();
+                numStarted++;
 
                 /// Throttle
                 n = (n + 1) % 8;
@@ -497,7 +657,7 @@ namespace NachoCore.Model
                     }
                 }
             }
-            Log.Info (Log.LOG_BRAIN, "{0} time variances started", emailMessageList.Count);
+            Log.Info (Log.LOG_BRAIN, "{0} time variances started", numStarted);
         }
 
         public static void MarkAll ()
@@ -505,6 +665,31 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
         }
 
+
+        protected void InsertScoreStates ()
+        {
+            NcAssert.True ((0 < AccountId) && (0 < Id));
+            DbScoreStates = new McEmailMessageScore () {
+                AccountId = AccountId,
+                ParentId = Id,
+            };
+            DbScoreStates.Insert ();
+        }
+
+        protected void ReadScoreStates ()
+        {
+            DbScoreStates = McEmailMessageScore.QueryByParentId (Id);
+            if (null == DbScoreStates) {
+                Log.Error (Log.LOG_BRAIN, "fail to get score states for email message {0}. create one", Id);
+                InsertScoreStates ();
+            }
+        }
+
+        protected void DeleteScoreStates ()
+        {
+            DbScoreStates = null;
+            McEmailMessageScore.DeleteByParentId (Id);
+        }
     }
 }
 

@@ -2,11 +2,11 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using System.IO;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 
 using NachoCore;
@@ -19,7 +19,7 @@ namespace NachoClient.iOS
 
         protected NachoFolders Calendars;
         protected int selectedCalIndex = 0;
-        List<McFolder> calFolderList = new List<McFolder>(); 
+        List<McFolder> calFolderList = new List<McFolder> ();
 
         public ChooseCalendarViewController (IntPtr handle) : base (handle)
         {
@@ -71,6 +71,7 @@ namespace NachoClient.iOS
             source = new CalendarChoicesSource (this, calFolderList);
             tableView.Source = source;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            tableView.AccessibilityLabel = "Choose calendar";
 
             View.Add (tableView);
         }
@@ -94,13 +95,13 @@ namespace NachoClient.iOS
 
         public void Done ()
         {
-            NavigationController.PopViewControllerAnimated (true);
+            NavigationController.PopViewController (true);
         }
 
         protected class CalendarChoicesSource : UITableViewSource
         {
             ChooseCalendarViewController owner;
-            List<McFolder> calFolderList = new List<McFolder>(); 
+            List<McFolder> calFolderList = new List<McFolder> ();
 
             public CalendarChoicesSource (ChooseCalendarViewController owner, List<McFolder> calFolderList)
             {
@@ -108,12 +109,12 @@ namespace NachoClient.iOS
                 this.calFolderList = calFolderList;
             }
 
-            public override int NumberOfSections (UITableView tableView)
+            public override nint NumberOfSections (UITableView tableView)
             {
                 return 1;
             }
 
-            public override int RowsInSection (UITableView tableview, int section)
+            public override nint RowsInSection (UITableView tableview, nint section)
             {
                 return this.calFolderList.Count;
             }
@@ -138,7 +139,7 @@ namespace NachoClient.iOS
                     cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                     cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 }
-                cell.TextLabel.Text = calFolderList[indexPath.Row].DisplayName;
+                cell.TextLabel.Text = calFolderList [indexPath.Row].DisplayName;
                 return cell;
             }
 

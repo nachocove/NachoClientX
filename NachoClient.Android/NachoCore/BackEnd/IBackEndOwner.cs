@@ -23,15 +23,17 @@ namespace NachoCore
         /// the account record. The BE will act based on the update event for the
         /// account record.
         ///
-        void ServConfReq (int accountId);
+        void ServConfReq (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg);
 
         ///
         /// CertAskReq: When called the callee must ask the user whether the passed server cert can
         /// be trusted for the specified account. 
         ///
-        void CertAskReq (int accountId, X509Certificate2 certificate);
+        void CertAskReq (int accountId, McAccount.AccountCapabilityEnum capabilities, X509Certificate2 certificate);
 
         void SearchContactsResp (int accountId, string prefix, string token);
+
+        void SendEmailResp (int accountId, int emailMessageId, bool didSend);
     }
 }
 

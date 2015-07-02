@@ -3,12 +3,13 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
-using System.Drawing;
+using CoreGraphics;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -18,15 +19,22 @@ namespace NachoClient.iOS
 
         // UI elements needed to customize the "More" tab.
         protected UITableView existingTableView;
-        protected AccountInfoView accountInfoView;
         protected static NachoTabBarController instance;
+
+        SwitchAccountButton switchAccountButton;
 
         public NachoTabBarController (IntPtr handle) : base (handle)
         {
         }
 
         protected UITabBarItem nachoNowItem;
+        protected UITabBarItem settingsItem;
         protected UITabBarItem foldersItem;
+        protected UITabBarItem deadlinesItem;
+        protected UITabBarItem deferredItem;
+        protected UITabBarItem inboxItem;
+
+        protected const int TABLEVIEW_TAG = 1999;
 
         public override void ViewDidLoad ()
         {
@@ -45,21 +53,45 @@ namespace NachoClient.iOS
             MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
             MoreNavigationController.NavigationBar.Translucent = false;
 
+            switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
             RestoreCustomTabBarOrder ();
 
             nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
+            inboxItem = SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
+            settingsItem = SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
+            // SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
+            deferredItem = SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
+            deadlinesItem = SetTabBarItem ("NachoClient.iOS.DeadlinesViewController", "Deadlines", "nav-mail", "nav-mail-active"); // Done
             foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "more-files", "more-files-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.FileListViewController", "Files", "more-files", "more-files-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.AboutUsViewController", "About Nacho Mail", "more-nachomail", "more-nachomail-active"); // Done
+
+
+            // This code is for testing purposes only.  It must never be compiled as part of a product build.
+            // Change "#if false" to "#if true" when you want to run this code in the simulator, then discard
+            // the change when you are done testing.  The committed version of the file must always have
+            // "#if false".
+            #if false
+            var existingControllers = new List<UIViewController> (ViewControllers);
+            existingControllers.Add (new ManageItemsViewController ());
+            ViewControllers = existingControllers.ToArray ();
+            // Use the same icons as the Settings tab.
+            SetTabBarItem ("NachoClient.iOS.ManageItemsViewController", "Manage", "more-settings", "more-settings-active");
+            #endif
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
+                UpdateNotificationBadge (NcApplication.Instance.Account.Id);
+            };
+
+            ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
+                LayoutMoreTable ();
             };
 
             InsertAccountInfoIntoMoreTab ();
@@ -70,15 +102,20 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            var accountId = LoginHelpers.GetCurrentAccountId ();
+            UpdateNotificationBadge (NcApplication.Instance.Account.Id);
+
+            var accountId = NcApplication.Instance.Account.Id;
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
 
             var emailMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey, accountId.ToString ());
             if (!String.IsNullOrEmpty (emailMessageIdString)) {
+                Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow(emailMessageIdString={0}", emailMessageIdString);
                 SwitchToNachoNow ();
             }
 
-            var eventMessageString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey, accountId.ToString ());
-            if (!String.IsNullOrEmpty (eventMessageString)) {
+            var eventMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey, accountId.ToString ());
+            if (!String.IsNullOrEmpty (eventMessageIdString)) {
+                Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow(eventMessageIdString={0}", eventMessageIdString);
                 SwitchToNachoNow ();
             }
         }
@@ -104,6 +141,23 @@ namespace NachoClient.iOS
             return null;
         }
 
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
+                LayoutMoreTable ();
+            }
+            if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
+                UpdateNotificationBadge (s.Account.Id);
+            }
+            if (NcResult.SubKindEnum.Error_PasswordWillExpire == s.Status.SubKind) {
+                UpdateNotificationBadge (s.Account.Id);
+            }
+            if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
+                UpdateNotificationBadge (s.Account.Id);
+            }
+        }
+
         public void SwitchToNachoNow ()
         {
             var navigationController = FindTabRoot (nachoNowItem);
@@ -113,15 +167,39 @@ namespace NachoClient.iOS
             var nachoNowViewController = (NachoNowViewController)FindViewController (navigationController);
             this.SelectedViewController = navigationController;
             if (null != nachoNowViewController) {
+                Log.Info (Log.LOG_UI, "SwitchToNachoNow HandleNotifications");
                 nachoNowViewController.HandleNotifications ();
+            } else {
+                Log.Info (Log.LOG_UI, "SwitchToNachoNow view controller is null");
             }
         }
 
+        void SwitchTo (UITabBarItem item)
+        {
+            var tab = FindTabRoot (item);
+            tab.PopToRootViewController(false);
+            this.SelectedViewController = tab;
+        }
+
+
         public void SwitchToFolders ()
         {
-            var folderTab = FindTabRoot (foldersItem);
-            folderTab.PopToRootViewController (false);
-            this.SelectedViewController = folderTab;
+            SwitchTo (foldersItem);
+        }
+
+        public void SwitchToInbox ()
+        {
+            SwitchTo (inboxItem);
+        }
+
+        public void SwitchToDeferred ()
+        {
+            SwitchTo (deferredItem);
+        }
+
+        public void SwitchToDeadlines ()
+        {
+            SwitchTo (deadlinesItem);
         }
 
         protected string GetTabBarItemTypeName (UIViewController vc)
@@ -186,17 +264,36 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public void SetSettingsBadge (bool isDirty)
+        protected bool IsItemVisible (UITabBarItem item)
         {
+            nint visibleItems = 5; // default
+
+            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
+            if (null != tableView) {
+                visibleItems = ViewControllers.Length - tableView.NumberOfRowsInSection (0);
+            }
+
             for (int i = 0; i < ViewControllers.Length; i++) {
-                if (ViewControllers [i].GetType () == typeof(GeneralSettingsViewController)) {
-                    ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                    if (i > (TabBar.Items.Length - 2) && isDirty) {
-                        MoreNavigationController.TabBarItem.BadgeValue = @"!";
-                    } else {
-                        MoreNavigationController.TabBarItem.BadgeValue = null;
-                    }
+                if (ViewControllers [i].TabBarItem == item) {
+                    return (i < visibleItems);
                 }
+            }
+            return false;
+        }
+
+        protected void UpdateNotificationBadge (int accountId)
+        {
+            DateTime expiry;
+            string rectificationUrl;
+            var showNotificationBadge = LoginHelpers.PasswordWillExpire (accountId, out expiry, out rectificationUrl);
+            showNotificationBadge |= LoginHelpers.DoesBackEndHaveIssues (accountId);
+
+            settingsItem.BadgeValue = (showNotificationBadge ? @"!" : null);
+
+            if (!IsItemVisible (settingsItem)) {
+                MoreNavigationController.TabBarItem.BadgeValue = (showNotificationBadge ? @"!" : null);
+            } else {
+                MoreNavigationController.TabBarItem.BadgeValue = null;
             }
         }
 
@@ -204,59 +301,55 @@ namespace NachoClient.iOS
         {
             var moreTabController = MoreNavigationController.TopViewController;
 
+            moreTabController.NavigationItem.TitleView = switchAccountButton;
+
             existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
             existingTableView.ScrollEnabled = false;
-            var cellHeight = 0f;
+            nfloat cellHeight = 0;
             foreach (var cell in existingTableView.VisibleCells) {
                 cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                 cellHeight = cell.Frame.Height;
             }
 
-            var newView = new UIScrollView (existingTableView.Frame);
+            var newView = new UIScrollView (View.Frame);
 
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            accountInfoView = new AccountInfoView (new RectangleF (
+            var tableHeight = (((existingTableView.NumberOfRowsInSection (0)) + 2) * cellHeight + 25);
+
+            existingTableView.Frame = new CGRect (
                 A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 80));
-            accountInfoView.OnAccountSelected = AccountTapHandler;
-
-            var tableHeight = (((existingTableView.NumberOfRowsInSection(0)) + 2) * cellHeight) + 5;
-
-            existingTableView.Frame = new RectangleF (
-                A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
                 newView.Frame.Width - 2 * A.Card_Horizontal_Indent, tableHeight);
             existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
             existingTableView.Layer.MasksToBounds = true;
             existingTableView.Layer.BorderWidth = A.Card_Border_Width;
             existingTableView.Layer.BorderColor = A.Card_Border_Color;
+            existingTableView.Tag = TABLEVIEW_TAG;
 
-            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent);
+            newView.ContentSize = new CGSize (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
 
-            newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
             moreTabController.View = newView;
 
-            ConfigureAccountInfo ();
+            LayoutMoreTable ();
         }
 
-        private void AccountTapHandler (McAccount account)
+        protected void LayoutMoreTable ()
         {
-            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var vc = (AccountSettingsViewController)x.InstantiateViewController ("AccountSettingsViewController");
-            MoreNavigationController.PushViewController (vc, true);
-        }
-
-        public void ConfigureAccountInfo ()
-        {
-            var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            accountInfoView.Configure (account);
+            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
+            if (null != tableView) {
+                var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);
+                tableView.Frame = new CGRect (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
+            }
         }
 
         public static void ReconfigureMoreTab ()
         {
-            instance.ConfigureAccountInfo ();
+        }
+
+        public static void UpdateMoreTab ()
+        {
         }
 
         protected void ViewControllerSelectedHandler (object sender, UITabBarSelectionEventArgs e)
@@ -264,7 +357,7 @@ namespace NachoClient.iOS
             if (e.ViewController == MoreNavigationController) {
                 // The user has tapped on the "More" tab in the tab bar. Do what we can to
                 // make sure the "More" view is up to date.
-                ConfigureAccountInfo ();
+                UpdateMoreTab ();
                 // Tweak the table cells to be closer to what we want.  We would like to
                 // make other changes, but this event is triggered at the wrong time, so
                 // those other changes won't stick.  The one change that does seem to stick
@@ -285,6 +378,16 @@ namespace NachoClient.iOS
                 MoreNavigationController.PopToRootViewController (false);
             }
             return true;
+        }
+
+        void SwitchAccountButtonPressed ()
+        {
+            SwitchAccountViewController.ShowDropdown (MoreNavigationController.ViewControllers[0], SwitchToAccount);
+        }
+
+        void SwitchToAccount (McAccount account)
+        {
+            switchAccountButton.SetAccountImage (account);
         }
     }
 }

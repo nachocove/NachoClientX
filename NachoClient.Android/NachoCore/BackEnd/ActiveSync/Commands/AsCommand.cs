@@ -9,6 +9,7 @@ using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Wbxml;
@@ -17,7 +18,7 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public abstract class AsCommand : IAsCommand, IAsHttpOperationOwner
+    public abstract class AsCommand : NcCommand, IAsHttpOperationOwner
     {
         // Constants.
         private const string ContentTypeWbxml = "application/vnd.ms-sync.wbxml";
@@ -32,23 +33,18 @@ namespace NachoCore.ActiveSync
         public XNamespace m_ns;
         protected XNamespace m_baseNs = Xml.AirSyncBase.Ns;
         protected NcStateMachine OwnerSm;
-        protected IBEContext BEContext;
         protected AsHttpOperation Op;
-        // PendingSingle is for commands that process 1-at-a-time. Pending list is for N-at-a-time commands.
-        // Both get loaded-up in the class initalizer. During loading, each gets marked as dispatched.
-        // The sublass is responsible for re-writing each from dispatched to something else.
-        // This base class has a "diaper" to catch any dispached left behind by the subclass. This base class
-        // is responsible for clearing PendingSingle/PendingList. 
-        // Because of threading, the PendingResolveLockObj must be locked before resolving.
-        // Any resolved pending objects must be removed from PendingSingle/PendingList before unlock.
-        protected McPending PendingSingle;
-        protected List<McPending> PendingList;
-        protected object PendingResolveLockObj;
-        protected NcResult SuccessInd;
-        protected NcResult FailureInd;
-        protected Object LockObj = new Object ();
+        private bool Cancelled = false;
+        private bool ProcessResponseOwnsPendingCleanup = false;
 
-        public TimeSpan Timeout { set; get; }
+        private TimeSpan _Timeout;
+        public TimeSpan Timeout { 
+            set { _Timeout = value;
+                if (null != Op) {
+                    Op.Timeout = _Timeout;
+                }
+            } 
+            get { return _Timeout; } }
 
         public uint MaxTries { set; get; }
 
@@ -60,13 +56,10 @@ namespace NachoCore.ActiveSync
             m_ns = nsName;
         }
 
-        public AsCommand (string commandName, IBEContext beContext)
+        public AsCommand (string commandName, IBEContext beContext) : base (beContext)
         {
             Timeout = TimeSpan.Zero;
             CommandName = commandName;
-            BEContext = beContext;
-            PendingList = new List<McPending> ();
-            PendingResolveLockObj = new object ();
         }
         // Virtual Methods.
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
@@ -85,36 +78,47 @@ namespace NachoCore.ActiveSync
             Op.Execute (sm);
         }
 
-        public virtual void Execute (NcStateMachine sm)
+        public override void Execute (NcStateMachine sm)
         {
             // Op is a "dummy" here for DRY purposes.
             Execute (sm, ref Op);
         }
         // Cancel() must be safe to call even when the command has already completed.
-        public virtual void Cancel ()
+        public override void Cancel ()
         {
             if (null != Op) {
                 Op.Cancel ();
                 // Don't null Op here - we might be calling Execute() on another thread. Let GC get it.
             }
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                /* Q: Do we need another state? We need to be smart about the case where
-                 * the cancel comes after the op has been run against the server. The op
-                 * may fail the 2nd time because the item exists. Don't want to bug the user.
-                 */
-                    if (McPending.StateEnum.Dispatched == pending.State) {
-                        pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+            lock (LockObj) {
+                Cancelled = true;
+            }
+            if (!ProcessResponseOwnsPendingCleanup) {
+                lock (PendingResolveLockObj) {
+                    ConsolidatePending ();
+                    foreach (var pending in PendingList) {
+                        if (McPending.StateEnum.Dispatched == pending.State) {
+                            pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+                        }
                     }
+                    PendingList.Clear ();
                 }
-                PendingList.Clear ();
             }
         }
 
         public virtual bool UseWbxml (AsHttpOperation Sender)
         {
             return true;
+        }
+
+        /// <summary>
+        /// Makes AsHttpOperation pretend like there is no body in the response.
+        /// </summary>
+        /// <returns><c>true</c>, if body should be ignored, <c>false</c> otherwise.</returns>
+        /// <param name="Sender">Sender.</param>
+        public virtual bool IgnoreBody (AsHttpOperation Sender)
+        {
+            return false;
         }
 
         public virtual bool IsContentLarge (AsHttpOperation Sender)
@@ -136,20 +140,33 @@ namespace NachoCore.ActiveSync
         {
             return null;
         }
+
         // Override if the subclass wants total control over the query string.
         public virtual string QueryString (AsHttpOperation Sender)
         {
+            return QueryString (Sender);
+        }
+
+        private string QueryString (AsHttpOperation Sender, bool isEmailRedacted=false)
+        {
             var ident = Device.Instance.Identity ();
+            string username;
+
+            if (isEmailRedacted) {
+                username = HashHelper.Sha256 (BEContext.Cred.Username);
+            } else {
+                username = BEContext.Cred.Username;
+            }
             return string.Format ("?Cmd={0}&User={1}&DeviceId={2}&DeviceType={3}",
                 CommandName, 
-                BEContext.Cred.Username,
+                username,
                 ident,
                 Device.Instance.Type ());
         }
 
-        public virtual Uri ServerUri (AsHttpOperation Sender)
+        public virtual Uri ServerUri (AsHttpOperation Sender, bool isEmailRedacted = false)
         {
-            var requestLine = QueryString (Sender);
+            var requestLine = QueryString (Sender, isEmailRedacted);
             var rlParams = ExtraQueryStringParams (Sender);
             if (null != rlParams) {
                 foreach (KeyValuePair<string,string> pair in rlParams) {
@@ -159,7 +176,7 @@ namespace NachoCore.ActiveSync
             }
             return new Uri (BEContext.Server.BaseUri (), requestLine);
         }
-
+           
         public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
         {
             var server = BEContext.Server;
@@ -216,20 +233,16 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public virtual void StatusInd (NcResult result)
+        protected bool SiezePendingCleanup ()
         {
-            BEContext.Owner.StatusInd (BEContext.ProtoControl, result);
-        }
-
-        public virtual void StatusInd (bool didSucceed)
-        {
-            if (didSucceed) {
-                if (null != SuccessInd) {
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, SuccessInd);
-                }
-            } else {
-                if (null != FailureInd) {
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, FailureInd);
+            lock (LockObj) {
+                // If we haven't been cancelled yet, own the McPending cleanup.
+                // If we have been cancelled, don't even process the response.
+                if (Cancelled) {
+                    return false;
+                } else {
+                    ProcessResponseOwnsPendingCleanup = true;
+                    return true;
                 }
             }
         }
@@ -242,12 +255,12 @@ namespace NachoCore.ActiveSync
             return null;
         }
         // Called for non-WBXML HTTP 200 responses.
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
@@ -282,38 +295,6 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public virtual void ResolveAllFailed (NcResult.WhyEnum why)
-        {
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, why);
-                }
-                PendingList.Clear ();
-            }
-        }
-
-        public virtual void ResolveAllDeferred ()
-        {
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
-                }
-                PendingList.Clear ();
-            }
-        }
-
-        protected void ConsolidatePending ()
-        {
-            if (null != PendingSingle) {
-                PendingList.Add (PendingSingle);
-                PendingSingle = null;
-            }
-        }
-
-        protected delegate void PendingAction (McPending pending);
-
         protected void PendingNonResolveApply (PendingAction action)
         {
             lock (PendingResolveLockObj) {
@@ -326,23 +307,18 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        protected void PendingResolveApply (PendingAction action)
-        {
-            lock (PendingResolveLockObj) {
-                ConsolidatePending ();
-                foreach (var pending in PendingList) {
-                    action (pending);
-                }
-                PendingList.Clear ();
-            }
-        }
-
         protected Event CompleteAsHardFail (uint status, NcResult.WhyEnum why)
         {
             PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsHardFail (BEContext.ProtoControl, why);
+            });
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            result.Value = status;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = BEContext.Account,
+                Status = result,
             });
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
@@ -356,6 +332,12 @@ namespace NachoCore.ActiveSync
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl, reason, why);
+            });
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            result.Value = status;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Account = BEContext.Account,
+                Status = result,
             });
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
@@ -376,8 +358,9 @@ namespace NachoCore.ActiveSync
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
         // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
-        public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
+        public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
         {
+            McProtocolState protocolState = null;
             switch ((Xml.StatusCode)status) {
             case Xml.StatusCode.InvalidContent_101:
             case Xml.StatusCode.InvalidWBXML_102:
@@ -475,9 +458,12 @@ namespace NachoCore.ActiveSync
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 
             case Xml.StatusCode.RemoteWipeRequested_140:
-                var protocolState = BEContext.ProtocolState;
-                protocolState.IsWipeRequired = true;
-                protocolState.Update ();
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IsWipeRequired = true;
+                    return true;
+                });
                 PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
@@ -500,7 +486,12 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
-                BEContext.ProtocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                    return true;
+                });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
 
             case Xml.StatusCode.ExternallyManagedDevicesNotAllowed_145:
@@ -636,6 +627,23 @@ namespace NachoCore.ActiveSync
             var doc = new XDocument ();
             doc.Declaration = new XDeclaration ("1.0", "utf-8", "no");
             return doc;
+        }
+    }
+
+    public class AsWaitCommand : AsCommand
+    {
+        NcCommand WaitCommand;
+        public AsWaitCommand (IBEContext dataSource, int duration, bool earlyOnECChange) : base ("AsWaitCommand", Xml.AirSyncBase.Ns, dataSource)
+        {
+            WaitCommand = new NcWaitCommand (dataSource, duration, earlyOnECChange);
+        }
+        public override void Execute (NcStateMachine sm)
+        {
+            WaitCommand.Execute (sm);
+        }
+        public override void Cancel ()
+        {
+            WaitCommand.Cancel ();
         }
     }
 }

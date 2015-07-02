@@ -126,4 +126,6 @@
       </xs:choice>
     </xs:sequence>
   </xs:group>
+  <!-- See this as a warning from telemetry. I see this as an example but not as an attribute -->
+  <xs:element name="ContentType" type="xs:string"/>
 </xs:schema>

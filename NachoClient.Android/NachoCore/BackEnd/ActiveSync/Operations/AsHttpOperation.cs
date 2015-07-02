@@ -1,4 +1,4 @@
-// # Copyright (C) 2013, 2014 Nacho Cove, Inc. All rights reserved.
+// # Copyright (C) 2013, 2014, 2015 Nacho Cove, Inc. All rights reserved.
 //
 using DnDns.Enums;
 using DnDns.Query;
@@ -62,6 +62,7 @@ namespace NachoCore.ActiveSync
         private const string ContentTypeWbxmlMultipart = "application/vnd.ms-sync.multipart";
         private const string ContentTypeMail = "message/rfc822";
         private const string ContentTypeXml = "text/xml";
+        private const string HeaderLocation = "Location";
         private const string HeaderRetryAfter = "Retry-After";
         private const string HeaderXMsRp = "X-MS-RP";
         private const string HeaderXMsLocation = "X-MS-Location";
@@ -75,12 +76,12 @@ namespace NachoCore.ActiveSync
         private const int KDefaultDelaySeconds = 5;
         private const int KDefaultThrottleDelaySeconds = 60;
         private const int KMaxDelaySeconds = 30;
-        private const int KMaxTimeoutSeconds = 100;
-        private const int KDefaultTimeoutSeconds = 20;
-        private const string KDefaultTimeoutExpander = "1.2";
-        private const int KDefaultRetries = 8;
+        private const int KMaxTimeoutSeconds = 999;
+        private const double KDefaultTimeoutExpander = 1.5;
+        private const int KDefaultRetries = 2;
         private const int KConsec401ThenReDisc = 5;
-        private const string KToXML = "ToXML";
+        private const string KLoadBytes = "LoadBytes";
+        private const string KToWbxmlStream = "ToWbxmlStream";
         private string CommandName;
 
         // HttpClient factory stuff.
@@ -99,6 +100,7 @@ namespace NachoCore.ActiveSync
         private NcStateMachine HttpOpSm;
         private NcStateMachine OwnerSm;
         private Uri ServerUri;
+        private string RedactedServerUri;
         private bool ServerUriBeingTested;
         private Stream ContentData;
         private string ContentType;
@@ -161,14 +163,14 @@ namespace NachoCore.ActiveSync
 
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
-            NcCapture.AddKind (KToXML);
+            NcCapture.AddKind (KLoadBytes);
+            NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
+            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
             Timeout = new TimeSpan (0, 0, timeoutSeconds);
-            var timeoutExpander = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutExpander", KDefaultTimeoutExpander);
-            TimeoutExpander = double.Parse (timeoutExpander);
-            MaxRetries = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "Retries", KDefaultRetries);
+            TimeoutExpander = KDefaultTimeoutExpander;
+            MaxRetries = KDefaultRetries;
             TriesLeft = MaxRetries + 1;
             Allow451Follow = true;
             CommandName = commandName;
@@ -257,6 +259,7 @@ namespace NachoCore.ActiveSync
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             ServerUri = Owner.ServerUri (this);
+            RedactedServerUri = Owner.ServerUri (this, true).ToString();
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "HTTPOPEXE");
         }
 
@@ -289,7 +292,9 @@ namespace NachoCore.ActiveSync
                     Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * TimeoutExpander));
                 }
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
-                AttemptHttp ();
+                // Remove NcTask.Run once #1313 solved.
+                // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
+                NcTask.Run (AttemptHttp, "AttemptHttp");
             } else {
                 Owner.ResolveAllDeferred ();
                 HttpOpSm.PostEvent (Final ((uint)SmEvt.E.TempFail, "ASHTTPDOH", null, "Too many retries."));
@@ -347,7 +352,7 @@ namespace NachoCore.ActiveSync
         private void TimeoutTimerCallback (object State)
         {
             if (!((CancellationToken)State).IsCancellationRequested) {
-                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
+                HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", RedactedServerUri));
             }
         }
         // This method should only be called if the response indicates that the new server is a legit AS server.
@@ -362,7 +367,7 @@ namespace NachoCore.ActiveSync
         private void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatusSingleton.ReportCommResult (host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
             }
         }
         // Final is how to pass the ultimate Event back to OwnerSm.
@@ -382,7 +387,7 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)HttpOpEvt.E.Final, "HTTPOPFIN", endEvent, null);
         }
 
-        private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
+        public bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
         {
             request = null;
             XDocument doc;
@@ -393,7 +398,17 @@ namespace NachoCore.ActiveSync
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
                 if (Owner.UseWbxml (this)) {
+                    var diaper = new NcTimer ("AsHttpOperation:ToWbxmlStream diaper", 
+                        (state) => {
+                            if (!cToken.IsCancellationRequested) {
+                                Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
+                            }
+                        },
+                        cToken, 10 * 1000, System.Threading.Timeout.Infinite);
+                    var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
+                    capture.Stop ();
+                    diaper.Dispose ();
                     var content = new StreamContent (stream);
                     request.Content = content;
                     request.Content.Headers.Add ("Content-Length", stream.Length.ToString ());
@@ -437,48 +452,50 @@ namespace NachoCore.ActiveSync
             }
 
             HttpRequestMessage request = null;
-            if (!CreateHttpRequest (out request, cToken)) {
-                Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
-                HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
-                return;
-            }
             HttpResponseMessage response = null;
-
             try {
-                ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
-                // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
-                // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
-                // change the value once you start using the client. So we use our own per-request timeout.
-                TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
-                    System.Threading.Timeout.InfiniteTimeSpan);
                 try {
-                    Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
+                    // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+                    // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
+                    // change the value once you start using the client. So we use our own per-request timeout.
+
+                    // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
+                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
+                        System.Threading.Timeout.InfiniteTimeSpan);
+                    if (!CreateHttpRequest (out request, cToken)) {
+                        Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
+                        CancelTimeoutTimer ("Intentional");
+                        HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPNOCON"));
+                        return;
+                    }
+                    ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
+                    Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", RedactedServerUri);
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
-                    Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
+                    Log.Info (Log.LOG_HTTP, "AttemptHttp OperationCanceledException {0}: exception {1}", RedactedServerUri, ex.Message);
                     CancelTimeoutTimer ("OperationCanceledException");
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 } catch (WebException ex) {
-                    Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
+                    Log.Info (Log.LOG_HTTP, "AttemptHttp WebException {0}: exception {1}", RedactedServerUri, ex.Message);
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("WebException");
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                         // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPWEBEX", null, string.Format ("WebException: {0}, Uri: {1}", ex.Message, RedactedServerUri));
                     }
                     return;
                 } catch (NullReferenceException ex) {
-                    Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
+                    Log.Info (Log.LOG_HTTP, "AttemptHttp NullReferenceException {0}: exception {1}", RedactedServerUri, ex.Message);
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("NullReferenceException");
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 } catch (Exception ex) {
@@ -486,28 +503,33 @@ namespace NachoCore.ActiveSync
                     if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
                     }
                     return;
                 }
 
                 if (!cToken.IsCancellationRequested) {
-                    CancelTimeoutTimer ("Success");
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
-                        Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
-                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
+                        CancelTimeoutTimer ("Exception creating ContentData");
+                        Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, RedactedServerUri, ex.Message, ex.StackTrace);
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", RedactedServerUri));
                         return;
                     }
-
+                    CancelTimeoutTimer ("Success");
                     try {
-                        HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
+                        var evt = ProcessHttpResponse (response, cToken);
+                        if (cToken.IsCancellationRequested) {
+                            Log.Info (Log.LOG_HTTP, "AttemptHttp: Dropping event because of cancellation: {0}/{1}", evt.EventCode, evt.Mnemonic);
+                        } else {
+                            HttpOpSm.PostEvent (evt);
+                        }
                     } catch (Exception ex) {
-                        Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
+                        Log.Error (Log.LOG_HTTP, "AttemptHttp {0} {1}: exception {2}\n{3}", ex, RedactedServerUri, ex.Message, ex.StackTrace);
                         // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
                         Owner.ResolveAllFailed (NcResult.WhyEnum.Unknown);
                         HttpOpSm.PostEvent (Final ((uint)SmEvt.E.HardFail, "HTTPOPPHREX", null, string.Format ("Exception in ProcessHttpResponse: {0}", ex.Message)));
@@ -527,6 +549,26 @@ namespace NachoCore.ActiveSync
         private bool Is2xx (HttpStatusCode statusCode)
         {
             return (HttpStatusCode.OK <= statusCode && HttpStatusCode.MultipleChoices > statusCode);
+        }
+
+        private bool HasBody (HttpResponseMessage response)
+        {
+#if __ANDROID__
+            if (!(response.Content is ByteArrayContent)) {
+                // FIXME - address Length property support in ModernHttpClient.
+                return true;
+            }
+#endif
+            long cdLength = -1;
+            try {
+                cdLength = ContentData.Length;
+            } catch (NotSupportedException) {
+                // FIXME - address Length property support in ModernHttpClient.
+            }
+            return 0 < cdLength ||
+                (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength) ||
+                (response.Headers.TransferEncodingChunked.HasValue && 
+                    (bool)response.Headers.TransferEncodingChunked);
         }
 
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
@@ -549,8 +591,11 @@ namespace NachoCore.ActiveSync
             }
             if (HttpStatusCode.Unauthorized != response.StatusCode) {
                 var protocolState = BEContext.ProtocolState;
-                protocolState.Consec401Count = 0;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.Consec401Count = 0;
+                    return true;
+                });
             }
             if (Is2xx (response.StatusCode)) {
                 // 2xx is "This class of status code indicates that the client's request was successfully received, understood, and accepted."
@@ -575,19 +620,52 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 if (0 <= credDaysLeft || null != credUri) {
+                    var cred = BEContext.Cred;
+                    cred.Expiry = DateTime.UtcNow.AddDays (credDaysLeft);
+                    if (null != credUri) {
+                        cred.RectificationUrl = credUri.ToString ();
+                    }
+                    cred.Update ();
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_PasswordWillExpire);
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
                 }
-                if ((0 < ContentData.Length ||
-                    (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength)) ||
-                    (response.Headers.TransferEncodingChunked.HasValue && 
-                        (bool)response.Headers.TransferEncodingChunked)) {
+                if (Owner.IgnoreBody (this)) {
+                    if (HasBody (response)) {
+                        Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: ContentType: {0}", ContentType);
+                        try {
+                            Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: Length: {0}", ContentData.Length);
+                        } catch (NotSupportedException) {
+                            // FIXME - address Length property support in ModernHttpClient.
+                        }
+                    }
+                } else if (HasBody (response)) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
                         try {
+                            var isWedged = false;
+                            var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
+                                             (state) => {
+                                    if (!cToken.IsCancellationRequested) {
+                                        isWedged = true;
+                                        TimeoutTimerCallback (state);
+                                    }
+                                },
+                                             cToken, 180 * 1000, System.Threading.Timeout.Infinite);
+                            var capture = NcCapture.Create (KLoadBytes);
+                            capture.Start ();
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
+                            capture.Stop ();
+                            if (1000 < capture.ElapsedMilliseconds) {
+                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0}ms", capture.ElapsedMilliseconds);
+                            }
+                            diaper.Dispose ();
+                            if (isWedged) {
+                                // If not cancelled, we've already done the right thing and sent a timeout event.
+                                return Final ((uint)SmEvt.E.HardFail, "LOADBYTESHANG");
+                            }
+                            cToken.ThrowIfCancellationRequested ();
                         } catch (OperationCanceledException) {
                             Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
@@ -611,7 +689,7 @@ namespace NachoCore.ActiveSync
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
                             // TODO - push TL status into pending.
-                            var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
+                            var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value), responseDoc);
                             if (null != statusEvent) {
                                 Log.Info (Log.LOG_AS, "Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
                                 // If Owner is returning an event, then Owner MUST resolve all pending.
@@ -620,14 +698,14 @@ namespace NachoCore.ActiveSync
                         }
                         Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
-                        return Final (Owner.ProcessResponse (this, response, responseDoc));
+                        return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     case ContentTypeWbxmlMultipart:
                         NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
                         return null;
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
                         // Owner MUST resolve all pending.
-                        return Final (Owner.ProcessResponse (this, response, responseDoc));
+                        return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     default:
                         if (null == ContentType) {
                             Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
@@ -641,14 +719,14 @@ namespace NachoCore.ActiveSync
                         }
                         if (null == responseDoc) {
                             // Owner MUST resolve all pending.
-                            return Final (Owner.ProcessResponse (this, response));
+                            return Final (Owner.ProcessResponse (this, response, cToken));
                         } else {
-                            return Final (Owner.ProcessResponse (this, response, responseDoc));
+                            return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                         }
                     }
                 } 
                 // Owner MUST resolve all pending.
-                return Final (Owner.ProcessResponse (this, response));
+                return Final (Owner.ProcessResponse (this, response, cToken));
 
             }
             switch (response.StatusCode) {
@@ -659,6 +737,21 @@ namespace NachoCore.ActiveSync
             case HttpStatusCode.Found:
                 ReportCommResult (ServerUri.Host, false);
                 Owner.ResolveAllDeferred ();
+                if (response.Headers.Contains (HeaderLocation)) {
+                    var redirUri = new Uri (response.Headers.GetValues (HeaderLocation).First ());
+                    if (!redirUri.IsHttps ()) {
+                        // Don't be tricked into accepting a non-HTTPS URI.
+                        return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP302NOSSL");
+                    }
+                    if (redirUri.Query.Contains ("TARGET")) {
+                        // We can bet this is SAML.
+                        var cred = BEContext.Cred;
+                        cred.CredType = McCred.CredTypeEnum.SAML;
+                        cred.RedirectUrl = redirUri.ToString ();
+                        cred.DoneSubstring = BEContext.Server.Path;
+                        return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP302SAML");
+                    }
+                }
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 302 with X-MS-RP");
                     McFolder.UpdateResetSyncState (BEContext.Account.Id);
@@ -696,12 +789,18 @@ namespace NachoCore.ActiveSync
                 var protocolState = BEContext.ProtocolState;
                 if (protocolState.LastAutoDSucceeded &&
                     KConsec401ThenReDisc < protocolState.Consec401Count + 1) {
-                    protocolState.Consec401Count = 0;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.Consec401Count = 0;
+                        return true;
+                    });
                     return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP401MAX");
                 } else {
-                    protocolState.Consec401Count++;
-                    protocolState.Update ();
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.Consec401Count++;
+                        return true;
+                    });
                     return Final ((uint)AsProtoControl.AsEvt.E.AuthFail, "HTTPOP401");
                 }
             case HttpStatusCode.Forbidden:
@@ -715,6 +814,10 @@ namespace NachoCore.ActiveSync
                 }
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
+                // If we get a 403 on a Provision from GFE, this is them saying that EAS isn't paid-for.
+                if (BEContext.Server.HostIsGMail () && (null != Owner as AsProvisionCommand)) {
+                    BEContext.ProtoControl.AutoDInfo = AutoDInfoEnum.GoogleForbids;
+                }
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP403F");
 
             case HttpStatusCode.NotFound:
@@ -750,12 +853,13 @@ namespace NachoCore.ActiveSync
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451B");
                         }
                         ServerUriBeingTested = true;
-                        var dummy = McServer.Create (BEContext.Account.Id, redirUri);
+                        var dummy = McServer.Create (BEContext.Account.Id, McAccount.ActiveSyncCapabilities, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (dummy.BaseUri (), query);
+                        RedactedServerUri  = HashHelper.HashEmailAddressesInUrl(ServerUri.ToString());
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
-                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
+                        Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, RedactedServerUri, ex.Message);
                         Owner.ResolveAllDeferred ();
                         return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451D");
                     }
@@ -797,7 +901,13 @@ namespace NachoCore.ActiveSync
                 }
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
-                return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500");
+                // if the mail server host is well-known (e.g google.com, hotmail.com) , do not do ReDiscovery.
+                if (BEContext.Server.HostIsWellKnown ()) {
+                    return Final ((uint)SmEvt.E.TempFail, "HTTPOP500A");
+                }
+                else{
+                    return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP500B");
+                }
 
             case (HttpStatusCode)501:
                 ReportCommResult (ServerUri.Host, false);
@@ -814,14 +924,23 @@ namespace NachoCore.ActiveSync
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsAsThrottle)) {
                     Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsAsThrottle);
+                    protocolState = BEContext.ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.HasBeenRateLimited = true;
+                        return true;
+                    });
                     try {
-                        protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsAsThrottle).First ();
-                        protocolState.SetAsThrottleReason (value);
-                        protocolState.Update ();
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.SetAsThrottleReason (value);
+                            return true;
+                        });
                     } catch {
                         Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
+
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
                     configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
                 } else {
@@ -839,7 +958,7 @@ namespace NachoCore.ActiveSync
                             bestSecs = ((maybe_secs > 0) ? (uint)maybe_secs : configuredSecs);
                         } catch (Exception ex) {
                             Log.Info (Log.LOG_HTTP, "Rejected DateTime string: {0}", value);
-                            Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
+                            Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, RedactedServerUri, ex.Message);
                             return DelayOrFinalHardFail (bestSecs, "HTTPOP503A", "Could not parse Retry-After value.");
                         }
                     }
@@ -886,7 +1005,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }
             Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
-            NcCommStatusSingleton.ReportCommResult (ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
+            NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
             return Final ((uint)SmEvt.E.HardFail, mnemonic, null, message);
         }
     }

@@ -2,8 +2,8 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 
 namespace NachoClient.iOS
@@ -12,7 +12,7 @@ namespace NachoClient.iOS
     {
         public InboxViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (NcEmailManager.Inbox());
+            SetEmailMessages (NcEmailManager.Inbox (NcApplication.Instance.Account.Id));
         }
 
         public override void ViewDidLoad ()
@@ -21,9 +21,14 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
         }
 
+        public override bool HasAccountSwitcher()
+        {
+            return true;
+        }
+
         protected override void CustomizeBackButton ()
         {
-            BackShouldSwitchToFolders ();
+//            BackShouldSwitchToFolders ();
         }
     }
 }

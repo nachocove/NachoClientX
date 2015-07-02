@@ -21,7 +21,7 @@ namespace NachoCore.Model
         public int OwnerEpoch { get; set; }
 
         [Indexed]
-        public bool HasBeenGleaned { get; set; }
+        public int HasBeenGleaned { get; set; }
 
         /// Index of Body container
         public int BodyId { get; set; }
@@ -78,55 +78,61 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            var existingItems = ExistingItems ();
-            foreach (var existingItem in existingItems) {
-                NcAssert.True (false, string.Format ("Existing item {0} has ServerId {1}", existingItem.Id, ServerId));
+            using (var capture = CaptureWithStart ("Insert")) {
+                var existingItems = ExistingItems ();
+                foreach (var existingItem in existingItems) {
+                    NcAssert.True (false, string.Format ("Existing item {0} has ServerId {1}", existingItem.Id, ServerId));
+                }
+                return base.Insert ();
             }
-            return base.Insert ();
         }
 
         public override int Update ()
         {
-            var existingItems = ExistingItems ();
-            foreach (var existingItem in existingItems) {
-                NcAssert.Equals (Id, existingItem.Id);
+            using (var capture = CaptureWithStart ("Update")) {
+                var existingItems = ExistingItems ();
+                foreach (var existingItem in existingItems) {
+                    NcAssert.Equals (Id, existingItem.Id);
+                }
+                return base.Update ();
             }
-            return base.Update ();
         }
 
         public override int Delete ()
         {
-            NcAssert.True (100000 > PendingRefCount);
-            var returnVal = -1;
+            using (var capture = CaptureWithStart ("Delete")) {
+                NcAssert.True (100000 > PendingRefCount);
+                var returnVal = -1;
 
-            NcModel.Instance.RunInTransaction (() => {
-                McFolder.UnlinkAll (this);
-                if (0 == PendingRefCount) {
-                    var result = base.Delete ();
-                    if (0 < BodyId) {
-                        var body = McBody.QueryById<McBody> (BodyId);
-                        if (null != body) {
-                            body.Delete ();
+                NcModel.Instance.RunInTransaction (() => {
+                    McFolder.UnlinkAll (this);
+                    if (0 == PendingRefCount) {
+                        var result = base.Delete ();
+                        if (0 < BodyId) {
+                            var body = McBody.QueryById<McBody> (BodyId);
+                            if (null != body) {
+                                body.Delete ();
+                            }
                         }
+                        DeleteAncillary ();
+                        returnVal = result;
+                    } else {
+                        IsAwaitingDelete = true;
+                        Update ();
+                        returnVal = 0;
                     }
-                    DeleteAncillary ();
-                    returnVal = result;
-                } else {
-                    IsAwaitingDelete = true;
-                    Update ();
-                    returnVal = 0;
-                }
-            });
+                });
 
-            return returnVal;
+                return returnVal;
+            }
         }
 
         public static IEnumerable<T> QueryByBodyIdIncAwaitDel<T> (int accountId, int bodyId) where T : McAbstrItem, new()
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.BodyId = ? ",
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.BodyId = ?, 0.001) ",
                     typeof(T).Name), 
                 accountId, bodyId);
         }
@@ -135,9 +141,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                " f.AccountId = ? AND " +
-                " f.IsAwaitingDelete = 0 AND " +
-                " f.ClientId = ? ", 
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.ClientId = ?, 0.001) ", 
                     typeof(T).Name), 
                 accountId, clientId).SingleOrDefault ();
         }
@@ -147,12 +153,27 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<T> (
                 string.Format (
                     "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
-                    " e.AccountId = ? AND " +
-                    " m.AccountId = ? AND " +
-                    " e.IsAwaitingDelete = 0 AND " +
-                    " m.FolderId = ? ",
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.FolderId = ?, 0.05) ",
                     typeof(T).Name),
                 accountId, accountId, folderId);
+        }
+
+        public static List<T> QueryOldEpochByFolderId<T> (int accountId, int folderId, int currentEpoch, int limit) where T : McAbstrItem, new()
+        {
+            return NcModel.Instance.Db.Query<T> (
+                string.Format (
+                    "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.FolderId = ?, 0.05) AND " +
+                    " likelihood (m.AsSyncEpoch < ?, 0.5) " +
+                    " LIMIT ? ",
+                    typeof(T).Name),
+                accountId, accountId, folderId, currentEpoch, limit);
         }
 
         public McBody GetBody ()
@@ -178,6 +199,113 @@ namespace NachoCore.Model
             return ClassCodeEnum.NeverInFolder;
         }
 
+        // *******************************************************************************
+        // Generic routines that provide the algorithms for managing a collection of items
+        // that are ancillary to (a.k.a. children of) this item.  The pieces of code that
+        // depend on the specific type of the ancillary item are passed in as delegates.
+        // *******************************************************************************
+
+        protected delegate List<T> CollectionFromDbDelegate<T> ();
+
+        protected void ReadAncillaryCollection<T> (
+            ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null == dbCollection) {
+                if (0 == this.Id) {
+                    dbCollection = new List<T> ();
+                } else {
+                    dbCollection = CollectionFromDb ();
+                }
+            }
+        }
+
+        protected IList<T> GetAncillaryCollection<T> (
+            IList<T> appCollection, ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null != appCollection) {
+                return appCollection;
+            }
+            ReadAncillaryCollection (ref dbCollection, CollectionFromDb);
+            return dbCollection.AsReadOnly ();
+        }
+
+        protected void DeleteAncillaryCollection<T> (
+            ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb)
+            where T : McAbstrObjectPerAcc
+        {
+            ReadAncillaryCollection (ref dbCollection, CollectionFromDb);
+            foreach (var item in dbCollection) {
+                item.Delete ();
+            }
+            dbCollection = null;
+        }
+
+        protected delegate void InitializeItemDelegate<T> (T item);
+
+        protected delegate bool CheckItemDelegate<T> (T item);
+
+        protected void SaveAncillaryCollection<T> (
+            ref IList<T> appCollection, ref List<T> dbCollection, CollectionFromDbDelegate<T> CollectionFromDb, InitializeItemDelegate<T> InitializeItem, CheckItemDelegate<T> CheckItem)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null == appCollection) {
+                return;
+            }
+            ReadAncillaryCollection (ref dbCollection, CollectionFromDb);
+            HashSet<int> reusedItemIds = new HashSet<int> ();
+            foreach (var item in appCollection) {
+                if (0 == item.Id) {
+                    InitializeItem (item);
+                    item.Insert ();
+                } else {
+                    NcAssert.True (CheckItem (item), "An ancillary item is being transfered from one parent item to another.");
+                    item.Update ();
+                    reusedItemIds.Add (item.Id);
+                }
+            }
+            foreach (var dbItem in dbCollection) {
+                if (!reusedItemIds.Contains (dbItem.Id)) {
+                    dbItem.Delete ();
+                }
+            }
+            dbCollection = new List<T> (appCollection);
+            appCollection = null;
+        }
+
+        protected void InsertAncillaryCollection<T> (
+            ref IList<T> appCollection, ref List<T> dbCollection, InitializeItemDelegate<T> InitializeItem)
+            where T : McAbstrObjectPerAcc
+        {
+            if (null == appCollection) {
+                dbCollection = new List<T> ();
+                return;
+            }
+            foreach (var item in appCollection) {
+                NcAssert.True (0 == item.Id);
+                InitializeItem (item);
+                item.Insert ();
+            }
+            dbCollection = new List<T> (appCollection);
+            appCollection = null;
+        }
+
+        public static McAbstrItem RefreshItem (McAbstrItem item)
+        {
+            McAbstrItem refreshedItem;
+            if (item is McEmailMessage) {
+                refreshedItem = McEmailMessage.QueryById<McEmailMessage> (item.Id);
+            } else if (item is McCalendar) {
+                refreshedItem = McCalendar.QueryById<McCalendar> (item.Id);
+            } else if (item is McException) {
+                refreshedItem = McException.QueryById<McException> (item.Id);
+            } else {
+                throw new NcAssert.NachoDefaultCaseFailure (
+                    string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
+            }
+            return refreshedItem;
+        }
     }
 }
 

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -52,14 +54,17 @@ namespace NachoCore.ActiveSync
             foreach (var iterFolder in FoldersInRequest) {
                 iterFolder.UpdateSet_AsSyncLastPing (DateTime.UtcNow);
             }
-            var update = BEContext.ProtocolState;
-            update.LastPing = DateTime.UtcNow;
-            BEContext.ProtocolState = update;
+            var protocolState = BEContext.ProtocolState;
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.LastPing = DateTime.UtcNow;
+                return true;
+            });
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
-            McProtocolState update;
+            McProtocolState protocolState;
             // NOTE: Important to remember that in this context, SmEvt.E.Success means to do another long-poll.
             string statusString = doc.Root.Element (m_ns + Xml.Ping.Status).Value;
             switch ((Xml.Ping.StatusCode)Convert.ToUInt32 (statusString)) {
@@ -84,15 +89,21 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD0", null, "Xml.Ping.StatusCode.MissingParams/SyntaxError");
 
             case Xml.Ping.StatusCode.BadHeartbeat_5:
-                update = BEContext.ProtocolState;
-                update.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
-                BEContext.ProtocolState = update;
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.HeartbeatInterval = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.HeartbeatInterval).Value);
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "PINGBADH");
 
             case Xml.Ping.StatusCode.TooManyFolders_6:
-                update = BEContext.ProtocolState;
-                update.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
-                BEContext.ProtocolState = update;
+                protocolState = BEContext.ProtocolState;
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.MaxFolders = uint.Parse (doc.Root.Element (m_ns + Xml.Ping.MaxFolders).Value);
+                    return true;
+                });
                 return Event.Create ((uint)SmEvt.E.Success, "PINGTMF");
 
             case Xml.Ping.StatusCode.NeedFolderSync_7:
@@ -105,6 +116,47 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "AsPingCommand ProcessResponse UNHANDLED status {0}", statusString);
                 return Event.Create ((uint)SmEvt.E.HardFail, "PINGHARD1");
             }
+        }
+
+        // PushAssist support.
+        public string PushAssistRequestUrl ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ServerUri (Op).ToString ();
+        }
+
+        public HttpRequestHeaders PushAssistRequestHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Headers;
+        }
+
+        public HttpContentHeaders PushAssistContentHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Content.Headers;
+        }
+
+        public byte[] PushAssistRequestData ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            return ToXDocument (Op).ToWbxml (doFiltering: false);
+        }
+
+        public byte[] PushAssistResponseData ()
+        {
+            var response = ToEmptyXDocument ();
+            response.Add (new XElement (m_ns + Xml.Ping.Ns,
+                new XElement (m_ns + Xml.Ping.Status, "1")));
+            return response.ToWbxml (doFiltering: false);
         }
     }
 }

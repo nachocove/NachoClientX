@@ -1,11 +1,11 @@
-﻿//#define DEBUG_UI
+//#define DEBUG_UI
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using MonoTouch.ObjCRuntime;
+using Foundation;
+using UIKit;
+using ObjCRuntime;
 
 using NachoCore.Utils;
 
@@ -69,12 +69,12 @@ namespace NachoClient.iOS
         }
 
         // Return null to hide the caret.  We want it hidden in a text field.
-        public override RectangleF GetCaretRectForPosition (UITextPosition position)
+        public override CGRect GetCaretRectForPosition (UITextPosition position)
         {
             if (TEXT_FIELD == type) {
-                return RectangleF.Empty;
+                return CGRect.Empty;
             } else if (null == position) {
-                return RectangleF.Empty;
+                return CGRect.Empty;
             } else {
                 return base.GetCaretRectForPosition (position);
             }
@@ -90,11 +90,11 @@ namespace NachoClient.iOS
             return (GAP_FIELD == type);
         }
 
-        [MonoTouch.Foundation.Export ("onShortTap:")]
+        [Foundation.Export ("onShortTap:")]
         public void OnShortTap (UIGestureRecognizer sender)
         {
             var addressField = sender.View as UcAddressField;
-            PointF touch = sender.LocationInView (addressField);
+            CGPoint touch = sender.LocationInView (addressField);
             var addressBlock = addressField.Superview as UcAddressBlock;
             // Depnding on whether the touch is on the left half or right half
             // of the text field, we make either the gap before or after this
@@ -104,6 +104,12 @@ namespace NachoClient.iOS
                 addressBlock.AddressFieldPredecessor (addressField));
             NcAssert.True (null != field);
             field.BecomeFirstResponder ();
+        }
+
+        public override void DictationRecordingDidEnd ()
+        {
+            this.Delegate.ShouldChangeCharacters (this, new NSRange (0, this.Text.Length), this.Text);
+            this.Text = "";
         }
     };
 }

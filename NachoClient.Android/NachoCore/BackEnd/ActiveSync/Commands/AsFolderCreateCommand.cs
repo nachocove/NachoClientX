@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -36,20 +37,27 @@ namespace NachoCore.ActiveSync
             return doc;		
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
+            if (!SiezePendingCleanup ()) {
+                return Event.Create ((uint)SmEvt.E.TempFail, "FLDCRECANCEL");
+            }
             var protocolState = BEContext.ProtocolState;
             var xmlFolderCreate = doc.Root;
             var xmlStatus = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.Status);
             var status = uint.Parse (xmlStatus.Value);
             switch ((Xml.FolderHierarchy.FolderCreateStatusCode)status) {
             case Xml.FolderHierarchy.FolderCreateStatusCode.Success_1:
-                protocolState.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.AsSyncKey = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;
+                    return true;
+                });
                 var serverId = xmlFolderCreate.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                 var pathElem = new McPath (BEContext.Account.Id);
                 pathElem.ServerId = serverId;
                 pathElem.ParentId = PendingSingle.ParentId;
+                pathElem.IsFolder = true;
                 pathElem.Insert ();
                 var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
                     PlaceholderId = PendingSingle.ServerId,
@@ -110,8 +118,11 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
-                protocolState.IncrementAsFolderSyncEpoch ();
-                protocolState.Update ();
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.IncrementAsFolderSyncEpoch ();
+                    return true;
+                });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC2");
 
             default:
@@ -126,7 +137,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private class ApplyCreateFolder : AsApplyServerCommand
+        private class ApplyCreateFolder : NcApplyServerCommand
         {
             public string FinalServerId { set; get; }
 
@@ -161,18 +172,24 @@ namespace NachoCore.ActiveSync
 
             protected override void ApplyCommandToModel ()
             {
-                var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
-                if (null != target) {
-                    target.ServerId = FinalServerId;
-                    target.IsAwaitingCreate = false;
-                    target.Update ();
+                var created = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
+                if (null != created) {
+                    created = created.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ServerId = FinalServerId;
+                        target.IsAwaitingCreate = false;
+                        return true;
+                    });
                     var account = McAccount.QueryById<McAccount> (AccountId);
                     var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
                     var folders = McFolder.QueryByParentId (AccountId, PlaceholderId);
                     foreach (var child in folders) {
-                        child.ParentId = FinalServerId;
-                        child.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
-                        child.Update ();
+                        child.UpdateWithOCApply<McFolder> ((record) => {
+                            var target = (McFolder)record;
+                            target.ParentId = FinalServerId;
+                            target.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
+                            return true;
+                        });
                     }
                 }
             }

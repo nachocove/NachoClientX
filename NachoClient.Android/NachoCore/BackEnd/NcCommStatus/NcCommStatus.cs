@@ -36,7 +36,7 @@ namespace NachoCore.Utils
         {
             Trackers = new List<ServerTracker> ();
             Status = NetStatusStatusEnum.Up;
-            Speed = NetStatusSpeedEnum.WiFi;
+            Speed = NetStatusSpeedEnum.WiFi_0;
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
             TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => {
@@ -80,6 +80,16 @@ namespace NachoCore.Utils
 
         public NetStatusSpeedEnum Speed { get; set; }
 
+        public CommQualityEnum Quality (int serverId)
+        {
+            var tracker = GetTracker (serverId);
+            if (null == tracker) {
+                Log.Error (Log.LOG_STATE, "Quality: Can't find server with Id {0}.", serverId);
+                return CommQualityEnum.OK;
+            }
+            return tracker.Quality;
+        }
+
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
 
         public event NetStatusEventHandler CommStatusNetEvent;
@@ -112,23 +122,23 @@ namespace NachoCore.Utils
             }
         }
 
-        public void ReportCommResult (string host, bool didFailGenerally)
+        public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
             lock (syncRoot) {
-                ReportCommResult (GetServerId (host), didFailGenerally);
+                ReportCommResult (GetServerId (accountId, host), didFailGenerally);
             }
         }
 
-        public void ReportCommResult (string host, DateTime delayUntil)
+        public void ReportCommResult (int accountId, string host, DateTime delayUntil)
         {
             lock (syncRoot) {
-                ReportCommResult (GetServerId (host), delayUntil);
+                ReportCommResult (GetServerId (accountId, host), delayUntil);
             }
         }
 
-        private int GetServerId (string host)
+        private int GetServerId (int accountId, string host)
         {
-            var server = McServer.QueryByHost (host);
+            var server = McServer.QueryByHost (accountId, host);
             // Allow 0 for scenario when we don't yet have a McServer record in DB (ex: auto-d).
             return (null == server) ? 0 : server.Id;
         }
@@ -166,7 +176,14 @@ namespace NachoCore.Utils
                 Speed = speed;
                 Log.Info (Log.LOG_STATE, "UPDATE STATE {0}=>{1} {2}=>{3}", oldStatus, Status, oldSpeed, Speed);
                 if (oldStatus != Status && null != CommStatusNetEvent) {
-                    CommStatusNetEvent (this, new NetStatusEventArgs (Status, Speed));
+                    var info = new NetStatusEventArgs (Status, Speed);
+                    CommStatusNetEvent (this, info);
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_NetworkStatus);
+                    result.Value = info;
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
                 }
             }
         }

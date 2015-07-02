@@ -10,11 +10,11 @@
             <attribute_redaction>none</attribute_redaction>
          </SrcMsgId>
          <SrcFldId>
-            <element_redaction>none</element_redaction>
+            <element_redaction>short_hash</element_redaction>
             <attribute_redaction>none</attribute_redaction>
          </SrcFldId>
          <DstFldId>
-            <element_redaction>none</element_redaction>
+            <element_redaction>short_hash</element_redaction>
             <attribute_redaction>none</attribute_redaction>
          </DstFldId>
       </Move>

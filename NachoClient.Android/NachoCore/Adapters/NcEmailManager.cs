@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -14,21 +14,15 @@ namespace NachoCore
         {
         }
 
-        protected static McFolder InboxFolder ()
+        public static McFolder InboxFolder (int accountId)
         {
-            var emailFolders = new NachoFolders (NachoFolders.FilterForEmail);
-            for (int i = 0; i < emailFolders.Count (); i++) {
-                McFolder f = emailFolders.GetFolder (i);
-                if (f.DisplayName.Equals ("Inbox")) {
-                    return f;
-                }
-            }
-            return null;
+            var inboxFolder = McFolder.GetDefaultInboxFolder (accountId);
+            return inboxFolder;
         }
 
-        public static INachoEmailMessages Inbox ()
+        public static INachoEmailMessages Inbox (int accountId )
         {
-            var inboxFolder = InboxFolder ();
+            var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Inbox");
             } else {
@@ -36,9 +30,9 @@ namespace NachoCore
             }
         }
 
-        public static INachoEmailMessages PriorityInbox ()
+        public static INachoEmailMessages PriorityInbox (int accountId)
         {
-            var inboxFolder = InboxFolder ();
+            var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
                 return new MissingFolder ("Hot List");
             } else {
@@ -60,8 +54,9 @@ namespace NachoCore
                 return 0;
             }
 
-            public bool Refresh (out List<int> deletes)
+            public bool Refresh (out List<int> adds, out List<int> deletes)
             {
+                adds = null;
                 deletes = null;
                 return false;
             }
@@ -72,9 +67,40 @@ namespace NachoCore
                 return null;
             }
 
+            public List<McEmailMessageThread> GetEmailThreadMessages (int id)
+            {
+                NcAssert.CaseError ();
+                return null;
+            }
+
             public string DisplayName ()
             {
                 return displayName;
+            }
+
+            public bool HasOutboxSemantics ()
+            {
+                return false;
+            }
+
+            public bool HasDraftsSemantics ()
+            {
+                return false;
+            }
+
+            public void StartSync ()
+            {
+                return;
+            }
+
+            public INachoEmailMessages GetAdapterForThread (string threadId)
+            {
+                return null;
+            }
+
+            public bool IsCompatibleWithAccount (McAccount account)
+            {
+                return false;
             }
 
         }

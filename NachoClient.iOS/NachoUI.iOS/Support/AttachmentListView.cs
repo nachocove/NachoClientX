@@ -1,11 +1,11 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Linq;
 using System.Collections.Generic;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -24,10 +24,10 @@ namespace NachoClient.iOS
 
     public class AttachmentListView : ExpandableView
     {
-        const float TOP_MARGIN = 5.0f;
-        const float BOTTOM_MARGIN = 5.0f;
-        protected float attachmentCellIndent = 0f;
+        static readonly nfloat TOP_MARGIN = 5.0f;
+        protected nfloat attachmentCellIndent = 0f;
 
+        public AttachmentView.AttachmentErrorCallback OnAttachmentError;
         public AttachmentView.AttachmentSelectedCallback OnAttachmentSelected;
 
         protected List<AttachmentView> attachmentViews;
@@ -36,9 +36,9 @@ namespace NachoClient.iOS
         protected UILabel numberLabel;
         // # of attachment
 
-        private float CenterY;
+        private nfloat CenterY;
 
-        public AttachmentListView (RectangleF frame) : base (frame, false)
+        public AttachmentListView (CGRect frame) : base (frame, false)
         {
             CenterY = frame.Height / 2;
             BackgroundColor = UIColor.White;
@@ -59,17 +59,18 @@ namespace NachoClient.iOS
 
         public void AddAttachment (McAttachment attachment)
         {
-            var frame = new RectangleF (attachmentCellIndent, ExpandedHeight + 1.0f, Frame.Width - attachmentCellIndent, AttachmentView.VIEW_HEIGHT);
+            var frame = new CGRect (attachmentCellIndent, ExpandedHeight + 1.0f, Frame.Width - attachmentCellIndent, AttachmentView.VIEW_HEIGHT);
             var attachmentView = new AttachmentView (frame, attachment);
             attachmentView.OnAttachmentSelected = OnAttachmentSelected;
+            attachmentView.OnAttachmentError = OnAttachmentError;
             attachmentViews.Add (attachmentView);
             AddSubview (attachmentView);
             UpdateNumber ();
         }
 
-        public void SetHeader (string text, UIFont font, UIColor textColor, UIImageView iconImage, UIFont numberFont, UIColor numberTextColor, UIColor numberBGColor, float numberOffset)
+        public void SetHeader (string text, UIFont font, UIColor textColor, UIImageView iconImage, UIFont numberFont, UIColor numberTextColor, UIColor numberBGColor, nfloat numberOffset)
         {
-            attachmentLabel = new UILabel (new RectangleF (0, 0, 1, 1));
+            attachmentLabel = new UILabel (new CGRect (0, 0, 1, 1));
             attachmentLabel.BackgroundColor = UIColor.White;
             attachmentLabel.Text = text;
             attachmentLabel.TextColor = textColor;
@@ -79,11 +80,11 @@ namespace NachoClient.iOS
             AddSubview (attachmentLabel);
             if (null != iconImage) {
                 ViewFramer.Create (attachmentLabel).X (42);
-                iconImage.Frame = new RectangleF (18, CenterY - 8, 16, 16);
+                iconImage.Frame = new CGRect (18, CenterY - 8, 16, 16);
                 AddSubview (iconImage);
             } 
 
-            numberLabel = new UILabel (new RectangleF (attachmentLabel.Frame.X + attachmentLabel.Frame.Width + numberOffset, TOP_MARGIN - 1, 1, 1));
+            numberLabel = new UILabel (new CGRect (attachmentLabel.Frame.X + attachmentLabel.Frame.Width + numberOffset, TOP_MARGIN - 1, 1, 1));
             numberLabel.BackgroundColor = numberBGColor;
             numberLabel.TextColor = numberTextColor;
             numberLabel.Font = numberFont;
@@ -92,7 +93,7 @@ namespace NachoClient.iOS
             AddSubview (numberLabel);
         }
 
-        public void SetAttachmentCellIndent (float indent)
+        public void SetAttachmentCellIndent (nfloat indent)
         {
             this.attachmentCellIndent = indent;
         }
@@ -104,7 +105,7 @@ namespace NachoClient.iOS
 
         protected void UpdateNumber ()
         {
-            const float cornerSize = 6.0f;
+            nfloat cornerSize = 6.0f;
             numberLabel.Text = attachmentViews.Count.ToString ();
             numberLabel.TextAlignment = UITextAlignment.Center;
             numberLabel.SizeToFit ();
@@ -113,6 +114,13 @@ namespace NachoClient.iOS
             numberLabel.Layer.CornerRadius = cornerSize;
             numberLabel.ClipsToBounds = true;
             ExpandedHeight += AttachmentView.VIEW_HEIGHT;
+        }
+
+        public void Refresh ()
+        {
+            foreach (var attachmentView in attachmentViews) {
+                attachmentView.RefreshStatus ();
+            }
         }
 
         protected new void Cleanup ()

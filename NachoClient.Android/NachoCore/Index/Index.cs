@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -15,16 +15,27 @@ using Lucene.Net.Search.Payloads;
 
 namespace NachoCore.Index
 {
-    public class Index : IDisposable
+    public class NcIndex : IDisposable
     {
+        public const int KTimeoutMsec = 5000;
+
         private StandardAnalyzer Analyzer;
         private FSDirectory IndexDirectory;
 
         private Mutex Lock;
         private IndexWriter Writer;
         private IndexReader Reader;
+        private bool Deleted;
 
-        public Index (string indexDirectoryPath)
+        public bool Dirty { protected set; get; }
+
+        public bool IsWriting {
+            get {
+                return (null != Writer);
+            }
+        }
+
+        public NcIndex (string indexDirectoryPath)
         {
             Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);
             IndexDirectory = FSDirectory.Open (indexDirectoryPath);
@@ -48,49 +59,52 @@ namespace NachoCore.Index
 
         // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
         // So, if you are going to use more than one item, please use the later combination.
-        public long Add (string emailPath, string type, string id)
+        public long Add (NcIndexDocument doc)
         {
-            BeginAddTransaction ();
-            var bytesIndexed = BatchAdd (emailPath, type, id);
+            if (!BeginAddTransaction ()) {
+                return -1;
+            }
+            var bytesIndexed = BatchAdd (doc);
             EndAddTransaction ();
             return bytesIndexed;
         }
 
-        public long BatchAdd (string emailPath, string type, string id)
+        public long BatchAdd (NcIndexDocument doc)
         {
             if (null == Writer) {
-                throw new ArgumentNullException ();
-            }
-
-            // Create the document to be indexed
-            IndexDocument doc;
-            switch (type) {
-            case "message":
-                doc = new IndexEmailMessage (emailPath, id);
-                break;
-            default:
-                var msg = String.Format ("unsupported item type {0}", type);
-                throw new ArgumentException (msg);
+                throw new ArgumentNullException ("writer not set up");
             }
 
             // Index the document
             Writer.AddDocument (doc.Doc);
+            Dirty = true;
 
             return doc.BytesIndexed;
         }
 
-        public void BeginAddTransaction ()
+        public bool BeginAddTransaction ()
         {
-            Lock.WaitOne ();
-            if (null != Writer) {
-                throw new ArgumentException ();
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return false;
             }
+            if (Deleted) {
+                Lock.ReleaseMutex ();
+                return false;
+            }
+            if (null != Writer) {
+                throw new ArgumentException ("writer already exists");
+            }
+            Dirty = false;
             Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
+            return true;
         }
 
         public void EndAddTransaction ()
         {
-            Writer.Commit ();
+            if (Dirty) {
+                Writer.Commit ();
+                Dirty = false;
+            }
             Writer.Dispose ();
             Writer = null;
             Lock.ReleaseMutex ();
@@ -100,7 +114,9 @@ namespace NachoCore.Index
         // So, if you are going to remove more than one item, please use the later combination.
         public bool Remove (string type, string id)
         {
-            BeginRemoveTransaction ();
+            if (!BeginRemoveTransaction ()) {
+                return false;
+            }
             var isRemoved = BatchRemove (type, id);
             EndRemoveTransaction ();
             return isRemoved;
@@ -109,7 +125,7 @@ namespace NachoCore.Index
         public bool BatchRemove (string type, string id)
         {
             if (null == Reader) {
-                throw new ArgumentNullException ();
+                throw new ArgumentNullException ("reader not set up");
             }
             var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "id", Analyzer);
             var queryString = String.Format ("type:{0} AND id:{1}", type, id);
@@ -125,16 +141,30 @@ namespace NachoCore.Index
                 return false;
             }
             Reader.DeleteDocument (matches.ScoreDocs [0].Doc);
+            Dirty = true;
             return true;
         }
 
-        public void BeginRemoveTransaction ()
+        public bool BeginRemoveTransaction ()
         {
-            Lock.WaitOne ();
-            if (null != Reader) {
-                throw new ArgumentException ();
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return false;
             }
-            Reader = IndexReader.Open (IndexDirectory, false);
+            if (Deleted) {
+                Lock.ReleaseMutex ();
+                return false;
+            }
+            if (null != Reader) {
+                throw new ArgumentException ("reader already exists");
+            }
+            try {
+                Reader = IndexReader.Open (IndexDirectory, false);
+            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
+                // This can happen if the removal is done before anything is written to the index.
+                Lock.ReleaseMutex ();
+                return false;
+            }
+            return true;
         }
 
         public void EndRemoveTransaction ()
@@ -145,19 +175,67 @@ namespace NachoCore.Index
             Lock.ReleaseMutex ();
         }
 
+        public bool MarkForDeletion ()
+        {
+            if (!Lock.WaitOne (KTimeoutMsec)) {
+                return false;
+            }
+            Deleted = true;
+            Lock.ReleaseMutex ();
+            return true;
+        }
+
         public List<MatchedItem> Search (string queryString, int maxMatches = 1000)
         {
-            using (var reader = IndexReader.Open (IndexDirectory, true)) {
-                var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
-                var query = parser.Parse (queryString);
-                var searcher = new IndexSearcher (reader);
-                var matches = searcher.Search (query, maxMatches);
-                List<MatchedItem> matchedItems = new List<MatchedItem> ();
-                foreach (var scoreDoc in matches.ScoreDocs) {
-                    matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
+            List<MatchedItem> matchedItems = new List<MatchedItem> ();
+            try {
+                using (var reader = IndexReader.Open (IndexDirectory, true)) {
+                    var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
+                    parser.AllowLeadingWildcard = true;
+                    var query = parser.Parse (queryString);
+                    var searcher = new IndexSearcher (reader);
+                    var matches = searcher.Search (query, maxMatches);
+                    foreach (var scoreDoc in matches.ScoreDocs) {
+                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
+                    }
                 }
-                return matchedItems;
+            } catch (Lucene.Net.Store.NoSuchDirectoryException) {
+                // This can happen if a search is done before anything is written to the index.
             }
+            return matchedItems;
+        }
+
+        public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000)
+        {
+            string newQueryString = "";
+            if (null != type) {
+                newQueryString += "+type:" + type;
+            }
+            newQueryString += " +(";
+            foreach (var f in fields) {
+                newQueryString += f + ":" + queryString + " ";
+            }
+            newQueryString += ")";
+            return Search (newQueryString, maxMatches);
+        }
+
+        public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
+        {
+            return SearchFields ("message", queryString, new string[] { "body", "from", "subject" }, maxMatches);
+        }
+
+        public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)
+        {
+            return SearchFields ("contact", queryString, new string[] {
+                "first_name",
+                "middle_name",
+                "last_name",
+                "company_name",
+                "email_address",
+                "phone_number",
+                "address",
+                "note"
+            }, maxMatches);
         }
     }
 

@@ -12,16 +12,13 @@ using NachoCore.Model;
 
 namespace NachoCore.Brain
 {
-    public class NcMessageDeferral
+    public static class NcMessageDeferral
     {
         /// User's first day of week
         /// TODO: Must be configurable
         const DayOfWeek FirstDayOfWork = DayOfWeek.Monday;
-
-
-        public NcMessageDeferral ()
-        {
-        }
+        const DayOfWeek LastDayOfWork = DayOfWeek.Friday;
+        const DayOfWeek FirstDayOfWeekend = DayOfWeek.Saturday;
 
         static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
         {
@@ -38,36 +35,54 @@ namespace NachoCore.Brain
                 deferUntil = r.GetValue<DateTime> ();
             }
             foreach (var message in thread) {
-                message.DeferralType = deferralType;
-                message.Update ();
-                var utc = deferUntil;
-                var local = deferUntil.LocalT ();
-                BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
-                NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                if (null != message) {
+                    message.DeferralType = deferralType;
+                    message.Update ();
+                    var utc = deferUntil;
+                    var local = deferUntil.LocalT ();
+                    BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
+                    NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                }
             }
             return NcResult.OK ();
         }
 
-        static public NcResult ClearMessageFlags (McEmailMessageThread thread)
+        // TODO: Just clear start time, not all of the flags.
+        static private NcResult ClearMessageFlags (McEmailMessage message)
+        {
+            BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
+            NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+            return NcResult.OK ();
+        }
+
+        static private NcResult ClearMessageThreadFlags (McEmailMessageThread thread)
         {
             foreach (var message in thread) {
-                BackEnd.Instance.ClearEmailFlagCmd (message.AccountId, message.Id);
-                NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                if (null != message) {
+                    ClearMessageFlags (message);
+                }
             }
             return NcResult.OK ();
+        }
+
+        static public NcResult UndeferMessage (McEmailMessage message)
+        {
+            return ClearMessageFlags (message);
         }
 
         static public NcResult UndeferThread (McEmailMessageThread thread)
         {
-            return ClearMessageFlags (thread);
+            return ClearMessageThreadFlags (thread);
         }
 
         static public NcResult SetDueDate (McEmailMessageThread thread, DateTime dueOn)
         {
             foreach (var message in thread) {
-                var start = DateTime.UtcNow;
-                BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
-                NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                if (null != message) {
+                    var start = DateTime.UtcNow;
+                    BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
+                    NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
+                }
             }
             return NcResult.OK ();
         }
@@ -88,51 +103,65 @@ namespace NachoCore.Brain
                 from = DateTime.MinValue;
                 break;
             case MessageDeferralType.OneHour:
-                from = AdjustToHour (from, from.AddMinutes (90).Hour);
+                from = TruncateToHour (from.AddMinutes (90));
                 break;
             case MessageDeferralType.TwoHours:
-                from = AdjustToHour (from, from.AddMinutes (150).Hour);
+                from = TruncateToHour (from.AddMinutes (150));
                 break;
             case MessageDeferralType.Later:
-                // TODO: Probaly want to choose next free hour
-                from = AdjustToHour (from, from.AddMinutes (270).Hour);
+                // TODO: Probaly want to choose next free hour (three hours now)
+                from = TruncateToHour (from.AddMinutes (210));
                 break;
             case MessageDeferralType.EndOfDay:
-                if (from.Hour >= 17) {
-                    from = AdjustToHour (from, 23);
+                if (from.ToLocalTime ().Hour >= 17) {
+                    from = AdjustToLocalHour (from, 23);
                 } else {
-                    from = AdjustToHour (from, 17);
+                    from = AdjustToLocalHour (from, 17);
                 }
                 break;
             case MessageDeferralType.Tonight:
-                if (from.Hour > 18) {
+                if (from.ToLocalTime ().Hour > 18) {
                     // Later this evening...
-                    from = from.AddHours (2);
+                    from = AdjustToLocalHour (from, 21);
                 } else {
-                    from = AdjustToHour (from, 19);
+                    from = AdjustToLocalHour (from, 19);
                 }
                 break;
             case MessageDeferralType.Tomorrow:
                 from = from.AddDays (1d);
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
+                break;
+            case MessageDeferralType.ThisWeek:
+                // Friday 5pm
+                while (from.ToLocalTime ().DayOfWeek != LastDayOfWork) {
+                    from = from.AddDays (1);
+                } 
+                from = AdjustToLocalHour (from, 17);
+                break;
+            case MessageDeferralType.Weekend:
+                // Satuday 8am
+                do {
+                    from = from.AddDays (1);
+                } while(from.ToLocalTime ().DayOfWeek != FirstDayOfWeekend);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextWeek:
                 do {
                     from = from.AddDays (1.0d);
-                } while(from.DayOfWeek != FirstDayOfWork);
-                from = AdjustToHour (from, 8);
+                } while(from.ToLocalTime ().DayOfWeek != FirstDayOfWork);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.MonthEnd:
                 // Last day
                 from = from.AddMonths (1);
                 from = from.AddDays (-from.Day); // Day is 1..31
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextMonth:
                 // First day
                 from = from.AddMonths (1);
                 from = from.AddDays (1.0 - from.Day); // Day is 1..32
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.Forever:
                 from = DateTime.MaxValue;
@@ -144,15 +173,23 @@ namespace NachoCore.Brain
                 NcAssert.CaseError (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
                 return NcResult.Error ("");
             }
-            Console.WriteLine ("Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime(), from.ToLocalTime());
+            Console.WriteLine ("Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime (), from.ToLocalTime ());
             return NcResult.OK (from.ToUniversalTime ());
         }
 
-        static DateTime AdjustToHour (DateTime t, int hour)
+        static DateTime AdjustToLocalHour (DateTime t, int hour)
         {
-            return new DateTime (t.Year, t.Month, t.Day, hour, 0, 0);
+            var l = t.ToLocalTime ();
+            var n = new DateTime (l.Year, l.Month, l.Day, hour, 0, 0, DateTimeKind.Local);
+            return n.ToUniversalTime ();
         }
 
+        static DateTime TruncateToHour (DateTime t)
+        {
+            NcAssert.True (DateTimeKind.Utc == t.Kind);
+            var n = new DateTime (t.Year, t.Month, t.Day, t.Hour, 0, 0, DateTimeKind.Utc);
+            return n;
+        }
     }
 }
 

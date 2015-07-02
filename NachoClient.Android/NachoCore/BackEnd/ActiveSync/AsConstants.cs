@@ -633,6 +633,7 @@ namespace NachoCore.ActiveSync
             public const string SyncKey = AirSync.SyncKey;
             public const string Type = AirSync.Type;
             public const string Update = "Update";
+
             public enum FolderSyncStatusCode : uint
             {
                 Success_1 = 1,
@@ -780,6 +781,7 @@ namespace NachoCore.ActiveSync
             public const string Phone = "Phone";
             public const string Picture = Contacts.Picture;
             public const string Status = AirSync.Status;
+            public const string Title = Contacts.Title;
 
             public enum StatusCode : uint
             {
@@ -840,6 +842,7 @@ namespace NachoCore.ActiveSync
             public const string Ns = "MeetingResponse";
             // Alpha order.
             public const string CollectionId = "CollectionId";
+            public const string InstanceId = "InstanceId";
             public const string MeetingResponse = "MeetingResponse";
             public const string Request = "Request";
             public const string RequestId = "RequestId";
@@ -1019,12 +1022,15 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "Search";
             // Alpha order.
+            public const string And = "And";
             public const string DeepTraversal = "DeepTraversal";
-            public const string Properties = "Properties";
+            public const string FreeText = "FreeText";
+            public const string LessThan = "LessThan";
             public const string MaxPictures = "MaxPictures";
             public const string Name = "Name";
-            public const string Picture = "Picture";
             public const string Options = "Options";
+            public const string Picture = "Picture";
+            public const string Properties = "Properties";
             public const string Query = "Query";
             public const string Range = "Range";
             public const string RebuildResults = "RebuildResults";
@@ -1032,6 +1038,7 @@ namespace NachoCore.ActiveSync
             public const string Result = MeetingResp.Result;
             public const string Status = AirSync.Status;
             public const string Store = ItemOperations.Store;
+            public const string Value = "Value";
 
             public class NameCode
             {
@@ -1096,7 +1103,7 @@ namespace NachoCore.ActiveSync
                 PolicyDeny_7 = 7
             }
 
-            public enum SetGetStatusCode 
+            public enum SetGetStatusCode
             {
                 Success_1 = 1,
                 ProtocolError_2 = 2,

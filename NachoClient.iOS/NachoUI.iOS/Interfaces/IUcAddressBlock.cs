@@ -1,9 +1,9 @@
-﻿using System;
-using System.Drawing;
+using System;
+using CoreGraphics;
 using System.Collections.Generic;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 namespace NachoClient.iOS
 {

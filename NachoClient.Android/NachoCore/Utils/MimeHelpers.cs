@@ -3,7 +3,6 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using MimeKit;
@@ -51,13 +50,29 @@ namespace NachoCore.Utils
             }
         }
 
-        public static MimeEntity SearchMessage (string cid, MimeMessage message)
+        public static MimeMessage ConvertTnefToMessage (MimeKit.Tnef.TnefPart tnef)
+        {
+            try {
+                var message = tnef.ConvertToMessage ();
+                FixTnefMessage (message);
+                return message;
+            } catch (Exception e) {
+                // We have seen ConvertToMessage() fail with ArgumentOutOfRangeException and ArgumentException.
+                // It is unknown whether the problem is in Exchange server giving the app a corrupt calendar
+                // event body, or in MimeKit's TNEF parser.  But either way, there is not much the app can do
+                // to recover the data.
+                Log.Error (Log.LOG_CALENDAR, "TnefPart.ConvertToMessage() failed with exception {0}", e.ToString ());
+                return EmptyMessage ();
+            }
+        }
+
+        public static MimePart SearchMessage (string cid, MimeMessage message)
         {
             NcAssert.True (null != message);
             return SearchMimeEntity (cid, message.Body);
         }
 
-        public static MimeEntity SearchMimeEntity (string cid, MimeEntity entity)
+        public static MimePart SearchMimeEntity (string cid, MimeEntity entity)
         {
             if (null == entity) {
                 return null;
@@ -78,7 +93,7 @@ namespace NachoCore.Utils
             }
             var part = (MimePart)entity;
             if ((null != part.ContentId) && part.ContentId.Contains (cid)) {
-                return entity;
+                return part;
             } else {
                 return null;
             }
@@ -114,10 +129,10 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Return the first "text/plain" entity found in the given subtree, or null if none was found.
+        /// Return the first "subtype" entity found in the given subtree, or null if none was found.
         /// </summary>
         /// <param name="entity">The portion of the MIME message to search.</param>
-        static protected TextPart FindTextPart (MimeEntity entity)
+        static protected TextPart FindTextPartWithSubtype (MimeEntity entity, string subtype)
         {
             if (null == entity) {
                 return null;
@@ -125,10 +140,10 @@ namespace NachoCore.Utils
             if (entity is MimeKit.Tnef.TnefPart) {
                 // Pull apart the TNEF part and see what is inside.
                 var tnef = entity as MimeKit.Tnef.TnefPart;
-                var mimeMessage = tnef.ConvertToMessage ();
-                return FindTextPart (mimeMessage.Body);
+                var mimeMessage = ConvertTnefToMessage (tnef);
+                return FindTextPartWithSubtype (mimeMessage.Body, subtype);
             }
-            if (entity is TextPart && entity.ContentType.Matches ("text", "plain")) {
+            if (entity is TextPart && entity.ContentType.Matches ("text", subtype)) {
                 TextPart textPart = entity as TextPart;
                 if (null != textPart && null != textPart.ContentObject) {
                     return textPart;
@@ -138,7 +153,7 @@ namespace NachoCore.Utils
             }
             if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {
-                    var textPart = FindTextPart (subpart);
+                    var textPart = FindTextPartWithSubtype (subpart, subtype);
                     if (null != textPart) {
                         return textPart;
                     }
@@ -147,39 +162,93 @@ namespace NachoCore.Utils
             return null;
         }
 
-        static public string ExtractSummary (McEmailMessage message)
+        public static bool FindText (McEmailMessage message, out string html, out string text)
         {
-            var body = message.GetBody ();
+            html = null;
+            text = null;
 
-            if (!McBody.IsComplete (body)) {
-                return "";
+            var body = message.GetBody ();
+            if (!McBody.IsNontruncatedBodyComplete (body)) {
+                return false;
             }
 
             if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
-                return "";
+                return false;
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
+                text = body.GetContentsString ();
+                return true;
             }
 
             if (McAbstrFileDesc.BodyTypeEnum.HTML_2 == body.BodyType) {
-                return "";
+                html = body.GetContentsString ();
+                return true;
             }
 
             if (McAbstrFileDesc.BodyTypeEnum.RTF_3 == body.BodyType) {
-                return "";
+                return false;
             }
 
-            string text;
-            if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
-                text = body.GetContentsString ();
-            } else {
-                NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
-                text = ExtractTextPart (McBody.QueryById<McBody> (message.BodyId));
+            NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
+
+            var mimeMessage = LoadMessage (body);
+
+            return FindText(mimeMessage, out html, out text);
+        }
+
+        public static bool FindText(MimeMessage mimeMessage, out string html, out string text)
+        {
+            html = null;
+            text = null;
+
+            if (null == mimeMessage) {
+                return false;
             }
-            if (null == text) {
-                return "";
+
+            var part = FindTextPartWithSubtype (mimeMessage.Body, "html");
+            if (null != part) {
+                html = part.Text;
+                return true;
             }
-            var raw = text.Substring (0, Math.Min (text.Length, 1000));
-            var cooked = System.Text.RegularExpressions.Regex.Replace (raw, @"\s+", " ");
-            return cooked;
+            part = FindTextPartWithSubtype (mimeMessage.Body, "plain");
+            if (null != part) {
+                text = part.Text;
+                return true;
+            }
+            return false;
+        }
+
+        static public bool FindTextWithType (MimeMessage message, out string text, out McAbstrFileDesc.BodyTypeEnum type, params McAbstrFileDesc.BodyTypeEnum[] preferredTypes)
+        {
+            NcAssert.True (0 < preferredTypes.Length);
+            foreach (var preferredType in preferredTypes) {
+                string mimeSubType;
+                switch (preferredType) {
+                case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                    mimeSubType = "plain";
+                    break;
+                case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                    mimeSubType = "html";
+                    break;
+                case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                    mimeSubType = "rtf";
+                    break;
+                default:
+                    NcAssert.CaseError ();
+                    mimeSubType = "";
+                    break;
+                }
+                var textPart = FindTextPartWithSubtype (message.Body, mimeSubType);
+                if (null != textPart) {
+                    text = textPart.Text;
+                    type = preferredType;
+                    return true;
+                }
+            }
+            text = null;
+            type = McAbstrFileDesc.BodyTypeEnum.None;
+            return false;
         }
 
         /// <summary>
@@ -264,7 +333,7 @@ namespace NachoCore.Utils
             if (null == message) {
                 return null;
             }
-            var textPart = FindTextPart (message.Body);
+            var textPart = FindTextPartWithSubtype (message.Body, "plain");
             if (null == textPart) {
                 return null;
             }
@@ -317,7 +386,7 @@ namespace NachoCore.Utils
             if (entity is MimeKit.Tnef.TnefPart) {
                 // Replace the TNEF part with an equivalent MIME entity
                 var tnef = entity as MimeKit.Tnef.TnefPart;
-                var tnefAsMime = tnef.ConvertToMessage ();
+                var tnefAsMime = ConvertTnefToMessage (tnef);
                 ReplaceEntity (entity, tnefAsMime.Body, parent, message);
                 return SetPlainTextHelper (tnefAsMime.Body, parent, message, text, alreadyReplaced);
             }
@@ -386,8 +455,12 @@ namespace NachoCore.Utils
             msg.AccountId = AccountId;
             msg.To = CommaSeparatedList (mimeMessage.To);
             msg.Cc = CommaSeparatedList (mimeMessage.Cc);
+            msg.Bcc = CommaSeparatedList (mimeMessage.Bcc);
             msg.From = CommaSeparatedList (mimeMessage.From);
             msg.Subject = mimeMessage.Subject;
+
+            // For display in Outbox
+            msg.DateReceived = mimeMessage.Date.DateTime;
 
             // Create body
             var body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
@@ -400,28 +473,42 @@ namespace NachoCore.Utils
             return msg;
         }
 
-        public static void MimeDisplayList (MimeMessage message, ref List<MimeEntity> list)
+        public static string MimeTypeFromNativeBodyType (int nativeBodyType)
         {
-            if (null == list) {
-                list = new List<MimeEntity> ();
+            switch (nativeBodyType) {
+            case 0:
+                // NativeBodyType is not known.
+                return null;
+            case 1:
+                return "text/plain";
+            case 2:
+                return "text/html";
+            case 3:
+                return "text/rtf";
+            default:
+                Log.Error (Log.LOG_EMAIL, "Unexpected value for NativeBodyType: {0}", nativeBodyType);
+                return null;
             }
-            MimeEntityDisplayList (message.Body, ref list);
         }
 
-        protected static void MimeEntityDisplayList (MimeEntity entity, ref List<MimeEntity> list)
+        public static void MimeDisplayList (MimeMessage message, List<MimeEntity> list, string preferredType)
+        {
+            MimeEntityDisplayList (message.Body, list, preferredType);
+        }
+
+        protected static void MimeEntityDisplayList (MimeEntity entity, List<MimeEntity> list, string preferredType)
         {
             if (entity is MessagePart) {
                 // This entity is an attached message/rfc822 mime part.
                 var messagePart = (MessagePart)entity;
-                // If you'd like to render this inline instead of treating
-                // it as an attachment, you would just continue to recurse:
-                MimeDisplayList (messagePart.Message, ref list);
+                // The preferredType should only apply to the outermost message, not any nested messages.
+                MimeDisplayList (messagePart.Message, list, null);
                 return;
             }
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
                 if (multipart.ContentType.Matches ("multipart", "alternative")) {
-                    MimeBestAlternativeDisplayList (multipart, ref list);
+                    MimeBestAlternativeDisplayList (multipart, list, preferredType);
                     return;
                 }
                 if (multipart.ContentType.Matches ("multipart", "related") && 0 < multipart.Count) {
@@ -429,12 +516,13 @@ namespace NachoCore.Utils
                     // This isn't entirely correct. The multipart/related could have a "start"
                     // parameter that points to the root entity that is not the first one.
                     // But it is hard to write code to handle that without having a real life
-                    // message to test with.
-                    MimeEntityDisplayList (multipart [0], ref list);
+                    // message to test with.  All the examples that I have seen list the root
+                    // entity first.
+                    MimeEntityDisplayList (multipart [0], list, preferredType);
                     return;
                 }
                 foreach (var subpart in multipart) {
-                    MimeEntityDisplayList (subpart, ref list);
+                    MimeEntityDisplayList (subpart, list, preferredType);
                 }
                 return;
             }
@@ -449,19 +537,22 @@ namespace NachoCore.Utils
 
             // The conversion from TNEF to MIME will sometimes create a TextPart
             // with a null ContentObject, which will result in a NullReferenceException
-            // when accessing the Text property.  Render all TextParts, except
-            // for those bogus ones.
-            if (part is TextPart && null != part.ContentObject) {
-                list.Add (part);
+            // when accessing the Text property.  Discard those bogus TextParts.  Discard
+            // calendar parts, which are handled differently.  Render all other TextParts.
+            if (part is TextPart) {
+                if (null == part.ContentObject) {
+                    Log.Info (Log.LOG_EMAIL, "Discarding a {0} MIME section that has a null ContentObject.", part.ContentType);
+                } else if (!part.ContentType.Matches("text", "calendar")) {
+                    list.Add (part);
+                }
                 return;
             }
 
             if (part is MimeKit.Tnef.TnefPart) {
                 // Convert the TNEF stuff into a MIME message, and look through that.
-                MimeMessage tnef = (part as MimeKit.Tnef.TnefPart).ConvertToMessage ();
+                MimeMessage tnef = ConvertTnefToMessage (part as MimeKit.Tnef.TnefPart);
                 if (null != tnef.Body) {
-                    FixTnefMessage (tnef);
-                    MimeDisplayList (tnef, ref list);
+                    MimeDisplayList (tnef, list, preferredType);
                 }
                 return;
             }
@@ -471,33 +562,58 @@ namespace NachoCore.Utils
                 return;
             }
 
-            if (entity.ContentType.Matches ("application", "ics")) {
-                NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled ics: {0}\n", part.ContentType);
-                return;
-            }
-            if (entity.ContentType.Matches ("application", "octet-stream")) {
-                NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled octet-stream: {0}\n", part.ContentType);
-                return;
-            }
-
-            NachoCore.Utils.Log.Error (Log.LOG_EMAIL, "Unhandled Render: {0}\n", part.ContentType);
+            NachoCore.Utils.Log.Warn (Log.LOG_EMAIL, "Unhandled MIME part: {0}\n", part.ContentType);
         }
 
         /// <summary>
-        /// Pick the best alternative to be displayed, which is always supposed to be
-        /// the last one in the list.
+        /// Pick the best matching entity from a set of alternatives.  If one of the entities matches the
+        /// given preferred type.  Otherwise, look for HTML, RTF, or plain text, in that order.  If still
+        /// no match, return the last one in the list that is not a calendar entry.
         /// </summary>
-        /// <description>
-        /// If the best alternative is a calendar entry, then also select the next best
-        /// item, since we want to display that one as well.
-        /// </description>
-        protected static void MimeBestAlternativeDisplayList (Multipart multipart, ref List<MimeEntity> list)
+        protected static void MimeBestAlternativeDisplayList (Multipart multipart, List<MimeEntity> list, string preferredType)
         {
-            var last = multipart.Last ();
-            MimeEntityDisplayList (last, ref list);
-            if (1 < multipart.Count && last.ContentType.Matches ("text", "calendar")) {
-                var nextToLast = multipart [multipart.Count - 2];
-                MimeEntityDisplayList (nextToLast, ref list);
+            MimeEntity preferred = null;
+            MimeEntity html = null;
+            MimeEntity rtf = null;
+            MimeEntity plain = null;
+            MimeEntity lastNonCalendar = null;
+            foreach (var entity in multipart) {
+
+                // When an e-mail message has HTML with embedded images, then many mailers will send out
+                // a message with the following structure:
+                //    multipart/alternative
+                //        text/plain
+                //        multipart/related
+                //            text/html
+                //            image/jpeg
+                // When deciding which of the multipart/alternative subparts to choose, we are interested
+                // in the type of the first child of the multipart/related rather than the multipart/related
+                // itself, because we ultimately want to show the HTML part instead of the plain text part.
+                var effectiveEntity = entity;
+                while (effectiveEntity.ContentType.Matches ("multipart", "related") && effectiveEntity is Multipart && 0 < ((Multipart)effectiveEntity).Count) {
+                    effectiveEntity = ((Multipart)effectiveEntity) [0];
+                }
+                var effectiveType = effectiveEntity.ContentType;
+
+                if (null != preferredType && effectiveType.MimeType == preferredType) {
+                    preferred = entity;
+                }
+                if (effectiveType.Matches("text", "html")) {
+                    html = entity;
+                }
+                if (effectiveType.Matches("text", "rtf")) {
+                    rtf = entity;
+                }
+                if (effectiveType.Matches("text", "plain")) {
+                    plain = entity;
+                }
+                if (!effectiveType.Matches("text", "calendar")) {
+                    lastNonCalendar = entity;
+                }
+            }
+            MimeEntity bestMatch = preferred ?? html ?? rtf ?? plain ?? lastNonCalendar;
+            if (null != bestMatch) {
+                MimeEntityDisplayList (bestMatch, list, preferredType);
             }
         }
 
@@ -539,31 +655,7 @@ namespace NachoCore.Utils
                 }
             }
         }
-
-        public static MimePart EntityWithContentId (MimeMessage message, string contentId)
-        {
-            return EntityWithContentId (message.Body, contentId);
-        }
-
-        public static MimePart EntityWithContentId (MimeEntity root, string contentId)
-        {
-            if (null == root) {
-                return null;
-            }
-            if (root is MimePart && root.ContentId == contentId) {
-                return (MimePart)root;
-            }
-            if (root is Multipart) {
-                foreach (var subentity in (Multipart)root) {
-                    var match = EntityWithContentId (subentity, contentId);
-                    if (null != match) {
-                        return match;
-                    }
-                }
-            }
-            return null;
-        }
-
+       
         /// <summary>
         /// Find all the attachments in the given MIME message, including those
         /// nested inside a TNEF part.
@@ -572,22 +664,44 @@ namespace NachoCore.Utils
         public static List<MimeEntity> AllAttachments (MimeMessage message)
         {
             List<MimeEntity> result = new List<MimeEntity> ();
-            FindAttachments (message.Body, result);
+            FindAttachments (message.Body, result, false, false);
             return result;
         }
 
-        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result)
+        /// <summary>
+        /// Find all the attachments in the given MIME message, including those nested inside a TNEF part and
+        /// those that are marked as inline.
+        /// </summary>
+        /// <param name="message">The MIME message to be searched.</param>
+        public static List<MimeEntity> AllAttachmentsIncludingInline (MimeMessage message)
         {
-            if (null != entity.ContentDisposition && entity.ContentDisposition.IsAttachment) {
+            List<MimeEntity> result = new List<MimeEntity> ();
+            FindAttachments (message.Body, result, true, false);
+            return result;
+        }
+
+        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result, bool includeInline, bool insideTnef)
+        {
+            // If this entity originally came from TNEF, then ignore attachments named winmail.dat
+            // with type application/vnd.ms-tnef.  Those are an internal artifact of how some servers
+            // represent recurring meetings with exceptions, and are of no interest to the user.
+            if (null != entity.ContentDisposition &&
+                ((includeInline && ContentDisposition.Inline == entity.ContentDisposition.Disposition) ||
+                    entity.ContentDisposition.IsAttachment) &&
+                (!insideTnef || !entity.ContentType.Matches ("application", "vnd.ms-tnef") || entity.ContentType.Name != "winmail.dat"))
+            {
+                // It's an attachment that we are interested in.
                 result.Add (entity);
-            } else if (entity is MimeKit.Tnef.TnefPart) {
-                // Pull apart the TNEF part and see what is inside.
+            } else if (!insideTnef && entity is MimeKit.Tnef.TnefPart) {
+                // Pull apart the TNEF part and see what is inside.  (Unless we are already inside of
+                // a TNEF part, in which case the inner TNEF part represents an exception to a recurring
+                // meeting, not the meeting series that we are interested in.)
                 var tnef = entity as MimeKit.Tnef.TnefPart;
-                var mimeMessage = tnef.ConvertToMessage ();
-                FindAttachments (mimeMessage.Body, result);
+                var mimeMessage = ConvertTnefToMessage (tnef);
+                FindAttachments (mimeMessage.Body, result, includeInline, true);
             } else if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {
-                    FindAttachments (subpart, result);
+                    FindAttachments (subpart, result, includeInline, insideTnef);
                 }
             }
         }

@@ -2,12 +2,12 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 namespace NachoClient.iOS
 {
-	public partial class SelectProviderViewController : UIViewController
+	public partial class SelectProviderViewController : NcUIViewController
 	{
 		public SelectProviderViewController (IntPtr handle) : base (handle)
 		{

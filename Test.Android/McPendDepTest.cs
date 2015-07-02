@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace Test.Common
         public void DepThenIndep ()
         {
             List<int> depPendIdList = new List<int> ();
-            var createFolder = new McPending (1) {
+            var createFolder = new McPending (1, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                 Operation = McPending.Operations.FolderCreate,
                 ServerId = "parent",
                 ParentId = "0",
@@ -26,14 +26,14 @@ namespace Test.Common
             };
             createFolder.Insert ();
             for (int iter = 0; iter < 10; ++iter) {
-                var pending = new McPending (1) {
+                var pending = new McPending (1, McAccount.AccountCapabilityEnum.ContactWriter) {
                     Operation = McPending.Operations.ContactCreate,
                     ItemId = iter,
                     ParentId = "guid",
                     ClientId = iter.ToString(),
                 };
                 pending.Insert ();
-                pending.MarkPredBlocked (createFolder.Id);
+                pending = pending.MarkPredBlocked (createFolder.Id);
                 depPendIdList.Add (pending.Id);
             }
             // Verify all are blocked.

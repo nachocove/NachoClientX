@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Threading;
@@ -110,6 +110,60 @@ namespace Test.iOS
                     } else {
                         MockSteps robotType = DetermineRobotType (httpRequest);
                         httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
+                        httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
+                    }
+                });
+            }
+        }
+
+        // Test that subdomain auth succeeds even if base domain auth fails - zach's scenario
+        [TestFixture]
+        public class SubDomainAuthSuccess : AsAutodiscoverCommandTest
+        {
+            [Test]
+            public void TestS1SubDomainSuccess ()
+            {
+                string xml = CommonMockData.AutodOffice365ResponseXml;
+                TestAutodPingWithXmlResponse (xml, MockSteps.S1, isSubDomain : true);
+
+            }
+
+                
+            private void TestAutodPingWithXmlResponse (string xml, MockSteps step, bool isSubDomain)
+            {
+                // header settings
+                string mockResponseLength = xml.Length.ToString ();
+
+                bool hasRedirected = false;
+
+                PerformAutoDiscoveryWithSettings (true, sm => {
+                }, request => {
+                    MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
+                    return XMLForRobotType (request, robotType, step, xml);
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                        step = MockSteps.S1;
+                        answerLength = dnsByteArray.Length;
+                        return dnsByteArray;
+                    } else {
+                        answerLength = 0;
+                        return null;
+                    }
+                }, (httpRequest, httpResponse) => {
+                    bool urisubdomain = isSubDomain;
+                    if (httpRequest.RequestUri.Host.ToLower() == CommonMockData.Host)
+                    {
+                        urisubdomain = false;
+                    }
+                    MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: urisubdomain);
+                    // provide valid redirection headers if needed
+                    if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
+                        httpResponse.StatusCode = HttpStatusCode.Found;
+                        httpResponse.Headers.Add ("Location", CommonMockData.RedirectionUrl);
+                        hasRedirected = true; // disable second redirection
+                        step = MockSteps.S1;
+                    } else {
+                        httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step, isAuthFailFromBaseDomain: true);
                         httpResponse.Content.Headers.Add ("Content-Length", mockResponseLength);
                     }
                 });
@@ -392,14 +446,6 @@ namespace Test.iOS
                 TestSingleTimeout (MockSteps.S3, false);
             }
 
-            // Ensure that the Owner is called-back when a valid cert is encountered in
-            // the HTTPS access following a DNS SRV lookup
-            [Test]
-            public void TestS4 ()
-            {
-                TestSingleTimeout (MockSteps.S4, false);
-            }
-
             [Test]
             public void TestSubS1 ()
             {
@@ -416,12 +462,6 @@ namespace Test.iOS
             public void TestSubS3 ()
             {
                 TestSingleTimeout (MockSteps.S3, true);
-            }
-
-            [Test]
-            public void TestSubS4 ()
-            {
-                TestSingleTimeout (MockSteps.S4, true);
             }
 
             private void TestSingleTimeout (MockSteps step, bool isSubDomain)
@@ -445,16 +485,9 @@ namespace Test.iOS
                     return XMLForRobotType (request, robotType, step, xml);
                 }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        if (!hasTimedOutOnce) {
-                            hasTimedOutOnce = true;
-                            System.Threading.Thread.Sleep (new TimeSpan(0, 0, 20));
-                            answerLength = 0;
-                            return null;
-                        } else {
-                            step = MockSteps.S1;
-                            answerLength = dnsByteArray.Length;
-                            return dnsByteArray;
-                        }
+                        step = MockSteps.S1;
+                        answerLength = dnsByteArray.Length;
+                        return dnsByteArray;
                     } else {
                         answerLength = 0;
                         return null;
@@ -509,6 +542,7 @@ namespace Test.iOS
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
             phonyServer.AccountId = mockContext.Account.Id;
+            phonyServer.Capabilities = McAccount.ActiveSyncCapabilities;
             phonyServer.Host = "/Phony-Server";
             phonyServer.Path = "/phonypath";
             phonyServer.Port = 500;
@@ -523,8 +557,10 @@ namespace Test.iOS
             ServerCertificatePeek.TestOnlyFlushCache ();
         }
 
-        public HttpStatusCode AssignStatusCode (HttpRequestMessage request, MockSteps robotType, MockSteps step)
+        public HttpStatusCode AssignStatusCode (HttpRequestMessage request, MockSteps robotType, MockSteps step, bool isAuthFailFromBaseDomain = false)
         {
+            string requestHost = request.RequestUri.Host.ToLower();
+
             if (HasBeenRedirected (request)) {
                 return HttpStatusCode.OK;
             }
@@ -541,7 +577,13 @@ namespace Test.iOS
             switch (robotType) {
             case MockSteps.S1:
             case MockSteps.S2:
-                return HttpStatusCode.OK;
+                if ((isAuthFailFromBaseDomain == true) && (requestHost == CommonMockData.Host)) {
+                    Log.Info (Log.LOG_AS, "returning unauthorized for step {0} for base domain {1}", step, requestHost);
+                    return HttpStatusCode.Unauthorized;
+                }
+                else{
+                    return HttpStatusCode.OK;
+                }
             default:
                 return HttpStatusCode.NotFound;
             }

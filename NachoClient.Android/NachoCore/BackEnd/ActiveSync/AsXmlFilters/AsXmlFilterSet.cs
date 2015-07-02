@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NachoCore.Utils;
@@ -9,28 +9,33 @@ namespace NachoCore.Wbxml
     {
         private static NcXmlFilterSet _Requests = null;
         private static NcXmlFilterSet _Responses = null;
+        private static object LockObj = new object ();
 
         public static NcXmlFilterSet Requests {
             get {
-                if (null == _Requests) {
-                    _Requests = new NcXmlFilterSet ();
-                    InitializeRequestFilters ();
+                lock (LockObj) {
+                    if (null == _Requests) {
+                        _Requests = new NcXmlFilterSet ();
+                        InitializeRequestFilters ();
+                    }
+                    return _Requests;
                 }
-                return _Requests;
             }
         }
 
         public static NcXmlFilterSet Responses {
             get {
-                if (null == _Responses) {
-                    _Responses = new NcXmlFilterSet ();
-                    InitializeResponseFilters ();
+                lock (LockObj) {
+                    if (null == _Responses) {
+                        _Responses = new NcXmlFilterSet ();
+                        InitializeResponseFilters ();
+                    }
+                    return _Responses;
                 }
-                return _Responses;
             }
         }
 
-        private static void InitializeRequestFilters ()
+        public static void InitializeRequestFilters ()
         {
             AsXmlFilterSet._Requests.Add (new AsXmlFilterAirSyncRequest ());
             AsXmlFilterSet._Requests.Add (new AsXmlFilterComposeMailRequest ());

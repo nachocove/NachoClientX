@@ -21,6 +21,18 @@ namespace NachoCore.ActiveSync
             var xmlTruncated = xmlBody.ElementAnyNs (Xml.AirSyncBase.Truncated);
             var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
 
+            // An Exchange 2007 server might send a <Body> element without any <Data> element for calendar events
+            // that have an empty description.  This should be treated as if it were an empty <Data> element.
+            // The <Data> element can also be missing if a preview was requested.  We have to be careful to not
+            // confuse the two cases.
+            if (null == xmlData && null == xmlPreview &&
+                null != xmlEstimatedDataSize && 0 == xmlEstimatedDataSize.Value.ToInt() &&
+                (null == xmlTruncated || !ToBoolean(xmlTruncated.Value)))
+            {
+                // The easiest thing is to create an empty <Data> element, then let the normal processing happen.
+                xmlData = new XElement (Xml.AirSyncBase.Data, "");
+            }
+
             if (null != xmlPreview) {
                 item.BodyPreview = xmlPreview.Value;
             }
@@ -53,8 +65,97 @@ namespace NachoCore.ActiveSync
                     body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate;
                 }
                 body.Update ();
+
+                // Now that we have a body, see if it is possible to fill in the contents of any attachments.
+                if (McBody.BodyTypeEnum.MIME_4 == body.BodyType && McBody.FilePresenceEnum.Complete == body.FilePresence && !body.Truncated) {
+                    var bodyAttachments = MimeHelpers.AllAttachmentsIncludingInline (MimeHelpers.LoadMessage (body));
+                    if (0 < bodyAttachments.Count) {
+
+                        foreach (var ba in bodyAttachments) {
+                            Log.Info (Log.LOG_AS, "ATB: MIME attachment: Name {0}, FileName {1}, ContentID {2}", ba.ContentType.Name, ba.ContentDisposition.FileName, ba.ContentId);
+                        }
+
+                        foreach (var itemAttachment in McAttachment.QueryByItemId(item)) {
+                            if (McAttachment.FilePresenceEnum.Complete == itemAttachment.FilePresence) {
+                                // Attachment already downloaded.
+                                continue;
+                            }
+
+                            // There isn't a field that is guaranteed to be in both places and is guaranteed to be
+                            // unique.  Match on content ID or display name, but make sure the match is unique.
+                            // Any attachment that isn't matched will just be downloaded later, which is just a
+                            // performance issue, not a correctness issue.
+                            bool duplicateContentId = false;
+                            bool duplicateDisplayName = false;
+                            MimeKit.MimeEntity contentIdMatch = null;
+                            MimeKit.MimeEntity displayNameMatch = null;
+                            foreach (var bodyAttachment in bodyAttachments) {
+                                if (null != bodyAttachment.ContentId && null != itemAttachment.ContentId &&
+                                    bodyAttachment.ContentId == itemAttachment.ContentId)
+                                {
+                                    if (null == contentIdMatch) {
+                                        contentIdMatch = bodyAttachment;
+                                    } else {
+                                        duplicateContentId = true;
+                                    }
+                                }
+                                if (null != itemAttachment.DisplayName && null != bodyAttachment.ContentDisposition.FileName &&
+                                    itemAttachment.DisplayName == bodyAttachment.ContentDisposition.FileName)
+                                {
+                                    if (null == displayNameMatch) {
+                                        displayNameMatch = bodyAttachment;
+                                    } else {
+                                        duplicateDisplayName = true;
+                                    }
+                                }
+                            }
+                            MimeKit.MimeEntity match = duplicateContentId ? null : (contentIdMatch ?? (duplicateDisplayName ? null : displayNameMatch));
+                            if (null != match) {
+                                itemAttachment.UpdateData ((stream) => {
+                                    ((MimeKit.MimePart)match).ContentObject.DecodeTo (stream);
+                                });
+                                itemAttachment.SetFilePresence (McAttachment.FilePresenceEnum.Complete);
+                                itemAttachment.Truncated = false;
+                                itemAttachment.Update ();
+                            }
+                        }
+                    }
+                }
             } else {
                 item.BodyId = 0;
+            }
+        }
+
+        /// <summary>
+        /// Set the item's preview based on the Body element in the response.
+        /// Use the Preview element if it exists.  Otherwise, extract the first
+        /// 255 characters out of the body.  The item's Body field is not changed
+        /// at all.  The body in the response is used only to generate a preview.
+        /// It will not be treated as the real message body.
+        /// </summary>
+        public static void ExtractPreviewFromXmlBody (this McAbstrItem item, XElement xmlBody)
+        {
+            var xmlData = xmlBody.ElementAnyNs (Xml.AirSyncBase.Data);
+            var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
+
+            if (null != xmlPreview) {
+                item.BodyPreview = xmlPreview.Value;
+            }
+            if (null != xmlData) {
+                string bodyText;
+                var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
+                if (null != saveAttr) {
+                    var body = McBody.QueryById<McBody> (int.Parse (saveAttr.Value));
+                    NcAssert.NotNull (body);
+                    bodyText = body.GetContentsString ();
+                    // Now that we have looked at the contents, get rid of the McBody.
+                    body.Delete ();
+                } else {
+                    bodyText = xmlData.Value;
+                }
+                if (null == xmlPreview) {
+                    item.BodyPreview = bodyText;
+                }
             }
         }
 
@@ -115,7 +216,7 @@ namespace NachoCore.ActiveSync
             return (value) ? "1" : "0";
         }
 
-        public static XElement ToXmlApplicationData (McCalendar cal)
+        public static XElement ToXmlApplicationData (McCalendar cal, IBEContext beContext, bool includeBody = true)
         {
             XNamespace AirSyncNs = Xml.AirSync.Ns;
             XNamespace CalendarNs = Xml.Calendar.Ns;
@@ -158,10 +259,6 @@ namespace NachoCore.ActiveSync
             if (cal.MeetingStatusIsSet) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.MeetingStatus, (uint)cal.MeetingStatus));
             }
-            if (DateTime.MinValue != cal.AppointmentReplyTime) {
-                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.AppointmentReplyTime,
-                    cal.AppointmentReplyTime.ToString (DateTimeFmt1)));
-            }
             if (null != cal.OnlineMeetingConfLink) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingConfLink, cal.OnlineMeetingConfLink));
             }
@@ -169,7 +266,7 @@ namespace NachoCore.ActiveSync
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.OnlineMeetingExternalLink, cal.OnlineMeetingExternalLink));
             }
 
-            if (0 != cal.BodyId) {
+            if (includeBody && 0 != cal.BodyId) {
                 var body = McBody.QueryById<McBody> (cal.BodyId);
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
@@ -195,11 +292,116 @@ namespace NachoCore.ActiveSync
                 foreach (var category in cal.categories) {
                     xmlCategories.Add (new XElement (CalendarNs + Xml.Calendar.Category, category.Name));
                 }
+                xmlAppData.Add (xmlCategories);
             }
-            // TODO: exceptions.
-            // TODO recurrences.
+            if (0 != cal.recurrences.Count) {
+                foreach (var recurrence in cal.recurrences) {
+                    var xmlRecurrence = new XElement (CalendarNs + Xml.Calendar.Calendar_Recurrence);
+                    xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Type, (int)recurrence.Type));
+                    if (recurrence.IntervalIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Interval, recurrence.Interval));
+                    }
+                    if (recurrence.OccurrencesIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Occurrences, recurrence.Occurrences));
+                    }
+                    if (DateTime.MinValue != recurrence.Until) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.Until, recurrence.Until.ToString (CompactDateTimeFmt1)));
+                    }
+                    if (NcRecurrenceType.Monthly == recurrence.Type || NcRecurrenceType.Yearly == recurrence.Type) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.DayOfMonth, recurrence.DayOfMonth));
+                    }
+                    if (NcRecurrenceType.Yearly == recurrence.Type || NcRecurrenceType.YearlyOnDay == recurrence.Type) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.MonthOfYear, recurrence.MonthOfYear));
+                    }
+                    if (NcRecurrenceType.MonthlyOnDay == recurrence.Type || NcRecurrenceType.YearlyOnDay == recurrence.Type) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.WeekOfMonth, recurrence.WeekOfMonth));
+                    }
+                    if (recurrence.DayOfWeekIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.DayOfWeek, (int)recurrence.DayOfWeek));
+                    }
+                    if (recurrence.FirstDayOfWeekIsSet) {
+                        xmlRecurrence.Add (new XElement (CalendarNs + Xml.Calendar.Recurrence.FirstDayOfWeek, recurrence.FirstDayOfWeek));
+                    }
+                    xmlAppData.Add (xmlRecurrence);
+                }
+            }
+            if (0 != cal.exceptions.Count) {
+                var xmlExceptions = new XElement (CalendarNs + Xml.Calendar.Calendar_Exceptions);
+                foreach (var exception in cal.exceptions) {
+                    var xmlException = new XElement (CalendarNs + Xml.Calendar.Exceptions.Exception);
+                    if (0 != exception.Deleted) {
+                        // The exception for a deleted occurrence must contain only the Deleted and
+                        // ExceptionStartTime elements.
+                        xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Deleted, "1"));
+                        if (DateTime.MinValue != exception.ExceptionStartTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.ExceptionStartTime, exception.ExceptionStartTime.ToString (CompactDateTimeFmt1)));
+                        }
+                    } else {
+                        if (0 != exception.attendees.Count) {
+                            var xmlAttendees = new XElement (CalendarNs + Xml.Calendar.Exception.Attendees);
+                            foreach (var attendee in exception.attendees) {
+                                var xmlAttendee = new XElement (CalendarNs + Xml.Calendar.Attendees.Attendee);
+                                xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Email, attendee.Email));
+                                xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
+                                if (attendee.AttendeeTypeIsSet) {
+                                    xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeType, (uint)attendee.AttendeeType));
+                                }
+                                xmlAttendees.Add (xmlAttendee);
+                            }
+                            xmlException.Add (xmlAttendees);
+                        }
+                        if (0 != exception.categories.Count) {
+                            var xmlCategories = new XElement (CalendarNs + Xml.Calendar.Exception.Categories);
+                            foreach (var category in exception.categories) {
+                                xmlCategories.Add (new XElement (CalendarNs + Xml.Calendar.Category, category.Name));
+                            }
+                            xmlException.Add (xmlCategories);
+                        }
+                        if (exception.AllDayEventIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.AllDayEvent, exception.AllDayEvent ? "1" : "0"));
+                        }
+                        if (exception.BusyStatusIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.BusyStatus, (int)exception.BusyStatus));
+                        }
+                        if (0 != exception.Deleted) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Deleted, "1"));
+                        }
+                        if (exception.MeetingStatusIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.MeetingStatus, (int)exception.MeetingStatus));
+                        }
+                        if (exception.ReminderIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Reminder, exception.Reminder));
+                        }
+                        if (exception.SensitivityIsSet) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Sensitivity, (int)exception.Sensitivity));
+                        }
+                        if (DateTime.MinValue != exception.DtStamp) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.DtStamp, exception.DtStamp.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (DateTime.MinValue != exception.StartTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.StartTime, exception.StartTime.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (DateTime.MinValue != exception.EndTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.EndTime, exception.EndTime.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (DateTime.MinValue != exception.ExceptionStartTime) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.ExceptionStartTime, exception.ExceptionStartTime.ToString (CompactDateTimeFmt1)));
+                        }
+                        if (null != exception.Subject) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Subject, exception.Subject));
+                        }
+                        if (null != exception.Location) {
+                            xmlException.Add (new XElement (CalendarNs + Xml.Calendar.Exception.Location, exception.Location));
+                        }
+                        // TODO Body.  Sending a body for an exception is complicated.  Just leave the body out for now,
+                        // which means the exception will inherit its body from the main calendar event.
+                    }
+                    xmlExceptions.Add (xmlException);
+                }
+                xmlAppData.Add (xmlExceptions);
+            }
 
-            if (cal.ResponseRequestedIsSet) {
+            if (cal.ResponseRequestedIsSet && 14.0 <= Convert.ToDouble (beContext.ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
             }
             if (cal.DisallowNewTimeProposalIsSet) {
@@ -288,7 +490,6 @@ namespace NachoCore.ActiveSync
         /// <returns>
         /// A list of attendees not yet associated with an NcCalendar or NcException. Not null.
         /// </returns>
-        // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
         public List<McAttendee> ParseAttendees (int accountId, XNamespace ns, XElement attendees)
         {
@@ -300,13 +501,19 @@ namespace NachoCore.ActiveSync
             foreach (var attendee in attendees.Elements()) {
                 NcAssert.True (attendee.Name.LocalName.Equals (Xml.Calendar.Attendees.Attendee));
 
-                // Required
+                // Required.  But protect agains a misbehaving server.
+                string name = "";
                 var nameElement = attendee.Element (ns + Xml.Calendar.Attendee.Name);
-                string name = nameElement.Value;
+                if (null != nameElement) {
+                    name = nameElement.Value;
+                }
 
-                // Required
+                // Required.  But we have seen a case where it appears to be missing, so protect against that.
+                string email = "";
                 var emailElement = attendee.Element (ns + Xml.Calendar.Attendee.Email);
-                string email = emailElement.Value;
+                if (null != emailElement) {
+                    email = emailElement.Value;
+                }
 
                 // Optional
                 NcAttendeeStatus status = NcAttendeeStatus.NotResponded;
@@ -315,11 +522,16 @@ namespace NachoCore.ActiveSync
                     status = statusElement.Value.ToEnum<NcAttendeeStatus> ();
                 }
 
-                // Optional
-                NcAttendeeType type = NcAttendeeType.Unknown;
+                // Optional.  The default value is "Required".  (At least that's how GFE behaves.)
+                NcAttendeeType type = NcAttendeeType.Required;
                 var typeElement = attendee.Element (ns + Xml.Calendar.Attendee.AttendeeType);
                 if (null != typeElement) {
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
+                }
+
+                // McAttendee barfs if both Name and Email are empty.
+                if (string.IsNullOrEmpty(name) && string.IsNullOrEmpty(email)) {
+                    name = "Unknown";
                 }
 
                 var a = new McAttendee (accountId, name, email, type, status);
@@ -403,8 +615,8 @@ namespace NachoCore.ActiveSync
                     r.MonthOfYear = child.Value.ToInt ();
                     break;
                 case Xml.Calendar.Recurrence.Occurrences:
-                    r.Occurences = int.Parse (child.Value);
-                    r.OccurencesIsSet = true;
+                    r.Occurrences = int.Parse (child.Value);
+                    r.OccurrencesIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.Type:
                     r.Type = child.Value.ParseInteger<NcRecurrenceType> ();
@@ -434,30 +646,21 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
                 e.AccountId = accountId;
-                e.attendees = new List<McAttendee> ();
-                e.categories = new List<McCalendarCategory> ();
+                var attendees = new List<McAttendee> ();
+                var categories = new List<McCalendarCategory> ();
                 foreach (var child in exception.Elements()) {
                     switch (child.Name.LocalName) {
                     // Containers
                     case Xml.Calendar.Exception.Attendees:
-                        var attendees = ParseAttendees (accountId, ns, child);
-                        if (null == e.attendees) {
-                            e.attendees = attendees;
-                        } else {
-                            e.attendees.AddRange (attendees);
-                        }
+                        attendees.AddRange (ParseAttendees (accountId, ns, child));
                         break;
                     case Xml.Calendar.Exception.Categories:
-                        var categories = ParseCategories (accountId, ns, child);
-                        if (null == e.categories) {
-                            e.categories = categories;
-                        } else {
-                            e.categories.AddRange (categories);
-                        }
+                        categories.AddRange (ParseCategories (accountId, ns, child));
                         break;
                     // Elements
                     case Xml.Calendar.Exception.AllDayEvent:
                         e.AllDayEvent = child.Value.ToBoolean ();
+                        e.AllDayEventIsSet = true;
                         break;
                     case Xml.Calendar.Exception.BusyStatus:
                         e.BusyStatus = child.Value.ToEnum<NcBusyStatus> ();
@@ -499,6 +702,12 @@ namespace NachoCore.ActiveSync
                         break;
                     case Xml.AirSyncBase.Body:
                         e.ApplyAsXmlBody (child);
+                        if (0 != e.BodyId) {
+                            McBody body = McBody.QueryById<McBody> (e.BodyId);
+                            if (McBody.FilePresenceEnum.Complete == body.FilePresence && McBody.BodyTypeEnum.MIME_4 == body.BodyType) {
+                                e.SetServerAttachments (MimeHelpers.LoadMessage (body));
+                            }
+                        }
                         break;
                     case Xml.AirSyncBase.NativeBodyType:
                         NcAssert.CaseError (); // Docs claim this doesn't exist
@@ -508,10 +717,13 @@ namespace NachoCore.ActiveSync
                         break;
                     }
                 }
+                e.attendees = attendees;
+                e.categories = categories;
                 l.Add (e);
             }
             return l;
         }
+
         // CreateNcCalendarFromXML
         // <Body xmlns="AirSyncBase:"> <Type> 1 </Type> <Data> </Data> </Body>
         // <DtStamp xmlns="Calendar:"> 20131123T190243Z </DtStamp>
@@ -538,10 +750,10 @@ namespace NachoCore.ActiveSync
             c.AccountId = accountId;
             c.ServerId = serverId.Value;
 
-            c.attendees = new List<McAttendee> ();
-            c.categories = new List<McCalendarCategory> ();
-            c.exceptions = new List<McException> ();
-            c.recurrences = new List<McRecurrence> ();
+            var attendees = new List<McAttendee> ();
+            var categories = new List<McCalendarCategory> ();
+            var recurrences = new List<McRecurrence> ();
+            List<McException> exceptions = null;
 
             XNamespace nsCalendar = "Calendar";
             // <ApplicationData>...</ApplicationData>
@@ -553,23 +765,28 @@ namespace NachoCore.ActiveSync
                 switch (child.Name.LocalName) {
                 // Containers
                 case Xml.Calendar.Calendar_Attendees:
-                    var attendees = ParseAttendees (accountId, nsCalendar, child);
-                    c.attendees.AddRange (attendees);
+                    attendees.AddRange (ParseAttendees (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Categories:
-                    var categories = ParseCategories (accountId, nsCalendar, child);
-                    c.categories.AddRange (categories);
+                    categories.AddRange (ParseCategories (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
-                    var exceptions = ParseExceptions (accountId, nsCalendar, child);
-                    c.exceptions.AddRange (exceptions);
+                    if (null == exceptions) {
+                        exceptions = new List<McException> ();
+                    }
+                    exceptions.AddRange (ParseExceptions (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Recurrence:
-                    var recurrence = ParseRecurrence (accountId, nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
-                    c.recurrences.Add (recurrence);
+                    recurrences.Add (ParseRecurrence (accountId, nsCalendar, child, Xml.Calendar.Calendar_Recurrence));
                     break;
                 case Xml.AirSyncBase.Body:
                     c.ApplyAsXmlBody (child);
+                    if (0 != c.BodyId) {
+                        McBody body = McBody.QueryById<McBody> (c.BodyId);
+                        if (McBody.FilePresenceEnum.Complete == body.FilePresence && McBody.BodyTypeEnum.MIME_4 == body.BodyType) {
+                            c.SetServerAttachments (MimeHelpers.LoadMessage (body));
+                        }
+                    }
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
                     c.NativeBodyType = child.Value.ToInt ();
@@ -632,12 +849,17 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+            c.attendees = attendees;
+            c.categories = categories;
+            c.recurrences = recurrences;
+            if (null != exceptions) {
+                c.exceptions = exceptions;
+            }
             return NcResult.OK (c);
         }
 
         public NcResult ParseEmail (XNamespace ns, XElement command, McFolder folder)
         {
-
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
             NcAssert.True (null != serverId);
 
@@ -657,6 +879,8 @@ namespace NachoCore.ActiveSync
 
             emailMessage.xmlAttachments = null;
 
+            var categories = new List<McEmailMessageCategory> ();
+
             foreach (var child in appData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Attachments:
@@ -664,14 +888,25 @@ namespace NachoCore.ActiveSync
                     emailMessage.cachedHasAttachments = true;
                     break;
                 case Xml.AirSyncBase.Body:
-                    emailMessage.ApplyAsXmlBody (child);
+                    emailMessage.ExtractPreviewFromXmlBody (child);
                     break;
 
                 case Xml.Email.Flag:
-                    if (!child.HasElements) {
-                        // This is the clearing of the Flag.
-                        emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
-                    } else {
+                    // Implicit deletes: If an element is not present within the Flag container element
+                    // in a request or response, then the corresponding property is deleted. (MS-ASEMAIL)
+                    emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                    emailMessage.FlagType = null;
+                    emailMessage.FlagStartDate = DateTime.MinValue;
+                    emailMessage.FlagUtcStartDate = DateTime.MinValue;
+                    emailMessage.FlagDue = DateTime.MinValue;
+                    emailMessage.FlagUtcDue = DateTime.MinValue;
+                    emailMessage.FlagReminderSet = false;
+                    emailMessage.FlagReminderTime = DateTime.MinValue;
+                    emailMessage.FlagCompleteTime = DateTime.MinValue;
+                    emailMessage.FlagDateCompleted = DateTime.MinValue;
+                    emailMessage.FlagOrdinalDate = DateTime.MinValue;
+                    emailMessage.FlagSubOrdinalDate = DateTime.MinValue;
+                    if (child.HasElements) {
                         foreach (var flagPart in child.Elements()) {
                             switch (flagPart.Name.LocalName) {
                             case Xml.Email.Status:
@@ -792,6 +1027,9 @@ namespace NachoCore.ActiveSync
                     if (!String.IsNullOrEmpty (emailMessage.Subject) && (emailMessage.Subject != child.Value)) {
                         Log.Error (Log.LOG_AS, "Subject overwritten with changed value: serverId={0} {1} {2}", emailMessage.ServerId, emailMessage.Subject, child.Value);
                     }
+                    if (child.Value.StartsWith ("Synchronization with your") && child.Value.Contains ("failed for")) {
+                        Log.Error (Log.LOG_AS, "Server reports that synchronization failed. The user was notified via an e-mail message.");
+                    }
                     emailMessage.Subject = child.Value;
                     break;
 
@@ -853,16 +1091,12 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                    var categories = AsHelpers.ParseEmailCategories (folder.AccountId, nsEmail, child);
-                    if (0 == emailMessage.Categories.Count) {
-                        emailMessage.Categories = categories;
-                    } else {
-                        emailMessage.Categories.AddRange (categories);
-                    }
+                    categories.AddRange (AsHelpers.ParseEmailCategories (folder.AccountId, nsEmail, child));
                     break;
                 case Xml.Email.MeetingRequest:
                     if (child.HasElements) {
                         var e = new  McMeetingRequest ();
+                        var recurrences = new List<McRecurrence> ();
                         foreach (var meetingRequestPart in child.Elements()) {
                             switch (meetingRequestPart.Name.LocalName) {
                             case Xml.Email.AllDayEvent:
@@ -896,7 +1130,7 @@ namespace NachoCore.ActiveSync
                                 if (meetingRequestPart.HasElements) {
                                     foreach (var recurrencePart in meetingRequestPart.Elements()) {
                                         var recurrence = ParseRecurrence (folder.AccountId, nsEmail, recurrencePart, Xml.Email.Recurrence);
-                                        e.recurrences.Add (recurrence);
+                                        recurrences.Add (recurrence);
                                     }
                                 }
                                 break;
@@ -922,6 +1156,7 @@ namespace NachoCore.ActiveSync
                                 break;
                             }
                         }
+                        e.recurrences = recurrences;
                         emailMessage.MeetingRequest = e;
                     }
                     break;
@@ -935,6 +1170,10 @@ namespace NachoCore.ActiveSync
                     Log.Warn (Log.LOG_AS, "ProcessEmailItem UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);
                     break;
                 }
+            }
+            emailMessage.Categories = categories;
+            if (null == emailMessage.ConversationId) {
+                emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
             }
             return NcResult.OK (emailMessage);
         }
@@ -970,45 +1209,42 @@ namespace NachoCore.ActiveSync
         {
             XNamespace email2Ns = Xml.Email2.Ns;
             if (null != msg.xmlAttachments) {
-
-                if (null != msg.xmlAttachments) {
-                    foreach (XElement xmlAttachment in msg.xmlAttachments) {
-                        // Create & save the attachment record.
-                        var attachment = new McAttachment {
-                            AccountId = msg.AccountId,
-                            ItemId = msg.Id,
-                            ClassCode = msg.GetClassCode (),
-                            FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
-                            FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
-                            FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
-                            Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
-                        };
-                        var displayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName);
-                        if (null != displayName) {
-                            attachment.SetDisplayName (displayName.Value);
-                        }
-                        var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
-                        if (null != contentLocation) {
-                            attachment.ContentLocation = contentLocation.Value;
-                        }
-                        var contentId = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentId);
-                        if (null != contentId) {
-                            attachment.ContentId = contentId.Value;
-                        }
-                        var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
-                        if (null != isInline) {
-                            attachment.IsInline = ParseXmlBoolean (isInline);
-                        }
-                        var xmlUmAttDuration = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttDuration);
-                        if (null != xmlUmAttDuration) {
-                            attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
-                        }
-                        var xmlUmAttOrder = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttOrder);
-                        if (null != xmlUmAttOrder) {
-                            attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
-                        }
-                        attachment.Insert ();
+                foreach (XElement xmlAttachment in msg.xmlAttachments) {
+                    // Create & save the attachment record.
+                    var attachment = new McAttachment {
+                        AccountId = msg.AccountId,
+                        ItemId = msg.Id,
+                        ClassCode = msg.GetClassCode (),
+                        FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
+                        FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                        FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
+                        Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
+                    };
+                    var displayName = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.DisplayName);
+                    if (null != displayName) {
+                        attachment.SetDisplayName (displayName.Value);
                     }
+                    var contentLocation = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentLocation);
+                    if (null != contentLocation) {
+                        attachment.ContentLocation = contentLocation.Value;
+                    }
+                    var contentId = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.ContentId);
+                    if (null != contentId) {
+                        attachment.ContentId = contentId.Value;
+                    }
+                    var isInline = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.IsInline);
+                    if (null != isInline) {
+                        attachment.IsInline = ParseXmlBoolean (isInline);
+                    }
+                    var xmlUmAttDuration = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttDuration);
+                    if (null != xmlUmAttDuration) {
+                        attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
+                    }
+                    var xmlUmAttOrder = xmlAttachment.Element (email2Ns + Xml.Email2.UmAttOrder);
+                    if (null != xmlUmAttOrder) {
+                        attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
+                    }
+                    attachment.Insert ();
                 }
             }
         }
@@ -1091,6 +1327,33 @@ namespace NachoCore.ActiveSync
                 prop.SetValue (targetObj, dt);
             } catch (Exception e) {
                 Log.Warn (Log.LOG_AS, "TrySetCompactDateTimeFromXml: Bad value {0} or property {1}:\n{2}.", value, targetProp, e);
+            }
+        }
+
+        /// <summary>
+        /// ActiveSync delivers RTF bodies in a base-64 compressed format. This method converts
+        /// from that format to normal RTF.
+        /// </summary>
+        /// <returns>Normal uncompressed RTF.</returns>
+        /// <param name="base64Compressed">The base-64 compressed RTF.</param>
+        public static string Base64CompressedRtfToNormalRtf (string base64Compressed)
+        {
+            try {
+                byte[] compressed = Convert.FromBase64String (base64Compressed);
+                // The algorithm to decompress the RTF is too complex to be worth implementing ourselves.
+                // Fortunately, MimeKit has a converter that is usable, even though it doesn't look like it
+                // was designed to be used outside of MimeKit.
+                var compressedToNormalConverter = new MimeKit.Tnef.RtfCompressedToRtf ();
+                int normalIndex;
+                int normalLength;
+                byte[] normalBytes = compressedToNormalConverter.Filter (compressed, 0, compressed.Length, out normalIndex, out normalLength);
+                return System.Text.Encoding.UTF8.GetString (normalBytes, normalIndex, normalLength);
+            } catch (FormatException) {
+                Log.Warn (Log.LOG_UTILS, "Base-64 compressed RTF string is not a valid base-64 format.");
+                return base64Compressed;
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_UTILS, "Conversion of base-64 compressed RTF to normal RTF failed: {0}", e.ToString ());
+                return base64Compressed;
             }
         }
     }

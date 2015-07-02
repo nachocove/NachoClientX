@@ -1,15 +1,15 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using UIKit;
+using Foundation;
 
 namespace NachoClient.iOS
 {
     public class NcKeyboardSpy
     {
         public bool keyboardShowing;
-        public float keyboardHeight;
+        public nfloat keyboardHeight;
 
         /// <summary>
         /// All view controllers, except for UITableViewControllers, are responsible

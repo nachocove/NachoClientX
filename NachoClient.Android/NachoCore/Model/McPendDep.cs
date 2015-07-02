@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
@@ -29,7 +29,10 @@ namespace NachoCore.Model
 
         public static void DeleteAllSucc (int predId)
         {
-            NcModel.Instance.Db.Execute ("DELETE FROM McPendDep WHERE PredId = ?", predId);
+            NcModel.Instance.BusyProtect (() => {
+                NcModel.Instance.Db.Execute ("DELETE FROM McPendDep WHERE PredId = ?", predId);
+                return 1;
+            });
         }
 
         public static List<McPendDep> QueryByPredId (int predId)

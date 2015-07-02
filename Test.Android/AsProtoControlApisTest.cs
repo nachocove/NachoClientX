@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NUnit.Framework;
@@ -19,15 +19,15 @@ namespace Test.iOS
             public void TestCreateItemCmds ()
             {
                 TestCreatingItem<McCalendar> ((protoControl, itemId, folderId) => {
-                    protoControl.CreateCalCmd (itemId, folderId);
+                    return protoControl.CreateCalCmd (itemId, folderId);
                 });
                 SetUp ();
                 TestCreatingItem<McContact> ((protoControl, itemId, folderId) => {
-                    protoControl.CreateContactCmd (itemId, folderId);
+                    return protoControl.CreateContactCmd (itemId, folderId);
                 });
                 SetUp ();
                 TestCreatingItem<McTask> ((protoControl, itemId, folderId) => {
-                    protoControl.CreateTaskCmd (itemId, folderId);
+                    return protoControl.CreateTaskCmd (itemId, folderId);
                 });
             }
 
@@ -39,12 +39,12 @@ namespace Test.iOS
 
                 var destFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
-                TestForNachoExceptionFailure (() => {
-                    protoControl.CreateFolderCmd (destFolder.Id, "New folder name", TypeCode.Unknown_18);
-                }, String.Format ("Should throw exception if attempting to create folder (type: {0}) in client-owned folder", typeof(McFolder).ToString ()));
+                var result = protoControl.CreateFolderCmd (destFolder.Id, "New folder name", TypeCode.Unknown_18);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
             }
 
-            private void TestCreatingItem<T> (Action <AsProtoControl, int, int> action) where T : McAbstrItem, new()
+            private void TestCreatingItem<T> (Func <AsProtoControl, int, int, NcResult> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -53,9 +53,9 @@ namespace Test.iOS
                 var clientItem = FolderOps.CreateUniqueItem<T> (accountId);
                 clientFolder.Link (clientItem);
 
-                TestForNachoExceptionFailure (() => {
-                    action (protoControl, clientItem.Id, clientFolder.Id);
-                }, String.Format ("Should throw exception if attempting to create item (type: {0}) in client-owned folder", typeof(T).ToString ()));
+                var result = action (protoControl, clientItem.Id, clientFolder.Id);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
             }
         }
 
@@ -66,19 +66,19 @@ namespace Test.iOS
             public void TestUpdateItemCmds ()
             {
                 TestUpdatingItem<McCalendar> ((protoControl, itemId) => {
-                    protoControl.UpdateCalCmd (itemId);
+                    return protoControl.UpdateCalCmd (itemId, false);
                 });
                 SetUp ();
                 TestUpdatingItem<McContact> ((protoControl, itemId) => {
-                    protoControl.UpdateContactCmd (itemId);
+                    return protoControl.UpdateContactCmd (itemId);
                 });
                 SetUp ();
                 TestUpdatingItem<McTask> ((protoControl, itemId) => {
-                    protoControl.UpdateTaskCmd (itemId);
+                    return protoControl.UpdateTaskCmd (itemId);
                 });
             }
 
-            private void TestUpdatingItem<T> (Action <AsProtoControl, int> action) where T : McAbstrItem, new()
+            private void TestUpdatingItem<T> (Func <AsProtoControl, int, NcResult> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -87,9 +87,9 @@ namespace Test.iOS
                 var clientItem = FolderOps.CreateUniqueItem<T> (accountId);
                 clientFolder.Link (clientItem);
 
-                TestForNachoExceptionFailure (() => {
-                    action (protoControl, clientItem.Id);
-                }, String.Format ("Should throw exception if attempting to create item (type: {0}) in client-owned folder", typeof(T).ToString ()));
+                var result = action (protoControl, clientItem.Id);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned); 
             }
         }
 
@@ -101,19 +101,19 @@ namespace Test.iOS
             public void TestDeleteItemCmds ()
             {
                 TestDeletingItem<McEmailMessage> ((protoControl, itemId) => {
-                    protoControl.DeleteEmailCmd (itemId);
+                    return protoControl.DeleteEmailCmd (itemId);
                 });
                 SetUp ();
                 TestDeletingItem<McCalendar> ((protoControl, itemId) => {
-                    protoControl.DeleteCalCmd (itemId);
+                    return protoControl.DeleteCalCmd (itemId);
                 });
                 SetUp ();
                 TestDeletingItem<McContact> ((protoControl, itemId) => {
-                    protoControl.DeleteContactCmd (itemId);
+                    return protoControl.DeleteContactCmd (itemId);
                 });
                 SetUp ();
                 TestDeletingItem<McTask> ((protoControl, itemId) => {
-                    protoControl.DeleteTaskCmd (itemId);
+                    return protoControl.DeleteTaskCmd (itemId);
                 });
             }
 
@@ -126,12 +126,12 @@ namespace Test.iOS
                 var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
                 var otherFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, parentId: clientFolder.ServerId);
 
-                TestForNachoExceptionFailure (() => {
-                    protoControl.DeleteFolderCmd (otherFolder.Id);
-                }, String.Format ("Should throw exception if attempting to delete folder (type: {0}) in client-owned folder", typeof(McFolder).ToString ()));
+                var result = protoControl.DeleteFolderCmd (otherFolder.Id);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
             }
 
-            private void TestDeletingItem<T> (Action <AsProtoControl, int> action) where T : McAbstrItem, new()
+            private void TestDeletingItem<T> (Func <AsProtoControl, int, NcResult> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -140,9 +140,9 @@ namespace Test.iOS
                 var clientItem = FolderOps.CreateUniqueItem<T> (accountId);
                 clientFolder.Link (clientItem);
 
-                TestForNachoExceptionFailure (() => {
-                    action (protoControl, clientItem.Id);
-                }, String.Format ("Should throw exception if attempting to delete item (type: {0}) in client-owned folder", typeof(T).ToString ()));
+                var result = action (protoControl, clientItem.Id);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
             }
         }
 
@@ -153,19 +153,19 @@ namespace Test.iOS
             public void TestMoveItemCmds ()
             {
                 TestMovingItem<McEmailMessage> ((protoControl, item, destFolder) => {
-                    protoControl.MoveEmailCmd (item.Id, destFolder.Id);
+                    return protoControl.MoveEmailCmd (item.Id, destFolder.Id);
                 });
                 SetUp ();
                 TestMovingItem<McCalendar> ((protoControl, item, destFolder) => {
-                    protoControl.MoveCalCmd (item.Id, destFolder.Id);
+                    return protoControl.MoveCalCmd (item.Id, destFolder.Id);
                 });
                 SetUp ();
                 TestMovingItem<McContact> ((protoControl, item, destFolder) => {
-                    protoControl.MoveContactCmd (item.Id, destFolder.Id);
+                    return protoControl.MoveContactCmd (item.Id, destFolder.Id);
                 });
                 SetUp ();
                 TestMovingItem<McTask> ((protoControl, item, destFolder) => {
-                    protoControl.MoveTaskCmd (item.Id, destFolder.Id);
+                    return protoControl.MoveTaskCmd (item.Id, destFolder.Id);
                 });
             }
 
@@ -179,20 +179,19 @@ namespace Test.iOS
                 var folder1 = FolderOps.CreateFolder (accountId, isClientOwned: true);
                 var destFolder1 = FolderOps.CreateFolder (accountId, isClientOwned: false);
 
-                TestForNachoExceptionFailure (() => {
-                    protoControl.MoveFolderCmd (folder1.Id, destFolder1.Id);
-                }, "Should not be able to move client-owned folder to non-client-owned folder");
-
+                var result = protoControl.MoveFolderCmd (folder1.Id, destFolder1.Id);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
                 // cannot move non-client-owned fodler to client-owned folder
                 var folder2 = FolderOps.CreateFolder (accountId, isClientOwned: false);
                 var destFolder2 = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
-                TestForNachoExceptionFailure (() => {
-                    protoControl.MoveFolderCmd (folder2.Id, destFolder2.Id);
-                }, "Should not be able to move non-client-owned folder to client-owned folder");
+                result = protoControl.MoveFolderCmd (folder2.Id, destFolder2.Id);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);                    
             }
 
-            private void TestMovingItem<T> (Action<AsProtoControl, T, McFolder> action) where T : McAbstrItem, new()
+            private void TestMovingItem<T> (Func<AsProtoControl, T, McFolder, NcResult> action) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -204,9 +203,9 @@ namespace Test.iOS
 
                 var destFolder1 = FolderOps.CreateFolder (accountId, isClientOwned: false);
 
-                TestForNachoExceptionFailure (() => {
-                    action (protoControl, item, destFolder1);
-                }, "Should not be able to move item from client-owned to non-client-owned folder");
+                var result = action (protoControl, item, destFolder1);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned); 
 
                 // cannot move item from non-client-owned to client-owned folder
                 var folder2 = FolderOps.CreateFolder (accountId, isClientOwned: false);
@@ -214,9 +213,9 @@ namespace Test.iOS
 
                 var destFolder2 = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
-                TestForNachoExceptionFailure (() => {
-                    action (protoControl, item, destFolder2);
-                }, "Should not be able to move item from non-client-owned to client-owned folder");
+                result = action (protoControl, item, destFolder2);
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned); 
             }
         }
 
@@ -231,9 +230,9 @@ namespace Test.iOS
 
                 var clientFolder = FolderOps.CreateFolder (accountId, isClientOwned: true);
 
-                TestForNachoExceptionFailure (() => {
-                    protoControl.RenameFolderCmd (clientFolder.Id, "New display name");
-                }, String.Format ("Should throw exception if attempting to delete item (type: {0}) in client-owned folder", typeof(McFolder).ToString ()));
+                var result = protoControl.RenameFolderCmd (clientFolder.Id, "New display name");
+                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
+                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);                     
             }
         }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -33,7 +34,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             var xmlSettings = doc.Root;
             var xmlStatus = xmlSettings.Element (m_ns + Xml.Settings.Status);

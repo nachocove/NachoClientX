@@ -48,6 +48,9 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
                             (uint)AsProtoControl.AsEvt.E.ReDisc,
                             (uint)AsProtoControl.AsEvt.E.ReProv,
                             (uint)AsProtoControl.AsEvt.E.ReSync,
@@ -60,6 +63,11 @@ namespace NachoCore.ActiveSync
                     },
                     new Node {
                         State = (uint)Lst.GetWait,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGet, State = (uint)Lst.GetWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoAck, State = (uint)Lst.AckWait },
@@ -90,6 +98,11 @@ namespace NachoCore.ActiveSync
                     },
                     new Node {
                         State = (uint)Lst.AckWait,
+                        Invalid = new [] {
+                            (uint)NcProtoControl.PcEvt.E.PendQ,
+                            (uint)NcProtoControl.PcEvt.E.PendQHot,
+                            (uint)NcProtoControl.PcEvt.E.Park,
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoAck, State = (uint)Lst.AckWait },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoSucceed, State = (uint)St.Stop },
@@ -164,20 +177,22 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
             switch ((Xml.Provision.ProvisionStatusCode)uint.Parse (xmlStatus.Value)) {
             case Xml.Provision.ProvisionStatusCode.Success_1:
                 var xmlRemoteWipe = doc.Root.Element (m_ns + Xml.Provision.RemoteWipe);
                 if (null != xmlRemoteWipe) {
-                    // The way that wipe is implemented now, the following will not return - it will cause SIGBUS.
                     WipeSucceeded = NcEnforcer.Instance.Wipe (BEContext.Account, 
                         ServerUri (Op).ToString (), BEContext.ProtocolState.AsProtocolVersion);
                     if (! BEContext.ProtocolState.IsWipeRequired) {
                     var protocolState = BEContext.ProtocolState;
-                        protocolState.IsWipeRequired = true;
-                        protocolState.Update ();
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.IsWipeRequired = true;
+                            return true;
+                        });
                         return Event.Create ((uint)ProvEvt.E.Wipe, "PROVWIPE", null, "RemoteWipe element in Provision.");
                     }
                 }
@@ -187,9 +202,12 @@ namespace NachoCore.ActiveSync
                     var xmlPolicy = xmlPolicies.Element (m_ns + Xml.Provision.Policy);
 
                     // PolicyKey required element of Policy.
-                    McProtocolState update = BEContext.ProtocolState;
-                    update.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
-                    update.Update ();
+                    McProtocolState protocolState = BEContext.ProtocolState;
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsPolicyKey = xmlPolicy.Element (m_ns + Xml.Provision.PolicyKey).Value;
+                        return true;
+                    });
 
                     // PolicyType required element of Policy, but we don't care much.
                     var xmlPolicyType = xmlPolicy.Element (m_ns + Xml.Provision.PolicyType);
@@ -254,8 +272,11 @@ namespace NachoCore.ActiveSync
         {
             // Need to reset PolicyKey even when we are forced here via status code.
             var protocolState = BEContext.ProtocolState;
-            protocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
-            protocolState.Update ();
+            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                var target = (McProtocolState)record;
+                target.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
+                return true;
+            });
             base.Execute (Sm, ref GetOp);
         }
 
@@ -504,7 +525,7 @@ namespace NachoCore.ActiveSync
                     propUint.SetValue (targetObj, 0u);
                 } else {
                     propEnum.SetValue (targetObj, McPolicy.MaxEmailTruncationSizeValue.PerSizeBytes);
-                    propUint.SetValue (targetObj, numValue);
+                    propUint.SetValue (targetObj, (uint)numValue);
                 }
             } catch (Exception ex) {
                 Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Bad value {0} or property {1}: {2}.", value, targetProp, 

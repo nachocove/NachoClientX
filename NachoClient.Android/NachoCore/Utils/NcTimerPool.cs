@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
@@ -19,6 +19,7 @@ namespace NachoCore.Utils
         private static uint NextId = 1;
 
         public DateTime DueTime;
+
         public uint Id { get; protected set; }
 
         public NcTimerPoolTimerId ()
@@ -47,6 +48,7 @@ namespace NachoCore.Utils
         private NcTimerPool Pool;
 
         public string Name { get; private set; }
+
         public TimeSpan Period { get; private set; }
 
         private TimerCallback Callback;
@@ -61,28 +63,28 @@ namespace NachoCore.Utils
         }
 
         public NcTimerPoolTimer (NcTimerPool pool, string name,
-            TimerCallback callback, object obj, Int32 due, Int32 period) : base ()
+                                 TimerCallback callback, object obj, Int32 due, Int32 period) : base ()
         {
             Initialize (pool, name, callback, obj);
             Change (due, period);
         }
 
         public NcTimerPoolTimer (NcTimerPool pool, string name,
-            TimerCallback callback, object obj, Int64 due, Int64 period) : base ()
+                                 TimerCallback callback, object obj, Int64 due, Int64 period) : base ()
         {
             Initialize (pool, name, callback, obj);
             Change (due, period);
         }
 
         public NcTimerPoolTimer (NcTimerPool pool, string name,
-            TimerCallback callback, object obj, TimeSpan due, TimeSpan period) : base ()
+                                 TimerCallback callback, object obj, TimeSpan due, TimeSpan period) : base ()
         {
             Initialize (pool, name, callback, obj);
             Change (due, period);
         }
 
         public NcTimerPoolTimer (NcTimerPool pool, string name,
-            TimerCallback callback, object obj, UInt32 due, UInt32 period) : base ()
+                                 TimerCallback callback, object obj, UInt32 due, UInt32 period) : base ()
         {
             Initialize (pool, name, callback, obj);
             Change (due, period);
@@ -90,9 +92,7 @@ namespace NachoCore.Utils
 
         public void Dispose ()
         {
-            if (null != Pool.Find (this)) {
-                Pool.Remove (this);
-            }
+            Pool.TryRemove (this);
             Period = new TimeSpan (0);
             DueTime = DateTime.MinValue;
         }
@@ -101,8 +101,7 @@ namespace NachoCore.Utils
         {
             try {
                 return time + duration;
-            }
-            catch (ArgumentOutOfRangeException) {
+            } catch (ArgumentOutOfRangeException) {
                 /// Instead of throw exceptions all over, if we ever exceed
                 /// the range of DateTime, just clip the returned value to
                 /// DateTime.MaxValue.
@@ -141,7 +140,7 @@ namespace NachoCore.Utils
 
         public override string ToString ()
         {
-            return string.Format ("[NcTimerPoolTimer: Name={0}, Id={1}, DueTIme={2}]", Name, Id, DueTime);
+            return string.Format ("[NcTimerPoolTimer: Name={0}, Id={1}, DueTime={2}]", Name, Id, DueTime);
         }
     }
 
@@ -154,6 +153,7 @@ namespace NachoCore.Utils
         public CancellationToken Token;
 
         public DateTime NextDueTime { get; private set; }
+
         private NcTimer RealTimer;
         private SortedDictionary<NcTimerPoolTimerId, NcTimerPoolTimer> ChildrenTimers;
         private object LockObj;
@@ -259,6 +259,15 @@ namespace NachoCore.Utils
                 }
                 if (minTimeChanged) {
                     StartTimer ();
+                }
+            }
+        }
+
+        public void TryRemove (NcTimerPoolTimer timer)
+        {
+            lock (LockObj) {
+                if (null != Find (timer)) {
+                    Remove (timer);
                 }
             }
         }

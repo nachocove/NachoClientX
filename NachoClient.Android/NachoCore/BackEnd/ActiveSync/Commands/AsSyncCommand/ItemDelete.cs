@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        private class ApplyItemDelete : AsApplyServerCommand
+        private class ApplyItemDelete : NcApplyServerCommand
         {
             public string ClassCode { get; set; }
 

@@ -10,20 +10,30 @@ namespace NachoCore.Model
     {
         public McServer ()
         {
-            Path = "/Microsoft-Server-ActiveSync";
+            Path = Default_Path;
             Scheme = "https";
             Port = 443;
         }
 
+        public McAccount.AccountCapabilityEnum Capabilities { set; get; }
+
         public string Host { get; set; }
 
+        public const string Default_Path = "/Microsoft-Server-ActiveSync";
+        // Well known server/host values:
         public const string GMail_Host = "m.google.com";
-        public const string GMail_MX_Suffix = "ASPMX.L.GOOGLE.com";
         public const string HotMail_Host = "s.outlook.com";
+        // Well known MX record values:
+        public const string GMail_MX_Suffix = "aspmx.l.google.com";
+        public const string GMail_MX_Suffix2 = "googlemail.com";
+        // Well know email domain name suffixes:
         public const string HotMail_Suffix = "hotmail.com";
         public const string Outlook_Suffix = "outlook.com";
+        public const string GMail_Suffix = "gmail.com";
+        public const string GMail_Suffix2 = "googlemail.com";
 
         public string Path { get; set; }
+
 
         public string Scheme { get; set; }
 
@@ -33,12 +43,17 @@ namespace NachoCore.Model
 
         // We want to remember if the user entered their
         // own server or if we figured it out on our own.
-        public bool UserSpecifiedServer { get; set; }
+        public string UserSpecifiedServerName { get; set; }
 
         /// <summary>
         /// The base URI for the server.
         /// </summary>
         public Uri BaseUri ()
+        {
+            return new Uri (BaseUriString ());
+        }
+
+        public string BaseUriString ()
         {
             string uriString;
             if (443 == Port && "https" == Scheme) {
@@ -46,7 +61,7 @@ namespace NachoCore.Model
             } else {
                 uriString = string.Format ("{0}://{1}:{2}{3}", Scheme, Host, Port, Path);
             }
-            return new Uri (uriString);
+            return uriString;
         }
 
         /// <summary>
@@ -60,6 +75,11 @@ namespace NachoCore.Model
             return dummy.BaseUri ();
         }
 
+        public bool HostIsWellKnown ()
+        {
+            return HostIsGMail () || HostIsHotMail ();
+        }
+
         public bool HostIsHotMail ()
         {
             return Host.EndsWith (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
@@ -71,35 +91,73 @@ namespace NachoCore.Model
             return Host.EndsWith (McServer.GMail_Host, StringComparison.OrdinalIgnoreCase);
         }
 
-        public static McServer Create (int accountId, Uri uri)
+        public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, Uri uri)
         {
             return new McServer () {
                 AccountId = accountId,
+                Capabilities = capabilities,
                 Host = uri.Host,
                 Path = uri.AbsolutePath,
                 Scheme = uri.Scheme,
-                Port = uri.Port
+                Port = uri.Port,
+            };
+        }
+
+        public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, string host, int port)
+        {
+            return new McServer () {
+                AccountId = accountId,
+                Capabilities = capabilities,
+                Host = host,
+                Path = null,
+                Scheme = null,
+                Port = port,
             };
         }
 
         public void CopyFrom (McServer src)
         {
+            Capabilities = src.Capabilities;
             Host = src.Host;
             Path = src.Path;
             Scheme = src.Scheme;
             Port = src.Port;
         }
 
-        // <DEBUG>
-        public override int Delete ()
+        public bool IsSameServer (McServer match)
         {
-            Log.Error (Log.LOG_AS, "McServer.Delete called by {0}", new StackTrace ().ToString ());
-            return base.Delete ();
+            if (Capabilities != match.Capabilities) {
+                return false;
+            }
+            if ((Host != match.Host) || (Port != match.Port)) {
+                return false;
+            }
+            if (!String.Equals (Scheme, match.Scheme, StringComparison.OrdinalIgnoreCase)) {
+                return false;
+            }
+            if (!String.Equals (Path, match.Path, StringComparison.OrdinalIgnoreCase)) {
+                return false;
+            }
+            return true;
         }
-        // </DEBUG>
-        public static McServer QueryByHost (string host)
+
+        public static McServer QueryByHost (int accountId, string host)
         {
-            return NcModel.Instance.Db.Table<McServer> ().Where (x => host == x.Host).SingleOrDefault ();
+            return NcModel.Instance.Db.Table<McServer> ().Where (x => 
+                accountId == x.AccountId &&
+            host == x.Host
+            ).SingleOrDefault ();
+        }
+
+        public static McServer QueryByAccountIdAndCapabilities (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var servers = McServer.QueryByAccountId<McServer> (accountId);
+            foreach (var server in servers) {
+                if (capabilities == (capabilities & server.Capabilities)) {
+                    return server;
+                }
+            }
+            return null;
         }
     }
 }

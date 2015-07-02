@@ -1,5 +1,5 @@
 
-DNDNS
+DNDNS is licensed as follows:
 
 New BSD License (BSD)
 Copyright (c) 2010, j. montgomery

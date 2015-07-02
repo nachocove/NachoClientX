@@ -1,7 +1,7 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
+using Foundation;
 using NachoCore.Model;
 
 namespace NachoClient.iOS
@@ -10,7 +10,7 @@ namespace NachoClient.iOS
     {
         void SetOwner (INachoFolderChooserParent owner, bool modal, object cookie);
 
-        void DismissFolderChooser (bool animated, NSAction action);
+        void DismissFolderChooser (bool animated, Action action);
     }
 
     public interface INachoFolderChooserParent

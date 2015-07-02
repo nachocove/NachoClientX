@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@color/NachoBackgroundGray"
+    android:orientation="vertical"
+    android:paddingTop="15dp"
+    android:paddingLeft="15dp"
+    android:paddingRight="15dp"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:background="@android:color/white"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="80dp">
+        <ImageView
+            android:id="@+id/account_icon"
+            android:src="@drawable/avatar_hotmail"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:scaleType="fitXY"
+            android:layout_gravity="center"
+            android:padding="3dp"
+            android:background="@android:color/white" />
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
+            <TextView
+                android:id="@+id/account_name"
+                android:text="@string/demo_account"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:padding="3dp"
+                android:textSize="14dp"
+                android:textStyle="normal"
+                android:textColor="@android:color/black"
+                android:background="@android:color/white" />
+            <TextView
+                android:id="@+id/account_email"
+                android:text="@string/demo_email"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:padding="3dp"
+                android:textSize="14dp"
+                android:textStyle="normal"
+                android:textColor="@android:color/black"
+                android:background="@android:color/white" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

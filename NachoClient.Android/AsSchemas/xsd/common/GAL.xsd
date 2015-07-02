@@ -4,9 +4,36 @@
                "qualified" attributeFormDefault="unqualified">
   <xs:import namespace="RightsManagement" schemaLocation=
       "RightsManagement.xsd"/>
+  <!-- Move these outside -->
+  <xs:element name="DisplayName" type="xs:string"/>
+  <xs:element name="Phone" type="xs:string"/>
+  <xs:element name="Office" type="xs:string"/>
+  <xs:element name="Title" type="xs:string"/>
+  <xs:element name="Company" type="xs:string"/>
+  <xs:element name="Alias" type="xs:string"/>
+  <xs:element name="FirstName" type="xs:string"/>
+  <xs:element name="LastName" type="xs:string"/>
+  <xs:element name="HomePhone" type="xs:string"/>
+  <xs:element name="MobilePhone" type="xs:string"/>
+  <xs:element name="EmailAddress" type="xs:string"/>
+  <xs:element name="Picture">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Status" type="xs:integer"/>
+        <xs:element name="Data" type="xs:string" minOccurs="0"/>
+        <xs:element ref="rm:RightsManagementLicense" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
   <xs:group name="TopLevelSchemaProps">
     <xs:sequence>
       <xs:choice maxOccurs="unbounded">
+        <!--
+        This is the original definition. It is not wrong but difficult
+        to parse. It is defining a logical group with actual elements.
+        So, we would need to actually understand these are elements
+        that need to be defined. Another way is to define the elements
+        outside and reference them here.
         <xs:element name="DisplayName" type="xs:string"/>
         <xs:element name="Phone" type="xs:string"/>
         <xs:element name="Office" type="xs:string"/>
@@ -27,6 +54,19 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
+        -->
+        <xs:element ref="DisplayName" minOccurs="0"/>
+        <xs:element ref="Phone" minOccurs="0"/>
+        <xs:element ref="Office" minOccurs="0"/>
+        <xs:element ref="Title" minOccurs="0"/>
+        <xs:element ref="Company" minOccurs="0"/>
+        <xs:element ref="Alias" minOccurs="0"/>
+        <xs:element ref="FirstName" minOccurs="0"/>
+        <xs:element ref="LastName" minOccurs="0"/>
+        <xs:element ref="HomePhone" minOccurs="0"/>
+        <xs:element ref="MobilePhone" minOccurs="0"/>
+        <xs:element ref="EmailAddress" minOccurs="0"/>
+        <xs:element ref="Picture" minOccurs="0"/>
       </xs:choice>
     </xs:sequence>
   </xs:group>

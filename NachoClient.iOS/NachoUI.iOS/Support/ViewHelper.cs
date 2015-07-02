@@ -1,13 +1,12 @@
-﻿//#define UI_DEBUG
+//#define UI_DEBUG
 
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
-using MonoTouch.CoreGraphics;
+using UIKit;
+using Foundation;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
@@ -15,9 +14,9 @@ namespace NachoClient.iOS
     public class ViewHelper
     {
         /// Return the size of a view to the bottom of the parent view.
-        public static float FrameSizeToBottom (UIView view)
+        public static nfloat FrameSizeToBottom (UIView view)
         {
-            float parentHeight;
+            nfloat parentHeight;
             if (null == view.Superview) {
                 parentHeight = UIScreen.MainScreen.Bounds.Height;
             } else {
@@ -32,11 +31,11 @@ namespace NachoClient.iOS
             BOTH
         };
 
-        public static RectangleF InnerFrameWithInset (RectangleF outerFrame, float inset,
+        public static CGRect InnerFrameWithInset (CGRect outerFrame, nfloat inset,
             InsetMode xMode, InsetMode yMode)
         {
-            float x = 0.0f, y = 0.0f;
-            float width = outerFrame.Width;
+            nfloat x = 0.0f, y = 0.0f;
+            nfloat width = outerFrame.Width;
             switch (xMode) {
             case InsetMode.TOPLEFT:
                 x = inset;
@@ -52,7 +51,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            float height = outerFrame.Height;
+            nfloat height = outerFrame.Height;
             switch (yMode) {
             case InsetMode.TOPLEFT:
                 y = inset;
@@ -67,10 +66,10 @@ namespace NachoClient.iOS
                 height -= 2 * inset;
                 break;
             }
-            return new RectangleF (x, y, Math.Max (0.0f, width), Math.Max (0.0f, height));
+            return new CGRect (x, y, NMath.Max (0.0f, width), NMath.Max (0.0f, height));
         }
 
-        public static RectangleF InnerFrameWithInset (RectangleF outerFrame, float inset)
+        public static CGRect InnerFrameWithInset (CGRect outerFrame, nfloat inset)
         {
             return InnerFrameWithInset (outerFrame, inset, InsetMode.BOTH, InsetMode.BOTH);
         }
@@ -85,7 +84,7 @@ namespace NachoClient.iOS
                 // A transformation other than zooming.
                 return false;
             }
-            float ratio = tx.xx / tx.yy;
+            nfloat ratio = tx.xx / tx.yy;
             if (0.98f > ratio || 1.02f < ratio) {
                 // The x-scale and y-scale are not the same.
                 return false;
@@ -93,7 +92,7 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public static float ZoomScale (UIView view)
+        public static nfloat ZoomScale (UIView view)
         {
             if (!IsZoomed (view)) {
                 return 1.0f;
@@ -101,18 +100,18 @@ namespace NachoClient.iOS
             return view.Transform.xx;
         }
 
-        private static string ViewInfo (UIView view, string tagName)
+        public static string ViewInfo (UIView view, string tagName)
         {
             string result = view.GetType ().Name;
             if (!string.IsNullOrEmpty (tagName)) {
                 result += string.Format (" [{0}]", tagName);
             }
             result += string.Format (": Origin {0} Size {1} Tag {2}",
-                Pretty.PointF (view.Frame.Location), Pretty.SizeF (view.Frame.Size), view.Tag);
+                Util.PrettyPointF (view.Frame.Location), Util.PrettySizeF (view.Frame.Size), view.Tag);
             if (view is UIScrollView) {
                 var scroll = (UIScrollView)view;
                 result += string.Format (" Scrollable content: Offset {0} Size {1} ZoomScale {2}",
-                    Pretty.PointF (scroll.ContentOffset), Pretty.SizeF (scroll.ContentSize), scroll.ZoomScale);
+                    Util.PrettyPointF (scroll.ContentOffset), Util.PrettySizeF (scroll.ContentSize), scroll.ZoomScale);
             }
             if (!view.Transform.IsIdentity) {
                 result += string.Format (" Transform {0}", view.Transform.ToString ());
@@ -187,9 +186,9 @@ namespace NachoClient.iOS
             #endif
         }
 
-        public static SizeF ScaleSizeF (float scale, SizeF size)
+        public static CGSize ScaleSizeF (nfloat scale, CGSize size)
         {
-            return new SizeF (scale * size.Width, scale * size.Height);
+            return new CGSize (scale * size.Width, scale * size.Height);
         }
 
         public static void DisposeViewHierarchy (UIView view)
@@ -273,23 +272,23 @@ namespace NachoClient.iOS
     {
         public delegate bool SubviewFilter (UIView subview);
 
-        protected float YOffset;
+        protected nfloat YOffset;
         protected UIView ParentView;
-        protected float _MaxSubViewWidth;
+        protected nfloat _MaxSubViewWidth;
 
-        public float MaxSubViewWidth {
+        public nfloat MaxSubViewWidth {
             get {
                 return _MaxSubViewWidth;
             }
         }
 
-        public float MaxWidth {
+        public nfloat MaxWidth {
             get {
-                return Math.Max (_MaxSubViewWidth, ParentView.Frame.Width);
+                return NMath.Max (_MaxSubViewWidth, ParentView.Frame.Width);
             }
         }
 
-        public float TotalHeight {
+        public nfloat TotalHeight {
             get {
                 return YOffset;
             }
@@ -301,7 +300,7 @@ namespace NachoClient.iOS
             ParentView = view;
         }
 
-        public void AddSpace (float gap)
+        public void AddSpace (nfloat gap)
         {
             YOffset += gap;
         }
@@ -334,7 +333,7 @@ namespace NachoClient.iOS
 
     public class ViewFramer
     {
-        protected RectangleF Frame;
+        protected CGRect Frame;
         protected UIView View;
         protected bool AutoUpdate;
 
@@ -358,55 +357,86 @@ namespace NachoClient.iOS
             AutoUpdate = autoUpdate;
         }
 
-        public ViewFramer X (float x)
+        public ViewFramer X (nfloat x)
         {
             Frame.X = x;
             return MayUpdate ();
         }
 
-        public ViewFramer Y (float y)
+        public ViewFramer Y (nfloat y)
         {
             Frame.Y = y;
             return MayUpdate ();
         }
 
-        public ViewFramer Height (float height)
+        public ViewFramer Height (nfloat height)
         {
             Frame.Height = height;
             return MayUpdate ();
         }
 
-        public ViewFramer Width (float width)
+        public ViewFramer Width (nfloat width)
         {
             Frame.Width = width;
             return MayUpdate ();
         }
 
-        public ViewFramer AdjustX (float delta)
+        public ViewFramer AdjustX (nfloat delta)
         {
             Frame.X += delta;
             return MayUpdate ();
         }
 
-        public ViewFramer AdjustY (float delta)
+        public ViewFramer AdjustY (nfloat delta)
         {
             Frame.Y += delta;
             return MayUpdate ();
         }
 
-        public ViewFramer AdjustHeight (float delta)
+        public ViewFramer AdjustHeight (nfloat delta)
         {
             Frame.Height += delta;
             return MayUpdate ();
         }
 
-        public ViewFramer AdjustWidth (float delta)
+        public ViewFramer AdjustWidth (nfloat delta)
         {
             Frame.Width += delta;
             return MayUpdate ();
         }
 
-        public ViewFramer Size (SizeF size)
+        public ViewFramer CenterX(nfloat x, nfloat sectionWidth)
+        {
+            Frame.X = x + (sectionWidth / 2) - (Frame.Width / 2);
+            return MayUpdate ();
+        }
+
+        public ViewFramer CenterY(nfloat y, nfloat sectionHeight)
+        {
+            Frame.Y = y + (sectionHeight / 2) - (Frame.Height / 2);
+            return MayUpdate ();
+        }
+
+        public ViewFramer RightAlignX(nfloat sectionWidth)
+        {
+            return X (sectionWidth - Frame.Width);
+        }
+
+        public ViewFramer Center(nfloat x, nfloat y)
+        {
+            Frame = new CGRect (x - (Frame.Width / 2), y - (Frame.Height / 2), Frame.Width, Frame.Height);
+            return MayUpdate ();
+        }
+
+        public ViewFramer Square()
+        {
+            var length = NMath.Max (Frame.Width, Frame.Height);
+            Frame.Width = length;
+            Frame.Height = length;
+            return MayUpdate ();
+        }
+
+        public ViewFramer Size (CGSize size)
         {
             Frame.Width = size.Width;
             Frame.Height = size.Height;

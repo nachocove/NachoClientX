@@ -26,10 +26,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using CoreGraphics;
 using System.IO;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using MimeKit;
 using NachoCore.Utils;
 
@@ -53,7 +53,7 @@ namespace NachoClient.iOS
         }
 
         [Export ("initWithRequest:cachedResponse:client:")]
-        public CidImageProtocol (NSUrlRequest request, NSCachedUrlResponse cachedResponse, NSUrlProtocolClient client)
+        public CidImageProtocol (NSUrlRequest request, NSCachedUrlResponse cachedResponse, INSUrlProtocolClient client)
             : base (request, cachedResponse, client)
         {
         }

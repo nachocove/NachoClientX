@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using ModernHttpClient;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -29,6 +30,7 @@ namespace NachoCore.ActiveSync
         {
             private const int KDefaultCertTimeoutSeconds = 8;
             private double KDefaultTimeoutExpander = 2.0;
+
             public enum RobotLst : uint
             {
                 PostWait = (St.Last + 1),
@@ -82,6 +84,7 @@ namespace NachoCore.ActiveSync
             public uint RetriesLeft;
             public bool IsReDir;
             public Uri ReDirUri;
+            public bool IsUserSpecifiedDomain;
 
 
             private TimeSpan CertTimeout;
@@ -94,7 +97,7 @@ namespace NachoCore.ActiveSync
             private List<Uri> ReDirSource = new List<Uri> ();
             private Uri LastUri;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -126,6 +129,7 @@ namespace NachoCore.ActiveSync
 
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
+                IsUserSpecifiedDomain = isUerSpecifiedDomain;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {
                     /* NOTE: There are three start states:
@@ -139,8 +143,13 @@ namespace NachoCore.ActiveSync
                     LocalStateType = typeof(RobotLst),
                     TransTable = new [] {
                         new Node {State = (uint)RobotLst.PostWait, 
-                            Invalid = new [] {(uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -198,8 +207,15 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.GetWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                (uint)SharedEvt.E.ReStart,
+                                (uint)SharedEvt.E.SrvCertN,
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -247,9 +263,19 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.SrvDnsWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                                (uint)AsProtoControl.AsEvt.E.ReProv, 
+                                (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                                (uint)SharedEvt.E.ReStart, 
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, 
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -277,9 +303,19 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.MxDnsWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                (uint)AsProtoControl.AsEvt.E.ReProv,
+                                (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                (uint)SharedEvt.E.ReStart, 
+                                (uint)SharedEvt.E.SrvCertN,
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, 
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -307,9 +343,19 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.CertWait,
-                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc, 
+                                (uint)AsProtoControl.AsEvt.E.ReProv, 
+                                (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                                (uint)SharedEvt.E.ReStart,
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, 
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -337,10 +383,20 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.OkWait,
-                            Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail, (uint)SmEvt.E.TempFail,
-                                (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, 
-                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart,
-                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)SmEvt.E.Success,
+                                (uint)SmEvt.E.HardFail, 
+                                (uint)SmEvt.E.TempFail,
+                                (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                (uint)AsProtoControl.AsEvt.E.ReProv, 
+                                (uint)AsProtoControl.AsEvt.E.ReSync, 
+                                (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                (uint)SharedEvt.E.ReStart,
+                                (uint)RobotEvt.E.ReDir,
+                                (uint)RobotEvt.E.NullCode,
                             }, 
                             On = new[] {
                                 new Trans {
@@ -363,8 +419,13 @@ namespace NachoCore.ActiveSync
                         },
 
                         new Node {State = (uint)RobotLst.ReDirWait,
-                            Invalid = new [] {(uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
-                                (uint)RobotEvt.E.NullCode
+                            Invalid = new [] {
+                                (uint)NcProtoControl.PcEvt.E.PendQ,
+                                (uint)NcProtoControl.PcEvt.E.PendQHot,
+                                (uint)NcProtoControl.PcEvt.E.Park,
+                                (uint)SharedEvt.E.SrvCertN, 
+                                (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.NullCode,
                             },
                             On = new[] {
                                 new Trans {
@@ -466,7 +527,7 @@ namespace NachoCore.ActiveSync
             {
                 // Once cancelled, we must post NO event to TL SM.
                 if (!Ct.IsCancellationRequested) {
-                    Command.Sm.PostEvent (Event);
+                    Command.ProcessEventFromRobot (Event, this);
                 }
             }
 
@@ -509,6 +570,7 @@ namespace NachoCore.ActiveSync
             private void DoRobotHttp ()
             {
                 var currentUri = CurrentServerUri ();
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending HTTP request to {1}", Step, currentUri);
                 if (IsNotReDirLoop (currentUri) && 0 < RetriesLeft--) {
                     HttpOp = HttpOpFactory ();
                     LastUri = currentUri;
@@ -521,7 +583,8 @@ namespace NachoCore.ActiveSync
             private void DoRobotDns ()
             {
                 if (0 < RetriesLeft--) {
-                    DnsOp = new AsDnsOperation (this, new TimeSpan(0, 0, 10));
+                    Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS:Sending DNS request to {1}", Step, this.DnsHost (null));
+                    DnsOp = new AsDnsOperation (this, new TimeSpan (0, 0, 10));
                     DnsOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRDHARD");
@@ -562,7 +625,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotGet2ReDir ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: ReDir after GET to {1}", Step, ReDirUri);
                 DoRobot2ReDir ();
             }
 
@@ -601,11 +664,9 @@ namespace NachoCore.ActiveSync
                         LastUri = ReDirUri;
                         await client.GetAsync (ReDirUri).ConfigureAwait (false);
                     } catch (Exception ex) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0", null, 
-                            string.Format ("SR:GetAsync Exception: {0}", ex.ToString ()));
-                        return;
-                    }
-                    finally {
+                        // Exceptions don't matter - only the cert matters.
+                        Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
+                    } finally {
                         client.Dispose ();
                         handler.Dispose ();
                     }
@@ -640,6 +701,8 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotAuthFail ()
             {
+                var currentUri = CurrentServerUri ();
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Auth failed: {1}.", Step, currentUri);
                 ForTopLevel (Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRAUTHFAIL", this));
             }
 
@@ -663,44 +726,44 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotPostHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST failed: {1}.", Step, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: POST failed: {1}.", Step, LastUri);
                 DoRobotHardFail ();
             }
 
             private void DoRobotGetHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: GET failed: {1}.", Step, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: GET failed: {1}.", Step, LastUri);
                 DoRobotHardFail ();
             }
 
             private void DoRobotDnsSrvHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS SRV failed.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: DNS query SRV rec to {1} failed.", Step, this.DnsHost (null));
                 DoRobotHardFail ();
             }
 
             private void DoRobotDnsMxHardFail ()
             {
                 Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXNotFound;
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS MX failed.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: DNS query MX rec to {1} failed.", Step, this.DnsHost (null));
                 DoRobotHardFail ();
             }
 
             private void DoRobotGetCertHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Could not retrieve sever SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: Could not retrieve server SSL cert.", Step);
                 DoRobotHardFail ();
             }
 
             private void DoRobotCertOkHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: User rejected server SSL cert.", Step);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: User rejected server SSL cert.", Step);
                 DoRobotHardFail ();
             }
 
             private void DoRobotReDirHardFail ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: {1} failed: {2}.", Step, MethodToUse, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:FAIL: {1} failed: {2}.", Step, MethodToUse, LastUri);
                 DoRobotHardFail ();
             }
 
@@ -743,7 +806,7 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Uri ServerUri (AsHttpOperation Sender)
+            public Uri ServerUri (AsHttpOperation Sender, bool isEmailRedacted = false)
             {
                 return CurrentServerUri ();
             }
@@ -760,7 +823,7 @@ namespace NachoCore.ActiveSync
                 return true;
             }
 
-            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
+            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
             {
                 // There is no AS XML <Status> to report on.
                 return null;
@@ -805,6 +868,11 @@ namespace NachoCore.ActiveSync
             public bool UseWbxml (AsHttpOperation Sender)
             {
                 // Autodiscovery is XML only.
+                return false;
+            }
+
+            public bool IgnoreBody (AsHttpOperation Sender)
+            {
                 return false;
             }
 
@@ -856,13 +924,13 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
             {
                 // We should never get back content that isn't XML.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR0HARD");
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
             {
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
@@ -914,39 +982,39 @@ namespace NachoCore.ActiveSync
                 var xmlStatus = xmlError.ElementAnyNs (Xml.Autodisco.Status);
                 var xmlAttrId = xmlError.Attribute (Xml.Autodisco.Error_Attr_Id);
                 if (null != xmlAttrId) {
-                    Log.Error (Log.LOG_AS, "ProcessXmlError: Id = {0}.", xmlAttrId.Value);
+                    Log.Error (Log.LOG_AS, "ProcessXmlError: Id = {0}. Step = {1}.", xmlAttrId.Value, Step);
                 }
                 var xmlAttrTime = xmlError.Attribute (Xml.Autodisco.Error_Attr_Time);
                 if (null != xmlAttrTime) {
-                    Log.Error (Log.LOG_AS, "ProcessXmlError: Time = {0}.", xmlAttrTime.Value);
+                    Log.Error (Log.LOG_AS, "ProcessXmlError: Time = {0}. Step = {1}.", xmlAttrTime.Value, Step);
                 }
                 if (null != xmlStatus) {
                     // ProtocolError is the only valid value, but MSFT does not always obey! See
                     // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
                     switch (uint.Parse (xmlStatus.Value)) {
                     case (uint)Xml.Autodisco.StatusCode.Success_1:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}", Xml.Autodisco.StatusCode.Success_1);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}. Step = {1}.", Xml.Autodisco.StatusCode.Success_1, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDStatus1));
                         break;
                     case (uint)Xml.Autodisco.StatusCode.ProtocolError_2:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}", Xml.Autodisco.StatusCode.ProtocolError_2);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Status code {0}. Step = {1}.", Xml.Autodisco.StatusCode.ProtocolError_2, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDStatus2));
                         break;
                     default:
-                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Status code {0}", xmlStatus.Value);
+                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Status code {0}. Step = {1}.", xmlStatus.Value, Step);
                         break;
                     }
                 }
                 var xmlMessage = xmlError.ElementAnyNs (Xml.Autodisco.Message);
                 if (null != xmlMessage) {
-                    Log.Error (Log.LOG_AS, "Rx of Message: {0}", xmlMessage.Value);
+                    Log.Error (Log.LOG_AS, "Rx of Message: {0}. Step = {1}.", xmlMessage.Value, Step);
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
                     result.Message = xmlMessage.Value;
                     StatusInd (result);
                 }
                 var xmlDebugData = xmlError.ElementAnyNs (Xml.Autodisco.DebugData);
                 if (null != xmlDebugData) {
-                    Log.Error (Log.LOG_AS, "Rx of DebugData: {0}", xmlDebugData.Value);
+                    Log.Error (Log.LOG_AS, "Rx of DebugData: {0}. Step = {1}.", xmlDebugData.Value, Step);
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_AutoDAdminMessage);
                     result.Message = xmlMessage.Value;
                     StatusInd (result); 
@@ -955,15 +1023,15 @@ namespace NachoCore.ActiveSync
                 if (null != xmlErrorCode) {
                     switch (uint.Parse (xmlErrorCode.Value)) {
                     case (uint)Xml.Autodisco.ErrorCodeCode.InvalidRequest_600:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}", Xml.Autodisco.ErrorCodeCode.InvalidRequest_600);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}. Step = {1}.", Xml.Autodisco.ErrorCodeCode.InvalidRequest_600, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDError600));
                         break;
                     case (uint)Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601:
-                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}", Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601);
+                        Log.Error (Log.LOG_AS, "Rx of Auto-d Error code {0}. Step = {1}.", Xml.Autodisco.ErrorCodeCode.NoProviderForSchema_601, Step);
                         StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_AutoDError601));
                         break;
                     default:
-                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Error code {0}", xmlErrorCode.Value);
+                        Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Error code {0}. Step = {1}.", xmlErrorCode.Value, Step);
                         break;
                     }
                 }
@@ -972,9 +1040,15 @@ namespace NachoCore.ActiveSync
 
             private Event ProcessXmlRedirect (AsHttpOperation Sender, XElement xmlRedirect)
             {
-                SrEmailAddr = xmlRedirect.Value;
-                SrDomain = DomainFromEmailAddr (SrEmailAddr);
-                return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
+                // if email address changed, restart Auto discovery
+                if (!SrEmailAddr.Equals (xmlRedirect.Value, StringComparison.Ordinal)) {
+                    SrEmailAddr = xmlRedirect.Value;
+                    SrDomain = DomainFromEmailAddr (SrEmailAddr);
+                    return Event.Create ((uint)SharedEvt.E.ReStart, "SRPXRHARD");
+                } else { // else fail hard
+                    Log.Error (Log.LOG_AS, "Redirected email address is the same as before so there's no point running auto discovery again. Step = {0}",Step);
+                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPXEHARD");
+                }
             }
 
             private Event ProcessXmlSettings (AsHttpOperation Sender, XElement xmlSettings)
@@ -1080,13 +1154,30 @@ namespace NachoCore.ActiveSync
                 case Steps.S4:
                     if (RCode.NoError == response.RCode &&
                         0 < response.AnswerRRs &&
-                        NsType.SRV == response.NsType) {
-                        var aBest = (SrvRecord)response.Answers.OrderBy (r1 => ((SrvRecord)r1).Priority).ThenByDescending (r2 => ((SrvRecord)r2).Weight).First ();
-                        var bestRecs = response.Answers.Where (r1 => aBest.Priority == ((SrvRecord)r1).Priority &&
-                                       aBest.Weight == ((SrvRecord)r1).Weight).ToArray ();
-                        var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
-                        var chosen = (SrvRecord)bestRecs [index];
-                        SrDomain = chosen.HostName;
+                        NsType.SRV == response.NsType &&
+                        AtLeastOne<SrvRecord> (response.Answers)) {
+                        SrvRecord best = null;
+                        var allBest = new List<SrvRecord> ();
+                        foreach (var answer in response.Answers) {
+                            var srv = answer as SrvRecord;
+                            if (null != srv) {
+                                if (null == best || BetterThan (srv, best)) {
+                                    // The best record found so far.
+                                    best = srv;
+                                    allBest.Clear ();
+                                    allBest.Add (srv);
+                                } else if (SameValue (srv, best)) {
+                                    // Equal to the best one so far.  Add it to the set.
+                                    allBest.Add (srv);
+                                } else {
+                                    // Not the best record. Ignore it.
+                                }
+                            }
+                        }
+                        NcAssert.True (0 < allBest.Count, "No SRV records were found.");
+                        // Pick one of the best records at random.
+                        best = allBest [picker.Next (allBest.Count)];
+                        SrDomain = best.HostName;
                         return Event.Create ((uint)SmEvt.E.Success, "SRPR2SUCCESS");
                     } else {
                         return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2HARD");
@@ -1095,9 +1186,11 @@ namespace NachoCore.ActiveSync
                 case Steps.S5:
                     if (RCode.NoError == response.RCode &&
                         0 < response.AnswerRRs &&
-                        NsType.MX == response.NsType) {
-                        var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
-                        if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
+                        NsType.MX == response.NsType &&
+                        AtLeastOne<MxRecord> (response.Answers)) {
+                        var aBest = (MxRecord)response.Answers.Where (r0 => r0 is MxRecord).OrderBy (r1 => ((MxRecord)r1).Preference).First ();
+                        if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase) ||
+                            aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix2, StringComparison.OrdinalIgnoreCase)) {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
                             SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
@@ -1115,6 +1208,36 @@ namespace NachoCore.ActiveSync
                     NcAssert.CaseError (string.Format ("ProcessResponse with Step {0}", Step.ToString ()));
                     return null;
                 }
+            }
+
+            /// <summary>
+            /// Does the IDnsRecord array have at least one element of the given type?
+            /// </summary>
+            private static bool AtLeastOne<T> (IDnsRecord[] answers) where T : IDnsRecord
+            {
+                foreach (var record in answers) {
+                    if (record is T) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /// <summary>
+            /// Do the two SrvRecords have the same priority and weight?
+            /// </summary>
+            private static bool SameValue (SrvRecord a, SrvRecord b)
+            {
+                return a.Priority == b.Priority && a.Weight == b.Weight;
+            }
+
+            /// <summary>
+            /// Does the first SrvRecord better than the second one?  "Better" is defined
+            /// as a lower priority, or the same priority with a greater weight.
+            /// </summary>
+            private static bool BetterThan (SrvRecord a, SrvRecord b)
+            {
+                return a.Priority < b.Priority || (a.Priority == b.Priority && a.Weight > b.Weight);
             }
         }
     }

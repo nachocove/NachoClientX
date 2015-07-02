@@ -1,7 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
+using System.Xml.Linq;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -29,13 +30,14 @@ namespace Test.iOS
         }
 
         public static McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
+            McAccount.AccountCapabilityEnum capability = McAccount.AccountCapabilityEnum.EmailReaderWriter,
             string token = "", string clientId = "", string parentId = "", string destId = "", McAbstrItem item = null)
         {
             McPending pending;
             if (item != null) {
-                pending = new McPending (accountId, item);
+                pending = new McPending (accountId, capability, item);
             } else {
-                pending = new McPending (accountId);
+                pending = new McPending (accountId, capability);
                 pending.ServerId = serverId;
             }
             pending.ServerId = serverId;
@@ -391,12 +393,21 @@ namespace Test.iOS
                 var pending3r = CreatePending (accountId:6, operation:Operations.EmailBodyDownload, serverId:"1:3");
                 // rejected because state is Failed.
                 var pending4r = CreatePending (accountId:5, operation:Operations.EmailBodyDownload, serverId:"1:4");
-                pending2.DelayNotAllowed = true;
-                pending2.Update ();
-                pending3r.DelayNotAllowed = true;
-                pending3r.Update ();
-                pending4r.State = StateEnum.Failed;
-                pending4r.Update ();
+                pending2 = pending2.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.DelayNotAllowed = true;
+                    return true;
+                });
+                pending3r = pending3r.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.DelayNotAllowed = true;
+                    return true;
+                });
+                pending4r = pending4r.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Failed;
+                    return true;
+                });
                 McPending.ResolveAllDelayNotAllowedAsFailed (protoControl, 5);
                 var search = McPending.QueryById<McPending> (pending1r.Id);
                 Assert.True (null != search && pending1r.Id == search.Id);
@@ -603,7 +614,7 @@ namespace Test.iOS
                     Assert.AreEqual (StateEnum.Deferred, retrieved.State, "Should set state to deferred");
 
                     System.Threading.Thread.Sleep ((int)(waitSeconds * 1000));
-                    McPending.MakeEligibleOnTime (defaultAccountId);
+                    McPending.MakeEligibleOnTime ();
                     retrieved = McPending.QueryById<McPending> (pending.Id);
                     Assert.AreEqual (StateEnum.Eligible, retrieved.State, "MakeEligibleOnTime should set state to eligible in DB");
                 }
@@ -638,7 +649,7 @@ namespace Test.iOS
                 // Find only the 1st using QueryDeferredSync (int accountId).
                 var firstPend = querySyncType ();
                 System.Threading.Thread.Sleep ((int)(waitTime * 1000));
-                var secondPend = McPending.QueryDeferredUntilNow (defaultAccountId);
+                var secondPend = McPending.QueryDeferredUntilNow ();
 
                 Assert.AreEqual (1, firstPend.Count, "Should return a single object");
                 Assert.AreEqual (reason, firstPend.FirstOrDefault ().DeferredReason, "Deferred reason (UntilSync) should be set to UntilSync");
@@ -660,7 +671,7 @@ namespace Test.iOS
                 firstRetr.MarkDispached ();
                 firstRetr.ResolveAsDeferred (protoControl, reason, onFail);
 
-                McPending.MakeEligibleOnTime (defaultAccountId);
+                McPending.MakeEligibleOnTime ();
 
                 // Verify only the 2nd is in Eligible state in DB.
                 firstRetr = McPending.QueryById<McPending> (pending.Id);
@@ -730,11 +741,17 @@ namespace Test.iOS
                 CreatePending (accountId: 1);
                 var matcher = CreatePending (accountId: 2); // other pending
                 var isDel = CreatePending (accountId: 2);
-                isDel.State = McPending.StateEnum.Deleted;
-                isDel.Update ();
+                isDel = isDel.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = McPending.StateEnum.Deleted;
+                    return true;
+                });
                 var isFailed = CreatePending (accountId: 2);
-                isFailed.State = McPending.StateEnum.Failed;
-                isFailed.Update ();
+                isFailed = isFailed.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = McPending.StateEnum.Failed;
+                    return true;
+                });
                 var retrieved = McPending.QueryNonFailedNonDeleted (2);
                 Assert.AreEqual (1, retrieved.Count, "Should retrieve pending from correct account");
                 PendingsAreEqual (matcher, retrieved.FirstOrDefault ());
@@ -746,7 +763,7 @@ namespace Test.iOS
                 var pendElig = CreatePending ();
                 CreatePending (); // pending but not eligible
                 CreatePending (accountId: 5); // pending in other account
-                var retrieved = McPending.QueryEligible (defaultAccountId);
+                var retrieved = McPending.QueryEligible (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 PendingsAreEqual (pendElig, retrieved.FirstOrDefault ());
             }
 
@@ -808,7 +825,7 @@ namespace Test.iOS
                 var pendPast = CreateDeferredWithSeconds (protoControl, -waitSeconds);
                 CreateDeferredWithSeconds (protoControl, waitSeconds, accountId: 5); // pendOtherAccount 
 
-                var retrieved = McPending.QueryDeferredUntilNow (defaultAccountId);
+                var retrieved = McPending.QueryDeferredUntilNow ();
                 Assert.AreEqual (1, retrieved.Count);
                 PendingsAreEqual (pendPast, retrieved.FirstOrDefault ());
             }
@@ -881,12 +898,36 @@ namespace Test.iOS
             [Test]
             public void TestQueryFirstEligibleByOperation ()
             {
-                var firstPend = CreatePending (operation: Operations.CalUpdate);
-                CreatePending (operation: Operations.CalUpdate); // second pending object
-                CreatePending (operation: Operations.CalUpdate); // pending object in another account
+                var firstPend = CreatePending (operation: Operations.CalUpdate, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId:"a");
+                CreatePending (operation: Operations.CalUpdate, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId:"b"); // second pending object
+                CreatePending (accountId:3, operation: Operations.CalUpdate, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId:"c"); // pending object in another account
 
                 var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, Operations.CalUpdate);
                 PendingsAreEqual (firstPend, retrieved);
+            }
+
+            [Test]
+            public void TestQueryFirstEligibleByOperation2 ()
+            {
+                var found = new List<McPending> ();
+                found.Add (CreatePending (operation: Operations.EmailDelete, capability: McAccount.AccountCapabilityEnum.EmailReaderWriter, serverId:"a"));
+                found.Add (CreatePending (operation: Operations.CalDelete, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId:"b"));
+                found.Add (CreatePending (operation: Operations.ContactDelete,capability:  McAccount.AccountCapabilityEnum.ContactWriter, serverId:"c")); 
+                found.Add (CreatePending (operation: Operations.TaskDelete, capability: McAccount.AccountCapabilityEnum.TaskWriter, serverId:"d")); 
+                CreatePending (accountId:3, operation: Operations.CalDelete, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId:"e"); // pending object in another account
+                CreatePending (operation: Operations.TaskDelete, capability: McAccount.AccountCapabilityEnum.TaskWriter, serverId:"f"); // excluded by limit.
+                CreatePending (operation: Operations.CalUpdate, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId:"g"); // excluded by op.
+
+                var retrieved = McPending.QueryFirstEligibleByOperation (defaultAccountId, 
+                                    Operations.EmailDelete, Operations.CalDelete, Operations.ContactDelete, Operations.TaskDelete,
+                                    4);
+                Assert.AreEqual (4, retrieved.Count);
+                foreach (var pending in retrieved) {
+                    var match = found.Where (x => x.Operation == pending.Operation).FirstOrDefault ();
+                    Assert.IsNotNull (match);
+                    found.Remove (match);
+                }
+                Assert.AreEqual (0, found.Count);
             }
 
             [Test]
@@ -915,6 +956,36 @@ namespace Test.iOS
                 var badPend = CreatePending (serverId: serverId, operation: Operations.AttachmentDownload);
                 var noItem = badPend.QueryItemUsingServerId ();
                 Assert.Null (noItem, "Should return null if a non-move operation is queried");
+            }
+
+            [Test]
+            public void TestQueryByEmailMessageId ()
+            {
+                var email1 = FolderOps.CreateUniqueItem<McEmailMessage> (serverId: "e1");
+                var cal = FolderOps.CreateUniqueItem<McCalendar> (serverId: "c1");
+                var email2 = FolderOps.CreateUniqueItem<McEmailMessage> (accountId: 3, serverId: "e2");
+                var pend1 = CreatePending (operation: Operations.EmailSend, capability: McAccount.AccountCapabilityEnum.EmailSender, item: email1);
+                CreatePending (operation: Operations.EmailBodyDownload, item: email1);
+                CreatePending (accountId:5, operation: Operations.EmailSend, capability: McAccount.AccountCapabilityEnum.EmailSender, item: email1);
+                CreatePending (operation: Operations.EmailSend, item: email2);
+                CreatePending (operation: Operations.CalDelete, capability: McAccount.AccountCapabilityEnum.CalWriter, item: cal);
+
+                var found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+                pend1 = pend1.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.Operation = Operations.EmailForward;
+                    return true;
+                });
+                found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
+                pend1 = pend1.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.Operation = Operations.EmailReply;
+                    return true;
+                });
+                found = McPending.QueryByEmailMessageId (email1.AccountId, email1.Id);
+                PendingsAreEqual (found, pend1);
             }
         }
 
@@ -1005,8 +1076,8 @@ namespace Test.iOS
             {
                 var op = Operations.CalRespond;
                 var serverId = "1";
-                var firstPend = CreatePending (operation: op, serverId: serverId);
-                var secPend = CreatePending (operation: op, serverId: firstPend.ServerId);
+                var firstPend = CreatePending (operation: op, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId: serverId);
+                var secPend = CreatePending (operation: op, capability: McAccount.AccountCapabilityEnum.CalWriter, serverId: firstPend.ServerId);
 
                 var retrieved = McPending.QueryById<McPending> (secPend.Id);
                 Assert.AreEqual (StateEnum.PredBlocked, retrieved.State);
@@ -1018,7 +1089,7 @@ namespace Test.iOS
                 var op = Operations.CalMove;
                 var serverId = "5";
 
-                TestItemMoveDep (op, serverId);
+                TestItemMoveDep (op, McAccount.AccountCapabilityEnum.CalWriter, serverId);
             }
 
             [Test]
@@ -1027,7 +1098,7 @@ namespace Test.iOS
                 var op = Operations.CalMove;
                 var serverId = "5";
 
-                TestItemMoveDep (op, serverId);
+                TestItemMoveDep (op, McAccount.AccountCapabilityEnum.CalWriter, serverId);
             }
 
             [Test]
@@ -1036,7 +1107,7 @@ namespace Test.iOS
                 var op = Operations.CalMove;
                 var serverId = "5";
 
-                TestItemMoveDep (op, serverId);
+                TestItemMoveDep (op, McAccount.AccountCapabilityEnum.CalWriter, serverId);
             }
 
             [Test]
@@ -1045,17 +1116,17 @@ namespace Test.iOS
                 var op = Operations.CalMove;
                 var serverId = "5";
 
-                TestItemMoveDep (op, serverId);
+                TestItemMoveDep (op, McAccount.AccountCapabilityEnum.CalWriter, serverId);
             }
 
-            private void TestItemMoveDep (Operations op, string serverId)
+            private void TestItemMoveDep (Operations op, McAccount.AccountCapabilityEnum capability, string serverId)
             {
                 NcResult result = NcResult.Info (SubKindEnum.Info_ContactMoveSucceeded);
 
                 // Create pending object to block other pending operations
                 var blocker = CreatePending (serverId: serverId, operation: Operations.FolderCreate);
 
-                TestMoveAfterFolderCreate (blocker, op, result);
+                TestMoveAfterFolderCreate (blocker, op, capability, result);
                 TestMoveIntoOtherPending (blocker, op, result, shouldBlock: true);
 
                 // remove FolderCreate blocker
@@ -1065,7 +1136,7 @@ namespace Test.iOS
                 // make a CalCreate blocker
                 var calBlocker = CreatePending (serverId: serverId, operation: Operations.CalCreate);
 
-                TestMoveAfterCalCreate (blocker, op, result);
+                TestMoveAfterCalCreate (blocker, op, capability, result);
                 TestMoveIntoOtherPending (blocker, op, result, shouldBlock: false);
 
                 // remove CalCreate blocker
@@ -1073,10 +1144,10 @@ namespace Test.iOS
                 calBlocker.ResolveAsSuccess (protoControl, result);
             }
 
-            private void TestMoveAfterFolderCreate (McPending blocker, Operations op, NcResult result)
+            private void TestMoveAfterFolderCreate (McPending blocker, Operations op, McAccount.AccountCapabilityEnum capability, NcResult result)
             {
                 // Test that Move Op is blocked when pred has Op FolderCreate
-                var parIdPend = CreatePending (parentId: blocker.ServerId, operation: op);
+                var parIdPend = CreatePending (parentId: blocker.ServerId, operation: op, capability: capability);
                 var retrieved = McPending.QueryById<McPending> (parIdPend.Id);
 
                 Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove operation should be blocked by FolderCreate if serverId's are equal");
@@ -1101,10 +1172,10 @@ namespace Test.iOS
                 destIdPend.ResolveAsSuccess (protoControl, result);
             }
 
-            private void TestMoveAfterCalCreate (McPending blocker, Operations op, NcResult result)
+            private void TestMoveAfterCalCreate (McPending blocker, Operations op, McAccount.AccountCapabilityEnum capability, NcResult result)
             {
                 // Test that Move Op is blocked when pred has Op Cal Create
-                var pend = CreatePending (serverId: blocker.ServerId, operation: op);
+                var pend = CreatePending (serverId: blocker.ServerId, operation: op, capability: capability);
                 var retrieved = McPending.QueryById<McPending> (pend.Id);
 
                 Assert.AreEqual (StateEnum.PredBlocked, retrieved.State, "ItemMove op should be blocked when pred has Op CalCreate");
@@ -1124,15 +1195,27 @@ namespace Test.iOS
                 var first = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: firstSId);
                 var second = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: secondSId);
                 second.Prioritize ();
-                var seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                var shouldBeNone = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.AccountCapabilityEnum.CalReader);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                Assert.AreEqual (2, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligible (defaultAccountId, McAccount.AccountCapabilityEnum.EmailSender);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligible (defaultAccountId, McAccount.AccountCapabilityEnum.CalReader);
+                Assert.AreEqual (0, shouldBeNone.Count ());
+                shouldBeNone = McPending.QueryEligible (defaultAccountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                Assert.AreEqual (2, shouldBeNone.Count ());
+                var seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 Assert.AreEqual (2, seq.Count ());
                 Assert.AreEqual (secondSId, seq.First ().ServerId);
                 first.Prioritize ();
-                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 Assert.AreEqual (firstSId, seq.First ().ServerId);
                 Assert.AreEqual (2, seq.Count ());
                 second.Prioritize ();
-                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 Assert.AreEqual (2, seq.Count ());
                 Assert.AreEqual (secondSId, seq.First ().ServerId);
             }
@@ -1141,9 +1224,12 @@ namespace Test.iOS
             public void TestIsDuplicate ()
             {
                 var first = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: firstSId);
-                first.ParentId = "dog";
-                first.Update ();
-                var second = new McPending (defaultAccountId) {
+                first = first.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.ParentId = "dog";
+                    return true;
+                });
+                var second = new McPending (defaultAccountId, first.Capability) {
                     ServerId = first.ServerId,
                     ParentId = first.ParentId,
                     Operation = first.Operation,
@@ -1164,12 +1250,14 @@ namespace Test.iOS
                 second.ParentId = first.ParentId;
                 Assert.True (second.IsDuplicate ());
                 second.Operation = Operations.CalBodyDownload;
+                second.Capability = McAccount.AccountCapabilityEnum.CalReader;
                 try {
                     second.IsDuplicate ();
                     Assert.True(false);
                 } catch (NcAssert.NachoAssertionFailure) {
                 }
                 second.Operation = first.Operation;
+                second.Capability = first.Capability;
                 Assert.True (second.IsDuplicate ());
                 second.AccountId++;
                 Assert.False (second.IsDuplicate ());
@@ -1195,8 +1283,14 @@ namespace Test.iOS
                 // Item should not be deleted if McPending.Delete () is called when refCount > 0 AND isAwaitingDelete == True
                 var item = CreateAndLinkItem ();
 
-                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
-                var secPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                var firstPend = CreatePending (item: item, 
+                    operation: Operations.CalCreate, 
+                    capability: McAccount.AccountCapabilityEnum.CalWriter,
+                    serverId: defaultServerId);
+                var secPend = CreatePending (item: item, 
+                    operation: Operations.CalCreate, 
+                    capability: McAccount.AccountCapabilityEnum.CalWriter,
+                    serverId: defaultServerId);
                 firstPend.MarkDispached ();
                 secPend.MarkDispached ();
 
@@ -1222,8 +1316,14 @@ namespace Test.iOS
                 // Item should not be deleted when refCount reaches 0 if isAwaitingDelete is false
                 var item = CreateAndLinkItem ();
 
-                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
-                var secPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                var firstPend = CreatePending (item: item, 
+                    operation: Operations.CalCreate, 
+                    capability: McAccount.AccountCapabilityEnum.CalWriter,
+                    serverId: defaultServerId);
+                var secPend = CreatePending (item: item, 
+                    operation: Operations.CalCreate, 
+                    capability: McAccount.AccountCapabilityEnum.CalWriter,
+                    serverId: defaultServerId);
                 firstPend.MarkDispached ();
                 secPend.MarkDispached ();
 
@@ -1240,7 +1340,9 @@ namespace Test.iOS
                 // Item should be deleted by McItem.Delete () if refCount == 0
                 var item = CreateAndLinkItem ();
 
-                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, serverId: defaultServerId);
+                var firstPend = CreatePending (item: item, operation: Operations.CalCreate, 
+                    capability: McAccount.AccountCapabilityEnum.CalWriter, 
+                    serverId: defaultServerId);
                 firstPend.MarkDispached ();
 
                 firstPend.ResolveAsSuccess (protoControl, NcResult.Info (SubKindEnum.Info_CalendarChanged));

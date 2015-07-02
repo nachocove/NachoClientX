@@ -1,8 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 
-using MonoTouch.Foundation;
+using Foundation;
 
 namespace NachoClient.iOS
 {

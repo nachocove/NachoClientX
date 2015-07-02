@@ -1,8 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using UIKit;
+using Foundation;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
@@ -10,9 +10,12 @@ namespace NachoClient.iOS
     public class NcUIViewController : UIViewController
     {
         private string ClassName;
+
         public event EventHandler ViewDisappearing;
 
-        public NcUIViewController () : base()
+        protected nfloat keyboardHeight;
+
+        public NcUIViewController () : base ()
         {
             Initialize ();
         }
@@ -37,10 +40,14 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             NachoCore.Utils.NcAbate.HighPriority ("NcUIViewController ViewDidLoad");
         }
-            
+
         public override void ViewWillAppear (bool animated)
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_BEGIN");
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
             base.ViewWillAppear (animated);
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLAPPEAR + "_END");
         }
@@ -60,6 +67,13 @@ namespace NachoClient.iOS
             if (null != ViewDisappearing) {
                 ViewDisappearing (this, EventArgs.Empty);
             }
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
+            if (ShouldEndEditing) {
+                View.EndEditing (true);
+            }
             NachoCore.Utils.NcAbate.RegularPriority ("NcUIViewController ViewWillDisappear");
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
@@ -70,12 +84,51 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_END");
         }
+
+        public virtual bool ShouldEndEditing {
+            get { return true; }
+        }
+
+        public virtual bool HandlesKeyboardNotifications {
+            get { return true; }
+        }
+
+        protected virtual void OnKeyboardChanged ()
+        {
+        }
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+                //Start an animation, using values from the keyboard
+                UIView.BeginAnimations ("AnimateForKeyboard");
+                UIView.SetAnimationBeginsFromCurrentState (true);
+                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
+                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
+                //Pass the notification, calculating keyboard height, etc.
+                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
+                var oldHeight = keyboardHeight;
+                if (visible) {
+                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                    keyboardHeight = landscape ? keyboardFrame.Width : keyboardFrame.Height;
+                } else {
+                    keyboardHeight = 0;
+                }
+                if (oldHeight != keyboardHeight) {
+                    OnKeyboardChanged ();
+                }
+                //Commit the animation
+                UIView.CommitAnimations (); 
+            }
+        }
     }
 
     public abstract class NcUIViewControllerNoLeaks : NcUIViewController
     {
         public NcUIViewControllerNoLeaks ()
-            : base()
+            : base ()
         {
         }
 

@@ -4,7 +4,7 @@
 // actions made in the UI designer. If it is removed, they will be lost.
 // Manual changes to this file may not be handled correctly.
 //
-using MonoTouch.Foundation;
+using Foundation;
 using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
@@ -13,13 +13,13 @@ namespace NachoClient.iOS
 	partial class DatePickerViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIButton cancelButton { get; set; }
+		UIKit.UIButton cancelButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIDatePicker datePicker { get; set; }
+		UIKit.UIDatePicker datePicker { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton OKButton { get; set; }
+		UIKit.UIButton OKButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{

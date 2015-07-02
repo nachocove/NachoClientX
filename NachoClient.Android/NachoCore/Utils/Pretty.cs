@@ -1,7 +1,6 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
 using NachoCore;
 using NachoCore.Model;
 using MimeKit;
@@ -34,7 +33,7 @@ namespace NachoCore.Utils
 
         /// <summary>
         /// Calendar event duration, 0h0m style.
-        /// Returns empty string for an appointment.
+        /// Returns an empty string for a zero length time span.
         /// </summary>
         static public string CompactDuration (DateTime StartTime, DateTime EndTime)
         {
@@ -264,6 +263,14 @@ namespace NachoCore.Utils
             }
         }
 
+        static public string RecipientString (string Recipient)
+        {
+            if (null == Recipient) {
+                return "";
+            }
+            return Recipient;
+        }
+
         /// <summary>
         /// Given an organizer name, return a string
         /// worthy of being displayed in the files list.
@@ -330,10 +337,20 @@ namespace NachoCore.Utils
             return Date.LocalT ().ToString ("dddd") + " " + Date.LocalT ().ToString ("t");
         }
 
-        static public string DisplayNameForAccount (McAccount account)
+        // The display name of the account is a nickname for
+        // the account, like Exchange or My Work Account, etc.
+        // We do not support this yet, so null is teh right value.
+        static public string UserNameForAccount (McAccount account)
+        {
+            NcAssert.True (null == account.DisplayUserName);
+            return null;
+        }
+
+        // "Exchange" predates always setting the display name
+        static public string AccountName (McAccount account)
         {
             if (null == account.DisplayName) {
-                return account.EmailAddr;
+                return "Exchange";
             } else {
                 return account.DisplayName;
             }
@@ -361,58 +378,58 @@ namespace NachoCore.Utils
             }
         }
 
-
-        public static string FormatAlert (uint alert)
+        public static string ReminderTime (TimeSpan startsIn)
         {
-            var alertMessage = "";
-            if (0 == alert) {
-                alertMessage = "now";
-            } else if (1 == alert) {
-                alertMessage = " in a minute";
-            } else if (5 == alert || 15 == alert || 30 == alert) {
-                alertMessage = " in " + alert + " minutes";
-            } else if (60 == alert) {
-                alertMessage = " in an hour";
-            } else if (120 == alert) {
-                alertMessage = " in two hours";
-            } else if ((60 * 24) == alert) {
-                alertMessage = " in one day";
-            } else if ((60 * 48) == alert) {
-                alertMessage = " in two days";
-            } else if ((60 * 24 * 7) == alert) {
-                alertMessage = " in a week";
-            } else {
-                alertMessage = String.Format (" in {0} minutes", alert);
+            int minutes = Convert.ToInt32 (startsIn.TotalMinutes);
+            if (0 > minutes) {
+                return "already started";
             }
-            return alertMessage;
+            if (0 == minutes) {
+                return "now";
+            }
+            if (1 == minutes) {
+                return "in a minute";
+            }
+            if (60 == minutes) {
+                return "in an hour";
+            }
+            if ((60 * 24) == minutes) {
+                return "in a day";
+            }
+            if ((60 * 24 * 7) == minutes) {
+                return "in a week";
+            }
+            if (60 > minutes) {
+                return string.Format ("in {0} minutes", minutes);
+            }
+            if (120 > minutes) {
+                return string.Format ("in an hour and {0} minutes", minutes - 60);
+            }
+            if (0 == minutes % (60 * 24)) {
+                return string.Format ("in {0} days", minutes / (60 * 24));
+            }
+            if (0 == minutes % 60) {
+                return string.Format ("in {0} hours", minutes / 60);
+            }
+            return string.Format ("in {0}:{1:D2}", minutes / 60, minutes % 60);
         }
 
         public static string PrettyFileSize (long fileSize)
         {
             NcAssert.True (0 <= fileSize);
             if (1000 > fileSize) {
-                return String.Format ("{0}B", fileSize);
+                return String.Format ("{0} B", fileSize);
             }
             if (1000000 > fileSize) {
-                return String.Format ("{0:F1}KB", (double)fileSize / 1.0e3);
+                return String.Format ("{0:F1} KB", (double)fileSize / 1.0e3);
             }
             if ((1000 * 1000 * 1000) > fileSize) {
-                return String.Format ("{0:F1}MB", (double)fileSize / 1.0e6);
+                return String.Format ("{0:F1} MB", (double)fileSize / 1.0e6);
             }
             if ((1000L * 1000L * 1000L * 1000L) > fileSize) {
-                return String.Format ("{0:F1}GB", (double)fileSize / 1.0e9);
+                return String.Format ("{0:F1} GB", (double)fileSize / 1.0e9);
             }
             return String.Format ("{0:F1}TB", (double)fileSize / 1.0e12);
-        }
-
-        public static string PointF (PointF p)
-        {
-            return String.Format ("({0},{1})", p.X, p.Y);
-        }
-
-        public static string SizeF (SizeF s)
-        {
-            return String.Format ("({0},{1})", s.Width, s.Height);
         }
 
         public static string Join (String one, String two, String separator = " ")
@@ -514,7 +531,7 @@ namespace NachoCore.Utils
             return AddOrdinalSuffix (week);
         }
 
-        public static string MakeRecurrenceString (List<McRecurrence> recurrences)
+        public static string MakeRecurrenceString (IList<McRecurrence> recurrences)
         {
             if (0 == recurrences.Count) {
                 return "does not repeat";
@@ -631,6 +648,70 @@ namespace NachoCore.Utils
                 return String.Empty;
             }
             return System.IO.Path.GetExtension (path).ToUpper ();
+        }
+
+        public static string MaxAgeFilter (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
+        {
+            switch (code) {
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0:
+                return "All messages";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneDay_1:
+                return "One day";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeDays_2:
+                return "Three days";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneWeek_3:
+                return "One week";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
+                return "Two weeks";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
+                return "One month";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
+                return "Three months";
+            case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
+                return "Six months";
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            return "";
+        }
+
+        // Some of these are hidden on purpose, see notification code
+        public static string NotificationConfiguration (McAccount.NotificationConfigurationEnum code)
+        {
+            var list = new List<string> ();
+//            if (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 == (McAccount.NotificationConfigurationEnum.ALLOW_ALL_1 & code)) {
+//                list.Add ("All");
+//            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 == (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2 & code)) {
+                list.Add ("Hot");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 == (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4 & code)) {
+                list.Add ("VIPs");
+            }
+            if (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 == (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64 & code)) {
+                list.Add ("Inbox");
+            }
+//            if (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 == (McAccount.NotificationConfigurationEnum.ALLOW_INVITES_16 & code)) {
+//                list.Add ("Invitations");
+//            }
+//            if (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 == (McAccount.NotificationConfigurationEnum.ALLOW_REMINDERS_32 & code)) {
+//                list.Add ("Reminders");
+//            }
+            if (0 == list.Count) {
+                return "None";
+            } else {
+                return String.Join (", ", list);
+            }
+        }
+
+        public static string MessageCount(string label, int count)
+        {
+            if (0 == count) {
+                return String.Format ("No {0}s", label);
+            } else {
+                return String.Format("{0} {1}{2}", count, label, (1 == count) ? "" : "s");
+            }
         }
     }
 }
