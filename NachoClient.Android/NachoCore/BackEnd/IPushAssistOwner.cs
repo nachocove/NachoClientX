@@ -15,6 +15,14 @@ namespace NachoCore
 
     public class PushAssistParameters
     {
+        // Common elements
+        public PushAssistProtocol Protocol;
+
+        public int ResponseTimeoutMsec;
+
+        public int WaitBeforeUseMsec;
+
+        // ActiveSync Elements
         public string RequestUrl;
 
         public byte[] RequestData;
@@ -29,15 +37,19 @@ namespace NachoCore
 
         public byte[] NoChangeResponseData;
 
-        public PushAssistProtocol Protocol;
+        public Credentials MailServerCredentials;
 
-        public byte[] CommandTerminator;
 
-        public byte[] CommandAcknowledgement;
+        // IMAP elements
+        public byte[] IMAPAuthenticationBlob;
 
-        public int ResponseTimeoutMsec;
+        public string IMAPFolderName;
 
-        public int WaitBeforeUseMsec;
+        public bool IMAPSupportsIdle;
+
+        public bool IMAPSupportsExpunge;
+
+        public int IMAPEXISTSCount;
     }
 
     public interface IPushAssistOwner : IBEContext

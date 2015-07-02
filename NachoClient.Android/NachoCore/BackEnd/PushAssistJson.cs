@@ -30,19 +30,24 @@ namespace NachoCore
     public class StartSessionRequest : BaseRequest
     {
         public string MailServerUrl;
-        public Credentials MailServerCredentials;
         public string Protocol;
         public string Platform;
-        public Dictionary<string, string> HttpHeaders;
-        public string RequestData;
-        public string ExpectedReply;
-        public string NoChangeReply;
-        public string CommandTerminator;
-        public string CommandAcknowledgement;
         public int ResponseTimeout;
         public int WaitBeforeUse;
         public string PushToken;
         public string PushService;
+
+        public Credentials MailServerCredentials;
+        public Dictionary<string, string> HttpHeaders;
+        public string RequestData;
+        public string ExpectedReply;
+        public string NoChangeReply;
+
+        public string IMAPAuthenticationBlob;
+        public string IMAPFolderName;
+        public bool IMAPSupportsIdle;
+        public bool IMAPSupportsExpunge;
+        public int IMAPEXISTSCount;
     }
 
     public class DeferSessionRequest : SessionRequest
