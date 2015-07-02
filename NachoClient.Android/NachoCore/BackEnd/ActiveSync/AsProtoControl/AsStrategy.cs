@@ -80,7 +80,7 @@ namespace NachoCore.ActiveSync
 
             public static int[,] Ladder;
 
-            /* We achived stability while using this setup. Going back to try the old graduated sync filter scheme.
+            /* We achieved stability while using this setup. Going back to try the old graduated sync filter scheme.
             public static int[,] ProductionLadder = new int[,] {
                 // { Email, Cal, Contact, Action }
                 { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {

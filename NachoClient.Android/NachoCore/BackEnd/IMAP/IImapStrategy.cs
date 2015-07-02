@@ -6,11 +6,24 @@ using NachoCore.Model;
 using System;
 using MailKit.Search;
 using MimeKit;
+using NachoCore.Utils;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
     public class SyncKit
     {
+
+        // TODO Strategy Optimizations:
+        // 1) Instead of passing a simple list (or set) of uniqueId's, send a set, where each element is UID+Flags+headers.
+        //    Reason: We only need the full NewMessageFlags for NEW messages. When we're trying to determine Deleted or Flags-change,
+        //    we only need MessageSummaryItems.Flags and MessageSummaryItems.UniqueId. This will give us a much faster
+        //    server-response.
+        //    Perhaps instead UID+Flags_headers, have a set of "check for new" and a set for "check for changes"?
+        // 2) strategy should remember which folder it's been working on and give it some preference. Otherwise we always
+        //    do a depth-first sync, always checking the front of the list of folders first, making the tail-end of the list
+        //    very slow to update.
+
         public enum MethodEnum
         {
             Sync,
@@ -55,6 +68,7 @@ namespace NachoCore.IMAP
             string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method.ToString ());
             switch (Method) {
             case MethodEnum.Sync:
+                me += string.Format (" Flags {{{0}}}", Flags);
                 me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
                 break;
 

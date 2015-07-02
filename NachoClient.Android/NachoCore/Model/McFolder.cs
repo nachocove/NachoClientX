@@ -66,6 +66,8 @@ namespace NachoCore.Model
         // DateTime we last examined the folder.
         public DateTime ImapLastExamine { get; set; }
 
+        public bool ImapNeedFullSync { get; set; }
+
         // The lowest UID we've synced in the current round of syncing
         public uint ImapUidLowestUidSynced { get; set; }
         // The highest UID we've synced in the current round of syncing
