@@ -882,7 +882,7 @@ namespace NachoCore.IMAP
             bool supportsIdle = (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.Idle));
 
             return new PushAssistParameters () {
-                RequestUrl = string.Format ("{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
+                RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
                 Protocol = PushAssistProtocol.IMAP,
                 ResponseTimeoutMsec = 600 * 1000,
                 WaitBeforeUseMsec = 60 * 1000,
