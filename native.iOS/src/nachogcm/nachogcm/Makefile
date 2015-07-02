@@ -1,4 +1,4 @@
-CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I/usr/local/ssl/include 
+CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I/usr/local/ssl/include -I/opt/local/include 
 .PHONY: clean all install
 LIB_SRCS = $(wildcard *.c)
 LIB_OBJS = $(LIB_SRCS:.c=.o)

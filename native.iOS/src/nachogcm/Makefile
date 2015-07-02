@@ -1,5 +1,5 @@
 OPENSSL_HOME ?= /usr/local/ssl
-CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I$(OPENSSL_HOME)/include -I./include -g -O0
+CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I$(OPENSSL_HOME)/include -I./include -I/opt/local/include -g -O0 
 
 NACHOGCM_LIB=lib/nachogcm.a
 LIBS = $(NACHOGCM_LIB) -L$(OPENSSL_HOME)/lib -lcrypto

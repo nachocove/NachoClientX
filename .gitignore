@@ -5,6 +5,7 @@
 *.DS_Store
 *.nib
 */bin/*
+*.o
 */obj/*
 */*/bin/*
 */*/obj/*

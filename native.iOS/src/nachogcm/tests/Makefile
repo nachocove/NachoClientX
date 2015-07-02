@@ -1,17 +1,17 @@
 .PHONY: test all clean nachogcmlib
 
-CFLAGS = -Wall -Werror -I/usr/local/include -I ../include
+CFLAGS = -Wall -Werror -I/usr/local/include -I ../include -I/opt/local/include 
 
 TEST_SRCS = $(wildcard *.c)
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 TEST_EXE = check_nachogcm
 NACHOGCM_LIB = ../lib/nachogcm.a
-LIBS = -L/usr/local/ssl/lib -L/usr/local/lib -lcheck -lcrypto
+LIBS = -L/usr/local/ssl/lib -L/usr/local/lib -L/opt/local/lib -lcheck -lcrypto
 
 all: $(TEST_EXE)
 
 test: all
-	./$(TEST_EXE) -d 
+	./$(TEST_EXE)
 	
 $(TEST_EXE): $(TEST_OBJS) $(NACHOGCM_LIB)
 	$(CC) -o $@ $+ $(LIBS)
