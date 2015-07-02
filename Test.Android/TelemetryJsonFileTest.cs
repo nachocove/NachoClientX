@@ -267,7 +267,7 @@ namespace Test.Common
             var event4 = new TelemetrySamplesEvent () {
                 timestamp = TelemetryJsonEvent.AwsDateTime (WrappedTelemetryJsonFileTable.UtcNow),
                 sample_name = "Process_memory",
-                sample_value = 90,
+                sample_int = 90,
             };
             AddEventAndCheck (event4);
             CheckWriteFilesCount (4);
