@@ -390,7 +390,6 @@ namespace NachoClient
         private static UIColor[] calendarColors = {
             UIColor.Blue,
             UIColor.Red,
-            UIColor.Yellow,
             UIColor.Green,
             UIColor.Orange,
             UIColor.Purple,
