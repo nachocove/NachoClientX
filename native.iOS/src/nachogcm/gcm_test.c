@@ -21,10 +21,19 @@
 #define AES_256_BIT_KEY_SIZE 32
 #define BITS 8
 
+void print_usage(char *progname)
+{
+	printf("USAGE:\n");
+	printf("\t%s -m|--makekey (output a valid AES key to stdout)\n", progname);
+	printf("\t%s -i|--ivtest <an iv> (test a given IV for correctness)\n", progname);
+	printf("\t%s -k|--key <key> -e|--encrypt [-o|--outfile <output filename>] <filename> (encrypt a file, optionally into another file (stdout by default)\n", progname);
+	printf("\t%s -k|--key <key> -d|--decrypt [-o|--outfile <output filename>] <filename> (decrypt a file, optionally into another file (stdout by default)\n", progname);
+	printf("\t%s -h|--help\n", progname);
+}
 int main(int argc, char **argv) {
 	char *device_id = "Ncho3168E1E2XF59EX4E37XAFDEX";
 	unsigned long counter = 1234;
-	int iv_len;
+	int iv_len = 0;
 	char *input_file = "-";
 	char *output_file = "-";
 	unsigned char *key = NULL;
@@ -64,16 +73,14 @@ int main(int argc, char **argv) {
 	int c;
 	while ((c = getopt_long(argc, argv, short_args, long_options, NULL)) != -1) {
 		switch (c) {
-		case '?':
-			break;
-
 		case 'm':
 			key = make_key((AES_256_BIT_KEY_SIZE*BITS)); // makes a 32 byte string
 			printf("%s\n", b64encode(key, AES_256_BIT_KEY_SIZE));
 			exit(0);
 
+		case '?':
 		case 'h':
-			printf("USAGE: %s <iv-len in bits>\n", argv[0]);
+			print_usage(argv[0]);
 			break;
 
 		case 'k':
@@ -90,14 +97,22 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "IV Length must be a multiple of 8!\n");
 				exit(1);
 			}
-			break;
+			exit(0);
 
 		case 'd':
+			if (do_encrypt || do_decrypt) {
+				print_usage(argv[0]);
+				exit(1);
+			}
 			do_decrypt = 1;
 			input_file = optarg;
 			break;
 
 		case 'e':
+			if (do_encrypt || do_decrypt) {
+				print_usage(argv[0]);
+				exit(1);
+			}
 			do_encrypt = 1;
 			input_file = optarg;
 			break;
