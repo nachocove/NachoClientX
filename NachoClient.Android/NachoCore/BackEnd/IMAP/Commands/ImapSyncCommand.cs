@@ -165,8 +165,7 @@ namespace NachoCore.IMAP
 
             // Process any new or changed messages. This will also tell us any messages that vanished.
             UniqueIdSet vanished;
-            UniqueIdSet newOrChanged;
-            GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished, out newOrChanged);
+            UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
             if (newOrChanged.Any ()) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
@@ -221,9 +220,9 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
-        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished, out UniqueIdSet newOrChanged)
+        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
         {
-            newOrChanged = new UniqueIdSet ();
+            UniqueIdSet newOrChanged = new UniqueIdSet ();
             Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Message summaries {1}", Synckit.Folder.ImapFolderNameRedacted (), uidset.ToString ());
 
             NcCapture cap;
@@ -260,7 +259,7 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds);
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
-            return summaryUids;
+            return newOrChanged;
         }
 
         private IList<IMessageSummary> getMessageSummaries (IMailFolder mailKitFolder, UniqueIdSet uidset)
