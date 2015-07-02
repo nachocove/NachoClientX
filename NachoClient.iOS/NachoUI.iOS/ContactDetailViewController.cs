@@ -1046,7 +1046,12 @@ namespace NachoClient.iOS
 
         protected void PerformAction (string action, string number)
         {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+            try {
+                UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+            } catch (Exception e) {
+                ComplainAbout ("Cannot dial", "The phone number seems to be invalid");
+                Log.Warn (Log.LOG_UI, "Cannot dail an invalid # ({0})", e);
+            }
         }
 
         protected void ComplainAbout (string complaintTitle, string complaintMessage)
