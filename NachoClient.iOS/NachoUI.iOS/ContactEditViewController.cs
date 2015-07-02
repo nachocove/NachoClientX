@@ -1949,6 +1949,10 @@ namespace NachoClient.iOS
                     LayoutView ();
                 } else {
                     Dismiss ();
+                    dateView.Hidden = true;
+                    this.dateLabel.TextColor = A.Color_NachoGreen;
+                    ConfigureView ();
+                    LayoutView ();
                 }
             }
 
@@ -1960,10 +1964,6 @@ namespace NachoClient.iOS
                 // then construct a new DateTime with that date in UTC.
                 DateTime selectedDate = datePicker.Date.ToDateTime ().ToLocalTime ().Date;
                 dateAttribute.Value = new DateTime (selectedDate.Year, selectedDate.Month, selectedDate.Day, 0, 0, 0, DateTimeKind.Utc);
-                dateView.Hidden = true;
-                this.dateLabel.TextColor = A.Color_NachoGreen;
-                ConfigureView ();
-                LayoutView ();
             }
 
             protected void TrashButtonClicked (object sender, EventArgs e)
