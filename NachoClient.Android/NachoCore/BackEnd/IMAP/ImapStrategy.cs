@@ -135,8 +135,7 @@ namespace NachoCore.IMAP
                     // Nothing to do.
                     return null;
                 }
-
-                UniqueIdSet syncSet;
+                UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
                 UniqueIdSet uids;
 
                 MessageSummaryItems flags = NewMessageFlags;
@@ -147,7 +146,6 @@ namespace NachoCore.IMAP
 
                 if (HasNewMail (folder)) {
                     Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: HasNewMail", folder.ImapFolderNameRedacted ());
-                    syncSet = NotOnDeviceUids (folder, currentMails, currentUidSet);
                     var highestUid = new UniqueId (folder.ImapUidNext - 1);
                     if (syncSet.Any () && !syncSet.Contains (highestUid)) {
                         // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
@@ -156,27 +154,6 @@ namespace NachoCore.IMAP
                             var lowest = syncSet.Min ();
                             syncSet.Remove (lowest);
                         }
-                    }
-                } else if (HasChangedMails (folder, out uids)) {
-                    Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: HasChangedMails", folder.ImapFolderNameRedacted ());
-                    // FIXME This needs work. Need to figure out how to detect changed emails.
-                    if (uids.Any ()) {
-                        syncSet = uids;
-                    } else {
-                        resetLastSyncPoint (ref folder);
-                        syncSet = NotOnDeviceUids (folder, currentMails, currentUidSet);
-                    }
-                } else if (HasDeletedMail (folder, currentMails, currentUidSet, out uids)) {
-                    Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: HasDeletedMail", folder.ImapFolderNameRedacted ());
-                    syncSet = uids;
-                } else {
-                    syncSet = ReSyncUids (folder, currentMails);    
-                    if (!syncSet.Any ()) {
-                        Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: fetch new mail (if any)", folder.ImapFolderNameRedacted ());
-                        // continue fetching older mails
-                        syncSet = NotOnDeviceUids (folder, currentMails, currentUidSet);
-                    } else {
-                        Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: continue resync", folder.ImapFolderNameRedacted ());
                     }
                 }
 
@@ -214,8 +191,9 @@ namespace NachoCore.IMAP
             return (0 != folder.ImapUidHighestUidSynced && folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1);
         }
 
-        private bool HasDeletedMail (McFolder folder, UniqueIdSet currentMails, UniqueIdSet currentUidSet, out UniqueIdSet uids)
+        private static bool HasDeletedMail (McFolder folder, UniqueIdSet currentMails, UniqueIdSet currentUidSet, out UniqueIdSet uids)
         {
+            // Need to pass in the FULL currentUidSet, not one narrowed down by startingPoint and span!!
             uids = new UniqueIdSet (currentMails.Except (currentUidSet));
             return uids.Any ();
         }
