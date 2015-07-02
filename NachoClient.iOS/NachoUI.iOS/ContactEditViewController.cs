@@ -860,6 +860,12 @@ namespace NachoClient.iOS
             case Xml.Contacts2.MMS:
                 contactCopy.MMS = null;
                 break;
+            case Xml.Contacts2.NickName:
+                contactCopy.NickName = null;
+                break;
+            default:
+                Log.Warn (Log.LOG_UI, "Clearing unknown contact misc. field {0}", forCell.Name);
+                break;
             }
         }
 
@@ -985,6 +991,9 @@ namespace NachoClient.iOS
                 break;
             case Xml.Contacts2.NickName:
                 contactCopy.NickName = editingMiscCell.Value;
+                break;
+            default:
+                Log.Warn (Log.LOG_UI, "Setting unknown contact misc. field {0}", forCell.Name);
                 break;
             }
         }
