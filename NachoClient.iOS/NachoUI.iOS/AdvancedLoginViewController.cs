@@ -50,14 +50,6 @@ namespace NachoClient.iOS
             }
         }
 
-        void ShowWaitingScreen(string loadingMessage = null)
-        {
-            RemoveWindows ();
-            waitingScreen = new WaitingScreen (View.Frame, this);
-            View.AddSubview (waitingScreen);
-            waitingScreen.ShowView(loadingMessage);
-        }
-
         public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account);
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
@@ -131,6 +123,12 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if ((uint)LoginProtocolControl.States.TutorialSupportWait == loginProtocolControl.sm.State) {
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AllDone, "avl: ViewDidAppear");
+                EventFromEnum ();
+                return;
+            }
+
             // Kickstart if we are just starting out and we're still in the start state
             if ((uint)LoginProtocolControl.States.Start == loginProtocolControl.sm.State) {
                 if (null != account) {
@@ -143,7 +141,12 @@ namespace NachoClient.iOS
 
         public void FinishUp ()
         {
-            waitingScreen.Layer.RemoveAllAnimations ();
+            if (null == waitingScreen) {
+                waitingScreen = new WaitingScreen (View.Frame, this);
+                View.AddSubview (waitingScreen);
+            } else {
+                waitingScreen.Layer.RemoveAllAnimations ();
+            }
 
             if (!LoginHelpers.HasViewedTutorial ()) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowTutorial, "avl: FinishUp");
@@ -166,6 +169,10 @@ namespace NachoClient.iOS
         public void ShowAdvancedConfiguration (LoginProtocolControl.Prompt prompt)
         {
             RemoveWindows ();
+
+            if (null != account) {
+                BackEnd.Instance.Stop (account.Id);
+            }
 
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (service) {
@@ -200,7 +207,7 @@ namespace NachoClient.iOS
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.StartOver, "avl: onConnect");
                 break;
             case ConnectCallbackStatusEnum.Support:
-                PerformSegue ("SegueToSupport", this);
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowSupport, "avl: onConnect");
                 break;
             }
         }
@@ -259,6 +266,14 @@ namespace NachoClient.iOS
             } else {
                 waitingScreen.ShowView ("Syncing Your Inbox...");
             }
+        }
+
+        public void ShowWaitingScreen (string waitingMessage)
+        {
+            RemoveWindows ();
+            waitingScreen = new WaitingScreen (View.Frame, this);
+            View.AddSubview (waitingScreen);
+            waitingScreen.ShowView (waitingMessage);
         }
 
         public void PromptForCredentials ()
@@ -337,8 +352,15 @@ namespace NachoClient.iOS
         {
         }
 
+        public void ShowSupport ()
+        {
+            RemoveWindows ();
+            PerformSegue ("SegueToSupport", this);
+        }
+
         public void ShowTutorial ()
         {
+            RemoveWindows ();
             PerformSegue ("SegueToHome", this);
         }
 
@@ -527,6 +549,7 @@ namespace NachoClient.iOS
 
             if ((BackEndStateEnum.Running == senderState) || (BackEndStateEnum.Running == readerState)) {
                 Log.Info (Log.LOG_UI, "avl: status enums running");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Running, "avl: EventFromEnum not started");
                 return;
             }
 
@@ -597,14 +620,21 @@ namespace NachoClient.iOS
         /// </summary>
         public void ReturnToAdvanceView ()
         {
-            // FIXME
-            waitingScreen.DismissView ();
+            if (CanShowAdvanced ()) {
+                waitingScreen.DismissView ();
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowAdvanced, "avl: ReturnToAdvanceView stopped");
+            }
+        }
+
+        public bool CanShowAdvanced()
+        {
+            return (McAccount.AccountServiceEnum.Exchange == service) || (McAccount.AccountServiceEnum.IMAP_SMTP == service);
         }
 
         public void SegueToSupport ()
         {
             waitingScreen.DismissView ();
-            PerformSegue ("SegueToSupport", this);
+            loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowSupport, "avl: onConnect");
         }
 
         protected override void OnKeyboardChanged ()

@@ -13,7 +13,7 @@ namespace NachoCore
 
         void ShowAdvancedConfiguration (Prompt prompt);
 
-        void ShowNoNetwork();
+        void ShowNoNetwork ();
 
         void Start ();
 
@@ -31,6 +31,8 @@ namespace NachoCore
 
         void TryAgainOrQuit ();
 
+        void ShowSupport ();
+
         void ShowTutorial ();
 
         void Done ();
@@ -40,6 +42,8 @@ namespace NachoCore
         void Quit ();
 
         void ShowCredReq ();
+
+        void ShowWaitingScreen (string waitingMessage);
     }
 }
 
