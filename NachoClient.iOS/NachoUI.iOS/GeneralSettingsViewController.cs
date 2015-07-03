@@ -43,6 +43,9 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            if (null != NavigationController) {
+                Util.ConfigureNavBar (false, NavigationController);
+            }
         }
 
         protected override void CreateViewHierarchy ()
@@ -56,7 +59,7 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, this.NavigationController);
 
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount:false);
+            accountsTableViewSource.Setup (this, showAccessory: true, showUnreadCount: false);
 
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.Source = accountsTableViewSource;
@@ -114,6 +117,9 @@ namespace NachoClient.iOS
                 var account = (McAccount)h.value;
                 var vc = (AccountSettingsViewController)segue.DestinationViewController;
                 vc.SetAccount (account);
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToAdvancedLoginView")) {
                 return;
             }
             if (segue.Identifier.Equals ("SegueToLaunch")) {

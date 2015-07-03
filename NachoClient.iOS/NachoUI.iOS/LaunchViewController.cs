@@ -30,7 +30,7 @@ namespace NachoClient.iOS
         public static void StartAccountSetup (UIViewController fromViewController)
         {
             var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var toViewController = (LaunchViewController)storyboard.InstantiateViewController ("LaunchViewController");
+            var toViewController = (AdvancedLoginViewController)storyboard.InstantiateViewController ("AdvancedLoginViewController");
             var segue = new FadeCustomSegue ("", fromViewController, toViewController);
             segue.Perform ();
         }
