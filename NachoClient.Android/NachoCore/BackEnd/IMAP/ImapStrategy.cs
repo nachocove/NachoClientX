@@ -136,7 +136,6 @@ namespace NachoCore.IMAP
                     return null;
                 }
                 UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
-                UniqueIdSet uids;
 
                 MessageSummaryItems flags = NewMessageFlags;
                 HashSet<HeaderId> headers = new HashSet<HeaderId> ();
