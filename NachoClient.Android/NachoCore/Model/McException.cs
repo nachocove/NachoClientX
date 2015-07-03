@@ -61,6 +61,16 @@ namespace NachoCore.Model
             return this.ResponseTypeIsSet ? this.ResponseType : CalendarItemOrSelf ().ResponseType;
         }
 
+        public override bool HasMeetingStatus ()
+        {
+            return this.MeetingStatusIsSet || CalendarItemOrSelf ().MeetingStatusIsSet;
+        }
+
+        public override NcMeetingStatus GetMeetingStatus ()
+        {
+            return this.MeetingStatusIsSet ? this.MeetingStatus : CalendarItemOrSelf ().MeetingStatus;
+        }
+
         public override string GetUID ()
         {
             var cal = CalendarItem ();

@@ -117,6 +117,16 @@ namespace NachoCore.Model
             return HasResponseType () ? ResponseType : NcResponseType.None;
         }
 
+        public virtual bool HasMeetingStatus ()
+        {
+            return MeetingStatusIsSet;
+        }
+
+        public virtual NcMeetingStatus GetMeetingStatus ()
+        {
+            return HasMeetingStatus () ? MeetingStatus : NcMeetingStatus.Appointment;
+        }
+
         /// <summary>
         /// Return the UID for this event.  This method must be overridden by derived classes.
         /// </summary>
