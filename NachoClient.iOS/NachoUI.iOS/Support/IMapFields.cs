@@ -378,7 +378,7 @@ namespace NachoClient.iOS
             var password = passwordView.textField.Text;
 
             if (null == account) {
-                account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.Exchange, email, password);
+                account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.IMAP_SMTP, email, password);
             }
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
 
