@@ -7,7 +7,7 @@ namespace NachoCore.IMAP
 {
     public class ImapFetchAttachmentCommand : ImapCommand
     {
-        public ImapFetchAttachmentCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFetchAttachmentCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             // FIXME
         }

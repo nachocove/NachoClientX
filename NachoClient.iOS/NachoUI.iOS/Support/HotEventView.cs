@@ -128,7 +128,8 @@ namespace NachoClient.iOS
 
         public void Configure ()
         {
-            currentEvent = McEvent.GetCurrentOrNextEvent ();
+            DateTime timerFireTime;
+            currentEvent = CalendarHelper.CurrentOrNextEvent (out timerFireTime);
             ConfigureCurrentEvent ();
 
             if (null != eventEndTimer) {
@@ -139,10 +140,10 @@ namespace NachoClient.iOS
             // Set a timer to fire at the end of the currently displayed event, so the view can
             // be reconfigured to show the next event.
             if (null != currentEvent) {
-                TimeSpan timerDuration = currentEvent.GetEndTimeUtc () - DateTime.UtcNow;
+                TimeSpan timerDuration = timerFireTime - DateTime.UtcNow;
                 if (timerDuration < TimeSpan.Zero) {
-                    // The event ended in between GetCurrentOrNextEvent running its query and now.
-                    // Configure the timer to fire immediately.
+                    // The time to reevaluate the current event was in the very near future, and that time was reached in between
+                    // CurrentOrNextEvent() and now.  Configure the timer to fire immediately.
                     timerDuration = TimeSpan.Zero;
                 }
                 eventEndTimer = new NcTimer ("HotEventView", (state) => {
@@ -211,8 +212,12 @@ namespace NachoClient.iOS
             subjectLabelView.Text = subject;
             subjectLabelView.Hidden = false;
 
-            var size = new CGSize (10, 10);
-            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
+            int colorIndex = 0;
+            var folder = McFolder.QueryByFolderEntryId<McCalendar> (cRoot.AccountId, cRoot.Id).FirstOrDefault ();
+            if (null != folder) {
+                colorIndex = folder.DisplayColor;
+            }
+            dotView.Image = Util.DrawCalDot (Util.CalendarColor (colorIndex), new CGSize (10, 10));
             dotView.Hidden = false;
 
             var startString = "";

@@ -383,6 +383,29 @@ namespace NachoClient
             return image;
         }
 
+        /// <summary>
+        /// Colors to use to identify calendar folders.  These are temporary.  The final set of colors
+        /// has not been decided yet.
+        /// </summary>
+        private static UIColor[] calendarColors = {
+            UIColor.Blue,
+            UIColor.Red,
+            UIColor.Green,
+            UIColor.Orange,
+            UIColor.Purple,
+            UIColor.Brown,
+            UIColor.Gray,
+            UIColor.Black,
+        };
+
+        public static UIColor CalendarColor (int colorIndex)
+        {
+            if (0 == colorIndex) {
+                return UIColor.White;
+            }
+            return calendarColors [(colorIndex - 1) % calendarColors.Length];
+        }
+
         public static UIImage DrawCalDot (UIColor circleColor, CGSize size)
         {
             var origin = new CGPoint (0, 0);
@@ -975,6 +998,10 @@ namespace NachoClient
 
         public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
+            if (null == contact) {
+                ComplainAbout ("No Phone Number", "This contact does not have a phone number.");
+                return;
+            }
             if (0 == contact.PhoneNumbers.Count) {
                 if (contact.CanUserEdit ()) {
                     owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
@@ -996,6 +1023,10 @@ namespace NachoClient
 
         public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
+            if (null == contact) {
+                ComplainAbout ("No Email Address", "This contact does not have an email address.");
+                return;
+            }
             if (0 == contact.EmailAddresses.Count) {
                 if (contact.CanUserEdit ()) {
                     owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
@@ -1227,6 +1258,14 @@ namespace NachoClient
                 return formattedText;
             }
         }
+
+        public static void SetHidden(bool hidden, params UIView[] views)
+        {
+            foreach(var view in views) {
+                view.Hidden = hidden;
+            }
+        }
+
 
         #endregion
     }

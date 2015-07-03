@@ -17,7 +17,11 @@ namespace NachoCore.Utils
 {
     public class Telemetry
     {
+        #if __IOS__
         public static bool ENABLED = true;
+        #else
+        public static bool ENABLED = false;
+        #endif
 
         // AWS Redshift has a limit of 65,535 for varchar.
         private const int MAX_AWS_LEN = 65535;
@@ -194,23 +198,6 @@ namespace NachoCore.Utils
             RecordJsonEvent (TelemetryEventType.COUNTER, jsonEvent);
         }
 
-        public static void RecordCapture (string name, int count, int min, int max, long sum, long sum2)
-        {
-            if (!ENABLED) {
-                return;
-            }
-
-            var jsonEvent = new TelemetryStatistics2Event () {
-                stat2_name = name,
-                count = count,
-                min = min,
-                max = max,
-                sum = sum,
-                sum2 = sum2,
-            };
-            RecordJsonEvent (TelemetryEventType.CAPTURE, jsonEvent);
-        }
-
         private static TelemetryUiEvent GetTelemetryUiEvent (string uiType, string uiObject)
         {
             TelemetryUiEvent uiEvent = new TelemetryUiEvent ();
@@ -353,16 +340,46 @@ namespace NachoCore.Utils
             RecordSupport (dict);
         }
 
-        public static void RecordSamples (string samplesName, List<int> samplesValues)
+        public static void RecordIntSamples (string samplesName, List<int> samplesValues)
         {
             if (!ENABLED) {
                 return;
             }
-            var jsonEvent = new TelemetrySamplesEvent () {
-                samples_name = samplesName,
-                samples = samplesValues
-            };
-            RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_int = value,
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
+        }
+
+        public static void RecordFloatSamples (string samplesName, List<double> samplesValues)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_float = value,
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
+        }
+
+        public static void RecordStringSamples (string samplesName, List<string> samplesValues)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            foreach (var value in samplesValues) {
+                var jsonEvent = new TelemetrySamplesEvent () {
+                    sample_name = samplesName,
+                    sample_string = value,
+                };
+                RecordJsonEvent (TelemetryEventType.SAMPLES, jsonEvent);
+            }
         }
 
         public static void RecordStatistics2 (string name, int count, int min, int max, long sum, long sum2)
@@ -379,6 +396,45 @@ namespace NachoCore.Utils
                 sum2 = sum2,
             };
             RecordJsonEvent (TelemetryEventType.STATISTICS2, jsonEvent);
+        }
+
+        public static void RecordIntTimeSeries (string name, DateTime time, int value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            var jsonEvent = new TelemetryTimeSeriesEvent () {
+                time_series_name = name,
+                time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
+                time_series_int = value,
+            };
+            RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
+        }
+
+        public static void RecordFloatTimeSeries (string name, DateTime time, double value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            var jsonEvent = new TelemetryTimeSeriesEvent () {
+                time_series_name = name,
+                time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
+                time_series_float = value,
+            };
+            RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
+        }
+
+        public static void RecordStringTimeSeries (string name, DateTime time, string value)
+        {
+            if (!ENABLED) {
+                return;
+            }
+            var jsonEvent = new TelemetryTimeSeriesEvent () {
+                time_series_name = name,
+                time_series_timestamp = TelemetryJsonEvent.AwsDateTime (time),
+                time_series_string = value,
+            };
+            RecordJsonEvent (TelemetryEventType.TIME_SERIES, jsonEvent);
         }
 
         public static void StartService ()

@@ -347,8 +347,13 @@ namespace NachoCore
 
         private void DoAbate ()
         {
-            Cts.Cancel ();
-            Cts = null;
+            // If the state machine in state SyncW gets AbateOn, AbateOff, AbateOn events before it gets
+            // the SyncCancelled event, then Cts will be null.  This is not an error, since the in-progress
+            // sync has already been notified and there is nothing else that needs ot be cancelled.
+            if (null != Cts) {
+                Cts.Cancel ();
+                Cts = null;
+            }
         }
 
         private void DoPark ()

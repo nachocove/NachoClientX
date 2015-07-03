@@ -28,6 +28,11 @@ die () {
 ./scripts/fetch.py || die "fail to fetch all repos!"
 ./scripts/repos.py checkout-branch --branch $branch || die "fail to switch to branch $branch"
 
+# Need to fetch and change branch again because the branch may add new repos that is not
+# in master's repos_cfg.py.
+./scripts/fetch.py || die "fail to fetch all repos!"
+./scripts/repos.py checkout-branch --branch $branch || die "fail to switch to branch $branch"
+
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile="alpha_build.$tag.$timestamp.log"

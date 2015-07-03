@@ -155,8 +155,10 @@ namespace NachoCore.Utils
     {
         public const string SAMPLES = "SAMPLES";
 
-        public string samples_name;
-        public List<int> samples;
+        public string sample_name;
+        public int sample_int;
+        public double sample_float;
+        public string sample_string;
 
         public TelemetrySamplesEvent ()
         {
@@ -164,15 +166,17 @@ namespace NachoCore.Utils
         }
     }
 
-    public class TelemetryTimeSeriesSamplesEvent : TelemetryJsonEvent
+    public class TelemetryTimeSeriesEvent : TelemetryJsonEvent
     {
         public const string TIME_SERIES = "TIME_SERIES";
 
         public string time_series_name;
-        public List<string> time_series_timestamp;
-        public List<int> time_series_samples;
+        public string time_series_timestamp;
+        public int time_series_int;
+        public double time_series_float;
+        public string time_series_string;
 
-        public TelemetryTimeSeriesSamplesEvent ()
+        public TelemetryTimeSeriesEvent ()
         {
             event_type = TIME_SERIES;
         }

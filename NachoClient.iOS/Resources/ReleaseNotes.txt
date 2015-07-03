@@ -1,16 +1,11 @@
-This release updates the current beta release with:
+New features since the 1.0 release:
 
-. Support for fast notifications for new email messages.
+. Support for Gmail, Yahoo, iCloud, and other IMAP e-mail servers.
 
-. Better manage instances of recurring meetings.
+. Support for multiple accounts within the app simultaneously.
 
-. General performance improvements.
+. Displaying events from the device's calendar in the app's calendar.
 
-. Faster 'hot' analysis.
+Known limitations:
 
-. Bug fixes
-
-Known issues:
-
-. Threading support does not currently work for Google Apps users.
-
+. No calendar support for IMAP servers.

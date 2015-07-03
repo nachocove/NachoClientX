@@ -152,35 +152,41 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                EmailAddressId = McEmailAddress.Get (AccountId, Email);
-                retval = base.Insert ();
-                InsertAddressMap ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Insert")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    EmailAddressId = McEmailAddress.Get (AccountId, Email);
+                    retval = base.Insert ();
+                    InsertAddressMap ();
+                });
+                return retval;
+            }
         }
 
         public override int Update ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                EmailAddressId = McEmailAddress.Get (AccountId, Email);
-                DeleteAddressMap ();
-                InsertAddressMap ();
-                retval = base.Update ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Update")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    EmailAddressId = McEmailAddress.Get (AccountId, Email);
+                    DeleteAddressMap ();
+                    InsertAddressMap ();
+                    retval = base.Update ();
+                });
+                return retval;
+            }
         }
 
         public override int Delete ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                retval = base.Delete ();
-                DeleteAddressMap ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Delete")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    retval = base.Delete ();
+                    DeleteAddressMap ();
+                });
+                return retval;
+            }
         }
     }
 }

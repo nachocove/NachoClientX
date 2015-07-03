@@ -553,7 +553,19 @@ namespace NachoCore.ActiveSync
 
         private bool HasBody (HttpResponseMessage response)
         {
-            return 0 < ContentData.Length ||
+#if __ANDROID__
+            if (!(response.Content is ByteArrayContent)) {
+                // FIXME - address Length property support in ModernHttpClient.
+                return true;
+            }
+#endif
+            long cdLength = -1;
+            try {
+                cdLength = ContentData.Length;
+            } catch (NotSupportedException) {
+                // FIXME - address Length property support in ModernHttpClient.
+            }
+            return 0 < cdLength ||
                 (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength) ||
                 (response.Headers.TransferEncodingChunked.HasValue && 
                     (bool)response.Headers.TransferEncodingChunked);
@@ -620,7 +632,12 @@ namespace NachoCore.ActiveSync
                 }
                 if (Owner.IgnoreBody (this)) {
                     if (HasBody (response)) {
-                        Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: ContentType: {0}, Length: {1}", ContentType, ContentData.Length);
+                        Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: ContentType: {0}", ContentType);
+                        try {
+                            Log.Warn (Log.LOG_HTTP, "Ignored HTTP Body: Length: {0}", ContentData.Length);
+                        } catch (NotSupportedException) {
+                            // FIXME - address Length property support in ModernHttpClient.
+                        }
                     }
                 } else if (HasBody (response)) {
                     switch (ContentType) {

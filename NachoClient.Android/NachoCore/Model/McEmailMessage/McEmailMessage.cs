@@ -1025,57 +1025,61 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int returnVal = -1; 
+            using (var capture = CaptureWithStart ("Insert")) {
+                int returnVal = -1; 
 
-            if (0 == ScoreVersion) {
-                // Try to use the address score for initial email message score
-                // TODO - Should refactor IScorable to include a quick score function in Brain 2.0
-                McEmailAddress emailAddress = GetFromAddress ();
-                if (null != emailAddress) {
-                    if (emailAddress.IsVip || (0 < UserAction)) {
-                        Score = minHotScore;
-                    } else if (0 > UserAction) {
-                        Score = minHotScore - 0.1;
-                    } else if (0 < emailAddress.ScoreVersion) {
-                        Score = emailAddress.Score;
-                    } else {
-                        Score = 0.0;
+                if (0 == ScoreVersion) {
+                    // Try to use the address score for initial email message score
+                    // TODO - Should refactor IScorable to include a quick score function in Brain 2.0
+                    McEmailAddress emailAddress = GetFromAddress ();
+                    if (null != emailAddress) {
+                        if (emailAddress.IsVip || (0 < UserAction)) {
+                            Score = minHotScore;
+                        } else if (0 > UserAction) {
+                            Score = minHotScore - 0.1;
+                        } else if (0 < emailAddress.ScoreVersion) {
+                            Score = emailAddress.Score;
+                        } else {
+                            Score = 0.0;
+                        }
                     }
                 }
-            }
-            HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
+                HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
 
-            NcModel.Instance.RunInTransaction (() => {
-                returnVal = base.Insert ();
-                InsertAddressMaps ();
-                InsertMeetingRequest ();
-                InsertCategories ();
-                InsertScoreStates ();
-            });
+                NcModel.Instance.RunInTransaction (() => {
+                    returnVal = base.Insert ();
+                    InsertAddressMaps ();
+                    InsertMeetingRequest ();
+                    InsertCategories ();
+                    InsertScoreStates ();
+                });
               
-            return returnVal;
+                return returnVal;
+            }
         }
 
         public override int Update ()
         {
-            int returnVal = -1;  
-            if (!HasBeenNotified) {
-                HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
-            }
-
-            NcModel.Instance.RunInTransaction (() => {
-                returnVal = base.Update ();
-                SaveMeetingRequest ();
-                SaveCategories ();
-                if (emailAddressesChanged) {
-                    DeleteAddressMaps ();
-                    InsertAddressMaps ();
+            using (var capture = CaptureWithStart ("Update")) {
+                int returnVal = -1;  
+                if (!HasBeenNotified) {
+                    HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
                 }
-                // Score states are only affected by brain which uses the score states Update() method.
-                // So, no need to update score states here
-            });
 
-            return returnVal;
+                NcModel.Instance.RunInTransaction (() => {
+                    returnVal = base.Update ();
+                    SaveMeetingRequest ();
+                    SaveCategories ();
+                    if (emailAddressesChanged) {
+                        DeleteAddressMaps ();
+                        InsertAddressMaps ();
+                    }
+                    // Score states are only affected by brain which uses the score states Update() method.
+                    // So, no need to update score states here
+                });
+
+                return returnVal;
+            }
         }
 
         public void UpdateIsIndex ()
@@ -1108,10 +1112,12 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            int returnVal = base.Delete ();
-            NcBrain.UnindexEmailMessage (this);
-            DeleteScoreStates ();
-            return returnVal;
+            using (var capture = CaptureWithStart ("Delete")) {
+                int returnVal = base.Delete ();
+                NcBrain.UnindexEmailMessage (this);
+                DeleteScoreStates ();
+                return returnVal;
+            }
         }
 
         public McEmailAddress GetFromAddress ()

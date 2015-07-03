@@ -27,6 +27,11 @@ die () {
 ./scripts/fetch.py
 ./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
 
+# Need to fetch and change branch again because the branch may add new repos that is not
+# in master's repos_cfg.py.
+./scripts/fetch.py
+./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
+
 # Build everything else
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile="appstore_build.$tag.$timestamp.log"

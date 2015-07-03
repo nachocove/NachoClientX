@@ -30,6 +30,7 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
+using Google.iOS;
 
 namespace NachoClient.iOS
 {
@@ -39,7 +40,7 @@ namespace NachoClient.iOS
     // See http://iosapi.xamarin.com/?link=T%3aMonoTouch.UIKit.UIApplicationDelegate
 
     [Register ("AppDelegate")]
-    public partial class AppDelegate : UIApplicationDelegate
+    public partial class AppDelegate : UIApplicationDelegate, IGIDSignInDelegate
     {
         [DllImport ("libc")]
         private static extern int sigaction (Signal sig, IntPtr act, IntPtr oact);
@@ -97,6 +98,8 @@ namespace NachoClient.iOS
                 return (0 != (UserNotificationSettings & (ulong)UIUserNotificationType.Badge));
             }
         }
+
+        private DateTime foregroundTime = DateTime.MinValue;
 
         private void StartCrashReporting ()
         {
@@ -199,22 +202,28 @@ namespace NachoClient.iOS
             var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
+                fetchAccounts = new List<int> ();
+                pushAccounts = GetAllNonDeviceAccountIds ();
                 if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
                         inbox.StartSync ();
-                        completionHandler (UIBackgroundFetchResult.NewData);
                     } else {
-                        if (doingPerformFetch) {
-                            Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
-                            completionHandler (UIBackgroundFetchResult.NewData);
-                        } else {
-                            StartFetch (application, completionHandler, "RN");
-                            return; // completeHandler is called at the completion of perform fetch.
-                        }
+                        fetchAccounts.Add (accountId);
                     }
                 })) {
+                    // Can't find any account matching those contexts. Abort immediately
                     completionHandler (UIBackgroundFetchResult.NoData);
+                }
+                if (NcApplication.Instance.IsForeground) {
+                    completionHandler (UIBackgroundFetchResult.NewData);
+                } else {
+                    if (doingPerformFetch) {
+                        Log.Warn (Log.LOG_PUSH, "A perform fetch is already in progress. Do not start another one.");
+                        completionHandler (UIBackgroundFetchResult.NewData);
+                    } else {
+                        StartFetch (application, completionHandler, "RN");
+                    }
                 }
             }
         }
@@ -380,17 +389,12 @@ namespace NachoClient.iOS
             }
 
             // Initialize Google
-            var gglError = new NSError ();
-            var gglInstance = Google.iOS.GGLContext.SharedInstance;
-            gglInstance.ConfigureWithError (ref gglError);
-            if (null != gglError) {
-                // FIXME: Always reporting error
-                Log.Error (Log.LOG_UI, "Google GGLContext initialize has error: {0}", gglError);
-            }
+            var googleInfo = NSDictionary.FromFile ("GoogleService-Info.plist");
+            GIDSignIn.SharedInstance.ClientID = googleInfo [new NSString ("CLIENT_ID")].ToString ();
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (LoginHelpers.ReadyToStart (NcApplication.Instance.Account)) {
+            if (NcApplication.ReadyToStartUI ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -408,7 +412,10 @@ namespace NachoClient.iOS
         /// </summary>
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
+            Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
+
             if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
+                StartGoogleSignInSilently (); // It'll create a new account if needed
                 return true;
             }
 
@@ -437,7 +444,7 @@ namespace NachoClient.iOS
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
-
+            foregroundTime = DateTime.UtcNow;
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
             if (-1 != BackgroundIosTaskId) {
@@ -468,6 +475,13 @@ namespace NachoClient.iOS
             NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
+
+            if (DateTime.MinValue != foregroundTime) {
+                // Log the duration of foreground for usage analytics
+                var duration = (int)(DateTime.UtcNow - foregroundTime).TotalMilliseconds;
+                Telemetry.RecordIntTimeSeries ("Client.Foreground.Duration", foregroundTime, duration);
+                foregroundTime = DateTime.MinValue;
+            }
 
             if (!isInitializing) {
                 NcApplication.Instance.StopClass4Services ();
@@ -589,16 +603,27 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "WillTerminate: Exit");
         }
 
-        /// <summary>
-        /// Code to implement iOS-7 background-fetch.
-        /// </summary>/
         private bool doingPerformFetch = false;
         private Action<UIBackgroundFetchResult> CompletionHandler = null;
         private UIBackgroundFetchResult fetchResult;
         private Timer performFetchTimer = null;
-        private bool fetchComplete;
-        private bool pushAssistArmComplete;
         private string fetchCause;
+        // A list of all account ids that are waiting to be synced.
+        private List<int> fetchAccounts;
+        // A list of all accounts ids that are waiting for push assist to set up
+        private List<int> pushAccounts;
+
+        private bool fetchComplete {
+            get {
+                return (0 == fetchAccounts.Count);
+            }
+        }
+
+        private bool pushAssistArmComplete {
+            get {
+                return (0 == pushAccounts.Count);
+            }
+        }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -612,16 +637,22 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
-                fetchComplete = true;
-                BadgeNotifUpdate ();
-                if (fetchComplete && pushAssistArmComplete) {
-                    CompletePerformFetch ();
+                if ((null != statusEvent.Account) && (0 < statusEvent.Account.Id)) {
+                    fetchAccounts.Remove (statusEvent.Account.Id);
+                } else {
+                    Log.Error (Log.LOG_PUSH, "Info_SyncSucceeded for unknown account {0}", statusEvent.Account.Id);
+                }
+                if (fetchComplete) {
+                    BadgeNotifUpdate ();
+                    if (pushAssistArmComplete) {
+                        CompletePerformFetch ();
+                    }
                 }
                 break;
 
             case NcResult.SubKindEnum.Info_PushAssistArmed:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
-                pushAssistArmComplete = true;
+                pushAccounts.Remove (statusEvent.Account.Id);
                 if (fetchComplete && pushAssistArmComplete) {
                     CompletePerformFetch ();
                 }
@@ -682,6 +713,8 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
+            fetchAccounts = GetAllNonDeviceAccountIds ();
+            pushAccounts = GetAllNonDeviceAccountIds ();
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -692,8 +725,6 @@ namespace NachoClient.iOS
                 CompletePerformFetchWithoutShutdown ();
             }
             CompletionHandler = completionHandler;
-            fetchComplete = false;
-            pushAssistArmComplete = false;
             fetchCause = cause;
             fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
@@ -1145,6 +1176,69 @@ namespace NachoClient.iOS
             }
         }
 
+        protected List<int> GetAllNonDeviceAccountIds ()
+        {
+            return (from account in McAccount.GetAllAccounts ()
+                             where McAccount.AccountTypeEnum.Device != account.AccountType
+                             select account.Id).ToList ();
+
+        }
+
+        void StartGoogleSignInSilently ()
+        {
+            Log.Info (Log.LOG_UI, "avl: AppDelegate StartGoogleSignInSilently");
+
+            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
+
+            // Add scope to give full access to email
+            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
+            scopes.Add ("https://mail.google.com");
+            scopes.Add ("https://www.googleapis.com/auth/calendar");
+            scopes.Add ("https://www.google.com/m8/feeds/");
+            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
+
+            Google.iOS.GIDSignIn.SharedInstance.SignInSilently ();
+        }
+
+
+        // GIDSignInDelegate
+        public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
+        {
+            Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser {0}", error);
+
+            // TODO: Handle more errors
+            if (null != error) {
+                return;
+            }
+
+            var emailAddress = user.Profile.Email;
+            var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
+
+            if (null != existingAccount) {
+                // Already have this one.
+                Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", emailAddress);
+                return;
+            }
+
+            Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser new account account: {0}", emailAddress);
+                
+            var service = McAccount.AccountServiceEnum.GoogleDefault;
+
+            var account = NcAccountHandler.Instance.CreateAccount (service,
+                              user.Profile.Email,
+                              user.Authentication.AccessToken, 
+                              user.Authentication.RefreshToken,
+                              user.Authentication.AccessTokenExpirationDate.ToDateTime ());
+            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
+
+            BackEnd.Instance.Stop (account.Id);
+            BackEnd.Instance.Start (account.Id);
+
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = storyboard.InstantiateViewController ("StartupViewController");
+            Window.RootViewController.ShowViewController (vc, this);
+        }
+
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
@@ -1216,5 +1310,7 @@ namespace NachoClient.iOS
             });
         }
     }
+
+   
 }
 

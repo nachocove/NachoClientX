@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
@@ -103,30 +104,13 @@ namespace NachoCore.Utils
             return (DateTime.MaxValue != gonnaExpireOn);
         }
 
-        static public bool ReadyToStart (McAccount account)
-        {
-            if (!NcApplication.Instance.IsUp ()) {
-                return false;
-            }
-            if (!LoginHelpers.HasViewedTutorial ()) {
-                return false;
-            }
-            if (McAccount.AccountTypeEnum.Device == account.AccountType) {
-                return false;
-            }
-            return AccountIsConfigured (account);
-        }
 
-        public static bool AccountIsConfigured (McAccount account)
-        {
-            return HasFirstSyncCompleted (account.Id);
-        }
 
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }
 
-        static public void SetSwitchToTime(McAccount account)
+        static public void SetSwitchToTime (McAccount account)
         {
             // Save most recently used
             SetMostRecentAccount (account);
@@ -134,52 +118,65 @@ namespace NachoCore.Utils
             McMutables.Set (account.Id, "AccountSwitcher", "SwitchTo", time);
         }
 
-        static public DateTime GetSwitchToTime(McAccount account)
+        static public DateTime GetSwitchToTime (McAccount account)
         {
             var defaultTime = DateTime.UtcNow.ToString ();
             var switchToTime = McMutables.GetOrCreate (account.Id, "AccountSwitcher", "SwitchTo", defaultTime);
             return DateTime.Parse (switchToTime);
         }
 
-        static public void SetMostRecentAccount(McAccount account)
+        static public void SetMostRecentAccount (McAccount account)
         {
             var deviceId = McAccount.GetDeviceAccount ().Id;
             McMutables.SetInt (deviceId, "AccountSwitcher", "MostRecent", account.Id);
         }
 
-        static public int GetMostRecentAccountId()
+        static public McAccount GetMostRecentAccount ()
         {
-            var device = McAccount.GetDeviceAccount ();
-            // FIXME, maybe
-            if (null != device) {
-                return McMutables.GetInt (device.Id, "AccountSwitcher", "MostRecent", 0);
-            } else {
-                return 0;
+            var deviceAccount = McAccount.GetDeviceAccount ();
+            if (null == deviceAccount) {
+                return null;
             }
+            var recentAccountId = McMutables.GetInt (deviceAccount.Id, "AccountSwitcher", "MostRecent", 0);
+            if ((0 == recentAccountId) || (deviceAccount.Id == recentAccountId)) {
+                return null;
+            }
+            return McAccount.QueryById<McAccount> (recentAccountId);
         }
 
-        public static McAccount PickStartupAccount()
+        // Look for a configured account
+        public static McAccount PickStartupAccount ()
         {
-            McAccount account;
-            // See if the most recently used account is ok.
-            var accountId = LoginHelpers.GetMostRecentAccountId();
-            if (0 != accountId) {
-                account = McAccount.QueryById<McAccount> (accountId);
-                if (null != account) {
-                    if (LoginHelpers.AccountIsConfigured (account)) {
-                        return account; // bingo!
-                    }
+            McAccount account = GetMostRecentAccount ();
+            if (null != account) {
+                if (!account.ConfigurationInProgress) {
+                    return account;
                 }
             }
-            // Pick a configured account or default to device account
-            account = McAccount.GetDeviceAccount ();
             foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (LoginHelpers.AccountIsConfigured (a)) {
-                    account = a;
-                    break;
+                if (a.ConfigurationInProgress) {
+                    continue;
                 }
+                if (McAccount.AccountTypeEnum.Device == a.AccountType) {
+                    continue;
+                }
+                return a;
             }
-            return account;
+            // Default to device account
+            return McAccount.GetDeviceAccount ();
+        }
+
+        public static string GetPassword(McAccount account)
+        {
+            if (McAccount.AccountServiceEnum.GoogleDefault == account.AccountService) {
+                return "";
+            }
+            var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+            if (null == creds) {
+                return "";
+            } else {
+                return creds.GetPassword ();
+            }
         }
 
     }

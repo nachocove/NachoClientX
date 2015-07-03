@@ -9,10 +9,16 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderUpdateCommand : ImapCommand
     {
-        public ImapFolderUpdateCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFolderUpdateCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
@@ -23,6 +29,7 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, PendingSingle.ServerId);
 
             IMailFolder encapsulatingFolder;
+            IMailFolder mailKitFolder;
             if (McFolder.AsRootServerId != PendingSingle.DestParentId) {
                 encapsulatingFolder = Client.GetFolder (PendingSingle.DestParentId, Cts.Token);
             } else {
@@ -38,7 +45,7 @@ namespace NachoCore.IMAP
             mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
 
             if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, out folder)) {
-                UpdateImapSetting (mailKitFolder, folder);
+                UpdateImapSetting (mailKitFolder, ref folder);
                 // TODO Do applyCommand stuff here
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 PendingResolveApply ((pending) => {

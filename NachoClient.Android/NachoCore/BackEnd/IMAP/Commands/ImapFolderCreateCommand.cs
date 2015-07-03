@@ -11,10 +11,16 @@ namespace NachoCore.IMAP
 {
     public class ImapFolderCreateCommand : ImapCommand
     {
-        public ImapFolderCreateCommand (IBEContext beContext, ImapClient imap, McPending pending) : base (beContext, imap)
+        public ImapFolderCreateCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            //RedactProtocolLogFunc = RedactProtocolLog;
+        }
+
+        public string RedactProtocolLog (bool isRequest, string logData)
+        {
+            return logData;
         }
 
         protected override Event ExecuteCommand ()
@@ -43,7 +49,7 @@ namespace NachoCore.IMAP
                 //   not have the right destId, because that folder doesn't yet exist, so we fail in the Move Command.
                 Log.Info (Log.LOG_IMAP, "Created folder {0}", newFolder.FullName);
             }
-            UpdateImapSetting (newFolder, folder);
+            UpdateImapSetting (newFolder, ref folder);
 
             var applyFolderCreate = new ApplyCreateFolder (BEContext.Account.Id) {
                 PlaceholderId = PendingSingle.ServerId,

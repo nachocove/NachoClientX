@@ -144,29 +144,33 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
-                retval = base.Insert ();
-                InsertExceptions ();
-                InsertRecurrences ();
-                InsertAddressMap ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Insert")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
+                    retval = base.Insert ();
+                    InsertExceptions ();
+                    InsertRecurrences ();
+                    InsertAddressMap ();
+                });
+                return retval;
+            }
         }
 
         public override int Update ()
         {
-            int retval = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
-                DeleteAddressMap ();
-                InsertAddressMap ();
-                retval = base.Update ();
-                SaveExceptions ();
-                SaveRecurrences ();
-            });
-            return retval;
+            using (var capture = CaptureWithStart ("Update")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
+                    DeleteAddressMap ();
+                    InsertAddressMap ();
+                    retval = base.Update ();
+                    SaveExceptions ();
+                    SaveRecurrences ();
+                });
+                return retval;
+            }
         }
 
         public static McCalendar QueryByUID (int accountId, string UID)
@@ -199,8 +203,8 @@ namespace NachoCore.Model
         public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
         {
             return NcModel.Instance.Db.Query<McCalendar> ("SELECT * FROM McCalendar WHERE " +
-                " likelihood (RecurrencesGeneratedUntil < ?, 0.1) AND " +
-                " likelihood (IsAwaitingDelete = ?, 1.0) ",
+            " likelihood (RecurrencesGeneratedUntil < ?, 0.1) AND " +
+            " likelihood (IsAwaitingDelete = ?, 1.0) ",
                 generateUntil, false);
         }
 
@@ -224,35 +228,36 @@ namespace NachoCore.Model
             // that references it.  But McEvents are treated differently.  We want to delete them
             // right now so they disappear from the calendar, even if the underlying McCalendar
             // might stick around for a while longer.
+            using (var capture = CaptureWithStart ("Insert")) {
+                int retval = 0;
+                List<NcEventIndex> eventIds = null;
 
-            int retval = 0;
-            List<NcEventIndex> eventIds = null;
+                NcModel.Instance.RunInTransaction (() => {
+                    eventIds = McEvent.QueryEventIdsForCalendarItem (this.Id);
+                    McEvent.DeleteEventsForCalendarItem (this.Id);
+                    retval = base.Delete ();
+                });
 
-            NcModel.Instance.RunInTransaction (() => {
-                eventIds = McEvent.QueryEventIdsForCalendarItem (this.Id);
-                McEvent.DeleteEventsForCalendarItem (this.Id);
-                retval = base.Delete ();
-            });
+                // Canceling a local notification may require running some code on the UI thread.
+                // Even if the UI thread action is invoked asynchronously, the UI thread will take
+                // priority and run for a little while, slowing down this thread.  We don't want
+                // the slowdown to happen within a database transaction.  So the actual cancelation
+                // is delayed until after all the database work is done.  (But it uses the set of
+                // event IDs that were gathered while within the transaction, so those are guaranteed
+                // to be the correct events.)
+                LocalNotificationManager.CancelNotifications (eventIds);
 
-            // Canceling a local notification may require running some code on the UI thread.
-            // Even if the UI thread action is invoked asynchronously, the UI thread will take
-            // priority and run for a little while, slowing down this thread.  We don't want
-            // the slowdown to happen within a database transaction.  So the actual cancelation
-            // is delayed until after all the database work is done.  (But it uses the set of
-            // event IDs that were gathered while within the transaction, so those are guaranteed
-            // to be the correct events.)
-            LocalNotificationManager.CancelNotifications (eventIds);
+                // The code that manages McEvents will never notice that the events for this
+                // item have been deleted.  So the EventSetChanged status needs to be fired
+                // explicitly.
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                    Tokens = new string[] { DateTime.Now.ToString () },
+                });
 
-            // The code that manages McEvents will never notice that the events for this
-            // item have been deleted.  So the EventSetChanged status needs to be fired
-            // explicitly.
-            NcApplication.Instance.InvokeStatusIndEvent(new StatusIndEventArgs() {
-                Status = NcResult.Info(NcResult.SubKindEnum.Info_EventSetChanged),
-                Account = ConstMcAccount.NotAccountSpecific,
-                Tokens = new string[] { DateTime.Now.ToString () },
-            });
-
-            return retval;
+                return retval;
+            }
         }
     }
 }

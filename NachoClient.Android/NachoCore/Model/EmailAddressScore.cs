@@ -227,22 +227,26 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int rc = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                rc = base.Insert ();
-                InsertScoreStates ();
-            });
-            return rc;
+            using (var capture = CaptureWithStart ("Insert")) {
+                int rc = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    rc = base.Insert ();
+                    InsertScoreStates ();
+                });
+                return rc;
+            }
         }
 
         public override int Delete ()
         {
-            int rc = 0;
-            NcModel.Instance.RunInTransaction (() => {
-                rc = base.Delete ();
-                DeleteScoreStates ();
-            });
-            return rc;
+            using (var capture = CaptureWithStart ("Delete")) {
+                int rc = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    rc = base.Delete ();
+                    DeleteScoreStates ();
+                });
+                return rc;
+            }
         }
 
         public void InsertByBrain ()
@@ -302,11 +306,13 @@ namespace NachoCore.Model
 
         protected void ReadScoreStates ()
         {
-            DbScoreStates = McEmailAddressScore.QueryByParentId (Id);
-            if (null == DbScoreStates) {
-                Log.Error (Log.LOG_BRAIN, "fail to find score states for email address {0}. Create one", Id);
-                InsertScoreStates ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                DbScoreStates = McEmailAddressScore.QueryByParentId (Id);
+                if (null == DbScoreStates) {
+                    Log.Error (Log.LOG_BRAIN, "fail to find score states for email address {0}. Create one", Id);
+                    InsertScoreStates ();
+                }
+            });
         }
 
         protected void DeleteScoreStates ()

@@ -43,25 +43,41 @@ namespace NachoCore.Model
         public int SyncAttemptCount { get; set; }
         // Updated when a Sync response contains this folder.
         public DateTime LastSyncAttempt { get; set; }
+
+
+        #region IMAP Folder metadata
+
+        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
+        // technically this isn't part of the actual IMAP metadata (that the server provides), but we'll treat it as such, since
+        // it really never should be modified by any code (other than the McFolder initializer).
+        public string ImapGuid { get; set; }
+
         // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
         public bool ImapNoSelect { get; set; }
-        // The lowest UID we've synced in the current round of syncing
-        public uint ImapUidLowestUidSynced { get; set; }
-        // The highest UID we've synced in the current round of syncing
-        public uint ImapUidHighestUidSynced { get; set; }
         // The folder's UIDVALIDITY value
         public uint ImapUidValidity { get; set; }
         // the folders UIDNEXT value
         public uint ImapUidNext { get; set; }
-        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
-        public string ImapGuid { get; set; }
+
+        #endregion
+
+        #region IMAP Sync helper variables
+
         // DateTime we last examined the folder.
         public DateTime ImapLastExamine { get; set; }
-        // Highest Modification Sequence Numbers.
-        public long CurImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
-        public long LastImapHighestModSeq { get; set; }  // should be a ulong but apparently sqlite doesn't support uint64
+
+        public bool ImapNeedFullSync { get; set; }
+
+        // The lowest UID we've synced in the current round of syncing
+        public uint ImapUidLowestUidSynced { get; set; }
+        // The highest UID we've synced in the current round of syncing
+        public uint ImapUidHighestUidSynced { get; set; }
+        // The current sync-point in the current round of syncing
+        public uint ImapLastUidSynced { get; set; }
         // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
         public string ImapUidSet { get; set; }
+
+        #endregion
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -98,6 +114,7 @@ namespace NachoCore.Model
         public McFolder ()
         {
             ImapUidLowestUidSynced = uint.MaxValue;
+            ImapLastUidSynced = uint.MinValue;
             ImapUidHighestUidSynced = uint.MinValue;
             ImapGuid = Guid.NewGuid ().ToString ("N");
         }
@@ -107,9 +124,9 @@ namespace NachoCore.Model
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
         }
 
-        public string ImapFolderNameRedacted()
+        public string ImapFolderNameRedacted ()
         {
-            return IsDistinguished ? ServerId : "User Folder";
+            return string.Format ("{0}/{1}", ImapGuid, IsDistinguished ? ServerId : "User Folder");
         }
 
         // "factory" to create folders.
@@ -587,34 +604,64 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            int rows = base.Insert ();
-            if (MaybeJunkFolder (DisplayName)) {
-                JunkFolderIds.TryAdd (Id, DisplayName);
+            using (var capture = CaptureWithStart ("Insert")) {
+                int result = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    // If this is a calendar folder, give it a unique index that can be used to give it a color.
+                    // This doesn't seem like the right place for this code.  McFolder.Insert() shouldn't have
+                    // code that is specific to calendar folders.  But on the other hand, McFolder.Insert() is
+                    // the only place that the code can go that guarantees that DisplayColor is set and that its
+                    // value is unique.
+                    if (NachoFolders.FilterForCalendars.Contains (this.Type) && 0 == DisplayColor) {
+                        // This code will work even if the app UI allows the user to select the color for a folder,
+                        // which could result in a gap in the index numbers.  The next folder to be created will
+                        // start filling in the gap.  That is why we don't just look for the largest existing index.
+                        int nextColor = 1;
+                        var calFolders = NcModel.Instance.Db.Query<McFolder> (
+                                             "SELECT f.* FROM McFolder AS f " +
+                                             " WHERE f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (NachoFolders.FilterForCalendars) +
+                                             " ORDER BY f.DisplayColor ");
+                        foreach (var folder in calFolders) {
+                            if (nextColor == folder.DisplayColor) {
+                                ++nextColor;
+                            } else if (nextColor != folder.DisplayColor + 1) {
+                                break;
+                            }
+                        }
+                        this.DisplayColor = nextColor;
+                    }
+                    result = base.Insert ();
+                    if (MaybeJunkFolder (DisplayName)) {
+                        JunkFolderIds.TryAdd (Id, DisplayName);
+                    }
+                });
+                return result;
             }
-            return rows;
         }
 
         public override int Delete ()
         {
-            // Delete anything in the folder and any sub-folders/map entries (recursively).
-            DeleteItems ();
+            using (var capture = CaptureWithStart ("Delete")) {
+                // Delete anything in the folder and any sub-folders/map entries (recursively).
+                DeleteItems ();
 
-            // Delete any sub-folders.
-            var subs = McFolder.QueryByParentId (AccountId, ServerId);
-            foreach (var sub in subs) {
-                // Recusion.
-                sub.Delete ();
+                // Delete any sub-folders.
+                var subs = McFolder.QueryByParentId (AccountId, ServerId);
+                foreach (var sub in subs) {
+                    // Recusion.
+                    sub.Delete ();
+                }
+                int rows = base.Delete ();
+
+                string dummy;
+                JunkFolderIds.TryRemove (Id, out dummy);
+                if (Xml.FolderHierarchy.TypeCode.Ric_19 == Type) {
+                    int folderId;
+                    RicFolderIds.TryRemove (AccountId, out folderId);
+                }
+
+                return rows;
             }
-            int rows = base.Delete ();
-
-            string dummy;
-            JunkFolderIds.TryRemove (Id, out dummy);
-            if (Xml.FolderHierarchy.TypeCode.Ric_19 == Type) {
-                int folderId;
-                RicFolderIds.TryRemove (AccountId, out folderId);
-            }
-
-            return rows;
         }
 
         public NcResult UpdateLink (McAbstrItem obj)
@@ -905,7 +952,8 @@ namespace NachoCore.Model
             // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
             string[] tags = {
                 "junk",
-                "spam"
+                "spam",
+                "bulk mail", // Yahoo uses this as junk mail folder
             };
             var folderLower = folderName.ToLower ();
             for (int n = 0; n < tags.Length; n++) {

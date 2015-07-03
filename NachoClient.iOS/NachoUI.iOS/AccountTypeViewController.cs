@@ -117,6 +117,12 @@ namespace NachoClient.iOS
             }
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return true;
+            }
+        }
+
         protected override void ConfigureAndLayout ()
         {
             // Static view doesn't need layout
@@ -137,7 +143,7 @@ namespace NachoClient.iOS
             if (null != ServiceSelected) {
                 ServiceSelected (service);
             }
-            DismissModalViewController (true);
+            DismissModalViewController (false);
         }
 
     }

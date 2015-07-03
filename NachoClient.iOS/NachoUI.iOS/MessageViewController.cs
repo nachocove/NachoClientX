@@ -58,7 +58,8 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
-        
+
+
 
 
 #else
@@ -71,6 +72,9 @@ namespace NachoClient.iOS
         protected bool expandedHeader = false;
         protected nfloat expandedSeparatorYOffset;
         protected nfloat compactSeparatorYOffset;
+
+        // Information to be collected for telemetry
+        protected DateTime appearTime;
 
         public enum TagType
         {
@@ -110,6 +114,32 @@ namespace NachoClient.iOS
             // Can't switch acct; let's be sure for now
             var message = thread.FirstMessageSpecialCase ();
             NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            appearTime = DateTime.UtcNow;
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            // Record information about the read email and then reset them.
+            if (null != thread) {
+                var now = DateTime.UtcNow;
+                var message = thread.FirstMessageSpecialCase ();
+                // The message may have been deleted while the view was open.
+                if (null != message) {
+                    Telemetry.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
+                    Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, message.Id);
+                    Telemetry.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, message.Score);
+                    var body = McBody.QueryById<McBody> (message.BodyId);
+                    if (McBody.IsComplete (body)) {
+                        Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                    }
+                }
+            }
+            base.ViewWillDisappear (animated);
         }
 
         protected override void CreateViewHierarchy ()

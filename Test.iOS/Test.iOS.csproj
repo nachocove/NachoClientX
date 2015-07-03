@@ -317,6 +317,12 @@
     <Compile Include="..\Test.Android\ImapOperationTest.cs">
       <Link>ImapOperationTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McEmailMessageScoreTest.cs">
+      <Link>McEmailMessageScoreTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\EmailMessageScoreTest.cs">
+      <Link>EmailMessageScoreTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

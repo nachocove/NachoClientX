@@ -68,11 +68,12 @@ namespace NachoCore.Model
 
         public const AccountCapabilityEnum DeviceCapabilities = (
                                                                     AccountCapabilityEnum.CalReader |
-                                                                    AccountCapabilityEnum.CalWriter |
                                                                     AccountCapabilityEnum.ContactReader |
                                                                     AccountCapabilityEnum.ContactWriter
                                                                 );
             
+        // Flags an account that's being configured
+        public bool ConfigurationInProgress { get; set; }
         
         // This type is stored in the db; add to the end
         [Flags]
@@ -194,6 +195,7 @@ namespace NachoCore.Model
             }
         }
 
+        private static uint FudgeFactor = 1;
         public static TimeSpan SyncTimeSpan (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             switch (code) {
@@ -208,11 +210,11 @@ namespace NachoCore.Model
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.TwoWeeks_4:
                 return TimeSpan.FromDays (14);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
-                return TimeSpan.FromDays (30);
+                return TimeSpan.FromDays (30 + FudgeFactor);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
-                return TimeSpan.FromDays (90);
+                return TimeSpan.FromDays (90 + FudgeFactor*2);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
-                return TimeSpan.FromDays (180);
+                return TimeSpan.FromDays (180 + FudgeFactor*3);
             default:
                 NcAssert.CaseError ();
                 return TimeSpan.Zero;
@@ -221,6 +223,7 @@ namespace NachoCore.Model
 
         public TimeSpan DaysSyncEmailSpan()
         {
+            // Add 2 days just because we can.
             return SyncTimeSpan (DaysToSyncEmail);
         }
 
@@ -265,6 +268,15 @@ namespace NachoCore.Model
 
         public bool FastNotificationEnabled { get; set; }
 
+        /// <summary>
+        /// Does this account have the given capability or capabilities?
+        /// </summary>
+        /// <param name="capability">A combination of capabilities from AccountCapabilityEnum</param>
+        public bool HasCapability (McAccount.AccountCapabilityEnum capability)
+        {
+            return (AccountCapability & capability) == capability;
+        }
+
         public static IEnumerable<McAccount> QueryByEmailAddr (string emailAddr)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.EmailAddr == emailAddr);
@@ -280,7 +292,7 @@ namespace NachoCore.Model
             List<McAccount> result = new List<McAccount> ();
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (McAccount acc in accounts) {
-                if (accountCapabilities == (accountCapabilities & acc.AccountCapability)) {
+                if (acc.HasCapability (accountCapabilities)) {
                     result.Add (acc);
                 }
             }
@@ -295,6 +307,11 @@ namespace NachoCore.Model
         public static List<McAccount> GetAllAccounts ()
         {
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
+        }
+
+        public static McAccount GetAccountBeingConfigured()
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.ConfigurationInProgress).SingleOrDefault ();
         }
 
         public static string AccountServiceName (AccountServiceEnum service)

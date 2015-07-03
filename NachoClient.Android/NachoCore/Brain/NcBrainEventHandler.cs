@@ -124,6 +124,9 @@ namespace NachoCore.Brain
                 }
                 while (DateTime.UtcNow < runTill) {
                     var emailMessages = McEmailMessage.QueryNeedUpdate (5, above: false);
+                    if (0 == emailMessages.Count) {
+                        break;
+                    }
                     foreach (var emailMessage in emailMessages) {
                         if (IsInterrupted ()) {
                             break;

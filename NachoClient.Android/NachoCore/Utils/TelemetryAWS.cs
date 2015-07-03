@@ -133,6 +133,8 @@ namespace NachoCore.Utils
                             if (null != Client) {
                                 Client.Dispose ();
                                 Client = null;
+                            }
+                            if (null != S3Client) {
                                 S3Client.Dispose ();
                                 S3Client = null;
                             }
@@ -350,8 +352,11 @@ namespace NachoCore.Utils
 
         protected bool UploadFileToS3 (string filePath, string s3Key)
         {
+            NcAssert.True (filePath.EndsWith (".gz"));
+            var fileName = Path.GetFileName (s3Key);
+            var eventClass = fileName.Substring (0, fileName.LastIndexOf ('-')).Replace ('_', '-');
             var uploadRequest = new PutObjectRequest () {
-                BucketName = BuildInfo.S3Bucket,
+                BucketName = BuildInfo.S3Bucket + eventClass,
                 Key = s3Key,
                 FilePath = filePath,
             };

@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         UIButton submitButton;
         UIButton advancedButton;
         UIButton supportButton;
+        UIButton startOverButton;
         UIView contentView;
         UIScrollView scrollView;
 
@@ -38,18 +39,26 @@ namespace NachoClient.iOS
         INachoCredentialsDelegate owner;
         McAccount.AccountServiceEnum service;
 
+        bool credReqCallback;
+        string emailInitializer;
+        string passwordInitializer;
+
         public AccountCredentialsViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void Setup (INachoCredentialsDelegate owner, McAccount.AccountServiceEnum service)
+        public void Setup (INachoCredentialsDelegate owner, McAccount.AccountServiceEnum service, bool credReqCallback, string email, string password)
         {
             this.owner = owner;
             this.service = service;
+            this.credReqCallback = credReqCallback;
+            this.emailInitializer = email;
+            this.passwordInitializer = password;
         }
 
         public override void ViewWillAppear (bool animated)
         {
+            Log.Info (Log.LOG_UI, "avl: AccountCredentialsViewController ViewWillAppear {0}", NavigationController);
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -59,6 +68,7 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
+            Log.Info (Log.LOG_UI, "avl: AccountCredentialsViewController ViewWillDisappear {0}", NavigationController);
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -104,14 +114,21 @@ namespace NachoClient.iOS
             yOffset += circleMailSize + 20;
 
             startLabel = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 50));
-            startLabel.Text = "Enter your account information";
-            startLabel.Lines = 1;
             startLabel.BackgroundColor = A.Color_NachoGreen;
             startLabel.TextColor = UIColor.White;
             startLabel.Font = A.Font_AvenirNextRegular17;
             startLabel.TextAlignment = UITextAlignment.Center;
             startLabel.Alpha = 1;
             contentView.AddSubview (startLabel);
+
+            if (credReqCallback) {
+                startLabel.Lines = 2;
+                startLabel.Text = "There seems to be a problem with your credentials.";
+                startLabel.SizeToFit ();
+            } else {
+                startLabel.Lines = 1;
+                startLabel.Text = "Enter your account information";
+            }
 
             yOffset = startLabel.Frame.Bottom + 20;
 
@@ -207,7 +224,19 @@ namespace NachoClient.iOS
             contentView.AddSubview (supportButton);
             supportButton.TouchUpInside += SupportButtonTouchUpInside;
 
-            yOffset = supportButton.Frame.Bottom;
+            yOffset = supportButton.Frame.Bottom + 20;
+
+            startOverButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, 20));
+            startOverButton.BackgroundColor = A.Color_NachoGreen;
+            startOverButton.SetTitle ("Start Over", UIControlState.Normal);
+            startOverButton.TitleLabel.TextColor = A.Color_NachoYellow;
+            startOverButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            startOverButton.AccessibilityLabel = "Start Over";
+            contentView.AddSubview (startOverButton);
+            startOverButton.TouchUpInside += StartOverButton_TouchUpInside;
+
+            yOffset = startOverButton.Frame.Bottom + 20;
+
 
             // bottom padding
             yOffset += 20;
@@ -227,8 +256,14 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: starting fresh");
-            emailField.Text = "";
-            passwordField.Text = "";
+            emailField.Text = emailInitializer;
+            passwordField.Text = passwordInitializer;
+            ConfigureAndLayoutInternal ();
+        }
+
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
             ConfigureAndLayoutInternal ();
         }
 
@@ -270,9 +305,11 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (null != McAccount.QueryByEmailAddr (emailField.Text).FirstOrDefault ()) {
-                Complain ("Nacho Mail", "An account with that email address already exists. Duplicate accounts are not supported.");
-                return;
+            if (!credReqCallback) {
+                if (null != McAccount.QueryByEmailAddr (emailField.Text).FirstOrDefault ()) {
+                    Complain ("Nacho Mail", "An account with that email address already exists. Duplicate accounts are not supported.");
+                    return;
+                }
             }
 
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
@@ -318,7 +355,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (null != owner) {
-                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text);
+                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text, credReqCallback, false);
             }
             PerformSegue ("UnwindFromAccountCredentials", this);
         }
@@ -368,10 +405,20 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (null != owner) {
-                owner.CredentialsDismissed (this, true, emailField.Text.Trim (), passwordField.Text);
+                owner.CredentialsDismissed (this, true, emailField.Text.Trim (), passwordField.Text, credReqCallback, false);
             }
             PerformSegue ("UnwindFromAccountCredentials", this);
         }
+
+        void StartOverButton_TouchUpInside (object sender, EventArgs e)
+        {
+            View.EndEditing (true);
+            if (null != owner) {
+                owner.CredentialsDismissed (this, false, emailField.Text.Trim (), passwordField.Text, credReqCallback, true);
+            }
+            PerformSegue ("UnwindFromAccountCredentials", this);
+        }
+
 
         protected void SupportButtonTouchUpInside (object sender, EventArgs e)
         {
@@ -388,10 +435,12 @@ namespace NachoClient.iOS
             submitButton.TouchUpInside -= SubmitButtonTouchUpInside;
             advancedButton.TouchUpInside -= AdvancedLoginTouchUpInside;
             supportButton.TouchUpInside -= SupportButtonTouchUpInside;
+            startOverButton.TouchUpInside -= StartOverButton_TouchUpInside;
 
             submitButton = null;
             advancedButton = null;
             supportButton = null;
+            startOverButton = null;
 
             emailField.ShouldReturn -= TextFieldShouldReturn;
             emailField.EditingDidEnd -= TextFieldEditingEnded;
@@ -405,7 +454,6 @@ namespace NachoClient.iOS
         [Action ("UnwindAccountCredentialsViewController:")]
         public void UnwindAccountCredentialsViewController (UIStoryboardSegue segue)
         {
-            Console.WriteLine ("UnwindAccountCredentialsViewController!");
         }
            
     }

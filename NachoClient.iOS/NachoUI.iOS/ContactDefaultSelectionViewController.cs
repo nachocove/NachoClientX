@@ -214,7 +214,7 @@ namespace NachoClient.iOS
             phoneField.Font = A.Font_AvenirNextMedium14;
             phoneField.BorderStyle = UITextBorderStyle.None;
             phoneField.TextAlignment = UITextAlignment.Left;
-            phoneField.KeyboardType = UIKeyboardType.NumbersAndPunctuation;
+            phoneField.KeyboardType = UIKeyboardType.PhonePad;
             phoneField.AutocapitalizationType = UITextAutocapitalizationType.None;
             phoneField.AutocorrectionType = UITextAutocorrectionType.No;
             phoneField.ClearButtonMode = UITextFieldViewMode.WhileEditing;
