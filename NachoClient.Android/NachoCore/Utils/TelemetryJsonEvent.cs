@@ -156,7 +156,9 @@ namespace NachoCore.Utils
         public const string SAMPLES = "SAMPLES";
 
         public string sample_name;
-        public int sample_value;
+        public int sample_int;
+        public double sample_float;
+        public string sample_string;
 
         public TelemetrySamplesEvent ()
         {
@@ -170,7 +172,9 @@ namespace NachoCore.Utils
 
         public string time_series_name;
         public string time_series_timestamp;
-        public int time_series_value;
+        public int time_series_int;
+        public double time_series_float;
+        public string time_series_string;
 
         public TelemetryTimeSeriesEvent ()
         {

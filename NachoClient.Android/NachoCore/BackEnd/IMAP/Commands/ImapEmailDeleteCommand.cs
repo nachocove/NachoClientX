@@ -51,7 +51,7 @@ namespace NachoCore.IMAP
             // TODO The set flags reply contains information we can use (S: * 5 FETCH (UID 8631 MODSEQ (948373) FLAGS (\Deleted))).
             // save it. That being said, if we increment the MODSEQ, then that will basically
             // force a resync (or at least a sync), which we don't want. Might want to check the modseq before our delete.
-            UpdateImapSetting (mailKitFolder, folder);
+            UpdateImapSetting (mailKitFolder, ref folder);
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageDeleteSucceeded));

@@ -41,8 +41,8 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignKey>iPhone Developer</CodesignKey>
-    <MtouchProfiling>true</MtouchProfiling>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchProfiling>true</MtouchProfiling>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <Optimize>true</Optimize>
@@ -147,7 +147,7 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
@@ -156,6 +156,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -176,7 +177,7 @@
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_log_settings.py " workingdir="${ProjectDir}" />
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/configure_ios.py ${ProjectDir}/Info.plist" workingdir="${ProjectDir}" />
         <Command type="AfterClean" command="rm -f LogSettings.cs" workingdir="${ProjectDir}" />
-        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --ios ${TargetDir}" />
+        <Command type="AfterBuild" command="${SolutionDir}/scripts/hockeyapp_upload.py --no-skip --ios ${TargetDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="${SolutionDir}/scripts/remove_itunesmetadata.sh" />
       </CustomCommands>

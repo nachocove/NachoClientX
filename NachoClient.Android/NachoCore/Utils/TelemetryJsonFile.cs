@@ -197,6 +197,9 @@ namespace NachoCore.Utils
             case TelemetryCounterEvent.COUNTER:
                 eventClass = TelemetryEventClass.Counter;
                 break;
+            case TelemetryTimeSeriesEvent.TIME_SERIES:
+                eventClass = TelemetryEventClass.Time_Series;
+                break;
             default:
                 var msg = String.Format ("GetEventClass: unknown type {0}", eventType);
                 throw new NcAssert.NachoDefaultCaseFailure (msg);

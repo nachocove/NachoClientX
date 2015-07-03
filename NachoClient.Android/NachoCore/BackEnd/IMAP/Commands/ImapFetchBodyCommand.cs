@@ -64,6 +64,11 @@ namespace NachoCore.IMAP
         private NcResult FetchOneBody (McPending pending)
         {
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
+            if (null == email) {
+                Log.Error (Log.LOG_IMAP, "Could not find email for {0}", pending.ServerId);
+                return NcResult.Error ("Unknown email ServerId");
+            }
+
             NcResult result;
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);

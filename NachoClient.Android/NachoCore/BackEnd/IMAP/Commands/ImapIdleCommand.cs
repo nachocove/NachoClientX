@@ -31,30 +31,42 @@ namespace NachoCore.IMAP
 
         private bool mailArrived = false;
         private bool mailDeleted = false;
+        private bool needResync = false; // used if something happened, but we don't know what exactly.
 
         protected override Event ExecuteCommand ()
         {
             var done = CancellationTokenSource.CreateLinkedTokenSource (new [] { Cts.Token });
-            Event retEvent = Event.Create ((uint)SmEvt.E.HardFail, "IMAPIDLEHARDX");
             var mailKitFolder = GetOpenMailkitFolder (IdleFolder);
             if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == IdleFolder.Type) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
             }
             if (Client.Capabilities.HasFlag (ImapCapabilities.Idle)) {
-                retEvent = IdleIdle(mailKitFolder, done);
+                IdleIdle(mailKitFolder, done);
             } else {
-                retEvent = NoopIdle(mailKitFolder, done);
+                NoopIdle(mailKitFolder, done);
             }
             Cts.Token.ThrowIfCancellationRequested ();
-            mailKitFolder.Close (false, Cts.Token);
-            StatusItems statusItems =
-                StatusItems.UidNext |
-                StatusItems.UidValidity |
-                StatusItems.Count |
-                StatusItems.Recent |
-                StatusItems.HighestModSeq;
-            mailKitFolder.Status (statusItems, Cts.Token);
-            UpdateImapSetting (mailKitFolder, IdleFolder);
+            if (mailArrived) {
+                Log.Info (Log.LOG_IMAP, "{0}: New mail arrived during idle", IdleFolder.ImapFolderNameRedacted ());
+            }
+            if (mailDeleted) {
+                Log.Info (Log.LOG_IMAP, "{0}: Mail Deleted during idle", IdleFolder.ImapFolderNameRedacted ());
+            }
+            if (mailArrived || mailDeleted || needResync) {
+                if (!ImapSyncCommand.GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
+                    Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", IdleFolder.ImapFolderNameRedacted ());
+                }
+                // GetFolderMetaData does an UpdateImapSetting already.
+            } else {
+                // just do a quick status check
+                mailKitFolder.Close (false, Cts.Token);
+                StatusItems statusItems =
+                    StatusItems.UidNext |
+                    StatusItems.UidValidity |
+                    StatusItems.HighestModSeq;
+                mailKitFolder.Status (statusItems, Cts.Token);
+                UpdateImapSetting (mailKitFolder, ref IdleFolder);
+            }
 
             var protocolState = BEContext.ProtocolState;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
@@ -62,36 +74,30 @@ namespace NachoCore.IMAP
                 target.LastPing = DateTime.UtcNow;
                 return true;
             });
-            if (mailArrived) {
-                // TODO this would be a good opportunity to force a sync.
-                Log.Info (Log.LOG_IMAP, "New mail arrived during idle");
-            }
-            if (mailDeleted) {
-                // TODO this would be a good opportunity to force a sync.
-                Log.Info (Log.LOG_IMAP, "Mail Deleted during idle");
-            }
-            return retEvent;
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
         }
 
-        private Event IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        private void IdleIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 mailArrived = true;
                 done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", IdleFolder.ImapFolderNameRedacted (), e.Index);
                 mailDeleted = true;
                 done.Cancel ();
             };
             EventHandler<MessageFlagsChangedEventArgs> MessageFlagsChangedHandler = (sender, e) => {
-                var mkFolder = (ImapFolder) sender;
-
-                McFolder folder = McFolder.QueryByServerId<McFolder> (BEContext.Account.Id, mkFolder.FullName);
                 if (!e.UniqueId.HasValue) {
-                    Log.Warn (Log.LOG_IMAP, "{0}: flags for message Index {1} have changed to: {2}. No UID passed.", folder.ImapFolderNameRedacted (), e.Index, e.Flags);
+                    Log.Warn (Log.LOG_IMAP, "{0}: flags for message Index {1} have changed to: {2}. No UID passed.",
+                        IdleFolder.ImapFolderNameRedacted (), e.Index, e.Flags);
                 } else {
-                    Log.Info (Log.LOG_IMAP, "{0}: flags for message {1} have changed to: {2}.", folder.ImapFolderNameRedacted (), e.UniqueId, e.Flags);
-                    McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (folder, e.UniqueId.Value));
+                    Log.Info (Log.LOG_IMAP, "{0}: flags for message {1} have changed to: {2}.",
+                        IdleFolder.ImapFolderNameRedacted (), e.UniqueId, e.Flags);
+                    McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (
+                        BEContext.Account.Id,
+                        ImapProtoControl.MessageServerId (IdleFolder, e.UniqueId.Value));
                     if (null != emailMessage) {
                         if (emailMessage.IsRead != e.Flags.HasFlag (MessageFlags.Seen)) {
                             emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -112,7 +118,6 @@ namespace NachoCore.IMAP
 
                 Client.Idle (done.Token, CancellationToken.None);
                 Cts.Token.ThrowIfCancellationRequested ();
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
                 mailKitFolder.MessageFlagsChanged -= MessageFlagsChangedHandler;
@@ -123,27 +128,38 @@ namespace NachoCore.IMAP
         // TODO: Should be tied into power-state
         uint kNoopSleepTime = 20;
 
-        private Event NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
+        private void NoopIdle (IMailFolder mailKitFolder, CancellationTokenSource done)
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
                 if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
                     mailArrived = true;
+                } else {
+                    needResync = true;
                 }
                 done.Cancel ();
             };
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
+                Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", IdleFolder.ImapFolderNameRedacted (), e.Index);
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
                 if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
                     mailDeleted = true;
+                } else {
+                    needResync = true;
                 }
+                done.Cancel ();
+            };
+
+            EventHandler<EventArgs> MessageCountChangedHandler = (sender, e) => {
+                Log.Info (Log.LOG_IMAP, "{0}: message count changed", IdleFolder.ImapFolderNameRedacted ());
+                needResync = true;
                 done.Cancel ();
             };
 
             try {
                 mailKitFolder.MessagesArrived += MessagesArrivedHandler;
                 mailKitFolder.MessageExpunged += MessageExpungedHandler;
-
+                mailKitFolder.CountChanged += MessageCountChangedHandler;
                 while (!Cts.Token.IsCancellationRequested) {
                     var cancelled = done.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(kNoopSleepTime));
                     if (cancelled) {
@@ -152,11 +168,10 @@ namespace NachoCore.IMAP
                     Client.NoOp (Cts.Token);
                 }
                 Cts.Token.ThrowIfCancellationRequested ();
-
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPIDLEDONE");
             } finally {
                 mailKitFolder.MessagesArrived -= MessagesArrivedHandler;
                 mailKitFolder.MessageExpunged -= MessageExpungedHandler;
+                mailKitFolder.CountChanged -= MessageCountChangedHandler;
             }
         }
     }

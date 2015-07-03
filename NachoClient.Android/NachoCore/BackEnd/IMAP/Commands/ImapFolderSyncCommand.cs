@@ -105,7 +105,7 @@ namespace NachoCore.IMAP
                     // TODO do ApplyCommand stuff here
                 }
                 if (null != folder) {
-                    if (UpdateImapSetting (mailKitFolder, folder)) {
+                    if (UpdateImapSetting (mailKitFolder, ref folder)) {
                         // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                         // Strategy will notice that modseq and/or noselect etc has changed, and resync.
                         Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());

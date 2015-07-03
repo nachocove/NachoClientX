@@ -1449,7 +1449,8 @@ namespace NachoCore.Model
             // Query the index for contacts up to 100 of them
             foreach (var account in McAccount.GetAllAccounts()) {
                 var index = NcBrain.SharedInstance.Index (account.Id);
-                var matches = index.SearchAllContactFields ("*" + searchFor + "*", 100);
+                var escapedSearchFor = Lucene.Net.QueryParsers.QueryParser.Escape (searchFor);
+                var matches = index.SearchAllContactFields ("*" + escapedSearchFor + "*", 100);
                 if (0 == matches.Count) {
                     continue;
                 }

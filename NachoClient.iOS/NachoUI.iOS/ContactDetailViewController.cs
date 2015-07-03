@@ -1041,12 +1041,20 @@ namespace NachoClient.iOS
                 ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
-            PerformAction ("tel", number);
+            if (!PerformAction ("tel", number)) {
+                ComplainAbout ("Cannot dial", "The phone number seems to be invalid");
+            }
         }
 
-        protected void PerformAction (string action, string number)
+        protected bool PerformAction (string action, string number)
         {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+            try {
+                UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+                return true;
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_UI, "Cannot perform action {0} ({1})", action, e);
+                return false;
+            }
         }
 
         protected void ComplainAbout (string complaintTitle, string complaintMessage)
@@ -1056,8 +1064,10 @@ namespace NachoClient.iOS
 
         protected void VipButtonTouchUpInside (object sender, EventArgs e)
         {
-            contact.SetVIP (!contact.IsVip);
-            UpdateVipButton ();
+            if (null != contact) {
+                contact.SetVIP (!contact.IsVip);
+                UpdateVipButton ();
+            }
         }
 
         protected void UpdateVipButton ()
@@ -1099,6 +1109,10 @@ namespace NachoClient.iOS
 
         public void RefreshData ()
         {
+            if (null == contact) {
+                return;
+            }
+
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
 
             NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");

@@ -188,6 +188,25 @@ namespace NachoPlatform
                 }
                 cal.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedTimeZone (eventTimeZone), cal.StartTime).toEncodedTimeZone ();
 
+                if (null == Event.Organizer) {
+                    cal.MeetingStatus = NcMeetingStatus.Appointment;
+                } else {
+                    if (Event.Organizer.IsCurrentUser) {
+                        if (EKEventStatus.Cancelled == Event.Status) {
+                            cal.MeetingStatus = NcMeetingStatus.MeetingOrganizerCancelled;
+                        } else {
+                            cal.MeetingStatus = NcMeetingStatus.MeetingOrganizer;
+                        }
+                    } else {
+                        if (EKEventStatus.Cancelled == Event.Status) {
+                            cal.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
+                        } else {
+                            cal.MeetingStatus = NcMeetingStatus.MeetingAttendee;
+                        }
+                    }
+                }
+                cal.MeetingStatusIsSet = true;
+
                 var attendees = new List<McAttendee> ();
                 var ekAttendees = Event.Attendees;
                 if (null != ekAttendees) {
