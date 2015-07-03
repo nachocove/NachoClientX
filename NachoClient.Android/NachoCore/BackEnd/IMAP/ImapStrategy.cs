@@ -61,7 +61,7 @@ namespace NachoCore.IMAP
                                            | MessageSummaryItems.GMailMessageId
                                            | MessageSummaryItems.GMailThreadId;
 
-        //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+        MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
         /// <summary>
         /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
@@ -98,6 +98,7 @@ namespace NachoCore.IMAP
                 UidSet = new UniqueIdSet ();
             }
 
+            uint span;
             Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder", folder.ImapFolderNameRedacted ());
             if (UserRequested ||
                 0 == folder.ImapUidNext ||
@@ -111,6 +112,17 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 syncKit = new SyncKit (folder);
+            } else if (!string.IsNullOrEmpty (folder.ImapModSeqUidSet)) {
+                span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+                UniqueIdSet ModSeqSet;
+                if (!UniqueIdSet.TryParse (folder.ImapModSeqUidSet, folder.ImapUidValidity, out ModSeqSet)) {
+                    return null;
+                }
+                UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (ModSeqSet.OrderByDescending (x => x).Take ((int)span).ToList ());
+                MessageSummaryItems flags = FlagResyncFlags;
+                HashSet<HeaderId> headers = new HashSet<HeaderId> ();
+                syncKit = new SyncKit (folder, syncSet, flags, headers);
+                syncKit.Method = SyncKit.MethodEnum.ModSeq;
             } else {
                 bool needSync = needFullSync (folder);
                 bool hasNewMail = HasNewMail (folder);
@@ -124,7 +136,7 @@ namespace NachoCore.IMAP
                     });
                 }
 
-                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+                span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
                 int startingPoint = (int)(0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Last {1} UidNext {2} Syncing from {3} for {4} messages", folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, startingPoint, span);
 

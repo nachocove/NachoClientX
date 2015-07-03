@@ -192,13 +192,18 @@ namespace NachoCore.IMAP
         {
             bool changed = false;
             if (folder.ImapNoSelect != mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect) ||
-                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id))
+                (mailKitFolder.UidNext.HasValue && folder.ImapUidNext != mailKitFolder.UidNext.Value.Id) ||
+                (mailKitFolder.SupportsModSeq && (long)mailKitFolder.HighestModSeq != folder.ImapHighestModSeq))
             {
                 // update.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
+                    target.ImapHighestModSeq = (long)mailKitFolder.HighestModSeq;
+                    if (0 == target.ImapLastHighestModSeq && 0 != target.ImapHighestModSeq) {
+                        target.ImapLastHighestModSeq = target.ImapHighestModSeq;
+                    }
                     return true;
                 });
                 changed = true;

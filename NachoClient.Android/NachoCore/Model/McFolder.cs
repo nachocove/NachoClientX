@@ -56,8 +56,10 @@ namespace NachoCore.Model
         public bool ImapNoSelect { get; set; }
         // The folder's UIDVALIDITY value
         public uint ImapUidValidity { get; set; }
-        // the folders UIDNEXT value
+        // the folder's UIDNEXT value
         public uint ImapUidNext { get; set; }
+        // the folder's HIGHESTMODSEQ number
+        public long ImapHighestModSeq { get; set; }
 
         #endregion
 
@@ -76,6 +78,9 @@ namespace NachoCore.Model
         public uint ImapLastUidSynced { get; set; }
         // The set of UID's we need to process as a string (UniqueIdSet.ToString(). Parse with TryParseUidSet())
         public string ImapUidSet { get; set; }
+        // the folder's previous HIGHESTMODSEQ number
+        public long ImapLastHighestModSeq { get; set; }
+        public string ImapModSeqUidSet { get; set; }
 
         #endregion
 

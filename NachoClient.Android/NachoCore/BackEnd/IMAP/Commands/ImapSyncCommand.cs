@@ -83,6 +83,7 @@ namespace NachoCore.IMAP
                 break;
 
             case SyncKit.MethodEnum.Sync:
+            case SyncKit.MethodEnum.ModSeq:
                 result = syncFolder (mailKitFolder, timespan);
                 break;
 
@@ -129,6 +130,20 @@ namespace NachoCore.IMAP
             
             UpdateImapSetting (mailKitFolder, ref folder);
 
+            if (mailKitFolder.SupportsModSeq && folder.ImapLastHighestModSeq != folder.ImapHighestModSeq) {
+                query = SearchQuery.All.And (SearchQuery.ChangedSince ((ulong)folder.ImapLastHighestModSeq));
+                var modseqUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
+                Log.Info (Log.LOG_IMAP, "{0}: UID's changed since ModSeq {1}: {2}", folder.ImapFolderNameRedacted (), folder.ImapLastHighestModSeq, modseqUids.ToString ());
+                if (modseqUids.Any ()) {
+                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ImapModSeqUidSet = modseqUids.ToString ();
+                        //target.ImapLastHighestModSeq = target.ImapHighestModSeq;
+                        return true;
+                    });
+                }
+            }
+
             if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
                 UniqueIdSet current;
                 if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
@@ -158,8 +173,6 @@ namespace NachoCore.IMAP
 
         private Event syncFolder (IMailFolder mailKitFolder, TimeSpan timespan)
         {
-            NcAssert.True (SyncKit.MethodEnum.Sync == Synckit.Method);
-
             // First find all messages marked as /Deleted
             UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 

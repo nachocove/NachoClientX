@@ -27,6 +27,7 @@ namespace NachoCore.IMAP
         public enum MethodEnum
         {
             Sync,
+            ModSeq,
             OpenOnly,
         };
 
@@ -37,6 +38,7 @@ namespace NachoCore.IMAP
         public McPending PendingSingle;
         public UniqueIdSet SyncSet;
         public HashSet<HeaderId> Headers;
+        public SearchQuery Query;
 
         public SyncKit (McFolder folder)
         {
@@ -68,6 +70,7 @@ namespace NachoCore.IMAP
             string me = string.Format ("SyncKit {0} (Type {{{1}}}", Folder.ImapFolderNameRedacted (), Method.ToString ());
             switch (Method) {
             case MethodEnum.Sync:
+            case MethodEnum.ModSeq:
                 me += string.Format (" Flags {{{0}}}", Flags);
                 me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
                 break;
