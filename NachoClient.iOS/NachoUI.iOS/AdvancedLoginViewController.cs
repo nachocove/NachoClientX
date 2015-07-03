@@ -18,7 +18,7 @@ namespace NachoClient.iOS
     public partial class AdvancedLoginViewController : NcUIViewController, ILoginProtocol, INachoCredentialsDelegate, INachoCertificateResponderParent, IGIDSignInDelegate, IGIDSignInUIDelegate
     {
         ILoginFields loginFields;
-        WaitingScreen waitScreen;
+        WaitingScreen waitingScreen;
         CertificateView certificateView;
         LoginProtocolControl loginProtocolControl;
 
@@ -32,6 +32,30 @@ namespace NachoClient.iOS
             Connect,
             Support,
             StartOver
+        }
+
+        void RemoveWindows ()
+        {
+            if (null != loginFields) {
+                loginFields.View.RemoveFromSuperview ();
+                loginFields = null;
+            }
+            if (null != waitingScreen) {
+                waitingScreen.RemoveFromSuperview ();
+                waitingScreen = null;
+            }
+            if (null != certificateView) {
+                certificateView.RemoveFromSuperview ();
+                certificateView = null;
+            }
+        }
+
+        void ShowWaitingScreen(string loadingMessage = null)
+        {
+            RemoveWindows ();
+            waitingScreen = new WaitingScreen (View.Frame, this);
+            View.AddSubview (waitingScreen);
+            waitingScreen.ShowView(loadingMessage);
         }
 
         public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account);
@@ -49,43 +73,35 @@ namespace NachoClient.iOS
 
             loginProtocolControl = new LoginProtocolControl (this);
 
-            waitScreen = new WaitingScreen (View.Frame, this);
-            waitScreen.Hidden = true;
-            View.Add (waitScreen);
-
-            certificateView = new CertificateView (View.Frame, this);
-            View.Add (certificateView);
-
             View.BackgroundColor = A.Color_NachoGreen;
         }
 
-
         public override void ViewWillAppear (bool animated)
         {
-            Log.Info (Log.LOG_UI, "avl: ViewWillAppear");
-
+            Log.Info (Log.LOG_UI, "avl: AdvancedLoginViewController ViewWillAppear {0}", NavigationController);
             base.ViewWillAppear (animated);
-
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-                if (this.NavigationController.NavigationBarHidden == true) {
-                    this.NavigationController.NavigationBarHidden = false; 
-                }
-                NavigationItem.SetHidesBackButton (true, false);
+            NavigationItem.SetHidesBackButton (true, false);
+            if (null != NavigationController) {
+                NavigationController.SetNavigationBarHidden (false, false);
+                NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override void ViewWillDisappear (bool animated)
         {
+            Log.Info (Log.LOG_UI, "avl: AdvancedLoginViewController ViewWillDisappear {0}", NavigationController);
             base.ViewWillDisappear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = false;
-                if (this.NavigationController.NavigationBarHidden == true) {
-                    this.NavigationController.NavigationBarHidden = false; 
-                }
+            if (null != NavigationController) {
+                NavigationController.SetNavigationBarHidden (false, false);
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return true;
+            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -107,26 +123,38 @@ namespace NachoClient.iOS
 
             if (McAccount.AccountServiceEnum.None == service) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NoService, "avl: ViewDidAppear");
+                return;
             }
 
             if ((uint)LoginProtocolControl.States.FinishWait == loginProtocolControl.sm.State) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.TryAgain, "avl: ViewDidAppear");
+                return;
             }
+
+            // Kickstart if we are just starting out and we're still in the start state
+            if ((uint)LoginProtocolControl.States.Start == loginProtocolControl.sm.State) {
+                if (null != account) {
+                    EventFromEnum ();
+                }
+                return;
+            }
+
         }
 
         public void FinishUp ()
         {
-            waitScreen.Layer.RemoveAllAnimations ();
+            waitingScreen.Layer.RemoveAllAnimations ();
 
             if (!LoginHelpers.HasViewedTutorial ()) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowTutorial, "avl: FinishUp");
             } else {
-                waitScreen.StartSyncedEmailAnimation (account.Id);
+                waitingScreen.StartSyncedEmailAnimation (account.Id);
             }
         }
 
         public void FinishedSyncedEmailAnimation (int accountId)
         {
+            RemoveWindows ();
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AllDone, "avl: FinishedSyncedEmailAnimation");
         }
 
@@ -137,11 +165,7 @@ namespace NachoClient.iOS
 
         public void ShowAdvancedConfiguration (LoginProtocolControl.Prompt prompt)
         {
-            if (null != loginFields) {
-                loginFields.View.RemoveFromSuperview ();
-                loginFields = null;
-            }
-            waitScreen.HideView ();
+            RemoveWindows ();
 
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (service) {
@@ -198,7 +222,10 @@ namespace NachoClient.iOS
 
         public void ShowCertAsk ()
         {
+            RemoveWindows ();
+            certificateView = new CertificateView (View.Frame, this);
             certificateView.SetCertificateInformation (account.Id);
+            View.AddSubview (certificateView);
             View.BringSubviewToFront (certificateView);
             certificateView.ShowView ();
         }
@@ -206,6 +233,7 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void DontAcceptCertificate (int accountId)
         {
+            RemoveWindows ();
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CertRejected, "avl: DontAcceptCertificate");
         }
@@ -213,19 +241,24 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void AcceptCertificate (int accountId)
         {
+            RemoveWindows ();
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CertAccepted, "avl: DontAcceptCertificate");
         }
 
         public void Start ()
         {
-            waitScreen.ShowView ("Verifying Your Server...");
+            ShowWaitingScreen ("Verifying Your Server...");
             BackEnd.Instance.Start (account.Id);
         }
 
         public void UpdateUI ()
         {
-            waitScreen.ShowView ("Syncing Your Inbox...");
+            if (null == waitingScreen) {
+                ShowWaitingScreen ("Syncing Your Inbox");
+            } else {
+                waitingScreen.ShowView ("Syncing Your Inbox...");
+            }
         }
 
         public void PromptForCredentials ()
@@ -258,6 +291,7 @@ namespace NachoClient.iOS
             scopes.Add ("https://www.google.com/m8/feeds/");
             Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
 
+            Google.iOS.GIDSignIn.SharedInstance.SignOut ();
             Google.iOS.GIDSignIn.SharedInstance.SignIn ();
         }
 
@@ -295,7 +329,7 @@ namespace NachoClient.iOS
 
         public void StartSync ()
         {
-            waitScreen.ShowView ("Verifying Your Server...");
+            ShowWaitingScreen ("Verifying Your Server...");
             BackEnd.Instance.Start (account.Id);
         }
 
@@ -315,20 +349,28 @@ namespace NachoClient.iOS
 
             // FIXME: Only set if null or device
             NcApplication.Instance.Account = account;
+            LoginHelpers.SetSwitchToTime (account);
 
+            RemoveWindows ();
             NavigationController.PopToRootViewController (true);
         }
 
         public void Quit ()
         {
-            RemoveWorkInProgress (() => NavigationController.PopToRootViewController (false));
+            RemoveWorkInProgress (() => {
+                RemoveWindows ();
+                NavigationController.PopToRootViewController (false);
+            });
         }
 
         public void StartOver ()
         {
-            RemoveWorkInProgress (() => NavigationController.PopToRootViewController (false));
+            RemoveWorkInProgress (() => {
+                RemoveWindows ();
+                NavigationController.PopToRootViewController (false);
+            });
         }
-            
+
         protected void ServiceSelected (McAccount.AccountServiceEnum service)
         {
             this.service = service;
@@ -372,7 +414,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1}", account.Id, cred.Id);
                 BackEnd.Instance.CredResp (account.Id);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
-                waitScreen.ShowView ();
+                ShowWaitingScreen ("Verifying Your Server...");
                 return;
             }
 
@@ -556,12 +598,12 @@ namespace NachoClient.iOS
         public void ReturnToAdvanceView ()
         {
             // FIXME
-            waitScreen.HideView ();
+            waitingScreen.DismissView ();
         }
 
         public void SegueToSupport ()
         {
-            waitScreen.HideView ();
+            waitingScreen.DismissView ();
             PerformSegue ("SegueToSupport", this);
         }
 

@@ -51,6 +51,7 @@ namespace NachoClient.iOS
         {
             this.owner = owner;
 
+            this.Hidden = true;
             this.BackgroundColor = A.Color_NachoGreen;
             LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64 + 64;
 
@@ -193,12 +194,7 @@ namespace NachoClient.iOS
                 }));
             }
         }
-
-        public void HideView()
-        {
-            DismissView ();
-        }
-
+            
         public void DismissView ()
         {
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
