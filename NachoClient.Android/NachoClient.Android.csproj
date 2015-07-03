@@ -490,6 +490,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration31.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration32.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration33.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControlApis.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
