@@ -1232,6 +1232,213 @@ namespace NachoCore.Utils
             }
         }
 
+        // Looking at the characteristics of a calendar item, return a number that indicates the importance of the calendar item.
+        // A higher number indicates more important.  The ranking, from highest to lowest:
+        //   7. Meeting organizer
+        //   6. Meeting that has been accepted
+        //   5. Appointment
+        //   4. Meeting that hasn't been responded to, or whose status is unknown
+        //   3. Meeting that has been tentatively accepted
+        //   2. Meeting that has been declined
+        //   1. Meeting that has been cancelled
+        // (Declined meetings and cancelled meetings should never get this far, but it was easy enough to check for them.)
+
+        private static int MeetingStatusLevel (McAbstrCalendarRoot cal)
+        {
+            if (cal.HasMeetingStatus ()) {
+                switch (cal.GetMeetingStatus ()) {
+                case NcMeetingStatus.MeetingOrganizer:
+                    return 7;
+                case NcMeetingStatus.MeetingAttendee:
+                    if (cal.HasResponseType ()) {
+                        if (NcResponseType.Accepted == cal.GetResponseType ()) {
+                            return 6;
+                        } else if (NcResponseType.Tentative == cal.GetResponseType ()) {
+                            return 3;
+                        } else if (NcResponseType.Declined == cal.GetResponseType ()) {
+                            return 2;
+                        } else {
+                            return 4;
+                        }
+                    }
+                    return 4;
+                case NcMeetingStatus.Appointment:
+                    return 5;
+                case NcMeetingStatus.MeetingOrganizerCancelled:
+                case NcMeetingStatus.MeetingAttendeeCancelled:
+                default:
+                    return 1;
+                }
+            }
+            // Treat it like an appointment.
+            return 5;
+        }
+
+        /// <summary>
+        /// Is the first event more important than the second event?
+        /// </summary>
+        private static bool FirstIsBetterMeetingStatus (McAbstrCalendarRoot a, McAbstrCalendarRoot b)
+        {
+            return MeetingStatusLevel (a) > MeetingStatusLevel (b);
+        }
+
+        /// <summary>
+        /// Should the first event trump the second one when choosing the hot event, assuming both events are in the future?
+        /// The primary factor is the start time, with earlier start times being preferred.
+        /// </summary>
+        private static bool FirstIsBetterFutureEvent (McEvent a, McAbstrCalendarRoot aCal, McEvent b, McAbstrCalendarRoot bCal)
+        {
+            if (a.GetStartTimeUtc () < b.GetStartTimeUtc ()) {
+                return true;
+            }
+            if (a.GetStartTimeUtc () > b.GetStartTimeUtc ()) {
+                return false;
+            }
+            if (!a.AllDayEvent && b.AllDayEvent) {
+                return true;
+            }
+            if (a.AllDayEvent && !b.AllDayEvent) {
+                return false;
+            }
+            return FirstIsBetterMeetingStatus (aCal, bCal);
+        }
+
+        /// <summary>
+        /// Should the first event trump the second one when choosing the hot event, assuming both events are currently in progress?
+        /// The primary factor is the start time, with the event that has started the most recently being preferred.
+        /// </summary>
+        private static bool FirstIsBetterCurrentEvent (McEvent a, McAbstrCalendarRoot aCal, McEvent b, McAbstrCalendarRoot bCal)
+        {
+            if (a.GetStartTimeUtc () > b.GetStartTimeUtc ()) {
+                return true;
+            }
+            if (a.GetStartTimeUtc () < b.GetStartTimeUtc ()) {
+                return false;
+            }
+            return FirstIsBetterMeetingStatus (aCal, bCal);
+        }
+
+        private static DateTime EarlierTime (DateTime a, DateTime b)
+        {
+            if (a < b) {
+                return a;
+            }
+            return b;
+        }
+
+        /// How far into the future to look for the next event.
+        private static TimeSpan NextEventWindow = TimeSpan.FromDays (7);
+
+        /// The time span within which an upcoming event trumps an in-progress event when choosing the hot event.
+        private static TimeSpan NearFutureSpan = TimeSpan.FromMinutes (30);
+
+        /// The time span within which a regular event trumps an all-day event when choosing the hot event.
+        private static TimeSpan MediumFutureSpan = TimeSpan.FromHours (24);
+
+        /// <summary>
+        /// Pick the event to display in the hot event view.  The goal is to pick the one event that the user is most interested in seeing
+        /// </summary>
+        /// <returns>The or next event.</returns>
+        /// <param name="nextCheckTime">Next check time.</param>
+        public static McEvent CurrentOrNextEvent (out DateTime nextCheckTime)
+        {
+            McEvent bestNearFuture = null;
+            McAbstrCalendarRoot bestNearFutureCal = null;
+            bool multipleInNearFuture = false;
+            McEvent bestCurrent = null;
+            McAbstrCalendarRoot bestCurrentCal = null;
+            McEvent bestMediumFuture = null;
+            McAbstrCalendarRoot bestMediumFutureCal = null;
+            McEvent bestAllDay = null;
+            McAbstrCalendarRoot bestAllDayCal = null;
+            McEvent bestFarFuture = null;
+            McAbstrCalendarRoot bestFarFutureCal = null;
+
+            DateTime now = DateTime.UtcNow;
+
+            foreach (var evt in McEvent.UpcomingEvents (NextEventWindow)) {
+
+                if (evt.GetEndTimeUtc () < now) {
+                    // Because of the way that all-day events are stored, it is possible for McEvent.UpcomingEvents() to return an
+                    // all-day event that is already over.  Ignore such events.
+                    continue;
+                }
+                var cal = evt.GetCalendarItemforEvent ();
+                if (null == cal || NcMeetingStatus.MeetingOrganizerCancelled == cal.GetMeetingStatus () || NcMeetingStatus.MeetingAttendeeCancelled == cal.GetMeetingStatus ()) {
+                    // Ignore events that don't have a corresponding calendar item or that have been cancelled.
+                    continue;
+                }
+
+                if (!evt.AllDayEvent && evt.GetStartTimeUtc () > now && evt.GetStartTimeUtc () - now < NearFutureSpan) {
+                    // Starts in the next 30 minutes
+                    if (null == bestNearFuture || FirstIsBetterFutureEvent (evt, cal, bestNearFuture, bestNearFutureCal)) {
+                        bestNearFuture = evt;
+                        bestNearFutureCal = cal;
+                    } else if (evt.GetStartTimeUtc () != bestNearFuture.GetStartTimeUtc ()) {
+                        multipleInNearFuture = true;
+                        // Events at at least two different times within the next 30 minutes.  Looking at more events won't be useful.
+                        break;
+                    }
+                } else if (!evt.AllDayEvent && evt.GetStartTimeUtc () <= now) {
+                    // Event is currently in progress
+                    if (null == bestCurrent || FirstIsBetterCurrentEvent (evt, cal, bestCurrent, bestCurrentCal)) {
+                        bestCurrent = evt;
+                        bestCurrentCal = cal;
+                    }
+                } else if (!evt.AllDayEvent && evt.GetStartTimeUtc () - now < MediumFutureSpan) {
+                    // Sarts in the next 24 hours
+                    if (null == bestMediumFuture || FirstIsBetterFutureEvent (evt, cal, bestMediumFuture, bestMediumFutureCal)) {
+                        bestMediumFuture = evt;
+                        bestMediumFutureCal = cal;
+                    } else if (evt.GetStartTimeUtc () != bestMediumFuture.GetStartTimeUtc ()) {
+                        // Events at at least two different times within the next day.  Looking at more events won't be useful.
+                        break;
+                    }
+                } else if (evt.AllDayEvent && evt.GetStartTimeUtc () - now < MediumFutureSpan) {
+                    // All day event for today or tomorrow.
+                    if (null == bestAllDay || FirstIsBetterFutureEvent (evt, cal, bestAllDay, bestAllDayCal)) {
+                        bestAllDay = evt;
+                        bestAllDayCal = cal;
+                    }
+                } else {
+                    // Starts more than 24 hours in the future.  For this bucket, all-day events and regular events are treated the same.
+                    if (null == bestFarFuture || FirstIsBetterFutureEvent (evt, cal, bestFarFuture, bestFarFutureCal)) {
+                        bestFarFuture = evt;
+                        bestFarFutureCal = cal;
+                    } else if (evt.AllDayEvent != bestFarFuture.AllDayEvent || evt.GetStartTimeUtc() - bestFarFuture.GetStartTimeUtc() > TimeSpan.FromHours (14)) {
+                        // Looking at more events won't be useful.  (The 14-hour time span deals with the issue of all-day events
+                        // and regular events being returned out of order.
+                        break;
+                    }
+                }
+            }
+
+            // Figure out when the hot event view should next call CurrentOrNextEvent().  Err on the side of returning a time span
+            // that is too short rather than too long.  A time span that is too short will result in some extra computation.
+            // A time span that is too long may result in the wrong event being displayed.
+            if (multipleInNearFuture) {
+                nextCheckTime = bestNearFuture.GetStartTimeUtc ();
+            } else {
+                nextCheckTime = now.AddHours (2);
+                if (null != bestNearFuture) {
+                    nextCheckTime = EarlierTime (nextCheckTime, bestNearFuture.GetEndTimeUtc ());
+                }
+                if (null != bestCurrent) {
+                    nextCheckTime = EarlierTime (nextCheckTime, bestCurrent.GetEndTimeUtc ());
+                }
+                if (null != bestMediumFuture) {
+                    nextCheckTime = EarlierTime (nextCheckTime, bestMediumFuture.GetStartTimeUtc ().Subtract (NearFutureSpan));
+                }
+                if (null != bestAllDay && null == bestNearFuture && null == bestCurrent && null == bestMediumFuture) {
+                    nextCheckTime = EarlierTime (nextCheckTime, bestAllDay.GetEndTimeUtc ());
+                    if (null != bestFarFuture) {
+                        nextCheckTime = EarlierTime (nextCheckTime, bestFarFuture.GetStartTimeUtc ().Subtract (MediumFutureSpan));
+                    }
+                }
+            }
+            return bestNearFuture ?? bestCurrent ?? bestMediumFuture ?? bestAllDay ?? bestFarFuture;
+        }
+
         /// <summary>
         /// Convert the local time zone information into a form that can be represented in
         /// Exchange's time zone format.
