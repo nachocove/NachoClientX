@@ -148,6 +148,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
+                Util.ConfigureNavBar (false, this.NavigationController);
                 this.NavigationController.ToolbarHidden = true;
             }
             MaybeRefreshPriorityInbox ();

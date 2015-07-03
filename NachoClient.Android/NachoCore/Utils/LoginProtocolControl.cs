@@ -16,6 +16,7 @@ namespace NachoCore.Utils
             CredentialsWait,
             SyncWait,
             SubmitWait,
+            TutorialSupportWait,
             FinishWait,
         };
 
@@ -54,6 +55,7 @@ namespace NachoCore.Utils
                 ServerConfCallback,
                 ServerUpdate,
                 ShowAdvanced,
+                ShowSupport,
                 ShowTutorial,
                 StartOver,
                 TryAgain,
@@ -93,6 +95,7 @@ namespace NachoCore.Utils
                             (uint)Events.E.Quit,
                             (uint)Events.E.ServerUpdate,
                             (uint)Events.E.ShowAdvanced,
+                            (uint)Events.E.ShowSupport,
                             (uint)Events.E.ShowTutorial,
                             (uint)Events.E.StartOver,
                             (uint)Events.E.TryAgain,
@@ -100,13 +103,13 @@ namespace NachoCore.Utils
                         On = new Trans[] {
                             new Trans { Event = (uint)Events.E.NoService, Act = PromptForService, State = (uint)States.ServiceWait },
                             new Trans { Event = (uint)Events.E.NotYetStarted, Act = Start, State = (uint)States.SyncWait },
-                            new Trans { Event = (uint)Events.E.Running, Act = Noop, State = (uint)States.SyncWait },
+                            new Trans { Event = (uint)Events.E.Running, Act = ShowWaitingScreen, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.NoNetwork, Act = ShowNoNetwork, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowServerConfCallback, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CredReqCallback, Act = ShowCredReq, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CertAskCallback, Act = ShowCertAsk, State = (uint)States.SubmitWait },
-                            new Trans { Event = (uint)Events.E.PostAutoDPostInboxSync, Act = UpdateUI, State = (uint)States.SyncWait },
-                            new Trans { Event = (uint)Events.E.PostAutoDPreInboxSync, Act = FinishUp, State = (uint)States.FinishWait },
+                            new Trans { Event = (uint)Events.E.PostAutoDPreInboxSync, Act = UpdateUI, State = (uint)States.SyncWait },
+                            new Trans { Event = (uint)Events.E.PostAutoDPostInboxSync, Act = FinishUp, State = (uint)States.FinishWait },
                         }
                     },
                     new Node {
@@ -143,6 +146,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.KnownServicePicked, Act = PromptForCredentials, State = (uint)States.CredentialsWait },
                             new Trans { Event = (uint)Events.E.ShowAdvanced, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.NoService, Act = Quit, State = (uint)States.ServiceWait },
+                            new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
                         }
                     },
                     new Node {
@@ -179,6 +183,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.DuplicateAccount, Act = StartGoogleLoginWithComplaint, State = (uint)States.GmailWait },
                             new Trans { Event = (uint)Events.E.Error, Act = TryAgainOrQuit, State = (uint)States.GmailWhatNext },
                             new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Start },
+                            new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
                         }
                     },
                     new Node {
@@ -209,6 +214,7 @@ namespace NachoCore.Utils
                             (uint)Events.E.ServerConfCallback,
                             (uint)Events.E.ServerUpdate,
                             (uint)Events.E.ShowAdvanced,
+                            (uint)Events.E.ShowSupport,
                             (uint)Events.E.ShowTutorial,
                             (uint)Events.E.StartOver,
                         },
@@ -251,6 +257,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.AccountCreated, Act = StartSync, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.StartOver, Act = StartOver, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.ShowAdvanced, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
+                            new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
                         }
                     },
                     new Node {
@@ -272,13 +279,12 @@ namespace NachoCore.Utils
                             (uint)Events.E.NoService,
                             (uint)Events.E.Quit,
                             (uint)Events.E.ServerUpdate,
-                            (uint)Events.E.ShowAdvanced,
                             (uint)Events.E.ShowTutorial,
                             (uint)Events.E.TryAgain,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)Events.E.NotYetStarted, Act = Start, State = (uint)States.SyncWait },
-                            new Trans { Event = (uint)Events.E.Running, Act = Noop, State = (uint)States.SyncWait },
+                            new Trans { Event = (uint)Events.E.Running, Act = ShowWaitingScreen, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.NoNetwork, Act = ShowNoNetwork, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowServerConfCallback, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CredReqCallback, Act = ShowCredReq, State = (uint)States.SubmitWait },
@@ -287,6 +293,8 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.PostAutoDPostInboxSync, Act = FinishUp, State = (uint)States.FinishWait },
                             new Trans { Event = (uint)Events.E.StartOver, Act = StartOver, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.AccountCreated, Act = StartSync, State = (uint)States.SyncWait },
+                            new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
+                            new Trans { Event = (uint)Events.E.ShowAdvanced, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
                         }
                     },
                     new Node {
@@ -323,6 +331,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.CertRejected, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.AccountCreated, Act = StartSync, State = (uint)States.SyncWait },
+                            new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
                         }
                     },
                     new Node {
@@ -354,11 +363,49 @@ namespace NachoCore.Utils
                             (uint)Events.E.ServerUpdate,
                             (uint)Events.E.ShowAdvanced,
                             (uint)Events.E.StartOver,
+                            (uint)Events.E.ShowSupport,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)Events.E.TryAgain, Act = FinishUp, State = (uint)States.FinishWait },
                             new Trans { Event = (uint)Events.E.ShowTutorial, Act = ShowTutorial, State = (uint)States.FinishWait },
                             new Trans { Event = (uint)Events.E.AllDone, Act = Done, State = (uint)States.Start },
+                        }
+                    },
+                    new Node {
+                        State = (uint)States.TutorialSupportWait,
+                        Drop = new uint [] {
+                            (uint)Events.E.AccountCreated,
+                            (uint)Events.E.CertAccepted,
+                            (uint)Events.E.CertAskCallback,
+                            (uint)Events.E.CertRejected,
+                            (uint)Events.E.CredUpdate,
+                            (uint)Events.E.CredReqCallback,
+                            (uint)Events.E.DuplicateAccount,
+                            (uint)Events.E.Error,
+                            (uint)Events.E.ExchangePicked,
+                            (uint)Events.E.GetPassword,
+                            (uint)Events.E.GmailPicked,
+                            (uint)Events.E.KnownServicePicked,
+                            (uint)Events.E.ImapPicked,
+                            (uint)Events.E.NoNetwork,
+                            (uint)Events.E.NoService,
+                            (uint)Events.E.NotYetStarted,
+                            (uint)Events.E.PostAutoDPostInboxSync,
+                            (uint)Events.E.PostAutoDPreInboxSync,
+                            (uint)Events.E.Quit,
+                            (uint)Events.E.Running,
+                            (uint)Events.E.ServerConfCallback,
+                            (uint)Events.E.ServerUpdate,
+                            (uint)Events.E.ShowAdvanced,
+                            (uint)Events.E.StartOver,
+                            (uint)Events.E.ShowSupport,
+                            (uint)Events.E.ShowTutorial,
+                            (uint)Events.E.TryAgain,
+                        },
+                        Invalid = new uint [] {
+                        },
+                        On = new Trans[] {
+                            new Trans { Event = (uint)Events.E.AllDone, Act = Noop, State = (uint)States.Start },
                         }
                     },
                 },
@@ -372,12 +419,12 @@ namespace NachoCore.Utils
         {
         }
 
-        void ShowServerConfCallback()
+        void ShowServerConfCallback ()
         {
             ShowAdvancedConfiguration (Prompt.ServerConf);
         }
 
-        void ShowAdvancedConfiguration()
+        void ShowAdvancedConfiguration ()
         {
             ShowAdvancedConfiguration (Prompt.EnterInfo);
         }
@@ -444,6 +491,11 @@ namespace NachoCore.Utils
             owner.TryAgainOrQuit ();
         }
 
+        void ShowSupport ()
+        {
+            owner.ShowSupport ();
+        }
+
         void ShowTutorial ()
         {
             owner.ShowTutorial ();
@@ -467,6 +519,11 @@ namespace NachoCore.Utils
         void ShowCredReq ()
         {
             owner.ShowCredReq ();
+        }
+
+        void ShowWaitingScreen ()
+        {
+            owner.ShowWaitingScreen ("");
         }
 
         // State-machine's state persistance callback.
