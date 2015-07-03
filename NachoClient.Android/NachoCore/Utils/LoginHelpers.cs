@@ -147,10 +147,6 @@ namespace NachoCore.Utils
         // Look for a configured account
         public static McAccount PickStartupAccount ()
         {
-            foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
-                var cred = McCred.QueryByAccountId<McCred> (a.Id).SingleOrDefault ();
-            }
-
             McAccount account = GetMostRecentAccount ();
             if (null != account) {
                 if (!account.ConfigurationInProgress) {
