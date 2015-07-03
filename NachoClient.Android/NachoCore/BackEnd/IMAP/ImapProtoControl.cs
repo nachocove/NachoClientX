@@ -892,6 +892,7 @@ namespace NachoCore.IMAP
                 IMAPSupportsIdle = supportsIdle,
                 IMAPSupportsExpunge = supportsExpunged,
                 IMAPEXISTSCount = folder.ImapExists,
+                IMAPUIDNEXT = folder.ImapUidNext,
             };
         }
         #endregion

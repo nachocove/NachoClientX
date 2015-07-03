@@ -742,6 +742,7 @@ namespace NachoCore
                 IMAPSupportsIdle = parameters.IMAPSupportsIdle,
                 IMAPSupportsExpunge = parameters.IMAPSupportsExpunge,
                 IMAPEXISTSCount = parameters.IMAPEXISTSCount,
+                IMAPUIDNEXT = parameters.IMAPUIDNEXT,
             };
             FillOutIdentInfo (jsonRequest);
 

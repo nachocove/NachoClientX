@@ -50,6 +50,8 @@ namespace NachoCore
         public bool IMAPSupportsExpunge;
 
         public int IMAPEXISTSCount;
+
+        public int IMAPUIDNEXT;
     }
 
     public interface IPushAssistOwner : IBEContext

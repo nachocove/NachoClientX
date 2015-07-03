@@ -48,6 +48,7 @@ namespace NachoCore
         public bool IMAPSupportsIdle;
         public bool IMAPSupportsExpunge;
         public int IMAPEXISTSCount;
+        public int IMAPUIDNEXT;
     }
 
     public class DeferSessionRequest : SessionRequest
