@@ -326,7 +326,7 @@ namespace NachoCore.IMAP
             } else {
                 changed = true;
                 try {
-                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary);
+                    emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary as MessageSummary);
                     updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                     if (null == emailMessage.BodyPreview) {
                         emailMessage.IsIncomplete = true;
@@ -354,8 +354,7 @@ namespace NachoCore.IMAP
                     if (justCreated) {
                         emailMessage.Insert ();
                         folder.Link (emailMessage);
-                        // FIXME
-                        // InsertAttachments (emailMessage);
+                        InsertAttachments (emailMessage, imapSummary as MessageSummary);
                     } else {
                         emailMessage.AccountId = folder.AccountId;
                         emailMessage.Update ();
@@ -442,7 +441,7 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        public static McEmailMessage ParseEmail (int accountId, string ServerId, IMessageSummary summary)
+        public static McEmailMessage ParseEmail (int accountId, string ServerId, MessageSummary summary)
         {
             NcAssert.NotNull (summary.Envelope);
 
@@ -451,8 +450,6 @@ namespace NachoCore.IMAP
                 AccountId = accountId,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,
-                // FIXME - Any error.
-                // cachedHasAttachments = summary.Attachments.Any (),
                 MessageID = summary.Envelope.MessageId,
                 DateReceived = summary.InternalDate.HasValue ? summary.InternalDate.Value.UtcDateTime : DateTime.MinValue,
                 FromEmailAddressId = 0,
@@ -545,6 +542,33 @@ namespace NachoCore.IMAP
             emailMessage.IsIncomplete = false;
 
             return emailMessage;
+        }
+
+        public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
+        {
+            if (imapSummary.Attachments.Any ()) {
+                foreach (var att in imapSummary.Attachments) {
+                    // Create & save the attachment record.
+                    var attachment = new McAttachment {
+                        AccountId = msg.AccountId,
+                        ItemId = msg.Id,
+                        ClassCode = msg.GetClassCode (),
+                        FileSize = att.Octets,
+                        FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual,
+                        FileReference = att.PartSpecifier, // not sure what to put here
+                        //Method = uint.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.Method).Value),
+                    };
+                    attachment.SetDisplayName (att.FileName); // FileName looks at ContentDisposition
+                    if (null != att.ContentLocation) {
+                        attachment.ContentLocation = att.ContentLocation.ToString ();
+                    }
+                    attachment.ContentId = att.ContentId;
+                    attachment.IsInline = !att.IsAttachment;
+                    //attachment.VoiceSeconds = uint.Parse (xmlUmAttDuration.Value);
+                    //attachment.VoiceOrder = int.Parse (xmlUmAttOrder.Value);
+                    attachment.Insert ();
+                }
+            }
         }
 
         private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder)

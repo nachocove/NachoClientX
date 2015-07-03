@@ -46,10 +46,18 @@ namespace NachoCore.Model
 
 
         #region IMAP Folder metadata
-
-        // the Imap GUID we use to keep track of folders. Will not change if the folder is moved or renamed. Used for McEmailMessage.ServerId.
-        // technically this isn't part of the actual IMAP metadata (that the server provides), but we'll treat it as such, since
-        // it really never should be modified by any code (other than the McFolder initializer).
+        // Nacho Mail Code requires the McEmailMessage.ServerId to be unique across all folders. In IMAP,
+        // the UID is unique only within a folder (otehr folders may have messages with the same UID).
+        // In order to make the ServerId for a message unique, we create this ImapGuid, and prepend it to
+        // the UID to create the McEmailMessgae.ServerId. See ImapProtoControl.ImapMessageFolderGuid(),
+        // ImapProtoControl.ImapMessageUid() and ImapProtoControl.MessageServerId() for functions that 
+        // Convert to and from the McEmailMessage.ServerId to the various pieces of information.
+        //
+        // The ImapGuid will not change if the folder is moved or renamed.
+        //
+        // Technically this isn't part of the actual IMAP metadata (that the Imap Server provides),
+        // but we'll treat it as such, since it really never should be modified by any code (other than
+        // the McFolder initializer).
         public string ImapGuid { get; set; }
 
         // Whether the IMAP folder had the \NoSelect flag set. This means it can not be opened and will not have messages.
@@ -457,6 +465,18 @@ namespace NachoCore.Model
                               accountId, isClientOwned);
             return folders.ToList ();
         }
+
+        public static List<McFolder> QueryByImapGuid (int accountId, string guid)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " likelihood (f.AccountId = ?, 1.0) AND " +
+                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (f.ImapGuid = ?, 0.05) ",
+                accountId, guid);
+            return folders.ToList ();
+        }
+
+
         // ONLY TO BE USED BY SERVER-END CODE.
         // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes
         // IsAwaitingCreate folders.
