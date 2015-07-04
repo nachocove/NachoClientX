@@ -1,14 +1,14 @@
 ﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using NachoCore.Model;
-using MailKit.Net.Imap;
 using NachoCore.Utils;
 using System.IO;
 using System.Linq;
+using MailKit;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchAttachmentCommand : ImapCommand
+    public class ImapFetchAttachmentCommand : ImapCommand, ITransferProgress
     {
         public ImapFetchAttachmentCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
@@ -53,7 +53,7 @@ namespace NachoCore.IMAP
             }
             var mailKitFolder = GetOpenMailkitFolder (folder);
             // TODO Use GetStream with subclassed routines for direct-to-disk downloads
-            var st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token);
+            var st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token, this);
             var path = attachment.GetFilePath ();
             using (var fileStream = new FileStream (path, FileMode.OpenOrCreate, FileAccess.ReadWrite)) {
                 st.CopyTo(fileStream);
@@ -64,5 +64,19 @@ namespace NachoCore.IMAP
             attachment.Update ();
             return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
         }
+
+        #region ITransferProgress implementation
+
+        public void Report (long bytesTransferred, long totalSize)
+        {
+            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
+        }
+
+        public void Report (long bytesTransferred)
+        {
+            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
+        }
+
+        #endregion
     }
 }
