@@ -52,7 +52,6 @@ namespace NachoCore.IMAP
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            // TODO Use GetStream variant with progress report.
             // TODO Use GetStream with subclassed routines for direct-to-disk downloads
             var st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token);
             var path = attachment.GetFilePath ();
