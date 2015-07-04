@@ -12,7 +12,7 @@ using System.Threading;
 
 namespace NachoCore.IMAP
 {
-    public class ImapProtoControl : NcProtoControl, IPushAssistOwner
+    public partial class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
         public NcImapClient MainClient;
 
