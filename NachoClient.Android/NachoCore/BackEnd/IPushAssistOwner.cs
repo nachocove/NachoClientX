@@ -51,7 +51,7 @@ namespace NachoCore
 
         public int IMAPEXISTSCount;
 
-        public int IMAPUIDNEXT;
+        public uint IMAPUIDNEXT;
     }
 
     public interface IPushAssistOwner : IBEContext
