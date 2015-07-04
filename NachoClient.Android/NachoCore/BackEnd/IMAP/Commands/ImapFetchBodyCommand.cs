@@ -6,10 +6,11 @@ using MailKit;
 using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
+using System;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchBodyCommand : ImapCommand
+    public class ImapFetchBodyCommand : ImapCommand, ITransferProgress
     {
         public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
@@ -69,58 +70,73 @@ namespace NachoCore.IMAP
                 return NcResult.Error ("Unknown email ServerId");
             }
 
-            NcResult result;
+            NcResult result = null;
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            MimeMessage imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
+            McBody body;
+            if (0 == email.BodyId) {
+                body = new McBody () {
+                    AccountId = BEContext.Account.Id,
+                };
+            } else {
+                body = McBody.QueryById<McBody> (email.BodyId);
+            }
+            var uid = ImapProtoControl.ImapMessageUid (pending.ServerId);
+            MimeMessage imapbody = null;
+            mailKitFolder.SetStreamContext (uid, body.GetFilePath ());
+            try {
+                imapbody = mailKitFolder.GetMessage (uid, Cts.Token, this);
+            } catch (Exception e) {
+                body.Delete ();
+                mailKitFolder.UnsetStreamContext ();
+                throw;
+            }
             if (null == imapbody) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
-                email.BodyId = 0;
                 result = NcResult.Error ("No Body found");
             } else {
-                McAbstrFileDesc.BodyTypeEnum bodyType;
-                // FIXME Getting the 'body' string is inefficient and wasteful.
-                //   Perhaps use the WriteTo method on the Body, write to a file,
-                //   then open the file and pass that stream to UpdateData/InsertFile?
-                string bodyAsString;
                 if (imapbody.Body.ContentType.Matches ("multipart", "*")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                    bodyAsString = imapbody.Body.ToString ();
+                    body.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
                 } else if (imapbody.Body.ContentType.Matches ("text", "*")) {
                     if (imapbody.Body.ContentType.Matches ("text", "html")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                        bodyAsString = imapbody.HtmlBody;
+                        body.BodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
                     } else if (imapbody.Body.ContentType.Matches ("text", "plain")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        bodyAsString = imapbody.TextBody;
+                        body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                     } else {
                         Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
-                        return NcResult.Error ("Unhandled text subtype");
+                        result = NcResult.Error ("Unhandled text subtype");
                     }
                 } else {
                     Log.Error (Log.LOG_IMAP, "Unhandled mime subtype {0}", imapbody.Body.ContentType.ToString ());
-                    return NcResult.Error ("Unhandled mimetype subtype");
+                    result = NcResult.Error ("Unhandled mimetype subtype");
                 }
-
-                McBody body;
-                if (0 == email.BodyId) {
-                    body = McBody.InsertFile (pending.AccountId, bodyType, bodyAsString); 
-                    email.BodyId = body.Id;
-                } else {
-                    body = McBody.QueryById<McBody> (email.BodyId);
-                    body.UpdateData (bodyAsString);
-                }
-                body.BodyType = bodyType;
+            }
+            if (null == result) {
+                email.BodyId = body.Id;
                 body.Truncated = false;
-                body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
-                body.FileSize = bodyAsString.Length;
-                body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
-                body.Update ();
+                body.UpdateSaveFinish ();
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+            } else {
+                body.Delete ();
+                email.BodyId = 0;
             }
             email.Update ();
             return result;
         }
+
+        #region ITransferProgress implementation
+
+        public void Report (long bytesTransferred, long totalSize)
+        {
+            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
+        }
+
+        public void Report (long bytesTransferred)
+        {
+            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
+        }
+
+        #endregion
     }
 }

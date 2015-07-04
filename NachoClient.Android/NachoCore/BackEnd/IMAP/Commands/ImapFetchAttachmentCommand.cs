@@ -5,6 +5,7 @@ using NachoCore.Utils;
 using System.IO;
 using System.Linq;
 using MailKit;
+using System;
 
 namespace NachoCore.IMAP
 {
@@ -52,16 +53,17 @@ namespace NachoCore.IMAP
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            // TODO Use GetStream with subclassed routines for direct-to-disk downloads
-            var st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token, this);
-            var path = attachment.GetFilePath ();
-            using (var fileStream = new FileStream (path, FileMode.OpenOrCreate, FileAccess.ReadWrite)) {
-                st.CopyTo(fileStream);
+            mailKitFolder.SetStreamContext (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.GetFilePath ());
+            try {
+                mailKitFolder.GetBodyPart (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token, this);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_IMAP, "Could not GetBodyPart: {0}", e);
+                attachment.DeleteFile ();
+                mailKitFolder.UnsetStreamContext ();
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
-            st.Close ();
-            attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Complete);
             attachment.Truncated = false;
-            attachment.Update ();
+            attachment.UpdateSaveFinish ();
             return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
         }
 
