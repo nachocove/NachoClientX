@@ -128,12 +128,15 @@ namespace NachoClient.iOS
             if (null != thread) {
                 var now = DateTime.UtcNow;
                 var message = thread.FirstMessageSpecialCase ();
-                Telemetry.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
-                Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, message.Id);
-                Telemetry.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, message.Score);
-                var body = McBody.QueryById<McBody> (message.BodyId);
-                if (McBody.IsComplete (body)) {
-                    Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                // The message may have been deleted while the view was open.
+                if (null != message) {
+                    Telemetry.RecordFloatTimeSeries ("MessageViewController.Duration", appearTime, (now - appearTime).TotalMilliseconds);
+                    Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.Id", appearTime, message.Id);
+                    Telemetry.RecordFloatTimeSeries ("McEmailMessage.Read.Score", appearTime, message.Score);
+                    var body = McBody.QueryById<McBody> (message.BodyId);
+                    if (McBody.IsComplete (body)) {
+                        Telemetry.RecordIntTimeSeries ("McEmailMessage.Read.BodyFileLength", appearTime, (int)body.FileSize);
+                    }
                 }
             }
             base.ViewWillDisappear (animated);

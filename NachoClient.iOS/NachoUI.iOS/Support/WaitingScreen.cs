@@ -51,6 +51,7 @@ namespace NachoClient.iOS
         {
             this.owner = owner;
 
+            this.Hidden = true;
             this.BackgroundColor = A.Color_NachoGreen;
             LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64 + 64;
 
@@ -125,6 +126,8 @@ namespace NachoClient.iOS
             nachoMailLabel.TextAlignment = UITextAlignment.Center;
             this.AddSubview (nachoMailLabel);
 
+            nfloat yOffset = nachoMailLabel.Frame.Bottom + 40;
+
             supportButton = new UIButton (UIButtonType.System);
             supportButton.SetTitle ("Customer Support", UIControlState.Normal);
             supportButton.SetTitleColor (UIColor.White, UIControlState.Normal);
@@ -136,8 +139,10 @@ namespace NachoClient.iOS
                 owner.SegueToSupport ();
             };
             supportButton.SizeToFit ();
-            ViewFramer.Create (supportButton).Center (this.Frame.Width / 2, this.Frame.Bottom - 70);
+            ViewFramer.Create (supportButton).CenterX (0, Frame.Width).Y (yOffset);
             this.AddSubview (supportButton);
+
+            yOffset += 40;
 
             dismissButton = new UIButton (UIButtonType.System);
             dismissButton.SetTitle ("Return to Account Setup", UIControlState.Normal);
@@ -150,8 +155,10 @@ namespace NachoClient.iOS
                 owner.ReturnToAdvanceView ();
             };
             dismissButton.SizeToFit ();
-            ViewFramer.Create (dismissButton).Center (this.Frame.Width / 2, this.Frame.Bottom - 40);
+            ViewFramer.Create (dismissButton).CenterX (0, Frame.Width).Y (yOffset);
             this.AddSubview (dismissButton);
+
+            dismissButton.Hidden = !owner.CanShowAdvanced ();
         }
 
         protected UIImage maskImage (UIImage maskImage)
@@ -192,11 +199,6 @@ namespace NachoClient.iOS
                 }, ((bool finished) => {
                 }));
             }
-        }
-
-        public void HideView()
-        {
-            DismissView ();
         }
 
         public void DismissView ()
@@ -248,6 +250,8 @@ namespace NachoClient.iOS
 
         public void StartSyncedEmailAnimation (int accountId)
         {
+            this.Hidden = false;
+
             UIView.AnimateKeyframes (4, .1, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .075, () => {
