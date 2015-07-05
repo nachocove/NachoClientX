@@ -35,6 +35,7 @@ namespace NachoClient.iOS
             switchButton.Layer.AllowsEdgeAntialiasing = true;
             switchButton.TouchUpInside += SwitchButton_TouchUpInside;
             switchButton.AccessibilityLabel = "Switch account";
+            switchButton.ImageView.ContentMode = UIViewContentMode.Center;
 
             switchButton.AdjustsImageWhenHighlighted = false;
 

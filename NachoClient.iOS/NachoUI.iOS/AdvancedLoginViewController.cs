@@ -12,6 +12,7 @@ using System.Linq;
 using System.Collections.Generic;
 using NachoPlatform;
 using Google.iOS;
+using System.Net.Http;
 
 namespace NachoClient.iOS
 {
@@ -336,6 +337,23 @@ namespace NachoClient.iOS
             NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
 
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: DidSignInForUser");
+
+            if (user.Profile.HasImage) {
+                FetchGooglePortrait (account, user.Profile.ImageURL(40));
+            }
+        }
+
+        async void FetchGooglePortrait (McAccount account, NSUrl imageUrl)
+        {
+            try {
+                var httpClient = new HttpClient();
+                byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
+                var portrait = McPortrait.InsertFile (account.Id, contents);
+                account.DisplayPortraitId = portrait.Id;
+                account.Update ();
+            } catch (Exception e) {
+                Log.Info (Log.LOG_UI, "avl: FetchGooglePortrait {0}", e);
+            }
         }
 
         public void StartGoogleLoginWithComplaint ()
@@ -626,7 +644,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public bool CanShowAdvanced()
+        public bool CanShowAdvanced ()
         {
             return (McAccount.AccountServiceEnum.Exchange == service) || (McAccount.AccountServiceEnum.IMAP_SMTP == service);
         }
