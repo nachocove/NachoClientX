@@ -53,7 +53,7 @@ namespace NachoClient.iOS
 
             this.Hidden = true;
             this.BackgroundColor = A.Color_NachoGreen;
-            LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64 + 64;
+            LOWER_SECTION_Y_VAL = 64 + 64;
 
             spinnerView = new UIView (new CGRect (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             spinnerView.BackgroundColor = A.Color_NachoRed;
@@ -181,7 +181,6 @@ namespace NachoClient.iOS
                 this.Hidden = false;
                 this.Superview.BringSubviewToFront (this);
                 owner.NavigationItem.Title = "";
-                Util.ConfigureNavBar (true, owner.NavigationController);
                 ResetLoadingItems ();
                 StartLoadingAnimation ();
             }
@@ -206,7 +205,6 @@ namespace NachoClient.iOS
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
             topHalfSpinner.Layer.RemoveAllAnimations ();
             owner.NavigationItem.Title = "Account Setup";
-            Util.ConfigureNavBar (false, owner.NavigationController);
             this.Hidden = true;
         }
 

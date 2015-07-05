@@ -75,7 +75,7 @@ namespace NachoCore.Model
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
-                account.ConfigurationInProgress = true;
+                account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.InProgress;
                 account.Signature = "Sent from Nacho Mail";
                 account.SetAccountService (service);
                 account.DisplayName = McAccount.AccountServiceName (service);

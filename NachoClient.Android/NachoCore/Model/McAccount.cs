@@ -71,9 +71,16 @@ namespace NachoCore.Model
                                                                     AccountCapabilityEnum.ContactReader |
                                                                     AccountCapabilityEnum.ContactWriter
                                                                 );
-            
+
+        public enum ConfigurationInProgressEnum : int
+        {
+            Done = 0,
+            InProgress,
+            GoogleCallback,
+        };
+
         // Flags an account that's being configured
-        public bool ConfigurationInProgress { get; set; }
+        public ConfigurationInProgressEnum ConfigurationInProgress { get; set; }
         
         // This type is stored in the db; add to the end
         [Flags]
@@ -196,6 +203,7 @@ namespace NachoCore.Model
         }
 
         private static uint FudgeFactor = 1;
+
         public static TimeSpan SyncTimeSpan (ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             switch (code) {
@@ -212,22 +220,22 @@ namespace NachoCore.Model
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5:
                 return TimeSpan.FromDays (30 + FudgeFactor);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.ThreeMonths_6:
-                return TimeSpan.FromDays (90 + FudgeFactor*2);
+                return TimeSpan.FromDays (90 + FudgeFactor * 2);
             case ActiveSync.Xml.Provision.MaxAgeFilterCode.SixMonths_7:
-                return TimeSpan.FromDays (180 + FudgeFactor*3);
+                return TimeSpan.FromDays (180 + FudgeFactor * 3);
             default:
                 NcAssert.CaseError ();
                 return TimeSpan.Zero;
             }
         }
 
-        public TimeSpan DaysSyncEmailSpan()
+        public TimeSpan DaysSyncEmailSpan ()
         {
             // Add 2 days just because we can.
             return SyncTimeSpan (DaysToSyncEmail);
         }
 
-        public TimeSpan DaysSyncCalendar()
+        public TimeSpan DaysSyncCalendar ()
         {
             return SyncTimeSpan (DaysToSyncCalendar);
         }
@@ -309,9 +317,9 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
         }
 
-        public static McAccount GetAccountBeingConfigured()
+        public static McAccount GetAccountBeingConfigured ()
         {
-            return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.ConfigurationInProgress).SingleOrDefault ();
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => McAccount.ConfigurationInProgressEnum.Done != x.ConfigurationInProgress).SingleOrDefault ();
         }
 
         public static string AccountServiceName (AccountServiceEnum service)
