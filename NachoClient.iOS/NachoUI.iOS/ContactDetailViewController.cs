@@ -191,7 +191,7 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, false);
+                dc.SetOwner (this, contact.GetDisplayNameOrEmailAddress ());
                 return;
             }
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
