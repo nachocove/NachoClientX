@@ -369,7 +369,7 @@ namespace Test.Common
             Brain.TestIndexContact (contact1);
             Brain.TestCloseAllOpenedIndexes ();
 
-            Assert.AreEqual (EmailMessageIndexDocument.Version, contact1.IndexVersion);
+            Assert.AreEqual (ContactIndexDocument.Version, contact1.IndexVersion);
             var matches = index.SearchAllContactFields ("alan");
             CheckOneContact (contact1.Id, matches);
 
@@ -388,7 +388,7 @@ namespace Test.Common
             Brain.TestIndexContact (contact2);
             Brain.TestCloseAllOpenedIndexes ();
 
-            Assert.AreEqual (EmailMessageIndexDocument.Version - 1, contact2.IndexVersion);
+            Assert.AreEqual (ContactIndexDocument.Version - 1, contact2.IndexVersion);
             matches = index.SearchAllContactFields ("bob");
             CheckOneContact (contact2.Id, matches);
 
@@ -407,7 +407,7 @@ namespace Test.Common
             Brain.TestIndexContact (contact3);
             Brain.TestCloseAllOpenedIndexes ();
 
-            Assert.AreEqual (EmailMessageIndexDocument.Version, contact3.IndexVersion);
+            Assert.AreEqual (ContactIndexDocument.Version, contact3.IndexVersion);
             matches = index.SearchAllContactFields ("charles");
             CheckOneContact (contact3.Id, matches);
         }

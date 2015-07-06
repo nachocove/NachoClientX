@@ -367,7 +367,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void TestEmailAddressFields ()
+        public void TestEmailAddressAndDomainFields ()
         {
             string[] subjects = new string[3] {
                 "email #1",
@@ -509,7 +509,10 @@ namespace Test.Common
                 contactParams [n].LastName = last_name [n];
                 contactParams [n].Note = notes [n];
                 for (int m = 0; m < email_addresses [n].Length; m++) {
-                    contactParams [n].EmailAddresses.Add (email_addresses [n] [m]);
+                    var addr = email_addresses [n] [m];
+                    contactParams [n].EmailAddresses.Add (addr);
+                    var idx = addr.IndexOf ("@");
+                    contactParams [n].EmailDomains.Add (addr.Substring (idx + 1));
                 }
                 for (int m = 0; m < phone_numbers [n].Length; m++) {
                     contactParams [n].PhoneNumbers.Add (phone_numbers [n] [m]);
@@ -547,28 +550,32 @@ namespace Test.Common
             // Search by middle name
             matches = Index.Search ("middle_name:Mary");
             VerifyContacts (matches, new int[] { 2 });
-            matches = Index.Search ("middle_name:*");
-            VerifyContacts (matches, new int[] { 1, 2 });
+            matches = Index.Search ("middle_name:M*");
+            VerifyContacts (matches, new int[] { 2 });
 
             // Search by last name
             matches = Index.Search ("last_name:Brown");
             VerifyContacts (matches, new int[] { 3 });
-            matches = Index.Search ("last_name:*");
-            VerifyContacts (matches, new int[] { 0, 1, 2, 3 });
+            matches = Index.Search ("last_name:J*");
+            VerifyContacts (matches, new int[] { 1 });
 
             // Search by email address
             matches = Index.Search ("email_address:support@joannfrabrics.com");
             VerifyContacts (matches, new int[] { 2 });
             matches = Index.Search ("email_address:b*");
             VerifyContacts (matches, new int[] { 0 });
-            matches = Index.Search ("email_address:*@company.net");
+
+            // Search by email domain
+            matches = Index.Search ("email_domain:company.net");
             VerifyContacts (matches, new int[] { 0, 1 });
+            matches = Index.Search ("email_domain:joann*");
+            VerifyContacts (matches, new int[] { 2 });
 
             // Search by phone #
             matches = Index.Search ("phone_number:510-555-4321");
             VerifyContacts (matches, new int[] { 2 });
-            matches = Index.Search ("phone_number:*");
-            VerifyContacts (matches, new int[] { 0, 1, 2 });
+            matches = Index.Search ("phone_number:408*");
+            VerifyContacts (matches, new int[] { 1 });
 
             // Search by address
             matches = Index.Search ("address:cunningham");

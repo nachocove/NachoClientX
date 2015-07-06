@@ -59,17 +59,28 @@ namespace NachoCore.Model
 
     public class McContactNameComparer : IComparer<McContact>
     {
+        protected string GetFirstName (McContact c)
+        {
+            if (!String.IsNullOrEmpty (c.FirstName)) {
+                return c.FirstName;
+            }
+            if (0 < c.EmailAddresses.Count) {
+                return c.EmailAddresses [0].Value;
+            }
+            return null;
+        }
+
         public int Compare (McContact a, McContact b)
         {
-            int result = String.Compare (a.FirstName, b.FirstName);
+            int result = String.Compare (GetFirstName (a), GetFirstName (b), ignoreCase: true);
             if (0 != result) {
                 return result;
             }
-            result = String.Compare (a.MiddleName, b.MiddleName);
+            result = String.Compare (a.MiddleName, b.MiddleName, ignoreCase: true);
             if (0 != result) {
                 return result;
             }
-            return String.Compare (a.LastName, b.LastName);
+            return String.Compare (a.LastName, b.LastName, ignoreCase: true);
         }
     }
 
@@ -1441,21 +1452,25 @@ namespace NachoCore.Model
 
         public static List<McContactEmailAddressAttribute> SearchIndexAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
         {
+            const int maxResults = 100;
             var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
             if (String.IsNullOrEmpty (searchFor)) {
                 return emailAddressAttributes;
             }
 
+            var escapedSearchFor = Lucene.Net.QueryParsers.QueryParser.Escape (searchFor);
+
             // Query the index for contacts up to 100 of them
+            var allContacts = new List<McContact> ();
             foreach (var account in McAccount.GetAllAccounts()) {
                 var index = NcBrain.SharedInstance.Index (account.Id);
-                var escapedSearchFor = Lucene.Net.QueryParsers.QueryParser.Escape (searchFor);
-                var matches = index.SearchAllContactFields ("*" + escapedSearchFor + "*", 100);
+                var matches = index.SearchAllContactFields (escapedSearchFor + "*", maxResults);
                 if (0 == matches.Count) {
                     continue;
                 }
-                var contacts = McContact.QueryByIds (matches.Select (x => x.Id).ToList ());
-                if (matches.Count > contacts.Count) {
+                var idList = matches.Select (x => x.Id).Distinct ().ToList ();
+                var contacts = McContact.QueryByIds (idList);
+                if (idList.Count > contacts.Count) {
                     // Some ids in the index are no longer value. We need to remove those entries in the index
                     var hash = new HashSet<int> ();
                     contacts.ForEach ((x) => {
@@ -1471,24 +1486,23 @@ namespace NachoCore.Model
                         }
                     }
                 } else {
-                    NcAssert.True (matches.Count == contacts.Count);
+                    NcAssert.True (idList.Count == contacts.Count);
                 }
 
-                contacts.Sort (new McContactNameComparer ());
+                allContacts.AddRange (contacts);
+            }
+            allContacts.Sort (new McContactNameComparer ());
 
-                // Get all matching email addresses
-                int count = 0;
-                foreach (var contact in contacts) {
-                    if (withEclipsing && contact.EmailAddressesEclipsed) {
-                        continue;
-                    }
-                    foreach (var emailAddress in contact.EmailAddresses) {
-                        emailAddressAttributes.Add (emailAddress);
-                        count += 1;
-                        if (100 < count) {
-                            break;
-                        }
-                    }
+            // Get all matching email addresses
+            int count = 0;
+            foreach (var contact in allContacts) {
+                if (withEclipsing && contact.EmailAddressesEclipsed) {
+                    continue;
+                }
+                emailAddressAttributes.AddRange (contact.EmailAddresses);
+                count += contact.EmailAddresses.Count;
+                if (maxResults < count) {
+                    break;
                 }
             }
 

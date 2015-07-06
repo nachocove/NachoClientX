@@ -126,6 +126,7 @@ namespace NachoCore.Index
         public string MiddleName;
         public string LastName;
         public List<string> EmailAddresses;
+        public List<string> EmailDomains;
         public List<string> PhoneNumbers;
         public List<string> Addresses;
         public string Note;
@@ -134,6 +135,7 @@ namespace NachoCore.Index
         public ContactIndexParameters ()
         {
             EmailAddresses = new List<string> ();
+            EmailDomains = new List<string> ();
             PhoneNumbers = new List<string> ();
             Addresses = new List<string> ();
         }
@@ -151,7 +153,7 @@ namespace NachoCore.Index
         // If in the future, we need to add a new indexed field. That will become v2
         // and v3 is when body (really notes) is indexed. A migration will be needed
         // to set all v1 and v2 to v1. They will be re-indexed to v2 or v3.
-        public const int Version = 2;
+        public const int Version = 3;
 
         public ContactIndexDocument (string id, ContactIndexParameters contact)
             : base ("contact", id, null)
@@ -162,6 +164,9 @@ namespace NachoCore.Index
             AddIndexedField ("company_name", contact.CompanyName);
             foreach (var emailAddress in contact.EmailAddresses) {
                 AddIndexedField ("email_address", emailAddress);
+            }
+            foreach (var emailDomain in contact.EmailDomains) {
+                AddIndexedField ("email_domain", emailDomain);
             }
             foreach (var phoneNumber in contact.PhoneNumbers) {
                 AddIndexedField ("phone_number", phoneNumber);
