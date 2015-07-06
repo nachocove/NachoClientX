@@ -571,11 +571,9 @@ namespace NachoCore.IMAP
             }
         }
 
-        private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder)
+        private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
             string preview = string.Empty;
-            NcImapFolder mailKitFolder = folder as NcImapFolder;
-            NcAssert.NotNull (mailKitFolder);
 
             var part = findPreviewablePart (summary);
             if (null != part) {
