@@ -25,8 +25,6 @@ namespace NachoCore
 
         void StartGoogleLogin ();
 
-        void StartGoogleLoginWithComplaint ();
-
         void StartSync ();
 
         void TryAgainOrQuit ();
@@ -44,6 +42,8 @@ namespace NachoCore
         void ShowCredReq ();
 
         void ShowWaitingScreen (string waitingMessage);
+
+        void ShowDuplicateAccount();
     }
 }
 

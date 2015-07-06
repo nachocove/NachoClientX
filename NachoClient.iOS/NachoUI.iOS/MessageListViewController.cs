@@ -305,8 +305,8 @@ namespace NachoClient.iOS
                     SwitchToAccount (NcApplication.Instance.Account);
                 } else {
                     NavigationController.PopViewController (true);
+                    return;
                 }
-                return;
             }
 
             if (!StatusIndCallbackIsSet) {

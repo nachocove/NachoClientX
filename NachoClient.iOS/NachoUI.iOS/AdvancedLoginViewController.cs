@@ -106,12 +106,20 @@ namespace NachoClient.iOS
             if (null == account) {
                 // Configus interruptus?
                 account = McAccount.GetAccountBeingConfigured ();
-                if (null != account) {
+                if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback != account.ConfigurationInProgress)) {
                     email = account.EmailAddr;
                     service = account.AccountService;
                     password = LoginHelpers.GetPassword (account);
                     BackEnd.Instance.Start (account.Id);
                 }
+            }
+
+            // Returning to app from browser after a potentially successful login (see AppDelegate)
+            if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback == account.ConfigurationInProgress)) {
+                StartGoogleSilentLogin ();
+                account.Delete ();
+                account = null;
+                return;
             }
 
             if (McAccount.AccountServiceEnum.None == service) {
@@ -143,7 +151,7 @@ namespace NachoClient.iOS
         public void FinishUp ()
         {
             if (null == waitingScreen) {
-                waitingScreen = new WaitingScreen (View.Frame, this);
+                waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
                 View.AddSubview (waitingScreen);
             } else {
                 waitingScreen.Layer.RemoveAllAnimations ();
@@ -228,10 +236,23 @@ namespace NachoClient.iOS
             return;
         }
 
+
+        public void ShowDuplicateAccount ()
+        {
+            NcActionSheet.Show (View, this, null,
+                String.Format ("This account already exists."),
+                new NcAlertAction ("OK", () => {
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowDuplicateAccount");
+
+                }));
+            return;
+        }
+
+
         public void ShowCertAsk ()
         {
             RemoveWindows ();
-            certificateView = new CertificateView (View.Frame, this);
+            certificateView = new CertificateView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             certificateView.SetCertificateInformation (account.Id);
             View.AddSubview (certificateView);
             View.BringSubviewToFront (certificateView);
@@ -272,7 +293,7 @@ namespace NachoClient.iOS
         public void ShowWaitingScreen (string waitingMessage)
         {
             RemoveWindows ();
-            waitingScreen = new WaitingScreen (View.Frame, this);
+            waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             View.AddSubview (waitingScreen);
             waitingScreen.ShowView (waitingMessage);
         }
@@ -299,16 +320,15 @@ namespace NachoClient.iOS
         {
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
-
-            // Add scope to give full access to email
-            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
-
             Google.iOS.GIDSignIn.SharedInstance.SignOut ();
             Google.iOS.GIDSignIn.SharedInstance.SignIn ();
+        }
+
+        public void StartGoogleSilentLogin ()
+        {
+            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.SignInSilently ();
         }
 
         // GIDSignInDelegate
@@ -327,7 +347,15 @@ namespace NachoClient.iOS
                 
             service = McAccount.AccountServiceEnum.GoogleDefault;
 
-            // TODO: Check for & reject duplicate account.
+            var emailAddress = user.Profile.Email;
+            var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
+
+            if (null != existingAccount) {
+                // Already have this one.
+                Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", emailAddress);
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: DidSignInForUser");
+                return;
+            }
 
             account = NcAccountHandler.Instance.CreateAccount (service,
                 user.Profile.Email,
@@ -339,14 +367,14 @@ namespace NachoClient.iOS
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: DidSignInForUser");
 
             if (user.Profile.HasImage) {
-                FetchGooglePortrait (account, user.Profile.ImageURL(40));
+                FetchGooglePortrait (account, user.Profile.ImageURL (40));
             }
         }
 
         async void FetchGooglePortrait (McAccount account, NSUrl imageUrl)
         {
             try {
-                var httpClient = new HttpClient();
+                var httpClient = new HttpClient ();
                 byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
                 var portrait = McPortrait.InsertFile (account.Id, contents);
                 account.DisplayPortraitId = portrait.Id;
@@ -354,10 +382,6 @@ namespace NachoClient.iOS
             } catch (Exception e) {
                 Log.Info (Log.LOG_UI, "avl: FetchGooglePortrait {0}", e);
             }
-        }
-
-        public void StartGoogleLoginWithComplaint ()
-        {
         }
 
         public void StartSync ()
@@ -384,7 +408,7 @@ namespace NachoClient.iOS
 
         public void Done ()
         {
-            account.ConfigurationInProgress = false;
+            account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
             account.Update ();
 
             // FIXME: Only set if null or device

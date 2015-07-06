@@ -12,7 +12,6 @@ namespace NachoCore.Utils
             Start = St.Last + 1,
             ServiceWait,
             GmailWait,
-            GmailWhatNext,
             CredentialsWait,
             SyncWait,
             SubmitWait,
@@ -80,19 +79,16 @@ namespace NachoCore.Utils
                         Drop = new uint [] {
                         },
                         Invalid = new uint [] {
-                            (uint)Events.E.AccountCreated,
                             (uint)Events.E.AllDone,
                             (uint)Events.E.CertAccepted,
                             (uint)Events.E.CertRejected,
                             (uint)Events.E.CredUpdate,
-                            (uint)Events.E.DuplicateAccount,
                             (uint)Events.E.Error,
                             (uint)Events.E.ExchangePicked,
                             (uint)Events.E.GetPassword,
                             (uint)Events.E.GmailPicked,
                             (uint)Events.E.KnownServicePicked,
                             (uint)Events.E.ImapPicked,
-                            (uint)Events.E.Quit,
                             (uint)Events.E.ServerUpdate,
                             (uint)Events.E.ShowAdvanced,
                             (uint)Events.E.ShowSupport,
@@ -105,11 +101,14 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.NotYetStarted, Act = Start, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.Running, Act = ShowWaitingScreen, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.NoNetwork, Act = ShowNoNetwork, State = (uint)States.SubmitWait },
+                            new Trans { Event = (uint)Events.E.DuplicateAccount, Act = ShowDuplicateAccount, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.ServerConfCallback, Act = ShowServerConfCallback, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CredReqCallback, Act = ShowCredReq, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.CertAskCallback, Act = ShowCertAsk, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.PostAutoDPreInboxSync, Act = UpdateUI, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.PostAutoDPostInboxSync, Act = FinishUp, State = (uint)States.FinishWait },
+                            new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Start },
+                            new Trans { Event = (uint)Events.E.AccountCreated, Act = StartSync, State = (uint)States.SyncWait },
                         }
                     },
                     new Node {
@@ -180,47 +179,10 @@ namespace NachoCore.Utils
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)Events.E.AccountCreated, Act = StartSync, State = (uint)States.SyncWait },
-                            new Trans { Event = (uint)Events.E.DuplicateAccount, Act = StartGoogleLoginWithComplaint, State = (uint)States.GmailWait },
-                            new Trans { Event = (uint)Events.E.Error, Act = TryAgainOrQuit, State = (uint)States.GmailWhatNext },
+                            new Trans { Event = (uint)Events.E.DuplicateAccount, Act = ShowDuplicateAccount, State = (uint)States.Start },
+                            new Trans { Event = (uint)Events.E.Error, Act = TryAgainOrQuit, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
-                        }
-                    },
-                    new Node {
-                        State = (uint)States.GmailWhatNext,
-                        Drop = new uint [] {
-                        },
-                        Invalid = new uint [] {
-                            (uint)Events.E.AccountCreated,
-                            (uint)Events.E.AllDone,
-                            (uint)Events.E.CertAccepted,
-                            (uint)Events.E.CertAskCallback,
-                            (uint)Events.E.CertRejected,
-                            (uint)Events.E.CredUpdate,
-                            (uint)Events.E.CredReqCallback,
-                            (uint)Events.E.DuplicateAccount,
-                            (uint)Events.E.Error,
-                            (uint)Events.E.ExchangePicked,
-                            (uint)Events.E.GetPassword,
-                            (uint)Events.E.GmailPicked,
-                            (uint)Events.E.KnownServicePicked,
-                            (uint)Events.E.ImapPicked,
-                            (uint)Events.E.NoNetwork,
-                            (uint)Events.E.NoService,
-                            (uint)Events.E.NotYetStarted,
-                            (uint)Events.E.PostAutoDPostInboxSync,
-                            (uint)Events.E.PostAutoDPreInboxSync,
-                            (uint)Events.E.Running,
-                            (uint)Events.E.ServerConfCallback,
-                            (uint)Events.E.ServerUpdate,
-                            (uint)Events.E.ShowAdvanced,
-                            (uint)Events.E.ShowSupport,
-                            (uint)Events.E.ShowTutorial,
-                            (uint)Events.E.StartOver,
-                        },
-                        On = new Trans[] {
-                            new Trans { Event = (uint)Events.E.TryAgain, Act = StartGoogleLogin, State = (uint)States.GmailWait },
-                            new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Start },
                         }
                     },
                     new Node {
@@ -476,9 +438,9 @@ namespace NachoCore.Utils
             owner.StartGoogleLogin ();
         }
 
-        void StartGoogleLoginWithComplaint ()
+        void ShowDuplicateAccount ()
         {
-            owner.StartGoogleLoginWithComplaint ();
+            owner.ShowDuplicateAccount ();
         }
 
         void StartSync ()

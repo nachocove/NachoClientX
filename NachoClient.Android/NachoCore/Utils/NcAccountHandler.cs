@@ -75,7 +75,7 @@ namespace NachoCore.Model
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
-                account.ConfigurationInProgress = true;
+                account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.InProgress;
                 account.Signature = "Sent from Nacho Mail";
                 account.SetAccountService (service);
                 account.DisplayName = McAccount.AccountServiceName (service);
@@ -223,9 +223,11 @@ namespace NachoCore.Model
             var cred = McCred.QueryByAccountId<McCred> (AccountId).SingleOrDefault ();
             if (Keychain.Instance.HasKeychain ()) {
                 // TODO - add a wipe API to keychain.
-                Keychain.Instance.DeletePassword (cred.Id);
-                Keychain.Instance.DeleteAccessToken (cred.Id);
-                Keychain.Instance.DeleteRefreshToken (cred.Id);
+                if (null != cred) {
+                    Keychain.Instance.DeletePassword (cred.Id);
+                    Keychain.Instance.DeleteAccessToken (cred.Id);
+                    Keychain.Instance.DeleteRefreshToken (cred.Id);
+                }
             }
 
             // delete all DB data for account id - is db running?
