@@ -51,6 +51,11 @@ namespace NachoCore.Model
             /// The server supports the CONDSTORE extension defined in rfc4551.
             /// </summary>
             CondStore        = 1 << 2,
+            /// <summary>
+            /// The server supports the <a href="https://tools.ietf.org/html/rfc4959">SASL-IR</a> extension.
+            /// </summary>
+            SaslIR           = 1 << 3,
+
         }
 
         public McProtocolState ()
@@ -73,6 +78,7 @@ namespace NachoCore.Model
             /*
              * "Imap" IMAP ctor inits here:
              */
+            ImapServerCapabilities = ImapServerCapabilities;
             /*
              * "Smtp" SMTP ctor inits here:
              */
@@ -130,6 +136,10 @@ namespace NachoCore.Model
         public uint ImapProtoControlState { get; set; }
 
         public NcImapCapabilities ImapServerCapabilities { get; set; }
+        // servers can send different capabilities, depending on whether we're auth'd or not.
+        // We need to know both, because in some cases the auth'd capabilities no longer include
+        // the authentication capabilities, which we need to know.
+        public NcImapCapabilities ImapServerCapabilitiesUnAuth { get; set; }
 
         /*
          * "Smtp" SMTP properties go here:
@@ -185,6 +195,9 @@ namespace NachoCore.Model
             }
             if (capabilities.HasFlag (ImapCapabilities.CondStore)) {
                 cap |= NcImapCapabilities.CondStore;
+            }
+            if (capabilities.HasFlag (ImapCapabilities.SaslIR)) {
+                cap |= NcImapCapabilities.SaslIR;
             }
             return cap;
         }
