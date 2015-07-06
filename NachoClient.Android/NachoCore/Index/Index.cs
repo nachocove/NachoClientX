@@ -185,12 +185,13 @@ namespace NachoCore.Index
             return true;
         }
 
-        public List<MatchedItem> Search (string queryString, int maxMatches = 1000)
+        public List<MatchedItem> Search (string queryString, int maxMatches = 1000, bool leadingWildcard = false)
         {
             List<MatchedItem> matchedItems = new List<MatchedItem> ();
             try {
                 using (var reader = IndexReader.Open (IndexDirectory, true)) {
                     var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
+                    parser.AllowLeadingWildcard = leadingWildcard;
                     var query = parser.Parse (queryString);
                     var searcher = new IndexSearcher (reader);
                     var matches = searcher.Search (query, maxMatches);
@@ -204,7 +205,7 @@ namespace NachoCore.Index
             return matchedItems;
         }
 
-        public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000)
+        public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000, bool leadingWildcard = false)
         {
             string newQueryString = "";
             if (null != type) {
@@ -215,12 +216,12 @@ namespace NachoCore.Index
                 newQueryString += f + ":" + queryString + " ";
             }
             newQueryString += ")";
-            return Search (newQueryString, maxMatches);
+            return Search (newQueryString, maxMatches, leadingWildcard);
         }
 
         public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
         {
-            return SearchFields ("message", queryString, new string[] { "body", "from", "subject" }, maxMatches);
+            return SearchFields ("message", queryString, new string[] { "body", "from", "subject" }, maxMatches, true);
         }
 
         public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)
@@ -235,7 +236,7 @@ namespace NachoCore.Index
                 "phone_number",
                 "address",
                 "note"
-            }, maxMatches);
+            }, maxMatches, false);
         }
     }
 
