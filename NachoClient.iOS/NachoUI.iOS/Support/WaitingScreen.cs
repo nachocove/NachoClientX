@@ -53,7 +53,7 @@ namespace NachoClient.iOS
 
             this.Hidden = true;
             this.BackgroundColor = A.Color_NachoGreen;
-            LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64 + 64;
+            LOWER_SECTION_Y_VAL = 64 + 64;
 
             spinnerView = new UIView (new CGRect (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             spinnerView.BackgroundColor = A.Color_NachoRed;
@@ -103,11 +103,11 @@ namespace NachoClient.iOS
             this.AddSubview (finishedCircleImage);
 
             firstTrianglesImage = new UIImageView (UIImage.FromBundle ("Bootscreen-3@2x"));
-            firstTrianglesImage.Frame = new CGRect (0, LOWER_SECTION_Y_VAL + 309, this.Frame.Width, 39);
+            firstTrianglesImage.Frame = new CGRect (0, rect.Bottom - 39, this.Frame.Width, 39);
             this.AddSubview (firstTrianglesImage);
 
             secondTriangleImage = new UIImageView (UIImage.FromBundle ("Bootscreen-2@2x"));
-            secondTriangleImage.Frame = new CGRect (40, LOWER_SECTION_Y_VAL + 309, this.Frame.Width - 80, 25);
+            secondTriangleImage.Frame = new CGRect (40, rect.Bottom - 25, this.Frame.Width - 80, 25);
             this.AddSubview (secondTriangleImage);
 
             welcomeToLabel = new UILabel (new CGRect (this.Frame.Width / 2 - (120 / 2), LOWER_SECTION_Y_VAL + 89, 120, 20));
@@ -181,7 +181,6 @@ namespace NachoClient.iOS
                 this.Hidden = false;
                 this.Superview.BringSubviewToFront (this);
                 owner.NavigationItem.Title = "";
-                Util.ConfigureNavBar (true, owner.NavigationController);
                 ResetLoadingItems ();
                 StartLoadingAnimation ();
             }
@@ -206,7 +205,6 @@ namespace NachoClient.iOS
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
             topHalfSpinner.Layer.RemoveAllAnimations ();
             owner.NavigationItem.Title = "Account Setup";
-            Util.ConfigureNavBar (false, owner.NavigationController);
             this.Hidden = true;
         }
 
@@ -268,7 +266,7 @@ namespace NachoClient.iOS
                 UIView.AddKeyframeWithRelativeStartTime (.15, .075, () => {
                     startedCircleImage.Alpha = 1.0f;
                     startedCircleImage.Transform = CGAffineTransform.MakeScale (120, 120);
-                    firstTrianglesImage.Frame = new CGRect (firstTrianglesImage.Frame.X, firstTrianglesImage.Frame.Y - 39, firstTrianglesImage.Frame.Width, firstTrianglesImage.Frame.Height);
+//                    firstTrianglesImage.Frame = new CGRect (firstTrianglesImage.Frame.X, firstTrianglesImage.Frame.Y - 39, firstTrianglesImage.Frame.Width, firstTrianglesImage.Frame.Height);
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.225, .03, () => {
@@ -276,9 +274,9 @@ namespace NachoClient.iOS
                     finishedCircleImage.Transform = CGAffineTransform.MakeScale (120, 120);
                 });
 
-                UIView.AddKeyframeWithRelativeStartTime (.225, .075, () => {
-                    secondTriangleImage.Frame = new CGRect (secondTriangleImage.Frame.X, secondTriangleImage.Frame.Y - 25, secondTriangleImage.Frame.Width, secondTriangleImage.Frame.Height);
-                });
+//                UIView.AddKeyframeWithRelativeStartTime (.225, .075, () => {
+//                    secondTriangleImage.Frame = new CGRect (secondTriangleImage.Frame.X, secondTriangleImage.Frame.Y - 25, secondTriangleImage.Frame.Width, secondTriangleImage.Frame.Height);
+//                });
 
                 UIView.AddKeyframeWithRelativeStartTime (.3, .075, () => {
                     welcomeToLabel.Alpha = 1.0f;

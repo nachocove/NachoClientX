@@ -67,6 +67,9 @@ namespace NachoCore.Model
         // the folders UIDNEXT value
         public uint ImapUidNext { get; set; }
 
+        // the folders EXISTS value, i.e. total number of messages in the folder
+        public int ImapExists { get; set; }
+
         #endregion
 
         #region IMAP Sync helper variables

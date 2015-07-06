@@ -149,12 +149,12 @@ namespace NachoCore.Utils
         {
             McAccount account = GetMostRecentAccount ();
             if (null != account) {
-                if (!account.ConfigurationInProgress) {
+                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     return account;
                 }
             }
             foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (a.ConfigurationInProgress) {
+                if (McAccount.ConfigurationInProgressEnum.Done != a.ConfigurationInProgress) {
                     continue;
                 }
                 if (McAccount.AccountTypeEnum.Device == a.AccountType) {
@@ -166,7 +166,7 @@ namespace NachoCore.Utils
             return McAccount.GetDeviceAccount ();
         }
 
-        public static string GetPassword(McAccount account)
+        public static string GetPassword (McAccount account)
         {
             if (McAccount.AccountServiceEnum.GoogleDefault == account.AccountService) {
                 return "";

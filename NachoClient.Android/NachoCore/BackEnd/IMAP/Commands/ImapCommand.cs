@@ -198,6 +198,7 @@ namespace NachoCore.IMAP
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
+                    target.ImapExists = mailKitFolder.Count;
                     return true;
                 });
                 changed = true;

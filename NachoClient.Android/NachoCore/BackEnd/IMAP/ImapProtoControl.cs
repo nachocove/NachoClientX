@@ -9,6 +9,9 @@ using MailKit;
 using MailKit.Net.Imap;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using MailKit.Security;
+using System.Net;
+using System.Text;
 
 namespace NachoCore.IMAP
 {
@@ -90,6 +93,7 @@ namespace NachoCore.IMAP
             };
         }
         public ImapStrategy Strategy { set; get; }
+        private PushAssist PushAssist { set; get; }
 
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
@@ -462,7 +466,7 @@ namespace NachoCore.IMAP
             Sm.Validate ();
             Sm.State = ProtocolState.ImapProtoControlState;
             Strategy = new ImapStrategy (this);
-            //PushAssist = new PushAssist (this);
+            PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -530,14 +534,11 @@ namespace NachoCore.IMAP
             return MessageServerId.Split (':') [0];
         }
 
-        public PushAssistParameters PushAssistParameters ()
-        {
-            NcAssert.True (false);
-            return null;
-        }
-
         public override void ForceStop ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPFORCESTOP");
         }
 
@@ -548,6 +549,10 @@ namespace NachoCore.IMAP
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            if (null != PushAssist) {
+                PushAssist.Dispose ();
+                PushAssist = null;
+            }
             base.Remove ();
         }
 
@@ -581,11 +586,6 @@ namespace NachoCore.IMAP
         private void DoArg ()
         {
             var cmd = Sm.Arg as ImapCommand;
-            /* FIXME
-            if (null != cmd as AsPingCommand && null != PushAssist) {
-                PushAssist.Execute ();
-            }
-            */
             SetCmd (cmd);
             ExecuteCmd ();
         }
@@ -621,6 +621,7 @@ namespace NachoCore.IMAP
 
         private void ExecuteCmd ()
         {
+            PossiblyKickPushAssist ();
             Cmd.Execute (Sm);
         }
 
@@ -796,6 +797,9 @@ namespace NachoCore.IMAP
         }
         private void DoPark ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
@@ -807,13 +811,7 @@ namespace NachoCore.IMAP
 
         private void DoDrive ()
         {
-            /*
-            if (null != PushAssist) {
-                if (PushAssist.IsStartOrParked ()) {
-                    PushAssist.Execute ();
-                }
-            }
-            */
+            PossiblyKickPushAssist ();
             Sm.State = ProtocolState.ImapProtoControlState;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DRIVE");
         }
@@ -824,6 +822,80 @@ namespace NachoCore.IMAP
             CancelCmd ();
             Owner.CredReq (this);
         }
+
+        #region PushAssist support.
+        private bool CanStartPushAssist()
+        {
+            // We need to be able to get the right capabilities, so must be auth'd.
+            return MainClient.IsConnected && MainClient.IsAuthenticated;
+        }
+
+        private void PossiblyKickPushAssist()
+        {
+            if (CanStartPushAssist()) {
+                if (PushAssist.IsStartOrParked ()) {
+                    PushAssist.Execute ();
+                }
+            }
+        }
+
+        private byte[] PushAssistAuthBlob()
+        {
+
+            SaslMechanism sasl;
+            switch (ProtoControl.Cred.CredType) {
+            case McCred.CredTypeEnum.OAuth2:
+                sasl = SaslMechanism.Create ("XOAUTH2",
+                    new Uri (string.Format ("imap://{0}", ProtoControl.Server.Host)),
+                    new NetworkCredential (ProtoControl.Cred.Username, ProtoControl.Cred.GetAccessToken ()));
+                break;
+
+            default:
+                sasl = SaslMechanism.Create ("PLAIN",
+                    new Uri (string.Format ("imap://{0}", ProtoControl.Server.Host)),
+                    new NetworkCredential (ProtoControl.Cred.Username, ProtoControl.Cred.GetPassword ()));
+                break;
+            }
+            string command = string.Format ("AUTHENTICATE {0}", sasl.MechanismName);
+            if (sasl.SupportsInitialResponse &&
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilitiesUnAuth & McProtocolState.NcImapCapabilities.SaslIR)) ||
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR)))
+            {
+                command += " ";
+            } else {
+                command += "\n";
+            }
+            command += sasl.Challenge (null);
+            return Encoding.UTF8.GetBytes (command);
+        }
+
+        public PushAssistParameters PushAssistParameters ()
+        {
+            McFolder folder = McFolder.GetDefaultInboxFolder (ProtoControl.Account.Id);
+            if (!CanStartPushAssist()) {
+                // We need to have logged in at least one. Having sync'd inbox seems like a good thing to key on.
+                Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters without having synced inbox");
+                return null;
+            }
+
+            bool supportsExpunged = ProtoControl.Account.AccountService != McAccount.AccountServiceEnum.Yahoo;
+            bool supportsIdle = (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.Idle));
+
+            return new PushAssistParameters () {
+                RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
+                Protocol = PushAssistProtocol.IMAP,
+                ResponseTimeoutMsec = 600 * 1000,
+                WaitBeforeUseMsec = 60 * 1000,
+
+                IMAPAuthenticationBlob = PushAssistAuthBlob(),
+                IMAPFolderName = folder.ServerId,
+                IMAPSupportsIdle = supportsIdle,
+                IMAPSupportsExpunge = supportsExpunged,
+                IMAPEXISTSCount = folder.ImapExists,
+                IMAPUIDNEXT = folder.ImapUidNext,
+            };
+        }
+        #endregion
     }
 }
 

@@ -194,9 +194,10 @@ namespace Test.Common
             // e1 is in the past.
             // e3 is after e2.
             // Therefore, e2 should be the selected event.
-            var nextEvent = McEvent.GetCurrentOrNextEvent ();
-            Assert.NotNull (nextEvent, "GetCurrentOrNextEvent() didn't find any event.");
-            Assert.AreEqual (e2.Id, nextEvent.Id, "GetCurrentOrNextEvent() returned the wrong event.");
+            DateTime dummy;
+            var nextEvent = CalendarHelper.CurrentOrNextEvent (out dummy);
+            Assert.NotNull (nextEvent, "CurrentOrNextEvent() didn't find any event.");
+            Assert.AreEqual (e2.Id, nextEvent.Id, "CurrentOrNextEvent() returned the wrong event.");
         }
 
         [Test]
