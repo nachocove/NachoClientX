@@ -7,6 +7,9 @@ using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
 using System;
+using System.IO;
+using MimeKit.IO;
+using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
@@ -85,57 +88,66 @@ namespace NachoCore.IMAP
             }
             var uid = ImapProtoControl.ImapMessageUid (pending.ServerId);
             MimeMessage imapbody = null;
-            mailKitFolder.SetStreamContext (uid, body.GetFilePath ());
+            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
             try {
-                imapbody = mailKitFolder.GetMessage (uid, Cts.Token, this);
-            } catch (Exception e) {
-                body.Delete ();
-                mailKitFolder.UnsetStreamContext ();
-                throw;
-            }
-            if (null == imapbody) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
-                result = NcResult.Error ("No Body found");
-            } else {
-                if (imapbody.Body.ContentType.Matches ("multipart", "*")) {
-                    body.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                } else if (imapbody.Body.ContentType.Matches ("text", "*")) {
-                    if (imapbody.Body.ContentType.Matches ("text", "html")) {
-                        body.BodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                    } else if (imapbody.Body.ContentType.Matches ("text", "plain")) {
-                        body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                    } else {
-                        Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
-                        result = NcResult.Error ("Unhandled text subtype");
-                    }
+                mailKitFolder.SetStreamContext (uid, tmp);
+                try {
+                    imapbody = mailKitFolder.GetMessage (uid, Cts.Token, this);
+                } catch (Exception e) {
+                    body.Delete ();
+                    mailKitFolder.UnsetStreamContext ();
+                    throw;
+                }
+                if (null == imapbody) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
+                    result = NcResult.Error ("No Body found");
                 } else {
-                    Log.Error (Log.LOG_IMAP, "Unhandled mime subtype {0}", imapbody.Body.ContentType.ToString ());
-                    result = NcResult.Error ("Unhandled mimetype subtype");
+                    if (imapbody.Body.ContentType.Matches ("multipart", "*")) {
+                        body.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                    } else if (imapbody.Body.ContentType.Matches ("text", "*")) {
+                        if (imapbody.Body.ContentType.Matches ("text", "html")) {
+                            body.BodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                        } else if (imapbody.Body.ContentType.Matches ("text", "plain")) {
+                            body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                        } else {
+                            Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
+                            result = NcResult.Error ("Unhandled text subtype");
+                        }
+                    } else {
+                        Log.Error (Log.LOG_IMAP, "Unhandled mime subtype {0}", imapbody.Body.ContentType.ToString ());
+                        result = NcResult.Error ("Unhandled mimetype subtype");
+                    }
+                }
+                if (null == result) {
+                    email.BodyId = body.Id;
+                    body.Truncated = false;
+                    body.UpdateFileCopy (tmp);
+                    body.UpdateSaveFinish ();
+                    result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+                } else {
+                    body.Delete ();
+                    email.BodyId = 0;
+                }
+                email.Update ();
+                return result;
+            } finally {
+                var fileInfo = new FileInfo (tmp);
+                if (fileInfo.Exists) {
+                    File.Delete (tmp);
                 }
             }
-            if (null == result) {
-                email.BodyId = body.Id;
-                body.Truncated = false;
-                body.UpdateSaveFinish ();
-                result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
-            } else {
-                body.Delete ();
-                email.BodyId = 0;
-            }
-            email.Update ();
-            return result;
         }
 
         #region ITransferProgress implementation
 
         public void Report (long bytesTransferred, long totalSize)
         {
-            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
+            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
         }
 
         public void Report (long bytesTransferred)
         {
-            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
+            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
         }
 
         #endregion
