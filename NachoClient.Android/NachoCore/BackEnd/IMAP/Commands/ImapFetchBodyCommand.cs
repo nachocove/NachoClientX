@@ -79,6 +79,7 @@ namespace NachoCore.IMAP
                 body = new McBody () {
                     AccountId = BEContext.Account.Id,
                 };
+                body.Insert ();
             } else {
                 body = McBody.QueryById<McBody> (email.BodyId);
             }
