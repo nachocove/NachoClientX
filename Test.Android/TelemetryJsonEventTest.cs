@@ -199,6 +199,28 @@ namespace Test.Common
             CheckCommonHeader (now, decode);
             Assert.AreEqual (jsonEvent.sample_name, decode.sample_name);
             Assert.AreEqual (jsonEvent.sample_int, decode.sample_int);
+
+            now = GetUtcNow ();
+            var jsonEvent2 = new TelemetrySamplesEvent () {
+                sample_name = "Object score",
+                sample_float = 0.5125,
+            };
+            var json2 = jsonEvent2.ToJson ();
+            var decode2 = JsonConvert.DeserializeObject<TelemetrySamplesEvent> (json2);
+            CheckCommonHeader (now, decode2);
+            Assert.AreEqual (jsonEvent2.sample_name, decode2.sample_name);
+            Assert.AreEqual (jsonEvent2.sample_float, decode2.sample_float);
+
+            now = GetUtcNow ();
+            var jsonEvent3 = new TelemetrySamplesEvent () {
+                sample_name = "City",
+                sample_string = "San Francisco",
+            };
+            var json3 = jsonEvent3.ToJson ();
+            var decode3 = JsonConvert.DeserializeObject<TelemetrySamplesEvent> (json3);
+            CheckCommonHeader (now, decode3);
+            Assert.AreEqual (jsonEvent3.sample_name, decode3.sample_name);
+            Assert.AreEqual (jsonEvent3.sample_string, decode3.sample_string);
         }
     }
 }
