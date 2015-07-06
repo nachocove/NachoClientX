@@ -191,7 +191,6 @@ namespace NachoCore.Index
             try {
                 using (var reader = IndexReader.Open (IndexDirectory, true)) {
                     var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
-                    parser.AllowLeadingWildcard = true;
                     var query = parser.Parse (queryString);
                     var searcher = new IndexSearcher (reader);
                     var matches = searcher.Search (query, maxMatches);
