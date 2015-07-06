@@ -74,7 +74,6 @@ namespace NachoCore.IMAP
                         st.CopyTo(filtered);
                     }
                 }
-                st.Dispose ();
                 attachment.Truncated = false;
                 attachment.UpdateSaveFinish ();
                 return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
@@ -105,12 +104,12 @@ namespace NachoCore.IMAP
 
         public void Report (long bytesTransferred, long totalSize)
         {
-            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
+            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
         }
 
         public void Report (long bytesTransferred)
         {
-            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
+            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
         }
 
         #endregion
