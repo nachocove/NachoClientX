@@ -151,7 +151,7 @@ namespace NachoClient.iOS
         public void FinishUp ()
         {
             if (null == waitingScreen) {
-                waitingScreen = new WaitingScreen (View.Frame, this);
+                waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
                 View.AddSubview (waitingScreen);
             } else {
                 waitingScreen.Layer.RemoveAllAnimations ();
@@ -252,7 +252,7 @@ namespace NachoClient.iOS
         public void ShowCertAsk ()
         {
             RemoveWindows ();
-            certificateView = new CertificateView (View.Frame, this);
+            certificateView = new CertificateView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             certificateView.SetCertificateInformation (account.Id);
             View.AddSubview (certificateView);
             View.BringSubviewToFront (certificateView);
@@ -293,7 +293,7 @@ namespace NachoClient.iOS
         public void ShowWaitingScreen (string waitingMessage)
         {
             RemoveWindows ();
-            waitingScreen = new WaitingScreen (View.Frame, this);
+            waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             View.AddSubview (waitingScreen);
             waitingScreen.ShowView (waitingMessage);
         }
