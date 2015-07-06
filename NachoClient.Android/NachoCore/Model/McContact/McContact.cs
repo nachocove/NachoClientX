@@ -59,17 +59,28 @@ namespace NachoCore.Model
 
     public class McContactNameComparer : IComparer<McContact>
     {
+        protected string GetFirstName (McContact c)
+        {
+            if (!String.IsNullOrEmpty (c.FirstName)) {
+                return c.FirstName;
+            }
+            if (0 < c.EmailAddresses.Count) {
+                return c.EmailAddresses [0].Value;
+            }
+            return null;
+        }
+
         public int Compare (McContact a, McContact b)
         {
-            int result = String.Compare (a.FirstName, b.FirstName);
+            int result = String.Compare (GetFirstName (a), GetFirstName (b), ignoreCase: true);
             if (0 != result) {
                 return result;
             }
-            result = String.Compare (a.MiddleName, b.MiddleName);
+            result = String.Compare (a.MiddleName, b.MiddleName, ignoreCase: true);
             if (0 != result) {
                 return result;
             }
-            return String.Compare (a.LastName, b.LastName);
+            return String.Compare (a.LastName, b.LastName, ignoreCase: true);
         }
     }
 

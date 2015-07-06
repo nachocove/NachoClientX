@@ -231,6 +231,7 @@ namespace NachoCore.Index
                 "last_name",
                 "company_name",
                 "email_address",
+                "email_domain",
                 "phone_number",
                 "address",
                 "note"
