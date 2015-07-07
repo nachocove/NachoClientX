@@ -139,7 +139,7 @@ namespace NachoCore.Utils
             Telemetry.SharedInstance.DbUpdated.Set ();
         }
 
-        public static void RecordLogEvent (int threadId, TelemetryEventType type, string fmt, params object[] list)
+        public static void RecordLogEvent (int threadId, TelemetryEventType type, ulong subsystem, string fmt, params object[] list)
         {
             if (!ENABLED) {
                 return;
@@ -149,6 +149,7 @@ namespace NachoCore.Utils
 
             var jsonEvent = new TelemetryLogEvent (type) {
                 thread_id = threadId,
+                module = Log.ModuleString(subsystem),
                 message = String.Format (fmt, list)
             };
             if (MAX_AWS_LEN < jsonEvent.message.Length) {

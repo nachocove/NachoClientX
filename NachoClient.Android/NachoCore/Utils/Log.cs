@@ -213,10 +213,10 @@ namespace NachoCore.Utils
                     }
                 }
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
-                    level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
+                    Log.ModuleString(subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
-                Telemetry.RecordLogEvent (threadId, teleType, fmt, list);
+                Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
             }
             LogElement elem;
             int maxIndirect = 5;
@@ -353,6 +353,64 @@ namespace NachoCore.Utils
         public const ulong LOG_BACKEND = (1 << 22);
         public const ulong LOG_SMTP = (1 << 23);
         public const ulong LOG_IMAP = (1 << 24);
+
+        public static string ModuleString(ulong subsystem)
+        {
+            switch (subsystem) {
+            case LOG_SYNC:
+                return "SYNC";
+            case LOG_CALENDAR:
+                return "CALENDAR";
+            case LOG_CONTACTS:
+                return "CONTACTS";
+            case LOG_UI:
+                return "UI";
+            case LOG_TIMER:
+                return "TIMER";
+            case LOG_HTTP:
+                return "HTTP";
+            case LOG_STATE:
+                return "STATE";
+            case LOG_RENDER:
+                return "RENDER";
+            case LOG_EMAIL:
+                return "EMAIL";
+            case LOG_AS:
+                return "AS";
+            case LOG_SYS:
+                return "SYS";
+            case LOG_XML:
+                return "XML";
+            case LOG_LIFECYCLE:
+                return "LIFECYCLE";
+            case LOG_BRAIN:
+                return "BRAIN";
+            case LOG_XML_FILTER:
+                return "XML_FILTER";
+            case LOG_UTILS:
+                return "UTILS";
+            case LOG_INIT:
+                return "INIT";
+            case LOG_TEST:
+                return "TEST";
+            case LOG_DNS:
+                return "DNS";
+            case LOG_ASSERT:
+                return "ASSERT";
+            case LOG_DB:
+                return "DB";
+            case LOG_PUSH:
+                return "PUSH";
+            case LOG_BACKEND:
+                return "BACKEND";
+            case LOG_SMTP:
+                return "SMTP";
+            case LOG_IMAP:
+                return "IMAP";
+            default:
+                throw new Exception (string.Format ("Unknown Log subsystem {0}", subsystem));
+            }
+        }
 
         private static Logger DefaultLogger;
 

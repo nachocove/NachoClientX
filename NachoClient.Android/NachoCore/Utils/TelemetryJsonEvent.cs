@@ -75,6 +75,7 @@ namespace NachoCore.Utils
 
         public int thread_id;
         public string message;
+        public string module;
 
         public TelemetryLogEvent () : this (TelemetryEventType.ERROR)
         {
