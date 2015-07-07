@@ -232,7 +232,7 @@ namespace NachoClient.iOS
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
-                searchResults = McContact.SearchIndexAllContactsWithEmailAddresses (forSearchString, true);
+                searchResults = McContact.SearchIndexAllContacts (forSearchString, true, true);
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
 
