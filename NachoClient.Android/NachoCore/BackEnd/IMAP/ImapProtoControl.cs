@@ -827,7 +827,7 @@ namespace NachoCore.IMAP
         private bool CanStartPushAssist()
         {
             // We need to be able to get the right capabilities, so must be auth'd.
-            return MainClient.IsConnected && MainClient.IsAuthenticated;
+            return MainClient.IsConnected && MainClient.IsAuthenticated && ProtoControl.ProtocolState.HasSyncedInbox;
         }
 
         private void PossiblyKickPushAssist()
@@ -873,7 +873,7 @@ namespace NachoCore.IMAP
         {
             McFolder folder = McFolder.GetDefaultInboxFolder (ProtoControl.Account.Id);
             if (!CanStartPushAssist()) {
-                // We need to have logged in at least one. Having sync'd inbox seems like a good thing to key on.
+                // We need to have logged in at least once. Having sync'd inbox seems like a good thing to key on.
                 Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters without having synced inbox");
                 return null;
             }
