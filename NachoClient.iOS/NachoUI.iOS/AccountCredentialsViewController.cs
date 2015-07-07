@@ -279,6 +279,10 @@ namespace NachoClient.iOS
 
         private void MaybeStartLogin ()
         {
+            if (string.IsNullOrEmpty (passwordField.Text)) {
+                Complain ("Nacho Mail", "Password is empty. Please enter a password.");
+                return;
+            }
             var emailAddress = emailField.Text.Trim ();
 
             string serviceName;
