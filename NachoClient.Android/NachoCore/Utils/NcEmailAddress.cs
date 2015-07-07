@@ -325,7 +325,7 @@ namespace NachoCore.Utils
             }
             foreach (var a in addressList) {
                 NcAssert.True (kind == a.kind);
-                var mailbox = a.ToMailboxAddress ();
+                var mailbox = a.ToMailboxAddress (mustUseAddress: true);
                 if (null != mailbox) {
                     list.Add (mailbox);
                 }
