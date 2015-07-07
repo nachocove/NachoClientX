@@ -601,31 +601,30 @@ namespace NachoCore
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
 
-            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId (),
-                    // FIXME STEVE
-                                                    McAccount.AccountCapabilityEnum.EmailSender);
+            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
+                var senderHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailSender);
+                var readerHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                LoginHelpers.SetDoesBackEndHaveIssues (accountId, senderHasIssues || readerHasIssues);
+            }
+        }
 
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                switch (backEndState) {
-                case BackEndStateEnum.CertAskWait:
-                    CertAskReqCallback (accountId, null);
-                    Log.Info (Log.LOG_STATE, "NcApplication: CERTASKCALLBACK ");
-                    break;
-                case BackEndStateEnum.CredWait:
-                    CredReqCallback (accountId);
-                    Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
-                    break;
-                case BackEndStateEnum.ServerConfWait:
-                    // FIXME STEVE
-                    ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender);
-                    Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
-                    break;
-                default:
-                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-                    break;
-                }
+        bool DoesBackEndStateIndicateAnIssue (int accountId, McAccount.AccountCapabilityEnum capabiliity)
+        {
+            var backEndState = BackEnd.Instance.BackEndState (accountId, capabiliity);
+
+            switch (backEndState) {
+            case BackEndStateEnum.CertAskWait:
+                Log.Info (Log.LOG_STATE, "NcApplication: CERTASKCALLBACK ");
+                return true;
+            case BackEndStateEnum.CredWait:
+                Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
+                return true;
+            case BackEndStateEnum.ServerConfWait:
+                Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
+                return true;
+            default:
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation exited");
+                return false;
             }
         }
 
