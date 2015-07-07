@@ -32,7 +32,7 @@ namespace NachoCore
         public static UserIdFile SharedInstance {
             get {
                 if (null == _Instance) {
-                    // Check if there is a file with the old file name. Rename it
+                    // Check if there is a file with the old file name (client_id). Rename it
                     var dirPath = NcApplication.GetDataDirPath ();
                     var oldFilePath = Path.Combine (dirPath, OldFileName);
                     var newFilePath = Path.Combine (dirPath, FileName);
@@ -41,6 +41,13 @@ namespace NachoCore
                     }
 
                     _Instance = new UserIdFile ();
+
+                    // Check if the there is a new file (user_id). If yes, migrate
+                    // the user ID to keychain
+                    if (_Instance.Exists ()) {
+                        _Instance.Write (_Instance.ReadFile ());
+                        File.Delete (_Instance.FilePath);
+                    }
                 }
                 return _Instance;
             }
@@ -56,7 +63,7 @@ namespace NachoCore
             return File.Exists (FilePath);
         }
 
-        public string Read ()
+        protected string ReadFile ()
         {
             try {
                 using (var stream = new FileStream (FilePath, FileMode.Open, FileAccess.Read)) {
@@ -69,14 +76,15 @@ namespace NachoCore
             }
         }
 
+        public string Read ()
+        {
+            return Keychain.Instance.GetUserId ();
+        }
+
         public void Write (string userId)
         {
-            Console.WriteLine ("Writing ClientId in {0} file : {1}", FileName, userId);
-            using (var stream = new FileStream (FilePath, FileMode.Create, FileAccess.Write)) {
-                using (var writer = new StreamWriter (stream)) {
-                    writer.WriteLine (userId);
-                }
-            }
+            Console.WriteLine ("Writing UserId {0}", userId);
+            Keychain.Instance.SetUserId (userId);
         }
     }
 
