@@ -5,6 +5,10 @@ using NachoCore.Utils;
 using System.IO;
 using System.Linq;
 using MailKit;
+using System;
+using System.Collections.Generic;
+using MimeKit.IO;
+using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
@@ -52,29 +56,60 @@ namespace NachoCore.IMAP
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            // TODO Use GetStream with subclassed routines for direct-to-disk downloads
-            var st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token, this);
-            var path = attachment.GetFilePath ();
-            using (var fileStream = new FileStream (path, FileMode.OpenOrCreate, FileAccess.ReadWrite)) {
-                st.CopyTo(fileStream);
+            var uid = ImapProtoControl.ImapMessageUid (email.ServerId);
+            var part = attachmentBodyPart (uid, mailKitFolder, attachment.FileReference);
+            if (null == part) {
+                Log.Error (Log.LOG_IMAP, "Could not find part with PartSpecifier {0} in summary", attachment.FileReference);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
-            st.Close ();
-            attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Complete);
-            attachment.Truncated = false;
-            attachment.Update ();
-            return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
+
+            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+            mailKitFolder.SetStreamContext (ImapProtoControl.ImapMessageUid (email.ServerId), tmp);
+            try {
+                Stream st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token, this);
+                var path = attachment.GetFilePath ();
+                using (var attachFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                    using (var filtered = new FilteredStream (attachFile)) {
+                        filtered.Add (DecoderFilter.Create (part.ContentTransferEncoding));
+                        st.CopyTo(filtered);
+                    }
+                }
+                attachment.Truncated = false;
+                attachment.UpdateSaveFinish ();
+                return NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_IMAP, "Could not GetBodyPart: {0}", e);
+                attachment.DeleteFile ();
+                mailKitFolder.UnsetStreamContext ();
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+            }
+        }
+
+        private BodyPartBasic attachmentBodyPart(UniqueId uid, IMailFolder mailKitFolder, string fileReference)
+        {
+            // TODO Perhaps we can store the content transfer encoding in McAttachment,
+            // so we don't have to go to the server to get it again.
+            var UidList = new List<UniqueId> ();
+            UidList.Add (uid);
+            MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
+            var isummary = mailKitFolder.Fetch (UidList, flags, Cts.Token);
+            if (null == isummary || isummary.Count < 1) {
+                Log.Error (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
+            }
+            var summary = isummary[0] as MessageSummary;
+            return summary.BodyParts.Where (x => x.PartSpecifier == fileReference).FirstOrDefault ();
         }
 
         #region ITransferProgress implementation
 
         public void Report (long bytesTransferred, long totalSize)
         {
-            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
+            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
         }
 
         public void Report (long bytesTransferred)
         {
-            Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
+            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
         }
 
         #endregion

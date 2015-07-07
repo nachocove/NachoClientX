@@ -571,7 +571,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private string getPreviewFromSummary (MessageSummary summary, IMailFolder folder)
+        private string getPreviewFromSummary (MessageSummary summary, IMailFolder mailKitFolder)
         {
             string preview = string.Empty;
 
@@ -605,7 +605,7 @@ namespace NachoCore.IMAP
                     }
                     Stream stream;
                     try {
-                        stream = folder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
+                        stream = mailKitFolder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
                     } catch (ImapCommandException e) {
                         Log.Error (Log.LOG_IMAP, "Could not fetch stream: {0}", e);
                         return null;

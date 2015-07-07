@@ -132,10 +132,9 @@ namespace NachoCore.IMAP
             return ret;
         }
 
-        protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
+        protected NcImapFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
         {
-            IMailFolder mailKitFolder;
-            mailKitFolder = Client.GetFolder (folder.ServerId);
+            var mailKitFolder = Client.GetFolder (folder.ServerId) as NcImapFolder;
             if (null == mailKitFolder) {
                 return null;
             }
