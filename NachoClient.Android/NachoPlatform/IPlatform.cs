@@ -179,7 +179,9 @@ namespace NachoPlatform
         void AskForPermission (Action<bool> result);
 
         NcResult Add (McContact contact);
+
         NcResult Delete (string serverId);
+
         NcResult Change (McContact contact);
 
         bool AuthorizationStatus { get; }
@@ -205,7 +207,9 @@ namespace NachoPlatform
         void AskForPermission (Action<bool> result);
 
         NcResult Add (McCalendar contact);
+
         NcResult Delete (string serverId);
+
         NcResult Change (McCalendar contact);
 
         bool AuthorizationStatus { get; }
@@ -253,6 +257,10 @@ namespace NachoPlatform
         bool SetRefreshToken (int handle, string token);
 
         bool DeleteRefreshToken (int handle);
+
+        string GetUserId ();
+
+        bool SetUserId (string userId);
     }
 
     public interface IPlatformUIRedirector
