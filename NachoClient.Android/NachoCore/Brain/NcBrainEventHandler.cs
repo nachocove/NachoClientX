@@ -164,7 +164,7 @@ namespace NachoCore.Brain
                     var contact = McContact.QueryById<McContact> ((int)reindexEvent.ContactId);
                     UnindexContact ((int)reindexEvent.AccountId, (int)reindexEvent.ContactId);
                     if (null != contact) {
-                        IndexContact (contact, "re-indexing");
+                        IndexContact (contact);
                     }
                     if (!sourceReset) {
                         // The contact is already indexed but it may already be sitting
