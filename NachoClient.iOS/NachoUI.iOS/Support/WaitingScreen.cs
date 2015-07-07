@@ -266,18 +266,13 @@ namespace NachoClient.iOS
                 UIView.AddKeyframeWithRelativeStartTime (.15, .075, () => {
                     startedCircleImage.Alpha = 1.0f;
                     startedCircleImage.Transform = CGAffineTransform.MakeScale (120, 120);
-//                    firstTrianglesImage.Frame = new CGRect (firstTrianglesImage.Frame.X, firstTrianglesImage.Frame.Y - 39, firstTrianglesImage.Frame.Width, firstTrianglesImage.Frame.Height);
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.225, .03, () => {
                     finishedCircleImage.Alpha = 1.0f;
                     finishedCircleImage.Transform = CGAffineTransform.MakeScale (120, 120);
                 });
-
-//                UIView.AddKeyframeWithRelativeStartTime (.225, .075, () => {
-//                    secondTriangleImage.Frame = new CGRect (secondTriangleImage.Frame.X, secondTriangleImage.Frame.Y - 25, secondTriangleImage.Frame.Width, secondTriangleImage.Frame.Height);
-//                });
-
+                    
                 UIView.AddKeyframeWithRelativeStartTime (.3, .075, () => {
                     welcomeToLabel.Alpha = 1.0f;
                     nachoMailLabel.Alpha = 1.0f;
