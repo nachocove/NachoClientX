@@ -74,7 +74,6 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.SetNavigationBarHidden (false, true);
             }
-            NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -294,13 +293,11 @@ namespace NachoClient.iOS
             }
 
             if (!emailAddress.Contains ("@")) {
-                emailField.TextColor = A.Color_NachoRed;
                 Complain ("Nacho Mail", "Your email address must contain an '@'.\nFor example, username@company.com");
                 return;
             }
 
             if (!EmailHelper.IsValidEmail (emailField.Text)) {
-                emailField.TextColor = A.Color_NachoRed;
                 Complain ("Nacho Mail", "Your email address is not valid.\nFor example, username@company.com");
                 return;
             }
@@ -367,11 +364,6 @@ namespace NachoClient.iOS
             submitButton.Alpha = (shouldWe ? 1.0f : 0.5f);
         }
 
-        private void OnTextFieldChanged (NSNotification notification)
-        {
-            maybeEnableConnect ();
-        }
-
         protected override void OnKeyboardChanged ()
         {
             ConfigureAndLayoutInternal ();
@@ -423,11 +415,6 @@ namespace NachoClient.iOS
         protected void SupportButtonTouchUpInside (object sender, EventArgs e)
         {
             PerformSegue ("SegueToSupport", this);
-        }
-
-        protected void OnKeyboardChangeCompleted ()
-        {
-
         }
 
         protected override void Cleanup ()
