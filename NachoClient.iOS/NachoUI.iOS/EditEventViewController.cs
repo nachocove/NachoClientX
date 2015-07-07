@@ -215,7 +215,7 @@ namespace NachoClient.iOS
             } else {
                 account = NcApplication.Instance.Account;
             }
-            if (account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
+            if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
                 account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.CalWriter).FirstOrDefault ();
                 if (null == account) {
                     Log.Warn (Log.LOG_CALENDAR,
