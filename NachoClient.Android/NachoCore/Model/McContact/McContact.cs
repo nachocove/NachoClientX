@@ -790,15 +790,17 @@ namespace NachoCore.Model
                 EvaluateSelfEclipsing ();
                 int retval = 0;
                 NcModel.Instance.RunInTransaction (() => {
-                    // Delete the old index document. Brain will re-index it in the background.
-                    IndexVersion = 0;
-                    NcBrain.UnindexContact (this);
-
                     retval = base.Update ();
                     if (McContactAncillaryDataEnum.READ_NONE != HasReadAncillaryData) {
                         InsertAncillaryData ();
                     }
                     EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers, McContactOpEnum.Update);
+
+                    // Re-index the contact. Must do this after the contact update because
+                    // re-indexing has a contact update (for updating IndexVersion) and
+                    // doing this before contact update would set up a race.
+                    IndexVersion = 0;
+                    NcBrain.ReindexContact (this);
                 });
                 return retval;
             }

@@ -13,6 +13,7 @@ namespace NachoCore.Brain
         protected OpenedIndexSet OpenedIndexes;
         private long BytesIndexed;
         private RoundRobinList Scheduler;
+        private RoundRobinSource ContactIndexingSource;
 
         private void InitializeEventHandler ()
         {
@@ -20,7 +21,8 @@ namespace NachoCore.Brain
             OpenedIndexes = new OpenedIndexSet (this);
             Scheduler = new RoundRobinList ();
             Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScore, 5), 3);
-            Scheduler.Add (new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5), 10);
+            ContactIndexingSource = new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5);
+            Scheduler.Add (ContactIndexingSource, 10);
             Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
             Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
         }
@@ -141,6 +143,7 @@ namespace NachoCore.Brain
 
         private int ProcessPersistedRequests (int count)
         {
+            bool sourceReset = false;
             return ProcessLoop (count, "persisted requests processed", () => {
                 var dbEvent = McBrainEvent.QueryNext ();
                 if (null == dbEvent) {
@@ -153,8 +156,23 @@ namespace NachoCore.Brain
                     UnindexEmailMessage ((int)unindexEvent.AccountId, (int)unindexEvent.EmailMessageId);
                     break;
                 case NcBrainEventType.UNINDEX_CONTACT:
-                    var contactEvent = brainEvent as NcCBrainUnindexContactEvent;
+                    var contactEvent = brainEvent as NcBrainUnindexContactEvent;
                     UnindexContact ((int)contactEvent.AccountId, (int)contactEvent.ContactId);
+                    break;
+                case NcBrainEventType.REINDEX_CONTACT:
+                    var reindexEvent = brainEvent as NcBrainReindexContactEvent;
+                    var contact = McContact.QueryById<McContact> ((int)reindexEvent.ContactId);
+                    UnindexContact ((int)reindexEvent.AccountId, (int)reindexEvent.ContactId);
+                    if (null != contact) {
+                        IndexContact (contact);
+                    }
+                    if (!sourceReset) {
+                        // The contact is already indexed but it may already be sitting
+                        // in contact indexing source's object list. Then, it will be
+                        // indexed twice. So, we manually clears that source's object list
+                        ContactIndexingSource.Reset ();
+                        sourceReset = true;
+                    }
                     break;
                 case NcBrainEventType.UPDATE_ADDRESS_SCORE:
                     var updateAddressEvent = brainEvent as NcBrainUpdateAddressScoreEvent;

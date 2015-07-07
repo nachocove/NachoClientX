@@ -93,6 +93,11 @@ namespace NachoCore.Brain
             processResult = ProcessFunction (nextObject);
             return true;
         }
+
+        public void Reset ()
+        {
+            Objects = new List<object> ();
+        }
     }
 
     public class RoundRobinList
