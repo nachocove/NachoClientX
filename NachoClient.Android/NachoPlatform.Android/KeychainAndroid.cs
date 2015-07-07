@@ -21,7 +21,7 @@ namespace NachoPlatform
                 return instance;
             }
         }
-            
+
         public bool HasKeychain ()
         {
             return false;
@@ -80,5 +80,18 @@ namespace NachoPlatform
             NcAssert.True (false);
             return false;
         }
+
+        public string GetUserId ()
+        {
+            NcAssert.True (false);
+            return null;
+        }
+
+        public bool SetUserId (string userId)
+        {
+            NcAssert.True (false);
+            return false;
+        }
+
     }
 }
