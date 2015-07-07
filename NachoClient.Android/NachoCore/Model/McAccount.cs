@@ -317,9 +317,24 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
         }
 
+        public static List<int> GetAllConfiguredNonDeviceAccountIds ()
+        {
+            return (from account in McAccount.GetAllAccounts ()
+                where
+                McAccount.AccountTypeEnum.Device != account.AccountType &&
+                McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                select account.Id).ToList ();
+        }
+
         public static McAccount GetAccountBeingConfigured ()
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => McAccount.ConfigurationInProgressEnum.Done != x.ConfigurationInProgress).SingleOrDefault ();
+        }
+
+        public static bool IsAccountBeingConfigured (int accountId)
+        {
+            var account = McAccount.QueryById<McAccount> (accountId);
+            return (null != account) && (McAccount.ConfigurationInProgressEnum.Done != account.ConfigurationInProgress);
         }
 
         public static string AccountServiceName (AccountServiceEnum service)

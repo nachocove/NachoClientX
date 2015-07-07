@@ -68,7 +68,6 @@ namespace NachoClient.iOS
         private bool FinalShutdownHasHappened = false;
         private bool FirstLaunchInitialization = false;
         private bool DidEnterBackgroundCalled = false;
-        private bool hasFirstSyncCompleted;
 
         private ulong UserNotificationSettings {
             get {
@@ -203,7 +202,7 @@ namespace NachoClient.iOS
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
                 fetchAccounts = new List<int> ();
-                pushAccounts = GetAllNonDeviceAccountIds ();
+                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
                 if (!PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
                     if (NcApplication.Instance.IsForeground) {
                         var inbox = NcEmailManager.PriorityInbox (accountId);
@@ -420,7 +419,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
 
             if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                CreateGoolgePlaceholderAccount ();
+                CreateGooglePlaceholderAccount ();
                 return true;
             }
 
@@ -718,8 +717,8 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
-            fetchAccounts = GetAllNonDeviceAccountIds ();
-            pushAccounts = GetAllNonDeviceAccountIds ();
+            fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -849,8 +848,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
 
-            hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
-            if (hasFirstSyncCompleted == false) {
+            if (McAccount.IsAccountBeingConfigured (accountId)) {
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
                     Account = McAccount.QueryById<McAccount> (accountId),
@@ -867,7 +865,6 @@ namespace NachoClient.iOS
             // TODO Make use of the MX information that was gathered during auto-d.
             // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
-            hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
             switch ((uint)arg) {
             case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
@@ -880,90 +877,90 @@ namespace NachoClient.iOS
                 why = NcResult.WhyEnum.NotSpecified;
                 break;
             }
-            if (hasFirstSyncCompleted == false) {
+            if (McAccount.IsAccountBeingConfigured (accountId)) {
                 var status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why);
                 status.Value = capabilities;
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = status,
                     Account = McAccount.QueryById<McAccount> (accountId),
                 });
-            } else {
-
-                // called if server name is wrong
-                // cancel should call "exit program, enter new server name should be updated server
-
-                LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
-
-                var Mo = NcModel.Instance;
-                var Be = BackEnd.Instance;
-
-                var credView = new UIAlertView ();
-
-                credView.Title = "Need Correct Server Name";
-                credView.AddButton ("Update");
-                credView.AddButton ("Cancel");
-                credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-                credView.Show ();
-                credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                    var parent = (UIAlertView)a;
-                    if (b.ButtonIndex == 0) {
-
-                        LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
-
-                        var txt = parent.GetTextField (0).Text;
-                        // FIXME need to scan string to make sure it is of right format (regex).
-                        if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost (txt)) {
-                            Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
-                            NcModel.Instance.RunInTransaction (() => {
-                                var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
-                                if (null == tmpServer) {
-                                    tmpServer = new McServer () {
-                                        // FIXME STEVE
-                                        Capabilities = McAccount.ActiveSyncCapabilities,
-                                        Host = txt,
-                                    };
-                                    tmpServer.Insert ();
-                                } else {
-                                    tmpServer.Host = txt;
-                                    tmpServer.Update ();
-                                }
-                            });
-                            // FIXME STEVE - need to pass matching capability from request.
-                            // TODO Generic code needs to be moved out of AppDelegate.
-                            Be.ServerConfResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false); 
-                            credView.ResignFirstResponder ();
-                        }
-                        ;
-                    }
-                    ;
-
-                    if (b.ButtonIndex == 1) {
-                        var gonnaquit = new UIAlertView ();
-                        gonnaquit.Title = "Are You Sure? \n No account information will be updated";
-
-                        gonnaquit.AddButton ("Ok"); // continue exiting
-                        gonnaquit.AddButton ("Go Back"); // enter info
-                        gonnaquit.CancelButtonIndex = 1;
-                        gonnaquit.Show ();
-                        gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                            if (e.ButtonIndex == 1) {
-                                // FIXME STEVE
-                                ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender); // go again
-                            }
-                            gonnaquit.ResignFirstResponder ();
-                        };
-                    }
-                    ;
-                };
+                return;
             }
+
+
+            // called if server name is wrong
+            // cancel should call "exit program, enter new server name should be updated server
+
+            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
+
+            var Mo = NcModel.Instance;
+            var Be = BackEnd.Instance;
+
+            var credView = new UIAlertView ();
+
+            credView.Title = "Need Correct Server Name";
+            credView.AddButton ("Update");
+            credView.AddButton ("Cancel");
+            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
+            credView.Show ();
+            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
+                var parent = (UIAlertView)a;
+                if (b.ButtonIndex == 0) {
+
+                    LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
+
+                    var txt = parent.GetTextField (0).Text;
+                    // FIXME need to scan string to make sure it is of right format (regex).
+                    if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost (txt)) {
+                        Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
+                        NcModel.Instance.RunInTransaction (() => {
+                            var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
+                            if (null == tmpServer) {
+                                tmpServer = new McServer () {
+                                    // FIXME STEVE
+                                    Capabilities = McAccount.ActiveSyncCapabilities,
+                                    Host = txt,
+                                };
+                                tmpServer.Insert ();
+                            } else {
+                                tmpServer.Host = txt;
+                                tmpServer.Update ();
+                            }
+                        });
+                        // FIXME STEVE - need to pass matching capability from request.
+                        // TODO Generic code needs to be moved out of AppDelegate.
+                        Be.ServerConfResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false); 
+                        credView.ResignFirstResponder ();
+                    }
+                    ;
+                }
+                ;
+
+                if (b.ButtonIndex == 1) {
+                    var gonnaquit = new UIAlertView ();
+                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
+
+                    gonnaquit.AddButton ("Ok"); // continue exiting
+                    gonnaquit.AddButton ("Go Back"); // enter info
+                    gonnaquit.CancelButtonIndex = 1;
+                    gonnaquit.Show ();
+                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
+                        if (e.ButtonIndex == 1) {
+                            // FIXME STEVE
+                            ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender); // go again
+                        }
+                        gonnaquit.ResignFirstResponder ();
+                    };
+                }
+                ;
+            };
         }
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
 
-            hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId);
-            if (hasFirstSyncCompleted == false) {
+            if (McAccount.IsAccountBeingConfigured (accountId)) {
                 Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
@@ -1181,16 +1178,8 @@ namespace NachoClient.iOS
             }
         }
 
-        protected List<int> GetAllNonDeviceAccountIds ()
-        {
-            return (from account in McAccount.GetAllAccounts ()
-                             where McAccount.AccountTypeEnum.Device != account.AccountType
-                             select account.Id).ToList ();
-
-        }
-
         // Creates an in-progress account for AdvancedLoginView
-        void CreateGoolgePlaceholderAccount ()
+        void CreateGooglePlaceholderAccount ()
         {
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             if (null != accountBeingConfigured) {

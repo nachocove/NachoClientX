@@ -283,10 +283,7 @@ namespace NachoClient.iOS
 
         protected void UpdateNotificationBadge (int accountId)
         {
-            DateTime expiry;
-            string rectificationUrl;
-            var showNotificationBadge = LoginHelpers.PasswordWillExpire (accountId, out expiry, out rectificationUrl);
-            showNotificationBadge |= LoginHelpers.DoesBackEndHaveIssues (accountId);
+            var showNotificationBadge = LoginHelpers.ShouldAlertUser ();
 
             settingsItem.BadgeValue = (showNotificationBadge ? @"!" : null);
 
