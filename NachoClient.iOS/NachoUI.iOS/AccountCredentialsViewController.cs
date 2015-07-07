@@ -62,7 +62,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.SetNavigationBarHidden (true, false);
+                this.NavigationController.SetNavigationBarHidden (true, true);
             }
         }
 
@@ -72,7 +72,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.SetNavigationBarHidden (false, false);
+                this.NavigationController.SetNavigationBarHidden (false, true);
             }
             NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
         }
