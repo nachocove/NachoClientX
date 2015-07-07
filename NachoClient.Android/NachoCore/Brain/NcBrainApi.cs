@@ -44,12 +44,26 @@ namespace NachoCore.Brain
             PersistentEnqueue (emailMessage.AccountId, brainEvent);
         }
 
+        public static bool ValidContact (McContact contact)
+        {
+            return ((null != contact) && (0 < contact.Id) && (0 < contact.AccountId));
+        }
+
         public static void UnindexContact (McContact contact)
         {
-            if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
+            if (!ValidContact (contact)) {
                 return;
             }
-            var brainEvent = new NcCBrainUnindexContactEvent (contact.AccountId, contact.Id);
+            var brainEvent = new NcBrainUnindexContactEvent (contact.AccountId, contact.Id);
+            PersistentEnqueue (contact.AccountId, brainEvent);
+        }
+
+        public static void ReindexContact (McContact contact)
+        {
+            if (!ValidContact (contact)) {
+                return;
+            }
+            var brainEvent = new NcBrainReindexContactEvent (contact.AccountId, contact.Id);
             PersistentEnqueue (contact.AccountId, brainEvent);
         }
 
