@@ -1450,7 +1450,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McContact> (query);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchIndexAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
+        public static List<McContactEmailAddressAttribute> SearchIndexAllContacts (string searchFor, bool onlyWithEmailAddresses, bool withEclipsing)
         {
             const int maxResults = 100;
             var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
@@ -1499,8 +1499,20 @@ namespace NachoCore.Model
                 if (withEclipsing && contact.EmailAddressesEclipsed) {
                     continue;
                 }
-                emailAddressAttributes.AddRange (contact.EmailAddresses);
-                count += contact.EmailAddresses.Count;
+                if (0 == contact.EmailAddresses.Count) {
+                    if (onlyWithEmailAddresses) {
+                        continue;
+                    }
+                    var addressAttr = new McContactEmailAddressAttribute () {
+                        AccountId = contact.AccountId,
+                        ContactId = contact.Id
+                    };
+                    emailAddressAttributes.Add (addressAttr);
+                    count += 1;
+                } else {
+                    emailAddressAttributes.AddRange (contact.EmailAddresses);
+                    count += contact.EmailAddresses.Count;
+                }
                 if (maxResults < count) {
                     break;
                 }
