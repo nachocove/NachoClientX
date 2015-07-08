@@ -80,6 +80,11 @@ namespace NachoCore.IMAP
         /// </summary>
         public static void guessServiceType (IBEContext BEContext)
         {
+            if (McAccount.AccountServiceEnum.None != BEContext.ProtocolState.ImapServiceType) {
+                // we've already done this.
+                return;
+            }
+
             char[] emailDelimiter = { '@' };
 
             McAccount.AccountServiceEnum service;
