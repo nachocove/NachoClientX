@@ -106,8 +106,8 @@ namespace NachoCore.SMTP
 
         protected void ProtocolLoggerStopAndLog ()
         {
-            string ClassName = this.GetType ().Name + " ";
-            Log.Info (Log.LOG_SMTP, "{0}SMTP exchange\n{1}", ClassName, Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ()));
+            //string ClassName = this.GetType ().Name + " ";
+            //Log.Info (Log.LOG_SMTP, "{0}SMTP exchange\n{1}", ClassName, Encoding.UTF8.GetString (Client.MailKitProtocolLogger.GetCombinedBuffer ()));
             Client.MailKitProtocolLogger.Stop ();
         }
     }

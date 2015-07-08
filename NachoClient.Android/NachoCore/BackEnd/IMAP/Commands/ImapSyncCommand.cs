@@ -24,10 +24,10 @@ namespace NachoCore.IMAP
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
-        private List<Regex> RegexList;
-
+        private Regex FetchCmdRegex;
         private const string KImapFetchTiming = "IMAP Summary Fetch";
         private const string KImapPreviewGeneration = "IMAP Preview Generation";
+        private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
 
         public class MailSummary
         {
@@ -43,22 +43,101 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
-            //RedactProtocolLogFunc = RedactProtocolLog;
-            RegexList = new List<Regex> ();
+            RedactProtocolLogFunc = RedactProtocolLog;
+            var flags = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
 
             //* 59 FETCH (UID 8721 MODSEQ (952121) BODY[1]<0> {500} ... )
-            RegexList.Add (new Regex (@"^(?<star>\* )(?<num>\d+ )(?<cmd>FETCH )(?<openparen>\()(?<stuff>[^\n]+)(?<redact>.*)(?<closeparen>\))$", NcMailKitProtocolLogger.rxOptions));
+            FetchCmdRegex = new Regex (@"^(?<star>\* )(?<num>\d+ )(?<cmd>FETCH )", flags);
 
-            //* 38 FETCH (X-GM-THRID 1503699202635470816 X-GM-MSGID 1503699202635470816 UID 8695 RFC822.SIZE 64686 MODSEQ (950792) INTERNALDATE "11-Jun-2015 16:15:08 +0000" FLAGS () ENVELOPE ("Thu, 11 Jun 2015 16:15:02 +0000" "test with attachment" (("Jan Vilhuber" NIL "janv" "nachocove.com")) (("Jan Vilhuber" NIL "janv" "nachocove.com")) (("Jan Vilhuber" NIL "janv" "nachocove.com")) (("Jan Vilhuber" NIL "jan.vilhuber" "gmail.com")) NIL NIL NIL "<C4E2D584-AC73-492F-B08B-D0FA8A12929E@nachocove.com>") BODYSTRUCTURE ((2015-06-17T23:20:14.541Z: IMAP S: "TEXT" "PLAIN" ("CHARSET" "us-ascii") NIL NIL "QUOTED-PRINTABLE" 0 0 NIL NIL NIL)("IMAGE" "PNG" ("NAME" "Screen Shot 2015-06-10 at 10.13.12 AM.png") "<9A84A7CB1408CC4A96BF4CB3CC02846B@prod.exchangelabs.com>" "Screen Shot 2015-06-10 at 10.13.12 AM.png" "BASE64" 59598 NIL ("ATTACHMENT" ("CREATION-DATE" "Thu, 11 Jun 2015 16:15:02 GMT" "FILENAME" "Screen Shot 2015-06-10 at 10.13.12 AM.png" "MODIFICATION-DATE" "Thu, 11 Jun 2015 16:15:02 GMT" "SIZE" "43549")) NIL) "MIXED" ("BOUNDARY" "_002_C4E2D584AC73492FB08BD0FA8A12929Enachocovecom_") NIL NIL) BODY[HEADER.FIELDS (IMPORTANCE DKIM-SIGNATURE CONTENT-CLASS)] {2}
+            //* 374 FETCH (X-GM-THRID 1505999102887456107 X-GM-MSGID 1505999102887456107 UID 9089 RFC822.SIZE 7245 MODSEQ (967775) INTERNALDATE "07-Jul-2015 01:31:04 +0000" FLAGS () ENVELOPE ("Tue, 07 Jul 2015 01:31:03 +0000" "New voicemail from (727) 373-7491 at 7:29 PM" (("Google Voice" NIL "voice-noreply" "google.com")) (("Google Voice" NIL "voice-noreply" "google.com")) (("Google Voice" NIL "voice-noreply" "google.com")) ((NIL NIL "jan.vilhuber" "gmail.com")) NIL NIL NIL "<001a113445b2b78383051a3ef955@google.com>") BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "UTF-8" "DELSP" "yes" "FORMAT" "flowed") NIL NIL "7BIT" 691 12 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "QUOTED-PRINTABLE" 3724 47 NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "001a113445b2b7836a051a3ef952") NIL NIL) BODY[HEADER.FIELDS (IMPORTANCE DKIM-SIGNATURE CONTENT-CLASS)] {559}
+            //DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com;
+            //s=20120113; h=mime-version:message-id:date:subject:from:to:content-type;
+            //bh=ILYmpZW+xQNvnLdp4jNld6UKgeldZUfXQwjaagKVl1w=;
+            //b=kJb23brjhwqokoH3HgGOaO8+hSbldZz5IJ3+JVHkuzyk2hgEwSI3Be4X1sthGZHbBq
+            //04pL2r9A/ea1GoI5sonR67hZ7UXufwrzYrSEmvPxziJxTbmopDurVPSW11oG3XWTn5pX
+            //Ul3tyYSOKu7sXvmBOG5f99Nb7WFyp9dQQYxNKs/rD2cWwtfME0Lw3bjic7NvcU4Q0giE
+            //fLtJnqTCtzX5A/gcYgxvICT1k/yXUlXIv0mfrWit1ZhyGmbNKYLiffG21IG0nHODWLPO
+            //ZtuyJyUmJikvd9CLKPL86uRXfYjyKVaQ0n9oN35F5G4brJaDtN9eysLw7LWYObm1Hu0T U2og==
+            //
+            //)
             // Need to redact the entire Envelope and BODYSTRUCTURE filenames
 
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
+            NcCapture.AddKind (KImapSyncLogRedaction);
         }
+
+        ~ImapSyncCommand ()
+        {
+            if (!string.IsNullOrEmpty (lastIncompleteLine)) {
+                Log.Error (Log.LOG_IMAP, "Line left dangling on exit: {0}", lastIncompleteLine);
+            }
+        }
+
+        private bool inFetch = false;
+        private string lastIncompleteLine;
 
         public string RedactProtocolLog (bool isRequest, string logData)
         {
-            return NcMailKitProtocolLogger.RedactLogDataRegex (RegexList, logData);
+            if (!isRequest) {
+                var cap = NcCapture.CreateAndStart (KImapSyncLogRedaction);
+                char[] delimiterChars = { '\n' };
+                if (!string.IsNullOrEmpty (lastIncompleteLine)) {
+                    logData = lastIncompleteLine + logData;
+                    lastIncompleteLine = null;
+                }
+                var lines = new List<string> (logData.Split (delimiterChars));
+                if (!logData.EndsWith ("\n")) {
+                    lastIncompleteLine = lines.Last ();
+                    lines = lines.Take (lines.Count () - 1).ToList ();
+                }
+                List<string> result = new List<string> ();
+                foreach (var line in lines) {
+                    if (FetchCmdRegex.IsMatch (line)) {
+                        inFetch = true;
+                        char[] space = { ' ' };
+                        bool inEnvelope = false;
+                        List<string> newLine = new List<string> ();
+                        foreach (var token in line.Split (space)) {
+                            switch (token) {
+                            case "ENVELOPE":
+                                inEnvelope = true;
+                                newLine.Add (token + " ( REDACTED )");
+                                continue;
+
+                            case "BODYSTRUCTURE":
+                                inEnvelope = false;
+                                newLine.Add (token);
+                                continue;
+
+                            default:
+                                if (!inEnvelope) {
+                                    newLine.Add (token);
+                                }
+                                break;
+                            }
+                        }
+                        result.Add (string.Join (" ", newLine));
+                    } else if (inFetch) {
+                        if (line.StartsWith (")")) {
+                            inFetch = false;
+                            result.Add (line);
+                        } else if ("\r" == line) {
+                            result.Add (line);
+                        } else {
+                            result.Add ("REDACTED\r");
+                        }
+                        continue;
+                    } else { // if (!inFetch)
+                        result.Add (line);
+                    }
+                }
+                cap.Stop ();
+                var resultData = string.Join ("\n", result);
+                return resultData;
+            } else {
+                return logData;
+            }
         }
 
         protected override Event ExecuteCommand ()
@@ -97,7 +176,7 @@ namespace NachoCore.IMAP
 
         private Event getFolderMetaDataInternal (IMailFolder mailKitFolder, TimeSpan timespan)
         {
-            if (!GetFolderMetaData(ref Synckit.Folder, mailKitFolder, timespan)) {
+            if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL");
             } else {
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCOPENSUC");
@@ -107,7 +186,7 @@ namespace NachoCore.IMAP
         public static bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
         {
             // Just load UID with SELECT.
-            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted());
+            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
 
             var query = SearchQuery.NotDeleted;
             if (TimeSpan.Zero != timespan) {
@@ -116,7 +195,7 @@ namespace NachoCore.IMAP
             UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
             Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
                 uids.ToString (),
-                folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+                folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
 
             query = SearchQuery.Deleted;
             if (TimeSpan.Zero != timespan) {
@@ -125,7 +204,7 @@ namespace NachoCore.IMAP
             var deletedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
             Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
                 deletedUids.ToString (),
-                folder.ImapFolderNameRedacted(), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+                folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
             
             UpdateImapSetting (mailKitFolder, ref folder);
 
@@ -220,7 +299,7 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
-        private UniqueIdSet GetNewOrChangedMessages(IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
+        private UniqueIdSet GetNewOrChangedMessages (IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
             Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Message summaries {1}", Synckit.Folder.ImapFolderNameRedacted (), uidset.ToString ());
@@ -314,7 +393,7 @@ namespace NachoCore.IMAP
                 return null;
             }
 
-            string McEmailMessageServerId = ImapProtoControl.MessageServerId(folder, imapSummary.UniqueId.Value);
+            string McEmailMessageServerId = ImapProtoControl.MessageServerId (folder, imapSummary.UniqueId.Value);
             bool justCreated = false;
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
@@ -369,7 +448,7 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        private UniqueIdSet FindDeletedUids(IMailFolder mailKitFolder, UniqueIdSet uids)
+        private UniqueIdSet FindDeletedUids (IMailFolder mailKitFolder, UniqueIdSet uids)
         {
             // Check for deleted messages
             SearchQuery query = SearchQuery.Deleted;
@@ -377,7 +456,7 @@ namespace NachoCore.IMAP
             return messagesDeleted;
         }
 
-        private UniqueIdSet deleteEmails(UniqueIdSet uids)
+        private UniqueIdSet deleteEmails (UniqueIdSet uids)
         {
             // TODO Convert some of this to queries instead of loops
             UniqueIdSet messagesDeleted = new UniqueIdSet ();
@@ -392,7 +471,7 @@ namespace NachoCore.IMAP
             return messagesDeleted;
         }
 
-        public static bool UpdateEmailMetaData(McEmailMessage emailMessage, IMessageSummary summary)
+        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, IMessageSummary summary)
         {
             if (!summary.Flags.HasValue) {
                 Log.Error (Log.LOG_IMAP, "Trying to update email message without any flags");
@@ -401,7 +480,7 @@ namespace NachoCore.IMAP
             return UpdateEmailMetaData (emailMessage, summary.Flags.Value, summary.UserFlags);
         }
 
-        public static bool UpdateEmailMetaData(McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
+        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
         {
             bool changed = false;
 
@@ -412,7 +491,7 @@ namespace NachoCore.IMAP
             return changed;
         }
 
-        private static bool updateFlags(McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
+        private static bool updateFlags (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
         {
             bool changed = false;
             bool before = emailMessage.IsRead;
@@ -584,7 +663,7 @@ namespace NachoCore.IMAP
                     BodyPartBasic m = part as BodyPartBasic;
                     bool isPlainText = false; // when in doubt, run the http decode, just in case.
                     if (null != m) {
-                        if (!MimeKit.Utils.MimeUtils.TryParse(m.ContentTransferEncoding, out encoding)) {
+                        if (!MimeKit.Utils.MimeUtils.TryParse (m.ContentTransferEncoding, out encoding)) {
                             Log.Error (Log.LOG_IMAP, "Could not parse ContentTransferEncoding {0}", m.ContentTransferEncoding);
                             encoding = ContentEncoding.Default;
                         }
