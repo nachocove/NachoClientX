@@ -83,8 +83,6 @@ namespace NachoCore.IMAP
                 return;
             }
 
-            char[] emailDelimiter = { '@' };
-
             McAccount.AccountServiceEnum service;
             string username = BEContext.Cred.Username;
 
@@ -98,7 +96,7 @@ namespace NachoCore.IMAP
                 } else {
                     // we don't know (or don't care)
                     if (username.Contains ("@")) {
-                        Log.Info (Log.LOG_IMAP, "Unknown generic IMAP server for domain {0}", username.Split (emailDelimiter) [1]);
+                        Log.Info (Log.LOG_IMAP, "Unknown generic IMAP server for domain {0}", username.Split ('@') [1]);
                     }
                     service = BEContext.Account.AccountService;
                 }
@@ -121,8 +119,8 @@ namespace NachoCore.IMAP
             case McAccount.AccountServiceEnum.iCloud:
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
-                    var parts = username.Split (emailDelimiter);
-                    if (parts [1].ToLower ().Contains ("icloud.com")) {
+                    var parts = username.Split ('@');
+                    if (parts [1].ToLower ().Equals ("icloud.com")) {
                         username = parts [0];
                     }
                 }
@@ -148,8 +146,8 @@ namespace NachoCore.IMAP
             }
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLower ();
-                if (domain.Contains ("icloud.com") ||
-                    domain.Contains ("me.com")) {
+                if (DomainIsOrEndsWith (domain, "icloud.com") ||
+                    DomainIsOrEndsWith (domain, "me.com")) {
                     return true;
                 }
             }
@@ -166,17 +164,23 @@ namespace NachoCore.IMAP
             // new discovery statemachine. We'll see if this gets us far enough along.
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLower ();
-                if (domain.Contains ("yahoo.com") ||
-                    domain.Contains ("yahoo.net") ||
-                    domain.Contains ("ymail.com") ||
-                    domain.Contains ("rocketmail.com")) {
+                if (DomainIsOrEndsWith (domain, "yahoo.com") ||
+                    DomainIsOrEndsWith (domain, "yahoo.net") ||
+                    DomainIsOrEndsWith (domain, "ymail.com") ||
+                    DomainIsOrEndsWith (domain, "rocketmail.com")) {
                     return true;
                 }
             }
             return false;
         }
 
-
+        private static bool DomainIsOrEndsWith (string domain, string mightBe)
+        {
+            if (string.IsNullOrEmpty (domain) || string.IsNullOrEmpty (mightBe)) {
+                return false;
+            }
+            return domain == mightBe || domain.EndsWith ("." + mightBe);
+        }
     }
 }
 
