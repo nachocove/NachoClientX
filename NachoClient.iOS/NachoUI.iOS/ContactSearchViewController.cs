@@ -163,6 +163,7 @@ namespace NachoClient.iOS
         public void ContactSelectedCallback (McContact contact)
         {
             address.contact = contact;
+            address.address = contact.GetEmailAddress ();
             owner.UpdateEmailAddress (this, address);
             if (null != owner) {
                 owner.DismissINachoContactChooser (this);
