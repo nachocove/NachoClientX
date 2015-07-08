@@ -120,7 +120,9 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLower (), "icloud.com")) {
+                    if (DomainIsOrEndsWith (parts [1].ToLower (), "icloud.com") ||
+                        DomainIsOrEndsWith (parts [1].ToLower (), "me.com") ||
+                        DomainIsOrEndsWith (parts [1].ToLower (), "mac.com")) {
                         username = parts [0];
                     }
                 }
@@ -147,7 +149,8 @@ namespace NachoCore.IMAP
             if (emailAddress.Contains ("@")) {
                 var domain = emailAddress.Split ('@') [1].ToLower ();
                 if (DomainIsOrEndsWith (domain, "icloud.com") ||
-                    DomainIsOrEndsWith (domain, "me.com")) {
+                    DomainIsOrEndsWith (domain, "me.com") ||
+                    DomainIsOrEndsWith (domain, "mac.com")) {
                     return true;
                 }
             }
