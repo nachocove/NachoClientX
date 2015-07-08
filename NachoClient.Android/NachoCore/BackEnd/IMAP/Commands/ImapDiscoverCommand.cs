@@ -105,6 +105,13 @@ namespace NachoCore.IMAP
                 service = BEContext.Account.AccountService;
                 break;
             }
+            if (BEContext.ProtocolState.ImapServiceType != service) {
+                BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.ImapServiceType = service;
+                    return true;
+                });
+            }
 
             // Now that we know (perhaps) the service type, see if we need to do anything with the username
             switch (service) {
@@ -122,23 +129,13 @@ namespace NachoCore.IMAP
                 break;
 
             }
-
-            NcModel.Instance.RunInTransaction (() => {
-                if (BEContext.Cred.Username != username) {
-                    BEContext.Cred.UpdateWithOCApply<McCred> ((record) => {
-                        var target = (McCred)record;
-                        target.Username = username;
-                        return true;
-                    });
-                }
-                if (BEContext.ProtocolState.ImapServiceType != service) {
-                    BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                        var target = (McProtocolState)record;
-                        target.ImapServiceType = service;
-                        return true;
-                    });
-                }
-            });
+            if (BEContext.Cred.Username != username) {
+                BEContext.Cred.UpdateWithOCApply<McCred> ((record) => {
+                    var target = (McCred)record;
+                    target.Username = username;
+                    return true;
+                });
+            }
         }
 
         private static bool isiCloud (string emailAddress)
