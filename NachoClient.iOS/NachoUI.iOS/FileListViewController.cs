@@ -347,7 +347,7 @@ namespace NachoClient.iOS
                 var dc = (NotesViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 selectedNote = (McNote)holder.value;
-                dc.SetOwner (this, null);
+                dc.SetOwner (this, null, insertDate: false);
                 return;
             }
             if (segue.Identifier.Equals (FilesToNotesModalSegueId)) {

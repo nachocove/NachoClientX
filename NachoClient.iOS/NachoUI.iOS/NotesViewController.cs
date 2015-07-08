@@ -16,16 +16,19 @@ namespace NachoClient.iOS
 
         private INachoNotesControllerParent owner;
         private string itemTitle;
+        private bool insertDate;
+        private string unmodifiedText;
 
         private NcTextView textView;
 
         private static nfloat HORIZONTAL_MARGIN = 15f;
         private static nfloat VERTICAL_MARGIN = 15f;
 
-        public void SetOwner (INachoNotesControllerParent owner, string title)
+        public void SetOwner (INachoNotesControllerParent owner, string title, bool insertDate)
         {
             this.owner = owner;
             this.itemTitle = title;
+            this.insertDate = insertDate;
         }
 
         protected override void CreateViewHierarchy ()
@@ -41,8 +44,16 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            textView.Text = owner.GetNoteText ();
-            textView.SelectedRange = new NSRange (0, 0);
+            if (insertDate) {
+                string dateString = DateTime.Now.ToShortDateString ();
+                unmodifiedText = dateString + "\n\n\n" + owner.GetNoteText ();
+                textView.Text = unmodifiedText;
+                textView.SelectedRange = new NSRange (dateString.Length + 1, 0);
+            } else {
+                unmodifiedText = owner.GetNoteText ();
+                textView.Text = unmodifiedText;
+                textView.SelectedRange = new NSRange (0, 0);
+            }
             textView.BecomeFirstResponder ();
 
             Layout ();
@@ -87,7 +98,9 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            owner.SaveNote (textView.Text);
+            if (textView.Text != unmodifiedText) {
+                owner.SaveNote (textView.Text);
+            }
         }
 
         public override bool HidesBottomBarWhenPushed
