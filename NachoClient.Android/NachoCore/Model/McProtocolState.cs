@@ -141,6 +141,8 @@ namespace NachoCore.Model
         // the authentication capabilities, which we need to know.
         public NcImapCapabilities ImapServerCapabilitiesUnAuth { get; set; }
 
+        public McAccount.AccountServiceEnum ImapServiceType { get; set; }
+
         /*
          * "Smtp" SMTP properties go here:
          */

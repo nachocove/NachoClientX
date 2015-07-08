@@ -923,7 +923,7 @@ namespace NachoCore.IMAP
                 return null;
             }
 
-            bool supportsExpunged = ProtoControl.Account.AccountService != McAccount.AccountServiceEnum.Yahoo;
+            bool supportsExpunged = ProtoControl.ProtocolState.ImapServiceType != McAccount.AccountServiceEnum.Yahoo;
             bool supportsIdle = (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.Idle));
 
             return new PushAssistParameters () {
