@@ -119,11 +119,8 @@ namespace NachoCore.IMAP
             case McAccount.AccountServiceEnum.iCloud:
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
-                    var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith (parts [1].ToLower (), "icloud.com") ||
-                        DomainIsOrEndsWith (parts [1].ToLower (), "me.com") ||
-                        DomainIsOrEndsWith (parts [1].ToLower (), "mac.com")) {
-                        username = parts [0];
+                    if (isiCloud (username)) {
+                        username = username.Split ('@') [0];
                     }
                 }
                 break;
