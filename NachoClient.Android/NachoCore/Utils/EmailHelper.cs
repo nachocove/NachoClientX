@@ -728,8 +728,9 @@ namespace NachoCore.Utils
                 }
             }
             if (null == adjusted) {
-                adjusted = Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
-                    @"\[(http|image|cid|img_).*?\]", " "),
+                adjusted = Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
+                    @"!\[(image|cid|img_).+\]\s*\(.+\)", " "),
+                    @"\[(http|image|cid|img_).+\]", " "),
                     @"<(http|mailto)\S*?>", " "),
                     @"https?:\S*", " "),
                     @"\s+", " "),
