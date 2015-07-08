@@ -87,12 +87,6 @@ namespace NachoCore.ActiveSync
             };
         };
 
-        public enum AutoDFailureReason : uint
-        {
-            CannotConnectToServer,
-            CannotFindServer
-        };
-
         public const string RequestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
         public const int TestTimeoutSecs = 30;
