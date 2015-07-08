@@ -214,7 +214,7 @@ namespace NachoClient.iOS
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
         {
             if (DateTime.UtcNow > chosenDateTime) {
-                NcAlertView.ShowMessage (this, "Date in the Past",
+                NcAlertView.ShowMessage (vc, "Date in the Past",
                     "The chosen date is in the past. You must select a date in the future.");
                 return;
             }

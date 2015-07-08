@@ -251,7 +251,7 @@ namespace NachoClient.iOS
 
         public void ShowNoNetwork ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("No network connection. Please check that you have internet access."),
                 new NcAlertAction ("Try again", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.TryAgain, "avl: ShowNoNetwork");
@@ -266,7 +266,7 @@ namespace NachoClient.iOS
 
         public void ShowDuplicateAccount ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("This account already exists."),
                 new NcAlertAction ("OK", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowDuplicateAccount");
@@ -303,7 +303,7 @@ namespace NachoClient.iOS
 
         public void ShowCertRejected ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("Cannot configure this account without accepting the certificate."),
                 new NcAlertAction ("OK", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowCertRejected");
