@@ -179,34 +179,32 @@ namespace NachoClient.iOS
             inputViews.Add (domainView);
             inputViews.Add (usernameView);
             inputViews.Add (passwordView);
+        }
 
+        void CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum connect)
+        {
+            if (null != onConnect) {
+                onConnect (connect, account, emailView.textField.Text, passwordView.textField.Text);
+            }
         }
 
         void StartOverButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-            if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.StartOver, null);
-            }
+            CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.StartOver);
         }
 
         void CustomerSupportButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-            if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Support, null);
-            }
+            CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Support);
         }
 
         void ConnectButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-
             var action = SaveUserSettings ();
-
-            if (null != onConnect) {
-                onConnect (action, account);
-            }
+            CallOnConnect (action);
         }
 
         void AdvancedButton_TouchUpInside (object sender, EventArgs e)
