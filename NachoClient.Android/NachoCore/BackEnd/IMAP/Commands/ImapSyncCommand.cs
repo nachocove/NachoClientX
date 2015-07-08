@@ -657,7 +657,6 @@ namespace NachoCore.IMAP
             var part = findPreviewablePart (summary);
             if (null != part) {
                 try {
-                    Log.Info (Log.LOG_IMAP, "Subject {0}", summary.Envelope.Subject);
                     int previewBytes = PreviewSizeBytes;
                     string partSpecifier = part.PartSpecifier;
                     ContentEncoding encoding = ContentEncoding.Default;
