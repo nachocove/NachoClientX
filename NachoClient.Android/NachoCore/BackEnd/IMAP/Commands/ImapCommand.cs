@@ -46,26 +46,30 @@ namespace NachoCore.IMAP
             }, this.GetType ().Name);
         }
 
+        public Event ExecuteConnectAndAuthEvent()
+        {
+            lock(Client.SyncRoot) {
+                try {
+                    if (null != RedactProtocolLogFunc) {
+                        Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
+                    }
+                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                        var authy = new ImapAuthenticateCommand (BEContext, Client);
+                        authy.ConnectAndAuthenticate ();
+                    }
+                    return ExecuteCommand ();
+                } finally {
+                    if (Client.MailKitProtocolLogger.Enabled ()) {
+                        ProtocolLoggerStopAndPostTelemetry ();
+                    }
+                }
+            }
+        }
+
         public void ExecuteNoTask(NcStateMachine sm)
         {
             try {
-                Event evt;
-                lock(Client.SyncRoot) {
-                    try {
-                        if (null != RedactProtocolLogFunc) {
-                            Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
-                        }
-                        if (!Client.IsConnected || !Client.IsAuthenticated) {
-                            var authy = new ImapAuthenticateCommand (BEContext, Client);
-                            authy.ConnectAndAuthenticate ();
-                        }
-                        evt = ExecuteCommand ();
-                    } finally {
-                        if (Client.MailKitProtocolLogger.Enabled ()) {
-                            ProtocolLoggerStopAndPostTelemetry ();
-                        }
-                    }
-                }
+                Event evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
             } catch (OperationCanceledException) {
