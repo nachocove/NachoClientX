@@ -21,7 +21,7 @@ namespace NachoPlatform
 
         private NSUbiquitousKeyValueStore Store;
 
-        private bool HasiCloud = false;
+        private bool HasiCloud = true;
         private NSUrl iCloudUrl;
 
 
@@ -67,18 +67,18 @@ namespace NachoPlatform
                 string remoteUserId = Store.GetString (KUserId);
                 Log.Info (Log.LOG_SYS, "CloudHandler: Cloud UserId {0}", remoteUserId);
                 if (remoteUserId != null) {
-                    string localUserId = NSUserDefaults.StandardUserDefaults.StringForKey (KUserId);
+                    string localUserId = Keychain.Instance.GetUserId ();
                     if (localUserId != remoteUserId) {
                         // replace local cached UserId with Cloud UserId
-                        NSUserDefaults.StandardUserDefaults.SetString (remoteUserId, KUserId);
-                        NSUserDefaults.StandardUserDefaults.Synchronize ();
+                        Keychain.Instance.SetUserId (remoteUserId);
                     }
                     return remoteUserId;
                 }
             }
             // if no icloud or not found in iCloud
-            Log.Info (Log.LOG_SYS, "CloudHandler: UserId not stored in cloud. Getting user defaults value : {0}", NSUserDefaults.StandardUserDefaults.StringForKey (KUserId));
-            return NSUserDefaults.StandardUserDefaults.StringForKey (KUserId);
+            var userId = Keychain.Instance.GetUserId ();
+            Log.Info (Log.LOG_SYS, "CloudHandler: UserId not stored in cloud. Getting keychain value : {0}", userId);
+            return userId;
         }
 
         public void SetUserId (string UserId)
@@ -88,8 +88,7 @@ namespace NachoPlatform
                 Store.SetString (KUserId, UserId);  
                 Store.Synchronize ();
             }
-            NSUserDefaults.StandardUserDefaults.SetString (UserId, KUserId);
-            NSUserDefaults.StandardUserDefaults.Synchronize ();
+            Keychain.Instance.SetUserId (UserId);
         }
 
         public bool IsAlreadyPurchased ()

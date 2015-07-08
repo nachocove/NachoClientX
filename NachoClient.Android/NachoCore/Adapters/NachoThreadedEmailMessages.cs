@@ -75,7 +75,9 @@ namespace NachoCore
 
         public void StartSync ()
         {
-
+            if (null != folder) {
+                BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
+            }
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)

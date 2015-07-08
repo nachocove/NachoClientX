@@ -32,7 +32,7 @@ namespace NachoCore
         public static UserIdFile SharedInstance {
             get {
                 if (null == _Instance) {
-                    // Check if there is a file with the old file name. Rename it
+                    // Check if there is a file with the old file name (client_id). Rename it
                     var dirPath = NcApplication.GetDataDirPath ();
                     var oldFilePath = Path.Combine (dirPath, OldFileName);
                     var newFilePath = Path.Combine (dirPath, FileName);
@@ -41,6 +41,13 @@ namespace NachoCore
                     }
 
                     _Instance = new UserIdFile ();
+
+                    // Check if the there is a new file (user_id). If yes, migrate
+                    // the user ID to keychain
+                    if (_Instance.Exists ()) {
+                        _Instance.Write (_Instance.ReadFile ());
+                        File.Delete (_Instance.FilePath);
+                    }
                 }
                 return _Instance;
             }
@@ -56,7 +63,7 @@ namespace NachoCore
             return File.Exists (FilePath);
         }
 
-        public string Read ()
+        protected string ReadFile ()
         {
             try {
                 using (var stream = new FileStream (FilePath, FileMode.Open, FileAccess.Read)) {
@@ -69,14 +76,15 @@ namespace NachoCore
             }
         }
 
+        public string Read ()
+        {
+            return Keychain.Instance.GetUserId ();
+        }
+
         public void Write (string userId)
         {
-            Console.WriteLine ("Writing ClientId in {0} file : {1}", FileName, userId);
-            using (var stream = new FileStream (FilePath, FileMode.Create, FileAccess.Write)) {
-                using (var writer = new StreamWriter (stream)) {
-                    writer.WriteLine (userId);
-                }
-            }
+            Console.WriteLine ("Writing UserId {0}", userId);
+            Keychain.Instance.SetUserId (userId);
         }
     }
 
@@ -601,31 +609,30 @@ namespace NachoCore
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
 
-            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId (),
-                    // FIXME STEVE
-                                                    McAccount.AccountCapabilityEnum.EmailSender);
+            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
+                var senderHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailSender);
+                var readerHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                LoginHelpers.SetDoesBackEndHaveIssues (accountId, senderHasIssues || readerHasIssues);
+            }
+        }
 
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                switch (backEndState) {
-                case BackEndStateEnum.CertAskWait:
-                    CertAskReqCallback (accountId, null);
-                    Log.Info (Log.LOG_STATE, "NcApplication: CERTASKCALLBACK ");
-                    break;
-                case BackEndStateEnum.CredWait:
-                    CredReqCallback (accountId);
-                    Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
-                    break;
-                case BackEndStateEnum.ServerConfWait:
-                    // FIXME STEVE
-                    ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender);
-                    Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
-                    break;
-                default:
-                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
-                    break;
-                }
+        bool DoesBackEndStateIndicateAnIssue (int accountId, McAccount.AccountCapabilityEnum capabiliity)
+        {
+            var backEndState = BackEnd.Instance.BackEndState (accountId, capabiliity);
+
+            switch (backEndState) {
+            case BackEndStateEnum.CertAskWait:
+                Log.Info (Log.LOG_STATE, "NcApplication: CERTASKCALLBACK ");
+                return true;
+            case BackEndStateEnum.CredWait:
+                Log.Info (Log.LOG_STATE, "NcApplication: CREDCALLBACK ");
+                return true;
+            case BackEndStateEnum.ServerConfWait:
+                Log.Info (Log.LOG_STATE, "NcApplication: SERVCONFCALLBACK ");
+                return true;
+            default:
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: ContinueOnActivation exited");
+                return false;
             }
         }
 

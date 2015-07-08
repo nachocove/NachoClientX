@@ -75,6 +75,7 @@ namespace NachoCore.Utils
 
         public int thread_id;
         public string message;
+        public string module;
 
         public TelemetryLogEvent () : this (TelemetryEventType.ERROR)
         {
@@ -156,8 +157,8 @@ namespace NachoCore.Utils
         public const string SAMPLES = "SAMPLES";
 
         public string sample_name;
-        public int sample_int;
-        public double sample_float;
+        public int? sample_int;
+        public double? sample_float;
         public string sample_string;
 
         public TelemetrySamplesEvent ()
@@ -172,8 +173,8 @@ namespace NachoCore.Utils
 
         public string time_series_name;
         public string time_series_timestamp;
-        public int time_series_int;
-        public double time_series_float;
+        public int? time_series_int;
+        public double? time_series_float;
         public string time_series_string;
 
         public TelemetryTimeSeriesEvent ()

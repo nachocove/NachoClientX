@@ -32,7 +32,9 @@ namespace NachoClient.iOS
         {
             Connect,
             Support,
-            StartOver
+            StartOver,
+            DuplicateAccount,
+            ContinueToShowAdvanced,
         }
 
         void RemoveWindows ()
@@ -51,7 +53,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account);
+        public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account, string email, string password);
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
@@ -106,7 +108,7 @@ namespace NachoClient.iOS
             if (null == account) {
                 // Configus interruptus?
                 account = McAccount.GetAccountBeingConfigured ();
-                if (null != account) {
+                if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback != account.ConfigurationInProgress)) {
                     email = account.EmailAddr;
                     service = account.AccountService;
                     password = LoginHelpers.GetPassword (account);
@@ -114,9 +116,29 @@ namespace NachoClient.iOS
                 }
             }
 
+            // Returning to app from browser after a potentially successful login (see AppDelegate)
+            if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback == account.ConfigurationInProgress)) {
+                StartGoogleSilentLogin ();
+                account.Delete ();
+                account = null;
+                return;
+            }
+
             if (McAccount.AccountServiceEnum.None == service) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NoService, "avl: ViewDidAppear");
                 return;
+            }
+
+            // User can visit support from advanced view before an account is created
+            if (null == account) {
+                switch (service) {
+                case McAccount.AccountServiceEnum.Exchange:
+                case McAccount.AccountServiceEnum.IMAP_SMTP:
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowAdvanced, "avl: ViewDidAppear");
+                    return;
+                default:
+                    return;
+                }
             }
 
             if ((uint)LoginProtocolControl.States.FinishWait == loginProtocolControl.sm.State) {
@@ -132,9 +154,7 @@ namespace NachoClient.iOS
 
             // Kickstart if we are just starting out and we're still in the start state
             if ((uint)LoginProtocolControl.States.Start == loginProtocolControl.sm.State) {
-                if (null != account) {
-                    EventFromEnum ();
-                }
+                EventFromEnum ();
                 return;
             }
 
@@ -143,7 +163,7 @@ namespace NachoClient.iOS
         public void FinishUp ()
         {
             if (null == waitingScreen) {
-                waitingScreen = new WaitingScreen (View.Frame, this);
+                waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
                 View.AddSubview (waitingScreen);
             } else {
                 waitingScreen.Layer.RemoveAllAnimations ();
@@ -175,12 +195,19 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Stop (account.Id);
             }
 
+            // FIXME: Getting server conf callback for known servers
+            var accountType = McAccount.GetAccountType (service);
+
+            if ((service != McAccount.AccountServiceEnum.Exchange) || (service != McAccount.AccountServiceEnum.IMAP_SMTP)) {
+                Log.Error (Log.LOG_UI, "avl: Showing advanced view for {0}", service);
+            }
+
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
-            switch (service) {
-            case McAccount.AccountServiceEnum.Exchange:
+            switch (accountType) {
+            case McAccount.AccountTypeEnum.Exchange:
                 loginFields = new ExchangeFields (account, prompt, rect, onConnect);
                 break;
-            case McAccount.AccountServiceEnum.IMAP_SMTP:
+            case McAccount.AccountTypeEnum.IMAP_SMTP:
                 loginFields = new IMapFields (account, prompt, rect, onConnect);
                 break;
             default:
@@ -190,9 +217,12 @@ namespace NachoClient.iOS
             View.AddSubview (loginFields.View);
         }
 
-        void onConnect (ConnectCallbackStatusEnum connect, McAccount account)
+        void onConnect (ConnectCallbackStatusEnum connect, McAccount account, string email, string password)
         {
             View.EndEditing (true);
+
+            this.email = email;
+            this.password = password;
 
             switch (connect) {
             case ConnectCallbackStatusEnum.Connect:
@@ -210,12 +240,17 @@ namespace NachoClient.iOS
             case ConnectCallbackStatusEnum.Support:
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowSupport, "avl: onConnect");
                 break;
+            case ConnectCallbackStatusEnum.DuplicateAccount:
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: onConnect");
+                break;
+            case ConnectCallbackStatusEnum.ContinueToShowAdvanced:
+                break;
             }
         }
 
         public void ShowNoNetwork ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("No network connection. Please check that you have internet access."),
                 new NcAlertAction ("Try again", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.TryAgain, "avl: ShowNoNetwork");
@@ -228,10 +263,21 @@ namespace NachoClient.iOS
             return;
         }
 
+        public void ShowDuplicateAccount ()
+        {
+            NcAlertView.Show (this, null,
+                String.Format ("This account already exists."),
+                new NcAlertAction ("OK", () => {
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowDuplicateAccount");
+
+                }));
+            return;
+        }
+
         public void ShowCertAsk ()
         {
             RemoveWindows ();
-            certificateView = new CertificateView (View.Frame, this);
+            certificateView = new CertificateView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             certificateView.SetCertificateInformation (account.Id);
             View.AddSubview (certificateView);
             View.BringSubviewToFront (certificateView);
@@ -251,7 +297,18 @@ namespace NachoClient.iOS
         {
             RemoveWindows ();
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
-            loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CertAccepted, "avl: DontAcceptCertificate");
+            loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CertAccepted, "avl: AcceptCertificate");
+        }
+
+        public void ShowCertRejected ()
+        {
+            NcAlertView.Show (this, null,
+                String.Format ("Cannot configure this account without accepting the certificate."),
+                new NcAlertAction ("OK", () => {
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowCertRejected");
+
+                }));
+            return;
         }
 
         public void Start ()
@@ -272,7 +329,7 @@ namespace NachoClient.iOS
         public void ShowWaitingScreen (string waitingMessage)
         {
             RemoveWindows ();
-            waitingScreen = new WaitingScreen (View.Frame, this);
+            waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             View.AddSubview (waitingScreen);
             waitingScreen.ShowView (waitingMessage);
         }
@@ -299,16 +356,15 @@ namespace NachoClient.iOS
         {
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
-
-            // Add scope to give full access to email
-            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
-
             Google.iOS.GIDSignIn.SharedInstance.SignOut ();
             Google.iOS.GIDSignIn.SharedInstance.SignIn ();
+        }
+
+        public void StartGoogleSilentLogin ()
+        {
+            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.SignInSilently ();
         }
 
         // GIDSignInDelegate
@@ -327,7 +383,12 @@ namespace NachoClient.iOS
                 
             service = McAccount.AccountServiceEnum.GoogleDefault;
 
-            // TODO: Check for & reject duplicate account.
+            if (LoginHelpers.AccountExists (user.Profile.Email)) {
+                // Already have this one.
+                Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", user.Profile.Email);
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: DidSignInForUser");
+                return;
+            }
 
             account = NcAccountHandler.Instance.CreateAccount (service,
                 user.Profile.Email,
@@ -339,14 +400,14 @@ namespace NachoClient.iOS
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: DidSignInForUser");
 
             if (user.Profile.HasImage) {
-                FetchGooglePortrait (account, user.Profile.ImageURL(40));
+                FetchGooglePortrait (account, user.Profile.ImageURL (40));
             }
         }
 
         async void FetchGooglePortrait (McAccount account, NSUrl imageUrl)
         {
             try {
-                var httpClient = new HttpClient();
+                var httpClient = new HttpClient ();
                 byte[] contents = await httpClient.GetByteArrayAsync (imageUrl);
                 var portrait = McPortrait.InsertFile (account.Id, contents);
                 account.DisplayPortraitId = portrait.Id;
@@ -354,10 +415,6 @@ namespace NachoClient.iOS
             } catch (Exception e) {
                 Log.Info (Log.LOG_UI, "avl: FetchGooglePortrait {0}", e);
             }
-        }
-
-        public void StartGoogleLoginWithComplaint ()
-        {
         }
 
         public void StartSync ()
@@ -384,7 +441,7 @@ namespace NachoClient.iOS
 
         public void Done ()
         {
-            account.ConfigurationInProgress = false;
+            account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
             account.Update ();
 
             // FIXME: Only set if null or device
@@ -431,6 +488,38 @@ namespace NachoClient.iOS
             }
         }
 
+        // If there's a cred req callback but the email address
+        // changes, then we need to do a stop/start instead of a
+        // cred resp because the email address might auto-d to a
+        // different server.
+        bool UpdateCredentialsAndGo (McAccount account, string email, string password, bool credReqCallback)
+        {
+            if (null == account) {
+                return false;
+            }
+            if (!credReqCallback) {
+                return false;
+            }
+            if (account.EmailAddr != email) {
+                credReqCallback = false;
+                BackEnd.Instance.Stop (account.Id);
+            }
+            account.EmailAddr = email;
+            account.Update ();
+            var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+            cred.UpdatePassword (password);
+            cred.Update ();
+
+            Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
+
+            if (credReqCallback) {
+                BackEnd.Instance.CredResp (account.Id);
+            } else {
+                BackEnd.Instance.Start (account.Id);
+            }
+            return true;
+        }
+
         public void CredentialsDismissed (UIViewController vc, bool startInAdvanced, string email, string password, bool credReqCallback, bool startOver)
         {
             this.email = email;
@@ -444,20 +533,16 @@ namespace NachoClient.iOS
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.StartOver, "avl: CredentialsDismissed");
                 return;
             }
-            if (credReqCallback) {
-                // Save email & password
-                var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
-                account.EmailAddr = email;
-                cred.UpdatePassword (password);
-                account.Update ();
-                cred.Update ();
-                Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1}", account.Id, cred.Id);
-                BackEnd.Instance.CredResp (account.Id);
+            if (UpdateCredentialsAndGo (account, email, password, credReqCallback)) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
                 ShowWaitingScreen ("Verifying Your Server...");
                 return;
             }
-
+            if (LoginHelpers.AccountExists (email)) {
+                Log.Info (Log.LOG_UI, "avl: CredentialsDismissed existing account: {0}", email);
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: CredentialsDismissed");
+                return;
+            }
             account = NcAccountHandler.Instance.CreateAccount (service, email, password);
             NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: CredentialsDismissed");
@@ -548,7 +633,6 @@ namespace NachoClient.iOS
 
             if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CertAskCallback, "avl: EventFromEnum cert ask");
-
                 return;
             }
 
@@ -567,7 +651,7 @@ namespace NachoClient.iOS
 
             if ((BackEndStateEnum.Running == senderState) || (BackEndStateEnum.Running == readerState)) {
                 Log.Info (Log.LOG_UI, "avl: status enums running");
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Running, "avl: EventFromEnum not started");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Running, "avl: EventFromEnum running");
                 return;
             }
 

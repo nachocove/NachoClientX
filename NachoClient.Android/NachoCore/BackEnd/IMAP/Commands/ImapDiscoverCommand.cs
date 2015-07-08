@@ -2,6 +2,12 @@
 //
 using NachoCore.Utils;
 using MailKit.Net.Imap;
+using System;
+using MailKit.Security;
+using MailKit;
+using System.IO;
+using System.Net.Sockets;
+using NachoCore.Model;
 
 namespace NachoCore.IMAP
 {
@@ -11,15 +17,170 @@ namespace NachoCore.IMAP
         {
             RedactProtocolLogFunc = RedactProtocolLog;
         }
+
         public string RedactProtocolLog (bool isRequest, string logData)
         {
             // Redaction is done in the base class, since it's more complicated than just string replacement
             return logData;
         }
+
+        public override void Execute (NcStateMachine sm)
+        {
+            var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+            errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
+            try {
+                
+                Event evt = base.ExecuteConnectAndAuthEvent ();
+                sm.PostEvent (evt);
+                return;
+
+            } catch (SocketException ex) {
+                Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
+                ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                errResult.Message = ex.Message;
+            } catch (AuthenticationException ex) {
+                Log.Info (Log.LOG_IMAP, "AuthenticationException");
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH1");
+                errResult.Message = ex.Message;
+            } catch (ImapCommandException ex) {
+                Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
+                errResult.Message = ex.Message;
+            } catch (IOException ex) {
+                Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+                errResult.Message = ex.Message;
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
+                ResolveAllFailed (NcResult.WhyEnum.Unknown);
+                sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
+                errResult.Message = ex.Message;
+            }
+            StatusInd (errResult);
+        }
+
         protected override Event ExecuteCommand ()
         {
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
             return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUC");
+        }
+
+        /// <summary>
+        /// Guess the type of the IMAP service. This is important only in a few cases, for example
+        /// yahoo (which is horribly broken and I need to do things differently in a few places), and
+        /// icloud (which does something funky on authentication).
+        /// 
+        /// Other cases may arise, at which point we need to identify service.
+        /// </summary>
+        public static void guessServiceType (IBEContext BEContext)
+        {
+            if (McAccount.AccountServiceEnum.None != BEContext.ProtocolState.ImapServiceType) {
+                // we've already done this.
+                return;
+            }
+
+            McAccount.AccountServiceEnum service;
+            string username = BEContext.Cred.Username;
+
+            // See if we can identify the service type
+            switch (BEContext.Account.AccountService) {
+            case McAccount.AccountServiceEnum.IMAP_SMTP:
+                if (isiCloud (username)) {
+                    service = McAccount.AccountServiceEnum.iCloud;
+                } else if (isYahoo (username)) {
+                    service = McAccount.AccountServiceEnum.Yahoo;
+                } else {
+                    // we don't know (or don't care)
+                    if (username.Contains ("@")) {
+                        Log.Info (Log.LOG_IMAP, "Unknown generic IMAP server for domain {0}", username.Split ('@') [1]);
+                    }
+                    service = BEContext.Account.AccountService;
+                }
+                break;
+
+            default:
+                service = BEContext.Account.AccountService;
+                break;
+            }
+            if (BEContext.ProtocolState.ImapServiceType != service) {
+                BEContext.ProtocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.ImapServiceType = service;
+                    return true;
+                });
+            }
+
+            // Now that we know (perhaps) the service type, see if we need to do anything with the username
+            switch (service) {
+            case McAccount.AccountServiceEnum.iCloud:
+                if (username.Contains ("@")) {
+                    // https://support.apple.com/en-us/HT202304
+                    var parts = username.Split ('@');
+                    if (DomainIsOrEndsWith(parts [1].ToLower (), "icloud.com")) {
+                        username = parts [0];
+                    }
+                }
+                break;
+
+            default:
+                break;
+
+            }
+            if (BEContext.Cred.Username != username) {
+                BEContext.Cred.UpdateWithOCApply<McCred> ((record) => {
+                    var target = (McCred)record;
+                    target.Username = username;
+                    return true;
+                });
+            }
+        }
+
+        private static bool isiCloud (string emailAddress)
+        {
+            if (string.IsNullOrEmpty (emailAddress)) {
+                return false;
+            }
+            if (emailAddress.Contains ("@")) {
+                var domain = emailAddress.Split ('@') [1].ToLower ();
+                if (DomainIsOrEndsWith (domain, "icloud.com") ||
+                    DomainIsOrEndsWith (domain, "me.com")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool isYahoo (string emailAddress)
+        {
+            if (string.IsNullOrEmpty (emailAddress)) {
+                return false;
+            }
+            // For now check a known list of domains. Better would be to do a DNS lookup (which might
+            // indicate that the DNS Server belongs to yahoo), but that would require a whole
+            // new discovery statemachine. We'll see if this gets us far enough along.
+            if (emailAddress.Contains ("@")) {
+                var domain = emailAddress.Split ('@') [1].ToLower ();
+                if (DomainIsOrEndsWith (domain, "yahoo.com") ||
+                    DomainIsOrEndsWith (domain, "yahoo.net") ||
+                    DomainIsOrEndsWith (domain, "ymail.com") ||
+                    DomainIsOrEndsWith (domain, "rocketmail.com")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // The intended use of this function is for the caller to do ToLower( on both domain and mightBe.
+        private static bool DomainIsOrEndsWith (string domain, string mightBe)
+        {
+            if (string.IsNullOrEmpty (domain) || string.IsNullOrEmpty (mightBe)) {
+                return false;
+            }
+            return domain == mightBe || domain.EndsWith ("." + mightBe);
         }
     }
 }

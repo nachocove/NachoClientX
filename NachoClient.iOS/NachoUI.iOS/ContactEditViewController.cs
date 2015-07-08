@@ -45,6 +45,9 @@ namespace NachoClient.iOS
         protected static readonly nfloat HORIZONTAL_INDENT = 30;
         protected nfloat CELL_HEIGHT = 44;
 
+        //////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// If you add a new editable field, make sure you update CompareContactsOnEditableFields() as well
+        //////////////////////////////////////////////////////////////////////////////////////////////////////
         protected List<PhoneCell> phoneCellList = new List<PhoneCell> ();
         protected List<EmailCell> emailCellList = new List<EmailCell> ();
         protected List<DateCell> dateCellList = new List<DateCell> ();
@@ -167,6 +170,12 @@ namespace NachoClient.iOS
             }
         }
 
+        protected string GetDisplayNameFromCopy ()
+        {
+            var name = contactCopy.GetDisplayName ();
+            return string.IsNullOrEmpty (name) ? "" : name;
+        }
+
         protected override void CreateViewHierarchy ()
         {
             nfloat internalOffset = 0;
@@ -213,10 +222,7 @@ namespace NachoClient.iOS
             contactNameLabel.TextColor = A.Color_NachoBlack;
             contactNameLabel.TextAlignment = UITextAlignment.Left;
             contactNameLabel.Tag = HEADER_NAME_TEXT_FIELD_TAG;
-            contactNameLabel.Text = 
-                string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
-                "" : 
-                contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
+            contactNameLabel.Text = GetDisplayNameFromCopy ();
             contentView.AddSubview (contactNameLabel);
 
             yOffset = contactNameLabel.Frame.Bottom + 10;
@@ -680,15 +686,6 @@ namespace NachoClient.iOS
             return true;
         }
 
-        protected void NameFieldChanged (object sender, EventArgs e)
-        {
-            contactNameLabel.Text = 
-                firstNameField.Text +
-            " " + middleNameField +
-            " " + lastNameField +
-            " " + suffixField;
-        }
-
         protected void CompanyEditingEnded (object sender, EventArgs e)
         {
             UITextField companyField = (UITextField)View.ViewWithTag (HEADER_COMPANY_TEXT_FIELD);
@@ -873,11 +870,19 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            NcAlertView.Show (this, "Discard Changes?", "Going back will discard your changes. Are you sure?",
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
-                new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
-                    NavigationController.PopViewController (true);
-                }));
+            McContact origContact = contact;
+            if (null == origContact) {
+                origContact = new McContact ();
+            }
+            if (!CompareContactsOnEditableFields (origContact, contactCopy)) {
+                NcAlertView.Show (this, "Discard Changes?", "Going back will discard your changes. Are you sure?",
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null),
+                    new NcAlertAction ("Yes", NcAlertActionStyle.Destructive, () => {
+                        NavigationController.PopViewController (true);
+                    }));
+            } else {
+                NavigationController.PopViewController (true);
+            }
         }
 
         private bool HasInvalidEmail ()
@@ -1315,10 +1320,7 @@ namespace NachoClient.iOS
 
             var headerCompany = (UITextField)View.ViewWithTag (HEADER_COMPANY_TEXT_FIELD);
 
-            contactNameLabel.Text = 
-                string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
-                "" : 
-                contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
+            contactNameLabel.Text = GetDisplayNameFromCopy ();
 
             headerCompany.Text = contactCopy.CompanyName;
 
@@ -2455,6 +2457,87 @@ namespace NachoClient.iOS
             addressTextField.AutocorrectionType = UITextAutocorrectionType.No;
 
             return addressTextField;
+        }
+
+        protected bool CompareLists<T> (List<T> list1, List<T> list2, Func<T,T,bool> comparer)
+        {
+            if (list1.Count != list2.Count) {
+                return false;
+            }
+            for (int n = 0; n < list1.Count; n++) {
+                if (!comparer (list1 [n], list2 [n])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        protected bool CompareStringAttributeLists (List<McContactStringAttribute> list1, List<McContactStringAttribute> list2)
+        {
+            return CompareLists<McContactStringAttribute> (list1, list2,
+                (attr1, attr2) => (attr1.Type == attr2.Type) && (attr1.Value == attr2.Value) && (attr1.Label == attr2.Label));
+        }
+
+        protected bool CompareContactsOnEditableFields (McContact a, McContact b)
+        {
+            string valueA, valueB;
+            string[] properties = new string[] {
+                "FirstName",
+                "MiddleName",
+                "LastName",
+                "Suffix",
+                "CompanyName",
+                "Alias",
+                "FileAs",
+                "JobTitle",
+                "OfficeLocation",
+                "Title",
+                "WebPage",
+                "AccountName",
+                "CustomerId",
+                "GovernmentId",
+                "MMS",
+                "NickName",
+                "YomiCompanyName",
+                "YomiFirstName",
+                "YomiLastName",
+            };
+
+            foreach (var prop in properties) {
+                valueA = (string)a.GetType ().GetProperty (prop).GetValue (a, null);
+                valueB = (string)b.GetType ().GetProperty (prop).GetValue (b, null);
+                if (valueA != valueB) {
+                    return false;
+                }
+            }
+
+            if (!CompareLists<McContactEmailAddressAttribute> (a.EmailAddresses, b.EmailAddresses,
+                    (attr1, attr2) => (attr1.Value == attr2.Value))) {
+                return false;
+            }
+            if (!CompareStringAttributeLists (a.PhoneNumbers, b.PhoneNumbers)) {
+                return false;
+            }
+            if (!CompareLists<McContactDateAttribute> (a.Dates, b.Dates,
+                    (attr1, attr2) => ((attr1.Label == attr2.Label) && (attr1.Value == attr2.Value)))) {
+                return false;
+            }
+            if (!CompareLists<McContactAddressAttribute> (a.Addresses, b.Addresses,
+                    (addr1, addr2) => (
+                        (addr1.City == addr2.City) && (addr1.Country == addr2.Country) &&
+                        (addr1.PostalCode == addr2.PostalCode) && (addr1.State == addr2.State) &&
+                        (addr1.Street == addr2.Street)
+                    ))) {
+                return false;
+            }
+            if (!CompareStringAttributeLists (a.IMAddresses, b.IMAddresses)) {
+                return false;
+            }
+            if (!CompareStringAttributeLists (a.Relationships, b.Relationships)) {
+                return false;
+            }
+
+            return true;
         }
     }
 }

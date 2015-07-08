@@ -9,6 +9,9 @@ using MailKit;
 using MailKit.Net.Imap;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using MailKit.Security;
+using System.Net;
+using System.Text;
 
 namespace NachoCore.IMAP
 {
@@ -78,6 +81,7 @@ namespace NachoCore.IMAP
                 ReDisc = (PcEvt.E.Last + 1),
                 UiSetCred,
                 UiSetServConf,
+                GetServConf,
                 PkWait,
                 ReFSync,
                 PkSync,
@@ -85,11 +89,13 @@ namespace NachoCore.IMAP
                 PkQOp,
                 PkHotQOp,
                 PkFetch,
+                Wait,
                 AuthFail,
                 Last = AuthFail,
             };
         }
         public ImapStrategy Strategy { set; get; }
+        private PushAssist PushAssist { set; get; }
 
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
@@ -111,6 +117,7 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.PendQHot,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         Invalid = new uint[] {
                             (uint)ImapEvt.E.AuthFail,
@@ -124,6 +131,7 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
+                            (uint)ImapEvt.E.Wait,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -146,6 +154,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkQOp,
                             (uint)ImapEvt.E.PkHotQOp,
                             (uint)ImapEvt.E.PkFetch,
+                            (uint)ImapEvt.E.Wait,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -156,6 +165,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.GetServConf, Act = DoUiServConfReq, State = (uint)Lst.UiServConfW },
                         }
                     },
                     new Node {
@@ -177,6 +187,8 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkQOp,
                             (uint)ImapEvt.E.PkHotQOp,
                             (uint)ImapEvt.E.PkFetch,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
                             // If the creds are still bad, then disc will ask for new ones again.
@@ -205,6 +217,8 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkQOp,
                             (uint)ImapEvt.E.PkHotQOp,
                             (uint)ImapEvt.E.PkFetch,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
                             // If the creds are still bad, then disc will ask for new ones again.
@@ -228,6 +242,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkQOp,
                             (uint)ImapEvt.E.PkHotQOp,
                             (uint)ImapEvt.E.PkFetch,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoFSync, State = (uint)Lst.FSyncW },
@@ -239,6 +254,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
                         },
                     },
                     new Node {
@@ -254,6 +270,8 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -282,6 +300,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.PkWait,
                             (uint)ImapEvt.E.PkSync,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -293,6 +312,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
                         }
                     },
                     new Node {
@@ -308,6 +328,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.PkWait,
                             (uint)ImapEvt.E.PkSync,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -320,6 +341,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
                         }
                     },
                     new Node {
@@ -336,6 +358,8 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.PkWait,
                             (uint)ImapEvt.E.PkSync,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -363,6 +387,8 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.PkWait,
                             (uint)ImapEvt.E.PkSync,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNopOrPick, ActSetsState = true },
@@ -390,6 +416,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.PkWait,
                             (uint)ImapEvt.E.PkSync,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -401,6 +428,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
                         }
                     },
                     new Node {
@@ -419,6 +447,8 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.PkWait,
                             (uint)ImapEvt.E.PkSync,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
@@ -451,6 +481,8 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkSync,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.ReFSync,
+                            (uint)ImapEvt.E.Wait,
+                            (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
@@ -462,7 +494,7 @@ namespace NachoCore.IMAP
             Sm.Validate ();
             Sm.State = ProtocolState.ImapProtoControlState;
             Strategy = new ImapStrategy (this);
-            //PushAssist = new PushAssist (this);
+            PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -530,14 +562,11 @@ namespace NachoCore.IMAP
             return MessageServerId.Split (':') [0];
         }
 
-        public PushAssistParameters PushAssistParameters ()
-        {
-            NcAssert.True (false);
-            return null;
-        }
-
         public override void ForceStop ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPFORCESTOP");
         }
 
@@ -548,6 +577,10 @@ namespace NachoCore.IMAP
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            if (null != PushAssist) {
+                PushAssist.Dispose ();
+                PushAssist = null;
+            }
             base.Remove ();
         }
 
@@ -566,6 +599,12 @@ namespace NachoCore.IMAP
             ExecuteCmd ();
         }
 
+        private void DoUiServConfReq ()
+        {
+            // Send the request toward the UI.
+            Owner.ServConfReq (this, Sm.Arg);
+        }
+
         private void DoConn ()
         {
             SetCmd (new ImapAuthenticateCommand (this, MainClient));
@@ -581,12 +620,14 @@ namespace NachoCore.IMAP
         private void DoArg ()
         {
             var cmd = Sm.Arg as ImapCommand;
-            /* FIXME
-            if (null != cmd as AsPingCommand && null != PushAssist) {
-                PushAssist.Execute ();
-            }
-            */
             SetCmd (cmd);
+            ExecuteCmd ();
+        }
+
+        private void DoWait ()
+        {
+            var waitTime = (int)Sm.Arg;
+            SetCmd (new ImapWaitCommand (this, MainClient, waitTime, true));
             ExecuteCmd ();
         }
 
@@ -621,6 +662,7 @@ namespace NachoCore.IMAP
 
         private void ExecuteCmd ()
         {
+            PossiblyKickPushAssist ();
             Cmd.Execute (Sm);
         }
 
@@ -693,6 +735,7 @@ namespace NachoCore.IMAP
                                     (uint)ImapEvt.E.PkQOp,
                                     (uint)ImapEvt.E.PkSync,
                                     (uint)ImapEvt.E.ReFSync,
+                                    (uint)ImapEvt.E.GetServConf,
                                 },
                                 On = new Trans[] {
                                     new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)St.Start },
@@ -701,6 +744,7 @@ namespace NachoCore.IMAP
                                     new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoExDone, State = (uint)St.Stop },
                                     new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoExDone, State = (uint)St.Stop },
                                     new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoExDone, State = (uint)St.Stop },
                                 },
                             }
                         }
@@ -796,6 +840,9 @@ namespace NachoCore.IMAP
         }
         private void DoPark ()
         {
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             SetCmd (null);
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
@@ -807,13 +854,7 @@ namespace NachoCore.IMAP
 
         private void DoDrive ()
         {
-            /*
-            if (null != PushAssist) {
-                if (PushAssist.IsStartOrParked ()) {
-                    PushAssist.Execute ();
-                }
-            }
-            */
+            PossiblyKickPushAssist ();
             Sm.State = ProtocolState.ImapProtoControlState;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DRIVE");
         }
@@ -824,6 +865,82 @@ namespace NachoCore.IMAP
             CancelCmd ();
             Owner.CredReq (this);
         }
+
+        #region PushAssist support.
+        private bool CanStartPushAssist()
+        {
+            // We need to be able to get the right capabilities, so must be auth'd.
+            return MainClient.IsConnected && MainClient.IsAuthenticated && ProtoControl.ProtocolState.HasSyncedInbox;
+        }
+
+        private void PossiblyKickPushAssist()
+        {
+            if (CanStartPushAssist()) {
+                // uncomment for testing on the simulator
+                //PushAssist.SetDeviceToken ("SIMULATOR");
+                if (PushAssist.IsStartOrParked ()) {
+                    PushAssist.Execute ();
+                }
+            }
+        }
+
+        private byte[] PushAssistAuthBlob()
+        {
+
+            SaslMechanism sasl;
+            switch (ProtoControl.Cred.CredType) {
+            case McCred.CredTypeEnum.OAuth2:
+                sasl = SaslMechanism.Create ("XOAUTH2",
+                    new Uri (string.Format ("imap://{0}", ProtoControl.Server.Host)),
+                    new NetworkCredential (ProtoControl.Cred.Username, ProtoControl.Cred.GetAccessToken ()));
+                break;
+
+            default:
+                sasl = SaslMechanism.Create ("PLAIN",
+                    new Uri (string.Format ("imap://{0}", ProtoControl.Server.Host)),
+                    new NetworkCredential (ProtoControl.Cred.Username, ProtoControl.Cred.GetPassword ()));
+                break;
+            }
+            string command = string.Format ("AUTHENTICATE {0}", sasl.MechanismName);
+            if (sasl.SupportsInitialResponse &&
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilitiesUnAuth & McProtocolState.NcImapCapabilities.SaslIR)) ||
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR)))
+            {
+                command += " ";
+            } else {
+                command += "\n";
+            }
+            command += sasl.Challenge (null);
+            return Encoding.UTF8.GetBytes (command);
+        }
+
+        public PushAssistParameters PushAssistParameters ()
+        {
+            McFolder folder = McFolder.GetDefaultInboxFolder (ProtoControl.Account.Id);
+            if (!CanStartPushAssist()) {
+                // We need to have logged in at least once. Having sync'd inbox seems like a good thing to key on.
+                Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters without having synced inbox");
+                return null;
+            }
+
+            bool supportsExpunged = ProtoControl.ProtocolState.ImapServiceType != McAccount.AccountServiceEnum.Yahoo;
+            bool supportsIdle = (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.Idle));
+
+            return new PushAssistParameters () {
+                RequestUrl = string.Format ("imap://{0}:{1}", ProtoControl.Server.Host, ProtoControl.Server.Port),
+                Protocol = PushAssistProtocol.IMAP,
+                ResponseTimeoutMsec = 600 * 1000,
+                WaitBeforeUseMsec = 60 * 1000,
+
+                IMAPAuthenticationBlob = PushAssistAuthBlob(),
+                IMAPFolderName = folder.ServerId,
+                IMAPSupportsIdle = supportsIdle,
+                IMAPSupportsExpunge = supportsExpunged,
+                IMAPEXISTSCount = folder.ImapExists,
+                IMAPUIDNEXT = folder.ImapUidNext,
+            };
+        }
+        #endregion
     }
 }
 

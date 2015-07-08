@@ -158,6 +158,7 @@ namespace NachoClient.iOS
                 }
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.ContentView.BackgroundColor = UIColor.White;
+                cell.TextLabel.Font = A.Font_AvenirNextDemiBold17;
 
                 var cellWidth = tableView.Frame.Width;
 
@@ -243,15 +244,15 @@ namespace NachoClient.iOS
             var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
             var cRoot =  CalendarHelper.GetMcCalendarRootForEvent (e.Id);
 
-            if (null == c) {
-                foreach (var v in cell.ContentView.Subviews) {
-                    v.Hidden = true;
-                }
-                var label = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
-                label.Text = "Event has been deleted...";
-                label.Hidden = false;
+            if (null == c || null == cRoot) {
+                cell.ContentView.ViewWithTag (SWIPE_TAG).Hidden = true;
+                cell.TextLabel.Hidden = false;
+                cell.TextLabel.Text = "This event has been deleted.";
                 return;
             }
+
+            cell.ContentView.ViewWithTag (SWIPE_TAG).Hidden = false;
+            cell.TextLabel.Hidden = true;
 
             // Save calendar item index
             cell.ContentView.Tag = c.Id;
@@ -260,7 +261,6 @@ namespace NachoClient.iOS
             var subject = Pretty.SubjectString (c.GetSubject ());
 
             var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
-            subjectLabelView.Hidden = false;
             subjectLabelView.Text = subject;
 
             int colorIndex = 0;
@@ -273,16 +273,11 @@ namespace NachoClient.iOS
             dotView.Frame = new CGRect (30, 20, 9, 9);
             var size = new CGSize (10, 10);
             dotView.Image = Util.DrawCalDot (Util.CalendarColor (colorIndex), size);
-            dotView.Hidden = false;
 
             // Duration label view
             var durationLabelView = cell.ContentView.ViewWithTag (DURATION_TAG) as UILabel;
             var locationLabelView = cell.ContentView.ViewWithTag (LOCATION_TEXT_TAG) as UILabel;
             var locationIconView = cell.ContentView.ViewWithTag (LOCATION_ICON_TAG) as UIImageView;
-
-            durationLabelView.Hidden = false;
-            locationLabelView.Hidden = false;
-            locationIconView.Hidden = false;
 
             // Starting time and duration
             var startAndDuration = "";
@@ -311,10 +306,11 @@ namespace NachoClient.iOS
             } else {
                 locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
                 locationLabelView.Text = locationString;
+                locationIconView.Hidden = false;
+                locationLabelView.Hidden = false;
             }
 
             var lineView = cell.ContentView.ViewWithTag (LINE_TAG);
-            lineView.Hidden = false;
             lineView.Frame = new CGRect (34, 0, 1, HeightForCalendarEvent (c));
 
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_TAG);

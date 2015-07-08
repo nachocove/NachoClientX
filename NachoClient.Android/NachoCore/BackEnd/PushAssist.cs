@@ -490,6 +490,7 @@ namespace NachoCore
                 break;
             case McAccount.AccountTypeEnum.IMAP_SMTP:
                 prefix = "imap_smtp";
+                id = account.EmailAddr;
                 break;
             default:
                 Log.Error (Log.LOG_PUSH, "GetClientContext: Unexpected account type {0}", (uint)account.AccountType);
@@ -596,7 +597,7 @@ namespace NachoCore
             PostEvent (SmEvt.E.Success, mnemonic);
         }
 
-        private string SafeToBase64 (byte[] bytes)
+        public static string SafeToBase64 (byte[] bytes)
         {
             if (null == bytes) {
                 return null;
@@ -722,22 +723,27 @@ namespace NachoCore
             }
             var jsonRequest = new StartSessionRequest () {
                 MailServerUrl = parameters.RequestUrl,
-                MailServerCredentials = new Credentials {
-                    Username = cred.Username,
-                    Password = cred.GetPassword ()
-                },
-                Protocol = ProtocolToString (parameters.Protocol),
                 Platform = GetPlatformName (),
+                Protocol = ProtocolToString (parameters.Protocol),
+                PushToken = DeviceToken,
+                PushService = NcApplication.Instance.GetPushService (),
+                ResponseTimeout = parameters.ResponseTimeoutMsec,
+                WaitBeforeUse = parameters.WaitBeforeUseMsec,
+
+                // AS elements
+                MailServerCredentials = parameters.MailServerCredentials,
                 HttpHeaders = httpHeadersDict,
                 RequestData = SafeToBase64 (parameters.RequestData),
                 ExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
                 NoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
-                CommandTerminator = SafeToBase64 (parameters.CommandTerminator),
-                CommandAcknowledgement = SafeToBase64 (parameters.CommandAcknowledgement),
-                ResponseTimeout = parameters.ResponseTimeoutMsec,
-                WaitBeforeUse = parameters.WaitBeforeUseMsec,
-                PushToken = DeviceToken,
-                PushService = NcApplication.Instance.GetPushService (),
+
+                // IMAP elements
+                IMAPAuthenticationBlob = SafeToBase64 (parameters.IMAPAuthenticationBlob),
+                IMAPFolderName = parameters.IMAPFolderName,
+                IMAPSupportsIdle = parameters.IMAPSupportsIdle,
+                IMAPSupportsExpunge = parameters.IMAPSupportsExpunge,
+                IMAPEXISTSCount = parameters.IMAPEXISTSCount,
+                IMAPUIDNEXT = parameters.IMAPUIDNEXT,
             };
             FillOutIdentInfo (jsonRequest);
 

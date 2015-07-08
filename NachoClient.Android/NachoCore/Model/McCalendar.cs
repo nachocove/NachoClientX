@@ -228,7 +228,7 @@ namespace NachoCore.Model
             // that references it.  But McEvents are treated differently.  We want to delete them
             // right now so they disappear from the calendar, even if the underlying McCalendar
             // might stick around for a while longer.
-            using (var capture = CaptureWithStart ("Insert")) {
+            using (var capture = CaptureWithStart ("Delete")) {
                 int retval = 0;
                 List<NcEventIndex> eventIds = null;
 
@@ -259,6 +259,26 @@ namespace NachoCore.Model
                 return retval;
             }
         }
+
+        /// <summary>
+        /// Delete an item that originally came from the device calendar.  This is the same as the
+        /// regular delete, except for two things. (1) Don't cancel local notifications, because
+        /// we don't set notifications for events that came from the device calendar. (2) Don't
+        /// fire the EventSetChanged event, because deleting device calendar items can come in
+        /// rapid succession leading to an overload of EventSetChanged events. The code that
+        /// manages device calendar events is responsible for firing EventSetChanged once all the
+        /// device calendar items have been processed.
+        /// </summary>
+        public int DeleteDeviceItem ()
+        {
+            using (var capture = CaptureWithStart ("Delete")) {
+                int retval = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    McEvent.DeleteEventsForCalendarItem (this.Id);
+                    retval = base.Delete ();
+                });
+                return retval;
+            }
+        }
     }
 }
-

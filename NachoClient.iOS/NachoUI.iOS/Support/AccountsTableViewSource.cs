@@ -31,7 +31,7 @@ namespace NachoClient.iOS
             accounts = new List<McAccount> ();
 
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (!account.ConfigurationInProgress) {
+                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     accounts.Add (account);
                 }
             }

@@ -179,36 +179,32 @@ namespace NachoClient.iOS
             inputViews.Add (domainView);
             inputViews.Add (usernameView);
             inputViews.Add (passwordView);
+        }
 
+        void CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum connect)
+        {
+            if (null != onConnect) {
+                onConnect (connect, account, emailView.textField.Text, passwordView.textField.Text);
+            }
         }
 
         void StartOverButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-            if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.StartOver, null);
-            }
+            CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.StartOver);
         }
 
         void CustomerSupportButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-            if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Support, null);
-            }
+            CallOnConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Support);
         }
 
         void ConnectButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-
-            if (!SaveUserSettings ()) {
-                return;
-            }
-
-            if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect, account);
-            }
+            var action = SaveUserSettings ();
+            CallOnConnect (action);
         }
 
         void AdvancedButton_TouchUpInside (object sender, EventArgs e)
@@ -340,21 +336,32 @@ namespace NachoClient.iOS
         /// Updates McCred and McAccount from the UI
         /// in both theAccount and the database.
         /// </summary>
-        public bool SaveUserSettings ()
+        public AdvancedLoginViewController.ConnectCallbackStatusEnum SaveUserSettings ()
         {
             if (!CanUserConnect ()) {
-                return false;
+                return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
             }
             var email = emailView.textField.Text.Trim ();
             var password = passwordView.textField.Text;
 
+            // FIXME
+            // If account exists and is significantly different from what's entered, then re-create it.
+
             if (null == account) {
+                if (LoginHelpers.AccountExists (email)) {
+                    // Already have this one.
+                    Log.Info (Log.LOG_UI, "avl: SaveUserSettings existing account: {0}", email);
+                    return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
+                }
                 account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.Exchange, email, password);
             }
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
 
             account.EmailAddr = email;
             account.Update ();
+
+            cred.UpdatePassword (password);
+            cred.Update ();
 
             // If the user clears the username, we'll let them start over
             if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
@@ -373,7 +380,7 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", account.Id, cred.Id, cred.UserSpecifiedUsername);
 
-            return true;
+            return AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect;
         }
 
         /// <summary>
@@ -388,8 +395,8 @@ namespace NachoClient.iOS
                 if (null != server) {
                     server.Delete ();
                     Log.Info (Log.LOG_UI, "avl: delete server {0}", server.BaseUriString ());
-                    return;
                 }
+                return;
             }
 
             // did the server came from the back end, we're done

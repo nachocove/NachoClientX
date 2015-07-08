@@ -36,7 +36,7 @@ die () {
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile="appstore_build.$tag.$timestamp.log"
 make -f build.mk 2>&1 | tee $logfile
-if [ $? -ne 0 ]
+if [ ${PIPESTATUS[0]} -ne 0 ]
 then
     echo "Fail to build auxillary packages"
     exit 1
@@ -44,7 +44,7 @@ fi
 
 # Build NachoClient
 VERSION="$version" BUILD="$build" RELEASE="appstore" /Applications/Xamarin\ Studio.app/Contents/MacOS/XamarinStudio ./NachoClient.sln
-if [ $? -eq 0 ]
+if [ ${PIPESTATUS[0]} -eq 0 ]
 then
     echo "appstore build $tag is made."
 else

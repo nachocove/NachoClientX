@@ -231,8 +231,8 @@ namespace NachoClient.iOS
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
-                searchResults = McContact.SearchIndexAllContactsWithEmailAddresses (forSearchString, true);
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
+                searchResults = McContact.SearchIndexAllContacts (forSearchString, true, true);
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
 

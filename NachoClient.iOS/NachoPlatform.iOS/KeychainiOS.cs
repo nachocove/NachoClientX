@@ -29,6 +29,8 @@ namespace NachoPlatform
         private const string KIdentifierForVendor = "IdentifierForVendor";
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
+        private const string KUserId = "UserId";
+
         /*
          * For better or worse...
          * Key chain is searched using account and service. We keep account constant as KDefaultAccount.
@@ -79,17 +81,37 @@ namespace NachoPlatform
             return Deleter (CreateQuery (handle));
         }
 
-        public string GetIdentifierForVendor ()
+        public string GetStringForKey (string key)
         {
-            var data = Getter (CreateQuery (KIdentifierForVendor));
+            var data = Getter (CreateQuery (key));
             // XAMMIT. 
             // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
             return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
         }
 
+        public bool SetStringForKey (string key, string value)
+        {
+            return Setter (CreateQuery (key), NSData.FromString (value));
+        }
+
+        public string GetIdentifierForVendor ()
+        {
+            return GetStringForKey (KIdentifierForVendor);
+        }
+
         public bool SetIdentifierForVendor (string ident)
         {
-            return Setter (CreateQuery (KIdentifierForVendor), NSData.FromString (ident));
+            return SetStringForKey (KIdentifierForVendor, ident);
+        }
+
+        public string GetUserId ()
+        {
+            return GetStringForKey (KUserId);
+        }
+
+        public bool SetUserId (string userId)
+        {
+            return SetStringForKey (KUserId, userId);
         }
 
         public bool SetAccessToken (int handle, string token)

@@ -20,8 +20,10 @@ namespace NachoClient.iOS
 
         UIImageView circleMail;
         UILabel startLabel;
+        UIView serviceBox;
         UIView emailBox;
         UIView passwordBox;
+        UITextField serviceField;
         UITextField emailField;
         UITextField passwordField;
         UIButton submitButton;
@@ -35,6 +37,7 @@ namespace NachoClient.iOS
 
         const int EMAIL_TEXTFIELD_TAG = 101;
         const int PASSWORD_TEXTFIELD_TAG = 102;
+        const int SERVICE_TEXTFIELD_TAG = 103;
 
         INachoCredentialsDelegate owner;
         McAccount.AccountServiceEnum service;
@@ -62,8 +65,16 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.SetNavigationBarHidden (true, false);
+                this.NavigationController.SetNavigationBarHidden (true, true);
             }
+        }
+
+        NSObject notification;
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            notification = NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -72,9 +83,9 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.SetNavigationBarHidden (false, false);
+                this.NavigationController.SetNavigationBarHidden (false, true);
             }
-            NSNotificationCenter.DefaultCenter.RemoveObserver (UITextField.TextFieldTextDidChangeNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (notification);
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -113,28 +124,57 @@ namespace NachoClient.iOS
 
             yOffset += circleMailSize + 20;
 
-            startLabel = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 50));
+            startLabel = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 0));
             startLabel.BackgroundColor = A.Color_NachoGreen;
             startLabel.TextColor = UIColor.White;
             startLabel.Font = A.Font_AvenirNextRegular17;
             startLabel.TextAlignment = UITextAlignment.Center;
+            startLabel.LineBreakMode = UILineBreakMode.WordWrap;
             startLabel.Alpha = 1;
-            contentView.AddSubview (startLabel);
-
             if (credReqCallback) {
-                startLabel.Lines = 2;
                 startLabel.Text = "There seems to be a problem with your credentials.";
-                startLabel.SizeToFit ();
             } else {
-                startLabel.Lines = 1;
                 startLabel.Text = "Enter your account information";
             }
 
+            startLabel.Lines = 0;
+            startLabel.SizeToFit ();
+            contentView.AddSubview (startLabel);
+            
             yOffset = startLabel.Frame.Bottom + 20;
+
+            serviceBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
+            serviceBox.BackgroundColor = UIColor.White;
+            serviceBox.Alpha = 1;
+
+            serviceField = new UITextField (new CGRect (45, 0, serviceBox.Frame.Width - 50, serviceBox.Frame.Height));
+            serviceField.BackgroundColor = UIColor.White;
+            serviceField.Text = McAccount.AccountServiceName (service);
+            serviceField.Font = A.Font_AvenirNextRegular17;
+            serviceField.BorderStyle = UITextBorderStyle.None;
+            serviceField.TextAlignment = UITextAlignment.Left;
+            serviceField.Tag = SERVICE_TEXTFIELD_TAG;
+            serviceField.ShouldBeginEditing += (UITextField textField) => {
+                return false;
+            };
+
+            serviceBox.AddSubview (serviceField);
+
+            var serviceImageView = new UIImageView ();
+            var imageName = Util.GetAccountServiceImageName (service);
+            using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                serviceImageView.Image = image;
+            }
+            serviceImageView.Frame = new CGRect (3, 3, 40, 40);
+
+            serviceBox.AddSubview (serviceImageView);
+
+            contentView.AddSubview (serviceBox);
+
+            yOffset = serviceBox.Frame.Bottom + 4;
 
             emailBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
             emailBox.BackgroundColor = UIColor.White;
-
             emailBox.Alpha = 1;
 
             emailField = new UITextField (new CGRect (45, 0, emailBox.Frame.Width - 50, emailBox.Frame.Height));
@@ -237,7 +277,6 @@ namespace NachoClient.iOS
 
             yOffset = startOverButton.Frame.Bottom + 20;
 
-
             // bottom padding
             yOffset += 20;
 
@@ -272,6 +311,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureAndLayoutInternal ()
         {
+            maybeEnableConnect ();
             var contentSize = contentView.Frame.Size;
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             ViewFramer.Create (contentView).Size (contentSize);
@@ -280,6 +320,10 @@ namespace NachoClient.iOS
 
         private void MaybeStartLogin ()
         {
+            if (string.IsNullOrEmpty (passwordField.Text)) {
+                Complain ("Nacho Mail", "Password is empty. Please enter a password.");
+                return;
+            }
             var emailAddress = emailField.Text.Trim ();
 
             string serviceName;
@@ -294,13 +338,11 @@ namespace NachoClient.iOS
             }
 
             if (!emailAddress.Contains ("@")) {
-                emailField.TextColor = A.Color_NachoRed;
                 Complain ("Nacho Mail", "Your email address must contain an '@'.\nFor example, username@company.com");
                 return;
             }
 
             if (!EmailHelper.IsValidEmail (emailField.Text)) {
-                emailField.TextColor = A.Color_NachoRed;
                 Complain ("Nacho Mail", "Your email address is not valid.\nFor example, username@company.com");
                 return;
             }
@@ -423,11 +465,6 @@ namespace NachoClient.iOS
         protected void SupportButtonTouchUpInside (object sender, EventArgs e)
         {
             PerformSegue ("SegueToSupport", this);
-        }
-
-        protected void OnKeyboardChangeCompleted ()
-        {
-
         }
 
         protected override void Cleanup ()

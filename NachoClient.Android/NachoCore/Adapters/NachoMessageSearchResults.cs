@@ -61,20 +61,22 @@ namespace NachoCore
                 }
             }
 
-            list.RemoveAll ((McEmailMessageThread obj) => IsValid (obj));
+            var messageIdSet = new HashSet<string> ();
+
+            list.RemoveAll ((McEmailMessageThread messageIndex) => {
+                // As messages are moved, they change index & become
+                // unavailable.  Deferred messages should be hidden.
+                var message = messageIndex.FirstMessageSpecialCase ();
+                if ((null == message) || message.IsDeferred ()) {
+                    return true;
+                }
+                if (String.IsNullOrEmpty (message.MessageID)) {
+                    return false;
+                }
+                return !messageIdSet.Add (message.MessageID);
+            });
 
             Refresh (out adds, out deletes);
-        }
-
-        // As messages are moved, they change index & become
-        // unavailable.  Deferred messages should be hidden.
-        protected bool IsValid (McEmailMessageThread messageIndex)
-        {
-            var message = messageIndex.FirstMessageSpecialCase ();
-            if ((null == message) || message.IsDeferred ()) {
-                return true;
-            }
-            return false;
         }
 
         public bool Refresh (out List<int> adds, out List<int> deletes)

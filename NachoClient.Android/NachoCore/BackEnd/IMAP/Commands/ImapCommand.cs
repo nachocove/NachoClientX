@@ -46,26 +46,32 @@ namespace NachoCore.IMAP
             }, this.GetType ().Name);
         }
 
+        public Event ExecuteConnectAndAuthEvent()
+        {
+            ImapDiscoverCommand.guessServiceType (BEContext);
+
+            lock(Client.SyncRoot) {
+                try {
+                    if (null != RedactProtocolLogFunc) {
+                        Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
+                    }
+                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                        var authy = new ImapAuthenticateCommand (BEContext, Client);
+                        authy.ConnectAndAuthenticate ();
+                    }
+                    return ExecuteCommand ();
+                } finally {
+                    if (Client.MailKitProtocolLogger.Enabled ()) {
+                        ProtocolLoggerStopAndPostTelemetry ();
+                    }
+                }
+            }
+        }
+
         public void ExecuteNoTask(NcStateMachine sm)
         {
             try {
-                Event evt;
-                lock(Client.SyncRoot) {
-                    try {
-                        if (null != RedactProtocolLogFunc) {
-                            Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
-                        }
-                        if (!Client.IsConnected || !Client.IsAuthenticated) {
-                            var authy = new ImapAuthenticateCommand (BEContext, Client);
-                            authy.ConnectAndAuthenticate ();
-                        }
-                        evt = ExecuteCommand ();
-                    } finally {
-                        if (Client.MailKitProtocolLogger.Enabled ()) {
-                            ProtocolLoggerStopAndPostTelemetry ();
-                        }
-                    }
-                }
+                Event evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
             } catch (OperationCanceledException) {
@@ -85,6 +91,10 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.AuthFail, "IMAPAUTH2");
+            } catch (ImapCommandException ex) {
+                Log.Info (Log.LOG_IMAP, "ImapCommandException {0}", ex.Message);
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.Wait, "IMAPCOMMWAIT", 60);
             } catch (IOException ex) {
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                 ResolveAllDeferred ();
@@ -128,10 +138,9 @@ namespace NachoCore.IMAP
             return ret;
         }
 
-        protected IMailFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
+        protected NcImapFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
         {
-            IMailFolder mailKitFolder;
-            mailKitFolder = Client.GetFolder (folder.ServerId);
+            var mailKitFolder = Client.GetFolder (folder.ServerId) as NcImapFolder;
             if (null == mailKitFolder) {
                 return null;
             }
@@ -199,6 +208,7 @@ namespace NachoCore.IMAP
                     var target = (McFolder)record;
                     target.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                     target.ImapUidNext = mailKitFolder.UidNext.HasValue ? mailKitFolder.UidNext.Value.Id : 0;
+                    target.ImapExists = mailKitFolder.Count;
                     return true;
                 });
                 changed = true;

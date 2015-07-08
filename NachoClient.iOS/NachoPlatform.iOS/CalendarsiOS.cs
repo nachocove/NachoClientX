@@ -53,6 +53,9 @@ namespace NachoPlatform
 
             public override string ServerId {
                 get {
+                    if (string.IsNullOrEmpty (Event.EventIdentifier)) {
+                        return "";
+                    }
                     if (Event.IsDetached || !Event.HasRecurrenceRules) {
                         return Event.EventIdentifier;
                     }

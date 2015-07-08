@@ -37,7 +37,7 @@ die () {
 timestamp=`date "+%Y%m%d_%H%M%S"`
 logfile="alpha_build.$tag.$timestamp.log"
 make -f build.mk 2>&1 | tee $logfile
-if [ $? -ne 0 ]
+if [ ${PIPESTATUS[0]} -ne 0 ]
 then
     echo "Fail to build auxillary packages"
     exit 1
@@ -45,7 +45,7 @@ fi
 
 # Build NachoClient
 VERSION="$version" BUILD="$build" RELEASE="alpha" make release 2>&1 | tee -a $logfile
-if [ $? -eq 0 ]
+if [ ${PIPESTATUS[0]} -eq 0 ]
 then
     # Tag & push tags for all repos
     ./scripts/repos.py create-tag --version "$version" --build "$build" || die "fail to tag all repos!"

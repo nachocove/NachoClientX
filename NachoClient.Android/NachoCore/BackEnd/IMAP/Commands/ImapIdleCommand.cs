@@ -132,7 +132,7 @@ namespace NachoCore.IMAP
         {
             EventHandler<MessagesArrivedEventArgs> MessagesArrivedHandler = (sender, e) => {
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
-                if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
+                if (McAccount.AccountServiceEnum.Yahoo != BEContext.ProtocolState.ImapServiceType) {
                     mailArrived = true;
                 } else {
                     needResync = true;
@@ -142,7 +142,7 @@ namespace NachoCore.IMAP
             EventHandler<MessageEventArgs> MessageExpungedHandler = (sender, e) => {
                 Log.Info (Log.LOG_IMAP, "{0}: Message ID {1} expunged", IdleFolder.ImapFolderNameRedacted (), e.Index);
                 // Yahoo doesn't send EXPUNGED untagged responses, so we can't trust anything. Just go back and resync.
-                if (McAccount.AccountServiceEnum.Yahoo != BEContext.Account.AccountService) {
+                if (McAccount.AccountServiceEnum.Yahoo != BEContext.ProtocolState.ImapServiceType) {
                     mailDeleted = true;
                 } else {
                     needResync = true;

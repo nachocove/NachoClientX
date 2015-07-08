@@ -217,6 +217,7 @@ namespace NachoCore.Brain
             if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
                 return false;
             }
+            Log.Info (Log.LOG_BRAIN, "IndexContact: index contact {0}", contact.Id);
             if (!IndexExists (contact.AccountId)) {
                 Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing contact {1}",
                     contact.AccountId, contact.Id);
@@ -238,6 +239,11 @@ namespace NachoCore.Brain
             // Add all email address, phone numbers and addresses
             foreach (var emailAddress in contact.EmailAddresses) {
                 contactParams.EmailAddresses.Add (emailAddress.Value);
+                var addr = NcEmailAddress.ParseMailboxAddressString (emailAddress.Value);
+                if (null != addr) {
+                    var idx = emailAddress.Value.IndexOf ("@");
+                    contactParams.EmailDomains.Add (emailAddress.Value.Substring (idx + 1));
+                }
             }
             foreach (var phoneNumber in contact.PhoneNumbers) {
                 contactParams.PhoneNumbers.Add (phoneNumber.Value);

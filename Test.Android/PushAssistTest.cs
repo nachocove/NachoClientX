@@ -54,6 +54,10 @@ namespace Test.Common
             request.Content.Headers.ContentLength = ResponseData.Length;
 
             return new PushAssistParameters () {
+                MailServerCredentials = new Credentials () {
+                    Username = PushAssistTest.Email,
+                    Password = PushAssistTest.Password,
+                },
                 RequestUrl = ServerUrl,
                 RequestData = RequestData,
                 RequestHeaders = request.Headers,
@@ -131,8 +135,8 @@ namespace Test.Common
     {
         public string DeviceToken = Convert.ToBase64String (System.Text.Encoding.ASCII.GetBytes ("abcdef"));
         const string ClientToken = "us-1-east:12345";
-        const string Email = "bob@company.net";
-        const string Password = "Password";
+        public const string Email = "bob@company.net";
+        public const string Password = "Password";
         const string SessionToken = "xyz";
 
         private MockPushAssistOwnwer Owner;

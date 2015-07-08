@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7706" systemVersion="14D136" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7706" systemVersion="14E46" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7703"/>
     </dependencies>
@@ -628,6 +628,7 @@
                         <segue destination="15q-DA-GFk" kind="push" identifier="SegueToEditEvent" id="twQ-jE-jZd"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" modalTransitionStyle="crossDissolve" id="c2Q-C8-ZgX"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMailTo" id="EUF-Gz-AvW"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessageDeadline" modalTransitionStyle="crossDissolve" id="vSR-5M-L48"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -977,7 +978,7 @@
             <objects>
                 <viewController storyboardIdentifier="MessagePriorityViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MCC-ND-pIu" customClass="MessagePriorityViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ojE-Gm-ggk">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="568"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
@@ -1514,7 +1515,6 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="62b-xt-XXd"/>
         <segue reference="V0S-kd-9OI"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="A0a-NV-skH"/>
@@ -1527,23 +1527,24 @@
         <segue reference="qrX-U2-XFP"/>
         <segue reference="HwV-au-Wta"/>
         <segue reference="XQg-JR-vxA"/>
+        <segue reference="Aba-pv-mzB"/>
+        <segue reference="TEI-cG-N0R"/>
+        <segue reference="VR8-PG-xAi"/>
+        <segue reference="DcC-EH-FAx"/>
+        <segue reference="QDW-pm-HY2"/>
+        <segue reference="jZp-Tj-sBa"/>
+        <segue reference="c2Q-C8-ZgX"/>
+        <segue reference="twQ-jE-jZd"/>
+        <segue reference="vSR-5M-L48"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="RHB-Or-A5o"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="xrp-ey-B0j"/>
         <segue reference="rew-s7-VAQ"/>
+        <segue reference="Vqu-N7-OvL"/>
         <segue reference="22b-Az-fdF"/>
         <segue reference="Kfq-r2-VA6"/>
         <segue reference="nJv-0g-ewn"/>
-        <segue reference="QDW-pm-HY2"/>
-        <segue reference="jZp-Tj-sBa"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="VR8-PG-xAi"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="TEI-cG-N0R"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="Ruw-76-4Ym"/>
-        <segue reference="P25-H0-Oji"/>
-        <segue reference="Vqu-N7-OvL"/>
-        <segue reference="FUw-4q-4q9"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="zby-Sy-Y3J"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

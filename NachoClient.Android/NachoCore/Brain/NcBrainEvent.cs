@@ -21,6 +21,7 @@ namespace NachoCore.Brain
         UNINDEX_MESSAGE,
         UNINDEX_CONTACT,
         PERSISTENT_QUEUE,
+        REINDEX_CONTACT,
     };
 
     [Serializable]
@@ -215,10 +216,19 @@ namespace NachoCore.Brain
     }
 
     [Serializable]
-    public class NcCBrainUnindexContactEvent : NcBrainContactEvent
+    public class NcBrainUnindexContactEvent : NcBrainContactEvent
     {
-        public NcCBrainUnindexContactEvent (Int64 accountId, Int64 contactId)
+        public NcBrainUnindexContactEvent (Int64 accountId, Int64 contactId)
             : base (NcBrainEventType.UNINDEX_CONTACT, accountId, contactId)
+        {
+        }
+    }
+
+    [Serializable]
+    public class NcBrainReindexContactEvent : NcBrainContactEvent
+    {
+        public NcBrainReindexContactEvent (Int64 accountId, Int64 contactId)
+            : base (NcBrainEventType.REINDEX_CONTACT, accountId, contactId)
         {
         }
     }

@@ -183,51 +183,6 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        public override NcResult DnldAttCmd (int attId, bool doNotDelay = false)
-        {
-            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            NcModel.Instance.RunInTransaction (() => {
-                var att = McAttachment.QueryById<McAttachment> (attId);
-                if (null == att) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_AttMissing);
-                    return;
-                }
-                if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
-                    return;
-                }
-                var emailMessage = McEmailMessage.QueryById<McEmailMessage> (att.ItemId);
-                if (null == emailMessage) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
-                    return;
-                }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
-                    Operation = McPending.Operations.AttachmentDownload,
-                    ServerId = emailMessage.ServerId,
-                    AttachmentId = attId,
-                };
-                McPending dup;
-                if (pending.IsDuplicate (out dup)) {
-                    // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_AS, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
-                    result = NcResult.OK (dup.Token);
-                    return;
-                }
-
-                if (doNotDelay) {
-                    pending.DoNotDelay ();
-                }
-                pending.Insert ();
-                result = NcResult.OK (pending.Token);
-                att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
-                att.Update ();
-            });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCDNLDATT");
-            }, "DnldAttCmd");
-            return result;
-        }
-
         public override NcResult DnldCalBodyCmd (int calId)
         {
             // I can't get this command to work.  The server always responds with "Bad or malformed request."

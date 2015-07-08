@@ -20,6 +20,29 @@ namespace NachoCore.Brain
         const DayOfWeek LastDayOfWork = DayOfWeek.Friday;
         const DayOfWeek FirstDayOfWeekend = DayOfWeek.Saturday;
 
+        public enum MessageDateType
+        {
+            None,
+            Defer,
+            Intent,
+            Deadline,
+        }
+
+        static public void DateSelected (MessageDateType type, McEmailMessageThread thread, MessageDeferralType deferralType, DateTime selectedDate)
+        {
+            switch (type) {
+            case MessageDateType.Defer:
+                NcMessageDeferral.DeferThread (thread, deferralType, selectedDate);
+                break;
+            case MessageDateType.Deadline:
+                NcMessageDeferral.SetDueDate (thread, deferralType, selectedDate);
+                break;
+            case MessageDateType.Intent:
+            case MessageDateType.None:
+                break;
+            }
+        }
+
         static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
         {
             if (MessageDeferralType.None == deferralType) {
@@ -75,8 +98,15 @@ namespace NachoCore.Brain
             return ClearMessageThreadFlags (thread);
         }
 
-        static public NcResult SetDueDate (McEmailMessageThread thread, DateTime dueOn)
+        static public NcResult SetDueDate (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime dueOn)
         {
+            if (MessageDeferralType.Custom != deferralType) {
+                NcResult r = ComputeDeferral (DateTime.UtcNow, deferralType, dueOn);
+                if (r.isError ()) {
+                    return r;
+                }
+                dueOn = r.GetValue<DateTime> ();
+            }
             foreach (var message in thread) {
                 if (null != message) {
                     var start = DateTime.UtcNow;
@@ -173,7 +203,7 @@ namespace NachoCore.Brain
                 NcAssert.CaseError (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
                 return NcResult.Error ("");
             }
-            Console.WriteLine ("Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime (), from.ToLocalTime ());
+            Log.Info (Log.LOG_BRAIN, "Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime (), from.ToLocalTime ());
             return NcResult.OK (from.ToUniversalTime ());
         }
 

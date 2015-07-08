@@ -310,30 +310,48 @@ namespace NachoCore
                     var deviceContacts = DeviceContacts;
                     if (null != deviceContacts) {
                         lock (deviceContacts) {
-                            while (!deviceContacts.ProcessNextContact ()) {
-                                cToken.ThrowIfCancellationRequested ();
+                            bool somethingHappened = false;
+                            try {
+                                while (!deviceContacts.ProcessNextContact ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                }
+                                while (!deviceContacts.RemoveNextStale ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                }
+                                // The sync has completed.
+                                DeviceContacts = null;
+                            } finally {
+                                // Trigger status events and report progress both when the sync is complete and when the sync has been interrupted.
+                                if (somethingHappened) {
+                                    deviceContacts.Report ();
+                                }
                             }
-                            while (!deviceContacts.RemoveNextStale ()) {
-                                cToken.ThrowIfCancellationRequested ();
-                            }
-                            deviceContacts.Report ();
-                            // We completed the sync.
-                            DeviceContacts = null;
                         }
                     }
 
                     var deviceCalendars = DeviceCalendars;
                     if (null != deviceCalendars) {
                         lock (deviceCalendars) {
-                            while (!deviceCalendars.ProcessNextCal ()) {
-                                cToken.ThrowIfCancellationRequested ();
+                            bool somethingHappened = false;
+                            try {
+                                while (!deviceCalendars.ProcessNextCal ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                }
+                                while (!deviceCalendars.RemoveNextStale ()) {
+                                    somethingHappened = true;
+                                    cToken.ThrowIfCancellationRequested ();
+                                }
+                                // The sync has completed.
+                                DeviceCalendars = null;
+                            } finally {
+                                // Trigger status events and report progress both when the sync is complete and when the sync has been interrupted.
+                                if (somethingHappened) {
+                                    deviceCalendars.Report ();
+                                }
                             }
-                            while (!deviceCalendars.RemoveNextStale ()) {
-                                cToken.ThrowIfCancellationRequested ();
-                            }
-                            deviceCalendars.Report ();
-                            // We completed the sync.
-                            DeviceCalendars = null;
                         }
                     }
 

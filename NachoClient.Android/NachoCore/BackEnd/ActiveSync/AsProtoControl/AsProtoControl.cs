@@ -1312,13 +1312,18 @@ namespace NachoCore.ActiveSync
             }
             return new NachoCore.PushAssistParameters () {
                 RequestUrl = ping.PushAssistRequestUrl (),
+                Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
+                WaitBeforeUseMsec = 60 * 1000,
+
+                MailServerCredentials = new Credentials {
+                    Username = ProtoControl.Cred.Username,
+                    Password = ProtoControl.Cred.GetPassword ()
+                },
                 RequestData = ping.PushAssistRequestData (),
                 RequestHeaders = ping.PushAssistRequestHeaders (),
                 ContentHeaders = ping.PushAssistContentHeaders (),
                 NoChangeResponseData = ping.PushAssistResponseData (),
-                Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = (int)pingKit.MaxHeartbeatInterval * 1000,
-                WaitBeforeUseMsec = 60 * 1000,
             };
         }
     }

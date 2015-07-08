@@ -97,7 +97,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "SegueToMessagePriority") {
                 var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (dateOwner, null, DateControllerType.Intent);
+                vc.Setup (dateOwner, null, NcMessageDeferral.MessageDateType.Intent);
                 vc.SetIntentSelector (this);
                 return;
             }

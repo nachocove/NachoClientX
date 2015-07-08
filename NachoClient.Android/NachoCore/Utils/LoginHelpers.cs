@@ -8,13 +8,9 @@ using NachoCore.Utils;
 
 namespace NachoCore.Utils
 {
-    public class LoginHelpers
+    public static class LoginHelpers
     {
-        protected const string MODULE = "ClientConfigurationBits";
-
-        public LoginHelpers ()
-        {
-        }
+        static string MODULE = "ClientConfigurationBits";
 
         //Sets the status of the sync bit for given accountId
         //Implies that auto-d is complete too.
@@ -22,14 +18,6 @@ namespace NachoCore.Utils
         {
             Log.Info (Log.LOG_UI, "SetFirstSyncCompleted: {0}={1}", accountId, toWhat);
             McMutables.SetBool (accountId, MODULE, "hasSyncedFolders", toWhat);
-        }
-
-        //Gets the status of the sync bit for given accountId
-        //True if they have succesfully sync'd folders
-        //False if not
-        static public bool HasFirstSyncCompleted (int accountId)
-        {
-            return McMutables.GetOrCreateBool (accountId, MODULE, "hasSyncedFolders", false);
         }
 
         static public void SetDoesBackEndHaveIssues (int accountId, bool toWhat)
@@ -46,6 +34,29 @@ namespace NachoCore.Utils
         static public bool DoesBackEndHaveIssues (int accountId)
         {
             return McMutables.GetOrCreateBool (accountId, MODULE, "doesBackEndHaveIssues", false);
+        }
+
+        static public bool ShouldAlertUser ()
+        {
+            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
+                if (ShouldAlertUser (accountId)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static public bool ShouldAlertUser (int accountId)
+        {
+            if (DoesBackEndHaveIssues (accountId)) {
+                return true;
+            }
+            DateTime expiry;
+            string rectificationUrl;
+            if (LoginHelpers.PasswordWillExpire (accountId, out expiry, out rectificationUrl)) {
+                return true;
+            }
+            return false;
         }
 
         //Sets the status of the tutorial bit for given accountId
@@ -104,8 +115,6 @@ namespace NachoCore.Utils
             return (DateTime.MaxValue != gonnaExpireOn);
         }
 
-
-
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }
@@ -149,12 +158,12 @@ namespace NachoCore.Utils
         {
             McAccount account = GetMostRecentAccount ();
             if (null != account) {
-                if (!account.ConfigurationInProgress) {
+                if (McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress) {
                     return account;
                 }
             }
             foreach (var a in NcModel.Instance.Db.Table<McAccount> ()) {
-                if (a.ConfigurationInProgress) {
+                if (McAccount.ConfigurationInProgressEnum.Done != a.ConfigurationInProgress) {
                     continue;
                 }
                 if (McAccount.AccountTypeEnum.Device == a.AccountType) {
@@ -166,7 +175,7 @@ namespace NachoCore.Utils
             return McAccount.GetDeviceAccount ();
         }
 
-        public static string GetPassword(McAccount account)
+        public static string GetPassword (McAccount account)
         {
             if (McAccount.AccountServiceEnum.GoogleDefault == account.AccountService) {
                 return "";
@@ -179,5 +188,10 @@ namespace NachoCore.Utils
             }
         }
 
+        public static bool AccountExists (string emailAddress)
+        {
+            var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
+            return (null != existingAccount);
+        }
     }
 }

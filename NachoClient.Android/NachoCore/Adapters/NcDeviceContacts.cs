@@ -108,7 +108,9 @@ namespace NachoCore
             }
             NcModel.Instance.RunInTransaction (() => {
                 Folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Contact);
-                McContact.DeleteById<McContact> (map.FolderEntryId);
+                if (null != contact) {
+                    contact.Delete ();
+                }
             });
             return false;
         }
