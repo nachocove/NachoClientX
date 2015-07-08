@@ -14,7 +14,8 @@ namespace NachoCore
         private IEnumerator<PlatformCalendarRecord> DeviceCalendars = null;
         private IEnumerator<McMapFolderFolderEntry> Stale = null;
         private List<McMapFolderFolderEntry> Present;
-        private int InsertCount = 0, UpdateCount = 0, PresentCount = 0;
+        private int InsertCount = 0, UpdateCount = 0, DeleteCount = 0;
+        private int InsertTotal = 0, UpdateTotal = 0, DeleteTotal = 0;
 
         public NcDeviceCalendars ()
         {
@@ -33,14 +34,16 @@ namespace NachoCore
             if (null == DeviceCalendars) {
                 return true;
             }
-            if (!DeviceCalendars.MoveNext ()) {
-                return true;
-            }
-            var deviceCalendar = DeviceCalendars.Current;
-            // defensive.
-            if (null == deviceCalendar) {
-                return true;
-            }
+
+            PlatformCalendarRecord deviceCalendar;
+            do {
+                if (!DeviceCalendars.MoveNext ()) {
+                    return true;
+                }
+                deviceCalendar = DeviceCalendars.Current;
+                // Ignore items that are missing or that don't have an ID.  This can happen if a device calendar item is deleted
+                // in between the initial query that finds the events and the processing of the events.
+            } while (null == deviceCalendar || string.IsNullOrEmpty (deviceCalendar.ServerId));
 
             Func<PlatformCalendarRecord, McCalendar> inserter = (record) => {
                 NcResult result;
@@ -81,7 +84,7 @@ namespace NachoCore
                 {
                     NcModel.Instance.RunInTransaction (() => {
                         Folder.Unlink (existing);
-                        existing.Delete ();
+                        existing.DeleteDeviceItem ();
                         if (null != inserter.Invoke (deviceCalendar)) {
                             ++ UpdateCount;
                         } else {
@@ -100,12 +103,12 @@ namespace NachoCore
                     return true;
                 }
                 Stale = Present.GetEnumerator ();
-                PresentCount = Present.Count;
             }
             if (!Stale.MoveNext ()) {
                 return true;
             }
             var map = Stale.Current;
+            ++DeleteCount;
             var cal = McCalendar.QueryById<McCalendar> (map.FolderEntryId);
             if (null == cal) {
                 Log.Error (Log.LOG_SYS, "RemoveNextStale: can't find cal");
@@ -116,16 +119,32 @@ namespace NachoCore
             }
             NcModel.Instance.RunInTransaction (() => {
                 Folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
-                McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
+                if (null != cal) {
+                    cal.DeleteDeviceItem ();
+                }
             });
             return false;
         }
 
         public void Report ()
         {
-            NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
-            Log.Info (Log.LOG_SYS, "NcDeviceCalendars: {0} inserted, {1} updated, cleaning up {2} dead links.", 
-                InsertCount, UpdateCount, PresentCount);
+            if (0 < InsertCount || 0 < UpdateCount || 0 < DeleteCount) {
+                NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_CalendarSetChanged);
+            }
+            // If any McCalendar items were inserted or updated, then an EventSetChanged event will be fired after
+            // the CalendarSetChanged event is processed.  But if the only action was deleting McCalendar items, then
+            // CalendarSetChanged will not trigger EventSetChanged.  So EventSetChanged needs to be fired explicitly.
+            if (0 == InsertCount && 0 == UpdateCount && 0 < DeleteCount) {
+                NcApplication.Instance.InvokeStatusIndEventInfo (McAccount.GetDeviceAccount (), NcResult.SubKindEnum.Info_EventSetChanged);
+            }
+            InsertTotal += InsertCount;
+            UpdateTotal += UpdateCount;
+            DeleteTotal += DeleteCount;
+            Log.Info (Log.LOG_SYS, "NcDeviceCalendars: {0}/{1} inserted, {2}/{3} updated, {4}/{5} deleted. (current round / total so far)", 
+                InsertCount, InsertTotal, UpdateCount, UpdateTotal, DeleteCount, DeleteTotal);
+            InsertCount = 0;
+            UpdateCount = 0;
+            DeleteCount = 0;
         }
     }
 }

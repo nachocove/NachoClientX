@@ -34,7 +34,6 @@ namespace NachoClient.iOS
         UIPanGestureRecognizer DateDotMonthViewPanGestureRecognizer = null;
 
         public static bool BasicView = false;
-        public bool UseDeviceCalendar;
         protected bool adjustScrollPosition = true;
 
         public CalendarViewController (IntPtr handle) : base (handle)
