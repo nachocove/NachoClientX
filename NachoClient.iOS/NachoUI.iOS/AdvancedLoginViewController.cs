@@ -129,16 +129,15 @@ namespace NachoClient.iOS
                 return;
             }
 
-            // User can visit support before an account is created
+            // User can visit support from advanced view before an account is created
             if (null == account) {
                 switch (service) {
                 case McAccount.AccountServiceEnum.Exchange:
                 case McAccount.AccountServiceEnum.IMAP_SMTP:
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowAdvanced, "avl: ViewDidAppear");
-                    break;
+                    return;
                 default:
-                    NcAssert.CaseError ();
-                    break;
+                    return;
                 }
             }
 
