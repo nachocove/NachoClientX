@@ -10,6 +10,7 @@ using MimeKit;
 using MailKit;
 using System.IO;
 using System.Text;
+using System.Net.Sockets;
 
 namespace NachoCore.SMTP
 {
@@ -18,15 +19,9 @@ namespace NachoCore.SMTP
         public NcSmtpClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
-        public class SmtpCommandFailure : Exception {
-            public SmtpCommandFailure (string message) : base (message)
-            {
-            }
-        }
-
-        public SmtpCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext)
+        public SmtpCommand (IBEContext beContext, NcSmtpClient smtpClient) : base (beContext)
         {
-            Client = smtp;
+            Client = smtpClient;
             RedactProtocolLogFunc = null;
         }
 
@@ -37,30 +32,40 @@ namespace NachoCore.SMTP
             return null;
         }
 
+        public Event ExecuteConnectAndAuthEvent()
+        {
+            lock (Client.SyncRoot) {
+                try {
+                    if (null != RedactProtocolLogFunc) {
+                        Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
+                    }
+                    if (!Client.IsConnected || !Client.IsAuthenticated) {
+                        var authy = new SmtpAuthenticateCommand(BEContext, Client);
+                        authy.ConnectAndAuthenticate ();
+                    }
+                    Client.MailKitProtocolLogger.ResetBuffers ();
+                    return ExecuteCommand ();
+                } finally {
+                    if (Client.MailKitProtocolLogger.Enabled ()) {
+                        ProtocolLoggerStopAndLog ();
+                    }
+                }
+            }
+
+        }
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
                 try {
-                    Event evt;
-                    lock (Client.SyncRoot) {
-                        try {
-                            if (null != RedactProtocolLogFunc) {
-                                Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
-                            }
-                            if (!Client.IsConnected || !Client.IsAuthenticated) {
-                                var authy = new SmtpAuthenticateCommand(BEContext, Client);
-                                authy.ConnectAndAuthenticate ();
-                            }
-                            Client.MailKitProtocolLogger.ResetBuffers ();
-                            evt = ExecuteCommand ();
-                        } finally {
-                            if (Client.MailKitProtocolLogger.Enabled ()) {
-                                ProtocolLoggerStopAndLog ();
-                            }
-                        }
-                    }
+                    Event evt = ExecuteConnectAndAuthEvent();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
                     sm.PostEvent (evt);
+                } catch (SocketException ex) {
+                    Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
+                    ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
+                    var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                    errResult.Message = ex.Message;
+                    sm.PostEvent ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
                 } catch (OperationCanceledException) {
                     Log.Info (Log.LOG_SMTP, "OperationCanceledException");
                     ResolveAllDeferred ();
