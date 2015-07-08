@@ -11,6 +11,7 @@ using MailKit;
 using System.IO;
 using System.Text;
 using System.Net.Sockets;
+using NachoCore.IMAP;
 
 namespace NachoCore.SMTP
 {
@@ -125,6 +126,8 @@ namespace NachoCore.SMTP
 
         public void ConnectAndAuthenticate()
         {
+            ImapDiscoverCommand.guessServiceType (BEContext);
+
             if (!Client.IsConnected) {
                 //client.ClientCertificates = new X509CertificateCollection ();
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);

@@ -30,6 +30,8 @@ namespace NachoCore.IMAP
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             try {
                 
+                guessServiceType (BEContext);
+
                 Event evt = base.ExecuteConnectAndAuthEvent ();
                 sm.PostEvent (evt);
                 return;
@@ -65,8 +67,6 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            guessServiceType (BEContext);
-
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
             return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUC");
         }
