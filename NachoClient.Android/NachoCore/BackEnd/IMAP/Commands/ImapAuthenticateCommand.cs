@@ -45,12 +45,8 @@ namespace NachoCore.IMAP
                     Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
                 } else {
                     Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                    var username = BEContext.Cred.Username;
-                    if (McAccount.AccountServiceEnum.iCloud == BEContext.Account.AccountService) {
-                        username = username.Split ('@') [0];
-                    }
                     try {
-                        Client.Authenticate (username, BEContext.Cred.GetPassword (), Cts.Token);
+                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                     } catch (ImapProtocolException ex) {
                         Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", ex);
                         // some servers (icloud.com) seem to close the connection on a bad password/username.

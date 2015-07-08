@@ -48,6 +48,8 @@ namespace NachoCore.IMAP
 
         public Event ExecuteConnectAndAuthEvent()
         {
+            ImapDiscoverCommand.guessServiceType (BEContext);
+
             lock(Client.SyncRoot) {
                 try {
                     if (null != RedactProtocolLogFunc) {
