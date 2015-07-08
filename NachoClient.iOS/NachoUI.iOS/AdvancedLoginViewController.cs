@@ -53,7 +53,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account);
+        public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account, string email, string password);
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
@@ -196,12 +196,19 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Stop (account.Id);
             }
 
+            // FIXME: Getting server conf callback for known servers
+            var accountType = McAccount.GetAccountType (service);
+
+            if ((service != McAccount.AccountServiceEnum.Exchange) || (service != McAccount.AccountServiceEnum.IMAP_SMTP)) {
+                Log.Error (Log.LOG_UI, "avl: Showing advanced view for {0}", service);
+            }
+
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
-            switch (service) {
-            case McAccount.AccountServiceEnum.Exchange:
+            switch (accountType) {
+            case McAccount.AccountTypeEnum.Exchange:
                 loginFields = new ExchangeFields (account, prompt, rect, onConnect);
                 break;
-            case McAccount.AccountServiceEnum.IMAP_SMTP:
+            case McAccount.AccountTypeEnum.IMAP_SMTP:
                 loginFields = new IMapFields (account, prompt, rect, onConnect);
                 break;
             default:
@@ -211,9 +218,12 @@ namespace NachoClient.iOS
             View.AddSubview (loginFields.View);
         }
 
-        void onConnect (ConnectCallbackStatusEnum connect, McAccount account)
+        void onConnect (ConnectCallbackStatusEnum connect, McAccount account, string email, string password)
         {
             View.EndEditing (true);
+
+            this.email = email;
+            this.password = password;
 
             switch (connect) {
             case ConnectCallbackStatusEnum.Connect:
@@ -241,7 +251,7 @@ namespace NachoClient.iOS
 
         public void ShowNoNetwork ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("No network connection. Please check that you have internet access."),
                 new NcAlertAction ("Try again", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.TryAgain, "avl: ShowNoNetwork");
@@ -256,7 +266,7 @@ namespace NachoClient.iOS
 
         public void ShowDuplicateAccount ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("This account already exists."),
                 new NcAlertAction ("OK", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowDuplicateAccount");
@@ -293,7 +303,7 @@ namespace NachoClient.iOS
 
         public void ShowCertRejected ()
         {
-            NcActionSheet.Show (View, this, null,
+            NcAlertView.Show (this, null,
                 String.Format ("Cannot configure this account without accepting the certificate."),
                 new NcAlertAction ("OK", () => {
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: ShowCertRejected");
@@ -479,6 +489,38 @@ namespace NachoClient.iOS
             }
         }
 
+        // If there's a cred req callback but the email address
+        // changes, then we need to do a stop/start instead of a
+        // cred resp because the email address might auto-d to a
+        // different server.
+        bool UpdateCredentialsAndGo (McAccount account, string email, string password, bool credReqCallback)
+        {
+            if (null == account) {
+                return false;
+            }
+            if (!credReqCallback) {
+                return false;
+            }
+            if (account.EmailAddr != email) {
+                credReqCallback = false;
+                BackEnd.Instance.Stop (account.Id);
+            }
+            account.EmailAddr = email;
+            account.Update ();
+            var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+            cred.UpdatePassword (password);
+            cred.Update ();
+
+            Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
+
+            if (credReqCallback) {
+                BackEnd.Instance.CredResp (account.Id);
+            } else {
+                BackEnd.Instance.Start (account.Id);
+            }
+            return true;
+        }
+
         public void CredentialsDismissed (UIViewController vc, bool startInAdvanced, string email, string password, bool credReqCallback, bool startOver)
         {
             this.email = email;
@@ -492,26 +534,16 @@ namespace NachoClient.iOS
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.StartOver, "avl: CredentialsDismissed");
                 return;
             }
-            if (credReqCallback) {
-                // Save email & password
-                var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
-                account.EmailAddr = email;
-                cred.UpdatePassword (password);
-                account.Update ();
-                cred.Update ();
-                Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1}", account.Id, cred.Id);
-                BackEnd.Instance.CredResp (account.Id);
+            if (UpdateCredentialsAndGo (account, email, password, credReqCallback)) {
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
                 ShowWaitingScreen ("Verifying Your Server...");
                 return;
             }
-
             if (LoginHelpers.AccountExists (email)) {
                 Log.Info (Log.LOG_UI, "avl: CredentialsDismissed existing account: {0}", email);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: CredentialsDismissed");
                 return;
             }
-
             account = NcAccountHandler.Instance.CreateAccount (service, email, password);
             NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: CredentialsDismissed");
@@ -620,7 +652,7 @@ namespace NachoClient.iOS
 
             if ((BackEndStateEnum.Running == senderState) || (BackEndStateEnum.Running == readerState)) {
                 Log.Info (Log.LOG_UI, "avl: status enums running");
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Running, "avl: EventFromEnum not started");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Running, "avl: EventFromEnum running");
                 return;
             }
 

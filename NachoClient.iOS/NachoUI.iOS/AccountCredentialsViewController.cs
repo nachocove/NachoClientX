@@ -124,11 +124,12 @@ namespace NachoClient.iOS
 
             yOffset += circleMailSize + 20;
 
-            startLabel = new UILabel ();
+            startLabel = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 0));
             startLabel.BackgroundColor = A.Color_NachoGreen;
             startLabel.TextColor = UIColor.White;
             startLabel.Font = A.Font_AvenirNextRegular17;
             startLabel.TextAlignment = UITextAlignment.Center;
+            startLabel.LineBreakMode = UILineBreakMode.WordWrap;
             startLabel.Alpha = 1;
             if (credReqCallback) {
                 startLabel.Text = "There seems to be a problem with your credentials.";
@@ -138,7 +139,6 @@ namespace NachoClient.iOS
 
             startLabel.Lines = 0;
             startLabel.SizeToFit ();
-            startLabel.Frame = new CGRect (30, yOffset, View.Frame.Width - 60, startLabel.Frame.Height);
             contentView.AddSubview (startLabel);
             
             yOffset = startLabel.Frame.Bottom + 20;
@@ -240,8 +240,6 @@ namespace NachoClient.iOS
             submitButton.TouchUpInside += SubmitButtonTouchUpInside;
             contentView.AddSubview (submitButton);
 
-            maybeEnableConnect ();
-
             yOffset = submitButton.Frame.Bottom + 20f;
 
             advancedButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, 20));
@@ -313,6 +311,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureAndLayoutInternal ()
         {
+            maybeEnableConnect ();
             var contentSize = contentView.Frame.Size;
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             ViewFramer.Create (contentView).Size (contentSize);
