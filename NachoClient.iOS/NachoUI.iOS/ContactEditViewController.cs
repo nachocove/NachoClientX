@@ -167,6 +167,12 @@ namespace NachoClient.iOS
             }
         }
 
+        protected string GetDisplayNameFromCopy ()
+        {
+            var name = contactCopy.GetDisplayName ();
+            return string.IsNullOrEmpty (name) ? "" : name;
+        }
+
         protected override void CreateViewHierarchy ()
         {
             nfloat internalOffset = 0;
@@ -213,10 +219,7 @@ namespace NachoClient.iOS
             contactNameLabel.TextColor = A.Color_NachoBlack;
             contactNameLabel.TextAlignment = UITextAlignment.Left;
             contactNameLabel.Tag = HEADER_NAME_TEXT_FIELD_TAG;
-            contactNameLabel.Text = 
-                string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
-                "" : 
-                contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
+            contactNameLabel.Text = GetDisplayNameFromCopy ();
             contentView.AddSubview (contactNameLabel);
 
             yOffset = contactNameLabel.Frame.Bottom + 10;
@@ -678,15 +681,6 @@ namespace NachoClient.iOS
             lastName +
             " " + suffix;
             return true;
-        }
-
-        protected void NameFieldChanged (object sender, EventArgs e)
-        {
-            contactNameLabel.Text = 
-                firstNameField.Text +
-            " " + middleNameField +
-            " " + lastNameField +
-            " " + suffixField;
         }
 
         protected void CompanyEditingEnded (object sender, EventArgs e)
@@ -1315,10 +1309,7 @@ namespace NachoClient.iOS
 
             var headerCompany = (UITextField)View.ViewWithTag (HEADER_COMPANY_TEXT_FIELD);
 
-            contactNameLabel.Text = 
-                string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
-                "" : 
-                contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
+            contactNameLabel.Text = GetDisplayNameFromCopy ();
 
             headerCompany.Text = contactCopy.CompanyName;
 
