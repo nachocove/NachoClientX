@@ -541,6 +541,12 @@ namespace NachoClient.iOS
                 }
             }
 
+            if (contact.IMAddresses.Count > 0) {
+                foreach (var imAddressAttribute in contact.IMAddresses) {
+                    contactInfoHeight += AddMiscInfo (imAddressAttribute.Name, contactInfoHeight, contactInfoScrollView);
+                }
+            }
+
             if (contact.Addresses.Count > 0) {
                 foreach (var a in contact.Addresses) {
                     contactInfoHeight += AddMiscInfo (a.Name, contactInfoHeight, contactInfoScrollView);
@@ -986,6 +992,12 @@ namespace NachoClient.iOS
                 }
                 value = childrenString;
                 icon = "contacts-attendees";
+                break;
+            case Xml.Contacts2.IMAddress:
+            case Xml.Contacts2.IMAddress2:
+            case Xml.Contacts2.IMAddress3:
+                value = contact.GetIMAddressAttribute (whatType);
+                icon = "contacts-icn-url";
                 break;
             default:
                 value = contactHelper.MiscContactAttributeNameToValue (whatType, contact);
