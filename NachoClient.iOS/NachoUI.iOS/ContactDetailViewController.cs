@@ -203,7 +203,7 @@ namespace NachoClient.iOS
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
                 var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, DateControllerType.Defer);
+                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
                 return;
             }
             if (segue.Identifier == "MessageListToFolders") {
@@ -1135,14 +1135,13 @@ namespace NachoClient.iOS
             NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
         }
 
-        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
-            NcMessageDeferral.DeferThread (thread, request, selectedDate);
+            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
         }
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.Setup (null, null, DateControllerType.None);
             vc.DismissDateController (false, new Action (delegate {
                 this.DismissViewController (true, null);
             }));

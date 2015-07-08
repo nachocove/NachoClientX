@@ -132,7 +132,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (smtpServerView);
             yOffset += CELL_HEIGHT;
 
-            smtpPortNumberView = new AdvancedTextField ("Port", "465", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            smtpPortNumberView = new AdvancedTextField ("Port", "587", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             smtpPortNumberView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (smtpPortNumberView);
             yOffset += CELL_HEIGHT;
@@ -220,12 +220,10 @@ namespace NachoClient.iOS
         {
             scrollView.EndEditing (true);
 
-            if (!SaveUserSettings ()) {
-                return;
-            }
+            var action = SaveUserSettings ();
 
             if (null != onConnect) {
-                onConnect (AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect, account);
+                onConnect (action, account);
             }
         }
 
@@ -327,7 +325,7 @@ namespace NachoClient.iOS
         }
 
         // FIXME: How do we pull a msg from the McServer?
-        string GetServerConfMessage(McServer server)
+        string GetServerConfMessage (McServer server)
         {
             string message;
             string messagePrefix = "We had a problem finding the server";
@@ -369,15 +367,23 @@ namespace NachoClient.iOS
         /// Updates McCred and McAccount from the UI
         /// in both theAccount and the database.
         /// </summary>
-        public bool SaveUserSettings ()
+        public AdvancedLoginViewController.ConnectCallbackStatusEnum SaveUserSettings ()
         {
             if (!CanUserConnect ()) {
-                return false;
+                return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
             }
             var email = emailView.textField.Text.Trim ();
             var password = passwordView.textField.Text;
 
+            // FIXME
+            // If account exists and is significantly different from what's entered, then re-create it.
+
             if (null == account) {
+                if (LoginHelpers.AccountExists (email)) {
+                    // Already have this one.
+                    Log.Info (Log.LOG_UI, "avl: SaveUserSettings existing account: {0}", email);
+                    return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
+                }
                 account = NcAccountHandler.Instance.CreateAccount (McAccount.AccountServiceEnum.IMAP_SMTP, email, password);
             }
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
@@ -394,18 +400,18 @@ namespace NachoClient.iOS
                 return SaveServerSettings ();
             }
 
-            return true;
+            return AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect;
         }
 
         /// <summary>
         /// Saves the server settings.
         /// </summary>
-        private bool SaveServerSettings ()
+        private AdvancedLoginViewController.ConnectCallbackStatusEnum SaveServerSettings ()
         {
             DeleteTheServers ("SaveServerSettings");
 
             if (FieldsAreEmpty (advancedInputViews)) {
-                return true;
+                return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
             }
 
             var imapServerName = imapServerView.textField.Text;
@@ -426,7 +432,7 @@ namespace NachoClient.iOS
                 smtpServer.Insert ();
             });
             Log.Info (Log.LOG_UI, "avl CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
-            return true;
+            return AdvancedLoginViewController.ConnectCallbackStatusEnum.Connect;
         }
 
         void DeleteTheServers (string message)

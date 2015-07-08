@@ -44,6 +44,8 @@ namespace NachoCore
         void ShowWaitingScreen (string waitingMessage);
 
         void ShowDuplicateAccount();
+
+        void ShowCertRejected();
     }
 }
 

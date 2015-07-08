@@ -188,5 +188,10 @@ namespace NachoCore.Utils
             }
         }
 
+        public static bool AccountExists (string emailAddress)
+        {
+            var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
+            return (null != existingAccount);
+        }
     }
 }
