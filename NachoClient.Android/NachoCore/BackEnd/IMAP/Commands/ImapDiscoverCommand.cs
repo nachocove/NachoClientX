@@ -120,7 +120,7 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (parts [1].ToLower ().Equals ("icloud.com")) {
+                    if (DomainIsOrEndsWith(parts [1].ToLower (), "icloud.com")) {
                         username = parts [0];
                     }
                 }
@@ -174,6 +174,7 @@ namespace NachoCore.IMAP
             return false;
         }
 
+        // The intended use of this function is for the caller to do ToLower( on both domain and mightBe.
         private static bool DomainIsOrEndsWith (string domain, string mightBe)
         {
             if (string.IsNullOrEmpty (domain) || string.IsNullOrEmpty (mightBe)) {
