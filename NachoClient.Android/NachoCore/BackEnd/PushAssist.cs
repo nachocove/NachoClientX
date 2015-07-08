@@ -490,6 +490,7 @@ namespace NachoCore
                 break;
             case McAccount.AccountTypeEnum.IMAP_SMTP:
                 prefix = "imap_smtp";
+                id = account.EmailAddr;
                 break;
             default:
                 Log.Error (Log.LOG_PUSH, "GetClientContext: Unexpected account type {0}", (uint)account.AccountType);
