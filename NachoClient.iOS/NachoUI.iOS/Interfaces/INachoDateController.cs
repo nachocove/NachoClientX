@@ -3,25 +3,23 @@
 using System;
 using Foundation;
 using NachoCore.Model;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public enum DateControllerType {
-        None,
-        Defer,
-        Intent,
-    }
-
     public interface INachoDateController
     {
-        void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, DateControllerType dateControllerType);
+        void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, NcMessageDeferral.MessageDateType dateControllerType);
+
         void SetIntentSelector (IntentSelectionViewController selector);
+
         void DismissDateController (bool animated, Action action);
     }
 
     public interface INachoDateControllerParent
     {
-        void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate);
+        void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate);
+
         void DismissChildDateController (INachoDateController vc);
     }
 }

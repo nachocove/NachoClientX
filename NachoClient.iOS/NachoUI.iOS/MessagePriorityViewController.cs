@@ -17,7 +17,7 @@ namespace NachoClient.iOS
         protected McEmailMessageThread thread;
         protected INachoDateControllerParent owner;
         protected IntentSelectionViewController intentSelector;
-        protected DateControllerType dateControllerType = DateControllerType.None;
+        protected NcMessageDeferral.MessageDateType dateControllerType = NcMessageDeferral.MessageDateType.None;
 
         const float BUTTON_SIZE = 64;
         const float BUTTON_LABEL_HEIGHT = 40;
@@ -34,7 +34,7 @@ namespace NachoClient.iOS
             CreateView ();
         }
 
-        public void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, DateControllerType dateControllerType)
+        public void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, NcMessageDeferral.MessageDateType dateControllerType)
         {
             this.owner = owner;
             this.thread = thread;
@@ -58,7 +58,7 @@ namespace NachoClient.iOS
             navBar.Translucent = false;
 
             var navItem = new UINavigationItem ();
-            if (DateControllerType.Defer == dateControllerType) {
+            if (NcMessageDeferral.MessageDateType.Defer == dateControllerType) {
                 navItem.Title = "Defer Message";
             } else {
                 navItem.Title = "Set Deadline";
@@ -83,7 +83,7 @@ namespace NachoClient.iOS
 
             yOffset = sectionSeparator.Frame.Bottom + 20;
 
-            if (DateControllerType.Defer == dateControllerType) {
+            if (NcMessageDeferral.MessageDateType.Defer == dateControllerType) {
                 UILabel messageSubject = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 25));
                 var subject = thread.GetSubject ();
                 if (null != subject) {
@@ -102,7 +102,7 @@ namespace NachoClient.iOS
             List<ButtonInfo> buttonInfoList;
 
             switch (dateControllerType) {
-            case DateControllerType.Defer:
+            case NcMessageDeferral.MessageDateType.Defer:
                 buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                     new ButtonInfo ("Later Today", "modal-later-today", () => DateSelected (MessageDeferralType.Later, DateTime.MinValue)),
                     new ButtonInfo ("Tonight", "modal-tonight", () => DateSelected (MessageDeferralType.Tonight, DateTime.MinValue)),
@@ -117,7 +117,8 @@ namespace NachoClient.iOS
                     null,
                 });
                 break;
-            case DateControllerType.Intent:
+            case NcMessageDeferral.MessageDateType.Intent:
+            case NcMessageDeferral.MessageDateType.Deadline:
                 buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                     new ButtonInfo ("None", "modal-none", () => DateSelected (MessageDeferralType.None, DateTime.MinValue)),
                     new ButtonInfo ("One hour", "modal-later-today", () => DateSelected (MessageDeferralType.OneHour, DateTime.MinValue)),
@@ -189,6 +190,7 @@ namespace NachoClient.iOS
         public void DismissDateController (bool animated, Action action)
         {
             owner = null;
+            thread = null;
             DismissViewController (animated, action);
         }
 
@@ -202,6 +204,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "MessagePriorityToDatePicker") {
                 var vc = (DatePickerViewController)segue.DestinationViewController;
                 vc.owner = this;
+                return;
             }
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -227,7 +230,7 @@ namespace NachoClient.iOS
             var rc = NcMessageDeferral.ComputeDeferral (DateTime.UtcNow, dateType, selectedDate);
             if (rc.isOK ()) {
                 var date = rc.GetValue<DateTime> ();   
-                owner.DateSelected (dateType, thread, date);
+                owner.DateSelected (dateControllerType, dateType, thread, date);
                 owner.DismissChildDateController (this);
                 if (null != intentSelector) {
                     intentSelector.DismissIntentChooser (false, null);

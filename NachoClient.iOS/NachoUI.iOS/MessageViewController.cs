@@ -25,7 +25,7 @@ namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewControllerNoLeaks, INachoMessageViewer,
         INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, 
-        INcDatePickerDelegate, IUcAddressBlockDelegate, INachoDateControllerParent
+        IUcAddressBlockDelegate, INachoDateControllerParent
     {
         // Model data
         public McEmailMessageThread thread;
@@ -58,6 +58,8 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
+
+
 
 
 
@@ -382,7 +384,7 @@ namespace NachoClient.iOS
                     PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
                 }),
                 new UIBlockMenu.Block ("email-calendartime", "Create Deadline", () => {
-                    PerformSegue ("SegueToDatePicker", new SegueHolder (null));
+                    PerformSegue ("SegueToMessageDeadline", new SegueHolder (null));
                 }),
                 new UIBlockMenu.Block ("now-addcalevent", "Create Event", () => {
                     var message = thread.SingleMessageSpecialCase ();
@@ -619,7 +621,12 @@ namespace NachoClient.iOS
 
             if (segue.Identifier == "MessageViewToMessagePriority") {
                 var vc = (INachoDateController)segue.DestinationViewController;
-                vc.Setup (this, thread, DateControllerType.Defer);
+                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Defer);
+                return;
+            }
+            if (segue.Identifier == "SegueToMessageDeadline") {
+                var vc = (INachoDateController)segue.DestinationViewController;
+                vc.Setup (this, thread, NcMessageDeferral.MessageDateType.Deadline);
                 return;
             }
             if (segue.Identifier == "MessageViewToFolders") {
@@ -655,11 +662,11 @@ namespace NachoClient.iOS
                 vc.SetCalendarItem (c);
                 return;
             }
-            if (segue.Identifier == "SegueToDatePicker") {
-                var vc = (DatePickerViewController)segue.DestinationViewController;
-                vc.owner = this;
-                return;
-            }
+//            if (segue.Identifier == "SegueToDatePicker") {
+//                var vc = (DatePickerViewController)segue.DestinationViewController;
+//                vc.owner = this;
+//                return;
+//            }
             if (segue.Identifier == "SegueToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -752,14 +759,6 @@ namespace NachoClient.iOS
 
         // Interface implemntations
 
-        public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
-        {
-            NcMessageDeferral.SetDueDate (thread, chosenDateTime);
-            vc.owner = null;
-            vc.DismissViewController (false, null);
-            ConfigureAndLayout ();
-        }
-
         public void DismissChildMessageEditor (INachoMessageEditor vc)
         {
             vc.SetOwner (null);
@@ -768,14 +767,13 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
-            NcMessageDeferral.DeferThread (thread, request, selectedDate);
+            NcMessageDeferral.DateSelected (type, thread, request, selectedDate);
         }
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.Setup (null, null, DateControllerType.None);
             vc.DismissDateController (false, new Action (delegate {
                 NavigationController.PopViewController (true);
             }));

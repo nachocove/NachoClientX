@@ -1079,7 +1079,7 @@ namespace NachoClient.iOS
         }
 
         // INachoDateControllerParent called from IntentSelectionViewController -> Date selector
-        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        public void DateSelected (NcMessageDeferral.MessageDateType type, MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
             // Assumption -- SelectMessageIntent was already called
             NcAssert.True (McEmailMessage.IntentType.None != messageIntent);
@@ -1089,7 +1089,6 @@ namespace NachoClient.iOS
         // INachoDateControllerParent
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.Setup (null, null, DateControllerType.None);
             vc.DismissDateController (false, null);
         }
 
