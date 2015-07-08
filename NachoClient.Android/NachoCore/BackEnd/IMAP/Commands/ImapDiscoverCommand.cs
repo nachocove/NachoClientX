@@ -85,17 +85,11 @@ namespace NachoCore.IMAP
             McAccount.AccountServiceEnum service;
             string username = BEContext.Cred.Username;
 
+            // See if we can identify the service type
             switch (BEContext.Account.AccountService) {
             case McAccount.AccountServiceEnum.IMAP_SMTP:
                 if (isiCloud (username)) {
                     service = McAccount.AccountServiceEnum.iCloud;
-                    if (username.Contains ("@")) {
-                        // https://support.apple.com/en-us/HT202304
-                        var parts = username.Split (emailDelimiter);
-                        if (parts [1].ToLower ().Contains ("icloud.com")) {
-                            username = parts [0];
-                        }
-                    }
                 } else if (isYahoo (username)) {
                     service = McAccount.AccountServiceEnum.Yahoo;
                 } else {
@@ -110,6 +104,23 @@ namespace NachoCore.IMAP
             default:
                 service = BEContext.Account.AccountService;
                 break;
+            }
+
+            // Now that we know (perhaps) the service type, see if we need to do anything with the username
+            switch (service) {
+            case McAccount.AccountServiceEnum.iCloud:
+                if (username.Contains ("@")) {
+                    // https://support.apple.com/en-us/HT202304
+                    var parts = username.Split (emailDelimiter);
+                    if (parts [1].ToLower ().Contains ("icloud.com")) {
+                        username = parts [0];
+                    }
+                }
+                break;
+
+            default:
+                break;
+
             }
 
             NcModel.Instance.RunInTransaction (() => {
