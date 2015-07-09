@@ -171,28 +171,46 @@ namespace NachoClient.iOS
             var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
             var eventNotification = eventNotifications.FirstOrDefault ();
             if (null != eventNotification) {
-                // TODO: Multi-account switch
-                // var accountId = int.Parse(notification.Key);
                 var eventId = int.Parse (eventNotification.Value);
                 var e = McEvent.QueryById<McEvent> (eventId);
                 eventNotification.Delete ();
                 if (null != e) {
-                    PerformSegue ("NachoNowToEventView", new SegueHolder (e));
+                    if (MaybeSwitchToNotificationAccount (e)) {
+                        PerformSegue ("NachoNowToEventView", new SegueHolder (e));
+                    }
                 }
             }
             var emailNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey);
             var emailNotification = emailNotifications.FirstOrDefault ();
             if (null != emailNotification) {
-                // TODO: Multi-account switch
-                // var accountId = int.Parse (emailNotification.Key);
                 var messageId = int.Parse (emailNotification.Value);
+                var m = McEmailMessage.QueryById<McEmailMessage> (messageId);
                 emailNotification.Delete ();
-                var t = new McEmailMessageThread ();
-                t.FirstMessageId = messageId;
-                t.MessageCount = 1;
-                PerformSegue ("NachoNowToMessageView", new SegueHolder (t));
+                if (null != m) {
+                    if (MaybeSwitchToNotificationAccount (m)) {
+                        var t = new McEmailMessageThread ();
+                        t.FirstMessageId = messageId;
+                        t.MessageCount = 1;
+                        PerformSegue ("NachoNowToMessageView", new SegueHolder (t));
+                    }
+                }
                 return;
             }
+        }
+
+        bool MaybeSwitchToNotificationAccount (McAbstrObjectPerAcc obj)
+        {
+            var notificationAccount = McAccount.QueryById<McAccount> (obj.AccountId);
+            if (null == notificationAccount) {
+                Log.Error (Log.LOG_UI, "MaybeSwitchToNotificationAccount: no account for {0}", obj.Id);
+                return false;
+            }
+            if (notificationAccount.Id == NcApplication.Instance.Account.Id) {
+                return true;
+            }
+            NcApplication.Instance.Account = notificationAccount;
+            SwitchToAccount (notificationAccount);
+            return true;
         }
 
         public override void ViewWillDisappear (bool animated)
