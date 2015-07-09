@@ -97,6 +97,17 @@ namespace NachoCore.Brain
 
             gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
             NcEmailAddress.ParseName (mbAddr, ref gleanedContact);
+            if (mbAddr.Address == mbAddr.Name) {
+                // Some mail clients generate email addresses like "bob@company.net <bob@company.net>"
+                // And it creates a first name of "Bob@company.Net". This partially breaks eclipsing
+                // because the eclipsing algorithm considers this a different first name (from Bob)
+                // and a gleaned contact like this will not be eclipsed.
+                //
+                // Having the email address as the first name is really the same as not have a first name.
+                // We clear the first name in this case so that anonymous eclipsing will consolidate
+                // this with "Bob <bob@company.net" (if it exists.)
+                gleanedContact.FirstName = null;
+            }
 
             NcModel.Instance.RunInTransaction (() => {
                 // Check if the contact is a duplicate
