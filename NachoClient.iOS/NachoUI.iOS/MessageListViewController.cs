@@ -630,11 +630,7 @@ namespace NachoClient.iOS
             // On-device index
             var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
             var index = new NachoCore.Index.NcIndex (indexPath);
-            var match = searchBar.Text;
-            var quoted = Lucene.Net.QueryParsers.QueryParser.Escape (match);
-            var wildcard = (char.IsWhiteSpace (quoted.Last<char> ())) ? "" : "*";
-            var query = "*" + quoted + wildcard;
-            var matches = index.SearchAllEmailMessageFields (query);
+            var matches = index.SearchAllEmailMessageFields (searchBar.Text);
             searchResultsMessages.UpdateMatches (matches);
             List<int> adds;
             List<int> deletes;
