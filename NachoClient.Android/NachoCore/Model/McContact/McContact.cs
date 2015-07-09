@@ -1456,17 +1456,16 @@ namespace NachoCore.Model
         {
             const int maxResults = 100;
             var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
-            if (String.IsNullOrEmpty (searchFor)) {
+            var trimmedSearchFor = searchFor.Trim ();
+            if (String.IsNullOrEmpty (trimmedSearchFor)) {
                 return emailAddressAttributes;
             }
-
-            var escapedSearchFor = Lucene.Net.QueryParsers.QueryParser.Escape (searchFor);
 
             // Query the index for contacts up to 100 of them
             var allContacts = new List<McContact> ();
             foreach (var account in McAccount.GetAllAccounts()) {
                 var index = NcBrain.SharedInstance.Index (account.Id);
-                var matches = index.SearchAllContactFields (escapedSearchFor + "*", maxResults);
+                var matches = index.SearchAllContactFields (searchFor, maxResults);
                 if (0 == matches.Count) {
                     continue;
                 }

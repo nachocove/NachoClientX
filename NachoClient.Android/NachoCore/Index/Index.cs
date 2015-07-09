@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Linq;
 using MimeKit;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Store;
@@ -208,12 +209,15 @@ namespace NachoCore.Index
         public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000, bool leadingWildcard = false)
         {
             string newQueryString = "";
+            var queryTokens = queryString.Trim ().Split ().Select (x => (leadingWildcard ? "*" : "") + QueryParser.Escape (x) + "*");
+            var fieldQuery = String.Join (" ", queryTokens);
+
             if (null != type) {
                 newQueryString += "+type:" + type;
             }
             newQueryString += " +(";
             foreach (var f in fields) {
-                newQueryString += f + ":" + queryString + " ";
+                newQueryString += f + ":(" + fieldQuery + ") ";
             }
             newQueryString += ")";
             return Search (newQueryString, maxMatches, leadingWildcard);
