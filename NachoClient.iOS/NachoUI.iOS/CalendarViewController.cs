@@ -16,6 +16,7 @@ namespace NachoClient.iOS
     public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
         protected CalendarTableViewSource calendarSource;
+        protected INcEventProvider eventCalendarMap;
         protected UITableView calendarTableView;
         SwitchAccountButton switchAccountButton;
         public DateBarView DateDotView;
@@ -34,12 +35,17 @@ namespace NachoClient.iOS
         UIPanGestureRecognizer DateDotMonthViewPanGestureRecognizer = null;
 
         public static bool BasicView = false;
-        protected bool adjustScrollPosition = true;
+        protected bool firstTime = true;
 
         public CalendarViewController (IntPtr handle) : base (handle)
         {
             var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(CalendarViewController));
             a.TextColor = UIColor.LightGray;
+
+            // Start populating the event table, so the data will hopefully be ready when this view
+            // first becomes visible.
+            eventCalendarMap = new NcAllEventsCalendarMap ();
+            eventCalendarMap.Refresh (completionAction: null);
         }
 
         public override void ViewDidLoad ()
@@ -87,13 +93,15 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            // Start a background refresh, which will update the UI when it is done.
             calendarSource.Refresh (delegate {
                 ReloadDataWithoutScrolling ();
                 UpdateDateDotView ();
             });
 
-            if (adjustScrollPosition) {
-                adjustScrollPosition = false;
+            if (firstTime) {
+                firstTime = false;
                 calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
             }
         }
@@ -266,7 +274,6 @@ namespace NachoClient.iOS
         {
             NavigationController.NavigationBar.Translucent = false;
 
-            var eventCalendarMap = new NcAllEventsCalendarMap ();
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
             calendarSource.SetCalendar (eventCalendarMap);
