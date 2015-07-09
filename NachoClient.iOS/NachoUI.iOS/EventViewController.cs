@@ -906,7 +906,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this, true);
+                dc.SetOwner (this, c.GetSubject (), insertDate: false);
                 return;
             }
 
