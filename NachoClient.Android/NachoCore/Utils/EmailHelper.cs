@@ -728,7 +728,8 @@ namespace NachoCore.Utils
                 }
             }
             if (null == adjusted) {
-                adjusted = Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
+                adjusted = Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (Regex.Replace (raw,
+                    @"!\[(image|cid|img_).*?\]\(http.+?\)", " "),
                     @"\[(http|image|cid|img_).*?\]", " "),
                     @"<(http|mailto)\S*?>", " "),
                     @"https?:\S*", " "),
@@ -740,7 +741,7 @@ namespace NachoCore.Utils
                     adjusted = adjusted.Substring (0, adjusted.Length - 2);
                 }
             }
-            if (10 > adjusted.Length) {
+            if (10 > adjusted.Length || !ContainsLetter (adjusted)) {
                 // The adjustments stripped out almost everything.  What's left is probably not useful.
                 // Use the raw text, only collapsing the white space.
                 adjusted = Regex.Replace (raw, @"\s+", " ");
@@ -748,6 +749,18 @@ namespace NachoCore.Utils
             return adjusted;
         }
 
+        private static bool ContainsLetter (string s)
+        {
+            if (null == s) {
+                return false;
+            }
+            foreach (char c in s) {
+                if (char.IsLetter (c)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
 
