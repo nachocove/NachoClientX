@@ -61,7 +61,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
-            Log.Info (Log.LOG_UI, "avl: AccountCredentialsViewController ViewWillAppear {0}", NavigationController);
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -79,7 +78,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
-            Log.Info (Log.LOG_UI, "avl: AccountCredentialsViewController ViewWillDisappear {0}", NavigationController);
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;

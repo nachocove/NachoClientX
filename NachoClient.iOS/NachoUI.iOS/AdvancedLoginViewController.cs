@@ -73,7 +73,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
-            Log.Info (Log.LOG_UI, "avl: AdvancedLoginViewController ViewWillAppear {0}", NavigationController);
             base.ViewWillAppear (animated);
             NavigationItem.SetHidesBackButton (true, false);
             if (null != NavigationController) {
@@ -85,7 +84,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
-            Log.Info (Log.LOG_UI, "avl: AdvancedLoginViewController ViewWillDisappear {0}", NavigationController);
             base.ViewWillDisappear (animated);
             if (null != NavigationController) {
                 NavigationController.SetNavigationBarHidden (false, false);
@@ -101,7 +99,7 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
-            Log.Info (Log.LOG_UI, "avl: ViewDidAppear");
+            Log.Info (Log.LOG_UI, "avl: AdvanceLoginViewController ViewDidAppear");
 
             base.ViewDidAppear (animated);
 
@@ -125,7 +123,7 @@ namespace NachoClient.iOS
             }
 
             if (McAccount.AccountServiceEnum.None == service) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NoService, "avl: ViewDidAppear");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NoService, "avl: AdvanceLoginViewController ViewDidAppear");
                 return;
             }
 
@@ -134,7 +132,7 @@ namespace NachoClient.iOS
                 switch (service) {
                 case McAccount.AccountServiceEnum.Exchange:
                 case McAccount.AccountServiceEnum.IMAP_SMTP:
-                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowAdvanced, "avl: ViewDidAppear");
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ShowAdvanced, "avl: AdvanceLoginViewController ViewDidAppear");
                     return;
                 default:
                     return;
@@ -142,12 +140,12 @@ namespace NachoClient.iOS
             }
 
             if ((uint)LoginProtocolControl.States.FinishWait == loginProtocolControl.sm.State) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.TryAgain, "avl: ViewDidAppear");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.TryAgain, "avl: AdvanceLoginViewController ViewDidAppear");
                 return;
             }
 
             if ((uint)LoginProtocolControl.States.TutorialSupportWait == loginProtocolControl.sm.State) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AllDone, "avl: ViewDidAppear");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AllDone, "avl: AdvanceLoginViewController ViewDidAppear");
                 EventFromEnum ();
                 return;
             }
@@ -328,9 +326,11 @@ namespace NachoClient.iOS
 
         public void ShowWaitingScreen (string waitingMessage)
         {
-            RemoveWindows ();
-            waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
-            View.AddSubview (waitingScreen);
+            if (null == waitingScreen) {
+                RemoveWindows ();
+                waitingScreen = new WaitingScreen (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
+                View.AddSubview (waitingScreen);
+            }
             waitingScreen.ShowView (waitingMessage);
         }
 

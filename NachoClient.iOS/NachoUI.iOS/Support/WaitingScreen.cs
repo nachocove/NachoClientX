@@ -135,9 +135,8 @@ namespace NachoClient.iOS
             supportButton.ContentMode = UIViewContentMode.Center;
             supportButton.BackgroundColor = UIColor.Clear;
             supportButton.AccessibilityLabel = "Dismiss";
-            supportButton.TouchUpInside += (object sender, EventArgs e) => {
-                owner.SegueToSupport ();
-            };
+            supportButton.Alpha = 1.0f;
+            supportButton.TouchUpInside += SupportButton_TouchUpInside;
             supportButton.SizeToFit ();
             ViewFramer.Create (supportButton).CenterX (0, Frame.Width).Y (yOffset);
             this.AddSubview (supportButton);
@@ -151,14 +150,23 @@ namespace NachoClient.iOS
             dismissButton.ContentMode = UIViewContentMode.Center;
             dismissButton.BackgroundColor = UIColor.Clear;
             dismissButton.AccessibilityLabel = "Dismiss";
-            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                owner.ReturnToAdvanceView ();
-            };
+            dismissButton.TouchUpInside += DismissButton_TouchUpInside;
+
             dismissButton.SizeToFit ();
             ViewFramer.Create (dismissButton).CenterX (0, Frame.Width).Y (yOffset);
             this.AddSubview (dismissButton);
 
             dismissButton.Hidden = !owner.CanShowAdvanced ();
+        }
+
+        void DismissButton_TouchUpInside (object sender, EventArgs e)
+        {
+            owner.ReturnToAdvanceView ();
+        }
+
+        void SupportButton_TouchUpInside (object sender, EventArgs e)
+        {
+            owner.SegueToSupport ();
         }
 
         protected UIImage maskImage (UIImage maskImage)
@@ -249,12 +257,12 @@ namespace NachoClient.iOS
         public void StartSyncedEmailAnimation (int accountId)
         {
             this.Hidden = false;
+            supportButton.Alpha = 0.0f;
 
             UIView.AnimateKeyframes (4, .1, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .075, () => {
                     dismissButton.Alpha = 0.0f;
-                    supportButton.Alpha = 0.0f;
                     syncStatusLabel.Alpha = 0.0f;
                 });
 
