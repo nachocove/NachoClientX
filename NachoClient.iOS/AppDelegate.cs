@@ -366,7 +366,7 @@ namespace NachoClient.iOS
 
             // If launch options is set with the local notification key, that means the app has been started
             // by a local notification.  ReceivedLocalNotification will be called and it wants to know if the
-            // app has just be started of if it was already running. We set flags so ReceivedLocalNotification
+            // app has just be started or if it was already running. We set flags so ReceivedLocalNotification
             // knows that the app has just been started.
             if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
@@ -1190,6 +1190,7 @@ namespace NachoClient.iOS
             account.DisplayName = "Google placeholder account";
             account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.GoogleCallback;
             account.Insert ();
+            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount account created {0}", account.Id);
         }
     }
 
