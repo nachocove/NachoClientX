@@ -107,6 +107,7 @@ namespace NachoClient.iOS
                 // Configus interruptus?
                 account = McAccount.GetAccountBeingConfigured ();
                 if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback != account.ConfigurationInProgress)) {
+                    Log.Info (Log.LOG_UI, "avl: AdvanceLoginViewController reloading account being configured");
                     email = account.EmailAddr;
                     service = account.AccountService;
                     password = LoginHelpers.GetPassword (account);
@@ -117,8 +118,6 @@ namespace NachoClient.iOS
             // Returning to app from browser after a potentially successful login (see AppDelegate)
             if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback == account.ConfigurationInProgress)) {
                 StartGoogleSilentLogin ();
-                account.Delete ();
-                account = null;
                 return;
             }
 
@@ -371,6 +370,16 @@ namespace NachoClient.iOS
         public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
         {
             Log.Info (Log.LOG_UI, "avl: DidSignInForUser {0}", error);
+
+            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
+            if (null != accountBeingConfigured) {
+                if (McAccount.ConfigurationInProgressEnum.GoogleCallback == accountBeingConfigured.ConfigurationInProgress) {
+                    Log.Info (Log.LOG_UI, "avl: deleting google placeholder account");
+                    accountBeingConfigured.Delete ();
+                } else {
+                    Log.Error (Log.LOG_UI, "avl: expected google placeholder account; got {0}", accountBeingConfigured.AccountService);
+                }
+            }
 
             if (null != error) {
                 if (error.Code == (int)GIDSignInErrorCode.CodeCanceled) {
