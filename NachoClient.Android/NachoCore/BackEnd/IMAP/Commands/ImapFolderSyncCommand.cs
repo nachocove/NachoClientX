@@ -148,7 +148,5 @@ namespace NachoCore.IMAP
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
-
-
     }
 }
