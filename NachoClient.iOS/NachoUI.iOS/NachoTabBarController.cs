@@ -103,10 +103,9 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            UpdateNotificationBadge (NcApplication.Instance.Account.Id);
+            View.BackgroundColor = A.Color_NachoGreen;
 
-            var accountId = NcApplication.Instance.Account.Id;
-            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            UpdateNotificationBadge (NcApplication.Instance.Account.Id);
 
             var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
             if(0 != eventNotifications.Count) {
@@ -333,8 +332,13 @@ namespace NachoClient.iOS
             LayoutMoreTable ();
         }
 
+        // ViewDidAppear is not reliable
         protected void LayoutMoreTable ()
         {
+            if ((null != switchAccountButton) && (null != NcApplication.Instance.Account)) {
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            }
+
             var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
             if (null != tableView) {
                 var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);

@@ -78,6 +78,9 @@ namespace NachoClient.iOS
             if (null != NavigationController) {
                 NavigationController.SetNavigationBarHidden (false, false);
                 NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen;
+                if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                    this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
+                }
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }

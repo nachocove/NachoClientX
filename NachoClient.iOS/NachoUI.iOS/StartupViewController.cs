@@ -77,7 +77,7 @@ namespace NachoClient.iOS
             }
 
             // Something else in our way?
-            if(!NcApplication.ReadyToStartUI()) {
+            if (!NcApplication.ReadyToStartUI ()) {
                 Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToAdvancedLogin");
                 PerformSegue ("SegueToAdvancedLogin", this);
                 return;
@@ -98,6 +98,11 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                if (null != this.NavigationController) {
+                    if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                        this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
+                    }
+                }
             }
             if (!StatusIndCallbackIsSet) {
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;

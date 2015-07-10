@@ -46,6 +46,13 @@ namespace NachoClient.iOS
             if (null != NavigationController) {
                 Util.ConfigureNavBar (false, NavigationController);
             }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         protected override void CreateViewHierarchy ()
@@ -84,6 +91,21 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+            accountsTableView.Frame = new CGRect (0, 0, accountsTableView.Frame.Width, View.Frame.Height);
+        }
+
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
+            ConfigureAndLayout ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
+                ConfigureAndLayout ();
+            }
         }
 
         protected override void Cleanup ()
