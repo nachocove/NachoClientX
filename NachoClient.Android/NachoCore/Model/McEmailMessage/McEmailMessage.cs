@@ -412,7 +412,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McEmailMessageThread> (
                 "SELECT e.Id as FirstMessageId, " +
-                (groupBy ? " Count(e.Id)" : "1") +
+                (groupBy ? " MAX(e.DateReceived), Count(e.Id)" : "1") +
                 " as MessageCount FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
