@@ -77,11 +77,8 @@ namespace NachoCore.IMAP
             try {
                 imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
             } catch (ImapCommandException ex) {
-                if (ImapCommandResponse.No == ex.Response) {
-                    imapbody = null;
-                } else {
-                    throw;
-                }
+                // TODO Need to narrow this down. Pull in latest MailKit and make it compile.
+                imapbody = null;
             }
             if (null == imapbody) {
                 // the message doesn't exist. Delete it locally.
