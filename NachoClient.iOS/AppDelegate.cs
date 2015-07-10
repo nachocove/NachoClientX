@@ -755,13 +755,10 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
 
-            if (null == NcApplication.Instance.Account) {
-                Log.Info (Log.LOG_LIFECYCLE, "{0}: account is not set.", traceMessage);
-                return;
+            var devAccount = McAccount.GetDeviceAccount ();
+            if (null != devAccount) {
+                McMutables.Set (devAccount.Id, key, key, id.ToString ());
             }
-
-            var devAccountId = McAccount.GetDeviceAccount ().Id;
-            McMutables.Set (devAccountId, key, NcApplication.Instance.Account.Id.ToString (), id.ToString ());
         }
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
