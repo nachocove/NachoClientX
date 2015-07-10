@@ -869,8 +869,9 @@ namespace NachoCore.IMAP
         #region PushAssist support.
         private bool CanStartPushAssist()
         {
-            // We need to be able to get the right capabilities, so must be auth'd.
-            return MainClient.IsConnected && MainClient.IsAuthenticated && ProtoControl.ProtocolState.HasSyncedInbox;
+            // We need to be able to get the right capabilities, so must have auth'd at least once
+            // This happens during discovery, so this shouldn't be an issue.
+            return McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
         private void PossiblyKickPushAssist()
@@ -916,10 +917,10 @@ namespace NachoCore.IMAP
 
         public PushAssistParameters PushAssistParameters ()
         {
-            McFolder folder = McFolder.GetDefaultInboxFolder (ProtoControl.Account.Id);
             if (!CanStartPushAssist()) {
-                // We need to have logged in at least once. Having sync'd inbox seems like a good thing to key on.
-                Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters without having synced inbox");
+                // We need to have logged in at least once. We shouldn't have started the PA SM
+                // CanStartPushAssist is false, so this should realistically never happen.
+                Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters yet");
                 return null;
             }
 
@@ -933,11 +934,9 @@ namespace NachoCore.IMAP
                 WaitBeforeUseMsec = 60 * 1000,
 
                 IMAPAuthenticationBlob = PushAssistAuthBlob(),
-                IMAPFolderName = folder.ServerId,
+                IMAPFolderName = "INBOX",
                 IMAPSupportsIdle = supportsIdle,
                 IMAPSupportsExpunge = supportsExpunged,
-                IMAPEXISTSCount = folder.ImapExists,
-                IMAPUIDNEXT = folder.ImapUidNext,
             };
         }
         #endregion
