@@ -302,7 +302,6 @@ namespace NachoCore.IMAP
         private UniqueIdSet GetNewOrChangedMessages (IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
-            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Message summaries {1}", Synckit.Folder.ImapFolderNameRedacted (), uidset.ToString ());
 
             NcCapture cap;
             UniqueIdSet summaryUids = new UniqueIdSet ();
@@ -317,11 +316,9 @@ namespace NachoCore.IMAP
                     MessageSummary summ = imapSummary as MessageSummary;
                     var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1);
                     if (changed1) {
-                        Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: message UID {1} was modified or added", Synckit.Folder.ImapFolderNameRedacted (), imapSummary.UniqueId.Value.Id);
                         newOrChanged.Add (summ.UniqueId.Value);
                     }
                     if (null == emailMessage.BodyPreview) {
-                        Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: message UID {1} needs preview", Synckit.Folder.ImapFolderNameRedacted (), imapSummary.UniqueId.Value.Id);
                         var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                         if (!string.IsNullOrEmpty (preview)) {
                             emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
