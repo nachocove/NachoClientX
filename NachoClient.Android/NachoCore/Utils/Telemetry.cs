@@ -19,7 +19,8 @@ namespace NachoCore.Utils
     {
         #if __IOS__
         public static bool ENABLED = true;
-        #else
+        
+#else
         public static bool ENABLED = false;
         #endif
 
@@ -149,7 +150,7 @@ namespace NachoCore.Utils
 
             var jsonEvent = new TelemetryLogEvent (type) {
                 thread_id = threadId,
-                module = Log.ModuleString(subsystem),
+                module = Log.ModuleString (subsystem),
                 message = String.Format (fmt, list)
             };
             if (MAX_AWS_LEN < jsonEvent.message.Length) {
@@ -460,7 +461,10 @@ namespace NachoCore.Utils
         /// Send a SHA1 hash of the email address of all McAccounts (that have an email addresss)
         private void SendSha1AccountEmailAddresses ()
         {
-            foreach (McAccount account in McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange)) {
+            foreach (var account in McAccount.GetAllAccounts()) {
+                if (McAccount.AccountTypeEnum.Device == account.AccountType) {
+                    continue;
+                }
                 RecordAccountEmailAddress (account);
             }
         }
