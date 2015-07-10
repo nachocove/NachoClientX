@@ -63,7 +63,9 @@ namespace NachoClient.iOS
 
             chiliImageView.UserInteractionEnabled = true;
             var chiliTapGestureRecognizer = new UITapGestureRecognizer (new Action (() => {
-                OnClickChili (null, null);
+                if (null != OnClickChili) {
+                    OnClickChili (null, null);
+                }
             }));
             chiliTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return false;
@@ -171,7 +173,7 @@ namespace NachoClient.iOS
 
             // Chili image view
             var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            chiliImageView.Hidden = true;;
+            chiliImageView.Hidden = true;
 
             // Subject label view
             var subjectLabelView = this.ViewWithTag (SUBJECT_TAG) as UILabel;
@@ -210,7 +212,7 @@ namespace NachoClient.iOS
 
 
         // Opaque background prevents blending penalty
-        public void SetAllBackgroundColors(UIColor color)
+        public void SetAllBackgroundColors (UIColor color)
         {
             this.BackgroundColor = color;
             this.ViewWithTag (FROM_TAG).BackgroundColor = color;
