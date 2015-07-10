@@ -371,6 +371,24 @@ namespace NachoClient.iOS
             }
         }
 
+        public void ReconfigureVisibleCells (UITableView tableView)
+        {
+            if (null == tableView) {
+                return;
+            }
+            var paths = tableView.IndexPathsForVisibleRows;
+            if (null != paths) {
+                foreach (var path in paths) {
+                    var cell = tableView.CellAt (path);
+                    if (null != cell) {
+                        string emailAddress = null;
+                        var contact = ContactFromIndexPath (tableView, path, out emailAddress);
+                        ContactCell.ConfigureCell (tableView, cell, contact, owner, allowSwiping, emailAddress);
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Updates the search results.
         /// Return false if an asynch update is triggers.

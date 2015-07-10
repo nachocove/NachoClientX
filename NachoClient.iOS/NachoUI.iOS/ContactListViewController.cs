@@ -241,6 +241,8 @@ namespace NachoClient.iOS
                 TableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacts");
                 ReloadCapture.Stop ();
+            } else {
+                contactTableViewSource.ReconfigureVisibleCells (TableView);
             }
         }
 
