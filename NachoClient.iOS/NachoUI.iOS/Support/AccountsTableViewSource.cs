@@ -28,6 +28,11 @@ namespace NachoClient.iOS
             this.showAccessory = showAccessory;
             this.showUnreadCount = showUnreadCount;
 
+            Refresh ();
+        }
+
+        public void Refresh()
+        {
             accounts = new List<McAccount> ();
 
             foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {

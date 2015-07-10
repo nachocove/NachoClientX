@@ -178,6 +178,7 @@ namespace NachoCore.Utils
             Error_NoCapableService,
             Info_AccountBeaconChanged,
             Info_MdmConfigMayHaveChanged,
+            Info_AccountChanged,
         };
 
         public enum WhyEnum

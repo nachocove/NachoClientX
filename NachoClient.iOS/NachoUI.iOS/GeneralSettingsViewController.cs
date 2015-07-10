@@ -38,6 +38,10 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
+            accountsTableViewSource.Refresh ();
+            var contentOffset = accountsTableView.ContentOffset;
+            accountsTableView.ReloadData ();
+            accountsTableView.SetContentOffset (contentOffset, false);
         }
 
         public override void ViewDidAppear (bool animated)

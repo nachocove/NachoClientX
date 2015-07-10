@@ -156,6 +156,9 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
                 UpdateNotificationBadge (s.Account.Id);
             }
+            if(NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
+                UpdateSwitchAccountButton();
+            }
         }
 
         public void SwitchToNachoNow ()
@@ -335,14 +338,18 @@ namespace NachoClient.iOS
         // ViewDidAppear is not reliable
         protected void LayoutMoreTable ()
         {
-            if ((null != switchAccountButton) && (null != NcApplication.Instance.Account)) {
-                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
-            }
-
+            UpdateSwitchAccountButton ();
             var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
             if (null != tableView) {
                 var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);
                 tableView.Frame = new CGRect (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
+            }
+        }
+
+        protected void UpdateSwitchAccountButton()
+        {
+            if ((null != switchAccountButton) && (null != NcApplication.Instance.Account)) {
+                switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             }
         }
 

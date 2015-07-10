@@ -224,7 +224,16 @@ namespace NachoCore
         }
 
         // This is sucky, but for now it is better than having it in AppDelegate.
-        public McAccount Account { get; set; }
+        public McAccount Account {
+            get {
+                return _Account;
+            }
+            set {
+                _Account = value;
+                InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountChanged);
+            }
+        }
+        private McAccount _Account;
 
         public delegate void CredReqCallbackDele (int accountId);
 
