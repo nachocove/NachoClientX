@@ -215,18 +215,26 @@ namespace NachoClient.iOS
             } else {
                 account = NcApplication.Instance.Account;
             }
-            if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter)) {
-                account = McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.CalWriter).FirstOrDefault ();
+            calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
+            if (!account.HasCapability (McAccount.AccountCapabilityEnum.CalWriter) || 0 == calendars.Count ()) {
+                account = null;
+                foreach (var calAccount in McAccount.QueryByAccountCapabilities (McAccount.AccountCapabilityEnum.CalWriter)) {
+                    calendars = new NachoFolders (calAccount.Id, NachoFolders.FilterForCalendars);
+                    if (0 < calendars.Count ()) {
+                        Log.Info (Log.LOG_CALENDAR,
+                            "The current account does not support writing to calendars. Using a different account, {0}, that has calendar support.",
+                            calAccount.DisplayName);
+                        account = calAccount;
+                        break;
+                    }
+                }
                 if (null == account) {
-                    Log.Warn (Log.LOG_CALENDAR,
-                        "The current account does not support writing to calendars, and no suitable account could be found.");
+                    Log.Warn (Log.LOG_CALENDAR, "The current account does not support writing to calendars, and no suitable account could be found.");
                     noCalendarSupport = true;
-                    // Need to set the account to something, to get through creating the view hierarchy.
+                    // The account and set of calendars need to be set to something so the code can get through
+                    // setting up the view hierarchy and to the point where it displays the error message.
                     account = NcApplication.Instance.Account;
-                } else {
-                    Log.Info (Log.LOG_CALENDAR,
-                        "The current account does not support writing to calendars.  Using a different account, {0}, that has calendar support.",
-                        account.DisplayName);
+                    calendars = new NachoFolders (McAccount.GetDeviceAccount ().Id, NachoFolders.FilterForCalendars);
                 }
             }
         }
@@ -706,14 +714,6 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             suppressLayout = true;
-
-            calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
-            if (0 == calendars.Count()) {
-                // The current account does not support calendars.  But setting up the UI always expects there to be
-                // at least one calendar in the list.  Use the device calendar to keep the UI happy until an error
-                // message can be popped up.
-                calendars = new NachoFolders (McAccount.GetDeviceAccount().Id, NachoFolders.FilterForCalendars);
-            }
 
             if (CalendarItemEditorAction.create == action) {
                 NavigationItem.Title = "New Event";
