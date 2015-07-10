@@ -1039,6 +1039,7 @@ namespace NachoClient.iOS
 
         void onDeleteAccount (object sender, EventArgs e)
         {
+            contentView.Hidden = true;
             backButton.Enabled = false;
             editButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
