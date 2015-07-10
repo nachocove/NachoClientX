@@ -56,7 +56,7 @@ namespace NachoCore.IMAP
                 ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
                 bool isDistinguished;
 
-                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox)) {
+                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox) || Client.Inbox == mailKitFolder) {
                     folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
                     isDistinguished = true;
                 }
@@ -85,8 +85,18 @@ namespace NachoCore.IMAP
                     isDistinguished = false;
                 }
                 else {
-                    if ("notes" == mailKitFolder.Name.ToLower ()) {
+                    var folderName = mailKitFolder.Name;
+                    if (McFolder.MaybeNotesFolder (folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
+                        isDistinguished = true;
+                    } else if (McFolder.MaybeSentFolder (folderName)) {
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
+                        isDistinguished = true;
+                    } else if (McFolder.MaybeTrashFolder (folderName)) {
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
+                        isDistinguished = true;
+                    } else if (McFolder.MaybeDraftFolder (folderName)) {
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
                         isDistinguished = true;
                     } else {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
@@ -138,5 +148,7 @@ namespace NachoCore.IMAP
             });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
+
+
     }
 }
