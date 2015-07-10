@@ -77,6 +77,7 @@ namespace NachoCore.IMAP
             try {
                 imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
             } catch (ImapCommandException ex) {
+                Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
                 // TODO Need to narrow this down. Pull in latest MailKit and make it compile.
                 imapbody = null;
             }
@@ -126,8 +127,8 @@ namespace NachoCore.IMAP
                 body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
                 body.Update ();
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+                email.Update ();
             }
-            email.Update ();
             return result;
         }
     }
