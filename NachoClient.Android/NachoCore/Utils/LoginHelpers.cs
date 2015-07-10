@@ -106,6 +106,10 @@ namespace NachoCore.Utils
             }
             var gonnaExpireOn = DateTime.MaxValue;
             foreach (var cred in creds) {
+                // No warning for OAuth2 because it expires often & is auto-refreshed
+                if (McCred.CredTypeEnum.OAuth2 == cred.CredType) {
+                    continue;
+                }
                 if (cred.Expiry < gonnaExpireOn) {
                     expiry = cred.Expiry;
                     gonnaExpireOn = cred.Expiry;
