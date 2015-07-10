@@ -52,6 +52,7 @@ namespace NachoCore.IMAP
                 }
                 var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
                 mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+                UniqueIdSet notFoundLocally = new UniqueIdSet ();
                 if (mailKitFolder.Count > 0) {
                     IList<UniqueId> uids;
                     if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
@@ -62,15 +63,17 @@ namespace NachoCore.IMAP
                     foreach (var uid in uids) {
                         var serverId = ImapProtoControl.MessageServerId (folder, uid);
                         var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
-                        if (null == email) {
-                            Log.Warn (Log.LOG_IMAP, "Could not find email for serverID {0}. Perhaps it hasn't synced yet?", serverId);
-                        } else {
+                        if (null != email) {
+                            // if no email is found locally, it likely hasn't sync'd yet, so don't bother sending it back up.
                             emailList.Add (new NcEmailMessageIndex (email.Id));
+                        } else {
+                            notFoundLocally.Add (uid);
                         }
                     }
                     // TODO Should we post an indication to the UI for each searched folder?
                 }
-                Log.Info (Log.LOG_IMAP, "ImapSearchCommand: Found {0} items in folder {1}", emailList.Count, folder.ImapFolderNameRedacted());
+                Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} items", folder.ImapFolderNameRedacted(), emailList.Count);
+                Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} items that do not exist locally: {2}", folder.ImapFolderNameRedacted(), notFoundLocally.Count, notFoundLocally.ToString ());
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);
             result.Value = emailList;
