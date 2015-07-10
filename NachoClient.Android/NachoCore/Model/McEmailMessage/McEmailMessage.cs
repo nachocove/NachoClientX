@@ -647,6 +647,16 @@ namespace NachoCore.Model
                 accountId, dateRecv, from);
         }
 
+        public static List<NcEmailMessageIndex> QueryByServerIdList (int accountId, List<string> serverIds)
+        {
+            string sql = string.Format ("SELECT f.Id FROM McEmailMessage AS f WHERE " +
+                         " likelihood (f.AccountId = ?, 1.0) AND " +
+                         " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
+                         " likelihood (f.ServerId IN ({0}), 0.001) ", String.Join (",", serverIds));
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (sql, accountId);
+        }
+
+
         public static List<McEmailMessage> QueryUnnotified (int accountId = 0)
         {
             var emailMessageList = NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => false == x.HasBeenNotified);

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using MailKit;
 using MailKit.Net.Imap;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -42,17 +43,25 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            var query = SearchQuery.SubjectContains (PendingSingle.Search_Prefix).Or (SearchQuery.BodyContains (PendingSingle.Search_Prefix));
             var orderBy = new [] { OrderBy.ReverseArrival };
+
+            var query = SearchQuery.SubjectContains (PendingSingle.Search_Prefix)
+                .Or (SearchQuery.BodyContains (PendingSingle.Search_Prefix))
+                .Or (SearchQuery.FromContains (PendingSingle.Search_Prefix))
+                .Or (SearchQuery.BccContains (PendingSingle.Search_Prefix))
+                .Or (SearchQuery.MessageContains (PendingSingle.Search_Prefix))
+                .Or (SearchQuery.CcContains (PendingSingle.Search_Prefix));
+            if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.GMailExt1)) {
+                query = query.Or (SearchQuery.GMailRawSearch (PendingSingle.Search_Prefix));
+            }
+
             var folderList = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false);
             var emailList = new List<NcEmailMessageIndex> ();
             foreach (var folder in folderList) {
                 if (folder.ImapNoSelect) {
                     continue;
                 }
-                var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token);
-                mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-                UniqueIdSet notFoundLocally = new UniqueIdSet ();
+                var mailKitFolder = GetOpenMailkitFolder (folder);
                 if (mailKitFolder.Count > 0) {
                     IList<UniqueId> uids;
                     if (Client.Capabilities.HasFlag (MailKit.Net.Imap.ImapCapabilities.Sort)) {
@@ -60,20 +69,19 @@ namespace NachoCore.IMAP
                     } else {
                         uids = mailKitFolder.Search (query);
                     }
-                    foreach (var uid in uids) {
-                        var serverId = ImapProtoControl.MessageServerId (folder, uid);
-                        var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
-                        if (null != email) {
-                            // if no email is found locally, it likely hasn't sync'd yet, so don't bother sending it back up.
-                            emailList.Add (new NcEmailMessageIndex (email.Id));
-                        } else {
-                            notFoundLocally.Add (uid);
+                    if (uids.Any ()) {
+                        List<string> serverIdList = new List<string> ();
+                        foreach (var uid in uids) {
+                            serverIdList.Add ("\"" + ImapProtoControl.MessageServerId (folder, uid) + "\"");
+                        }
+                        var idList = McEmailMessage.QueryByServerIdList (BEContext.Account.Id, serverIdList);
+                        if (idList.Any ()) {
+                            // TODO Should we post an indication to the UI for each searched folder?
+                            Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} item(s)", folder.ImapFolderNameRedacted (), idList.Count);
+                            emailList.AddRange (idList);
                         }
                     }
-                    // TODO Should we post an indication to the UI for each searched folder?
                 }
-                Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} items", folder.ImapFolderNameRedacted(), emailList.Count);
-                Log.Info (Log.LOG_IMAP, "ImapSearchCommand {0}: Found {1} items that do not exist locally: {2}", folder.ImapFolderNameRedacted(), notFoundLocally.Count, notFoundLocally.ToString ());
             }
             var result = NcResult.Info (NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded);
             result.Value = emailList;
