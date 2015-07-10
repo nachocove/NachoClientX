@@ -1548,6 +1548,7 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs</Link>
+      </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcServiceHelper.cs">
       <Link>NachoCore\Utils\NcServiceHelper.cs</Link>
     </Compile>
