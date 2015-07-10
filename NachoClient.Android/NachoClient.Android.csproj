@@ -407,7 +407,6 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonEvent.cs" />
     <Compile Include="NachoCore\Utils\NcSamples.cs" />
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
-    <Compile Include="NachoCore\BackEnd\SMTP\SmtpCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
@@ -491,6 +490,9 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration32.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration33.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\ImapProtoControlApis.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -551,6 +553,7 @@
     <Folder Include="Resources\drawable-xxhdpi\" />
     <Folder Include="NachoUI.Android\Activities\" />
     <Folder Include="NachoUI.Android\Support\" />
+    <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

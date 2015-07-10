@@ -242,6 +242,7 @@
     <Folder Include="NachoCore\BackEnd\SMTP\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\" />
     <Folder Include="NachoCore\BackEnd\Device\" />
+    <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1386,9 +1387,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryJsonFile.cs">
       <Link>NachoCore\Utils\TelemetryJsonFile.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpCommand.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpCommand.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration26.cs">
       <Link>NachoCore\Model\Migration\NcMigration26.cs</Link>
     </Compile>
@@ -1541,6 +1539,15 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapProtoControlApis.cs">
       <Link>NachoCore\BackEnd\IMAP\ImapProtoControlApis.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

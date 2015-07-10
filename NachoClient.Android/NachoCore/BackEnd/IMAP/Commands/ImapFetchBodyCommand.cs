@@ -73,10 +73,19 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            MimeMessage imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
+            MimeMessage imapbody = null;
+            try {
+                imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
+            } catch (ImapCommandException ex) {
+                Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
+                // TODO Need to narrow this down. Pull in latest MailKit and make it compile.
+                imapbody = null;
+            }
             if (null == imapbody) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found");
-                email.BodyId = 0;
+                // the message doesn't exist. Delete it locally.
+                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
+                email.Delete ();
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 result = NcResult.Error ("No Body found");
             } else {
                 McAbstrFileDesc.BodyTypeEnum bodyType;
@@ -118,8 +127,8 @@ namespace NachoCore.IMAP
                 body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
                 body.Update ();
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+                email.Update ();
             }
-            email.Update ();
             return result;
         }
     }

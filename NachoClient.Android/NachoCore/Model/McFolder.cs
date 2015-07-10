@@ -970,7 +970,7 @@ namespace NachoCore.Model
                 searchFor);
         }
 
-        private static bool MaybeJunkFolder (string folderName)
+        public static bool MaybeJunkFolder (string folderName)
         {
             // TODO - This is pretty hokey. But there is no TypeCode for junk folder.
             string[] tags = {
@@ -978,6 +978,45 @@ namespace NachoCore.Model
                 "spam",
                 "bulk mail", // Yahoo uses this as junk mail folder
             };
+            return FolderMatchesStringList (folderName, tags);
+        }
+
+        public static bool MaybeSentFolder (string folderName)
+        {
+            string[] tags = {
+                "sent",
+            };
+            return FolderMatchesStringList (folderName, tags);
+        }
+
+        public static bool MaybeNotesFolder (string folderName)
+        {
+            string[] tags = {
+                "notes",
+            };
+            return FolderMatchesStringList (folderName, tags);
+        }
+
+        public static bool MaybeTrashFolder (string folderName)
+        {
+            string[] tags = {
+                "trash",
+            };
+            return FolderMatchesStringList (folderName, tags);
+        }
+
+        public static bool MaybeDraftFolder (string folderName)
+        {
+            string[] tags = {
+                "draft",
+                "drafts",
+            };
+            return FolderMatchesStringList (folderName, tags);
+        }
+
+
+        private static bool FolderMatchesStringList (string folderName, string[] tags)
+        {
             var folderLower = folderName.ToLower ();
             for (int n = 0; n < tags.Length; n++) {
                 if (folderLower.Contains (tags [n])) {
