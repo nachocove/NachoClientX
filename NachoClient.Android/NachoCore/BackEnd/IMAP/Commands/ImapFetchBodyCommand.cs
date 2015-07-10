@@ -83,7 +83,7 @@ namespace NachoCore.IMAP
             }
             if (null == imapbody) {
                 // the message doesn't exist. Delete it locally.
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
+                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
                 email.Delete ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 result = NcResult.Error ("No Body found");
