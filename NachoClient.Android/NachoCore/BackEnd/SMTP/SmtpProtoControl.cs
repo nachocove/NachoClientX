@@ -589,27 +589,6 @@ namespace NachoCore.SMTP
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
             }
         }
-
-        public override NcResult SendEmailCmd (int emailMessageId)
-        {
-            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
-            Log.Info (Log.LOG_SMTP, "SendEmailCmd({0})", emailMessageId);
-            NcModel.Instance.RunInTransaction (() => {
-                var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
-                if (null == emailMessage) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
-                    return;
-                }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, emailMessage) {
-                    Operation = McPending.Operations.EmailSend,
-                };
-                pending.Insert ();
-                result = NcResult.OK (pending.Token);
-            });
-            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSEND");
-            Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning {1}", emailMessageId, result.Value as string);
-            return result;
-        }
     }
 }
 
