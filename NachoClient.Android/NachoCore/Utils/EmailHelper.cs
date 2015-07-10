@@ -343,76 +343,7 @@ namespace NachoCore.Utils
                 return true;
             }
         }
-
-        public static bool IsServiceUnsupported (string emailAddress, out string serviceName)
-        {
-            serviceName = "";
-            return false;
-        }
-
-        public static bool IsGmailServiceAddress (string emailAddress)
-        {
-            return emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase);
-        }
-
-        public static bool IsHotmailServiceAddress (string emailAddress)
-        {
-            if (emailAddress.EndsWith ("@hotmail.com", StringComparison.OrdinalIgnoreCase)) {
-                return true;
-            }
-            if (emailAddress.EndsWith ("@outlook.com", StringComparison.OrdinalIgnoreCase)) {
-                return true;
-            }
-            if (emailAddress.EndsWith ("@live.com", StringComparison.OrdinalIgnoreCase)) {
-                return true;
-            }
-            return false;
-        }
-
-        public static bool IsHotmailService (McAccount.AccountServiceEnum service)
-        {
-            if (McAccount.AccountServiceEnum.HotmailDefault == service) {
-                return true;
-            }
-            if (McAccount.AccountServiceEnum.HotmailExchange == service) {
-                return true;
-            }
-            if (McAccount.AccountServiceEnum.OutlookExchange == service) {
-                return true;
-            }
-            return false;
-        }
-
-        public static bool IsHotmailServer (string serverName, out string serviceName)
-        {
-            if (String.Equals ("hotmail.com", serverName, StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Hotmail";
-                return true;
-            }
-            if (String.Equals ("outlook.com", serverName, StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Outlook.com";
-                return true;
-            }
-            if (String.Equals ("live.com", serverName, StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Live.com";
-                return true;
-            }
-            if (serverName.EndsWith (".hotmail.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Hotmail";
-                return true;
-            }
-            if (serverName.EndsWith (".outlook.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Outlook.com";
-                return true;
-            }
-            if (serverName.EndsWith (".live.com", StringComparison.OrdinalIgnoreCase)) {
-                serviceName = "Live.com";
-                return true;
-            }
-            serviceName = "";
-            return false;
-        }
-
+   
         public static bool IsMailToURL (string urlString)
         {
             return urlString.StartsWith (Uri.UriSchemeMailto + ":", StringComparison.OrdinalIgnoreCase);

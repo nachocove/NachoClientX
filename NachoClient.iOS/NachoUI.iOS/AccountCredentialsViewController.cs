@@ -147,7 +147,7 @@ namespace NachoClient.iOS
 
             serviceField = new UITextField (new CGRect (45, 0, serviceBox.Frame.Width - 50, serviceBox.Frame.Height));
             serviceField.BackgroundColor = UIColor.White;
-            serviceField.Text = McAccount.AccountServiceName (service);
+            serviceField.Text = NcServiceHelper.AccountServiceName (service);
             serviceField.Font = A.Font_AvenirNextRegular17;
             serviceField.BorderStyle = UITextBorderStyle.None;
             serviceField.TextAlignment = UITextAlignment.Left;
@@ -324,17 +324,6 @@ namespace NachoClient.iOS
             }
             var emailAddress = emailField.Text.Trim ();
 
-            string serviceName;
-            if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
-                if (EmailHelper.IsHotmailService (service)) {
-                    Complain ("Nacho Mail", "Please use your Hotmail or Outlook email address instead.");
-                } else {
-                    var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                    Complain ("Nacho Mail", nuance);
-                }
-                return;
-            }
-
             if (!emailAddress.Contains ("@")) {
                 Complain ("Nacho Mail", "Your email address must contain an '@'.\nFor example, username@company.com");
                 return;
@@ -342,6 +331,19 @@ namespace NachoClient.iOS
 
             if (!EmailHelper.IsValidEmail (emailField.Text)) {
                 Complain ("Nacho Mail", "Your email address is not valid.\nFor example, username@company.com");
+                return;
+            }
+
+            string serviceName;
+            if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
+                var nuance = String.Format ("Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (service));
+                Complain ("Nacho Mail", nuance);
+                return;
+            }
+
+            if (!NcServiceHelper.DoesAddressMatchService (emailAddress, service)) {
+                var nuance = String.Format ("The email address does not match the service. Please use your {0} email address instead.", NcServiceHelper.AccountServiceName (service));
+                Complain ("Nacho Mail", nuance);
                 return;
             }
 
@@ -356,19 +358,7 @@ namespace NachoClient.iOS
                 Complain ("Nacho Mail", "No network connection. Please check that you have internet access.");
                 return;
             }
-
-            if (EmailHelper.IsHotmailServiceAddress (emailAddress)) {
-                if (!EmailHelper.IsHotmailService (service)) {
-                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
-                    return;
-                }
-            } else {
-                if (EmailHelper.IsHotmailService (service)) {
-                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse your Hotmail or Outlook email address?");
-                    return;
-                }
-            }
-
+                           
             StartLoginProcess ();
         }
 

@@ -271,7 +271,7 @@ namespace NachoClient.iOS
             if (noCalendarSupport) {
                 var message = string.Format (
                     "This version of the app does not support calendars for {0} accounts. Calendar support will be available in a future release.",
-                    McAccount.AccountServiceName (account.AccountService));
+                    NcServiceHelper.AccountServiceName (account.AccountService));
                 NcAlertView.Show (this, "No Calendar Support", message,
                     new NcAlertAction ("OK", NcAlertActionStyle.Cancel, () => {
                         NavigationController.PopViewController (true);

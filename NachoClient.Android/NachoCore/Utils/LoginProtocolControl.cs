@@ -288,7 +288,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.ShowAdvanced, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.StartOver, Act = StartOver, State = (uint)States.Start },
                             new Trans { Event = (uint)Events.E.ServerUpdate, Act = StartSync, State = (uint)States.SyncWait },
-                            new Trans { Event = (uint)Events.E.CredUpdate, Act = StartSync, State = (uint)States.SyncWait },
+                            new Trans { Event = (uint)Events.E.CredUpdate, Act = Noop, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.CertAccepted, Act = StartSync, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.TryAgain, Act = StartSync, State = (uint)States.SyncWait },
                             new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Start },

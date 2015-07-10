@@ -337,38 +337,6 @@ namespace NachoCore.Model
             return (null != account) && (McAccount.ConfigurationInProgressEnum.Done != account.ConfigurationInProgress);
         }
 
-        public static string AccountServiceName (AccountServiceEnum service)
-        {
-            switch (service) {
-            case AccountServiceEnum.None:
-                return "";
-            case AccountServiceEnum.Exchange:
-                return "Exchange";
-            case AccountServiceEnum.HotmailExchange:
-                return "Hotmail";
-            case AccountServiceEnum.OutlookExchange:
-                return "Outlook";
-            case AccountServiceEnum.Office365Exchange:
-                return "Office 365";
-            case AccountServiceEnum.GoogleExchange:
-                return "Google Apps";
-            case AccountServiceEnum.GoogleDefault:
-                return "GMail";
-            case AccountServiceEnum.HotmailDefault:
-                return "Hotmail";
-            case AccountServiceEnum.Aol:
-                return "Aol";
-            case AccountServiceEnum.IMAP_SMTP:
-                return "IMAP";
-            case AccountServiceEnum.Yahoo:
-                return "Yahoo!";
-            case AccountServiceEnum.iCloud:
-                return "iCloud";
-            default:
-                NcAssert.CaseError (String.Format ("AccountServiceName: unknown {0}", service));
-                return "";
-            }
-        }
     }
 
     public class ConstMcAccount : McAccount

@@ -98,7 +98,7 @@ namespace NachoClient.iOS
                 using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     buttonRect.SetImage (image, UIControlState.Normal);
                 }
-                buttonRect.AccessibilityLabel = McAccount.AccountServiceName (service);
+                buttonRect.AccessibilityLabel = NcServiceHelper.AccountServiceName (service);
                 buttonRect.TouchUpInside += (object sender, EventArgs e) => {
                     ServiceSelected_Clicked (service);
                 };
@@ -106,7 +106,7 @@ namespace NachoClient.iOS
 
                 var label = new UILabel ();
                 label.TextColor = UIColor.White;
-                label.Text = McAccount.AccountServiceName (service);
+                label.Text = NcServiceHelper.AccountServiceName (service);
                 label.Font = A.Font_AvenirNextMedium14;
                 label.TextAlignment = UITextAlignment.Center;
                 label.SizeToFit ();

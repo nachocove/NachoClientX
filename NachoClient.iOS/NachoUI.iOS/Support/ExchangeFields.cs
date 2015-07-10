@@ -463,7 +463,7 @@ namespace NachoClient.iOS
             }
             string serviceName;
             var emailAddress = emailView.textField.Text;
-            if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
+            if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
                 var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
                 SetRedText (emailView, nuance);
                 return false;

@@ -320,7 +320,7 @@ namespace NachoClient.iOS
         public void UpdateUI ()
         {
             if (null == waitingScreen) {
-                ShowWaitingScreen ("Syncing Your Inbox");
+                ShowWaitingScreen ("Syncing Your Inbox...");
             } else {
                 waitingScreen.ShowView ("Syncing Your Inbox...");
             }
@@ -338,6 +338,7 @@ namespace NachoClient.iOS
 
         public void PromptForCredentials ()
         {
+            RemoveWindows ();
             PerformSegue ("SegueToAccountCredentials", new SegueHolder (false));
         }
 
@@ -349,6 +350,7 @@ namespace NachoClient.iOS
                 ShowAdvancedConfiguration (LoginProtocolControl.Prompt.BadCredentials);
                 break;
             default:
+                RemoveWindows ();
                 PerformSegue ("SegueToAccountCredentials", new SegueHolder (true));
                 break;
             }

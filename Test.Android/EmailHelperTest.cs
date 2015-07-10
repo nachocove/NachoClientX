@@ -280,7 +280,7 @@ namespace Test.Android
         }
 
         [Test]
-        public void QuoteForReplyTest()
+        public void QuoteForReplyTest ()
         {
             string quoted;
 
@@ -301,7 +301,7 @@ namespace Test.Android
         }
 
         [Test]
-        public void InitialsTest()
+        public void InitialsTest ()
         {
             string initials;
             string emailAddress;
@@ -320,7 +320,7 @@ namespace Test.Android
 
             emailAddress = "\"rascal2210@hotmail.com\" <rascal2210@hotmail.com>";
             initials = EmailHelper.Initials (emailAddress);
-            Assert.AreEqual("R", initials);
+            Assert.AreEqual ("R", initials);
 
             // Fixme: Look for '' strings?
             emailAddress = "'Real Use Case' <user@company.org>";
@@ -333,8 +333,98 @@ namespace Test.Android
             Assert.AreEqual ("AU", initials);
 
             emailAddress = "Microsoft Outlook"; // This was an actual From address from Outlook
-            initials = EmailHelper.Initials(emailAddress);
+            initials = EmailHelper.Initials (emailAddress);
             Assert.AreEqual ("M", initials);
+        }
+
+        class Info
+        {
+            public McAccount.AccountServiceEnum s;
+            public string n;
+            public bool r;
+        };
+
+        static readonly Info[] services = {
+            new Info { s = McAccount.AccountServiceEnum.Aol, n = "bob@aol.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.GoogleDefault, n = "bob@gmail.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@hotmail.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@outlook.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@live.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@hotmail.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@outlook.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@live.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@icloud.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@mac.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@me.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@hotmail.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@outlook.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@live.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Yahoo, n = "bob@yahoo.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Aol, n = "bob@aOl.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.GoogleDefault, n = "bob@gmAil.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@hoTmail.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@ouTlook.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@liVe.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@hOtmail.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@outlOok.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@liVe.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@iclOud.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@mAc.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@mE.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@hotmAil.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@oUtlook.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@liVe.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Yahoo, n = "bob@yahoo.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Aol, n = "aol.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.GoogleDefault, n = "gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "hotmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "outlook.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "live.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "hotmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "outlook.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "live.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "icloud.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "mac.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "me.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "hotmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "outlook.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "live.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.Yahoo, n = "yahoo.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.Aol, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.GoogleDefault, n = "bob@aol.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.iCloud, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.Yahoo, n = "bob@gmail.com", r = false },
+            new Info { s = McAccount.AccountServiceEnum.Exchange, n = "bob@nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.GoogleExchange, n = "bob@nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.IMAP_SMTP, n = "bob@nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Office365Exchange, n = "bob@server.nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Exchange, n = "bob@server.nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.GoogleExchange, n = "bob@server.nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.IMAP_SMTP, n = "bob@server.nachocove.com", r = true },
+            new Info { s = McAccount.AccountServiceEnum.Office365Exchange, n = "bob@nachocove.com", r = true },
+        };
+
+        [Test]
+        public void ServiceCheck ()
+        {
+            foreach (var s in services) {
+                var r = NcServiceHelper.DoesAddressMatchService (s.n, s.s);
+                if (r != s.r) {
+                    Console.WriteLine ("{0} {1} {2}", s.s, s.n, s.r);
+                    Assert.AreEqual (r, s.r);
+                }
+            }
         }
     }
 }

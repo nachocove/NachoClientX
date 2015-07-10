@@ -78,7 +78,7 @@ namespace NachoCore.Model
                 account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.InProgress;
                 account.Signature = "Sent from Nacho Mail";
                 account.SetAccountService (service);
-                account.DisplayName = McAccount.AccountServiceName (service);
+                account.DisplayName = NcServiceHelper.AccountServiceName (service);
                 account.Insert ();
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
