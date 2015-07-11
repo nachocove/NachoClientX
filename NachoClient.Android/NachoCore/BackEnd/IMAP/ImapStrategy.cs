@@ -400,23 +400,11 @@ namespace NachoCore.IMAP
                 }
 
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (PowerPermitsSpeculation () ||
-                    NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                if (PowerPermitsSpeculation ()) {
                     // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
                     // for speculatively pre-fetching bodies and attachments.
-                    SyncKit syncKit;
-                    // Always make sure Inbox is checked first.
-                    McFolder defInbox = McFolder.GetDefaultInboxFolder (BEContext.Account.Id);
-                    syncKit = GenSyncKit (accountId, protocolState, defInbox);
-                    if (null != syncKit) {
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, Client, syncKit));
-                    }
-                    foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
-                        if (defInbox.Id == folder.Id) {
-                            continue;
-                        }
-                        syncKit = GenSyncKit (accountId, protocolState, folder);
+                    foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
                         if (null != syncKit) {
                             Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
                             return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
@@ -430,12 +418,39 @@ namespace NachoCore.IMAP
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, Client, syncKit));
+                    }
+                }
                 Log.Info (Log.LOG_IMAP, "Strategy:QS:Wait");
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
                     new ImapWaitCommand (BEContext, Client, 120, true));
             }
             NcAssert.True (false);
             return null;
+        }
+
+        private List<McFolder> SyncFolderList (int accountId, NcApplication.ExecutionContextEnum exeCtxt)
+        {
+            var list = new List<McFolder> ();
+            McFolder defInbox = McFolder.GetDefaultInboxFolder (accountId);
+            // Always make sure Inbox is checked first.
+            list.Add (defInbox);
+
+            // if in FG, add all other folders. Otherwise, only Inbox gets syncd
+            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
+                    if (defInbox.Id == folder.Id) {
+                        continue;
+                    }
+                    list.Add (folder);
+                }
+            }
+            return list;
         }
     }
 }
