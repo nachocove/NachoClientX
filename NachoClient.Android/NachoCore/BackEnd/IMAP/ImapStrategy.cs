@@ -403,9 +403,8 @@ namespace NachoCore.IMAP
                 if (PowerPermitsSpeculation ()) {
                     // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
                     // for speculatively pre-fetching bodies and attachments.
-                    SyncKit syncKit;
                     foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                        syncKit = GenSyncKit (accountId, protocolState, folder);
+                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
                         if (null != syncKit) {
                             Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
                             return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
@@ -419,9 +418,8 @@ namespace NachoCore.IMAP
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                SyncKit syncKit;
                 foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                    syncKit = GenSyncKit (accountId, protocolState, folder);
+                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
                     if (null != syncKit) {
                         Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
