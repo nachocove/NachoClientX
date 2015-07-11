@@ -1142,9 +1142,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.DismissDateController (false, new Action (delegate {
-                this.DismissViewController (true, null);
-            }));
+            vc.DismissDateController (true, null);
         }
 
         public void DismissChildMessageEditor (INachoMessageEditor vc)
