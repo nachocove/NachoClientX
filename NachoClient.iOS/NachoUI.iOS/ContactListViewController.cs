@@ -23,6 +23,7 @@ namespace NachoClient.iOS
         UITableView TableView;
 
         SwitchAccountButton switchAccountButton;
+        NcUIBarButtonItem addContactButton;
 
         protected bool contactsNeedsRefresh;
 
@@ -87,7 +88,7 @@ namespace NachoClient.iOS
             searchButton.AccessibilityLabel = "Search";
             searchButton.TintColor = A.Color_NachoBlue;
 
-            var addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
+            addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
             addContactButton.AccessibilityLabel = "Add contact";
             addContactButton.TintColor = A.Color_NachoBlue;
 
@@ -104,11 +105,7 @@ namespace NachoClient.iOS
             SwitchToAccount (NcApplication.Instance.Account);
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
-                if (null == McFolder.GetDefaultContactFolder (NcApplication.Instance.Account.Id)) {
-                    NcAlertView.ShowMessage (this, "Unable to add contact", "Adding contact is not supported yet for this account.");
-                } else {
-                    PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
-                }
+                NcAlertView.ShowMessage (this, "Unable to add contact", "Adding contact is not supported yet for this account.");
             };
 
             searchButton.Clicked += (object sender, EventArgs e) => {
@@ -157,6 +154,7 @@ namespace NachoClient.iOS
         void SwitchToAccount (McAccount account)
         {
             switchAccountButton.SetAccountImage (account);
+            addContactButton.Enabled = (McAccount.AccountTypeEnum.Exchange == account.AccountType);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
