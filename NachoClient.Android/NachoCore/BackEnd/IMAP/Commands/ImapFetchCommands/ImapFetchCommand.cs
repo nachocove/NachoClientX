@@ -28,7 +28,7 @@ namespace NachoCore.IMAP
         ~ImapFetchCommand ()
         {
             if (!string.IsNullOrEmpty (lastIncompleteLine)) {
-                Log.Error (Log.LOG_IMAP, "Line left dangling on exit: {0}", lastIncompleteLine);
+                Log.Error (Log.LOG_IMAP, "{0}: Line left dangling on exit: {1}", this.GetType ().Name, lastIncompleteLine);
             }
         }
 
