@@ -439,7 +439,6 @@ namespace NachoCore.IMAP
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.PkPing,
                             (uint)ImapEvt.E.PkQOp,
@@ -458,6 +457,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
                         }
                     },
                     new Node {
