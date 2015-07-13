@@ -388,8 +388,15 @@ namespace NachoCore.SMTP
             if (!base.Execute ()) {
                 return false;
             }
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
-            return true;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            switch (exeCtxt) {
+            case NcApplication.ExecutionContextEnum.QuickSync:
+                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Execute() called in QuickSync. Ignoring.");
+                return false;
+            default:
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
+                return true;
+            }
         }
 
         private SmtpCommand Cmd;
