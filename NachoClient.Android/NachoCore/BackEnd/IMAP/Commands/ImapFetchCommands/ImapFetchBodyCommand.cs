@@ -9,18 +9,12 @@ using NachoCore.Model;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchBodyCommand : ImapCommand
+    public class ImapFetchBodyCommand : ImapFetchCommand
     {
         public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             pending.MarkDispached ();
             PendingSingle = pending;
-            //RedactProtocolLogFunc = RedactProtocolLog;
-        }
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            return logData;
         }
 
         protected override Event ExecuteCommand ()

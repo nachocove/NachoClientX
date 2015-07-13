@@ -12,7 +12,7 @@ using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchAttachmentCommand : ImapCommand, ITransferProgress
+    public class ImapFetchAttachmentCommand : ImapFetchCommand, ITransferProgress
     {
         public ImapFetchAttachmentCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
