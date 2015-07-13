@@ -17,7 +17,7 @@ namespace NachoClient.iOS
             get;
         }
 
-        void Layout ();
+        void Layout (nfloat newHeight);
     }
 }
 
