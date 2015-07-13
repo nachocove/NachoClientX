@@ -17,8 +17,10 @@ namespace NachoCore.IMAP
     public class ImapStrategy : NcStrategy
     {
         public const uint KBaseOverallWindowSize = 10;
-        public const int KBaseNoIdlePollTime = 60; // seconds
+        public const int KBaseNoIdlePollTime = 60;
+        // seconds
         public const int kFolderExamineInterval = 60 * 5;
+        public const int kFolderExamineQSInterval = 30;
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
@@ -49,19 +51,44 @@ namespace NachoCore.IMAP
             return overallWindowSize;
         }
 
-        private int FolderExamineInterval { get { return kFolderExamineInterval; }}
-        private int NoIdlePollTime { get { return KBaseNoIdlePollTime; }}
+        private int FolderExamineInterval { 
+            get {
+                return NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.Foreground ? kFolderExamineQSInterval : kFolderExamineInterval;
+            }
+        }
+
+        private int NoIdlePollTime { get { return KBaseNoIdlePollTime; } }
 
         MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
-                                           | MessageSummaryItems.Envelope
-                                           | MessageSummaryItems.Flags
-                                           | MessageSummaryItems.InternalDate
-                                           | MessageSummaryItems.MessageSize
-                                           | MessageSummaryItems.UniqueId
-                                           | MessageSummaryItems.GMailMessageId
-                                           | MessageSummaryItems.GMailThreadId;
+                                              | MessageSummaryItems.Envelope
+                                              | MessageSummaryItems.Flags
+                                              | MessageSummaryItems.InternalDate
+                                              | MessageSummaryItems.MessageSize
+                                              | MessageSummaryItems.UniqueId
+                                              | MessageSummaryItems.GMailMessageId
+                                              | MessageSummaryItems.GMailThreadId;
 
         //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+
+        uint SyncSpan (McFolder folder)
+        {
+            return UInt32.MinValue == folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+        }
+
+        private bool needFullSync (McFolder folder)
+        {
+            bool needSync = false;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            switch (exeCtxt) {
+            case NcApplication.ExecutionContextEnum.Foreground:
+                needSync = folder.ImapNeedFullSync;
+                break;
+
+            default:
+                break;
+            }
+            return needSync;
+        }
 
         /// <summary>
         /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
@@ -87,18 +114,7 @@ namespace NachoCore.IMAP
                 return null;
             }
             SyncKit syncKit = null;
-            var currentHighestInFolder = new UniqueId (folder.ImapUidNext - 1);
-            UniqueIdSet UidSet;
-            if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
-                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out UidSet)) {
-                    Log.Error (Log.LOG_IMAP, "GenSyncKit {0}: Could not parse uid set", folder.ImapFolderNameRedacted ());
-                    return null;
-                }
-            } else {
-                UidSet = new UniqueIdSet ();
-            }
-
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder", folder.ImapFolderNameRedacted ());
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last checked: {1})", folder.ImapFolderNameRedacted (), folder.ImapLastExamine);
             if (UserRequested ||
                 0 == folder.ImapUidNext ||
                 null == folder.ImapUidSet ||
@@ -124,9 +140,27 @@ namespace NachoCore.IMAP
                     });
                 }
 
-                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+                uint span = SyncSpan (folder);
                 int startingPoint = (int)(0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Last {1} UidNext {2} Syncing from {3} for {4} messages", folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, startingPoint, span);
+
+                var exeCtxt = NcApplication.Instance.ExecutionContext;
+                switch (exeCtxt) {
+                case NcApplication.ExecutionContextEnum.Foreground:
+                case NcApplication.ExecutionContextEnum.Background:
+                    break;
+
+                case NcApplication.ExecutionContextEnum.QuickSync:
+                    if (folder.ImapUidNext - startingPoint > span * 2) {
+                        Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: BG/QS: startingPoint {1} beyond cutoff. Stopping sync ({2})", folder.ImapFolderNameRedacted (), startingPoint, exeCtxt);
+                        return null;
+                    }
+                    break;
+
+                default:
+                    NcAssert.CaseError (string.Format ("Invalid ExecutionContext {0}", exeCtxt));
+                    return null;
+                }
 
                 UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, (uint)startingPoint, span);
                 UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, (uint)startingPoint, span);
@@ -166,12 +200,6 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: No synckit for folder", folder.ImapFolderNameRedacted ());
             }
             return syncKit;
-        }
-
-        private bool needFullSync (McFolder folder)
-        {
-            bool needSync = folder.ImapNeedFullSync;
-            return needSync;
         }
 
         private void resetLastSyncPoint (ref McFolder folder)
