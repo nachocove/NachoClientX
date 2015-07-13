@@ -16,7 +16,6 @@ using MimeKit.IO;
 using MimeKit.IO.Filters;
 using HtmlAgilityPack;
 using MailKit.Search;
-using System.Text.RegularExpressions;
 
 namespace NachoCore.IMAP
 {
@@ -208,7 +207,7 @@ namespace NachoCore.IMAP
         private UniqueIdSet GetNewOrChangedMessages (IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
-            bool created = false;
+            bool createdUnread = false;
             NcCapture cap;
             UniqueIdSet summaryUids = new UniqueIdSet ();
             IList<IMessageSummary> imapSummaries = getMessageSummaries (mailKitFolder, uidset);
@@ -225,8 +224,8 @@ namespace NachoCore.IMAP
                     if (changed1) {
                         newOrChanged.Add (summ.UniqueId.Value);
                     }
-                    if (created1) {
-                        created = true;
+                    if (created1 && false == emailMessage.IsRead) {
+                        createdUnread = true;
                     }
                     if (null == emailMessage.BodyPreview) {
                         var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
@@ -245,7 +244,7 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
-            if (created) {
+            if (createdUnread && Synckit.Folder.IsDistinguished && Synckit.Folder.Type == NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox));
             }
             return newOrChanged;
