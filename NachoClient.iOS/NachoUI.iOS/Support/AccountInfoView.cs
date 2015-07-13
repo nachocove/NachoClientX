@@ -140,6 +140,7 @@ namespace NachoClient.iOS
             accountSettingsIndicatorArrow = null;
             unreadCountLabel = null;
         }
+
     }
 }
 

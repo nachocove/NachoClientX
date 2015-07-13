@@ -24,7 +24,8 @@ namespace NachoCore.Utils
         {
             EnterInfo,
             ServerConf,
-            BadCredentials,
+            CredRequest,
+            EditInfo,
         };
 
         public class Events

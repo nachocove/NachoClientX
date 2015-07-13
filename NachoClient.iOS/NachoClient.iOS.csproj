@@ -1548,9 +1548,13 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs</Link>
-      </Compile>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcServiceHelper.cs">
       <Link>NachoCore\Utils\NcServiceHelper.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.designer.cs">
+      <DependentUpon>AdvancedSettingsViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
