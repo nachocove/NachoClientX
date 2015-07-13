@@ -1556,6 +1556,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.designer.cs">
+      <DependentUpon>AdvancedSettingsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

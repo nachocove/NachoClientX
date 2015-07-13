@@ -374,6 +374,21 @@
             </objects>
             <point key="canvasLocation" x="1004" y="860"/>
         </scene>
+        <!--Advanced Settings View Controller-->
+        <scene sceneID="eed-GO-vzW">
+            <objects>
+                <viewController storyboardIdentifier="AdvancedSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="2Zy-cI-oWr" customClass="AdvancedSettingsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="CKs-LK-5Qq">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="anI-ka-jMv"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="D2w-gC-MW9" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1360" y="330"/>
+        </scene>
         <!--Credentials Ask View Controller-->
         <scene sceneID="Mxz-Dm-4gL">
             <objects>
@@ -1060,8 +1075,10 @@
                     </view>
                     <navigationItem key="navigationItem" id="sgT-DG-MvI"/>
                     <connections>
-                        <segue destination="gDE-DU-0Wp" kind="modal" identifier="SegueToSignatureEdit" modalTransitionStyle="crossDissolve" id="jlF-xD-bFr"/>
+                        <segue destination="gDE-DU-0Wp" kind="push" identifier="SegueToSignatureEdit" id="jlF-xD-bFr"/>
                         <segue destination="sh6-zq-0y0" kind="push" identifier="SettingsToNotificationChooser" id="kK5-Or-Bs8"/>
+                        <segue destination="gDE-DU-0Wp" kind="push" identifier="SegueToDescriptionEdit" id="ytC-Oe-29B"/>
+                        <segue destination="2Zy-cI-oWr" kind="push" identifier="SegueToAdvancedSettings" id="Dac-hF-ivK"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1076,6 +1093,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
+                    <navigationItem key="navigationItem" id="iBy-Kw-URM"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Szt-xv-yfL" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1519,32 +1537,33 @@
         <segue reference="iqA-wd-xqD"/>
         <segue reference="A0a-NV-skH"/>
         <segue reference="sa2-Em-8sH"/>
+        <segue reference="tdu-G2-PEp"/>
         <segue reference="Tfk-Mt-BlS"/>
         <segue reference="HCr-Oa-UHV"/>
-        <segue reference="tdu-G2-PEp"/>
+        <segue reference="JTo-qU-j7O"/>
         <segue reference="tt1-JW-EVV"/>
         <segue reference="tzJ-j2-YOi"/>
         <segue reference="qrX-U2-XFP"/>
-        <segue reference="HwV-au-Wta"/>
         <segue reference="XQg-JR-vxA"/>
-        <segue reference="Aba-pv-mzB"/>
+        <segue reference="HwV-au-Wta"/>
         <segue reference="TEI-cG-N0R"/>
+        <segue reference="Aba-pv-mzB"/>
         <segue reference="VR8-PG-xAi"/>
         <segue reference="DcC-EH-FAx"/>
         <segue reference="QDW-pm-HY2"/>
         <segue reference="jZp-Tj-sBa"/>
-        <segue reference="c2Q-C8-ZgX"/>
-        <segue reference="twQ-jE-jZd"/>
-        <segue reference="vSR-5M-L48"/>
-        <segue reference="vUs-ft-xdy"/>
         <segue reference="RHB-Or-A5o"/>
+        <segue reference="c2Q-C8-ZgX"/>
+        <segue reference="vSR-5M-L48"/>
+        <segue reference="twQ-jE-jZd"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="rew-s7-VAQ"/>
-        <segue reference="Vqu-N7-OvL"/>
-        <segue reference="22b-Az-fdF"/>
-        <segue reference="Kfq-r2-VA6"/>
         <segue reference="nJv-0g-ewn"/>
+        <segue reference="ytC-Oe-29B"/>
+        <segue reference="rew-s7-VAQ"/>
+        <segue reference="22b-Az-fdF"/>
+        <segue reference="Vqu-N7-OvL"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
