@@ -797,6 +797,7 @@ namespace NachoCore.IMAP
             var pack = Strategy.Pick (MainClient);
             var transition = pack.Item1;
             var cmd = pack.Item2;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
             switch (transition) {
             case PickActionEnum.Fetch:
                 Sm.PostEvent ((uint)ImapEvt.E.PkFetch, "PCKFETCH", cmd);
@@ -805,7 +806,11 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)ImapEvt.E.PkSync, "PCKSYNC", cmd);
                 break;
             case PickActionEnum.Ping:
-                Sm.PostEvent ((uint)ImapEvt.E.PkPing, "PCKPING", cmd);
+                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPDOPICKQSPARK");
+                } else {
+                    Sm.PostEvent ((uint)ImapEvt.E.PkPing, "PCKPING", cmd);
+                }
                 break;
             case PickActionEnum.HotQOp:
                 Sm.PostEvent ((uint)ImapEvt.E.PkHotQOp, "PCKHOTOP", cmd);
@@ -817,7 +822,11 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)ImapEvt.E.ReFSync, "PCKFSYNC", cmd);
                 break;
             case PickActionEnum.Wait:
-                Sm.PostEvent ((uint)ImapEvt.E.PkWait, "PCKWAIT", cmd);
+                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPDOPICKQSPARK");
+                } else {
+                    Sm.PostEvent ((uint)ImapEvt.E.PkWait, "PCKWAIT", cmd);
+                }
                 break;
             default:
                 Log.Error (Log.LOG_IMAP, "Unknown PickAction {0}", transition.ToString ());
