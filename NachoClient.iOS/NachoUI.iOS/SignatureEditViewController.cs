@@ -23,6 +23,8 @@ namespace NachoClient.iOS
 
         UILabel labelView;
         NcTextView textView;
+        UIBarButtonItem saveButton;
+        UIBarButtonItem cancelButton;
 
         private static nfloat HORIZONTAL_MARGIN = 15f;
         private static nfloat VERTICAL_MARGIN = 15f;
@@ -36,10 +38,25 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            labelView = new UILabel (new CGRect (HORIZONTAL_MARGIN, 0, View.Frame.Width - (2 * HORIZONTAL_MARGIN), 0));
+            cancelButton = new NcUIBarButtonItem ();
+            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            cancelButton.AccessibilityLabel = "Close";
+            cancelButton.Clicked += CancelButton_Clicked;
+
+            saveButton = new NcUIBarButtonItem ();
+            saveButton.Title = "Save";
+            saveButton.AccessibilityLabel = "Send";
+            saveButton.Clicked += SaveButton_Clicked;
+
+            NavigationItem.LeftBarButtonItem = cancelButton;
+            NavigationItem.RightBarButtonItem = saveButton;
+
+            labelView = new UILabel (new CGRect (0, 0, View.Frame.Width, 0));
             labelView.Font = A.Font_AvenirNextRegular14;
-            labelView.TextColor = A.Color_NachoBlack;
+            labelView.TextColor = UIColor.Black;
+            labelView.TextAlignment = UITextAlignment.Center;
             labelView.BackgroundColor = A.Color_NachoLightGrayBackground;
+            labelView.LineBreakMode = UILineBreakMode.WordWrap;
             View.AddSubview (labelView);
 
             textView = new NcTextView (new CGRect (HORIZONTAL_MARGIN, 0, View.Frame.Width - (2 * HORIZONTAL_MARGIN), View.Frame.Height));
@@ -51,6 +68,19 @@ namespace NachoClient.iOS
             View.AddSubview (textView);
         }
 
+        void SaveButton_Clicked (object sender, EventArgs e)
+        {
+            if (null != OnSave) {
+                OnSave (textView.Text);
+            }
+            NavigationController.PopViewController (true);
+        }
+
+        void CancelButton_Clicked (object sender, EventArgs e)
+        {
+            NavigationController.PopViewController (true);
+        }
+
         protected override void ConfigureAndLayout ()
         {
             if (null == explanatoryText) {
@@ -60,8 +90,8 @@ namespace NachoClient.iOS
                 labelView.Hidden = false;
                 labelView.Lines = 0;
                 labelView.Text = explanatoryText;
-                labelView.LineBreakMode = UILineBreakMode.WordWrap;
                 labelView.SizeToFit ();
+                ViewFramer.Create (labelView).AdjustHeight (20).Width (View.Frame.Width);
             }
 
             textView.Text = existingText;
@@ -93,7 +123,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             NavigationItem.Title = itemTitle;
-            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -104,11 +133,12 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewWillDisappear (bool animated)
+        public override void ViewDidAppear (bool animated)
         {
-            base.ViewWillDisappear (animated);
-            if (null != OnSave) {
-                OnSave (textView.Text);
+            base.ViewDidAppear (animated);
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
         }
 
