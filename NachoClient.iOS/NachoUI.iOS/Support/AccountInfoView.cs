@@ -8,6 +8,7 @@ using Foundation;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -94,12 +95,7 @@ namespace NachoClient.iOS
                 accountEmailAddress.Text = account.EmailAddr;
 
                 if (showUnreadCount) {
-                    var inboxFolder = NcEmailManager.InboxFolder (account.Id);
-                    var unreadMessageCount = 0;
-                    if (null != inboxFolder) {
-                        unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
-                    }
-                    UpdateUnreadMessageCount (unreadMessageCount.ToString ());
+                    UpdateUnreadMessageCount (account.Id);
                 } else if (LoginHelpers.ShouldAlertUser (account.Id)) {
                     HighlightError ();
                 } else {
@@ -108,16 +104,27 @@ namespace NachoClient.iOS
             }
         }
 
-        void UpdateUnreadMessageCount (string message)
+        void UpdateUnreadMessageCount (int accountId)
         {
             unreadCountLabel.Hidden = false;
             unreadCountLabel.Layer.CornerRadius = 4;
             unreadCountLabel.Text = "000";
             unreadCountLabel.SizeToFit ();
             ViewFramer.Create (unreadCountLabel).Square ();
-            unreadCountLabel.Text = message;
+            unreadCountLabel.Text = "";
             var unreadCountLabelX = this.Frame.Width - unreadCountLabel.Frame.Width - 15;
             ViewFramer.Create (unreadCountLabel).CenterY (0, this.Frame.Height).X (unreadCountLabelX);
+
+            NcTask.Run (() => {
+                var inboxFolder = NcEmailManager.InboxFolder (accountId);
+                var unreadMessageCount = 0;
+                if (null != inboxFolder) {
+                    unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+                }
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    unreadCountLabel.Text = unreadMessageCount.ToString ();
+                });
+            }, "UpdateUnreadMessageCount");
         }
 
         void HighlightError ()
