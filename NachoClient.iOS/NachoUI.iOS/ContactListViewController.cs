@@ -105,7 +105,7 @@ namespace NachoClient.iOS
             SwitchToAccount (NcApplication.Instance.Account);
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
-                NcAlertView.ShowMessage (this, "Unable to add contact", "Adding contact is not supported yet for this account.");
+                PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
             };
 
             searchButton.Clicked += (object sender, EventArgs e) => {
