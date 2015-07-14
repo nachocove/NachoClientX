@@ -117,12 +117,8 @@ namespace NachoCore.IMAP
             if (folder.ImapNoSelect) {
                 return null;
             }
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last checked: {1}, HighestSynced {2}, UidNext {3}, UserRequested {4})",
-                folder.ImapFolderNameRedacted (), folder.ImapLastExamine,
-                folder.ImapUidHighestUidSynced, folder.ImapUidNext,
-                UserRequested);
-            
             SyncKit syncKit = null;
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last checked: {1})", folder.ImapFolderNameRedacted (), folder.ImapLastExamine);
             if (UserRequested ||
                 0 == folder.ImapUidNext ||
                 null == folder.ImapUidSet ||
@@ -138,9 +134,8 @@ namespace NachoCore.IMAP
             } else {
                 bool needSync = needFullSync (folder);
                 bool hasNewMail = HasNewMail (folder);
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: NeedFullSync {1} HasNewMail {2}", folder.ImapFolderNameRedacted (), needSync, hasNewMail);
                 if (needSync || hasNewMail) {
-                    Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Resetting sync pointer to highest point", folder.ImapFolderNameRedacted ());
+                    Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Resetting sync pointer to highest point: NeedFullSync {1} HasNewMail {2}", folder.ImapFolderNameRedacted (), needSync, hasNewMail);
                     resetLastSyncPoint (ref folder);
                     folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
@@ -224,7 +219,7 @@ namespace NachoCore.IMAP
 
         private bool HasNewMail (McFolder folder)
         {
-            return (0 != folder.ImapUidHighestUidSynced && folder.ImapUidHighestUidSynced < folder.ImapUidNext);
+            return (0 != folder.ImapUidHighestUidSynced && folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1);
         }
 
         private static bool HasDeletedMail (McFolder folder, UniqueIdSet currentMails, UniqueIdSet currentUidSet, out UniqueIdSet uids)
