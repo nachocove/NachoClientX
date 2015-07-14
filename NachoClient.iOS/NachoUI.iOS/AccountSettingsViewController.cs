@@ -296,6 +296,11 @@ namespace NachoClient.iOS
                 vc.Setup (account);
                 return;
             }
+            if (segue.Identifier == "SegueToAccountValidation") {
+                var vc = (AccountValidationViewController)segue.DestinationViewController;
+                vc.ChangePassword (account);
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -310,6 +315,10 @@ namespace NachoClient.iOS
 
         protected void ChangePasswordTapHandler (NSObject sender)
         {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SegueToAccountValidation", this);
+            }
         }
 
         protected void AdvancedSettingsTapHandler (NSObject sender)

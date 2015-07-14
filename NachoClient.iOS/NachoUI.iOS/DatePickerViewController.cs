@@ -18,16 +18,29 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            View.BackgroundColor = A.Color_NachoGreen;
+
             datePicker.Mode = UIDatePickerMode.Date;
+            datePicker.TintAdjustmentMode = UIViewTintAdjustmentMode.Dimmed;
+            datePicker.BackgroundColor = UIColor.White;
+            datePicker.Alpha = (nfloat)0.4;
+            datePicker.AccessibilityLabel = "Pick deadline date";
+            datePicker.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
+
+            OKButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
+            OKButton.TintColor = UIColor.White;
+            OKButton.AccessibilityLabel = "Ok";
             OKButton.TouchUpInside += (object sender, EventArgs e) => {
-                var date = datePicker.Date.ToDateTime();
+                var date = datePicker.Date.ToDateTime ();
                 var dateTime = DateTime.SpecifyKind (date, DateTimeKind.Utc);
                 owner.DismissDatePicker (this, dateTime);
             };
 
+            cancelButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
             cancelButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
+            cancelButton.TintColor = UIColor.White;
             cancelButton.AccessibilityLabel = "Cancel";
         }
 

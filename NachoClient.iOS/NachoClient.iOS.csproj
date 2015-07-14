@@ -1560,6 +1560,13 @@
     <Compile Include="NachoUI.iOS\AdvancedSettingsViewController.designer.cs">
       <DependentUpon>AdvancedSettingsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration34.cs">
+      <Link>NachoCore\Model\Migration\NcMigration34.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountValidationViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountValidationViewController.designer.cs">
+      <DependentUpon>AccountValidationViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

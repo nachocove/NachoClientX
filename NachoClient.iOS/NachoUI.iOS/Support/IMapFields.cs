@@ -319,6 +319,8 @@ namespace NachoClient.iOS
             ViewFramer.Create (startOverButton).Y (yOffset);
             yOffset = startOverButton.Frame.Bottom + 20;
 
+            startOverButton.Hidden = editInfo;
+
             // Padding
             yOffset += 20;
 
