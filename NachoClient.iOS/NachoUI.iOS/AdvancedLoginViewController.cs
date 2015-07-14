@@ -527,6 +527,7 @@ namespace NachoClient.iOS
             account.Update ();
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
             cred.UpdatePassword (password);
+            cred.Username = email;
             cred.Update ();
 
             Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
@@ -646,7 +647,7 @@ namespace NachoClient.iOS
             }
 
             if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredReqCallback, "avl: EventFromEnem cred req");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredReqCallback, "avl: EventFromEnum cred req");
                 return;
             }
 
