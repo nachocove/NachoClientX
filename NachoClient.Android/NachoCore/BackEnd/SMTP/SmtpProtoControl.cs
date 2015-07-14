@@ -390,10 +390,10 @@ namespace NachoCore.SMTP
             }
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             switch (exeCtxt) {
-            case NcApplication.ExecutionContextEnum.QuickSync:
-                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Execute() called in QuickSync. Ignoring.");
-                return false;
             default:
+                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Execute() called while not in FG. Ignoring.");
+                return false;
+            case NcApplication.ExecutionContextEnum.Foreground:
                 Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
                 return true;
             }
