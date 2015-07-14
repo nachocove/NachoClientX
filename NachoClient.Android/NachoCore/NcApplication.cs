@@ -233,6 +233,7 @@ namespace NachoCore
                 InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountChanged);
             }
         }
+
         private McAccount _Account;
 
         public delegate void CredReqCallbackDele (int accountId);
@@ -386,7 +387,7 @@ namespace NachoCore
             ProcessMemory.MinInput = 0;
             ProcessMemory.MaxInput = 100000;
             ProcessMemory.LimitInput = true;
-            ProcessMemory.ReportThreshold = 4;
+            ProcessMemory.ReportThreshold = 2;
         }
 
         private static volatile NcApplication instance;
