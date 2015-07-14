@@ -162,6 +162,8 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
+            contact.LastAccessed = DateTime.UtcNow;
+            contact.Update ();
             address.contact = contact;
             address.address = contact.GetEmailAddress ();
             owner.UpdateEmailAddress (this, address);

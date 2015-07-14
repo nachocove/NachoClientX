@@ -239,6 +239,9 @@ namespace NachoCore.Model
         [Indexed]
         public int IndexVersion { get; set; }
 
+        [Indexed]
+        public DateTime LastAccessed { get; set; }
+
         public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Contact;
@@ -1418,6 +1421,18 @@ namespace NachoCore.Model
                 " likelihood (m.FolderId = ?, 0.05) " +
                 " ORDER BY c.WeightedRank DESC",
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
+        }
+
+        public static List<NcContactIndex> QueryRecentlyAccessed (int accountId, int numContacts)
+        {
+            if (0 < accountId) {
+                return NcModel.Instance.Db.Query<NcContactIndex> (
+                    "SELECT c.Id as Id, \" \" FROM McContact AS c WHERE c.LastAccessed > 0 AND c.Account = ? ORDER BY c.LastAccessed DESC LIMIT ?",
+                    accountId, numContacts);
+            } else {
+                return NcModel.Instance.Db.Query<NcContactIndex> (
+                    "SELECT c.Id as Id, \" \" FROM McContact AS c WHERE c.LastAccessed > 0 ORDER BY c.LastAccessed DESC LIMIT ?", numContacts);
+            }
         }
 
         public static List<McContactEmailAddressAttribute> SearchAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
