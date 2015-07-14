@@ -73,9 +73,13 @@ namespace NachoCore.IMAP
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
-            PendingResolveApply ((pending) => {
-                pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-            });
+            if (PendingList.Any () || null != PendingSingle) {
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+                });
+            } else {
+                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+            }
             return result;
         }
 
