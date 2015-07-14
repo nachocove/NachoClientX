@@ -195,12 +195,6 @@ namespace NachoCore.IMAP
                 target.LastSyncAttempt = DateTime.UtcNow;
                 return true;
             });
-
-            // mark the pending as resolved.
-            PendingResolveApply ((pending) => {
-                pending.ResolveAsSuccess (BEContext.ProtoControl, 
-                    NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
