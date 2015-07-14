@@ -40,6 +40,9 @@ namespace NachoCore.Model
                 UpdateProgress (1);
             }
             foreach (var curIndex in indexes.Values) {
+                if (null == curIndex) {
+                    continue;
+                }
                 curIndex.EndRemoveTransaction ();
             }
         }
