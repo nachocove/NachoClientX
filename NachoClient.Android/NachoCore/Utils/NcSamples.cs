@@ -68,8 +68,8 @@ namespace NachoCore.Utils
                 var now = DateTime.UtcNow;
                 if ((now - LastReported).TotalSeconds >= ReportIntervalSec) {
                     Report ();
+                    LastReported = now;
                 }
-                LastReported = now;
             }
         }
 
