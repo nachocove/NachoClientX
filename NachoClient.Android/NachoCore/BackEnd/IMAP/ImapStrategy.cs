@@ -355,7 +355,17 @@ namespace NachoCore.IMAP
                 return userDemand;
             }
 
-            // TODO move user-directed Sync up to this priority level in FG.
+            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, Client, syncKit));
+                    }
+                }
+            }
+
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
@@ -449,14 +459,6 @@ namespace NachoCore.IMAP
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
-                    if (null != syncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, Client, syncKit));
-                    }
-                }
                 Log.Info (Log.LOG_IMAP, "Strategy:QS:Wait");
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
                     new ImapWaitCommand (BEContext, Client, 120, true));
