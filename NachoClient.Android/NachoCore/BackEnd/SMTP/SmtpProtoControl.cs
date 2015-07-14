@@ -54,6 +54,7 @@ namespace NachoCore.SMTP
                     return BackEndStateEnum.CertAskWait;
 
                 case (uint)Lst.ConnW:
+                case (uint)Lst.HotQOpW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
                     return BackEndStateEnum.PostAutoDPostInboxSync;
