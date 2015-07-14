@@ -100,9 +100,6 @@ namespace NachoCore.SMTP
         {
             base.Cancel ();
             lock (Client.SyncRoot) {
-                if (Client.IsConnected) {
-                    Client.Disconnect (false);
-                }
             }
         }
 
