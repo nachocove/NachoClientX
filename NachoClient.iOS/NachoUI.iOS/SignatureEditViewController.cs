@@ -78,6 +78,7 @@ namespace NachoClient.iOS
 
         void CancelButton_Clicked (object sender, EventArgs e)
         {
+            View.EndEditing (true);
             NavigationController.PopViewController (true);
         }
 
