@@ -91,12 +91,13 @@ namespace NachoCore.Index
         public InternetAddressList Bcc;
         public string Subject;
         public string Content;
+        public string Preview;
         public DateTime ReceivedDate;
     }
 
     public class EmailMessageIndexDocument : MimeIndexDocument
     {
-        public const int Version = 2;
+        public const int Version = 3;
 
         public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters, MimeMessage message) :
             base ("message", id, parameters.Content, message)
@@ -113,6 +114,9 @@ namespace NachoCore.Index
             AddAddressList ("to", parameters.To);
             AddAddressList ("cc", parameters.Cc);
             AddAddressList ("bcc", parameters.Bcc);
+
+            // Index the preview
+            AddIndexedField ("preview", parameters.Preview);
         }
     }
 

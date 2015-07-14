@@ -167,6 +167,7 @@ namespace NachoCore.Brain
                 Bcc = NcEmailAddress.ParseAddressListString (emailMessage.Bcc),
                 ReceivedDate = emailMessage.DateReceived,
                 Subject = emailMessage.Subject,
+                Preview = emailMessage.BodyPreview,
             };
             if (0 < emailMessage.BodyId) {
                 // Make sure the body is there
