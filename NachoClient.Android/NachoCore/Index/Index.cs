@@ -225,7 +225,19 @@ namespace NachoCore.Index
 
         public List<MatchedItem> SearchAllEmailMessageFields (string queryString, int maxMatches = 1000)
         {
-            return SearchFields ("message", queryString, new string[] { "body", "from", "subject" }, maxMatches, false);
+            return SearchFields ("message", queryString, new string[] {
+                "body",
+                "from",
+                "to",
+                "cc",
+                "bcc",
+                "from_domain",
+                "to_domain",
+                "cc_domain",
+                "bcc_domain",
+                "subject",
+                "preview",
+            }, maxMatches, false);
         }
 
         public List<MatchedItem> SearchAllContactFields (string queryString, int maxMatches = 1000)

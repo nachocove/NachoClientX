@@ -47,9 +47,16 @@ namespace NachoCore.Index
 
         protected void AddAddressList (string field, InternetAddressList addressList)
         {
+            var domain_field = field + "_domain";
             foreach (var address in addressList) {
                 var addressString = address.ToString ();
                 AddIndexedField (field, addressString);
+                var mbAddr = address as MailboxAddress;
+                if (null != mbAddr) {
+                    var idx = mbAddr.Address.IndexOf ("@");
+                    var domain = mbAddr.Address.Substring (idx + 1);
+                    AddIndexedField (domain_field, domain);
+                }
             }
         }
 
