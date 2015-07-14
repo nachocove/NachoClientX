@@ -630,7 +630,7 @@ namespace NachoClient.iOS
             // On-device index
             var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
             var index = new NachoCore.Index.NcIndex (indexPath);
-            var matches = index.SearchAllEmailMessageFields (searchBar.Text);
+            var matches = index.SearchAllEmailMessageFields (searchBar.Text, 100);
             searchResultsMessages.UpdateMatches (matches);
             List<int> adds;
             List<int> deletes;

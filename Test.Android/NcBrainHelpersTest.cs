@@ -195,7 +195,7 @@ namespace Test.Common
             // Test RoundRobinList.RoundRobinListRecord
             var numberSource = new TestSource<int> () { 1, 2 };
             var source = new RoundRobinSource (numberSource.Query, numberSource.Process, 5);
-            var record = new RoundRobinList.RoundRobinListRecord (source, 4);
+            var record = new RoundRobinList.RoundRobinListRecord ("TestRoundRobinList", source, 4);
             record.Initialize ();
             Assert.False (record.IsEmpty);
 
@@ -240,9 +240,9 @@ namespace Test.Common
             var source6 = new RoundRobinSource (list6.Query, list6.Process, 5);
 
             var rrList = new WrappedRoundRobinList ();
-            rrList.Add (source2, 2);
-            rrList.Add (source3, 3);
-            rrList.Add (source6, 6);
+            rrList.Add ("list2", source2, 2);
+            rrList.Add ("list3", source3, 3);
+            rrList.Add ("list6", source6, 6);
 
             // Initialize and verify the schedule
             rrList.Initialize ();

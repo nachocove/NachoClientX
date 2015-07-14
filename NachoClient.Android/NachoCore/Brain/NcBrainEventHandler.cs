@@ -20,11 +20,11 @@ namespace NachoCore.Brain
             EventQueue = new NcQueue<NcBrainEvent> ();
             OpenedIndexes = new OpenedIndexSet (this);
             Scheduler = new RoundRobinList ();
-            Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScore, 5), 3);
+            Scheduler.Add ("update hi priority email messages", new RoundRobinSource (McEmailMessage.QueryNeedUpdateObjectsAbove, UpdateEmailMessageScore, 5), 3);
             ContactIndexingSource = new RoundRobinSource (McContact.QueryNeedIndexingObjects, IndexContact, 5);
-            Scheduler.Add (ContactIndexingSource, 10);
-            Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
-            Scheduler.Add (new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
+            Scheduler.Add ("index contacts", ContactIndexingSource, 10);
+            Scheduler.Add ("analyze email messages", new RoundRobinSource (McEmailMessage.QueryNeedAnalysisObjects, AnalyzeEmailMessage, 5), 2);
+            Scheduler.Add ("index email messages", new RoundRobinSource (McEmailMessage.QueryNeedsIndexingObjects, IndexEmailMessage, 5), 3);
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
@@ -138,6 +138,7 @@ namespace NachoCore.Brain
                 }
             } finally {
                 OpenedIndexes.Cleanup ();
+                Scheduler.DumpRunCounts ();
             }
         }
 

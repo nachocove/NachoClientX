@@ -146,17 +146,23 @@ namespace NachoCore.Brain
             // Configuration
             public int Id { get; protected set; }
 
+            public string Description { get; protected set; }
+
             protected RoundRobinSource Source;
             protected int Weight;
 
             // States
             protected int Count;
 
+            // Counter
+            public int RunCount { get; set; }
+
             public bool IsEmpty { get; protected set; }
 
-            public RoundRobinListRecord (RoundRobinSource source, int weight)
+            public RoundRobinListRecord (string description, RoundRobinSource source, int weight)
             {
                 Id = NextId++;
+                Description = description;
                 NcAssert.True ((null != source) && (0 < weight));
                 Source = source;
                 Weight = weight;
@@ -184,6 +190,7 @@ namespace NachoCore.Brain
                     IsEmpty = true;
                     return false;
                 }
+                RunCount += 1;
                 return true;
             }
         }
@@ -204,17 +211,18 @@ namespace NachoCore.Brain
             foreach (var source in Sources) {
                 source.Initialize ();
                 source.AddToSchedule (Schedule);
+                source.RunCount = 0;
             }
             Schedule.Sort ();
             CurrentSourceIndex = 0;
         }
 
-        public void Add (RoundRobinSource source, int weight)
+        public void Add (string description, RoundRobinSource source, int weight)
         {
             if (int.MaxValue == Sources.Count) {
                 throw new IndexOutOfRangeException ();
             }
-            Sources.Add (new RoundRobinListRecord (source, weight));
+            Sources.Add (new RoundRobinListRecord (description, source, weight));
         }
 
         public bool Run (out bool processResult)
@@ -237,6 +245,16 @@ namespace NachoCore.Brain
                 }
             }
             return false;
+        }
+
+        public void DumpRunCounts ()
+        {
+            foreach (var source in Sources) {
+                if (0 == source.RunCount) {
+                    continue;
+                }
+                Log.Info (Log.LOG_BRAIN, "{0}: {1}", source.RunCount, source.Description);
+            }
         }
     }
 
