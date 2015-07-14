@@ -1427,7 +1427,7 @@ namespace NachoCore.Model
         {
             if (0 < accountId) {
                 return NcModel.Instance.Db.Query<NcContactIndex> (
-                    "SELECT c.Id as Id, \" \" FROM McContact AS c WHERE c.LastAccessed > 0 AND c.Account = ? ORDER BY c.LastAccessed DESC LIMIT ?",
+                    "SELECT c.Id as Id, \" \" FROM McContact AS c WHERE c.LastAccessed > 0 AND c.AccountId = ? ORDER BY c.LastAccessed DESC LIMIT ?",
                     accountId, numContacts);
             } else {
                 return NcModel.Instance.Db.Query<NcContactIndex> (
