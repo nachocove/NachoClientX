@@ -196,8 +196,8 @@ namespace NachoCore
                 break;
 
             case McAccount.AccountTypeEnum.IMAP_SMTP:
-                services.Enqueue (new SmtpProtoControl (this, accountId));
                 services.Enqueue (new ImapProtoControl (this, accountId));
+                services.Enqueue (new SmtpProtoControl (this, accountId));
                 break;
 
             default:
