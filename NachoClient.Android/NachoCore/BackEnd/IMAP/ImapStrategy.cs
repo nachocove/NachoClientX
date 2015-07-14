@@ -153,6 +153,9 @@ namespace NachoCore.IMAP
                 case NcApplication.ExecutionContextEnum.QuickSync:
                     if (folder.ImapUidNext - startingPoint > span * 2) {
                         Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: BG/QS: startingPoint {1} beyond cutoff. Stopping sync ({2})", folder.ImapFolderNameRedacted (), startingPoint, exeCtxt);
+
+                        BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+
                         return null;
                     }
                     break;
