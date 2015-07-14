@@ -840,12 +840,6 @@ namespace Test.Common
             Assert.AreEqual (contact4.Id, contacts2 [1].Id);
         }
 
-        protected void UpdateLastAccessed (McContact contact)
-        {
-            contact.LastAccessed = DateTime.UtcNow;
-            contact.Update ();
-        }
-
         protected void CheckContactIds (List<NcContactIndex> recents, List<McContact> contacts, int[] expectedIds)
         {
             Assert.AreEqual (expectedIds.Length, recents.Count);
@@ -878,19 +872,19 @@ namespace Test.Common
             Assert.AreEqual (0, recents.Count);
 
             // Update 3 contacts. Should display them all.
-            UpdateLastAccessed (contacts [0]);
-            UpdateLastAccessed (contacts [4]);
-            UpdateLastAccessed (contacts [2]);
+            contacts [0].UpdateLastAccessed ();
+            contacts [4].UpdateLastAccessed ();
+            contacts [2].UpdateLastAccessed ();
             recents = McContact.QueryRecentlyAccessed (0, 5);
             CheckContactIds (recents, contacts, new int[] { 2, 4, 0 });
 
             // Update one more contact.
-            UpdateLastAccessed (contacts [3]);
+            contacts [3].UpdateLastAccessed ();
             recents = McContact.QueryRecentlyAccessed (0, 4);
             CheckContactIds (recents, contacts, new int[] { 3, 2, 4, 0 });
 
             // Update one more contact. The 5th most recent contact should be evicted.
-            UpdateLastAccessed (contacts [1]);
+            contacts [1].UpdateLastAccessed ();
             recents = McContact.QueryRecentlyAccessed (0, 4);
             CheckContactIds (recents, contacts, new int[] { 1, 3, 2, 4 });
 

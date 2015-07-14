@@ -809,6 +809,15 @@ namespace NachoCore.Model
             }
         }
 
+        public void UpdateLastAccessed ()
+        {
+            LastAccessed = DateTime.UtcNow;
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET LastAccessed = ? WHERE Id = ?",
+                    LastAccessed, Id);
+            });
+        }
+
         public void UpdateEmailAddressesEclipsing ()
         {
             NcModel.Instance.BusyProtect (() => {

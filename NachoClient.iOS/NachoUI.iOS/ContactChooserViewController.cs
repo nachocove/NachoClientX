@@ -369,8 +369,7 @@ namespace NachoClient.iOS
                     }
                 }
 
-                contact.LastAccessed = DateTime.UtcNow;
-                contact.Update ();
+                contact.UpdateLastAccessed ();
 
                 Owner.UpdateEmailAddress (contact, Owner.searchResults [indexPath.Row].Value);
             }
