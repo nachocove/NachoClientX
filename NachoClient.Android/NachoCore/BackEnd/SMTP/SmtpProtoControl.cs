@@ -392,8 +392,8 @@ namespace NachoCore.SMTP
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             switch (exeCtxt) {
             default:
-                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Execute() called while not in FG. Ignoring.");
-                return false;
+                Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPCPARK");
+                return true;
             case NcApplication.ExecutionContextEnum.Foreground:
                 Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
                 return true;
