@@ -107,7 +107,15 @@ namespace NachoCore.Utils
                         if (!Stfu) {
                             Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} fired.", Id, Who);
                         }
-                        callback (state);
+                        try {
+                            callback (state);
+                        } catch (System.IO.IOException e) {                   
+                            Log.Error (Log.LOG_TIMER, "IOException: exception=[{0}]", e.Message);
+                            if (e.Message.Equals ("Too many open files", StringComparison.Ordinal)) {
+                                Log.Info (Log.LOG_TIMER, "{0}: Dumping File Descriptors", e.Message);
+                                Log.DumpFileDescriptors ();
+                            }
+                        }
                         HasFired = true;
                     }
                 }
