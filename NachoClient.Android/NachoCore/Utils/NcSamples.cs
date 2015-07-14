@@ -88,7 +88,6 @@ namespace NachoCore.Utils
         public void Report ()
         {
             RecordSamples ();
-            Clear ();
         }
 
         /// <summary>
