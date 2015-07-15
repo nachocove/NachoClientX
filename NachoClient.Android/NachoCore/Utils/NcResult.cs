@@ -179,6 +179,7 @@ namespace NachoCore.Utils
             Info_AccountBeaconChanged,
             Info_MdmConfigMayHaveChanged,
             Info_AccountChanged,
+            Info_BackEndStateChanged,
         };
 
         public enum WhyEnum
