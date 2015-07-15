@@ -241,6 +241,7 @@ namespace NachoCore.Model
             Active = 2,
         };
 
+        [Indexed]
         public uint FlagStatus { set; get; }
 
         /// This is the string associated with the flag.
@@ -541,7 +542,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " e.FlagStatus <> 0 AND " +
+                " likelihood (e.FlagStatus <> 0, 0.001) AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, DateTime.UtcNow);
@@ -556,7 +557,7 @@ namespace NachoCore.Model
                 " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.ConversationId = ?, 0.01) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " e.FlagStatus <> 0 AND " +
+                " likelihood (e.FlagStatus <> 0, 0.001) AND " +
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, threadId, DateTime.UtcNow);
@@ -569,7 +570,7 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.AccountId = ?, 1.0) AND " +
                 " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
-                " e.FlagStatus <> 0 AND" +
+                " likelihood (e.FlagStatus <> 0, 0.001) AND" +
                 " e.FlagType <> ?", 
                 accountId, "Defer until");
         }
@@ -581,8 +582,8 @@ namespace NachoCore.Model
                 " WHERE " +
                 " likelihood (e.AccountId = ?, 1.0) AND " +
                 " e.ConversationId = ? AND" +
-                " e.IsAwaitingDelete = 0 AND" +
-                " e.FlagStatus <> 0 AND" +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND" +
+                " likelihood (e.FlagStatus <> 0, 0.001) AND" +
                 " e.FlagType <> ?", 
                 accountId, threadId, "Defer until");
         }
