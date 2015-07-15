@@ -235,20 +235,6 @@ namespace NachoClient.iOS
                 searchResults = McContact.SearchIndexAllContacts (forSearchString, true, true);
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
-
-                /// This is a simple test code that issues a prefix search and print the results
-                /// in console. Once the real search window is done, please remove this chunk of code
-                /// HACK ALERT - TEST / DEMO CODE FOR INDEXING!!!!
-//                if (!String.IsNullOrEmpty (forSearchString)) {
-//                    var indexPath = NcModel.Instance.GetFileDirPath (2, "index");
-//                    NachoCore.Index.Index index = new NachoCore.Index.Index (indexPath);
-//                    var matches = index.Search (forSearchString + "*");
-//                    int n = 1;
-//                    foreach (var match in matches) {
-//                        Console.WriteLine (">>> {0}: {1} {2}", n, match.Type, match.Id);
-//                        n += 1;
-//                    }
-//                }
             }
         }
 
