@@ -23,6 +23,10 @@ namespace NachoClient.iOS
                 if (ex is System.IO.IOException && ex.Message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
                     Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
                 } else {
+                    if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
+                        Log.Error (Log.LOG_SYS, "Main:{0}: Dumping File Descriptors", ex.Message);
+                        Log.DumpFileDescriptors ();
+                    }
                     throw;
                 }
             }
