@@ -593,8 +593,8 @@ namespace NachoClient.iOS
                 EventFromEnum ();
                 return;
             }
-            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
+            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Info_BackEndStateChanged Status Ind (Advanced View)");
                 EventFromEnum ();
                 return;
             }
