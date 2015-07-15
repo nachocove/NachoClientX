@@ -3,12 +3,10 @@
 using System;
 using System.Linq;
 using MailKit;
-using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using MimeKit;
 
@@ -21,6 +19,8 @@ namespace NachoCore.IMAP
         // seconds
         public const int kFolderExamineInterval = 60 * 5;
         public const int kFolderExamineQSInterval = 30;
+
+        McFolder PrioSyncFolder { get; set; }
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
@@ -135,6 +135,7 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 syncKit = new SyncKit (folder);
+                PrioSyncFolder = folder;
             } else {
                 bool needSync = needFullSync (folder);
                 bool hasNewMail = HasNewMail (folder);
@@ -466,21 +467,31 @@ namespace NachoCore.IMAP
         private List<McFolder> SyncFolderList (int accountId, NcApplication.ExecutionContextEnum exeCtxt)
         {
             var list = new List<McFolder> ();
-            McFolder defInbox = McFolder.GetDefaultInboxFolder (accountId);
-            // Always make sure Inbox is checked first.
-            list.Add (defInbox);
+            if (null != PrioSyncFolder) {
+                list.Add (PrioSyncFolder);
+            }
 
-            // if in FG, add all other folders. Otherwise, only Inbox gets syncd
+            // Always make sure Inbox is checked first (but possibly after PrioFolder).
+            McFolder defInbox = McFolder.GetDefaultInboxFolder (accountId);
+            if (null == PrioSyncFolder || defInbox.Id != PrioSyncFolder.Id) {
+                list.Add (defInbox);
+            }
+
+            // if in FG, add all other folders. Otherwise, only Inbox (and PrioFolder) gets syncd
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false).OrderBy (x => x.SyncAttemptCount)) {
-                    if (defInbox.Id == folder.Id) {
-                        continue;
-                    }
-                    if (folder.ImapNoSelect) {
+                    if (folder.ImapNoSelect ||
+                        defInbox.Id == folder.Id ||
+                        (null != PrioSyncFolder && folder.Id == PrioSyncFolder.Id))
+                    {
                         continue;
                     }
                     list.Add (folder);
                 }
+            }
+            if (null != PrioSyncFolder) {
+                // don't let the PrioSyncFolder exist past one round.
+                PrioSyncFolder = null;
             }
             return list;
         }
