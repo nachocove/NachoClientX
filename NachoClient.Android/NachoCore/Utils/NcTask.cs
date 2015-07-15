@@ -80,12 +80,6 @@ namespace NachoCore.Utils
                         action.Invoke ();
                     } catch (OperationCanceledException) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
-                    } catch (System.IO.IOException e) {                   
-                        Log.Error (Log.LOG_SYS, "NcTask:IOException: exception=[{0}]", e.Message);
-                        if (e.Message.Equals ("Too many open files", StringComparison.Ordinal)) {
-                            Log.Info (Log.LOG_SYS, "NcTask:{0}: Dumping File Descriptors", e.Message);
-                            Log.DumpFileDescriptors ();
-                        }
                     }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
