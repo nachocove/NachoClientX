@@ -317,13 +317,18 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
         }
 
+        public static List<McAccount> GetCanAddContactAccounts ()
+        {
+            return GetAllAccounts ().Where ((x) => x.CanAddContact ()).ToList ();
+        }
+
         public static List<int> GetAllConfiguredNonDeviceAccountIds ()
         {
             return (from account in McAccount.GetAllAccounts ()
-                where
-                McAccount.AccountTypeEnum.Device != account.AccountType &&
-                McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
-                select account.Id).ToList ();
+                             where
+                                 McAccount.AccountTypeEnum.Device != account.AccountType &&
+                                 McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                             select account.Id).ToList ();
         }
 
         public static McAccount GetAccountBeingConfigured ()
@@ -337,6 +342,21 @@ namespace NachoCore.Model
             return (null != account) && (McAccount.ConfigurationInProgressEnum.Done != account.ConfigurationInProgress);
         }
 
+        public bool CanAddContact ()
+        {
+            AccountCapabilityEnum capabilities = 0;
+            switch (AccountType) {
+            case AccountTypeEnum.Exchange:
+                capabilities = ActiveSyncCapabilities;
+                break;
+            case AccountTypeEnum.IMAP_SMTP:
+                capabilities = ImapCapabilities;
+                break;
+            default:
+                break;
+            }
+            return capabilities.HasFlag (AccountCapabilityEnum.ContactWriter);
+        }
     }
 
     public class ConstMcAccount : McAccount

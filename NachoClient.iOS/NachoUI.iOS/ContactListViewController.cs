@@ -23,6 +23,7 @@ namespace NachoClient.iOS
         UITableView TableView;
 
         SwitchAccountButton switchAccountButton;
+        NcUIBarButtonItem addContactButton;
 
         protected bool contactsNeedsRefresh;
 
@@ -87,7 +88,7 @@ namespace NachoClient.iOS
             searchButton.AccessibilityLabel = "Search";
             searchButton.TintColor = A.Color_NachoBlue;
 
-            var addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
+            addContactButton = new NcUIBarButtonItem (UIBarButtonSystemItem.Add);
             addContactButton.AccessibilityLabel = "Add contact";
             addContactButton.TintColor = A.Color_NachoBlue;
 
@@ -104,10 +105,20 @@ namespace NachoClient.iOS
             SwitchToAccount (NcApplication.Instance.Account);
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
-                if (null == McFolder.GetDefaultContactFolder (NcApplication.Instance.Account.Id)) {
-                    NcAlertView.ShowMessage (this, "Unable to add contact", "Adding contact is not supported yet for this account.");
+                if (NcApplication.Instance.Account.CanAddContact ()) {
+                    PerformSegue ("ContactsToContactEdit", new SegueHolder (NcApplication.Instance.Account));
                 } else {
-                    PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
+                    var canAddAccounts = McAccount.GetCanAddContactAccounts ();
+                    var actions = new NcAlertAction[canAddAccounts.Count];
+                    for (int n = 0; n < canAddAccounts.Count; n++) {
+                        var account = canAddAccounts [n];
+                        var displayName = account.DisplayName + ": " + account.EmailAddr;
+                        actions [n] = new NcAlertAction (displayName, () => {
+                            PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
+                        });
+                    }
+                    NcActionSheet.Show (this.View, this, null,
+                        "Cannot add contacts to the current account. Select other account for the new contact.", actions);
                 }
             };
 
@@ -157,6 +168,9 @@ namespace NachoClient.iOS
         void SwitchToAccount (McAccount account)
         {
             switchAccountButton.SetAccountImage (account);
+            // If no account supports adding contacts, hide the button
+            bool hide = (0 == McAccount.GetCanAddContactAccounts ().Count);
+            NavigationItem.RightBarButtonItem = hide ? null : addContactButton;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -195,6 +209,9 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactsToContactEdit")) {
                 var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
                 destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
+                var h = sender as SegueHolder;
+                var a = (McAccount)h.value;
+                destinationViewController.account = a;
                 return;
             }
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
