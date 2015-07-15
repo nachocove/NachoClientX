@@ -27,6 +27,8 @@ namespace NachoCore
         {
         }
 
+        protected BackEndStateEnum LastBackEndState;
+
         public int AccountId;
 
         public INcProtoControlOwner Owner { get; set; }

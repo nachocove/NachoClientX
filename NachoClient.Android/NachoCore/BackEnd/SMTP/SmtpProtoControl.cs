@@ -362,6 +362,7 @@ namespace NachoCore.SMTP
             };
             Sm.Validate ();
             Sm.State = ProtocolState.SmtpProtoControlState;
+            LastBackEndState = BackEndState;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
@@ -564,6 +565,12 @@ namespace NachoCore.SMTP
                     return true;
                 });
             }
+            if (LastBackEndState != BackEndState) {
+                var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
+                res.Value = AccountId;
+                StatusInd (res);
+            }
+            LastBackEndState = BackEndState;
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)

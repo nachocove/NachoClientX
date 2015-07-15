@@ -26,6 +26,7 @@ namespace Test.iOS
         UniqueId TestUniqueId = new UniqueId (1);
         int someIndex = 1;
         McAccount Account;
+        uint defaultSpan = 30;
 
         McFolder TestFolder { get; set; }
         McProtocolState protocolState { get; set; }
@@ -152,23 +153,23 @@ namespace Test.iOS
             // This time, we should see 75 items, numbered 38 through 112
             syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (30, syncKit.SyncSet.Count);
+            Assert.AreEqual (defaultSpan, syncKit.SyncSet.Count);
             Assert.AreEqual (112, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (83, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (112-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (30, syncKit.SyncSet.Count);
             Assert.AreEqual (82, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (53, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (82-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (30, syncKit.SyncSet.Count);
             Assert.AreEqual (52, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (23, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (52-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             // less than 30 items are left, so the span should be "the rest" (i.e. 2), numbered 1 through 22.
@@ -180,14 +181,14 @@ namespace Test.iOS
             DoFakeSync (TestFolder, syncKit);
 
             // Simulate new message coming in. I.e. bump ImapUidNext by 1.
-            // This will cause us to start at the top again and sync down for 10 items
+            // This will cause us to start at the top again and sync down for 30 items
             DoFakeFolderOpen (TestFolder, TestFolder.ImapUidNext + 1);
             syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.Sync);
-            Assert.AreEqual (10, syncKit.SyncSet.Count);
+            Assert.AreEqual (30, syncKit.SyncSet.Count);
             Assert.AreEqual (123, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (114, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (123-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             // Simulate 12 new message coming in. I.e. bump ImapUidNext by 12
@@ -195,17 +196,17 @@ namespace Test.iOS
             DoFakeFolderOpen (TestFolder, TestFolder.ImapUidNext + 12);
             syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (10, syncKit.SyncSet.Count);
+            Assert.AreEqual (30, syncKit.SyncSet.Count);
             Assert.AreEqual (135, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (126, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (135-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             // and this sync continues downwards for 30 items.
             syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (30, syncKit.SyncSet.Count);
-            Assert.AreEqual (125, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (96, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (105, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (105-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             DeleteAllTestMail ();
