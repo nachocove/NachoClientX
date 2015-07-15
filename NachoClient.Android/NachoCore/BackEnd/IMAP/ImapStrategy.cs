@@ -153,22 +153,12 @@ namespace NachoCore.IMAP
                 int startingPoint = (int)(0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Last {1} UidNext {2} Syncing from {3} for {4} messages", folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, startingPoint, span);
 
-                var exeCtxt = NcApplication.Instance.ExecutionContext;
-                switch (exeCtxt) {
-                case NcApplication.ExecutionContextEnum.Foreground:
-                case NcApplication.ExecutionContextEnum.Background:
-                    break;
-
-                case NcApplication.ExecutionContextEnum.QuickSync:
+                if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
                     if (folder.ImapUidNext - startingPoint > span * 2) {
                         Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: BG/QS: startingPoint {1} beyond cutoff. Stopping sync ({2})", folder.ImapFolderNameRedacted (), startingPoint, exeCtxt);
                         return null;
                     }
                     break;
-
-                default:
-                    NcAssert.CaseError (string.Format ("Invalid ExecutionContext {0}", exeCtxt));
-                    return null;
                 }
 
                 UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, (uint)startingPoint, span);
