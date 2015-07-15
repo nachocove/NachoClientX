@@ -213,7 +213,7 @@ namespace NachoCore.Utils
                     }
                 }
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
-                    Log.ModuleString(subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
+                    Log.ModuleString (subsystem) + ":" + level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
                 Telemetry.RecordLogEvent (threadId, teleType, subsystem, fmt, list);
@@ -354,7 +354,7 @@ namespace NachoCore.Utils
         public const ulong LOG_SMTP = (1 << 23);
         public const ulong LOG_IMAP = (1 << 24);
 
-        public static string ModuleString(ulong subsystem)
+        public static string ModuleString (ulong subsystem)
         {
             switch (subsystem) {
             case LOG_SYNC:
@@ -450,6 +450,8 @@ namespace NachoCore.Utils
         public static void DumpFileDescriptors ()
         {
             int numFd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
+            int numOpenFd = PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ();
+            Log.Info (Log.LOG_SYS, "Monitor: FD Dumping current open files {0}", numOpenFd);
             for (int fd = 0; fd < numFd; fd++) {
                 var path = PlatformProcess.GetFileNameForDescriptor (fd);
                 if (null == path) {

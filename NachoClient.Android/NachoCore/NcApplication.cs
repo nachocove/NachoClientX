@@ -360,6 +360,12 @@ namespace NachoCore
                 if (null == nonXammit) {
                     aex.Handle ((ex) => true);
                 } else {
+                    foreach (var ex in aex.InnerExceptions) { 
+                        if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
+                            Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
+                            Log.DumpFileDescriptors ();
+                        }
+                    }
                     if (null != UnobservedTaskException) {
                         UnobservedTaskException (sender, eargs);
                     } else {
@@ -682,6 +688,8 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
+            Log.Info (Log.LOG_SYS, "Monitor: FD Max open files {0}", PlatformProcess.GetCurrentNumberOfFileDescriptors ());
+            Log.Info (Log.LOG_SYS, "Monitor: FD Current open files {0}", PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
