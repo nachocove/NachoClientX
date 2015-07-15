@@ -105,7 +105,21 @@ namespace NachoClient.iOS
             SwitchToAccount (NcApplication.Instance.Account);
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
+                if (NcApplication.Instance.Account.CanAddContact ()) {
+                    PerformSegue ("ContactsToContactEdit", new SegueHolder (NcApplication.Instance.Account));
+                } else {
+                    var canAddAccounts = McAccount.GetCanAddContactAccounts ();
+                    var actions = new NcAlertAction[canAddAccounts.Count];
+                    for (int n = 0; n < canAddAccounts.Count; n++) {
+                        var account = canAddAccounts [n];
+                        var displayName = account.DisplayName + ": " + account.EmailAddr;
+                        actions [n] = new NcAlertAction (displayName, () => {
+                            PerformSegue ("ContactsToContactEdit", new SegueHolder (account));
+                        });
+                    }
+                    NcActionSheet.Show (this.View, this, null,
+                        "Cannot add contacts to the current account. Select other account for the new contact.", actions);
+                }
             };
 
             searchButton.Clicked += (object sender, EventArgs e) => {
@@ -154,15 +168,8 @@ namespace NachoClient.iOS
         void SwitchToAccount (McAccount account)
         {
             switchAccountButton.SetAccountImage (account);
-            addContactButton.Enabled = account.CanAddContact ();
             // If no account supports adding contacts, hide the button
-            bool hide = true;
-            foreach (var acc in McAccount.GetAllAccounts()) {
-                if (acc.CanAddContact ()) {
-                    hide = false;
-                    break;
-                }
-            }
+            bool hide = (0 == McAccount.GetCanAddContactAccounts ().Count);
             NavigationItem.RightBarButtonItem = hide ? null : addContactButton;
         }
 
@@ -202,6 +209,9 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactsToContactEdit")) {
                 var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
                 destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
+                var h = sender as SegueHolder;
+                var a = (McAccount)h.value;
+                destinationViewController.account = a;
                 return;
             }
             if (segue.Identifier.Equals ("SegueToNachoNow")) {

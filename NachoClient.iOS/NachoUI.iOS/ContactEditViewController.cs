@@ -70,6 +70,7 @@ namespace NachoClient.iOS
         protected NachoCore.Utils.ContactsHelper contactHelper = new ContactsHelper ();
 
         public McContact contact;
+        public McAccount account;
         protected McContact contactCopy;
        
         protected nfloat yOffset;
@@ -717,7 +718,7 @@ namespace NachoClient.iOS
         protected void CreateNewContact ()
         {
             contactCopy = new McContact ();
-            contactCopy.AccountId = LoginHelpers.GetCurrentAccountId ();
+            contactCopy.AccountId = account.Id;
             contactCopy.Source = McAbstrItem.ItemSource.ActiveSync;
         }
 

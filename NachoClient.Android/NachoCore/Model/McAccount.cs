@@ -317,6 +317,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<McAccount> ("SELECT * FROM McAccount");
         }
 
+        public static List<McAccount> GetCanAddContactAccounts ()
+        {
+            return GetAllAccounts ().Where ((x) => x.CanAddContact ()).ToList ();
+        }
+
         public static List<int> GetAllConfiguredNonDeviceAccountIds ()
         {
             return (from account in McAccount.GetAllAccounts ()
@@ -339,16 +344,18 @@ namespace NachoCore.Model
 
         public bool CanAddContact ()
         {
-            bool can;
+            AccountCapabilityEnum capabilities = 0;
             switch (AccountType) {
             case AccountTypeEnum.Exchange:
-                can = true;
+                capabilities = ActiveSyncCapabilities;
+                break;
+            case AccountTypeEnum.IMAP_SMTP:
+                capabilities = ImapCapabilities;
                 break;
             default:
-                can = false;
                 break;
             }
-            return can;
+            return capabilities.HasFlag (AccountCapabilityEnum.ContactWriter);
         }
     }
 
