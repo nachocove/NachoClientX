@@ -472,8 +472,11 @@ namespace NachoCore.IMAP
 
             // if in FG, add all other folders. Otherwise, only Inbox gets syncd
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
-                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
+                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false).OrderBy (x => x.SyncAttemptCount)) {
                     if (defInbox.Id == folder.Id) {
+                        continue;
+                    }
+                    if (folder.ImapNoSelect) {
                         continue;
                     }
                     list.Add (folder);
