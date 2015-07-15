@@ -55,16 +55,16 @@ namespace NachoClient.iOS
         Prompt prompt;
         McAccount account;
         AdvancedLoginViewController.onConnectCallback onConnect;
+        AdvancedLoginViewController.onValidateCallback onValidate;
 
-        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+        private ExchangeFields (McAccount account, Prompt prompt, CGRect rect, string buttonText)
         {
             this.prompt = prompt;
             this.account = account;
-            this.onConnect = onConnect;
 
             showAdvancedSettings = true;
 
-            CreateView (rect);
+            CreateView (rect, buttonText);
             UpdatePrompt (prompt);
             Layout (rect.Height);
 
@@ -73,7 +73,19 @@ namespace NachoClient.iOS
             }
         }
 
-        void CreateView (CGRect rect)
+        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+            : this (account, prompt, rect, "Connect")
+        {
+            this.onConnect = onConnect;
+        }
+
+        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
+            : this (account, prompt, rect, "Save")
+        {
+            this.onValidate = onValidate;
+        }
+
+        void CreateView (CGRect rect, string buttonText)
         {
             scrollView = new UIScrollView (rect);
             scrollView.BackgroundColor = A.Color_NachoGreen;
@@ -160,10 +172,10 @@ namespace NachoClient.iOS
             contentView.AddSubview (domainWhiteInset);
 
             connectButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
-            connectButton.AccessibilityLabel = "Connect";
+            connectButton.AccessibilityLabel = buttonText;
             connectButton.BackgroundColor = A.Color_NachoTeal;
             connectButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            connectButton.SetTitle ("Connect", UIControlState.Normal);
+            connectButton.SetTitle (buttonText, UIControlState.Normal);
             connectButton.TitleLabel.TextColor = UIColor.White;
             connectButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
             connectButton.Layer.CornerRadius = 4f;
@@ -234,8 +246,13 @@ namespace NachoClient.iOS
         void ConnectButton_TouchUpInside (object sender, EventArgs e)
         {
             scrollView.EndEditing (true);
-            var action = SaveUserSettings ();
-            CallOnConnect (action);
+
+            if (Prompt.EditInfo == prompt) {
+                Validate ();
+            } else {
+                var action = SaveUserSettings ();
+                CallOnConnect (action);
+            }
         }
 
         void AdvancedButton_TouchUpInside (object sender, EventArgs e)
@@ -390,6 +407,7 @@ namespace NachoClient.iOS
             if (!CanUserConnect ()) {
                 return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
             }
+
             var email = emailView.textField.Text.Trim ();
             var password = passwordView.textField.Text;
 
@@ -483,14 +501,59 @@ namespace NachoClient.iOS
             }
         }
 
-        bool haveEnteredEmailAndPassword ()
+        void Validate ()
         {
-            return !(String.IsNullOrEmpty (emailView.textField.Text) || String.IsNullOrEmpty (passwordView.textField.Text));
+            var cred = new McCred ();
+            cred.SetTestPassword (passwordView.textField.Text);          
+            if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
+                cred.UserSpecifiedUsername = false;
+                cred.Username = emailView.textField.Text;
+            } else {
+                cred.UserSpecifiedUsername = true;
+                cred.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
+            }
+            var parsedServer = new McServer ();
+            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == EmailHelper.ParseServer (ref parsedServer, serverView.textField.Text));
+
+            var server = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
+            server.CopyNameFrom (parsedServer);
+
+            onValidate (cred, new List<McServer> () { server });
+        }
+
+        public void Validated (McCred verifiedCred, List<McServer> verifiedServers)
+        {
+            var creds = McCred.QueryByAccountId<McCred> (account.Id).First ();
+            creds.Username = verifiedCred.Username;
+            creds.UserSpecifiedUsername = verifiedCred.UserSpecifiedUsername;
+            creds.UpdatePassword (verifiedCred.GetTestPassword ());
+            creds.Update ();
+
+            var verifiedServer = verifiedServers.First ();
+            var server = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
+            server.CopyNameFrom (verifiedServer);
+            server.Update ();
+        }
+
+        bool haveFilledRequiredFields ()
+        {
+            if (emailView.IsNullOrEmpty ()) {
+                return false;
+            }
+            if (passwordView.IsNullOrEmpty ()) {
+                return false;
+            }
+            if (Prompt.EditInfo == prompt) {
+                if (serverView.IsNullOrEmpty ()) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public void MaybeEnableConnect (UITextField textField)
         {
-            if (!haveEnteredEmailAndPassword ()) {
+            if (!haveFilledRequiredFields ()) {
                 connectButton.Enabled = false;
                 connectButton.Alpha = .5f;
             } else {
@@ -512,6 +575,13 @@ namespace NachoClient.iOS
             }
             if (passwordView.IsNullOrEmpty ()) {
                 SetRedText (passwordView, "Enter a password");
+                return false;
+            }
+            if (Prompt.EditInfo == prompt) {
+                if (serverView.IsNullOrEmpty ()) {
+                    SetRedText (passwordView, "Enter a server");
+                    return false;
+                }
             }
             string serviceName;
             var emailAddress = emailView.textField.Text;

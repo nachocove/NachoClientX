@@ -56,6 +56,8 @@ namespace NachoClient.iOS
 
         public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account, string email, string password);
 
+        public delegate void onValidateCallback (McCred creds, List<McServer> servers);
+
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
             service = McAccount.AccountServiceEnum.None;

@@ -115,13 +115,18 @@ namespace NachoCore.Model
             };
         }
 
-        public void CopyFrom (McServer src)
+        public void CopyNameFrom (McServer src)
         {
-            Capabilities = src.Capabilities;
             Host = src.Host;
             Path = src.Path;
             Scheme = src.Scheme;
             Port = src.Port;
+        }
+
+        public void CopyFrom (McServer src)
+        {
+            Capabilities = src.Capabilities;
+            CopyNameFrom (src);
         }
 
         public bool IsSameServer (McServer match)
