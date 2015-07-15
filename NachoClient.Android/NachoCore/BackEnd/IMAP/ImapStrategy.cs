@@ -436,17 +436,14 @@ namespace NachoCore.IMAP
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
                 }
 
-                // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (PowerPermitsSpeculation ()) {
-                    // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
-                    // for speculatively pre-fetching bodies and attachments.
-                    foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
-                        if (null != syncKit) {
-                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
-                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                                new ImapSyncCommand (BEContext, Client, syncKit));
-                        }
+                // (FG/BG) Sync
+                // FIXME Deal with 'narrow' and 'degraded' sync, i.e. on low battery 'do less' (whatever that means).
+                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, Client, syncKit));
                     }
                 }
                 Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
