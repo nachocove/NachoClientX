@@ -36,9 +36,12 @@ namespace NachoCore.Utils
 
         protected DateTime LastReported;
 
+        protected object LockObj;
+
         public NcSamplesInput ()
         {
             LastReported = DateTime.UtcNow;
+            LockObj = new object ();
         }
 
         /// <summary>
@@ -58,8 +61,10 @@ namespace NachoCore.Utils
                         String.Format ("{0} is greater than upper limit {1}", value, MaxInput));
                 }
             }
-            ProcessSample (value);
-            Count += 1;
+            lock (LockObj) {
+                ProcessSample (value);
+                Count += 1;
+            }
             if ((0 < ReportThreshold) && (Count >= ReportThreshold)) {
                 Report ();
                 LastReported = DateTime.UtcNow;
@@ -68,8 +73,8 @@ namespace NachoCore.Utils
                 var now = DateTime.UtcNow;
                 if ((now - LastReported).TotalSeconds >= ReportIntervalSec) {
                     Report ();
+                    LastReported = now;
                 }
-                LastReported = now;
             }
         }
 
@@ -78,8 +83,10 @@ namespace NachoCore.Utils
         /// </summary>
         public void Clear ()
         {
-            ClearSamples ();
-            Count = 0;
+            lock (LockObj) {
+                ClearSamples ();
+                Count = 0;
+            }
         }
 
         /// <summary>
@@ -87,8 +94,10 @@ namespace NachoCore.Utils
         /// </summary>
         public void Report ()
         {
-            RecordSamples ();
-            Clear ();
+            lock (LockObj) {
+                RecordSamples ();
+                Clear ();
+            }
         }
 
         /// <summary>

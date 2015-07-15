@@ -149,11 +149,11 @@ namespace NachoCore.Brain
                 return false;
             }
             if (!IndexExists (emailMessage.AccountId)) {
-                Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing email message {1}",
+                Log.Warn (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing email message {1}",
                     emailMessage.AccountId, emailMessage.Id);
                 return false;
             }
-            Log.Info (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
+            Log.Debug (Log.LOG_BRAIN, "IndexEmailMessage: index email message {0}", emailMessage.Id);
             var index = OpenedIndexes.Get (emailMessage.AccountId);
             if (null == index) {
                 return false;
@@ -167,6 +167,7 @@ namespace NachoCore.Brain
                 Bcc = NcEmailAddress.ParseAddressListString (emailMessage.Bcc),
                 ReceivedDate = emailMessage.DateReceived,
                 Subject = emailMessage.Subject,
+                Preview = emailMessage.BodyPreview,
             };
             if (0 < emailMessage.BodyId) {
                 // Make sure the body is there
@@ -217,9 +218,9 @@ namespace NachoCore.Brain
             if ((null == contact) || (0 == contact.Id) || (0 == contact.AccountId)) {
                 return false;
             }
-            Log.Info (Log.LOG_BRAIN, "IndexContact: index contact {0}", contact.Id);
+            Log.Debug (Log.LOG_BRAIN, "IndexContact: index contact {0}", contact.Id);
             if (!IndexExists (contact.AccountId)) {
-                Log.Info (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing contact {1}",
+                Log.Warn (Log.LOG_BRAIN, "Account {0} no longer exists. Ignore indexing contact {1}",
                     contact.AccountId, contact.Id);
                 return false;
             }

@@ -24,7 +24,8 @@ namespace NachoCore.Utils
         {
             EnterInfo,
             ServerConf,
-            BadCredentials,
+            CredRequest,
+            EditInfo,
         };
 
         public class Events
@@ -300,6 +301,7 @@ namespace NachoCore.Utils
                     new Node {
                         State = (uint)States.FinishWait,
                         Drop = new uint [] {
+                            (uint)Events.E.PostAutoDPostInboxSync,
                         },
                         Invalid = new uint [] {
                             (uint)Events.E.AccountCreated,
@@ -318,7 +320,6 @@ namespace NachoCore.Utils
                             (uint)Events.E.NoNetwork,
                             (uint)Events.E.NoService,
                             (uint)Events.E.NotYetStarted,
-                            (uint)Events.E.PostAutoDPostInboxSync,
                             (uint)Events.E.PostAutoDPreInboxSync,
                             (uint)Events.E.Quit,
                             (uint)Events.E.Running,

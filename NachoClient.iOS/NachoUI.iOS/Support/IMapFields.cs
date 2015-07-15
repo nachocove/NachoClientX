@@ -44,6 +44,9 @@ namespace NachoClient.iOS
         UIView imapWhiteInset;
         UIView smtpWhiteInset;
 
+        UIImageView accountImageView;
+        UILabel accountEmailAddr;
+
         public bool showAdvanced {
             get;
             set;
@@ -53,20 +56,20 @@ namespace NachoClient.iOS
             get { return scrollView; }
         }
 
-     
-        AdvancedLoginViewController.onConnectCallback onConnect;
-
+        Prompt prompt;
         McAccount account;
+        AdvancedLoginViewController.onConnectCallback onConnect;
 
         public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
         {
             this.onConnect = onConnect;
             this.account = account;
+            this.prompt = prompt;
 
             showAdvancedSettings = true;
             CreateView (rect);
             UpdatePrompt (prompt);
-            Layout ();
+            Layout (rect.Height);
 
             if (null != account) {
                 LoadAccount ();
@@ -84,6 +87,25 @@ namespace NachoClient.iOS
             scrollView.AddSubview (contentView);
 
             nfloat yOffset = 0;
+
+            accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
+            accountImageView.Layer.CornerRadius = 25;
+            accountImageView.Layer.MasksToBounds = true;
+            accountImageView.ContentMode = UIViewContentMode.Center;
+            contentView.AddSubview (accountImageView);
+
+
+            accountEmailAddr = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));
+            accountEmailAddr.Font = A.Font_AvenirNextRegular17;
+            accountEmailAddr.TextColor = A.Color_NachoBlack;
+            contentView.AddSubview (accountEmailAddr);
+
+            if (null != account) {
+                using (var image = Util.ImageForAccount (account)) {
+                    accountImageView.Image = image;
+                }
+                accountEmailAddr.Text = account.EmailAddr;
+            }
 
             infoLabel = new UILabel (new CGRect (20, 15, View.Frame.Width - 40, 50));
             infoLabel.Font = A.Font_AvenirNextRegular17;
@@ -230,26 +252,39 @@ namespace NachoClient.iOS
         void AdvancedButton_TouchUpInside (object sender, EventArgs e)
         {
             showAdvancedSettings = true;
-            Layout ();
+            Layout (scrollView.Frame.Height);
         }
 
-        public void Layout ()
+        public void Layout (nfloat height)
         {
             nfloat yOffset = 0;
 
-            ViewFramer.Create (infoLabel).Y (yOffset);
-            yOffset = infoLabel.Frame.Bottom + 15;
+            var editInfo = (NachoCore.Utils.LoginProtocolControl.Prompt.EditInfo == prompt);
 
-            ViewFramer.Create (emailView).Y (yOffset);
-            yOffset += CELL_HEIGHT;
+            if (editInfo) {
+                yOffset = NMath.Max (accountImageView.Frame.Bottom, accountEmailAddr.Frame.Bottom);
+                yOffset += 15;
+            } else {
+                ViewFramer.Create (infoLabel).Y (yOffset);
+                yOffset = infoLabel.Frame.Bottom + 15;
+
+                ViewFramer.Create (emailView).Y (yOffset);
+                yOffset += CELL_HEIGHT;
+
+                ViewFramer.Create (emailWhiteInset).Y (emailView.Frame.Top + (CELL_HEIGHT / 2));
+            }
+
+            accountImageView.Hidden = !editInfo;
+            accountEmailAddr.Hidden = !editInfo;
+            infoLabel.Hidden = editInfo;
+            emailView.Hidden = editInfo;
+            emailWhiteInset.Hidden = editInfo;
 
             ViewFramer.Create (passwordView).Y (yOffset);
             yOffset += CELL_HEIGHT;
 
-            ViewFramer.Create (emailWhiteInset).Y (emailView.Frame.Top + (CELL_HEIGHT / 2));
-            yOffset += 20;
-
             if (showAdvancedSettings) {
+                yOffset += 20;
                 ViewFramer.Create (imapServerView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
 
@@ -284,11 +319,14 @@ namespace NachoClient.iOS
             ViewFramer.Create (startOverButton).Y (yOffset);
             yOffset = startOverButton.Frame.Bottom + 20;
 
+            startOverButton.Hidden = editInfo;
+
             // Padding
             yOffset += 20;
 
             Util.SetHidden (!showAdvancedSettings, imapServerView, imapPortNumberView, imapWhiteInset, smtpServerView, smtpPortNumberView, smtpWhiteInset);
 
+            ViewFramer.Create (scrollView).Height (height);
             scrollView.ContentSize = new CGSize (scrollView.Frame.Width, yOffset);
             ViewFramer.Create (contentView).Height (yOffset);
         }
@@ -304,7 +342,7 @@ namespace NachoClient.iOS
                 infoLabel.Text = GetServerConfMessage ();
                 infoLabel.TextColor = A.Color_NachoRed;
                 break;
-            case Prompt.BadCredentials:
+            case Prompt.CredRequest:
                 infoLabel.Text = "There seems to be a problem with your credentials.";
                 infoLabel.TextColor = A.Color_NachoRed;
                 break;
@@ -374,8 +412,12 @@ namespace NachoClient.iOS
             var email = emailView.textField.Text.Trim ();
             var password = passwordView.textField.Text;
 
-            // FIXME
-            // If account exists and is significantly different from what's entered, then re-create it.
+            // TODO: Ask jeff
+            // Stop/Start did not recover from 2nd wrong password or wrong username
+            if (null != account) {
+                NcAccountHandler.Instance.RemoveAccount (account.Id);
+                account = null;
+            }
 
             if (null == account) {
                 if (LoginHelpers.AccountExists (email)) {

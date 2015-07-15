@@ -33,6 +33,7 @@ namespace NachoClient.iOS
             Connect,
             Support,
             StartOver,
+            CredResponse,
             DuplicateAccount,
             ContinueToShowAdvanced,
         }
@@ -231,6 +232,7 @@ namespace NachoClient.iOS
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: onConnect");
                 } else {
                     this.account = account;
+                    BackEnd.Instance.Stop (account.Id);
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.NotYetStarted, "avl: onConnect");
                 }
                 break;
@@ -242,6 +244,9 @@ namespace NachoClient.iOS
                 break;
             case ConnectCallbackStatusEnum.DuplicateAccount:
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: onConnect");
+                break;
+            case ConnectCallbackStatusEnum.CredResponse:
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: onConnect");
                 break;
             case ConnectCallbackStatusEnum.ContinueToShowAdvanced:
                 break;
@@ -347,7 +352,7 @@ namespace NachoClient.iOS
             switch (service) {
             case McAccount.AccountServiceEnum.Exchange:
             case McAccount.AccountServiceEnum.IMAP_SMTP:
-                ShowAdvancedConfiguration (LoginProtocolControl.Prompt.BadCredentials);
+                ShowAdvancedConfiguration (LoginProtocolControl.Prompt.CredRequest);
                 break;
             default:
                 RemoveWindows ();
@@ -522,6 +527,7 @@ namespace NachoClient.iOS
             account.Update ();
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
             cred.UpdatePassword (password);
+            cred.Username = email;
             cred.Update ();
 
             Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
@@ -641,7 +647,7 @@ namespace NachoClient.iOS
             }
 
             if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredReqCallback, "avl: EventFromEnem cred req");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredReqCallback, "avl: EventFromEnum cred req");
                 return;
             }
 
@@ -759,8 +765,9 @@ namespace NachoClient.iOS
             // the notification is still alive when account
             // information is being gathered.  Avoid crash!
 
-            // FIXME
-            // LayoutView ();
+            if (null != loginFields) {
+                loginFields.Layout (View.Frame.Height - keyboardHeight);
+            }
         }
 
         public override bool ShouldAutorotate ()

@@ -18,78 +18,28 @@ namespace NachoClient.iOS
         protected UIView contentView;
         protected UIScrollView scrollView;
 
-        protected UIBarButtonItem editButton;
-        protected UIBarButtonItem cancelButton;
-        protected UIBarButtonItem saveButton;
-        protected UIBarButtonItem backButton;
-        protected UIButton deleteAccountButton;
-
-        protected UIView additionalSettingsView;
-        protected UIView deleteAccountView;
-        protected UILabel passwordExpiryLabel;
-        protected UIButton dirtyBackEndButton;
-        protected UILabel dirtyBackEndLabel;
-
-        protected bool textFieldsEditable = false;
-
-        protected static readonly nfloat HORIZONTAL_PADDING = 25f;
-        protected static readonly nfloat SPACER = 15f;
-        protected static readonly nfloat LABEL_VERTICAL_SPACER = 17f;
-        protected static readonly nfloat LABEL_WIDTH = 90f;
-        protected static readonly nfloat LABEL_HEIGHT = 17f;
-        protected static readonly nfloat TEXTFIELD_HEIGHT = 50f;
-
-        protected readonly UIColor LABEL_TEXT_COLOR = A.Color_NachoDarkText;
-        protected readonly UIColor TEXT_FIELD_TEXT_COLOR = A.Color_NachoGreen;
-        protected readonly UIFont TEXT_FIELD_FONT = A.Font_AvenirNextMedium14;
-
-        protected const int ACCOUNT_NAME_TAG = 100;
-        protected const int USERNAME_TAG = 101;
-        protected const int PASSWORD_TAG = 102;
-        protected const int EMAIL_TAG = 103;
-        protected const int MAILSERVER_TAG = 104;
-        protected const int CONFERENCE_TAG = 105;
-
-        protected string originalAccountNameValue = "";
-        protected string originalUsernameValue = "";
-        protected string originalPasswordValue = "";
-        protected string originalEmailValue = "";
-        protected string originalMailServerValue = "";
-        protected string originalConferenceValue = "";
-        protected string originalSignatureValue = "";
-
-        protected const int GREY_BACKGROUND_VIEW_TAG = 200;
-        protected const int STATUS_VIEW_TAG = 201;
-        protected const int DELETE_ACCOUNT_BACKGROUND_VIEW_TAG = 202;
-        protected const int DELETE_ACCOUNT_SPINNER_TAG = 203;
-
-        protected const int CANCEL_VALIDATION_BUTTON_TAG = 304;
-
-        protected bool handleStatusEnums = true;
-
+        UIBarButtonItem backButton;
+        UIImageView accountImageView;
+        UILabel EmailAddress;
+        UcNameValuePair DisplayNameTextBlock;
+        UcNameValuePair ChangePasswordBlock;
+        UcNameValuePair AdvancedSettingsBlock;
         UcNameValuePair SignatureBlock;
         UcNameValuePair DaysToSyncBlock;
         UcNameValuePair NotificationsBlock;
         UISwitch FastNotificationSwitch;
+        UIButton DeleteAccountButton;
+        UIView DeleteAccountBackgroundView;
+        UIActivityIndicatorView DeleteAccountActivityIndicator;
 
-        nfloat yOffset;
+        McAccount account;
 
-        protected enum AccountIssue
-        {
-            None,
-            InvalidHost,
-            ErrorAuth,
-            ErrorComm,
-            ErrorUser,
-        }
-
-        protected AccountIssue accountIssue = AccountIssue.None;
-
-        McAccount theAccount;
+        static readonly nfloat HEIGHT = 50;
+        static readonly nfloat INDENT = 25;
 
         public void SetAccount (McAccount account)
         {
-            this.theAccount = account;
+            this.account = account;
         }
 
         public AccountSettingsViewController (IntPtr handle) : base (handle)
@@ -103,7 +53,6 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
-            CaptureOriginalSettings ();
             if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
@@ -128,30 +77,13 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
 
-            editButton = new NcUIBarButtonItem ();
-            cancelButton = new NcUIBarButtonItem ();
             backButton = new NcUIBarButtonItem ();
-            saveButton = new NcUIBarButtonItem ();
-
-            editButton.Image = UIImage.FromBundle ("gen-edit");
-            cancelButton.Image = UIImage.FromBundle ("icn-close");
             backButton.Image = UIImage.FromBundle ("nav-backarrow");
-            saveButton.Title = "Done";
-
-            editButton.AccessibilityLabel = "Edit";
-            cancelButton.AccessibilityLabel = "Close";
-            backButton.AccessibilityLabel = "Back";
-            saveButton.AccessibilityLabel = "Save";
-
             backButton.TintColor = A.Color_NachoBlue;
+            backButton.AccessibilityLabel = "Back";
+            backButton.Clicked += BackButton_Clicked;
 
             NavigationItem.SetLeftBarButtonItem (backButton, true);
-            NavigationItem.SetRightBarButtonItem (editButton, true); 
-
-            editButton.Clicked += EditButtonClicked;
-            saveButton.Clicked += SaveButtonClicked;
-            cancelButton.Clicked += CancelButtonClicked;
-            backButton.Clicked += BackButtonClicked;
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -162,632 +94,174 @@ namespace NachoClient.iOS
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             View.AddSubview (scrollView);
 
-            contentView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
+            contentView = new UIView (Util.CardContentRectangle (View.Frame.Width, View.Frame.Height));
+            contentView.Layer.CornerRadius = A.Card_Corner_Radius;
+            contentView.BackgroundColor = UIColor.White;
             scrollView.AddSubview (contentView);
 
-            UIView settingsView = new UIView (new CGRect (0, 20, View.Frame.Width, TEXTFIELD_HEIGHT * 7));
-            settingsView.BackgroundColor = UIColor.White;
-            settingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            settingsView.Layer.BorderWidth = .5f;
+            accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
+            accountImageView.Layer.CornerRadius = 25;
+            accountImageView.Layer.MasksToBounds = true;
+            accountImageView.ContentMode = UIViewContentMode.Center;
+            contentView.AddSubview (accountImageView);
 
-            yOffset = 0;
+            using (var image = Util.ImageForAccount (account)) {
+                accountImageView.Image = image;
+            }
 
-            UILabel nameLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
-            nameLabel.Font = A.Font_AvenirNextRegular14;
-            nameLabel.TextAlignment = UITextAlignment.Left;
-            nameLabel.TextColor = LABEL_TEXT_COLOR;
-            nameLabel.Text = "Description";
-            settingsView.Add (nameLabel);
+            EmailAddress = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));
+            EmailAddress.Text = account.EmailAddr;
+            EmailAddress.Font = A.Font_AvenirNextRegular17;
+            EmailAddress.TextColor = A.Color_NachoBlack;
+            contentView.AddSubview (EmailAddress);
 
-            UITextField accountNameTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, View.Frame.Width - 149, TEXTFIELD_HEIGHT));
-            accountNameTextField.Placeholder = "Exchange";
-            accountNameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            accountNameTextField.Font = TEXT_FIELD_FONT;
-            accountNameTextField.TextAlignment = UITextAlignment.Left;
-            accountNameTextField.Tag = ACCOUNT_NAME_TAG;
-            accountNameTextField.ShouldReturn += TextFieldShouldReturn;
-            settingsView.Add (accountNameTextField);
+            nfloat yOffset = NMath.Max (accountImageView.Frame.Bottom, EmailAddress.Frame.Bottom);
 
-            yOffset = accountNameTextField.Frame.Bottom;
+            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
+            DisplayNameTextBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Description", INDENT, 15, ChangeDescriptionTapHandler);
+            contentView.AddSubview (DisplayNameTextBlock);
+            yOffset = DisplayNameTextBlock.Frame.Bottom;
 
-            UILabel usernameLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
-            usernameLabel.Font = A.Font_AvenirNextRegular14;
-            usernameLabel.TextAlignment = UITextAlignment.Left;
-            usernameLabel.TextColor = LABEL_TEXT_COLOR;
-            usernameLabel.Text = "Username";
-            settingsView.Add (usernameLabel);
+            var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+            if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Change Password", INDENT, 15, ChangePasswordTapHandler);
+                contentView.AddSubview (ChangePasswordBlock);
+                yOffset = ChangePasswordBlock.Frame.Bottom;
+            }
 
-            UITextField usernameTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
-            usernameTextField.Placeholder = "username";
-            usernameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            usernameTextField.Font = TEXT_FIELD_FONT;
-            usernameTextField.TextAlignment = UITextAlignment.Left;
-            usernameTextField.Tag = USERNAME_TAG;
-            usernameTextField.ShouldReturn += TextFieldShouldReturn;
-            settingsView.Add (usernameTextField);
+            if ((McAccount.AccountServiceEnum.Exchange == account.AccountService) || (McAccount.AccountServiceEnum.IMAP_SMTP == account.AccountService)) {
+                Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
+                AdvancedSettingsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Advanced Settings", INDENT, 15, AdvancedSettingsTapHandler);
+                contentView.AddSubview (AdvancedSettingsBlock);
+                yOffset = AdvancedSettingsBlock.Frame.Bottom;
+            }
+                
+            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            yOffset = usernameTextField.Frame.Bottom;
+            SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Signature", INDENT, 15, SignatureTapHandler);
+            contentView.AddSubview (SignatureBlock);
+            yOffset = SignatureBlock.Frame.Bottom;
 
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
+            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            UILabel passwordLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
-            passwordLabel.Font = A.Font_AvenirNextRegular14;
-            passwordLabel.TextAlignment = UITextAlignment.Left;
-            passwordLabel.TextColor = LABEL_TEXT_COLOR;
-            passwordLabel.Text = "Password";
-            settingsView.Add (passwordLabel);
+            DaysToSyncBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Days to sync", INDENT, 15, DaysToSyncTapHandler);
+            contentView.AddSubview (DaysToSyncBlock);
+            yOffset = DaysToSyncBlock.Frame.Bottom;
 
-            UITextField passwordTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
-            passwordTextField.Placeholder = "********";
-            passwordTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            passwordTextField.Font = TEXT_FIELD_FONT;
-            passwordTextField.TextAlignment = UITextAlignment.Left;
-            passwordTextField.SecureTextEntry = true;
-            passwordTextField.Tag = PASSWORD_TAG;
-            passwordTextField.ShouldReturn += TextFieldShouldReturn;
-            passwordTextField.ShouldChangeCharacters += ShouldChangeCharacters;
-            settingsView.Add (passwordTextField);
+            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            yOffset = passwordTextField.Frame.Bottom;
+            NotificationsBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Notifications", INDENT, 15, NotificationsTapHandler);
+            contentView.AddSubview (NotificationsBlock);
+            yOffset = NotificationsBlock.Frame.Bottom;
 
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
+            Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
 
-            UILabel emailLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
-            emailLabel.Font = A.Font_AvenirNextRegular14;
-            emailLabel.TextAlignment = UITextAlignment.Left;
-            emailLabel.TextColor = LABEL_TEXT_COLOR;
-            emailLabel.Text = "Email";
-            settingsView.Add (emailLabel);
-
-            UITextField emailTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
-            emailTextField.Placeholder = "zachq@nachocove.com";
-            emailTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            emailTextField.Font = TEXT_FIELD_FONT;
-            emailTextField.TextAlignment = UITextAlignment.Left;
-            emailTextField.Tag = EMAIL_TAG;
-            emailTextField.ShouldReturn += TextFieldShouldReturn;
-            settingsView.Add (emailTextField);
-
-            yOffset = emailTextField.Frame.Bottom;
-
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
-
-            UILabel mailserverLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
-            mailserverLabel.Font = A.Font_AvenirNextRegular14;
-            mailserverLabel.TextAlignment = UITextAlignment.Left;
-            mailserverLabel.TextColor = LABEL_TEXT_COLOR;
-            mailserverLabel.Text = "Mail Server";
-            settingsView.Add (mailserverLabel);
-
-            UITextField mailserverTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
-            mailserverTextField.Placeholder = "outlook.office365.com";
-            mailserverTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            mailserverTextField.Font = TEXT_FIELD_FONT;
-            mailserverTextField.TextAlignment = UITextAlignment.Left;
-            mailserverTextField.Tag = MAILSERVER_TAG;
-            mailserverTextField.ShouldReturn += TextFieldShouldReturn;
-            settingsView.Add (mailserverTextField);
-
-            yOffset = mailserverTextField.Frame.Bottom;
-
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
-
-            UILabel conferencecallLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + 3f, nameLabel.Frame.Width, LABEL_HEIGHT + 25));
-
-            conferencecallLabel.Font = A.Font_AvenirNextRegular14;
-            conferencecallLabel.TextAlignment = UITextAlignment.Left;
-            conferencecallLabel.TextColor = LABEL_TEXT_COLOR;
-            conferencecallLabel.Text = "Conference Call Number";
-            conferencecallLabel.Lines = 2;
-            conferencecallLabel.LineBreakMode = UILineBreakMode.WordWrap;
-
-            settingsView.Add (conferencecallLabel);
-
-            UITextField conferencecallTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
-            conferencecallTextField.Placeholder = "1928342-3";
-            conferencecallTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            conferencecallTextField.Font = TEXT_FIELD_FONT;
-            conferencecallTextField.TextAlignment = UITextAlignment.Left;
-            conferencecallTextField.Tag = CONFERENCE_TAG;
-            conferencecallTextField.ShouldReturn += TextFieldShouldReturn;
-            settingsView.Add (conferencecallTextField);
-
-            yOffset = conferencecallTextField.Frame.Bottom;
-
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
-
-            SignatureBlock = new UcNameValuePair (new CGRect (0, yOffset, View.Frame.Width, TEXTFIELD_HEIGHT), "Signature", HORIZONTAL_PADDING, 15, SignatureTapHandler);
-            settingsView.AddSubview (SignatureBlock);
-
-            contentView.AddSubview (settingsView);
-
-            yOffset = settingsView.Frame.Bottom + 20;
-
-            // Additional settings
-
-            additionalSettingsView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 3 * TEXTFIELD_HEIGHT));
-            additionalSettingsView.BackgroundColor = UIColor.White;
-            additionalSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            additionalSettingsView.Layer.BorderWidth = .5f;
-
-            DaysToSyncBlock = new UcNameValuePair (new CGRect (0, 0, View.Frame.Width, TEXTFIELD_HEIGHT), "Days to sync", HORIZONTAL_PADDING, 15, DaysToSyncTapHandler);
-            additionalSettingsView.AddSubview (DaysToSyncBlock);
-
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, TEXTFIELD_HEIGHT, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
-
-            NotificationsBlock = new UcNameValuePair (new CGRect (0, TEXTFIELD_HEIGHT, View.Frame.Width, TEXTFIELD_HEIGHT), "Notifications", HORIZONTAL_PADDING, 15, NotificationsTapHandler);
-            additionalSettingsView.AddSubview (NotificationsBlock);
-
-            var fastNotificationOffset = 2 * TEXTFIELD_HEIGHT;
-            Util.AddHorizontalLine (HORIZONTAL_PADDING, fastNotificationOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, additionalSettingsView);
-
-            var fastNotificationLabel = new UILabel ();
+            var fastNotificationLabel = new UILabel (new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT));
             fastNotificationLabel.Font = A.Font_AvenirNextRegular14;
             fastNotificationLabel.TextAlignment = UITextAlignment.Left;
-            fastNotificationLabel.TextColor = LABEL_TEXT_COLOR;
+            fastNotificationLabel.TextColor = A.Color_NachoDarkText;
             fastNotificationLabel.Text = "Fast Notification";
             fastNotificationLabel.SizeToFit ();
-            ViewFramer.Create (fastNotificationLabel).X (HORIZONTAL_PADDING).CenterY (fastNotificationOffset, TEXTFIELD_HEIGHT);
+            ViewFramer.Create (fastNotificationLabel).Height (HEIGHT);
 
             FastNotificationSwitch = new UISwitch ();
-            ViewFramer.Create (FastNotificationSwitch).RightAlignX (settingsView.Frame.Width - HORIZONTAL_PADDING);
-            ViewFramer.Create (FastNotificationSwitch).CenterY (fastNotificationOffset, TEXTFIELD_HEIGHT);
+            ViewFramer.Create (FastNotificationSwitch).RightAlignX (contentView.Frame.Width - INDENT);
+            ViewFramer.Create (FastNotificationSwitch).CenterY (yOffset, HEIGHT);
 
             FastNotificationSwitch.ValueChanged += FastNotificationSwitchChangedHandler;
 
-            additionalSettingsView.AddSubview (fastNotificationLabel);
-            additionalSettingsView.AddSubview (FastNotificationSwitch);
+            contentView.AddSubview (fastNotificationLabel);
+            contentView.AddSubview (FastNotificationSwitch);
 
-            contentView.AddSubview (additionalSettingsView);
+            yOffset = fastNotificationLabel.Frame.Bottom;
 
-            yOffset = additionalSettingsView.Frame.Bottom + 20;
+            var filler = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
+            filler.BackgroundColor = A.Color_NachoBackgroundGray;
+            contentView.AddSubview (filler);
+            yOffset = filler.Frame.Bottom + 5;
+                            
+            DeleteAccountButton = UIButton.FromType (UIButtonType.System);
+            DeleteAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
+            Util.AddButtonImage (DeleteAccountButton, "email-delete-two", UIControlState.Normal);
+            DeleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
+            DeleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
+            DeleteAccountButton.AccessibilityLabel = "Delete Account";
+            DeleteAccountButton.Font = A.Font_AvenirNextRegular14;
+            DeleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            DeleteAccountButton.TouchUpInside += onDeleteAccount;
+            contentView.AddSubview (DeleteAccountButton);
+            yOffset = DeleteAccountButton.Frame.Bottom;
 
-            passwordExpiryLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), TEXTFIELD_HEIGHT));
-
-            passwordExpiryLabel.Font = A.Font_AvenirNextRegular12;
-            passwordExpiryLabel.TextAlignment = UITextAlignment.Left;
-            passwordExpiryLabel.BackgroundColor = UIColor.Clear;
-            passwordExpiryLabel.TextColor = A.Color_NachoGreen;
-            passwordExpiryLabel.Lines = 0;
-            passwordExpiryLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            passwordExpiryLabel.Hidden = true;
-            contentView.AddSubview (passwordExpiryLabel);
-
-            yOffset = passwordExpiryLabel.Frame.Bottom + 10f;
-
-            dirtyBackEndLabel = new UILabel (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), TEXTFIELD_HEIGHT));
-            dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
-            dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
-            dirtyBackEndLabel.TextAlignment = UITextAlignment.Center;
-            dirtyBackEndLabel.BackgroundColor = UIColor.Clear;
-            dirtyBackEndLabel.TextColor = A.Color_NachoGreen;
-            dirtyBackEndLabel.Lines = 2;
-            dirtyBackEndLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            dirtyBackEndLabel.Hidden = true;
-            contentView.AddSubview (dirtyBackEndLabel);
-
-            yOffset = dirtyBackEndLabel.Frame.Bottom + 5;
-
-            dirtyBackEndButton = new UIButton (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), TEXTFIELD_HEIGHT));
-            dirtyBackEndButton.Layer.CornerRadius = 4.0f;
-            dirtyBackEndButton.BackgroundColor = A.Color_NachoRed;
-            dirtyBackEndButton.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            dirtyBackEndButton.SetTitle ("Fix Account", UIControlState.Normal);
-            dirtyBackEndButton.AccessibilityLabel = "Fix account";
-            dirtyBackEndButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-            dirtyBackEndButton.TouchUpInside += FixBackEndButtonClicked; 
-            dirtyBackEndButton.Hidden = true;
-            contentView.AddSubview (dirtyBackEndButton);
-
-            yOffset = dirtyBackEndButton.Frame.Bottom + 5;
-
-            deleteAccountView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
-            deleteAccountView.BackgroundColor = UIColor.White;
-            deleteAccountView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            deleteAccountView.Layer.BorderWidth = .5f;
-
-            deleteAccountButton = UIButton.FromType (UIButtonType.System);
-            deleteAccountButton.Frame = new CGRect (HORIZONTAL_PADDING, 0, deleteAccountView.Frame.Width, deleteAccountView.Frame.Height);
-            Util.AddButtonImage (deleteAccountButton, "email-delete-two", UIControlState.Normal);
-            deleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
-            deleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
-            deleteAccountButton.AccessibilityLabel = "Delete Account";
-            deleteAccountButton.Font = A.Font_AvenirNextRegular14;
-            deleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            deleteAccountButton.TouchUpInside += onDeleteAccount;
-            deleteAccountView.AddSubview (deleteAccountButton);
-
-            // Fixme: delete account is still a test thing
-            contentView.Add (deleteAccountView);
-
-            yOffset = deleteAccountView.Frame.Bottom + A.Card_Vertical_Indent;
-
-            UIView greyBackground = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            greyBackground.BackgroundColor = UIColor.DarkGray;
-            greyBackground.Alpha = .4f;
-            greyBackground.Tag = GREY_BACKGROUND_VIEW_TAG;
-            greyBackground.Hidden = true;
-            View.Add (greyBackground);
-
-            UIView statusView = new UIView (new CGRect (View.Frame.Width / 6, View.Frame.Height / 2 - 150, View.Frame.Width * 2 / 3, 150));
-            statusView.Tag = STATUS_VIEW_TAG;
-            statusView.Layer.CornerRadius = 7.0f;
-            statusView.BackgroundColor = UIColor.White;
-            statusView.Alpha = 1.0f;
-            statusView.Hidden = true;
-
-            UITextView statusMessage = new UITextView (new CGRect (8, 2, statusView.Frame.Width - 16, statusView.Frame.Height / 2.4f));
-            statusMessage.BackgroundColor = UIColor.White;
-            statusMessage.Alpha = 1.0f;
-            statusMessage.Font = UIFont.SystemFontOfSize (17);
-            statusMessage.TextColor = UIColor.Black;
-            statusMessage.Text = "Validating Credentials";
-            statusMessage.TextAlignment = UITextAlignment.Center;
-            statusMessage.Editable = false;
-            statusView.AddSubview (statusMessage);
-
-            UIActivityIndicatorView theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
-            theSpinner.Alpha = 1.0f;
-            theSpinner.HidesWhenStopped = true;
-            theSpinner.Frame = new CGRect (statusView.Frame.Width / 2 - 20, 50, 40, 40);
-            theSpinner.Color = A.Color_SystemBlue;
-            theSpinner.StartAnimating ();
-
-            statusView.AddSubview (theSpinner);
-
-            UIView cancelLine = new UIView (new CGRect (0, 105, statusView.Frame.Width, .5f));
-            cancelLine.BackgroundColor = A.Color_NachoLightBorderGray;
-            statusView.AddSubview (cancelLine);
-
-            UIButton cancelValidation = new UIButton (new CGRect (0, 106, statusView.Frame.Width, 40));
-            cancelValidation.Layer.CornerRadius = 10.0f;
-            cancelValidation.BackgroundColor = UIColor.White;
-            cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
-            cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
-            cancelValidation.AccessibilityLabel = "Cancel";
-            cancelValidation.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
-            cancelValidation.Tag = CANCEL_VALIDATION_BUTTON_TAG;
-            statusView.AddSubview (cancelValidation);
-
-            cancelValidation.TouchUpInside += CancelValidationButtonClicked;
-
-            statusView.AddSubview (cancelValidation);
-            View.AddSubview (statusView);
+            ViewFramer.Create (contentView).Height (yOffset);
 
             // Delete Account Spinner - Keeping this separate from the validate credential spinner 
-            UIView deleteAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
-            deleteAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
-            deleteAccountBackgroundView.Tag = DELETE_ACCOUNT_BACKGROUND_VIEW_TAG;
-            deleteAccountBackgroundView.Hidden = true;
-            deleteAccountBackgroundView.Alpha = 0.0f;
-            View.AddSubview (deleteAccountBackgroundView);
+            DeleteAccountBackgroundView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
+            DeleteAccountBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
+            DeleteAccountBackgroundView.Hidden = true;
+            DeleteAccountBackgroundView.Alpha = 0.0f;
+            View.AddSubview (DeleteAccountBackgroundView);
 
-            UIView alertMimicView = new UIView (new CGRect (deleteAccountBackgroundView.Frame.Width / 2 - 90, deleteAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
-            alertMimicView.BackgroundColor = UIColor.White;
-            alertMimicView.Layer.CornerRadius = 6.0f;
-            deleteAccountBackgroundView.AddSubview (alertMimicView);
+            UIView AlertMimicView = new UIView (new CGRect (DeleteAccountBackgroundView.Frame.Width / 2 - 90, DeleteAccountBackgroundView.Frame.Height / 2 - 80, 180, 110));
+            AlertMimicView.BackgroundColor = UIColor.White;
+            AlertMimicView.Layer.CornerRadius = 6.0f;
+            DeleteAccountBackgroundView.AddSubview (AlertMimicView);
 
-            UILabel deleteAccountStatusMessage = new UILabel (new CGRect (8, 10, alertMimicView.Frame.Width - 16, 25));
-            deleteAccountStatusMessage.BackgroundColor = UIColor.White;
-            deleteAccountStatusMessage.Alpha = 1.0f;
-            deleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
-            deleteAccountStatusMessage.TextColor = UIColor.Black;
-            deleteAccountStatusMessage.Text = "Deleting Account";
-            deleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
-            alertMimicView.AddSubview (deleteAccountStatusMessage);
+            UILabel DeleteAccountStatusMessage = new UILabel (new CGRect (8, 10, AlertMimicView.Frame.Width - 16, 25));
+            DeleteAccountStatusMessage.BackgroundColor = UIColor.White;
+            DeleteAccountStatusMessage.Alpha = 1.0f;
+            DeleteAccountStatusMessage.Font = UIFont.SystemFontOfSize (17);
+            DeleteAccountStatusMessage.TextColor = UIColor.Black;
+            DeleteAccountStatusMessage.Text = "Deleting Account";
+            DeleteAccountStatusMessage.TextAlignment = UITextAlignment.Center;
+            AlertMimicView.AddSubview (DeleteAccountStatusMessage);
 
-            UIActivityIndicatorView deleteAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
-            deleteAccountActivityIndicator.Frame = new CGRect (alertMimicView.Frame.Width / 2 - 20, deleteAccountStatusMessage.Frame.Bottom + 15, 40, 40);
-            deleteAccountActivityIndicator.Color = A.Color_SystemBlue;
-            deleteAccountActivityIndicator.Alpha = 1.0f;
-            deleteAccountActivityIndicator.StartAnimating ();
-            deleteAccountActivityIndicator.Tag = DELETE_ACCOUNT_SPINNER_TAG;
-            alertMimicView.AddSubview (deleteAccountActivityIndicator);
+            DeleteAccountActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
+            DeleteAccountActivityIndicator.Frame = new CGRect (AlertMimicView.Frame.Width / 2 - 20, DeleteAccountStatusMessage.Frame.Bottom + 15, 40, 40);
+            DeleteAccountActivityIndicator.Color = A.Color_SystemBlue;
+            DeleteAccountActivityIndicator.Alpha = 1.0f;
+            DeleteAccountActivityIndicator.StartAnimating ();
+            AlertMimicView.AddSubview (DeleteAccountActivityIndicator);
         }
 
         protected override void ConfigureAndLayout ()
         {
-            var theServer = McServer.QueryByAccountId<McServer> (theAccount.Id).FirstOrDefault ();
-            var theCred = McCred.QueryByAccountId<McCred> (theAccount.Id).FirstOrDefault ();
-            var theConference = McConference.QueryByAccountId <McConference> (theAccount.Id).FirstOrDefault ();
+            DisplayNameTextBlock.SetValue (account.DisplayName);
 
-            var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
-            var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
-            var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
-            var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
-            var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
-            var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
+            SignatureBlock.SetValue (account.Signature);
 
-            if (!String.IsNullOrEmpty (theAccount.DisplayName)) {
-                accountNameTextField.Text = theAccount.DisplayName;
-            }
+            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (account.DaysToSyncEmail));
 
-            if (!String.IsNullOrEmpty (theCred.Username)) {
-                usernameTextField.Text = theCred.Username;
-            }
+            FastNotificationSwitch.SetState (account.FastNotificationEnabled, false);
 
-            if (!String.IsNullOrEmpty (theCred.GetPassword ())) {
-                passwordTextField.Text = theCred.GetPassword ();
-            }
+            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (account.NotificationConfiguration));
 
-            if (!String.IsNullOrEmpty (theAccount.EmailAddr)) {
-                emailTextField.Text = theAccount.EmailAddr;
-            }
-
-            if (null != theServer) {
-                mailserverTextField.Text = theServer.Host;
-                if (443 != theServer.Port) {
-                    mailserverTextField.Text += ":" + theServer.Port.ToString ();
-                }
-            }
-
-            if (null == theConference) {
-                theConference = new McConference ();
-                theConference.AccountId = theAccount.Id;
-                theConference.DefaultPhoneNumber = "";
-                theConference.Insert ();
-            }
-
-            if (!String.IsNullOrEmpty (theConference.DefaultPhoneNumber)) {
-                conferenceTextField.Text = theConference.DefaultPhoneNumber;
-            }
-
-            SignatureBlock.SetValue (theAccount.Signature);
-
-            DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (theAccount.DaysToSyncEmail));
-
-            FastNotificationSwitch.SetState (theAccount.FastNotificationEnabled, false);
-
-            NotificationsBlock.SetValue (Pretty.NotificationConfiguration (theAccount.NotificationConfiguration));
-
-            accountNameTextField.Enabled = textFieldsEditable;
-            usernameTextField.Enabled = textFieldsEditable;
-            passwordTextField.Enabled = textFieldsEditable;
-            emailTextField.Enabled = textFieldsEditable;
-            mailserverTextField.Enabled = textFieldsEditable;
-            conferenceTextField.Enabled = textFieldsEditable;
-
-            yOffset = additionalSettingsView.Frame.Bottom + 20;
-
-            DateTime expiry;
-            string rectificationUrl;
-            if (LoginHelpers.PasswordWillExpire (theAccount.Id, out expiry, out rectificationUrl)) {
-                passwordExpiryLabel.Hidden = false;
-                passwordExpiryLabel.Text = String.Format ("Password will expire on {0}.\n{1}", Pretty.ReminderDate (expiry), rectificationUrl ?? "");
-                passwordExpiryLabel.SizeToFit ();
-                ViewFramer.Create (passwordExpiryLabel).Y (yOffset);
-                yOffset += passwordExpiryLabel.Frame.Height + 10;
-            } else {
-                passwordExpiryLabel.Hidden = true;
-            }
-
-            if (LoginHelpers.DoesBackEndHaveIssues (theAccount.Id)) {
-                dirtyBackEndLabel.Hidden = false;
-                dirtyBackEndButton.Hidden = false;
-                dirtyBackEndLabel.SizeToFit ();
-                ViewFramer.Create (dirtyBackEndLabel).Y (yOffset);
-                yOffset += dirtyBackEndLabel.Frame.Height + 10;
-                ViewFramer.Create (dirtyBackEndButton).Y (yOffset);
-                yOffset = yOffset + dirtyBackEndButton.Frame.Height + 10;
-            } else {
-                dirtyBackEndLabel.Hidden = true;
-                dirtyBackEndButton.Hidden = true;
-            }
-
-            ViewFramer.Create (deleteAccountView).Y (yOffset);
-            yOffset = yOffset + deleteAccountView.Frame.Height + 20;
-
-            ColorTextFields ();
-
-            LayoutView ();
-        }
-
-        protected void LayoutView ()
-        {
+            var contentViewWidth = contentView.Frame.Width;
+            var contentViewHeight = contentView.Frame.Height;
             scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
-            scrollView.ContentSize = contentView.Frame.Size;
+            contentView.Frame = new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, contentViewWidth, contentViewHeight);
+            scrollView.ContentSize = new CGSize (contentView.Frame.Width + 2 * A.Card_Horizontal_Indent, contentView.Frame.Height + 2 * A.Card_Vertical_Indent);
         }
 
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        protected override void OnKeyboardChanged ()
         {
-            if (segue.Identifier == "SettingsToNotificationChooser") {
-                var vc = (NotificationChooserViewController)segue.DestinationViewController;
-                vc.Setup (this, theAccount.Id, theAccount.NotificationConfiguration);
-                return;
-            }
-            if (segue.Identifier == "SegueToSignatureEdit") {
-                var vc = (SignatureEditViewController)segue.DestinationViewController;
-                vc.SetAccountId (theAccount.Id);
-                return;
-            }
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
-        protected void ColorTextFields ()
-        {
-            var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
-            var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
-            var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
-            var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
-
-            usernameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            passwordTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            emailTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            mailserverTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-
-            switch (accountIssue) {
-            case AccountIssue.ErrorAuth:
-                usernameTextField.TextColor = A.Color_NachoRed;
-                passwordTextField.TextColor = A.Color_NachoRed;
-                break;
-            case AccountIssue.ErrorComm:
-                mailserverTextField.TextColor = A.Color_NachoRed;
-                break;
-            case AccountIssue.ErrorUser:
-                usernameTextField.TextColor = A.Color_NachoRed;
-                break;
-            case AccountIssue.InvalidHost:
-                mailserverTextField.TextColor = A.Color_NachoRed;
-                break;
-            default:
-                break;
-            }
-        }
-
-        protected bool DidUserEditAccount ()
-        {
-            var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
-            var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
-            var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
-            var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
-            var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
-            var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
-
-            if (accountNameTextField.Text != originalAccountNameValue) {
-                return true;
-            }
-            if (usernameTextField.Text != originalUsernameValue) {
-                return true;
-            }
-            if (passwordTextField.Text != originalPasswordValue) {
-                return true;
-            }
-            if (emailTextField.Text != originalEmailValue) {
-                return true;
-            }
-            if (mailserverTextField.Text != originalMailServerValue) {
-                return true;
-            }
-            if (conferenceTextField.Text != originalConferenceValue) {
-                return true;
-            }
-
-            return false;
+            ConfigureAndLayout ();
         }
 
         protected override void Cleanup ()
         {
-            cancelButton.Clicked -= CancelButtonClicked;
-            editButton.Clicked -= EditButtonClicked;
-            saveButton.Clicked -= SaveButtonClicked;
-            backButton.Clicked -= BackButtonClicked;
-            deleteAccountButton.TouchUpInside -= onDeleteAccount;
+            backButton.Clicked -= BackButton_Clicked;
+
+            accountImageView = null;
+
+            DeleteAccountButton.TouchUpInside -= onDeleteAccount;
             FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
-
-            dirtyBackEndButton.TouchUpInside -= FixBackEndButtonClicked;
-            dirtyBackEndButton = null;
-
-            cancelButton = null;
-            editButton = null;
-            saveButton = null;
-            backButton = null;
-
-            var cancelValidationButton = (UIButton)View.ViewWithTag (CANCEL_VALIDATION_BUTTON_TAG);
-            if (null != cancelValidationButton) {
-                cancelValidationButton.TouchUpInside -= CancelValidationButtonClicked;
-                cancelValidationButton = null;
-            }
-
-            SignatureBlock.Cleanup ();
-            DaysToSyncBlock.Cleanup ();
-
-            UITextField accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
-            UITextField usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
-            UITextField passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
-            UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
-            UITextField mailServerTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
-            UITextField conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
-
-            accountNameTextField.ShouldReturn -= TextFieldShouldReturn;
-            usernameTextField.ShouldReturn -= TextFieldShouldReturn;
-            passwordTextField.ShouldReturn -= TextFieldShouldReturn;
-            emailTextField.ShouldReturn -= TextFieldShouldReturn;
-            mailServerTextField.ShouldReturn -= TextFieldShouldReturn;
-            conferenceTextField.ShouldReturn -= TextFieldShouldReturn;
-
-            passwordTextField.ShouldChangeCharacters -= ShouldChangeCharacters;
-
-            accountNameTextField = null;
-            usernameTextField = null;
-            passwordTextField = null;
-            emailTextField = null;
-            mailServerTextField = null;
-            conferenceTextField = null;
-            SignatureBlock = null;
-            DaysToSyncBlock = null;
         }
 
-        protected void ValidateAndDisplayWaitingView ()
+        void BackButton_Clicked (object sender, EventArgs e)
         {
-            var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
-            var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
-            var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
-
-            if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (mailserverTextField.Text.Trim ())) {
-                accountIssue = AccountIssue.InvalidHost;
-                ConfigureAndLayout ();
-                return;
-            }
-
-            McServer testServer = new McServer () {
-                // FIXME STEVE
-                Capabilities = McAccount.ActiveSyncCapabilities,
-            };
-            SetHostAndPort (testServer, mailserverTextField.Text);
-
-            McCred testCred = new McCred ();
-            testCred.SetTestPassword (passwordTextField.Text);
-            testCred.Username = (usernameTextField.Text);
-
-            // TODO: Add more precise error messages based on NcResult
-            if (!BackEnd.Instance.ValidateConfig (theAccount.Id, testServer, testCred).isOK ()) {
-                NcAlertView.Show (this, "Network Error",
-                    "A network issue is preventing your changes from being validated. Would you like to save your changes anyway?",
-                    new NcAlertAction ("Save", () => {
-                        SaveAccountSettings ();
-                        ToggleEditing ();
-                    }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-            } else {
-                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-                ShowStatusView ();
-            }
-        }
-
-        public void StatusIndicatorTriggered ()
-        {
-            HideStatusView ();
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            if (handleStatusEnums) {
-                HandleAccountIssue ();
-            }
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-
-            if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                accountIssue = AccountIssue.None;
-                StatusIndicatorTriggered ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
-                accountIssue = AccountIssue.ErrorComm;
-                StatusIndicatorTriggered ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                accountIssue = AccountIssue.ErrorAuth;
-                StatusIndicatorTriggered ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
-                accountIssue = AccountIssue.ErrorUser;
-                StatusIndicatorTriggered ();
-            }
+            NavigationController.PopViewController (true);
         }
 
         public bool TextFieldShouldReturn (UITextField whatField)
@@ -796,85 +270,62 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public bool ShouldChangeCharacters (UITextField textField, NSRange range, string replacementString)
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            var updatedString = textField.Text.Substring (0, (int)range.Location) + replacementString + textField.Text.Substring ((int)(range.Location + range.Length));
-            textField.Text = updatedString;
-            return false;
+            if (segue.Identifier == "SettingsToNotificationChooser") {
+                var vc = (NotificationChooserViewController)segue.DestinationViewController;
+                vc.Setup (this, account.Id, account.NotificationConfiguration);
+                return;
+            }
+            if (segue.Identifier == "SegueToSignatureEdit") {
+                var vc = (SignatureEditViewController)segue.DestinationViewController;
+                var tag = "Create a signature that will appear at the end of every email that you send.";
+                vc.Setup ("Signature", tag, account.Signature);
+                vc.OnSave = OnSaveDescription;
+                return;
+            }
+            if (segue.Identifier == "SegueToDescriptionEdit") {
+                var vc = (SignatureEditViewController)segue.DestinationViewController;
+                var tag = "Create a descriptive label for this account.";
+                vc.Setup ("Description", tag, account.DisplayName);
+                vc.OnSave = OnSaveDescription;
+                return;
+            }
+            if (segue.Identifier == "SegueToAdvancedSettings") {
+                var vc = (AdvancedSettingsViewController)segue.DestinationViewController;
+                vc.Setup (account);
+                return;
+            }
+            if (segue.Identifier == "SegueToAccountValidation") {
+                var vc = (AccountValidationViewController)segue.DestinationViewController;
+                vc.ChangePassword (account);
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
-        protected void SaveButtonClicked (object sender, EventArgs e)
+        protected void ChangeDescriptionTapHandler (NSObject sender)
         {
-            View.EndEditing (true);
-            handleStatusEnums = true;
-            ValidateAndDisplayWaitingView ();
-        }
-
-        protected void EditButtonClicked (object sender, EventArgs e)
-        {
-            ToggleEditing ();
-        }
-
-        protected void BackButtonClicked (object sender, EventArgs e)
-        {
-            NavigationController.PopViewController (true);
-        }
-
-        protected void CancelButtonClicked (object sender, EventArgs e)
-        {
-            if (DidUserEditAccount ()) {
-                NcAlertView.Show (this, "Dismiss Changes", "If you leave this screen, your changes will not be saved.",
-                    new NcAlertAction ("OK", () => {
-                        ToggleEditing ();
-                    }),
-                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-            } else {
-                ToggleEditing ();
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SegueToDescriptionEdit", this);
             }
         }
 
-        protected void CancelValidationButtonClicked (object sender, EventArgs e)
+        protected void ChangePasswordTapHandler (NSObject sender)
         {
-            BackEnd.Instance.CancelValidateConfig (theAccount.Id);
-
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-            HideStatusView ();
-
-            NcAlertView.Show (this, "Validation Cancelled",
-                "Your settings have not been validated. Would you like to save them anyway?",
-                new NcAlertAction ("Save", () => {
-                    SaveAccountSettings ();
-                    ToggleEditing ();
-                }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SegueToAccountValidation", this);
+            }
         }
 
-        protected void CaptureOriginalSettings ()
+        protected void AdvancedSettingsTapHandler (NSObject sender)
         {
-            McServer theServer = McServer.QueryByAccountId<McServer> (theAccount.Id).FirstOrDefault ();
-            McCred theCred = McCred.QueryByAccountId<McCred> (theAccount.Id).FirstOrDefault ();
-            McConference theConference = McConference.QueryByAccountId<McConference> (theAccount.Id).FirstOrDefault ();
-
-            if (null != theAccount.DisplayName) {
-                originalAccountNameValue = theAccount.DisplayName;
-            }
-            if (null != theCred.Username) {
-                originalUsernameValue = theCred.Username;
-            }
-            if (null != theCred.GetPassword ()) {
-                originalPasswordValue = theCred.GetPassword ();
-            }
-            if (null != theAccount.EmailAddr) {
-                originalEmailValue = theAccount.EmailAddr;
-            }
-            if (null != theServer) {
-                originalMailServerValue = theServer.Host;
-                if (443 != theServer.Port) {
-                    originalMailServerValue += ":" + theServer.Port;
-                }
-            }
-            if (null != theConference.DefaultPhoneNumber) {
-                originalConferenceValue = theConference.DefaultPhoneNumber;
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SegueToAdvancedSettings", this);
             }
         }
 
@@ -890,10 +341,10 @@ namespace NachoClient.iOS
         {
             NcActionSheet.Show (DaysToSyncBlock, this,
                 new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5), () => {
-                    UpdateDaysToSync (theAccount.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
+                    UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.OneMonth_5);
                 }),
                 new NcAlertAction (Pretty.MaxAgeFilter (NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0), () => {
-                    UpdateDaysToSync (theAccount.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
+                    UpdateDaysToSync (account.Id, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode.SyncAll_0);
                 }),
                 new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
             );
@@ -909,145 +360,48 @@ namespace NachoClient.iOS
 
         protected void FastNotificationSwitchChangedHandler (object sender, EventArgs e)
         {
-            theAccount.FastNotificationEnabled = FastNotificationSwitch.On;
-            theAccount.Update ();
-            NcApplication.Instance.InvokeStatusIndEventInfo (theAccount, NcResult.SubKindEnum.Info_FastNotificationChanged);
+            account.FastNotificationEnabled = FastNotificationSwitch.On;
+            account.Update ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_FastNotificationChanged);
         }
 
         protected void UpdateDaysToSync (int accountId, NachoCore.ActiveSync.Xml.Provision.MaxAgeFilterCode code)
         {
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
-            theAccount.DaysToSyncEmail = code;
-            theAccount.Update ();
+            account.DaysToSyncEmail = code;
+            account.Update ();
         }
 
         public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
         {
             NotificationsBlock.SetValue (Pretty.NotificationConfiguration (choice));
-            theAccount.NotificationConfiguration = choice;
-            theAccount.Update ();
+            account.NotificationConfiguration = choice;
+            account.Update ();
         }
 
-        protected void HandleAccountIssue ()
+        void OnSaveSignature (string text)
         {
-            string alertViewHeader = "";
-            string alertViewMessage = "";
-
-            switch (accountIssue) {
-            case AccountIssue.ErrorAuth:
-                alertViewHeader = "Invalid Credentials";
-                alertViewMessage = "User name or password is incorrect. No emails can be sent or recieved. Save anyway?";
-                break;
-            case AccountIssue.ErrorComm:
-                alertViewHeader = "Validation Failed";
-                alertViewMessage = "This account may not be able to send or receive emails. Save anyway?";
-                break;
-            case AccountIssue.ErrorUser:
-                alertViewHeader = "Invalid Username";
-                alertViewMessage = "User name is incorrect. No emails can be sent or received. Save anyway?";
-                break;
-            case AccountIssue.None:
-                SaveAccountSettings ();
-                ToggleEditing ();
-                return;
-            default:
-                break;
-            }
-
-            NcAlertView.Show (this, alertViewHeader, alertViewMessage,
-                new NcAlertAction ("Save", () => {
-                    SaveAccountSettings ();
-                    ToggleEditing ();
-                }),
-                new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null));
-            
-            handleStatusEnums = false;
-
-            ColorTextFields ();
+            SignatureBlock.SetValue (text);
+            account.Signature = text;
+            account.Update ();
         }
 
-        protected void ShowStatusView ()
+        void OnSaveDescription (string text)
         {
-            UIView greyBackground = (UIView)View.ViewWithTag (GREY_BACKGROUND_VIEW_TAG); 
-            UIView statusView = (UIView)View.ViewWithTag (STATUS_VIEW_TAG); 
-            greyBackground.Hidden = false;
-            statusView.Hidden = false;
-        }
-
-        protected void HideStatusView ()
-        {
-            UIView greyBackground = (UIView)View.ViewWithTag (GREY_BACKGROUND_VIEW_TAG);
-            UIView statusView = (UIView)View.ViewWithTag (STATUS_VIEW_TAG);
-            greyBackground.Hidden = true;
-            statusView.Hidden = true;
-        }
-
-        protected void SaveAccountSettings ()
-        {
-            View.EndEditing (true);
-            if (DidUserEditAccount ()) {
-                var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
-                var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
-                var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
-                var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
-                var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
-                var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
-
-                var theServer = McServer.QueryByAccountId<McServer> (theAccount.Id).FirstOrDefault ();
-                var theCred = McCred.QueryByAccountId<McCred> (theAccount.Id).FirstOrDefault ();
-                var theConference = McConference.QueryByAccountId <McConference> (theAccount.Id).FirstOrDefault ();
-
-                theAccount.DisplayName = accountNameTextField.Text;
-                theAccount.EmailAddr = emailTextField.Text.Trim ();
-                SetHostAndPort (theServer, mailserverTextField.Text);
-                theCred.Username = usernameTextField.Text;
-                theCred.UpdatePassword (passwordTextField.Text);
-                theConference.DefaultPhoneNumber = conferenceTextField.Text;
-
-                theAccount.Update ();
-                theServer.Update ();
-                theCred.Update ();
-                theConference.Update ();
-
-            }
-        }
-
-        //Should this be a helper? EmailHelper?
-        protected void SetHostAndPort (McServer forServer, string serverText)
-        {
-            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == EmailHelper.ParseServer (ref forServer, serverText));
-        }
-
-        protected void ToggleEditing ()
-        {
-            textFieldsEditable = !textFieldsEditable;
-            if (textFieldsEditable) {
-                NavigationItem.SetLeftBarButtonItem (cancelButton, true);
-                NavigationItem.SetRightBarButtonItem (saveButton, true);
-                UIView.Animate (1, () => {
-                    NavigationItem.Title = "Edit Account";
-                });
-            } else {
-                NavigationItem.SetLeftBarButtonItem (backButton, true);
-                NavigationItem.SetRightBarButtonItem (editButton, true);
-                UIView.Animate (1, () => {
-                    NavigationItem.Title = "Account Settings";
-                });
-            }
-            ConfigureAndLayout ();
+            DisplayNameTextBlock.SetValue (text);
+            account.DisplayName = text;
+            account.Update ();
         }
 
         void onDeleteAccount (object sender, EventArgs e)
         {
             contentView.Hidden = true;
             backButton.Enabled = false;
-            editButton.Enabled = false;
             ToggleDeleteAccountSpinnerView ();
             Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount (theAccount.Id);
+                NcAccountHandler.Instance.RemoveAccount (account.Id);
                 InvokeOnMainThread (() => {
                     backButton.Enabled = true;
-                    editButton.Enabled = true;
                     ToggleDeleteAccountSpinnerView ();
                     // go back to main screen
                     NcUIRedirector.Instance.GoBackToMainScreen ();  
@@ -1056,45 +410,18 @@ namespace NachoClient.iOS
             NcTask.Run (action, "RemoveAccount");
         }
 
-        protected void ToggleDeleteAccountSpinnerView ()
+        void ToggleDeleteAccountSpinnerView ()
         {
-            UIView deleteAccountBackgroundView = (UIView)View.ViewWithTag (DELETE_ACCOUNT_BACKGROUND_VIEW_TAG);
-            UIActivityIndicatorView deleteAccountActivityIndicator = (UIActivityIndicatorView)View.ViewWithTag (DELETE_ACCOUNT_SPINNER_TAG);
+            DeleteAccountBackgroundView.Hidden = !DeleteAccountBackgroundView.Hidden;
 
-            deleteAccountBackgroundView.Hidden = !deleteAccountBackgroundView.Hidden;
-
-            if (deleteAccountBackgroundView.Hidden) {
-                deleteAccountActivityIndicator.StopAnimating ();
-                deleteAccountBackgroundView.Alpha = 0.0f;
+            if (DeleteAccountBackgroundView.Hidden) {
+                DeleteAccountActivityIndicator.StopAnimating ();
+                DeleteAccountBackgroundView.Alpha = 0.0f;
             } else {
                 UIView.Animate (.15, () => {
-                    deleteAccountBackgroundView.Alpha = 1.0f;
+                    DeleteAccountBackgroundView.Alpha = 1.0f;
                 });
-                deleteAccountActivityIndicator.StartAnimating ();
-            }
-        }
-
-        protected override void OnKeyboardChanged ()
-        {
-            LayoutView ();
-        }
-
-        protected void FixBackEndButtonClicked (object sender, EventArgs e)
-        {
-            // FIXME STEVE
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Id, McAccount.AccountCapabilityEnum.EmailSender);
-
-            if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
-                UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                cvc.SetAccountId (theAccount.Id);
-                this.PresentViewController (cvc, true, null);
-            }
-
-            if (BackEndStateEnum.ServerConfWait == backEndState) {
-                var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                // FIXME STEVE
-                x.ServConfReqCallback (theAccount.Id, McAccount.AccountCapabilityEnum.EmailSender);
+                DeleteAccountActivityIndicator.StartAnimating ();
             }
         }
 
