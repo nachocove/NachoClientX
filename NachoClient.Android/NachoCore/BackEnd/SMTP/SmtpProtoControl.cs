@@ -54,6 +54,7 @@ namespace NachoCore.SMTP
                     return BackEndStateEnum.CertAskWait;
 
                 case (uint)Lst.ConnW:
+                case (uint)Lst.HotQOpW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
                     return BackEndStateEnum.PostAutoDPostInboxSync;
@@ -388,8 +389,15 @@ namespace NachoCore.SMTP
             if (!base.Execute ()) {
                 return false;
             }
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
-            return true;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            switch (exeCtxt) {
+            default:
+                Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPCPARK");
+                return true;
+            case NcApplication.ExecutionContextEnum.Foreground:
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
+                return true;
+            }
         }
 
         private SmtpCommand Cmd;

@@ -10,6 +10,7 @@ using NachoCore;
 using NachoCore.Model;
 using MailKit.Security;
 using System.Text;
+using System.Net.Sockets;
 
 namespace NachoCore.IMAP
 {
@@ -99,6 +100,12 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+            } catch (SocketException ex) {
+                // We check the server connectivity pretty well in Discovery. If this happens with
+                // other commands, it's probably a temporary failure.
+                Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPCONNTEMPAUTH");
             } catch (InvalidOperationException ex) {
                 Log.Error (Log.LOG_IMAP, "InvalidOperationException: {0}", ex.ToString ());
                 ResolveAllFailed (NcResult.WhyEnum.ProtocolError);

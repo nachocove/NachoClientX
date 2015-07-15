@@ -63,7 +63,8 @@ namespace Test.iOS
             imapSummary.Envelope.From.Add (TestFrom);
 
             bool changed;
-            var emailMessage = ImapSyncCommand.ServerSaysAddOrChangeEmail (Account.Id, imapSummary, TestFolder, out changed);
+            bool created;
+            var emailMessage = ImapSyncCommand.ServerSaysAddOrChangeEmail (Account.Id, imapSummary, TestFolder, out changed, out created);
 
             Assert.AreEqual (emailMessage.Subject, TestSubject);
             Assert.True (emailMessage.FromEmailAddressId > 0);
