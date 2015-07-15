@@ -64,13 +64,12 @@ namespace NachoCore.IMAP
                 case (uint)Lst.PingW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.Parked:
-                    // FIXME - need to consider ProtocolState.HasSyncedInbox.
-                    return BackEndStateEnum.PostAutoDPostInboxSync;
-
-                default:
-                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
-                    return BackEndStateEnum.PostAutoDPostInboxSync;
+                    return (ProtocolState.HasSyncedInbox) ? 
+                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                        BackEndStateEnum.PostAutoDPreInboxSync;
                 }
+                // should never reach here.
+                return BackEndStateEnum.NotYetStarted;
             }
         }
 
@@ -496,7 +495,6 @@ namespace NachoCore.IMAP
             LastBackEndState = BackEndState;
             Strategy = new ImapStrategy (this);
             PushAssist = new PushAssist (this);
-            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
@@ -580,7 +578,9 @@ namespace NachoCore.IMAP
         public override void Remove ()
         {
             // TODO Move to base
-            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
+                Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", Sm.State);
+            }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
