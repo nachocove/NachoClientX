@@ -579,7 +579,7 @@ namespace NachoClient.iOS
             }
             if (Prompt.EditInfo == prompt) {
                 if (serverView.IsNullOrEmpty ()) {
-                    SetRedText (passwordView, "Enter a server");
+                    SetRedText (serverView, "Enter a server");
                     return false;
                 }
             }
