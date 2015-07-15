@@ -154,7 +154,16 @@ namespace NachoClient.iOS
         void SwitchToAccount (McAccount account)
         {
             switchAccountButton.SetAccountImage (account);
-            addContactButton.Enabled = (McAccount.AccountTypeEnum.Exchange == account.AccountType);
+            addContactButton.Enabled = account.CanAddContact ();
+            // If no account supports adding contacts, hide the button
+            bool hide = true;
+            foreach (var acc in McAccount.GetAllAccounts()) {
+                if (acc.CanAddContact ()) {
+                    hide = false;
+                    break;
+                }
+            }
+            NavigationItem.RightBarButtonItem = hide ? null : addContactButton;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

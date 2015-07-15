@@ -320,10 +320,10 @@ namespace NachoCore.Model
         public static List<int> GetAllConfiguredNonDeviceAccountIds ()
         {
             return (from account in McAccount.GetAllAccounts ()
-                where
-                McAccount.AccountTypeEnum.Device != account.AccountType &&
-                McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
-                select account.Id).ToList ();
+                             where
+                                 McAccount.AccountTypeEnum.Device != account.AccountType &&
+                                 McAccount.ConfigurationInProgressEnum.Done == account.ConfigurationInProgress
+                             select account.Id).ToList ();
         }
 
         public static McAccount GetAccountBeingConfigured ()
@@ -337,6 +337,19 @@ namespace NachoCore.Model
             return (null != account) && (McAccount.ConfigurationInProgressEnum.Done != account.ConfigurationInProgress);
         }
 
+        public bool CanAddContact ()
+        {
+            bool can;
+            switch (AccountType) {
+            case AccountTypeEnum.Exchange:
+                can = true;
+                break;
+            default:
+                can = false;
+                break;
+            }
+            return can;
+        }
     }
 
     public class ConstMcAccount : McAccount
