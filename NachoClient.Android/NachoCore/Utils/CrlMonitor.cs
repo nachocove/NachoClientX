@@ -193,7 +193,7 @@ namespace NachoCore.Utils
                     throw;
                 }
             } catch (WebException e) {
-                Log.Warn (Log.LOG_PUSH, "CRL pull: Caught network exception - {0}", e);
+                Log.Warn (Log.LOG_PUSH, "CRL pull: Caught network exception: {0} - {1}", e.Status, e.Message);
             } catch (Exception e) {
                 Log.Warn (Log.LOG_PUSH, "CRL pull: Caught unexpected http exception - {0}", e);
             }
