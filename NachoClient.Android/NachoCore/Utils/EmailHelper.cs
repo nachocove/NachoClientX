@@ -75,7 +75,7 @@ namespace NachoCore.Utils
                 var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = result,
-                    Account = ConstMcAccount.NotAccountSpecific,
+                    Account = McAccount.QueryById<McAccount> (messageToSend.AccountId),
                 });
             }
 
@@ -105,7 +105,7 @@ namespace NachoCore.Utils
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (accountId),
             });
         }
 
@@ -124,7 +124,7 @@ namespace NachoCore.Utils
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
             return message;
         }
@@ -146,7 +146,7 @@ namespace NachoCore.Utils
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
         }
 
@@ -169,7 +169,7 @@ namespace NachoCore.Utils
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
         }
 
@@ -180,7 +180,7 @@ namespace NachoCore.Utils
             var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = result,
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
         }
 
@@ -343,7 +343,7 @@ namespace NachoCore.Utils
                 return true;
             }
         }
-   
+
         public static bool IsMailToURL (string urlString)
         {
             return urlString.StartsWith (Uri.UriSchemeMailto + ":", StringComparison.OrdinalIgnoreCase);
