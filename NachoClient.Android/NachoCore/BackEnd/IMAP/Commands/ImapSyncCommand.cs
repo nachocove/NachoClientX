@@ -87,8 +87,10 @@ namespace NachoCore.IMAP
             } else {
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
-            cap.Stop ();
+            cap.Pause ();
             Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
+            cap.Stop ();
+            cap.Dispose ();
             return result;
         }
 
@@ -215,40 +217,41 @@ namespace NachoCore.IMAP
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
             bool createdUnread = false;
-            NcCapture cap;
             UniqueIdSet summaryUids = new UniqueIdSet ();
             IList<IMessageSummary> imapSummaries = getMessageSummaries (mailKitFolder, uidset);
             if (imapSummaries.Any ()) {
-                cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
-                foreach (var imapSummary in imapSummaries) {
-                    if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
-                        continue;
-                    }
-                    bool changed1;
-                    bool created1;
-                    MessageSummary summ = imapSummary as MessageSummary;
-                    var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1, out created1);
-                    if (changed1) {
-                        newOrChanged.Add (summ.UniqueId.Value);
-                    }
-                    if (created1 && false == emailMessage.IsRead) {
-                        createdUnread = true;
-                    }
-                    if (null == emailMessage.BodyPreview) {
-                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                        if (!string.IsNullOrEmpty (preview)) {
-                            emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                var target = (McEmailMessage)record;
-                                target.BodyPreview = preview;
-                                target.IsIncomplete = false;
-                                return true;
-                            });
+                using (var cap = NcCapture.CreateAndStart (KImapPreviewGeneration)) {
+                    foreach (var imapSummary in imapSummaries) {
+                        if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
+                            continue;
                         }
+                        bool changed1;
+                        bool created1;
+                        MessageSummary summ = imapSummary as MessageSummary;
+                        var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1, out created1);
+                        if (changed1) {
+                            newOrChanged.Add (summ.UniqueId.Value);
+                        }
+                        if (created1 && false == emailMessage.IsRead) {
+                            createdUnread = true;
+                        }
+                        if (null == emailMessage.BodyPreview) {
+                            var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                            if (!string.IsNullOrEmpty (preview)) {
+                                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                    var target = (McEmailMessage)record;
+                                    target.BodyPreview = preview;
+                                    target.IsIncomplete = false;
+                                    return true;
+                                });
+                            }
+                        }
+                        summaryUids.Add (imapSummary.UniqueId.Value);
                     }
-                    summaryUids.Add (imapSummary.UniqueId.Value);
+                    cap.Pause ();
+                    Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
+                    cap.Stop ();
                 }
-                cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
             if (createdUnread && Synckit.Folder.IsDistinguished && Synckit.Folder.Type == NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2) {
@@ -259,17 +262,18 @@ namespace NachoCore.IMAP
 
         private IList<IMessageSummary> getMessageSummaries (IMailFolder mailKitFolder, UniqueIdSet uidset)
         {
-            NcCapture cap;
             IList<IMessageSummary> imapSummaries = null;
             try {
-                cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                if (Synckit.Headers.Any ()) {
-                    imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
-                } else {
-                    imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
+                using (var cap = NcCapture.CreateAndStart (KImapFetchTiming)) {
+                    if (Synckit.Headers.Any ()) {
+                        imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
+                    } else {
+                        imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
+                    }
+                    cap.Pause ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    cap.Stop ();
                 }
-                cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
             } catch (ImapProtocolException) {
                 // try one-by-one so we can at least get a few.
                 Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
