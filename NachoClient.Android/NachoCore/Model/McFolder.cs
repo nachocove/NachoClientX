@@ -100,6 +100,8 @@ namespace NachoCore.Model
 
         public bool IsDistinguished { get; set; }
 
+        public bool OnlyFolderContents { get; set; }
+
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
