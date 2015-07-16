@@ -87,8 +87,9 @@ namespace NachoCore.IMAP
             } else {
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
-            cap.Stop ();
+            cap.Pause ();
             Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
+            cap.Stop ();
             cap.Dispose ();
             return result;
         }
@@ -247,8 +248,9 @@ namespace NachoCore.IMAP
                         }
                         summaryUids.Add (imapSummary.UniqueId.Value);
                     }
-                    cap.Stop ();
+                    cap.Pause ();
                     Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
+                    cap.Stop ();
                 }
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
@@ -268,8 +270,9 @@ namespace NachoCore.IMAP
                     } else {
                         imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
                     }
-                    cap.Stop ();
+                    cap.Pause ();
                     Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    cap.Stop ();
                 }
             } catch (ImapProtocolException) {
                 // try one-by-one so we can at least get a few.
