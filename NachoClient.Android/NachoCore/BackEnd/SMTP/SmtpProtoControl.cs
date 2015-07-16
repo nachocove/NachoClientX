@@ -32,6 +32,9 @@ namespace NachoCore.SMTP
 
         public override BackEndStateEnum BackEndState {
             get {
+                if (null != BackEndStatePreset) {
+                    return (BackEndStateEnum)BackEndStatePreset;
+                }
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
                     state = ProtocolState.SmtpProtoControlState;
@@ -430,6 +433,7 @@ namespace NachoCore.SMTP
 
         private void DoUiServConfReq ()
         {
+            BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
             Owner.ServConfReq (this, Sm.Arg);
         }
@@ -444,6 +448,7 @@ namespace NachoCore.SMTP
 
         private void DoUiCertOkReq ()
         {
+            BackEndStatePreset = BackEndStateEnum.CertAskWait;
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
@@ -543,10 +548,11 @@ namespace NachoCore.SMTP
 
         private void DoUiCredReq ()
         {
-            // Send the request toward the UI.
             if (null != Cmd) {
                 Cmd.Cancel ();
             }
+            BackEndStatePreset = BackEndStateEnum.CredWait;
+            // Send the request toward the UI.
             Owner.CredReq (this);
         }
 
@@ -554,6 +560,7 @@ namespace NachoCore.SMTP
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
+            BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
             if ((uint)Lst.Parked != stateToSave) {

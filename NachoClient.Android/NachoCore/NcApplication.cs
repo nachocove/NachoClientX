@@ -852,6 +852,12 @@ namespace NachoCore
             }
         }
 
+        public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var certificate = BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities);
+            return (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint));
+        }
+
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)
         {
             if (isOkay) {
