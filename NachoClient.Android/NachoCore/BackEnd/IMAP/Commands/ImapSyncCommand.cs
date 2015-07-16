@@ -88,6 +88,7 @@ namespace NachoCore.IMAP
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
             cap.Stop ();
+            Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
             return result;
         }
 
