@@ -284,6 +284,11 @@ namespace NachoClient.iOS
         public void ShowCertAsk ()
         {
             RemoveWindows ();
+            // FIXME: need to pass thru and handle the requested capabilities
+            if (NcApplication.Instance.CertAskReqPreApproved (account.Id, McAccount.AccountCapabilityEnum.EmailSender)) {
+                AcceptCertificate (account.Id);
+                return;
+            }
             certificateView = new CertificateView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
             certificateView.SetCertificateInformation (account.Id);
             View.AddSubview (certificateView);
