@@ -53,7 +53,7 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
 
-            Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
+            Log.Info (Log.LOG_IMAP, "{0}: Processing {1}", Synckit.Folder.ImapFolderNameRedacted (), Synckit.ToString ());
 
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
             mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
@@ -88,7 +88,7 @@ namespace NachoCore.IMAP
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
             cap.Pause ();
-            Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
+            Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
             cap.Stop ();
             cap.Dispose ();
             return result;
