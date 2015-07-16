@@ -929,7 +929,8 @@ namespace NachoCore.IMAP
             string command = string.Format ("AUTHENTICATE {0}", sasl.MechanismName);
             if (sasl.SupportsInitialResponse &&
                 (0 != (ProtoControl.ProtocolState.ImapServerCapabilitiesUnAuth & McProtocolState.NcImapCapabilities.SaslIR)) ||
-                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR))) {
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR)))
+            {
                 command += " ";
             } else {
                 command += "\n";
