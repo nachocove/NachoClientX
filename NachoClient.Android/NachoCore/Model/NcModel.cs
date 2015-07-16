@@ -47,6 +47,11 @@ namespace NachoCore.Model
             }
         }
 
+        public DateTime GetLastAccess ()
+        {
+            return LastAccess;
+        }
+
         public void EliminateIfStale (Action action)
         {
             lock (LockObj) {
@@ -410,6 +415,7 @@ namespace NachoCore.Model
         public void Start ()
         {
             DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", state => {
+                Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
                 foreach (var kvp in DbConns) {
                     NcSQLiteConnection dummy;
                     if (kvp.Key == NcApplication.Instance.UiThreadId) {
@@ -423,7 +429,7 @@ namespace NachoCore.Model
                         }
                     });
                 }
-            }, null, 120 * 1000, 120 * 1000);
+            }, null, 15 * 1000, 15 * 1000);
             DbConnGCTimer.Stfu = true;
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
@@ -662,6 +668,18 @@ namespace NachoCore.Model
         {
             var guidString = Guid.NewGuid ().ToString ("N");
             return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
+        }
+
+        public void DumpLastAccess ()
+        {
+            Log.Info (Log.LOG_DB, "DbConn: Dumping LastAccess for open DB connections");
+            foreach (var kvp in DbConns) {
+                if (kvp.Key == NcApplication.Instance.UiThreadId) {
+                    Log.Info (Log.LOG_DB, "DbConn: UiThread Key: {0} LastAccess at: {1} Seconds: {2:N0}", kvp.Key, kvp.Value.GetLastAccess (), (DateTime.UtcNow - kvp.Value.GetLastAccess ()).TotalSeconds);
+                } else {
+                    Log.Info (Log.LOG_DB, "DbConn: Key: {0} LastAccess at: {1} Seconds: {2:N0}", kvp.Key, kvp.Value.GetLastAccess (), (DateTime.UtcNow - kvp.Value.GetLastAccess ()).TotalSeconds);
+                }
+            }
         }
 
         // To be run synchronously only on app boot.

@@ -697,6 +697,7 @@ namespace NachoCore
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
+            NcModel.Instance.DumpLastAccess ();
 
             if (null != MonitorEvent) {
                 MonitorEvent (this, EventArgs.Empty);
