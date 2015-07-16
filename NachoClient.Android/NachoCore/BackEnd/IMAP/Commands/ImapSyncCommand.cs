@@ -23,6 +23,8 @@ namespace NachoCore.IMAP
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
+        private const string KImapSyncOpenTiming = "IMAP Sync/Open";
+        private const string KImapSyncTiming = "IMAP Sync/Fetch";
         private const string KImapFetchTiming = "IMAP Summary Fetch";
         private const string KImapPreviewGeneration = "IMAP Preview Generation";
 
@@ -41,6 +43,8 @@ namespace NachoCore.IMAP
                 PendingSingle.MarkDispached ();
             }
 
+            NcCapture.AddKind (KImapSyncOpenTiming);
+            NcCapture.AddKind (KImapSyncTiming);
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
         }
@@ -61,12 +65,15 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
             Event result;
+            NcCapture cap;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
+                cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
                 result = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
 
             case SyncKit.MethodEnum.Sync:
+                cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 result = syncFolder (mailKitFolder, timespan);
                 break;
 
@@ -80,6 +87,8 @@ namespace NachoCore.IMAP
             } else {
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
+            cap.Stop ();
+            Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
             return result;
         }
 
