@@ -365,7 +365,6 @@ namespace NachoCore.SMTP
             LastBackEndState = BackEndState;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
-            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
