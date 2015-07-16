@@ -603,21 +603,6 @@ namespace NachoClient.iOS
                 EventFromEnum ();
                 return;
             }
-            if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
-                EventFromEnum ();
-                return;
-            }
-            if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: CredReqCallback Status Ind (Adv. View)");
-                EventFromEnum ();
-                return;
-            }
-            if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
-                EventFromEnum ();
-                return;
-            }
             if (NcResult.SubKindEnum.Info_NetworkStatus == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Info_NetworkStatus");
                 if (NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
