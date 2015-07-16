@@ -3,12 +3,10 @@
 using System;
 using System.Linq;
 using MailKit;
-using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoPlatform;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using MimeKit;
 
@@ -17,8 +15,12 @@ namespace NachoCore.IMAP
     public class ImapStrategy : NcStrategy
     {
         public const uint KBaseOverallWindowSize = 10;
-        public const int KBaseNoIdlePollTime = 60; // seconds
+        public const int KBaseNoIdlePollTime = 60;
+        // seconds
         public const int kFolderExamineInterval = 60 * 5;
+        public const int kFolderExamineQSInterval = 30;
+
+        McFolder PrioSyncFolder { get; set; }
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
@@ -26,6 +28,10 @@ namespace NachoCore.IMAP
 
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McPending pending)
         {
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            if (exeCtxt != NcApplication.ExecutionContextEnum.Foreground) {
+                Log.Warn (Log.LOG_IMAP, "GenSyncKit with Pending (i.e. user-request) but ExecutionContext is {0}", exeCtxt);
+            }
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (accountId, pending.ServerId);
             var syncKit = GenSyncKit (accountId, protocolState, folder, true);
@@ -49,19 +55,44 @@ namespace NachoCore.IMAP
             return overallWindowSize;
         }
 
-        private int FolderExamineInterval { get { return kFolderExamineInterval; }}
-        private int NoIdlePollTime { get { return KBaseNoIdlePollTime; }}
+        private int FolderExamineInterval { 
+            get {
+                return NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.Foreground ? kFolderExamineQSInterval : kFolderExamineInterval;
+            }
+        }
+
+        private int NoIdlePollTime { get { return KBaseNoIdlePollTime; } }
 
         MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
-                                           | MessageSummaryItems.Envelope
-                                           | MessageSummaryItems.Flags
-                                           | MessageSummaryItems.InternalDate
-                                           | MessageSummaryItems.MessageSize
-                                           | MessageSummaryItems.UniqueId
-                                           | MessageSummaryItems.GMailMessageId
-                                           | MessageSummaryItems.GMailThreadId;
+                                              | MessageSummaryItems.Envelope
+                                              | MessageSummaryItems.Flags
+                                              | MessageSummaryItems.InternalDate
+                                              | MessageSummaryItems.MessageSize
+                                              | MessageSummaryItems.UniqueId
+                                              | MessageSummaryItems.GMailMessageId
+                                              | MessageSummaryItems.GMailThreadId;
 
         //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
+
+        uint SyncSpan (McFolder folder)
+        {
+            return UInt32.MinValue == folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+        }
+
+        private bool needFullSync (McFolder folder)
+        {
+            bool needSync = false;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            switch (exeCtxt) {
+            case NcApplication.ExecutionContextEnum.Foreground:
+                needSync = folder.ImapNeedFullSync;
+                break;
+
+            default:
+                break;
+            }
+            return needSync;
+        }
 
         /// <summary>
         /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
@@ -86,19 +117,12 @@ namespace NachoCore.IMAP
             if (folder.ImapNoSelect) {
                 return null;
             }
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last checked: {1}, HighestSynced {2}, UidNext {3}, UserRequested {4})",
+                folder.ImapFolderNameRedacted (), folder.ImapLastExamine,
+                folder.ImapUidHighestUidSynced, folder.ImapUidNext,
+                UserRequested);
+            
             SyncKit syncKit = null;
-            var currentHighestInFolder = new UniqueId (folder.ImapUidNext - 1);
-            UniqueIdSet UidSet;
-            if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
-                if (!UniqueIdSet.TryParse (folder.ImapUidSet, folder.ImapUidValidity, out UidSet)) {
-                    Log.Error (Log.LOG_IMAP, "GenSyncKit {0}: Could not parse uid set", folder.ImapFolderNameRedacted ());
-                    return null;
-                }
-            } else {
-                UidSet = new UniqueIdSet ();
-            }
-
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder", folder.ImapFolderNameRedacted ());
             if (UserRequested ||
                 0 == folder.ImapUidNext ||
                 null == folder.ImapUidSet ||
@@ -111,11 +135,13 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 syncKit = new SyncKit (folder);
+                PrioSyncFolder = folder;
             } else {
                 bool needSync = needFullSync (folder);
                 bool hasNewMail = HasNewMail (folder);
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: NeedFullSync {1} HasNewMail {2}", folder.ImapFolderNameRedacted (), needSync, hasNewMail);
                 if (needSync || hasNewMail) {
-                    Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Resetting sync pointer to highest point: NeedFullSync {1} HasNewMail {2}", folder.ImapFolderNameRedacted (), needSync, hasNewMail);
+                    Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Resetting sync pointer to highest point", folder.ImapFolderNameRedacted ());
                     resetLastSyncPoint (ref folder);
                     folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
@@ -124,9 +150,17 @@ namespace NachoCore.IMAP
                     });
                 }
 
-                uint span = UInt32.MinValue == folder.ImapUidHighestUidSynced || currentHighestInFolder.Id > folder.ImapUidHighestUidSynced ? KBaseOverallWindowSize : SpanSizeWithCommStatus ();
+                uint span = SyncSpan (folder);
                 int startingPoint = (int)(0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Last {1} UidNext {2} Syncing from {3} for {4} messages", folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, startingPoint, span);
+
+                var exeCtxt = NcApplication.Instance.ExecutionContext;
+                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                    if (folder.ImapUidNext - startingPoint > span * 2) {
+                        Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: BG/QS: startingPoint {1} beyond cutoff. Stopping sync ({2})", folder.ImapFolderNameRedacted (), startingPoint, exeCtxt);
+                        return null;
+                    }
+                }
 
                 UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, (uint)startingPoint, span);
                 UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, (uint)startingPoint, span);
@@ -168,12 +202,6 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
-        private bool needFullSync (McFolder folder)
-        {
-            bool needSync = folder.ImapNeedFullSync;
-            return needSync;
-        }
-
         private void resetLastSyncPoint (ref McFolder folder)
         {
             if (folder.ImapLastUidSynced != folder.ImapUidNext) {
@@ -187,7 +215,7 @@ namespace NachoCore.IMAP
 
         private bool HasNewMail (McFolder folder)
         {
-            return (0 != folder.ImapUidHighestUidSynced && folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1);
+            return ((0 != folder.ImapUidHighestUidSynced) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext -1));
         }
 
         private static bool HasDeletedMail (McFolder folder, UniqueIdSet currentMails, UniqueIdSet currentUidSet, out UniqueIdSet uids)
@@ -324,7 +352,17 @@ namespace NachoCore.IMAP
                 return userDemand;
             }
 
-            // TODO move user-directed Sync up to this priority level in FG.
+            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, Client, syncKit));
+                    }
+                }
+            }
+
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
@@ -399,17 +437,14 @@ namespace NachoCore.IMAP
                     return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.FSync, new ImapFolderSyncCommand (BEContext, Client));
                 }
 
-                // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (PowerPermitsSpeculation ()) {
-                    // FIXME JAN once ImapXxxDownloadCommand can handle a FetchKit", lift logic from EAS 
-                    // for speculatively pre-fetching bodies and attachments.
-                    foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
-                        if (null != syncKit) {
-                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
-                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                                new ImapSyncCommand (BEContext, Client, syncKit));
-                        }
+                // (FG/BG) Sync
+                // FIXME Deal with 'narrow' and 'degraded' sync, i.e. on low battery 'do less' (whatever that means).
+                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
+                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                            new ImapSyncCommand (BEContext, Client, syncKit));
                     }
                 }
                 Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
@@ -418,14 +453,6 @@ namespace NachoCore.IMAP
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
-                    if (null != syncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, Client, syncKit));
-                    }
-                }
                 Log.Info (Log.LOG_IMAP, "Strategy:QS:Wait");
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Wait,
                     new ImapWaitCommand (BEContext, Client, 120, true));
@@ -437,18 +464,31 @@ namespace NachoCore.IMAP
         private List<McFolder> SyncFolderList (int accountId, NcApplication.ExecutionContextEnum exeCtxt)
         {
             var list = new List<McFolder> ();
-            McFolder defInbox = McFolder.GetDefaultInboxFolder (accountId);
-            // Always make sure Inbox is checked first.
-            list.Add (defInbox);
+            if (null != PrioSyncFolder) {
+                list.Add (PrioSyncFolder);
+            }
 
-            // if in FG, add all other folders. Otherwise, only Inbox gets syncd
-            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+            // Always make sure Inbox is checked first (but possibly after PrioFolder).
+            McFolder defInbox = McFolder.GetDefaultInboxFolder (accountId);
+            if (null == PrioSyncFolder || defInbox.Id != PrioSyncFolder.Id) {
+                list.Add (defInbox);
+            }
+
+            // if in FG, add all other folders. Otherwise, only Inbox (and PrioFolder) gets syncd
+            if (NcApplication.ExecutionContextEnum.QuickSync != exeCtxt) {
                 foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
-                    if (defInbox.Id == folder.Id) {
+                    if (folder.ImapNoSelect ||
+                        defInbox.Id == folder.Id ||
+                        (null != PrioSyncFolder && folder.Id == PrioSyncFolder.Id))
+                    {
                         continue;
                     }
                     list.Add (folder);
                 }
+            }
+            if (null != PrioSyncFolder) {
+                // don't let the PrioSyncFolder exist past one round.
+                PrioSyncFolder = null;
             }
             return list;
         }

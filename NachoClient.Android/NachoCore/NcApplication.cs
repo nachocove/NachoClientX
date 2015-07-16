@@ -233,6 +233,7 @@ namespace NachoCore
                 InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_AccountChanged);
             }
         }
+
         private McAccount _Account;
 
         public delegate void CredReqCallbackDele (int accountId);
@@ -661,7 +662,10 @@ namespace NachoCore
 
         public void MonitorStop ()
         {
-            MonitorTimer.Dispose ();
+            if (null != MonitorTimer) {
+                MonitorTimer.Dispose ();
+                MonitorTimer = null;
+            }
         }
 
         public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)

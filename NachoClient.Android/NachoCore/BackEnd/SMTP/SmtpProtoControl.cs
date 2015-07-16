@@ -54,6 +54,7 @@ namespace NachoCore.SMTP
                     return BackEndStateEnum.CertAskWait;
 
                 case (uint)Lst.ConnW:
+                case (uint)Lst.HotQOpW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
                     return BackEndStateEnum.PostAutoDPostInboxSync;
@@ -361,9 +362,9 @@ namespace NachoCore.SMTP
             };
             Sm.Validate ();
             Sm.State = ProtocolState.SmtpProtoControlState;
+            LastBackEndState = BackEndState;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
-            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
@@ -388,8 +389,15 @@ namespace NachoCore.SMTP
             if (!base.Execute ()) {
                 return false;
             }
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
-            return true;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            switch (exeCtxt) {
+            default:
+                Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPCPARK");
+                return true;
+            case NcApplication.ExecutionContextEnum.Foreground:
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
+                return true;
+            }
         }
 
         private SmtpCommand Cmd;
@@ -556,6 +564,12 @@ namespace NachoCore.SMTP
                     return true;
                 });
             }
+            if (LastBackEndState != BackEndState) {
+                var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
+                res.Value = AccountId;
+                StatusInd (res);
+            }
+            LastBackEndState = BackEndState;
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)

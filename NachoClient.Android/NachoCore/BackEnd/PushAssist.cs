@@ -771,7 +771,7 @@ namespace NachoCore
             }
             var httpResponse = task.Result.Response;
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0}",
+                Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0})",
                     httpResponse.StatusCode);
                 NumRetries++;
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_HTTP_RETRY");

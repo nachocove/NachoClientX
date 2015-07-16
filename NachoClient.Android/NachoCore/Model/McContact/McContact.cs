@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
 using NachoCore.Brain;
@@ -11,7 +12,7 @@ using NachoCore.Index;
 
 namespace NachoCore.Model
 {
-    public class NcContactIndex
+    public class NcContactIndex : IComparable<NcContactIndex>
     {
         public int Id { set; get; }
 
@@ -20,6 +21,27 @@ namespace NachoCore.Model
         public McContact GetContact ()
         {
             return McContact.QueryById<McContact> (Id);
+        }
+
+        private static bool SafeIsLetter (string s)
+        {
+            if (1 > s.Length) {
+                return false;
+            }
+            return Char.IsLetter (s [0]);
+        }
+
+        public int CompareTo (NcContactIndex other)
+        {
+            bool myIsLetter = SafeIsLetter (FirstLetter);
+            bool otherIsLetter = SafeIsLetter (other.FirstLetter);
+            if (myIsLetter && !otherIsLetter) {
+                return -1;
+            }
+            if (!myIsLetter && otherIsLetter) {
+                return +1;
+            }
+            return String.Compare (FirstLetter, other.FirstLetter, StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -1454,7 +1476,7 @@ namespace NachoCore.Model
 
         public static List<McContactEmailAddressAttribute> SearchIndexAllContacts (string searchFor, bool onlyWithEmailAddresses, bool withEclipsing)
         {
-            const int maxResults = 100;
+            const int maxResults = 30;
             var emailAddressAttributes = new List<McContactEmailAddressAttribute> ();
             var trimmedSearchFor = searchFor.Trim ();
             if (String.IsNullOrEmpty (trimmedSearchFor)) {
@@ -1463,34 +1485,44 @@ namespace NachoCore.Model
 
             // Query the index for contacts up to 100 of them
             var allContacts = new List<McContact> ();
+            var lockObj = new object ();
+            var tasks = new List<Task> ();
             foreach (var account in McAccount.GetAllAccounts()) {
-                var index = NcBrain.SharedInstance.Index (account.Id);
-                var matches = index.SearchAllContactFields (searchFor, maxResults);
-                if (0 == matches.Count) {
-                    continue;
-                }
-                var idList = matches.Select (x => x.Id).Distinct ().ToList ();
-                var contacts = McContact.QueryByIds (idList);
-                if (idList.Count > contacts.Count) {
-                    // Some ids in the index are no longer value. We need to remove those entries in the index
-                    var hash = new HashSet<int> ();
-                    contacts.ForEach ((x) => {
-                        hash.Add (x.Id);
-                    });
-                    foreach (var match in matches) {
-                        var id = int.Parse (match.Id);
-                        if (!hash.Contains (id)) {
-                            NcBrain.UnindexContact (new McContact () {
-                                Id = int.Parse (match.Id),
-                                AccountId = account.Id,
-                            });
-                        }
+                var task = NcTask.Run (() => {
+                    var index = NcBrain.SharedInstance.Index (account.Id);
+                    var matches = index.SearchAllContactFields (searchFor, maxResults);
+                    if (0 == matches.Count) {
+                        return;
                     }
-                } else {
-                    NcAssert.True (idList.Count == contacts.Count);
-                }
+                    var idList = matches.Select (x => x.Id).Distinct ().ToList ();
+                    var contacts = McContact.QueryByIds (idList);
+                    if (idList.Count > contacts.Count) {
+                        // Some ids in the index are no longer value. We need to remove those entries in the index
+                        var hash = new HashSet<int> ();
+                        contacts.ForEach ((x) => {
+                            hash.Add (x.Id);
+                        });
+                        foreach (var match in matches) {
+                            var id = int.Parse (match.Id);
+                            if (!hash.Contains (id)) {
+                                NcBrain.UnindexContact (new McContact () {
+                                    Id = int.Parse (match.Id),
+                                    AccountId = account.Id,
+                                });
+                            }
+                        }
+                    } else {
+                        NcAssert.True (idList.Count == contacts.Count);
+                    }
 
-                allContacts.AddRange (contacts);
+                    lock (lockObj) {
+                        allContacts.AddRange (contacts);
+                    }
+                }, "SearchContactOneAccount");
+                tasks.Add (task);
+            }
+            foreach (var task in tasks) {
+                task.Wait ();
             }
             allContacts.Sort (new McContactNameComparer ());
 

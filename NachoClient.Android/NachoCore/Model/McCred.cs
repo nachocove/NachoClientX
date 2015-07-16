@@ -135,6 +135,11 @@ namespace NachoCore.Model
             Password = password;
         }
 
+        public string GetTestPassword()
+        {
+            return Password;
+        }
+
         public string GetPassword ()
         {
             if (Keychain.Instance.HasKeychain () && null == Password) {

@@ -16,18 +16,17 @@ using MimeKit.IO;
 using MimeKit.IO.Filters;
 using HtmlAgilityPack;
 using MailKit.Search;
-using System.Text.RegularExpressions;
 
 namespace NachoCore.IMAP
 {
-    public class ImapSyncCommand : ImapCommand
+    public class ImapSyncCommand : ImapFetchCommand
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
-        private Regex FetchCmdRegex;
+        private const string KImapSyncOpenTiming = "IMAP Sync/Open";
+        private const string KImapSyncTiming = "IMAP Sync/Fetch";
         private const string KImapFetchTiming = "IMAP Summary Fetch";
         private const string KImapPreviewGeneration = "IMAP Preview Generation";
-        private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
 
         public class MailSummary
         {
@@ -43,101 +42,11 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
-            RedactProtocolLogFunc = RedactProtocolLog;
-            var flags = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
 
-            //* 59 FETCH (UID 8721 MODSEQ (952121) BODY[1]<0> {500} ... )
-            FetchCmdRegex = new Regex (@"^(?<star>\* )(?<num>\d+ )(?<cmd>FETCH )", flags);
-
-            //* 374 FETCH (X-GM-THRID 1505999102887456107 X-GM-MSGID 1505999102887456107 UID 9089 RFC822.SIZE 7245 MODSEQ (967775) INTERNALDATE "07-Jul-2015 01:31:04 +0000" FLAGS () ENVELOPE ("Tue, 07 Jul 2015 01:31:03 +0000" "New voicemail from (727) 373-7491 at 7:29 PM" (("Google Voice" NIL "voice-noreply" "google.com")) (("Google Voice" NIL "voice-noreply" "google.com")) (("Google Voice" NIL "voice-noreply" "google.com")) ((NIL NIL "jan.vilhuber" "gmail.com")) NIL NIL NIL "<001a113445b2b78383051a3ef955@google.com>") BODYSTRUCTURE (("TEXT" "PLAIN" ("CHARSET" "UTF-8" "DELSP" "yes" "FORMAT" "flowed") NIL NIL "7BIT" 691 12 NIL NIL NIL)("TEXT" "HTML" ("CHARSET" "UTF-8") NIL NIL "QUOTED-PRINTABLE" 3724 47 NIL NIL NIL) "ALTERNATIVE" ("BOUNDARY" "001a113445b2b7836a051a3ef952") NIL NIL) BODY[HEADER.FIELDS (IMPORTANCE DKIM-SIGNATURE CONTENT-CLASS)] {559}
-            //DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com;
-            //s=20120113; h=mime-version:message-id:date:subject:from:to:content-type;
-            //bh=ILYmpZW+xQNvnLdp4jNld6UKgeldZUfXQwjaagKVl1w=;
-            //b=kJb23brjhwqokoH3HgGOaO8+hSbldZz5IJ3+JVHkuzyk2hgEwSI3Be4X1sthGZHbBq
-            //04pL2r9A/ea1GoI5sonR67hZ7UXufwrzYrSEmvPxziJxTbmopDurVPSW11oG3XWTn5pX
-            //Ul3tyYSOKu7sXvmBOG5f99Nb7WFyp9dQQYxNKs/rD2cWwtfME0Lw3bjic7NvcU4Q0giE
-            //fLtJnqTCtzX5A/gcYgxvICT1k/yXUlXIv0mfrWit1ZhyGmbNKYLiffG21IG0nHODWLPO
-            //ZtuyJyUmJikvd9CLKPL86uRXfYjyKVaQ0n9oN35F5G4brJaDtN9eysLw7LWYObm1Hu0T U2og==
-            //
-            //)
-            // Need to redact the entire Envelope and BODYSTRUCTURE filenames
-
+            NcCapture.AddKind (KImapSyncOpenTiming);
+            NcCapture.AddKind (KImapSyncTiming);
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
-            NcCapture.AddKind (KImapSyncLogRedaction);
-        }
-
-        ~ImapSyncCommand ()
-        {
-            if (!string.IsNullOrEmpty (lastIncompleteLine)) {
-                Log.Error (Log.LOG_IMAP, "Line left dangling on exit: {0}", lastIncompleteLine);
-            }
-        }
-
-        private bool inFetch = false;
-        private string lastIncompleteLine;
-
-        public string RedactProtocolLog (bool isRequest, string logData)
-        {
-            if (!isRequest) {
-                var cap = NcCapture.CreateAndStart (KImapSyncLogRedaction);
-                char[] delimiterChars = { '\n' };
-                if (!string.IsNullOrEmpty (lastIncompleteLine)) {
-                    logData = lastIncompleteLine + logData;
-                    lastIncompleteLine = null;
-                }
-                var lines = new List<string> (logData.Split (delimiterChars));
-                if (!logData.EndsWith ("\n")) {
-                    lastIncompleteLine = lines.Last ();
-                    lines = lines.Take (lines.Count () - 1).ToList ();
-                }
-                List<string> result = new List<string> ();
-                foreach (var line in lines) {
-                    if (FetchCmdRegex.IsMatch (line)) {
-                        inFetch = true;
-                        char[] space = { ' ' };
-                        bool inEnvelope = false;
-                        List<string> newLine = new List<string> ();
-                        foreach (var token in line.Split (space)) {
-                            switch (token) {
-                            case "ENVELOPE":
-                                inEnvelope = true;
-                                newLine.Add (token + " ( REDACTED )");
-                                continue;
-
-                            case "BODYSTRUCTURE":
-                                inEnvelope = false;
-                                newLine.Add (token);
-                                continue;
-
-                            default:
-                                if (!inEnvelope) {
-                                    newLine.Add (token);
-                                }
-                                break;
-                            }
-                        }
-                        result.Add (string.Join (" ", newLine));
-                    } else if (inFetch) {
-                        if (line.StartsWith (")")) {
-                            inFetch = false;
-                            result.Add (line);
-                        } else if ("\r" == line) {
-                            result.Add (line);
-                        } else {
-                            result.Add ("REDACTED\r");
-                        }
-                        continue;
-                    } else { // if (!inFetch)
-                        result.Add (line);
-                    }
-                }
-                cap.Stop ();
-                var resultData = string.Join ("\n", result);
-                return resultData;
-            } else {
-                return logData;
-            }
         }
 
         protected override Event ExecuteCommand ()
@@ -156,21 +65,32 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
             Event result;
+            NcCapture cap;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
+                cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
                 result = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
 
             case SyncKit.MethodEnum.Sync:
+                cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 result = syncFolder (mailKitFolder, timespan);
                 break;
 
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
             }
-            PendingResolveApply ((pending) => {
-                pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-            });
+            if (PendingList.Any () || null != PendingSingle) {
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+                });
+            } else {
+                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+            }
+            cap.Pause ();
+            Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
+            cap.Stop ();
+            cap.Dispose ();
             return result;
         }
 
@@ -290,67 +210,70 @@ namespace NachoCore.IMAP
                 target.LastSyncAttempt = DateTime.UtcNow;
                 return true;
             });
-
-            // mark the pending as resolved.
-            PendingResolveApply ((pending) => {
-                pending.ResolveAsSuccess (BEContext.ProtoControl, 
-                    NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
         private UniqueIdSet GetNewOrChangedMessages (IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
-
-            NcCapture cap;
+            bool createdUnread = false;
             UniqueIdSet summaryUids = new UniqueIdSet ();
             IList<IMessageSummary> imapSummaries = getMessageSummaries (mailKitFolder, uidset);
             if (imapSummaries.Any ()) {
-                cap = NcCapture.CreateAndStart (KImapPreviewGeneration);
-                foreach (var imapSummary in imapSummaries) {
-                    if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
-                        continue;
-                    }
-                    bool changed1;
-                    MessageSummary summ = imapSummary as MessageSummary;
-                    var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1);
-                    if (changed1) {
-                        newOrChanged.Add (summ.UniqueId.Value);
-                    }
-                    if (null == emailMessage.BodyPreview) {
-                        var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                        if (!string.IsNullOrEmpty (preview)) {
-                            emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                var target = (McEmailMessage)record;
-                                target.BodyPreview = preview;
-                                target.IsIncomplete = false;
-                                return true;
-                            });
+                using (var cap = NcCapture.CreateAndStart (KImapPreviewGeneration)) {
+                    foreach (var imapSummary in imapSummaries) {
+                        if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
+                            continue;
                         }
+                        bool changed1;
+                        bool created1;
+                        MessageSummary summ = imapSummary as MessageSummary;
+                        var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1, out created1);
+                        if (changed1) {
+                            newOrChanged.Add (summ.UniqueId.Value);
+                        }
+                        if (created1 && false == emailMessage.IsRead) {
+                            createdUnread = true;
+                        }
+                        if (null == emailMessage.BodyPreview) {
+                            var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                            if (!string.IsNullOrEmpty (preview)) {
+                                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                    var target = (McEmailMessage)record;
+                                    target.BodyPreview = preview;
+                                    target.IsIncomplete = false;
+                                    return true;
+                                });
+                            }
+                        }
+                        summaryUids.Add (imapSummary.UniqueId.Value);
                     }
-                    summaryUids.Add (imapSummary.UniqueId.Value);
+                    cap.Pause ();
+                    Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
+                    cap.Stop ();
                 }
-                cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds);
             }
             vanished = SyncKit.MustUniqueIdSet (uidset.Except (summaryUids).ToList ());
+            if (createdUnread && Synckit.Folder.IsDistinguished && Synckit.Folder.Type == NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2) {
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox));
+            }
             return newOrChanged;
         }
 
         private IList<IMessageSummary> getMessageSummaries (IMailFolder mailKitFolder, UniqueIdSet uidset)
         {
-            NcCapture cap;
             IList<IMessageSummary> imapSummaries = null;
             try {
-                cap = NcCapture.CreateAndStart (KImapFetchTiming);
-                if (Synckit.Headers.Any ()) {
-                    imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
-                } else {
-                    imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
+                using (var cap = NcCapture.CreateAndStart (KImapFetchTiming)) {
+                    if (Synckit.Headers.Any ()) {
+                        imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Synckit.Headers, Cts.Token);
+                    } else {
+                        imapSummaries = mailKitFolder.Fetch (uidset, Synckit.Flags, Cts.Token);
+                    }
+                    cap.Pause ();
+                    Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
+                    cap.Stop ();
                 }
-                cap.Stop ();
-                Log.Info (Log.LOG_IMAP, "Retrieved {0} summaries in {1}ms", imapSummaries.Count, cap.ElapsedMilliseconds);
             } catch (ImapProtocolException) {
                 // try one-by-one so we can at least get a few.
                 Log.Warn (Log.LOG_IMAP, "Could not retrieve summaries in batch. Trying individually");
@@ -382,16 +305,17 @@ namespace NachoCore.IMAP
             return imapSummaries;
         }
 
-        public static McEmailMessage ServerSaysAddOrChangeEmail (int accountId, MessageSummary imapSummary, McFolder folder, out bool changed)
+        public static McEmailMessage ServerSaysAddOrChangeEmail (int accountId, MessageSummary imapSummary, McFolder folder, out bool changed, out bool created)
         {
             changed = false;
+            created = false;
+            bool justCreated = false;
             if (null == imapSummary.UniqueId || string.Empty == imapSummary.UniqueId.Value.ToString ()) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
                 return null;
             }
 
             string McEmailMessageServerId = ImapProtoControl.MessageServerId (folder, imapSummary.UniqueId.Value);
-            bool justCreated = false;
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
                 try {
@@ -441,7 +365,7 @@ namespace NachoCore.IMAP
             if (!emailMessage.IsIncomplete) {
                 // Extra work that needs to be done, but doesn't need to be in the same database transaction.
             }
-
+            created = justCreated;
             return emailMessage;
         }
 
@@ -581,7 +505,10 @@ namespace NachoCore.IMAP
                         break;
 
                     case HeaderId.Importance:
-                        switch (header.Value) {
+                        // according to https://tools.ietf.org/html/rfc2156
+                        //       importance      = "low" / "normal" / "high"
+                        // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
+                        switch (header.Value.ToLower ()) {
                         case "low":
                             emailMessage.Importance = NcImportance.Low_0;
                             break;

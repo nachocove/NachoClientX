@@ -417,13 +417,11 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapIdleCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapSyncCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration27.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration28.cs" />
     <Compile Include="NachoCore\BackEnd\NcCommand.cs" />
     <Compile Include="NachoCore\BackEnd\INcCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapSearchCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchAttachmentCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderCreateCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderUpdateCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderDeleteCommand.cs" />
@@ -494,6 +492,9 @@
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs" />
     <Compile Include="NachoCore\Utils\NcServiceHelper.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration34.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -556,6 +557,7 @@
     <Folder Include="NachoUI.Android\Activities\" />
     <Folder Include="NachoUI.Android\Support\" />
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />

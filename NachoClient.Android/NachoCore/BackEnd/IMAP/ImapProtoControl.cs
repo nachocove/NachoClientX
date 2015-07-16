@@ -64,9 +64,10 @@ namespace NachoCore.IMAP
                 case (uint)Lst.PingW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.Parked:
-                    // FIXME - need to consider ProtocolState.HasSyncedInbox.
-                    return BackEndStateEnum.PostAutoDPostInboxSync;
-
+                    return (ProtocolState.HasSyncedInbox) ? 
+                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                        BackEndStateEnum.PostAutoDPreInboxSync;
+                    
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
@@ -94,7 +95,9 @@ namespace NachoCore.IMAP
                 Last = AuthFail,
             };
         }
+
         public ImapStrategy Strategy { set; get; }
+
         private PushAssist PushAssist { set; get; }
 
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
@@ -439,7 +442,6 @@ namespace NachoCore.IMAP
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.PkPing,
                             (uint)ImapEvt.E.PkQOp,
@@ -458,6 +460,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
                         }
                     },
                     new Node {
@@ -493,9 +496,9 @@ namespace NachoCore.IMAP
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ImapProtoControlState;
+            LastBackEndState = BackEndState;
             Strategy = new ImapStrategy (this);
             PushAssist = new PushAssist (this);
-            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
@@ -513,6 +516,12 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
+            if (LastBackEndState != BackEndState) {
+                var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
+                res.Value = AccountId;
+                StatusInd (res);
+            }
+            LastBackEndState = BackEndState;
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
@@ -536,6 +545,7 @@ namespace NachoCore.IMAP
                 }
             }
         }
+
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
             if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
@@ -546,18 +556,18 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static string MessageServerId(McFolder folder, UniqueId ImapMessageUid)
+        public static string MessageServerId (McFolder folder, UniqueId ImapMessageUid)
         {
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public static UniqueId ImapMessageUid(string MessageServerId)
+        public static UniqueId ImapMessageUid (string MessageServerId)
         {
             uint x = UInt32.Parse (MessageServerId.Split (':') [1]);
-            return new UniqueId(x);
+            return new UniqueId (x);
         }
 
-        public static string ImapMessageFolderGuid(string MessageServerId)
+        public static string ImapMessageFolderGuid (string MessageServerId)
         {
             return MessageServerId.Split (':') [0];
         }
@@ -573,7 +583,9 @@ namespace NachoCore.IMAP
         public override void Remove ()
         {
             // TODO Move to base
-            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
+                Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", Sm.State);
+            }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
@@ -697,6 +709,7 @@ namespace NachoCore.IMAP
 
         private int MaxConcurrentExtraRequests = 2;
         private int ConcurrentExtraRequests = 0;
+
         private void DoExtraOrDont ()
         {
             /* TODO
@@ -797,6 +810,7 @@ namespace NachoCore.IMAP
             var pack = Strategy.Pick (MainClient);
             var transition = pack.Item1;
             var cmd = pack.Item2;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
             switch (transition) {
             case PickActionEnum.Fetch:
                 Sm.PostEvent ((uint)ImapEvt.E.PkFetch, "PCKFETCH", cmd);
@@ -805,7 +819,11 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)ImapEvt.E.PkSync, "PCKSYNC", cmd);
                 break;
             case PickActionEnum.Ping:
-                Sm.PostEvent ((uint)ImapEvt.E.PkPing, "PCKPING", cmd);
+                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPDOPICKQSPARK");
+                } else {
+                    Sm.PostEvent ((uint)ImapEvt.E.PkPing, "PCKPING", cmd);
+                }
                 break;
             case PickActionEnum.HotQOp:
                 Sm.PostEvent ((uint)ImapEvt.E.PkHotQOp, "PCKHOTOP", cmd);
@@ -817,7 +835,11 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)ImapEvt.E.ReFSync, "PCKFSYNC", cmd);
                 break;
             case PickActionEnum.Wait:
-                Sm.PostEvent ((uint)ImapEvt.E.PkWait, "PCKWAIT", cmd);
+                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                    Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPDOPICKQSPARK");
+                } else {
+                    Sm.PostEvent ((uint)ImapEvt.E.PkWait, "PCKWAIT", cmd);
+                }
                 break;
             default:
                 Log.Error (Log.LOG_IMAP, "Unknown PickAction {0}", transition.ToString ());
@@ -838,6 +860,7 @@ namespace NachoCore.IMAP
                 // We are running, ignore the Launch, stay in the current state.
             }
         }
+
         private void DoPark ()
         {
             if (null != PushAssist) {
@@ -847,7 +870,7 @@ namespace NachoCore.IMAP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock(MainClient.SyncRoot) {
+            lock (MainClient.SyncRoot) {
                 MainClient.Disconnect (true); // TODO Where does the Cancellation token come from?
             }
         }
@@ -867,16 +890,17 @@ namespace NachoCore.IMAP
         }
 
         #region PushAssist support.
-        private bool CanStartPushAssist()
+
+        private bool CanStartPushAssist ()
         {
             // We need to be able to get the right capabilities, so must have auth'd at least once
             // This happens during discovery, so this shouldn't be an issue.
             return McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
-        private void PossiblyKickPushAssist()
+        private void PossiblyKickPushAssist ()
         {
-            if (CanStartPushAssist()) {
+            if (CanStartPushAssist ()) {
                 // uncomment for testing on the simulator
                 //PushAssist.SetDeviceToken ("SIMULATOR");
                 if (PushAssist.IsStartOrParked ()) {
@@ -885,7 +909,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private byte[] PushAssistAuthBlob()
+        private byte[] PushAssistAuthBlob ()
         {
 
             SaslMechanism sasl;
@@ -917,7 +941,7 @@ namespace NachoCore.IMAP
 
         public PushAssistParameters PushAssistParameters ()
         {
-            if (!CanStartPushAssist()) {
+            if (!CanStartPushAssist ()) {
                 // We need to have logged in at least once. We shouldn't have started the PA SM
                 // CanStartPushAssist is false, so this should realistically never happen.
                 Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters yet");
@@ -933,12 +957,13 @@ namespace NachoCore.IMAP
                 ResponseTimeoutMsec = 600 * 1000,
                 WaitBeforeUseMsec = 60 * 1000,
 
-                IMAPAuthenticationBlob = PushAssistAuthBlob(),
+                IMAPAuthenticationBlob = PushAssistAuthBlob (),
                 IMAPFolderName = "INBOX",
                 IMAPSupportsIdle = supportsIdle,
                 IMAPSupportsExpunge = supportsExpunged,
             };
         }
+
         #endregion
     }
 }

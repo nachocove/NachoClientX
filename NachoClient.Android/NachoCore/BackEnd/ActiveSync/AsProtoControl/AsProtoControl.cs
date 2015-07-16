@@ -366,6 +366,7 @@ namespace NachoCore.ActiveSync
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)AsEvt.E.ReSync,
+                            (uint)CtlEvt.E.UiSetCred,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -375,7 +376,6 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
-                            (uint)CtlEvt.E.UiSetCred, // TODO: should we re-consider?
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
                             (uint)CtlEvt.E.PkQOp,
@@ -581,7 +581,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
@@ -835,17 +834,18 @@ namespace NachoCore.ActiveSync
             };
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
+            LastBackEndState = BackEndState;
             Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }
 
-
-
         public override void Remove ()
         {
-            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
+                Log.Warn (Log.LOG_IMAP, "AsProtoControl.Remove called while state is {0}", Sm.State);
+            }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
@@ -913,6 +913,12 @@ namespace NachoCore.ActiveSync
                 target.ProtoControlState = stateToSave;
                 return true;
             });
+            if (LastBackEndState != BackEndState) {
+                var res = NcResult.Info (NcResult.SubKindEnum.Info_BackEndStateChanged);
+                res.Value = AccountId;
+                StatusInd (res);
+            }
+            LastBackEndState = BackEndState;
         }
         // State-machine action methods.
         private void DoUiServConfReq ()

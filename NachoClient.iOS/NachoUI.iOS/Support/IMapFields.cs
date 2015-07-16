@@ -59,15 +59,15 @@ namespace NachoClient.iOS
         Prompt prompt;
         McAccount account;
         AdvancedLoginViewController.onConnectCallback onConnect;
+        AdvancedLoginViewController.onValidateCallback onValidate;
 
-        public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+        public IMapFields (McAccount account, Prompt prompt, CGRect rect, string buttonText)
         {
-            this.onConnect = onConnect;
             this.account = account;
             this.prompt = prompt;
 
             showAdvancedSettings = true;
-            CreateView (rect);
+            CreateView (rect, buttonText);
             UpdatePrompt (prompt);
             Layout (rect.Height);
 
@@ -76,7 +76,19 @@ namespace NachoClient.iOS
             }
         }
 
-        void CreateView (CGRect rect)
+        public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+            : this (account, prompt, rect, "Connect")
+        {
+            this.onConnect = onConnect;
+        }
+
+        public IMapFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
+            : this (account, prompt, rect, "Save")
+        {
+            this.onValidate = onValidate;
+        }
+
+        void CreateView (CGRect rect, string buttonText)
         {
             scrollView = new UIScrollView (rect);
             scrollView.BackgroundColor = A.Color_NachoGreen;
@@ -164,10 +176,10 @@ namespace NachoClient.iOS
             contentView.AddSubview (smtpWhiteInset);
 
             connectButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 46));
-            connectButton.AccessibilityLabel = "Connect";
+            connectButton.AccessibilityLabel = buttonText;
             connectButton.BackgroundColor = A.Color_NachoTeal;
             connectButton.TitleLabel.TextAlignment = UITextAlignment.Center;
-            connectButton.SetTitle ("Connect", UIControlState.Normal);
+            connectButton.SetTitle (buttonText, UIControlState.Normal);
             connectButton.TitleLabel.TextColor = UIColor.White;
             connectButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
             connectButton.Layer.CornerRadius = 4f;
@@ -245,8 +257,12 @@ namespace NachoClient.iOS
         {
             scrollView.EndEditing (true);
 
-            var action = SaveUserSettings ();
-            CallOnConnect (action);
+            if (Prompt.EditInfo == prompt) {
+                Validate ();
+            } else {
+                var action = SaveUserSettings ();
+                CallOnConnect (action);
+            }
         }
 
         void AdvancedButton_TouchUpInside (object sender, EventArgs e)
@@ -485,9 +501,48 @@ namespace NachoClient.iOS
                 server.Delete ();
                 Log.Info (Log.LOG_UI, "avl: delete server {0}", server.BaseUriString ());
             }
-
         }
 
+        void Validate ()
+        {
+            var cred = new McCred ();
+            cred.SetTestPassword (passwordView.textField.Text);          
+
+            var imapServerName = imapServerView.textField.Text;
+            var smtpServerName = smtpServerView.textField.Text;
+
+            int imapServerPort;
+            var imapPortTryParse = int.TryParse (imapPortNumberView.textField.Text, out imapServerPort);
+            NcAssert.True (imapPortTryParse);
+
+            int smtpServerPort;
+            var smtpPortTryParse = int.TryParse (smtpPortNumberView.textField.Text, out smtpServerPort);
+            NcAssert.True (smtpPortTryParse);
+
+            var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
+            var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
+
+            onValidate (cred, new List<McServer> () { imapServer, smtpServer });
+        }
+
+        public void Validated (McCred verifiedCred, List<McServer> verifiedServers)
+        {
+            var creds = McCred.QueryByAccountId<McCred> (account.Id).First ();
+            creds.Username = verifiedCred.Username;
+            creds.UserSpecifiedUsername = verifiedCred.UserSpecifiedUsername;
+            creds.UpdatePassword (verifiedCred.GetTestPassword ());
+            creds.Update ();
+
+            UpdateServer (verifiedServers.ElementAt (0));
+            UpdateServer (verifiedServers.ElementAt (1));
+        }
+
+        void UpdateServer(McServer verifiedServer)
+        {
+            var server = McServer.QueryByAccountIdAndCapabilities (account.Id, verifiedServer.Capabilities);
+            server.CopyNameFrom (verifiedServer);
+            server.Update ();
+        }
 
         bool FieldsAreSet (params AdvancedTextField[] fields)
         {

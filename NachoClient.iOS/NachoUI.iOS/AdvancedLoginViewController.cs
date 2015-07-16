@@ -56,6 +56,8 @@ namespace NachoClient.iOS
 
         public delegate void onConnectCallback (ConnectCallbackStatusEnum status, McAccount account, string email, string password);
 
+        public delegate void onValidateCallback (McCred creds, List<McServer> servers);
+
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
             service = McAccount.AccountServiceEnum.None;
@@ -527,6 +529,7 @@ namespace NachoClient.iOS
             account.Update ();
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
             cred.UpdatePassword (password);
+            cred.Username = email;
             cred.Update ();
 
             Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
@@ -590,8 +593,8 @@ namespace NachoClient.iOS
                 EventFromEnum ();
                 return;
             }
-            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
+            if (NcResult.SubKindEnum.Info_BackEndStateChanged == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "avl: Info_BackEndStateChanged Status Ind (Advanced View)");
                 EventFromEnum ();
                 return;
             }
@@ -646,7 +649,7 @@ namespace NachoClient.iOS
             }
 
             if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredReqCallback, "avl: EventFromEnem cred req");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredReqCallback, "avl: EventFromEnum cred req");
                 return;
             }
 
