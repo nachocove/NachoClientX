@@ -719,7 +719,8 @@ namespace NachoCore.IMAP
              */
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
-                MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
+                MaxConcurrentExtraRequests > ConcurrentExtraRequests)
+            {
                 NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = Strategy.PickUserDemand (Client);
