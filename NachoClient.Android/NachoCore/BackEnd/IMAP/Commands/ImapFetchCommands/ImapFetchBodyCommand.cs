@@ -6,6 +6,11 @@ using MailKit;
 using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
+using System.IO;
+using MimeKit.IO;
+using MimeKit.IO.Filters;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -67,62 +72,85 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            MimeMessage imapbody = null;
+            UniqueId uid = ImapProtoControl.ImapMessageUid (email.ServerId);
+            McAbstrFileDesc.BodyTypeEnum bodyType;
+            result = messageBodyPart (uid, mailKitFolder, out bodyType);
+            if (!result.isOK ()) {
+                return result;
+            }
+            BodyPart part = result.GetValue<BodyPart> ();
+
+            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+            mailKitFolder.SetStreamContext (uid, tmp);
+            McBody body;
+            if (0 == email.BodyId) {
+                body = new McBody () {
+                    AccountId = BEContext.Account.Id,
+                    BodyType = bodyType,
+                };
+                body.Insert ();
+            } else {
+                body = McBody.QueryById<McBody> (email.BodyId);
+            }
+
             try {
-                imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
+                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token);
+                var path = body.GetFilePath ();
+                using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                    st.CopyTo(bodyFile);
+                }
+                body.Truncated = false;
+                body.UpdateSaveFinish ();
+
+                email.BodyId = body.Id;
+                email.Update ();
+
+                result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
                 // TODO Need to narrow this down. Pull in latest MailKit and make it compile.
-                imapbody = null;
-            }
-            if (null == imapbody) {
                 // the message doesn't exist. Delete it locally.
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
+                body.DeleteFile ();
+                body.Delete ();
                 email.Delete ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 result = NcResult.Error ("No Body found");
-            } else {
-                McAbstrFileDesc.BodyTypeEnum bodyType;
-                // FIXME Getting the 'body' string is inefficient and wasteful.
-                //   Perhaps use the WriteTo method on the Body, write to a file,
-                //   then open the file and pass that stream to UpdateData/InsertFile?
-                string bodyAsString;
-                if (imapbody.Body.ContentType.Matches ("multipart", "*")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                    bodyAsString = imapbody.Body.ToString ();
-                } else if (imapbody.Body.ContentType.Matches ("text", "*")) {
-                    if (imapbody.Body.ContentType.Matches ("text", "html")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                        bodyAsString = imapbody.HtmlBody;
-                    } else if (imapbody.Body.ContentType.Matches ("text", "plain")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        bodyAsString = imapbody.TextBody;
-                    } else {
-                        Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
-                        return NcResult.Error ("Unhandled text subtype");
-                    }
-                } else {
-                    Log.Error (Log.LOG_IMAP, "Unhandled mime subtype {0}", imapbody.Body.ContentType.ToString ());
-                    return NcResult.Error ("Unhandled mimetype subtype");
-                }
-
-                McBody body;
-                if (0 == email.BodyId) {
-                    body = McBody.InsertFile (pending.AccountId, bodyType, bodyAsString); 
-                    email.BodyId = body.Id;
-                } else {
-                    body = McBody.QueryById<McBody> (email.BodyId);
-                    body.UpdateData (bodyAsString);
-                }
-                body.BodyType = bodyType;
-                body.Truncated = false;
-                body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
-                body.FileSize = bodyAsString.Length;
-                body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
-                body.Update ();
-                result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
-                email.Update ();
             }
+            mailKitFolder.UnsetStreamContext ();
+            return result;
+        }
+
+        private NcResult messageBodyPart(UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
+        {
+            NcResult result;
+            var UidList = new List<UniqueId> ();
+            UidList.Add (uid);
+            MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
+            var isummary = mailKitFolder.Fetch (UidList, flags, Cts.Token);
+            if (null == isummary || isummary.Count < 1) {
+                Log.Error (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
+            }
+            var summary = isummary[0] as MessageSummary;
+            var part = summary.Body;
+
+            if (part.ContentType.Matches ("multipart", "*")) {
+                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+            } else if (part.ContentType.Matches ("text", "*")) {
+                if (part.ContentType.Matches ("text", "html")) {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                } else if (part.ContentType.Matches ("text", "plain")) {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                } else {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.None;
+                    return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                }
+            } else {
+                bodyType = McAbstrFileDesc.BodyTypeEnum.None;
+                return NcResult.Error (string.Format ("Unhandled mime subtype {0}", part.ContentType.MediaSubtype));
+            }
+            result = NcResult.OK ();
+            result.Value = part;
             return result;
         }
     }
