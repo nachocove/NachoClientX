@@ -49,29 +49,12 @@ namespace NachoClient.iOS
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
 
-        protected void FindRange (char uppercaseTarget, out int index, out int count)
+        protected void FindRange (char uppercaseTarget, ref int index, out int count)
         {
-            int hit = -1;
-
-            for (int i = 0; i < contacts.Count; i++) {
-                var c = contacts [i];
-                if (uppercaseTarget <= c.FirstLetter [0]) {
-                    hit = i;
-                    break;
-                }
-            }
-
-            if (-1 == hit) {
-                count = 0;
-                index = contacts.Count;
-                return;
-            }
-
-            index = hit;
             count = 0;
-            while ((hit < contacts.Count) && (uppercaseTarget == contacts [hit].FirstLetter [0])) {
+            while ((index < contacts.Count) && (uppercaseTarget == contacts [index].FirstLetter [0])) {
                 count = count + 1;
-                hit = hit + 1;
+                index = index + 1;
             }
         }
 
@@ -88,25 +71,20 @@ namespace NachoClient.iOS
                     c.FirstLetter = c.FirstLetter.ToUpper ();
                 }
             }
+            this.contacts.Sort ();
 
             sectionStart = new int[27];
             sectionLength = new int[27];
 
-            int index;
+            int index = 0;
             int count;
-            FindRange ('A', out index, out count);
-
-            sectionStart [26] = 0;
-            sectionLength [26] = index;
-
-            sectionStart [0] = index;
-            sectionLength [0] = count;
-
-            for (int i = 1; i < 26; i++) {
-                FindRange ((char)(((int)'A') + i), out index, out count);
+            for (int i = 0; i < 26; i++) {
                 sectionStart [i] = index;
+                FindRange ((char)(((int)'A') + i), ref index, out count);
                 sectionLength [i] = count;
             }
+            sectionStart [26] = index;
+            sectionLength [26] = contacts.Count - index;
 
             if (SearchDisplayController.Active) {
                 SearchDisplayController.Delegate.ShouldReloadForSearchScope (SearchDisplayController, 0);

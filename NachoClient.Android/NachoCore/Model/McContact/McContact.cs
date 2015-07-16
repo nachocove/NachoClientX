@@ -12,7 +12,7 @@ using NachoCore.Index;
 
 namespace NachoCore.Model
 {
-    public class NcContactIndex
+    public class NcContactIndex : IComparable<NcContactIndex>
     {
         public int Id { set; get; }
 
@@ -21,6 +21,27 @@ namespace NachoCore.Model
         public McContact GetContact ()
         {
             return McContact.QueryById<McContact> (Id);
+        }
+
+        private static bool SafeIsLetter (string s)
+        {
+            if (1 > s.Length) {
+                return false;
+            }
+            return Char.IsLetter (s [0]);
+        }
+
+        public int CompareTo (NcContactIndex other)
+        {
+            bool myIsLetter = SafeIsLetter (FirstLetter);
+            bool otherIsLetter = SafeIsLetter (other.FirstLetter);
+            if (myIsLetter && !otherIsLetter) {
+                return -1;
+            }
+            if (!myIsLetter && otherIsLetter) {
+                return +1;
+            }
+            return String.Compare (FirstLetter, other.FirstLetter, ignoreCase: true);
         }
     }
 
