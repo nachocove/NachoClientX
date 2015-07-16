@@ -41,7 +41,7 @@ namespace NachoCore.Model
             if (!myIsLetter && otherIsLetter) {
                 return +1;
             }
-            return String.Compare (FirstLetter, other.FirstLetter, ignoreCase: true);
+            return String.Compare (FirstLetter, other.FirstLetter, StringComparison.OrdinalIgnoreCase);
         }
     }
 

@@ -68,7 +68,7 @@ namespace NachoClient.iOS
                 if (String.IsNullOrEmpty (c.FirstLetter)) {
                     c.FirstLetter = " ";
                 } else {
-                    c.FirstLetter = c.FirstLetter.ToUpper ();
+                    c.FirstLetter = c.FirstLetter.ToUpperInvariant ();
                 }
             }
             this.contacts.Sort ();
