@@ -281,7 +281,7 @@ namespace NachoClient.iOS
                 var vc = (SignatureEditViewController)segue.DestinationViewController;
                 var tag = "Create a signature that will appear at the end of every email that you send.";
                 vc.Setup ("Signature", tag, account.Signature);
-                vc.OnSave = OnSaveDescription;
+                vc.OnSave = OnSaveSignature;
                 return;
             }
             if (segue.Identifier == "SegueToDescriptionEdit") {

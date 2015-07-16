@@ -113,7 +113,7 @@ namespace NachoCore.Utils
             cal.Update ();
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (cal.AccountId),
             });
         }
 
@@ -171,8 +171,7 @@ namespace NachoCore.Utils
                     foreach (var exception in exceptions) {
                         if (0 == exception.Deleted &&
                             (!exception.MeetingStatusIsSet ||
-                                (NcMeetingStatus.MeetingOrganizerCancelled != exception.MeetingStatus && NcMeetingStatus.MeetingAttendeeCancelled != exception.MeetingStatus)))
-                        {
+                            (NcMeetingStatus.MeetingOrganizerCancelled != exception.MeetingStatus && NcMeetingStatus.MeetingAttendeeCancelled != exception.MeetingStatus))) {
                             exception.MeetingStatusIsSet = true;
                             exception.MeetingStatus = NcMeetingStatus.MeetingAttendeeCancelled;
                             exception.Subject = "Canceled: " + exception.GetSubject ();
@@ -185,7 +184,7 @@ namespace NachoCore.Utils
             cal.Update ();
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_CalendarChanged),
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (cal.AccountId),
             });
         }
 
@@ -1181,7 +1180,7 @@ namespace NachoCore.Utils
                             var lastOneGeneratedAggregate = DateTime.MaxValue;
                             foreach (var recurrence in calendarItem.recurrences) {
                                 var lastOneGenerated = ExpandRecurrences (
-                                    calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, untilDate);
+                                                           calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, untilDate);
                                 if (lastOneGeneratedAggregate > lastOneGenerated) {
                                     lastOneGeneratedAggregate = lastOneGenerated;
                                 }
@@ -1405,7 +1404,7 @@ namespace NachoCore.Utils
                     if (null == bestFarFuture || FirstIsBetterFutureEvent (evt, cal, bestFarFuture, bestFarFutureCal)) {
                         bestFarFuture = evt;
                         bestFarFutureCal = cal;
-                    } else if (evt.AllDayEvent != bestFarFuture.AllDayEvent || evt.GetStartTimeUtc() - bestFarFuture.GetStartTimeUtc() > TimeSpan.FromHours (14)) {
+                    } else if (evt.AllDayEvent != bestFarFuture.AllDayEvent || evt.GetStartTimeUtc () - bestFarFuture.GetStartTimeUtc () > TimeSpan.FromHours (14)) {
                         // Looking at more events won't be useful.  (The 14-hour time span deals with the issue of all-day events
                         // and regular events being returned out of order.
                         break;
