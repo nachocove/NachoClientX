@@ -67,9 +67,11 @@ namespace NachoCore.IMAP
                     return (ProtocolState.HasSyncedInbox) ? 
                         BackEndStateEnum.PostAutoDPostInboxSync : 
                         BackEndStateEnum.PostAutoDPreInboxSync;
+                    
+                default:
+                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
-                // should never reach here.
-                return BackEndStateEnum.NotYetStarted;
             }
         }
 
@@ -93,7 +95,9 @@ namespace NachoCore.IMAP
                 Last = AuthFail,
             };
         }
+
         public ImapStrategy Strategy { set; get; }
+
         private PushAssist PushAssist { set; get; }
 
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
@@ -541,6 +545,7 @@ namespace NachoCore.IMAP
                 }
             }
         }
+
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e)
         {
             if (NachoPlatform.NetStatusStatusEnum.Up == e.Status) {
@@ -551,18 +556,18 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static string MessageServerId(McFolder folder, UniqueId ImapMessageUid)
+        public static string MessageServerId (McFolder folder, UniqueId ImapMessageUid)
         {
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public static UniqueId ImapMessageUid(string MessageServerId)
+        public static UniqueId ImapMessageUid (string MessageServerId)
         {
             uint x = UInt32.Parse (MessageServerId.Split (':') [1]);
-            return new UniqueId(x);
+            return new UniqueId (x);
         }
 
-        public static string ImapMessageFolderGuid(string MessageServerId)
+        public static string ImapMessageFolderGuid (string MessageServerId)
         {
             return MessageServerId.Split (':') [0];
         }
@@ -704,6 +709,7 @@ namespace NachoCore.IMAP
 
         private int MaxConcurrentExtraRequests = 2;
         private int ConcurrentExtraRequests = 0;
+
         private void DoExtraOrDont ()
         {
             /* TODO
@@ -713,8 +719,7 @@ namespace NachoCore.IMAP
              */
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
-                MaxConcurrentExtraRequests > ConcurrentExtraRequests)
-            {
+                MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
                 NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = Strategy.PickUserDemand (Client);
@@ -854,6 +859,7 @@ namespace NachoCore.IMAP
                 // We are running, ignore the Launch, stay in the current state.
             }
         }
+
         private void DoPark ()
         {
             if (null != PushAssist) {
@@ -863,7 +869,7 @@ namespace NachoCore.IMAP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock(MainClient.SyncRoot) {
+            lock (MainClient.SyncRoot) {
                 MainClient.Disconnect (true); // TODO Where does the Cancellation token come from?
             }
         }
@@ -883,16 +889,17 @@ namespace NachoCore.IMAP
         }
 
         #region PushAssist support.
-        private bool CanStartPushAssist()
+
+        private bool CanStartPushAssist ()
         {
             // We need to be able to get the right capabilities, so must have auth'd at least once
             // This happens during discovery, so this shouldn't be an issue.
             return McAccount.AccountServiceEnum.None != ProtoControl.ProtocolState.ImapServiceType;
         }
 
-        private void PossiblyKickPushAssist()
+        private void PossiblyKickPushAssist ()
         {
-            if (CanStartPushAssist()) {
+            if (CanStartPushAssist ()) {
                 // uncomment for testing on the simulator
                 //PushAssist.SetDeviceToken ("SIMULATOR");
                 if (PushAssist.IsStartOrParked ()) {
@@ -901,7 +908,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private byte[] PushAssistAuthBlob()
+        private byte[] PushAssistAuthBlob ()
         {
 
             SaslMechanism sasl;
@@ -921,8 +928,7 @@ namespace NachoCore.IMAP
             string command = string.Format ("AUTHENTICATE {0}", sasl.MechanismName);
             if (sasl.SupportsInitialResponse &&
                 (0 != (ProtoControl.ProtocolState.ImapServerCapabilitiesUnAuth & McProtocolState.NcImapCapabilities.SaslIR)) ||
-                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR)))
-            {
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR))) {
                 command += " ";
             } else {
                 command += "\n";
@@ -933,7 +939,7 @@ namespace NachoCore.IMAP
 
         public PushAssistParameters PushAssistParameters ()
         {
-            if (!CanStartPushAssist()) {
+            if (!CanStartPushAssist ()) {
                 // We need to have logged in at least once. We shouldn't have started the PA SM
                 // CanStartPushAssist is false, so this should realistically never happen.
                 Log.Error (Log.LOG_IMAP, "Can't set up protocol parameters yet");
@@ -949,12 +955,13 @@ namespace NachoCore.IMAP
                 ResponseTimeoutMsec = 600 * 1000,
                 WaitBeforeUseMsec = 60 * 1000,
 
-                IMAPAuthenticationBlob = PushAssistAuthBlob(),
+                IMAPAuthenticationBlob = PushAssistAuthBlob (),
                 IMAPFolderName = "INBOX",
                 IMAPSupportsIdle = supportsIdle,
                 IMAPSupportsExpunge = supportsExpunged,
             };
         }
+
         #endregion
     }
 }
