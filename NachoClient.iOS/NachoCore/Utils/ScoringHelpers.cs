@@ -31,7 +31,7 @@ namespace NachoCore.Utils
             message.Update ();
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
-                Account = ConstMcAccount.NotAccountSpecific,
+                Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
             NcBrain.UpdateMessageScore (message.AccountId, message.Id);
         }
