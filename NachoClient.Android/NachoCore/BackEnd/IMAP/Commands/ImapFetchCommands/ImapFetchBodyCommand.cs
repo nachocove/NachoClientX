@@ -97,6 +97,8 @@ namespace NachoCore.IMAP
                 Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token);
                 var path = body.GetFilePath ();
                 using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                    // TODO If the message is not BodyTypeEnum.MIME_4, we probably need to strip the headers at this point.
+                    // TODO Do we need to filter by Content-Transfer-Encoding?
                     st.CopyTo(bodyFile);
                 }
                 body.Truncated = false;
@@ -123,18 +125,44 @@ namespace NachoCore.IMAP
 
         private NcResult messageBodyPart(UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
         {
+            bodyType = McAbstrFileDesc.BodyTypeEnum.None;
             NcResult result;
             var UidList = new List<UniqueId> ();
             UidList.Add (uid);
             MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
-            var isummary = mailKitFolder.Fetch (UidList, flags, Cts.Token);
+            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
+            headers.Add (HeaderId.MimeVersion);
+            headers.Add (HeaderId.ContentType);
+            headers.Add (HeaderId.ContentTransferEncoding);
+
+            var isummary = mailKitFolder.Fetch (UidList, flags, headers, Cts.Token);
             if (null == isummary || isummary.Count < 1) {
-                Log.Error (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
+                return NcResult.Error (string.Format ("Could not get summary for uid {0}", uid));
             }
-            var summary = isummary[0] as MessageSummary;
+
+            var summary = isummary [0] as MessageSummary;
+            if (null == summary) {
+                return NcResult.Error ("Could not convert summary to MessageSummary");
+            }
+
+            result = BodyTypeFromSummary (summary);
+            if (!result.isOK ()) {
+                return result;
+            }
+            bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
+
+            var part = summary.Body;
+            result = NcResult.OK ();
+            result.Value = part;
+            return result;
+        }
+
+        private NcResult BodyTypeFromSummary (MessageSummary summary)
+        {
+            McAbstrFileDesc.BodyTypeEnum bodyType;
             var part = summary.Body;
 
-            if (part.ContentType.Matches ("multipart", "*")) {
+            if (summary.Headers.Contains (HeaderId.MimeVersion) || part.ContentType.Matches ("multipart", "*")) {
                 bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
             } else if (part.ContentType.Matches ("text", "*")) {
                 if (part.ContentType.Matches ("text", "html")) {
@@ -149,8 +177,8 @@ namespace NachoCore.IMAP
                 bodyType = McAbstrFileDesc.BodyTypeEnum.None;
                 return NcResult.Error (string.Format ("Unhandled mime subtype {0}", part.ContentType.MediaSubtype));
             }
-            result = NcResult.OK ();
-            result.Value = part;
+            NcResult result = NcResult.OK ();
+            result.Value = bodyType;
             return result;
         }
     }
