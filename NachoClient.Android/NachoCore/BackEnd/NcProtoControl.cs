@@ -28,6 +28,7 @@ namespace NachoCore
         }
 
         protected BackEndStateEnum LastBackEndState;
+        protected BackEndStateEnum? BackEndStatePreset;
 
         public int AccountId;
 
