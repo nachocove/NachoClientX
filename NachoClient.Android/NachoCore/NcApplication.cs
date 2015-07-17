@@ -697,6 +697,7 @@ namespace NachoCore
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
+            NcModel.Instance.DumpLastAccess ();
 
             if (null != MonitorEvent) {
                 MonitorEvent (this, EventArgs.Empty);
@@ -849,6 +850,12 @@ namespace NachoCore
             } else {
                 Log.Error (Log.LOG_UI, "Nothing registered for NcApplication SendEmailRespCallback.");
             }
+        }
+
+        public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            var certificate = BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities);
+            return (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint));
         }
 
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)

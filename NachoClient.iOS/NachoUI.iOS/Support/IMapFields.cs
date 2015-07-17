@@ -151,6 +151,7 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT;
 
             imapPortNumberView = new AdvancedTextField ("Port", "993", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.Default);
+            imapPortNumberView.textField.Text = "993";
             imapPortNumberView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (imapPortNumberView);
             yOffset += CELL_HEIGHT;
@@ -167,6 +168,7 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT;
 
             smtpPortNumberView = new AdvancedTextField ("Port", "587", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            smtpPortNumberView.textField.Text = "587";
             smtpPortNumberView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (smtpPortNumberView);
             yOffset += CELL_HEIGHT;
@@ -423,6 +425,7 @@ namespace NachoClient.iOS
         public AdvancedLoginViewController.ConnectCallbackStatusEnum SaveUserSettings ()
         {
             if (!CanUserConnect ()) {
+                infoLabel.TextColor = UIColor.Red;
                 return AdvancedLoginViewController.ConnectCallbackStatusEnum.ContinueToShowAdvanced;
             }
             var email = emailView.textField.Text.Trim ();
@@ -567,7 +570,7 @@ namespace NachoClient.iOS
         public void MaybeEnableConnect (UITextField textField)
         {
             var enable = FieldsAreSet (basicInputViews);
-            enable |= (showAdvancedSettings ? FieldsAreSet (advancedInputViews) : FieldsAreEmpty (advancedInputViews));
+            enable &= (showAdvancedSettings ? FieldsAreSet (advancedInputViews) : FieldsAreEmpty (advancedInputViews));
             connectButton.Enabled = enable;
             connectButton.Alpha = (enable ? 1.0f : .5f);
         }
