@@ -14,7 +14,6 @@ using NachoCore.Model;
 using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
-using HtmlAgilityPack;
 using MailKit.Search;
 
 namespace NachoCore.IMAP
@@ -235,7 +234,7 @@ namespace NachoCore.IMAP
                         if (created1 && false == emailMessage.IsRead) {
                             createdUnread = true;
                         }
-                        if (null == emailMessage.BodyPreview) {
+                        if (string.IsNullOrEmpty (emailMessage.BodyPreview)) {
                             var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                             if (!string.IsNullOrEmpty (preview)) {
                                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -676,70 +675,6 @@ namespace NachoCore.IMAP
                 var buffer = decoded.GetBuffer ();
                 var length = (int)decoded.Length;
                 return Encoding.UTF8.GetString (buffer, 0, length);
-            }
-        }
-
-        private string Html2Text (string html)
-        {
-            HtmlDocument doc = new HtmlDocument ();
-            doc.LoadHtml (html);
-
-            StringWriter sw = new StringWriter ();
-            ConvertTo (doc.DocumentNode, sw);
-            sw.Flush ();
-            return sw.ToString ();
-        }
-
-        public void ConvertTo (HtmlNode node, TextWriter outText)
-        {
-            string html;
-            switch (node.NodeType) {
-            case HtmlNodeType.Comment:
-                // don't output comments
-                break;
-
-            case HtmlNodeType.Document:
-                ConvertContentTo (node, outText);
-                break;
-
-            case HtmlNodeType.Text:
-                // script and style must not be output
-                string parentName = node.ParentNode.Name;
-                if ((parentName == "script") || (parentName == "style"))
-                    break;
-
-                // get text
-                html = ((HtmlTextNode)node).Text;
-
-                // is it in fact a special closing node output as text?
-                if (HtmlNode.IsOverlappedClosingElement (html))
-                    break;
-
-                // check the text is meaningful and not a bunch of whitespaces
-                if (html.Trim ().Length > 0) {
-                    outText.Write (HtmlEntity.DeEntitize (html));
-                }
-                break;
-
-            case HtmlNodeType.Element:
-                switch (node.Name) {
-                case "p":
-                    // treat paragraphs as crlf
-                    outText.Write ("\r\n");
-                    break;
-                }
-
-                if (node.HasChildNodes) {
-                    ConvertContentTo (node, outText);
-                }
-                break;
-            }
-        }
-
-        private void ConvertContentTo (HtmlNode node, TextWriter outText)
-        {
-            foreach (HtmlNode subnode in node.ChildNodes) {
-                ConvertTo (subnode, outText);
             }
         }
     }
