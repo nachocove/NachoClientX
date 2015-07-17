@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -80,6 +81,8 @@ namespace NachoCore.Utils
                         action.Invoke ();
                     } catch (OperationCanceledException) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
+                    } finally {
+                        NcModel.Instance.Db = null;
                     }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
