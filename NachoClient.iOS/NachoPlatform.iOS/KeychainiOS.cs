@@ -66,9 +66,7 @@ namespace NachoPlatform
         public string GetPassword (int handle)
         {
             var data = Getter (CreateQuery (handle));
-            // XAMMIT. 
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            return StringFromNSData (data);
         }
 
         public bool SetPassword (int handle, string password)
@@ -84,9 +82,7 @@ namespace NachoPlatform
         public string GetStringForKey (string key)
         {
             var data = Getter (CreateQuery (key));
-            // XAMMIT. 
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            return StringFromNSData (data);
         }
 
         public bool SetStringForKey (string key, string value)
@@ -122,9 +118,7 @@ namespace NachoPlatform
         public string GetAccessToken (int handle)
         {
             var data = Getter (CreateQuery (handle, KAccessToken));
-            // XAMMIT.
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            return StringFromNSData (data);
         }
 
         public bool DeleteAccessToken (int handle)
@@ -140,9 +134,7 @@ namespace NachoPlatform
         public string GetRefreshToken (int handle)
         {
             var data = Getter (CreateQuery (handle, KRefreshToken));
-            // XAMMIT. 
-            // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
-            return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            return StringFromNSData (data);
         }
 
         public bool DeleteRefreshToken (int handle)
@@ -151,6 +143,20 @@ namespace NachoPlatform
         }
 
         // Shared implementations below.
+        private string StringFromNSData (NSData data)
+        {
+            try {
+                // XAMMIT. 
+                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+                return null == data ? null : System.Text.Encoding.UTF8.GetString (data.ToArray ());
+            } catch (ArgumentNullException) {
+                // XAMMIT. 
+                // Sometimes NSData.ToString throws ArgumentNullException.
+                Log.Error (Log.LOG_SYS, "StringFromNSData: ArgumentNullException");
+                return null;
+            }
+        }
+
         private NSData Getter (SecRecord query)
         {
             SecStatusCode res;
