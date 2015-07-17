@@ -157,7 +157,9 @@ namespace NachoCore.IMAP
                 if (McProtocolState.ImapSyncTypeEnum.Initial == protocolState.ImapSyncType) {
                     // If we're still in the initial sync, stop after a certain cut-off,
                     // so that we can populate all folders at least a little bit at the beginning.
-                    var numMessages = folder.ImapUidNext - startingPoint;
+                    var numMessages = folder.ImapUidNext - startingPoint - 1;
+                    // the cutoff-point depends on comm-status, but since the initial sync is always 10,
+                    // this will have the effect that we (mostly) will sync 10 + 30 before stopping.
                     if (numMessages >= SpanSizeWithCommStatus()) {
                         Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Cutting off sync (Sync State {1}) after {2} messages", folder.ImapFolderNameRedacted (), protocolState.ImapSyncType, numMessages);
                         return null;
@@ -491,7 +493,7 @@ namespace NachoCore.IMAP
 
             // if in FG, add all other folders. Otherwise, only Inbox (and PrioFolder) gets syncd
             if (NcApplication.ExecutionContextEnum.QuickSync != exeCtxt) {
-                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
+                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false).OrderBy (x => x.SyncAttemptCount)) {
                     if (folder.ImapNoSelect ||
                         defInbox.Id == folder.Id ||
                         (null != PrioSyncFolder && folder.Id == PrioSyncFolder.Id) ||
