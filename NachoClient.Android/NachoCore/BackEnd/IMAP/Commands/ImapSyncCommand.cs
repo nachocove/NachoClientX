@@ -235,14 +235,17 @@ namespace NachoCore.IMAP
                             createdUnread = true;
                         }
                         if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
-                            var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                            if (!string.IsNullOrEmpty (preview)) {
-                                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                    var target = (McEmailMessage)record;
-                                    target.BodyPreview = preview;
-                                    target.IsIncomplete = false;
-                                    return true;
-                                });
+                            using (var cap2 = NcCapture.CreateAndStart ("Imap Fetch Partial Body")) {
+                                var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                                if (!string.IsNullOrEmpty (preview)) {
+                                    emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                        var target = (McEmailMessage)record;
+                                        target.BodyPreview = preview;
+                                        target.IsIncomplete = false;
+                                        return true;
+                                    });
+                                }
+                                cap2.Stop ();
                             }
                         }
                         summaryUids.Add (imapSummary.UniqueId.Value);
