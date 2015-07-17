@@ -58,6 +58,7 @@ namespace NachoCore.SMTP
 
                 case (uint)Lst.ConnW:
                 case (uint)Lst.HotQOpW:
+                case (uint)Lst.QOpW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
                     return BackEndStateEnum.PostAutoDPostInboxSync;
