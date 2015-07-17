@@ -460,6 +460,7 @@ namespace NachoCore.IMAP
                             target.ImapSyncType = McProtocolState.ImapSyncTypeEnum.Regular;
                             return true;
                         });
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Switch to ImapSyncTypeEnum.Regular");
                         doAgain = true;
                     }
                 } while (doAgain);
