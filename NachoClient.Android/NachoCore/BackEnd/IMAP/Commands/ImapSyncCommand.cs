@@ -164,13 +164,13 @@ namespace NachoCore.IMAP
             // Process any new or changed messages. This will also tell us any messages that vanished.
             UniqueIdSet vanished;
             UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
-            if (newOrChanged.Any ()) {
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-            }
+
             // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
             toDelete.AddRange (vanished);
             var deleted = deleteEmails (toDelete);
-            if (deleted.Any ()) {
+            if (deleted.Any () || newOrChanged.Any ()) {
+                var messages = McEmailMessage.QueryNeedQuickScoring (BEContext.Account.Id, 100).Count;
+                Log.Info (Log.LOG_IMAP, "Sending Info_EmailMessageSetChanged. Brain should see {0} messages", messages);
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
             // remember where we sync'd
@@ -234,7 +234,7 @@ namespace NachoCore.IMAP
                         if (created1 && false == emailMessage.IsRead) {
                             createdUnread = true;
                         }
-                        if (string.IsNullOrEmpty (emailMessage.BodyPreview)) {
+                        if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
                             var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                             if (!string.IsNullOrEmpty (preview)) {
                                 emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
