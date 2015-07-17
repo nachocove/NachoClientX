@@ -154,10 +154,14 @@ namespace NachoCore.IMAP
                 int startingPoint = (int)(0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Last {1} UidNext {2} Syncing from {3} for {4} messages", folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, startingPoint, span);
 
-                var exeCtxt = NcApplication.Instance.ExecutionContext;
-                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                    if (folder.ImapUidNext - startingPoint > span * 2) {
-                        Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: BG/QS: startingPoint {1} beyond cutoff. Stopping sync ({2})", folder.ImapFolderNameRedacted (), startingPoint, exeCtxt);
+                if (McProtocolState.ImapSyncTypeEnum.Initial == protocolState.ImapSyncType) {
+                    // If we're still in the initial sync, stop after a certain cut-off,
+                    // so that we can populate all folders at least a little bit at the beginning.
+                    var numMessages = folder.ImapUidNext - startingPoint - 1;
+                    // the cutoff-point depends on comm-status, but since the initial sync is always 10,
+                    // this will have the effect that we (mostly) will sync 10 + 30 before stopping.
+                    if (numMessages >= SpanSizeWithCommStatus()) {
+                        Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Cutting off sync (Sync State {1}) after {2} messages", folder.ImapFolderNameRedacted (), protocolState.ImapSyncType, numMessages);
                         return null;
                     }
                 }
@@ -438,15 +442,29 @@ namespace NachoCore.IMAP
                 }
 
                 // (FG/BG) Sync
-                // FIXME Deal with 'narrow' and 'degraded' sync, i.e. on low battery 'do less' (whatever that means).
-                foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
-                    SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
-                    if (null != syncKit) {
-                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
-                        return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
-                            new ImapSyncCommand (BEContext, Client, syncKit));
+                bool doAgain;
+                do {
+                    doAgain = false;
+                    foreach (var folder in SyncFolderList (accountId, exeCtxt)) {
+                        SyncKit syncKit = GenSyncKit (accountId, protocolState, folder);
+                        if (null != syncKit) {
+                            Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
+                            return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
+                                new ImapSyncCommand (BEContext, Client, syncKit));
+                        }
                     }
-                }
+                    // if we got here, and we're still in Initial sync, then move up to the regular sync strategy.
+                    if (McProtocolState.ImapSyncTypeEnum.Initial == protocolState.ImapSyncType) {
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.ImapSyncType = McProtocolState.ImapSyncTypeEnum.Regular;
+                            return true;
+                        });
+                        Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Switch to ImapSyncTypeEnum.Regular");
+                        doAgain = true;
+                    }
+                } while (doAgain);
+
                 Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Ping");
                 return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Ping,
                     new ImapIdleCommand (BEContext, Client));
@@ -476,10 +494,11 @@ namespace NachoCore.IMAP
 
             // if in FG, add all other folders. Otherwise, only Inbox (and PrioFolder) gets syncd
             if (NcApplication.ExecutionContextEnum.QuickSync != exeCtxt) {
-                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false)) {
+                foreach (var folder in McFolder.QueryByIsClientOwned (accountId, false).OrderBy (x => x.SyncAttemptCount)) {
                     if (folder.ImapNoSelect ||
                         defInbox.Id == folder.Id ||
-                        (null != PrioSyncFolder && folder.Id == PrioSyncFolder.Id))
+                        (null != PrioSyncFolder && folder.Id == PrioSyncFolder.Id) ||
+                        folder.ImapUidNext <= 1)
                     {
                         continue;
                     }

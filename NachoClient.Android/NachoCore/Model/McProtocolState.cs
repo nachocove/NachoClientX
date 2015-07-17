@@ -33,6 +33,11 @@ namespace NachoCore.Model
             RecentCommands,
         };
 
+        public enum ImapSyncTypeEnum {
+            Initial,
+            Regular,
+        };
+
         [Flags]
         public enum NcImapCapabilities {
             /// <summary>
@@ -141,8 +146,16 @@ namespace NachoCore.Model
         // the authentication capabilities, which we need to know.
         public NcImapCapabilities ImapServerCapabilitiesUnAuth { get; set; }
 
+        // Same principle as McAccount.AccountService which is set by which account-type the
+        // user picks. This one is auto-discovered, so doesn't rely on the user's input.
+        // Reason: We can't rely on McAccount.AccountService for anything functional, since
+        // a user could just as easily configure a GMail account using the generic 'IMAP' button,
+        // which would break some internal functionality that relies on knowing whether a server
+        // is gmail, or yahoo, or aol, etc.
         public McAccount.AccountServiceEnum ImapServiceType { get; set; }
 
+        // The current sync type
+        public ImapSyncTypeEnum ImapSyncType { get; set; }
         /*
          * "Smtp" SMTP properties go here:
          */

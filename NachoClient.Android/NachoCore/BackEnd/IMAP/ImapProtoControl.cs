@@ -813,7 +813,11 @@ namespace NachoCore.IMAP
         {
             CancelCmd ();
             Sm.ClearEventQueue ();
-            var pack = Strategy.Pick (MainClient);
+            Tuple<PickActionEnum, ImapCommand> pack;
+            using (var cap = NcCapture.CreateAndStart ("ImapStrategy Pick")) {
+                pack = Strategy.Pick (MainClient);
+                cap.Stop ();
+            }
             var transition = pack.Item1;
             var cmd = pack.Item2;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
