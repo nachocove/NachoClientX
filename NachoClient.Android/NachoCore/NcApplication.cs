@@ -365,6 +365,7 @@ namespace NachoCore
                         if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
                             Log.Error (Log.LOG_SYS, "UnobservedTaskException:{0}: Dumping File Descriptors", ex.Message);
                             Log.DumpFileDescriptors ();
+                            NcModel.Instance.DumpLastAccess ();
                         }
                     }
                     if (null != UnobservedTaskException) {
