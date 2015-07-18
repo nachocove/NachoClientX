@@ -33,7 +33,11 @@ namespace NachoCore.IMAP
                 Event evt = base.ExecuteConnectAndAuthEvent ();
                 sm.PostEvent (evt);
                 return;
-
+            } catch (UriFormatException ex) {
+                Log.Error (Log.LOG_IMAP, "UriFormatException: {0}", ex.Message);
+                ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
+                sm.PostEvent ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                errResult.Message = ex.Message;
             } catch (SocketException ex) {
                 Log.Error (Log.LOG_IMAP, "SocketException: {0}", ex.Message);
                 ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
