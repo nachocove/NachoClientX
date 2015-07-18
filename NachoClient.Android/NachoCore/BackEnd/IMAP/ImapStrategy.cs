@@ -166,7 +166,16 @@ namespace NachoCore.IMAP
                 UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, (uint)startingPoint, span);
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: currentMails {{{1}}} currentUidSet {{{2}}}", folder.ImapFolderNameRedacted (), currentMails, currentUidSet);
                 if (!currentMails.Any () && !currentUidSet.Any ()) {
-                    // Nothing to do.
+                    // Nothing to sync.
+
+                    // if this is the inbox and we have nothing to do, we need to still mark protocolState.HasSyncedInbox as True.
+                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type && !protocolState.HasSyncedInbox) {
+                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                            var target = (McProtocolState)record;
+                            target.HasSyncedInbox = true;
+                            return true;
+                        });
+                    }
                     return null;
                 }
                 UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
