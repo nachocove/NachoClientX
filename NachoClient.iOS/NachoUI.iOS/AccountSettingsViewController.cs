@@ -10,10 +10,11 @@ using NachoCore.Utils;
 using System.Linq;
 using NachoCore;
 using NachoPlatform;
+using Google.iOS;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks
+    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks, IGIDSignInDelegate, IGIDSignInUIDelegate
     {
         protected UIView contentView;
         protected UIScrollView scrollView;
@@ -28,6 +29,7 @@ namespace NachoClient.iOS
         UcNameValuePair DaysToSyncBlock;
         UcNameValuePair NotificationsBlock;
         UISwitch FastNotificationSwitch;
+        UIButton FixAccountButton;
         UIButton DeleteAccountButton;
         UIView DeleteAccountBackgroundView;
         UIActivityIndicatorView DeleteAccountActivityIndicator;
@@ -177,10 +179,43 @@ namespace NachoClient.iOS
 
             yOffset = fastNotificationLabel.Frame.Bottom;
 
-            var filler = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
-            filler.BackgroundColor = A.Color_NachoBackgroundGray;
-            contentView.AddSubview (filler);
-            yOffset = filler.Frame.Bottom + 5;
+            var filler1 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
+            filler1.BackgroundColor = A.Color_NachoBackgroundGray;
+            contentView.AddSubview (filler1);
+            yOffset = filler1.Frame.Bottom + 5;
+
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
+                FixAccountButton = UIButton.FromType (UIButtonType.System);
+                FixAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
+                Util.AddButtonImage (FixAccountButton, "gen-avatar-alert", UIControlState.Normal);
+                FixAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
+                var serverIssueText = "";
+                switch (serverIssue) {
+                case BackEndStateEnum.CredWait:
+                    serverIssueText = "Update Password";
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                    serverIssueText = "Certificate Issue";
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    serverIssueText = "Server Error";
+                    break;
+                }
+                FixAccountButton.SetTitle (serverIssueText, UIControlState.Normal);
+                FixAccountButton.AccessibilityLabel = serverIssueText;
+                FixAccountButton.Font = A.Font_AvenirNextRegular14;
+                FixAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+                FixAccountButton.TouchUpInside += FixAccountButton_TouchUpInside;
+                contentView.AddSubview (FixAccountButton);
+                yOffset = FixAccountButton.Frame.Bottom;
+
+                var filler2 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
+                filler2.BackgroundColor = A.Color_NachoBackgroundGray;
+                contentView.AddSubview (filler2);
+                yOffset = filler2.Frame.Bottom + 5;
+            }
                             
             DeleteAccountButton = UIButton.FromType (UIButtonType.System);
             DeleteAccountButton.Frame = new CGRect (INDENT, yOffset, contentView.Frame.Width, HEIGHT);
@@ -255,6 +290,7 @@ namespace NachoClient.iOS
 
             accountImageView = null;
 
+            FixAccountButton.TouchUpInside -= FixAccountButton_TouchUpInside;
             DeleteAccountButton.TouchUpInside -= onDeleteAccount;
             FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
         }
@@ -294,6 +330,13 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToAdvancedSettings") {
                 var vc = (AdvancedSettingsViewController)segue.DestinationViewController;
                 vc.Setup (account);
+                return;
+            }
+            if (segue.Identifier == "SegueToCertAsk") {
+                var vc = (CertAskViewController)segue.DestinationViewController;
+                var h = (SegueHolder)sender;
+                var capabililty = (McAccount.AccountCapabilityEnum)h.value;
+                vc.Setup (account, capabililty);
                 return;
             }
             if (segue.Identifier == "SegueToAccountValidation") {
@@ -393,6 +436,27 @@ namespace NachoClient.iOS
             account.Update ();
         }
 
+        void FixAccountButton_TouchUpInside (object sender, EventArgs e)
+        {
+            McServer serverWithIssue;
+            BackEndStateEnum serverIssue;
+            if (LoginHelpers.IsUserInterventionRequired (account.Id, out serverWithIssue, out serverIssue)) {
+                switch (serverIssue) {
+                case BackEndStateEnum.CredWait:
+                    if (!MaybeStartGmailAuth (account)) {
+                        PerformSegue ("SegueToAccountValidation", this);
+                    }
+                    break;
+                case BackEndStateEnum.CertAskWait:
+                    PerformSegue ("SegueToCertAsk", new SegueHolder (McAccount.AccountCapabilityEnum.EmailSender));
+                    break;
+                case BackEndStateEnum.ServerConfWait:
+                    PerformSegue ("SegueToAdvancedSettings", this);
+                    break;
+                }
+            }
+        }
+
         void onDeleteAccount (object sender, EventArgs e)
         {
             contentView.Hidden = true;
@@ -423,6 +487,44 @@ namespace NachoClient.iOS
                 });
                 DeleteAccountActivityIndicator.StartAnimating ();
             }
+        }
+
+        bool MaybeStartGmailAuth (McAccount account)
+        {
+            if (McAccount.AccountServiceEnum.GoogleDefault != account.AccountService) {
+                return false;
+            }
+            var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+            if (null == cred) {
+                return false;
+            }
+            if (McCred.CredTypeEnum.OAuth2 != cred.CredType) {
+                return false;
+            }
+
+            NcAlertView.Show (this, "Sign In",
+                String.Format ("Please sign in to your Google account for {0}.", account.EmailAddr),
+                new NcAlertAction ("Yes", () => {
+                    StartGoogleLogin ();
+                }),
+                new NcAlertAction ("Cancel", () => {
+
+                }));
+            return true;
+        }
+
+        public void StartGoogleLogin ()
+        {
+            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
+            Google.iOS.GIDSignIn.SharedInstance.SignOut ();
+            Google.iOS.GIDSignIn.SharedInstance.SignIn ();
+        }
+
+        // GIDSignInDelegate
+        public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
+        {
+            Log.Info (Log.LOG_UI, "avl: AccountSettingsView DidSignInForUser {0}", error);
         }
 
     }

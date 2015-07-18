@@ -12,18 +12,8 @@ namespace NachoCore.Utils
     {
         static string MODULE = "ClientConfigurationBits";
 
-        //Sets the status of the sync bit for given accountId
-        //Implies that auto-d is complete too.
-        static public void SetFirstSyncCompleted (int accountId, bool toWhat)
+        static public void UserInterventionStateChanged (int accountId)
         {
-            Log.Info (Log.LOG_UI, "SetFirstSyncCompleted: {0}={1}", accountId, toWhat);
-            McMutables.SetBool (accountId, MODULE, "hasSyncedFolders", toWhat);
-        }
-
-        static public void SetDoesBackEndHaveIssues (int accountId, bool toWhat)
-        {
-            Log.Info (Log.LOG_UI, "SetDoesBackEndHaveIssues: {0}={1}", accountId, toWhat);
-            McMutables.SetBool (accountId, MODULE, "doesBackEndHaveIssues", toWhat);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NcResult.Info (NcResult.SubKindEnum.Info_UserInterventionFlagChanged),
                 Account = McAccount.QueryById<McAccount> (accountId),
@@ -31,9 +21,24 @@ namespace NachoCore.Utils
             });
         }
 
-        static public bool DoesBackEndHaveIssues (int accountId)
+        static public bool IsUserInterventionRequired (int accountId, out McServer serverWithIssue, out BackEndStateEnum serverStatus)
         {
-            return McMutables.GetOrCreateBool (accountId, MODULE, "doesBackEndHaveIssues", false);
+            var servers = McServer.QueryByAccountId<McServer> (accountId);
+
+            foreach (var server in servers) {
+                var status = BackEnd.Instance.BackEndState (accountId, server.Capabilities);
+                switch (status) {
+                case BackEndStateEnum.CertAskWait:
+                case BackEndStateEnum.CredWait:
+                case BackEndStateEnum.ServerConfWait:
+                    serverWithIssue = server;
+                    serverStatus = status; 
+                    return true;
+                }
+            }
+            serverWithIssue = null;
+            serverStatus = BackEndStateEnum.NotYetStarted; 
+            return false;
         }
 
         static public bool ShouldAlertUser ()
@@ -48,7 +53,9 @@ namespace NachoCore.Utils
 
         static public bool ShouldAlertUser (int accountId)
         {
-            if (DoesBackEndHaveIssues (accountId)) {
+            McServer serverWithIssue;
+            BackEndStateEnum serverStatus;
+            if (IsUserInterventionRequired (accountId, out serverWithIssue, out serverStatus)) {
                 return true;
             }
             DateTime expiry;

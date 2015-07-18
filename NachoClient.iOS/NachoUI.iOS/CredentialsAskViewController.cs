@@ -27,7 +27,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetAccountId(int accountId)
+        public void SetAccountId (int accountId)
         {
             theAccountId = accountId;
         }
@@ -51,7 +51,7 @@ namespace NachoClient.iOS
             // FIXME STEVE
             BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccountId, McAccount.AccountCapabilityEnum.EmailSender);
             if (BackEndStateEnum.CertAskWait == backEndState) {
-                certificateView.SetCertificateInformation (theAccountId);
+                certificateView.SetCertificateInformation (theAccountId, McAccount.AccountCapabilityEnum.EmailSender);
                 certificateView.ShowView ();
             }
         }
@@ -165,7 +165,7 @@ namespace NachoClient.iOS
                     BackEnd.Instance.CredResp (theAccountId);
                     View.EndEditing (true);
                     DismissViewController (true, null);
-                    LoginHelpers.SetDoesBackEndHaveIssues (theAccountId, false);
+                    LoginHelpers.UserInterventionStateChanged (theAccountId);
                 }
             };
 
@@ -234,7 +234,7 @@ namespace NachoClient.iOS
         {
             // FIXME STEVE
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
-            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
+            LoginHelpers.UserInterventionStateChanged (accountId);
             View.EndEditing (true);
             DismissViewController (true, null);
         }
@@ -244,7 +244,7 @@ namespace NachoClient.iOS
         {
             // FIXME STEVE - need to deal with > 1 server scenarios (McAccount.AccountCapabilityEnum).
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
-            LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
+            LoginHelpers.UserInterventionStateChanged (accountId);
             View.EndEditing (true);
             DismissViewController (true, null);
         }

@@ -625,12 +625,6 @@ namespace NachoCore
 
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass4Services complete");
-
-            foreach (var accountId in McAccount.GetAllConfiguredNonDeviceAccountIds()) {
-                var senderHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailSender);
-                var readerHasIssues = DoesBackEndStateIndicateAnIssue (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter);
-                LoginHelpers.SetDoesBackEndHaveIssues (accountId, senderHasIssues || readerHasIssues);
-            }
         }
 
         bool DoesBackEndStateIndicateAnIssue (int accountId, McAccount.AccountCapabilityEnum capabiliity)
@@ -856,14 +850,20 @@ namespace NachoCore
         public bool CertAskReqPreApproved (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             var certificate = BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities);
-            return (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint));
+            if (null != certificate) {
+                return (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint));
+            } else {
+                return false;
+            }
         }
 
         public void CertAskResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool isOkay)
         {
             if (isOkay) {
-                McMutables.GetOrCreateBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", 
-                    BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities).Thumbprint, true);
+                var certificate = BackEnd.Instance.ServerCertToBeExamined (accountId, capabilities);
+                if (null != certificate) {
+                    McMutables.GetOrCreateBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint, true);
+                }
             }
             BackEnd.Instance.CertAskResp (accountId, capabilities, isOkay);
         }

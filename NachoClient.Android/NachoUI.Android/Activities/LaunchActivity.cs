@@ -76,7 +76,6 @@ namespace NachoClient.AndroidClient
 
             // FIXME
             NcApplication.Instance.Account = account;
-            LoginHelpers.SetFirstSyncCompleted (account.Id, true);
 
             BackEnd.Instance.Start (account.Id);
 
