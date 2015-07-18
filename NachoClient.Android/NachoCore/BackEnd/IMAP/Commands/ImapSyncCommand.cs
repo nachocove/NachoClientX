@@ -192,14 +192,12 @@ namespace NachoCore.IMAP
 
             // update the protocol state
             var protocolState = BEContext.ProtocolState;
-            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == Synckit.Folder.Type) {
-                if (!protocolState.HasSyncedInbox) {
-                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                        var target = (McProtocolState)record;
-                        target.HasSyncedInbox = true;
-                        return true;
-                    });
-                }
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == Synckit.Folder.Type && !protocolState.HasSyncedInbox) {
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.HasSyncedInbox = true;
+                    return true;
+                });
             }
 
             // Update the sync count and last attempt
