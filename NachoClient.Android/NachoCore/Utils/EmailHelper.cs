@@ -324,6 +324,28 @@ namespace NachoCore.Utils
             return ParseServerWhyEnum.Success_0;
         }
 
+        public static string ParseServerWhyEnumToString (ParseServerWhyEnum why)
+        {
+            switch (why) {
+            case ParseServerWhyEnum.FailBadHost:
+                return "The host name has an error.";
+            case ParseServerWhyEnum.FailBadPort:
+                return "The port number has an error.";
+            case ParseServerWhyEnum.FailBadScheme:
+                return "The server name scheme has an error.";
+            case ParseServerWhyEnum.FailHadQuery:
+                return "The server name should not have a query string.";
+            case ParseServerWhyEnum.FailUnknown:
+                return "The server name has an error.";
+            case ParseServerWhyEnum.Success_0:
+                return "";
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            return "";
+        }
+
         public static bool IsValidHost (string host)
         {
             UriHostNameType fullServerUri = Uri.CheckHostName (host.Trim ());

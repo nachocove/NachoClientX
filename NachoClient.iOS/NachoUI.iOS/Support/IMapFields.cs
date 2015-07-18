@@ -342,6 +342,7 @@ namespace NachoClient.iOS
             // Padding
             yOffset += 20;
 
+            MaybeEnableConnect (emailView.textField);
             Util.SetHidden (!showAdvancedSettings, imapServerView, imapPortNumberView, imapWhiteInset, smtpServerView, smtpPortNumberView, smtpWhiteInset);
 
             ViewFramer.Create (scrollView).Height (height);
@@ -508,6 +509,10 @@ namespace NachoClient.iOS
 
         void Validate ()
         {
+            if (!CanUserConnect ()) {
+                return;
+            }
+
             var cred = new McCred ();
             cred.SetTestPassword (passwordView.textField.Text);          
 
@@ -540,7 +545,7 @@ namespace NachoClient.iOS
             UpdateServer (verifiedServers.ElementAt (1));
         }
 
-        void UpdateServer(McServer verifiedServer)
+        void UpdateServer (McServer verifiedServer)
         {
             var server = McServer.QueryByAccountIdAndCapabilities (account.Id, verifiedServer.Capabilities);
             server.CopyNameFrom (verifiedServer);
@@ -569,6 +574,8 @@ namespace NachoClient.iOS
 
         public void MaybeEnableConnect (UITextField textField)
         {
+            textField.TextColor = UIColor.Black;
+
             var enable = FieldsAreSet (basicInputViews);
             enable &= (showAdvancedSettings ? FieldsAreSet (advancedInputViews) : FieldsAreEmpty (advancedInputViews));
             connectButton.Enabled = enable;
@@ -578,55 +585,67 @@ namespace NachoClient.iOS
         bool CheckServer (AdvancedTextField serverName, AdvancedTextField portNumber, bool highlight)
         {
             if (serverName.IsNullOrEmpty ()) {
-                SetRedText (serverName, "Invalid server name. Please check that you typed it in correctly.");
+                Complain (serverName, "The server name is required.");
                 return false;
             }
-            if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverName.textField.Text)) {
-                SetRedText (serverName, "Invalid server name. Please check that you typed it in correctly.");
+            if (!EmailHelper.IsValidHost (serverName.textField.Text)) {
+                Complain (serverName, "Invalid server name. Please check that you typed it in correctly.");
                 return false;
             }
-            if (portNumber.IsNullOrEmpty ()) {
-                SetRedText (portNumber, "Invalid port number. It must be a number.");
-                return false;
+            if (serverName.textField.Text.Contains (":")) {
+                Complain (serverName, "Invalid server name. Scheme or port number is not allowed.");
             }
             int result;
             if (!int.TryParse (portNumber.textField.Text, out result)) {
-                SetRedText (portNumber, "Invalid port number. It must be a number.");
+                Complain (portNumber, "Invalid port number. It must be a number.");
                 return false;
             }
             return true;
         }
 
-        void SetRedText (AdvancedTextField field, string text)
+        void Complain (AdvancedTextField field, string text)
         {
-            infoLabel.Text = text;
+            if (Prompt.EditInfo == prompt) {
+                var vc = Util.FindOutermostViewController ();
+                NcAlertView.ShowMessage (vc, "Settings", text);
+            } else {
+                infoLabel.Text = text;
+                infoLabel.TextColor = A.Color_NachoRed;
+            }
+            if (null != field) {
+                field.textField.TextColor = A.Color_NachoRed;
+            }
         }
 
         bool CanUserConnect ()
         {
             if (emailView.IsNullOrEmpty ()) {
-                SetRedText (emailView, "Enter an email address");
+                Complain (emailView, "Enter an email address");
+                return false;
+            }
+            if (!EmailHelper.IsValidEmail (emailView.textField.Text)) {
+                Complain (emailView, "Email address is invalid");
                 return false;
             }
             if (passwordView.IsNullOrEmpty ()) {
-                SetRedText (passwordView, "Enter a password");
+                Complain (passwordView, "Enter a password");
             }
             string serviceName;
             var emailAddress = emailView.textField.Text;
             if (NcServiceHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
                 var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
-                SetRedText (emailView, nuance);
+                Complain (emailView, nuance);
                 return false;
             }
 
             // TODO: Allow iMap auto-d
 //            if (FieldsAreSet (advancedInputViews) && !FieldsAreEmpty (advancedInputViews)) {
-//                infoLabel.Text = "All fields must be filled in.";
+//                Complain (null, "All fields must be filled in.");
 //                return false;
 //            }
 
             if (!FieldsAreSet (advancedInputViews)) {
-                infoLabel.Text = "All fields must be filled in.";
+                Complain (null, "All fields must be filled in.");
                 return false;
             }
 
