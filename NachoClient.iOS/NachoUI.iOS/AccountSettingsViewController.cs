@@ -290,7 +290,9 @@ namespace NachoClient.iOS
 
             accountImageView = null;
 
-            FixAccountButton.TouchUpInside -= FixAccountButton_TouchUpInside;
+            if (null != FixAccountButton) {
+                FixAccountButton.TouchUpInside -= FixAccountButton_TouchUpInside;
+            }
             DeleteAccountButton.TouchUpInside -= onDeleteAccount;
             FastNotificationSwitch.ValueChanged -= FastNotificationSwitchChangedHandler;
         }
