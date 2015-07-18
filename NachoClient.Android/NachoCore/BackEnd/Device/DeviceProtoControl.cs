@@ -320,10 +320,9 @@ namespace NachoCore
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
                                 }
-                                // The sync has completed.
-                                DeviceContacts = null;
                             } finally {
-                                // Trigger status events and report progress both when the sync is complete and when the sync has been interrupted.
+                                // Trigger status events and report progress both when the sync is complete
+                                // and when the sync has been interrupted.
                                 if (somethingHappened) {
                                     deviceContacts.Report ();
                                 }
@@ -344,10 +343,9 @@ namespace NachoCore
                                     somethingHappened = true;
                                     cToken.ThrowIfCancellationRequested ();
                                 }
-                                // The sync has completed.
-                                DeviceCalendars = null;
                             } finally {
-                                // Trigger status events and report progress both when the sync is complete and when the sync has been interrupted.
+                                // Trigger status events and report progress both when the sync is complete
+                                // and when the sync has been interrupted.
                                 if (somethingHappened) {
                                     deviceCalendars.Report ();
                                 }
@@ -355,7 +353,12 @@ namespace NachoCore
                         }
                     }
 
+                    // The sync has completed.  Reset things so the next DoSync will start over.
+                    DeviceContacts = null;
+                    DeviceCalendars = null;
+
                     Sm.PostEvent ((uint)DevEvt.E.SyncDone, "DEVNCCONSYNCED");
+
                 } catch (OperationCanceledException) {
                     // Abate was signaled.
                     Sm.PostEvent ((uint)DevEvt.E.SyncCancelled, "DEVNCCONCANCEL");
