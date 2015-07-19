@@ -108,7 +108,7 @@ namespace NachoCore.Utils
                         if (!((Task)taskRef.Target).IsCompleted) {
                             Log.Warn (Log.LOG_SYS, "Task {0} still running", pair.Value);
                         }
-                        if (!((Task)taskRef.Target).IsCanceled) {
+                        if (((Task)taskRef.Target).IsCanceled) {
                             Log.Info (Log.LOG_SYS, "Task {0} cancelled", pair.Value);
                         }
                     }
