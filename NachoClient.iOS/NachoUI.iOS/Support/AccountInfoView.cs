@@ -122,7 +122,11 @@ namespace NachoClient.iOS
                     unreadMessageCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
                 }
                 InvokeOnUIThread.Instance.Invoke (() => {
-                    unreadCountLabel.Text = unreadMessageCount.ToString ();
+                    if (1000 < unreadMessageCount) {
+                        unreadCountLabel.Text = unreadMessageCount.ToString ();
+                    } else {
+                        unreadCountLabel.Text = "...";
+                    }
                 });
             }, "UpdateUnreadMessageCount");
         }

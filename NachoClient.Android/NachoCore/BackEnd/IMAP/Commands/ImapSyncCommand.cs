@@ -14,7 +14,6 @@ using NachoCore.Model;
 using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
-using HtmlAgilityPack;
 using MailKit.Search;
 
 namespace NachoCore.IMAP
@@ -53,7 +52,7 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
 
-            Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
+            Log.Info (Log.LOG_IMAP, "{0}: Processing {1}", Synckit.Folder.ImapFolderNameRedacted (), Synckit.ToString ());
 
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
             mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
@@ -88,7 +87,7 @@ namespace NachoCore.IMAP
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
             cap.Pause ();
-            Log.Info (Log.LOG_IMAP, "Sync took {0}", cap.ElapsedMilliseconds);
+            Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
             cap.Stop ();
             cap.Dispose ();
             return result;
@@ -165,13 +164,13 @@ namespace NachoCore.IMAP
             // Process any new or changed messages. This will also tell us any messages that vanished.
             UniqueIdSet vanished;
             UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
-            if (newOrChanged.Any ()) {
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-            }
+
             // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
             toDelete.AddRange (vanished);
             var deleted = deleteEmails (toDelete);
-            if (deleted.Any ()) {
+            if (deleted.Any () || newOrChanged.Any ()) {
+                var messages = McEmailMessage.QueryNeedQuickScoring (BEContext.Account.Id, 100).Count;
+                Log.Info (Log.LOG_IMAP, "Sending Info_EmailMessageSetChanged. Brain should see {0} messages", messages);
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
             // remember where we sync'd
@@ -193,14 +192,12 @@ namespace NachoCore.IMAP
 
             // update the protocol state
             var protocolState = BEContext.ProtocolState;
-            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == Synckit.Folder.Type) {
-                if (!protocolState.HasSyncedInbox) {
-                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                        var target = (McProtocolState)record;
-                        target.HasSyncedInbox = true;
-                        return true;
-                    });
-                }
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == Synckit.Folder.Type && !protocolState.HasSyncedInbox) {
+                protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                    var target = (McProtocolState)record;
+                    target.HasSyncedInbox = true;
+                    return true;
+                });
             }
 
             // Update the sync count and last attempt
@@ -235,15 +232,18 @@ namespace NachoCore.IMAP
                         if (created1 && false == emailMessage.IsRead) {
                             createdUnread = true;
                         }
-                        if (null == emailMessage.BodyPreview) {
-                            var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
-                            if (!string.IsNullOrEmpty (preview)) {
-                                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                    var target = (McEmailMessage)record;
-                                    target.BodyPreview = preview;
-                                    target.IsIncomplete = false;
-                                    return true;
-                                });
+                        if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
+                            using (var cap2 = NcCapture.CreateAndStart ("Imap Fetch Partial Body")) {
+                                var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
+                                if (!string.IsNullOrEmpty (preview)) {
+                                    emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                        var target = (McEmailMessage)record;
+                                        target.BodyPreview = preview;
+                                        target.IsIncomplete = false;
+                                        return true;
+                                    });
+                                }
+                                cap2.Stop ();
                             }
                         }
                         summaryUids.Add (imapSummary.UniqueId.Value);
@@ -676,70 +676,6 @@ namespace NachoCore.IMAP
                 var buffer = decoded.GetBuffer ();
                 var length = (int)decoded.Length;
                 return Encoding.UTF8.GetString (buffer, 0, length);
-            }
-        }
-
-        private string Html2Text (string html)
-        {
-            HtmlDocument doc = new HtmlDocument ();
-            doc.LoadHtml (html);
-
-            StringWriter sw = new StringWriter ();
-            ConvertTo (doc.DocumentNode, sw);
-            sw.Flush ();
-            return sw.ToString ();
-        }
-
-        public void ConvertTo (HtmlNode node, TextWriter outText)
-        {
-            string html;
-            switch (node.NodeType) {
-            case HtmlNodeType.Comment:
-                // don't output comments
-                break;
-
-            case HtmlNodeType.Document:
-                ConvertContentTo (node, outText);
-                break;
-
-            case HtmlNodeType.Text:
-                // script and style must not be output
-                string parentName = node.ParentNode.Name;
-                if ((parentName == "script") || (parentName == "style"))
-                    break;
-
-                // get text
-                html = ((HtmlTextNode)node).Text;
-
-                // is it in fact a special closing node output as text?
-                if (HtmlNode.IsOverlappedClosingElement (html))
-                    break;
-
-                // check the text is meaningful and not a bunch of whitespaces
-                if (html.Trim ().Length > 0) {
-                    outText.Write (HtmlEntity.DeEntitize (html));
-                }
-                break;
-
-            case HtmlNodeType.Element:
-                switch (node.Name) {
-                case "p":
-                    // treat paragraphs as crlf
-                    outText.Write ("\r\n");
-                    break;
-                }
-
-                if (node.HasChildNodes) {
-                    ConvertContentTo (node, outText);
-                }
-                break;
-            }
-        }
-
-        private void ConvertContentTo (HtmlNode node, TextWriter outText)
-        {
-            foreach (HtmlNode subnode in node.ChildNodes) {
-                ConvertTo (subnode, outText);
             }
         }
     }

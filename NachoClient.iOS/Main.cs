@@ -6,6 +6,7 @@ using System.Linq;
 using Foundation;
 using UIKit;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
@@ -26,6 +27,7 @@ namespace NachoClient.iOS
                     if (ex is System.IO.IOException && ex.Message.Contains ("Too many open files")) {
                         Log.Error (Log.LOG_SYS, "Main:{0}: Dumping File Descriptors", ex.Message);
                         Log.DumpFileDescriptors ();
+                        NcModel.Instance.DumpLastAccess ();
                     }
                     throw;
                 }

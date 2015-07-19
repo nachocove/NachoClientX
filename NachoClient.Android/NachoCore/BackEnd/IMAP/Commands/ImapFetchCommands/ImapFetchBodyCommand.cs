@@ -7,10 +7,8 @@ using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
 using System.IO;
-using MimeKit.IO;
-using MimeKit.IO.Filters;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 
 namespace NachoCore.IMAP
 {
@@ -107,6 +105,18 @@ namespace NachoCore.IMAP
                 email.BodyId = body.Id;
                 email.Update ();
 
+                if (string.IsNullOrEmpty (email.BodyPreview)) {
+                    var preview = BodyToPreview (body);
+                    if (!string.IsNullOrEmpty (preview)) {
+                        email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            target.BodyPreview = preview;
+                            return true;
+                        });
+                        StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                    }
+                }
+
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
@@ -180,6 +190,43 @@ namespace NachoCore.IMAP
             NcResult result = NcResult.OK ();
             result.Value = bodyType;
             return result;
+        }
+
+        private static string BodyToPreview (McBody body, int previewLength = 500)
+        {
+            string preview = string.Empty;
+            using (var bodyFile = new FileStream (body.GetFilePath (), FileMode.Open, FileAccess.Read)) {
+                switch (body.BodyType) {
+                case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                    // TODO This reads the entire file into memory. Perhaps not the best idea?
+                    preview = Html2Text (bodyFile);
+                    break;
+
+                case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                    byte[] pbytes = new byte[previewLength];
+                    bodyFile.Read (pbytes, 0, previewLength);
+                    preview = Encoding.UTF8.GetString (pbytes);
+                    break;
+
+                case McAbstrFileDesc.BodyTypeEnum.MIME_4:
+                    // TODO This reads the entire file into memory. Perhaps not the best idea?
+                    MimeMessage mime = MimeHelpers.LoadMessage (body);
+                    string html;
+                    string text;
+                    if (MimeHelpers.FindText (mime, out html, out text)) {
+                        if (!string.IsNullOrEmpty (text)) {
+                            preview = text;
+                        } else if (!string.IsNullOrEmpty (html)) {
+                            preview = Html2Text (html);
+                        }
+                    }
+                    break;
+                }
+            }
+            if (preview.Length > previewLength) {
+                preview = preview.Substring (0, previewLength);
+            }
+            return preview;
         }
     }
 }

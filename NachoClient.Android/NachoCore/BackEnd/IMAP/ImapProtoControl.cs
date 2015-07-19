@@ -37,6 +37,9 @@ namespace NachoCore.IMAP
 
         public override BackEndStateEnum BackEndState {
             get {
+                if (null != BackEndStatePreset) {
+                    return (BackEndStateEnum)BackEndStatePreset;
+                }
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
                     state = ProtocolState.ImapProtoControlState;
@@ -506,6 +509,7 @@ namespace NachoCore.IMAP
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
+            BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
             if ((uint)Lst.Parked != stateToSave) {
@@ -613,6 +617,7 @@ namespace NachoCore.IMAP
 
         private void DoUiServConfReq ()
         {
+            BackEndStatePreset = BackEndStateEnum.ServerConfWait;
             // Send the request toward the UI.
             Owner.ServConfReq (this, Sm.Arg);
         }
@@ -680,6 +685,7 @@ namespace NachoCore.IMAP
 
         private void DoUiCertOkReq ()
         {
+            BackEndStatePreset = BackEndStateEnum.CertAskWait;
             _ServerCertToBeExamined = (X509Certificate2)Sm.Arg;
             Owner.CertAskReq (this, _ServerCertToBeExamined);
         }
@@ -807,7 +813,11 @@ namespace NachoCore.IMAP
         {
             CancelCmd ();
             Sm.ClearEventQueue ();
-            var pack = Strategy.Pick (MainClient);
+            Tuple<PickActionEnum, ImapCommand> pack;
+            using (var cap = NcCapture.CreateAndStart ("ImapStrategy Pick")) {
+                pack = Strategy.Pick (MainClient);
+                cap.Stop ();
+            }
             var transition = pack.Item1;
             var cmd = pack.Item2;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
@@ -884,8 +894,9 @@ namespace NachoCore.IMAP
 
         private void DoUiCredReq ()
         {
-            // Send the request toward the UI.
             CancelCmd ();
+            BackEndStatePreset = BackEndStateEnum.CredWait;
+            // Send the request toward the UI.
             Owner.CredReq (this);
         }
 

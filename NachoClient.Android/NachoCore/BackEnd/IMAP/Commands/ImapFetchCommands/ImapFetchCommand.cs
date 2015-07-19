@@ -105,6 +105,7 @@ namespace NachoCore.IMAP
                     }
                 }
                 cap.Stop ();
+                cap.Dispose ();
                 var resultData = string.Join ("\n", result);
                 return resultData;
             } else {

@@ -37,6 +37,7 @@ namespace NachoCore.IMAP
         public McPending PendingSingle;
         public UniqueIdSet SyncSet;
         public HashSet<HeaderId> Headers;
+        public bool GetPreviews;
 
         public SyncKit (McFolder folder)
         {
@@ -52,6 +53,7 @@ namespace NachoCore.IMAP
             SyncSet = uidset;
             Flags = flags;
             Headers = headers;
+            GetPreviews = false;
         }
 
         public static UniqueIdSet MustUniqueIdSet (IList<UniqueId> uids)
