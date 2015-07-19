@@ -569,9 +569,11 @@ namespace NachoCore.ActiveSync
         {
             Log.Info (Log.LOG_AS, "AUTOD::END:Stopping all robots.");
             if (null != Robots) {
-                foreach (var robot in Robots) {
-                    robot.Cancel ();
-                    DisposedJunk.Add (robot);
+                lock (Robots) {
+                    foreach (var robot in Robots) {
+                        robot.Cancel ();
+                        DisposedJunk.Add (robot);
+                    }
                 }
                 Robots = null;
             }
