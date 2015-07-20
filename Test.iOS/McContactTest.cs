@@ -839,6 +839,63 @@ namespace Test.Common
             Assert.AreEqual (contact2.Id, contacts2 [0].Id);
             Assert.AreEqual (contact4.Id, contacts2 [1].Id);
         }
+
+        protected void CheckContactIds (List<NcContactIndex> recents, List<McContact> contacts, int[] expectedIds)
+        {
+            Assert.AreEqual (expectedIds.Length, recents.Count);
+            for (int n = 0; n < recents.Count; n++) {
+                Assert.AreEqual (contacts [expectedIds [n]].Id, recents [n].Id);
+            }
+        }
+
+        [Test]
+        public void QueryRecentlyAccessed ()
+        {
+            var contacts = new List<McContact> ();
+            for (int n = 0; n < 4; n++) {
+                var contact = new McContact () {
+                    AccountId = 1,
+                };
+                contact.Insert ();
+                contacts.Add (contact);
+            }
+            for (int n = 0; n < 2; n++) {
+                var contact = new McContact () {
+                    AccountId = 2,
+                };
+                contact.Insert ();
+                contacts.Add (contact);
+            }
+
+            // Verify that newly created contacts are not in the recently accessed list.
+            var recents = McContact.QueryRecentlyAccessed (0, 5);
+            Assert.AreEqual (0, recents.Count);
+
+            // Update 3 contacts. Should display them all.
+            contacts [0].UpdateLastAccessed ();
+            contacts [4].UpdateLastAccessed ();
+            contacts [2].UpdateLastAccessed ();
+            recents = McContact.QueryRecentlyAccessed (0, 5);
+            CheckContactIds (recents, contacts, new int[] { 2, 4, 0 });
+
+            // Update one more contact.
+            contacts [3].UpdateLastAccessed ();
+            recents = McContact.QueryRecentlyAccessed (0, 4);
+            CheckContactIds (recents, contacts, new int[] { 3, 2, 4, 0 });
+
+            // Update one more contact. The 5th most recent contact should be evicted.
+            contacts [1].UpdateLastAccessed ();
+            recents = McContact.QueryRecentlyAccessed (0, 4);
+            CheckContactIds (recents, contacts, new int[] { 1, 3, 2, 4 });
+
+            // Check account 1 only. Should get all 4 contacts.
+            recents = McContact.QueryRecentlyAccessed (1, 4);
+            CheckContactIds (recents, contacts, new int[] { 1, 3, 2, 0 });
+
+            // Check account 1 again with lower limit. Should get only the last 3 contacts.
+            recents = McContact.QueryRecentlyAccessed (1, 3);
+            CheckContactIds (recents, contacts, new int[] { 1, 3, 2 });
+        }
     }
 }
 

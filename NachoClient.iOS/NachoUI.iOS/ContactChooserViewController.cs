@@ -355,6 +355,8 @@ namespace NachoClient.iOS
                     }
                 }
 
+                contact.UpdateLastAccessed ();
+
                 Owner.UpdateEmailAddress (contact, Owner.searchResults [indexPath.Row].Value);
             }
 

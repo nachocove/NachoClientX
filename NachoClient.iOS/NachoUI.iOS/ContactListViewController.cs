@@ -251,8 +251,7 @@ namespace NachoClient.iOS
                 contactsNeedsRefresh = false;
                 ReloadCapture.Start ();
                 NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacts");
-                // RIC -- only highlight recents from the current account
-                var recents = McContact.RicContactsSortedByRank (NcApplication.Instance.Account.Id, 5);
+                var recents = McContact.QueryRecentlyAccessed (0, 5);
                 var contacts = McContact.AllContactsSortedByName (true);
                 contactTableViewSource.SetContacts (recents, contacts, true);
                 TableView.ReloadData ();
@@ -272,6 +271,7 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
+            contactsNeedsRefresh = true;
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
 

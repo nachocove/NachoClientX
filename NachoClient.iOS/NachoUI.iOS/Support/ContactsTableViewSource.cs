@@ -224,6 +224,7 @@ namespace NachoClient.iOS
         {
             string dummy;
             McContact contact = ContactFromIndexPath (tableView, indexPath, out dummy);
+            contact.UpdateLastAccessed ();
             owner.ContactSelectedCallback (contact);
             DumpInfo (contact);
             tableView.DeselectRow (indexPath, true);
