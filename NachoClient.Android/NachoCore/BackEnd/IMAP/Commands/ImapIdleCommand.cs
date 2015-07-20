@@ -56,7 +56,7 @@ namespace NachoCore.IMAP
             mailKitFolder = GetOpenMailkitFolder (IdleFolder);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
             if (mailArrived || mailDeleted || needResync) {
-                if (!ImapSyncCommand.GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
+                if (!GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
                     Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", IdleFolder.ImapFolderNameRedacted ());
                 }
             }
