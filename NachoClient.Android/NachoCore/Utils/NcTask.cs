@@ -64,9 +64,8 @@ namespace NachoCore.Utils
                     // Make sure that there is not another task by the same name already running
                     // No reverse mapping just walk. Should be few enough tasks that walking is not a problem.
                     foreach (var pair in TaskMap) {
-                        var taksname = pair.Value;
-                        if (taskName == name) {
-                            Log.Info (Log.LOG_SYS, "NcTask {0} already running", taskName);
+                        if (pair.Value.StartsWith (name)) {
+                            Log.Warn (Log.LOG_SYS, "NcTask {0} already running", pair.Value);
                             return null; // an entry exists
                         }
                     }
