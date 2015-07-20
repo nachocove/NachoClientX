@@ -179,8 +179,14 @@ namespace NachoCore.IMAP
                 folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
+            // If more than UidValidity is needed, add it here.
+            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+                StatusItems items = StatusItems.UidValidity;
+                mailKitFolder.Status (items);
+            }
+
             if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
-                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} != {2})", mailKitFolder.FullName, folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
+                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
                 folder.Delete ();
                 folder = null;
             }

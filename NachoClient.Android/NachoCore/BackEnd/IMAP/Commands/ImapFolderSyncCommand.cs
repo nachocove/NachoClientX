@@ -8,6 +8,7 @@ using NachoCore;
 using NachoCore.Model;
 using MailKit.Net.Imap;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -29,8 +30,6 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            // Right now, we rely on MailKit's FolderCache so access is synchronous.
-            IEnumerable<IMailFolder> folderList;
             // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
             // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
             // skip the GetFolders if it's semi-recent (seconds).
@@ -39,9 +38,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
             }
             // TODO Should we loop over all namespaces here? Typically there appears to be only one.
-            folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token);
-
-
+            IList<IMailFolder> folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token).ToList ();
             if (null == folderList) {
                 Log.Error (Log.LOG_IMAP, "Could not refresh folder list");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD3");
@@ -50,13 +47,47 @@ namespace NachoCore.IMAP
             // Process all incoming folders. Create or update them
             List<string> foldernames = new List<string> (); // Keep track of folder names, so we can compare later.
             bool added_or_changed = false;
+
+            // First, look for all 'directory' (hasChildren) folders.
+            foreach (var mailKitFolder in folderList) {
+                McFolder folder;
+                ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
+                bool isDistinguished;
+
+                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.HasChildren)) {
+                    folderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                    isDistinguished = false;
+                    foldernames.Add (mailKitFolder.FullName);
+                    if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
+                        added_or_changed = true;
+                        // TODO do ApplyCommand stuff here
+                    }
+                    if (null != folder) {
+                        if (UpdateImapSetting (mailKitFolder, ref folder)) {
+                            // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
+                            // Strategy will notice that modseq and/or noselect etc has changed, and resync.
+                            Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
+                        }
+                    }
+                }
+            }
+
+            bool haveSent = false;
+            bool haveDraft = false;
+            bool haveTrash = false;
+
+            // second, look for some folders we don't want to misidentify
             foreach (var mailKitFolder in folderList) {
                 Cts.Token.ThrowIfCancellationRequested ();
 
-                foldernames.Add (mailKitFolder.FullName);
-
+                McFolder folder;
                 ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
                 bool isDistinguished;
+
+                // ignore the ones we processed above.
+                if (foldernames.Contains (mailKitFolder.FullName)) {
+                    continue;
+                }
 
                 if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Inbox) || Client.Inbox == mailKitFolder) {
                     folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2;
@@ -65,16 +96,52 @@ namespace NachoCore.IMAP
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Sent)) {
                     folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
                     isDistinguished = true;
+                    haveSent = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Drafts)) {
                     folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
                     isDistinguished = true;
+                    haveDraft = true;
                 }
                 else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Trash)) {
                     folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
                     isDistinguished = true;
+                    haveTrash = true;
+                } else {
+                    continue; // ignore. Will be processed later.
                 }
-                else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
+
+                // FIXME: Catch errors here, so that an error for one folder doesn't blow up the entire FolderSync
+                foldernames.Add (mailKitFolder.FullName);
+                if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
+                    added_or_changed = true;
+                    // TODO do ApplyCommand stuff here
+                }
+                if (null != folder) {
+                    if (UpdateImapSetting (mailKitFolder, ref folder)) {
+                        // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
+                        // Strategy will notice that modseq and/or noselect etc has changed, and resync.
+                        Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
+                    }
+                }
+            }
+
+            // look again and process the rest.
+            foreach (var mailKitFolder in folderList) {
+                Cts.Token.ThrowIfCancellationRequested ();
+
+                // ignore the ones we processed above.
+                if (foldernames.Contains (mailKitFolder.FullName)) {
+                    continue;
+                }
+
+                foldernames.Add (mailKitFolder.FullName);
+
+                McFolder folder;
+                ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
+                bool isDistinguished;
+
+                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
                     folderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
                     isDistinguished = false;
                 }
@@ -91,13 +158,13 @@ namespace NachoCore.IMAP
                     if (McFolder.MaybeNotesFolder (folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
                         isDistinguished = true;
-                    } else if (McFolder.MaybeSentFolder (folderName)) {
+                    } else if (!haveSent && McFolder.MaybeSentFolder (folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
                         isDistinguished = true;
-                    } else if (McFolder.MaybeTrashFolder (folderName)) {
+                    } else if (!haveTrash && McFolder.MaybeTrashFolder (folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
                         isDistinguished = true;
-                    } else if (McFolder.MaybeDraftFolder (folderName)) {
+                    } else if (!haveDraft && McFolder.MaybeDraftFolder (folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
                         isDistinguished = true;
                     } else {
@@ -108,10 +175,6 @@ namespace NachoCore.IMAP
 
                 // FIXME: Catch errors here, so that an error for one folder doesn't blow up the entire FolderSync
 
-                McFolder folder;
-                if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                    mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
-                }
                 if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
                     added_or_changed = true;
                     // TODO do ApplyCommand stuff here
@@ -122,8 +185,6 @@ namespace NachoCore.IMAP
                         // Strategy will notice that modseq and/or noselect etc has changed, and resync.
                         Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
                     }
-                } else {
-                    Log.Error (Log.LOG_IMAP, "No folder returned from CreateOrUpdateFolder!");
                 }
             }
 
