@@ -449,10 +449,6 @@ namespace NachoClient.iOS
             BackEnd.Instance.Start (account.Id);
         }
 
-        public void TryAgainOrQuit ()
-        {
-        }
-
         public void ShowSupport ()
         {
             RemoveWindows ();
