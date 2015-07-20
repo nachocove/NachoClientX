@@ -75,14 +75,18 @@ namespace NachoCore.Utils
                 WeakReference taskRef = null;
                 var task = Task.Run (delegate {
                     if (!stfu) {
-                        Log.Info (Log.LOG_SYS, "NcTask {0} started.", taskName);
+                        Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
                     }
                     try {
                         action.Invoke ();
                     } catch (OperationCanceledException) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
                     } finally {
-                        NcModel.Instance.Db = null;
+                        var count = NcModel.Instance.NumberDbConnections;
+                        if (15 < count) {
+                            NcModel.Instance.Db = null;
+                            Log.Warn (Log.LOG_SYS, "NcTask: closing DB, connections: {0}", count);
+                        }
                     }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
