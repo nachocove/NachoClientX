@@ -110,8 +110,12 @@ namespace NachoCore.Brain
             try {
                 bool ranOnce = false;
                 while (DateTime.UtcNow < runTill) {
+                    if (IsInterrupted ()) {
+                        break;
+                    }
+
                     // Process all events in the persistent queue first
-                    if (0 < ProcessPersistedRequests (1)) {
+                    if (0 < ProcessPersistedRequests (100)) {
                         continue;
                     }
                     // Handle all other events
@@ -125,6 +129,10 @@ namespace NachoCore.Brain
                     }
                 }
                 while (DateTime.UtcNow < runTill) {
+                    if (IsInterrupted ()) {
+                        break;
+                    }
+
                     var emailMessages = McEmailMessage.QueryNeedUpdate (5, above: false);
                     if (0 == emailMessages.Count) {
                         break;
