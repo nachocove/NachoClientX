@@ -51,6 +51,8 @@ namespace NachoCore.IMAP
             List<string> foldernames = new List<string> (); // Keep track of folder names, so we can compare later.
             bool added_or_changed = false;
             foreach (var mailKitFolder in folderList) {
+                Cts.Token.ThrowIfCancellationRequested ();
+
                 foldernames.Add (mailKitFolder.FullName);
 
                 ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
@@ -108,7 +110,7 @@ namespace NachoCore.IMAP
 
                 McFolder folder;
                 if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                    mailKitFolder.Open (FolderAccess.ReadOnly);
+                    mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
                 }
                 if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
                     added_or_changed = true;
@@ -127,6 +129,7 @@ namespace NachoCore.IMAP
 
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
             foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
+                Cts.Token.ThrowIfCancellationRequested ();
                 if (!foldernames.Contains (folder.ServerId)) {
                     Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server", folder.ImapFolderNameRedacted());
                     // TODO Do applyCommand stuff here
@@ -135,6 +138,8 @@ namespace NachoCore.IMAP
                     added_or_changed = true;
                 }
             }
+
+            Cts.Token.ThrowIfCancellationRequested ();
 
             if (added_or_changed) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
