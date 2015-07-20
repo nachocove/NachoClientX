@@ -713,7 +713,7 @@ namespace NachoCore.IMAP
             Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
         }
 
-        private int MaxConcurrentExtraRequests = 2;
+        private const int MaxConcurrentExtraRequests = 4;
         private int ConcurrentExtraRequests = 0;
 
         private void DoExtraOrDont ()
