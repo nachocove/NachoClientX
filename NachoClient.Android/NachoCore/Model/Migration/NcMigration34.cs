@@ -26,10 +26,11 @@ namespace NachoCore.Model
             var indexes = new Dictionary<int, NcIndex> ();
             foreach (var account in McAccount.GetAllAccounts()) {
                 index = NcBrain.SharedInstance.Index (account.Id);
-                index.BeginRemoveTransaction ();
-                var numUpdated = index.BulkRemoveEmailMessage ();
-                index.EndRemoveTransaction ();
-                UpdateProgress (numUpdated);
+                if (index.BeginRemoveTransaction ()) {
+                    var numUpdated = index.BulkRemoveEmailMessage ();
+                    index.EndRemoveTransaction ();
+                    UpdateProgress (numUpdated);
+                }
             }
             Db.Execute ("UPDATE McEmailMessage SET IsIndexed = 0");
         }
