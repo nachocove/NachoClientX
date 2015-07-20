@@ -364,6 +364,10 @@ namespace NachoCore.Utils
                 var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
             }, "AWS upload events", () => {
+                if (null != uploadRequest.InputStream) {
+                    uploadRequest.InputStream.Dispose ();
+                    uploadRequest.InputStream = null;
+                }
                 SafeFileDelete (filePath);
             });
 
