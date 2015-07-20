@@ -833,6 +833,16 @@ namespace NachoClient
             }
             return FindOutermostView (view.Superview);
         }
+            
+        public static UIViewController FindOutermostViewController()
+        {
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+            var topVC = appDelegate.Window.RootViewController;
+            while(null != topVC.PresentedViewController) {
+                topVC = topVC.PresentedViewController;
+            }
+            return topVC;
+        }
 
         public static UIColor FindSolidBackgroundColor (UIView v)
         {

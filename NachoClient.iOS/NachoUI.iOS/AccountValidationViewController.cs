@@ -238,8 +238,10 @@ namespace NachoClient.iOS
 
         void HideStatusView ()
         {
-            greyBackground.RemoveFromSuperview ();
-            greyBackground = null;
+            if (null != greyBackground) {
+                greyBackground.RemoveFromSuperview ();
+                greyBackground = null;
+            }
         }
 
         protected override void ConfigureAndLayout ()

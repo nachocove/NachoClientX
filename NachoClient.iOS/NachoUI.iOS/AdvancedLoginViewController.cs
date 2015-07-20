@@ -290,7 +290,7 @@ namespace NachoClient.iOS
                 return;
             }
             certificateView = new CertificateView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height), this);
-            certificateView.SetCertificateInformation (account.Id);
+            certificateView.SetCertificateInformation (account.Id, McAccount.AccountCapabilityEnum.EmailSender);
             View.AddSubview (certificateView);
             View.BringSubviewToFront (certificateView);
             certificateView.ShowView ();
@@ -447,10 +447,6 @@ namespace NachoClient.iOS
         {
             ShowWaitingScreen ("Verifying Your Server...");
             BackEnd.Instance.Start (account.Id);
-        }
-
-        public void TryAgainOrQuit ()
-        {
         }
 
         public void ShowSupport ()

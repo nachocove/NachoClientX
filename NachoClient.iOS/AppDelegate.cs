@@ -849,15 +849,7 @@ namespace NachoClient.iOS
         public void CredReqCallback (int accountId)
         {
             Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
-
-            if (McAccount.IsAccountBeingConfigured (accountId)) {
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
-                    Account = McAccount.QueryById<McAccount> (accountId),
-                });
-            } else {
-                DisplayCredentialsFixView (accountId);
-            }
+            LoginHelpers.UserInterventionStateChanged (accountId);
         }
 
         public void ServConfReqCallback (int accountId, McAccount.AccountCapabilityEnum capabilities, object arg = null)
@@ -867,121 +859,29 @@ namespace NachoClient.iOS
             // TODO Make use of the MX information that was gathered during auto-d.
             // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
-            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
-            switch ((uint)arg) {
-            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
-                why = NcResult.WhyEnum.InvalidDest;
-                break;
-            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
-                why = NcResult.WhyEnum.ServerError;
-                break;
-            default:
-                why = NcResult.WhyEnum.NotSpecified;
-                break;
-            }
-            if (McAccount.IsAccountBeingConfigured (accountId)) {
-                var status = NachoCore.Utils.NcResult.Error (NcResult.SubKindEnum.Error_ServerConfReqCallback, why);
-                status.Value = capabilities;
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = status,
-                    Account = McAccount.QueryById<McAccount> (accountId),
-                });
-                return;
-            }
-
+//            NcResult.WhyEnum why = NcResult.WhyEnum.NotSpecified;
+//            switch ((uint)arg) {
+//            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotFindServer:
+//                why = NcResult.WhyEnum.InvalidDest;
+//                break;
+//            case (uint) AsAutodiscoverCommand.AutoDFailureReason.CannotConnectToServer:
+//                why = NcResult.WhyEnum.ServerError;
+//                break;
+//            default:
+//                why = NcResult.WhyEnum.NotSpecified;
+//                break;
+//            }
 
             // called if server name is wrong
             // cancel should call "exit program, enter new server name should be updated server
 
-            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
-
-            var Mo = NcModel.Instance;
-            var Be = BackEnd.Instance;
-
-            var credView = new UIAlertView ();
-
-            credView.Title = "Need Correct Server Name";
-            credView.AddButton ("Update");
-            credView.AddButton ("Cancel");
-            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-            credView.Show ();
-            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                var parent = (UIAlertView)a;
-                if (b.ButtonIndex == 0) {
-
-                    LoginHelpers.SetDoesBackEndHaveIssues (accountId, false);
-
-                    var txt = parent.GetTextField (0).Text;
-                    // FIXME need to scan string to make sure it is of right format (regex).
-                    if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost (txt)) {
-                        Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
-                        NcModel.Instance.RunInTransaction (() => {
-                            var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
-                            if (null == tmpServer) {
-                                tmpServer = new McServer () {
-                                    // FIXME STEVE
-                                    Capabilities = McAccount.ActiveSyncCapabilities,
-                                    Host = txt,
-                                };
-                                tmpServer.Insert ();
-                            } else {
-                                tmpServer.Host = txt;
-                                tmpServer.Update ();
-                            }
-                        });
-                        // FIXME STEVE - need to pass matching capability from request.
-                        // TODO Generic code needs to be moved out of AppDelegate.
-                        Be.ServerConfResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false); 
-                        credView.ResignFirstResponder ();
-                    }
-                    ;
-                }
-                ;
-
-                if (b.ButtonIndex == 1) {
-                    var gonnaquit = new UIAlertView ();
-                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
-
-                    gonnaquit.AddButton ("Ok"); // continue exiting
-                    gonnaquit.AddButton ("Go Back"); // enter info
-                    gonnaquit.CancelButtonIndex = 1;
-                    gonnaquit.Show ();
-                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                        if (e.ButtonIndex == 1) {
-                            // FIXME STEVE
-                            ServConfReqCallback (accountId, McAccount.AccountCapabilityEnum.EmailSender); // go again
-                        }
-                        gonnaquit.ResignFirstResponder ();
-                    };
-                }
-                ;
-            };
+            LoginHelpers.UserInterventionStateChanged (accountId);
         }
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
             Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
-
-            if (McAccount.IsAccountBeingConfigured (accountId)) {
-                Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
-                    Account = McAccount.QueryById<McAccount> (accountId),
-                });
-            } else {
-                // UI FIXME - ask user and call CertAskResp async'ly.
-                DisplayCredentialsFixView (accountId);
-            }
-        }
-
-        protected void DisplayCredentialsFixView (int accountId)
-        {
-            LoginHelpers.SetDoesBackEndHaveIssues (accountId, true);
-
-            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-            cvc.SetAccountId (accountId);
-            this.Window.RootViewController.PresentViewController (cvc, true, null);
+            LoginHelpers.UserInterventionStateChanged (accountId);
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.

@@ -126,8 +126,10 @@ namespace NachoClient.iOS
 
         void HideStatusView ()
         {
-            greyBackground.RemoveFromSuperview ();
-            greyBackground = null;
+            if (null != greyBackground) {
+                greyBackground.RemoveFromSuperview ();
+                greyBackground = null;
+            }
         }
 
         void onValidate(McCred cred, List<McServer> servers)

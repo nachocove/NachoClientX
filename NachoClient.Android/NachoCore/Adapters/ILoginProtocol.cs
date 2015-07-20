@@ -27,8 +27,6 @@ namespace NachoCore
 
         void StartSync ();
 
-        void TryAgainOrQuit ();
-
         void ShowSupport ();
 
         void ShowTutorial ();

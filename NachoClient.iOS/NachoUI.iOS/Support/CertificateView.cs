@@ -37,7 +37,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public CertificateView (CGRect rect, INachoCertificateResponderParent owner) : base(rect)
+        public CertificateView (CGRect rect, INachoCertificateResponderParent owner) : base (rect)
         {
             this.owner = owner;
             this.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (.7f);
@@ -152,14 +152,19 @@ namespace NachoClient.iOS
             certInfoTextView.Text = certInfo;
         }
 
-        public void SetCertificateInformation (int accountId)
+        public void SetCertificateInformation (int accountId, NachoCore.Model.McAccount.AccountCapabilityEnum capability)
         {
             callbackAccountId = accountId;
-            // FIXME STEVE
-            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId, NachoCore.Model.McAccount.AccountCapabilityEnum.EmailSender);
-            certInfo = CertificateHelper.FormatCertificateData (certToBeExamined);
-            certCommonName = CertificateHelper.GetCommonName (certToBeExamined);
-            certOrganization = CertificateHelper.GetOrganizationname (certToBeExamined);
+            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (accountId, capability);
+            if (null == certToBeExamined) {
+                certInfo = "Unable to find certificate to be examined.";
+                certCommonName = "error";
+                certOrganization = "error";
+            } else {
+                certInfo = CertificateHelper.FormatCertificateData (certToBeExamined);
+                certCommonName = CertificateHelper.GetCommonName (certToBeExamined);
+                certOrganization = CertificateHelper.GetOrganizationname (certToBeExamined);
+            }
             ConfigureView ();
         }
 

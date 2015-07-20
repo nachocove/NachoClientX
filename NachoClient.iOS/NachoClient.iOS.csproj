@@ -1567,6 +1567,10 @@
     <Compile Include="NachoUI.iOS\AccountValidationViewController.designer.cs">
       <DependentUpon>AccountValidationViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\CertAskViewController.cs" />
+    <Compile Include="NachoUI.iOS\CertAskViewController.designer.cs">
+      <DependentUpon>CertAskViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2456,6 +2460,10 @@
     <BundleResource Include="Resources\avatar-imap%404x.png" />
     <BundleResource Include="Resources\avatar-imap%406x.png" />
     <BundleResource Include="Resources\Loginscreen-3%406x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%402x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%403x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%404x.png" />
+    <BundleResource Include="Resources\gen-avatar-alert%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
