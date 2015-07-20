@@ -281,16 +281,17 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private bool AwsSendEvent (Action action, string description, Action cleanup = null)
+        private bool AwsSendEvent (Action action, string description, Action<bool> cleanup = null)
         {
             try {
                 action ();
             } catch (Exception e) {
                 if (!HandleAWSException (e, description)) {
+                    bool cancelled = NcTask.Cts.Token.IsCancellationRequested;
                     if (null != cleanup) {
-                        cleanup ();
+                        cleanup (cancelled);
                     }
-                    if (NcTask.Cts.Token.IsCancellationRequested) {
+                    if (cancelled) {
                         Client.Dispose ();
                         Client = null;
                         S3Client.Dispose ();
@@ -363,8 +364,14 @@ namespace NachoCore.Utils
             var succeeded = AwsSendEvent (() => {
                 var task = S3Client.PutObjectAsync (uploadRequest, NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
-            }, "AWS upload events", () => {
-                SafeFileDelete (filePath);
+            }, "AWS upload events", (cancelled) => {
+                if (null != uploadRequest.InputStream) {
+                    uploadRequest.InputStream.Dispose ();
+                    uploadRequest.InputStream = null;
+                }
+                if (!cancelled) {
+                    SafeFileDelete (filePath);
+                }
             });
 
             SafeFileDelete (filePath);
