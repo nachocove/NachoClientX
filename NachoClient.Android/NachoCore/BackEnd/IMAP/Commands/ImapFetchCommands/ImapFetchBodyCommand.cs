@@ -9,6 +9,7 @@ using NachoCore.Model;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -95,9 +96,17 @@ namespace NachoCore.IMAP
                 Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token);
                 var path = body.GetFilePath ();
                 using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
-                    // TODO If the message is not BodyTypeEnum.MIME_4, we probably need to strip the headers at this point.
                     // TODO Do we need to filter by Content-Transfer-Encoding?
-                    st.CopyTo(bodyFile);
+                    switch (body.BodyType) {
+                    default:
+                        st.CopyTo(bodyFile);
+                        break;
+
+                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                    case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                        CopyBody(st, bodyFile);
+                        break;
+                    }
                 }
                 body.Truncated = false;
                 body.UpdateSaveFinish ();
@@ -132,6 +141,36 @@ namespace NachoCore.IMAP
             mailKitFolder.UnsetStreamContext ();
             return result;
         }
+
+        /// <summary>
+        /// Copies a downloaded email from one stream to another, skipping the rfc822 mail headers.
+        /// The headers are separated from the body by an empty line, so look for that, and write everything after.
+        /// </summary>
+        /// <param name="src">Source stream</param>
+        /// <param name="dst">Dst stream</param>
+        /// <param name="terminator">Terminator (default "\r\n")</param>
+        private void CopyBody (Stream src, Stream dst, string terminator = "\r\n")
+        {
+            // TODO Need to pass in the encoding, instead of assuming UTF8?
+            Encoding enc = Encoding.UTF8;
+            int bufsize = 1024;
+            string line;
+            bool skip = true;
+            using (var streamReader = new StreamReader (src, enc, true, bufsize)) {
+                using (var streamWriter = new StreamWriter (dst, enc, bufsize, true)) {
+                    streamWriter.NewLine = terminator;
+                    while ((line = streamReader.ReadLine ()) != null) {
+                        if (skip && line.Equals (string.Empty)) {
+                            skip = false;
+                            continue; // skip the empty line. Next iteration will start writing.
+                        }
+                        if (!skip) {
+                            streamWriter.WriteLine (line);
+                        }
+                    }
+                }
+            }
+        }   
 
         private NcResult messageBodyPart(UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
         {
