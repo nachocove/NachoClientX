@@ -57,6 +57,7 @@ namespace NachoCore
         private NcDeviceContacts DeviceContacts = null;
         private NcDeviceCalendars DeviceCalendars = null;
         private CancellationTokenSource Cts = null;
+        private object CtsLock = new object ();
 
         public DeviceProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
@@ -310,7 +311,7 @@ namespace NachoCore
                 DeviceCalendars = new NcDeviceCalendars ();
             }
             var abateTokenSource = new CancellationTokenSource ();
-            lock (this) {
+            lock (CtsLock) {
                 Cts = abateTokenSource;
             }
             var abateToken = abateTokenSource.Token;
@@ -386,7 +387,7 @@ namespace NachoCore
                     }
                 } finally {
                     linkedCancel.Dispose ();
-                    lock (this) {
+                    lock (CtsLock) {
                         if (Cts == abateTokenSource) {
                             Cts = null;
                         }
@@ -401,7 +402,7 @@ namespace NachoCore
             // If the state machine in state SyncW gets AbateOn, AbateOff, AbateOn events before it gets
             // the SyncCancelled event, then Cts will be null.  This is not an error, since the in-progress
             // sync has already been notified and there is nothing else that needs to be cancelled.
-            lock (this) {
+            lock (CtsLock) {
                 if (null != Cts) {
                     Cts.Cancel ();
                     Cts = null;
