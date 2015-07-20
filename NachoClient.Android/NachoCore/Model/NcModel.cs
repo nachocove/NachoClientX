@@ -52,14 +52,23 @@ namespace NachoCore.Model
             return LastAccess;
         }
 
+        public void Eliminate ()
+        {
+            lock (LockObj) {
+                if (!DidDispose) {
+                    Dispose ();
+                    DidDispose = true;
+                }
+            }
+        }
+
         public void EliminateIfStale (Action action)
         {
             lock (LockObj) {
                 var wayBack = DateTime.UtcNow.AddMinutes (-1);
                 if (LastAccess < wayBack) {
                     action ();
-                    Dispose ();
-                    DidDispose = true;
+                    Eliminate ();
                 }
             }
         }
@@ -113,6 +122,15 @@ namespace NachoCore.Model
                 }
                 return db;
             } 
+
+            set {
+                NcAssert.True (null == value);
+                var threadId = Thread.CurrentThread.ManagedThreadId;
+                NcSQLiteConnection db = null;
+                if (DbConns.TryRemove (threadId, out db)) {
+                    db.Eliminate (); 
+                }
+            }
         }
 
         private object _TeleDbLock;
