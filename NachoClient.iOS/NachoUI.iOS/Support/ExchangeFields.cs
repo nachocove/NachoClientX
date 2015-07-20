@@ -57,7 +57,7 @@ namespace NachoClient.iOS
         AdvancedLoginViewController.onConnectCallback onConnect;
         AdvancedLoginViewController.onValidateCallback onValidate;
 
-        private ExchangeFields (McAccount account, Prompt prompt, CGRect rect, string buttonText)
+        private ExchangeFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, string buttonText)
         {
             this.prompt = prompt;
             this.account = account;
@@ -70,17 +70,21 @@ namespace NachoClient.iOS
 
             if (null != account) {
                 LoadAccount ();
+            } else {
+                emailView.textField.Text = initialEmail;
+                passwordView.textField.Text = initialPassword;
             }
+            MaybeEnableConnect (emailView.textField);
         }
 
-        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
-            : this (account, prompt, rect, "Connect")
+        public ExchangeFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onConnectCallback onConnect)
+            : this (account, prompt, initialEmail, initialPassword, rect, "Connect")
         {
             this.onConnect = onConnect;
         }
 
-        public ExchangeFields (McAccount account, Prompt prompt, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
-            : this (account, prompt, rect, "Save")
+        public ExchangeFields (McAccount account, Prompt prompt, string initialEmail, string initialPassword, CGRect rect, AdvancedLoginViewController.onValidateCallback onValidate)
+            : this (account, prompt, initialEmail, initialPassword, rect, "Save")
         {
             this.onValidate = onValidate;
         }

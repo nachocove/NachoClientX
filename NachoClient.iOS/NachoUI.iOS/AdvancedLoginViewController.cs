@@ -208,10 +208,10 @@ namespace NachoClient.iOS
             var rect = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
             switch (accountType) {
             case McAccount.AccountTypeEnum.Exchange:
-                loginFields = new ExchangeFields (account, prompt, rect, onConnect);
+                loginFields = new ExchangeFields (account, prompt, email, password, rect, onConnect);
                 break;
             case McAccount.AccountTypeEnum.IMAP_SMTP:
-                loginFields = new IMapFields (account, prompt, rect, onConnect);
+                loginFields = new IMapFields (account, prompt, email, password, rect, onConnect);
                 break;
             default:
                 NcAssert.CaseError ();
