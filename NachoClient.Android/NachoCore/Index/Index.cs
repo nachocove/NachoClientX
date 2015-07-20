@@ -146,6 +146,15 @@ namespace NachoCore.Index
             return true;
         }
 
+        public int BulkRemoveEmailMessage ()
+        {
+            if (null == Reader) {
+                throw new ArgumentNullException ("reader not set up");
+            }
+            var messages = new Term ("type", "message");
+            return Reader.DeleteDocuments (messages);
+        }
+
         public bool BeginRemoveTransaction ()
         {
             if (!Lock.WaitOne (KTimeoutMsec)) {
