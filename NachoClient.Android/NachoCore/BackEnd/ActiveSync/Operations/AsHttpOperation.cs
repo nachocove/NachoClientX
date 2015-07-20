@@ -625,7 +625,10 @@ namespace NachoCore.ActiveSync
                     if (null != credUri) {
                         cred.RectificationUrl = credUri.ToString ();
                     }
-                    cred.Update ();
+                    if (0 < cred.AccountId) {
+                        // If the UI is doing a validate-config, this McCred may not actually be in the DB.
+                        cred.Update ();
+                    }
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_PasswordWillExpire);
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
