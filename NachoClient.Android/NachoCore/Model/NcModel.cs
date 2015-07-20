@@ -56,8 +56,18 @@ namespace NachoCore.Model
         {
             lock (LockObj) {
                 if (!DidDispose) {
-                    Dispose ();
-                    DidDispose = true;
+                    try {
+                        Dispose ();
+                        DidDispose = true;
+                    } catch (SQLiteException ex) {
+                        if (SQLite3.Result.Busy == ex.Result) {
+                            // We tried to close a conn with 
+                            // "unfinalized statements or unfinished backups".
+                            Log.Error (Log.LOG_DB, "Eliminate: unfinalized statements or unfinished backups.");
+                        } else {
+                            throw;
+                        }
+                    }
                 }
             }
         }
