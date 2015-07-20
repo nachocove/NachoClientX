@@ -12,7 +12,7 @@ namespace NachoCore.Model
     {
         protected TableQuery<McEmailMessage> IndexedEmailMessages ()
         {
-            return Db.Table<McEmailMessage> ().Where ((e) => (e.IsIndexed > 0) /*&& (e.IsIndexed < EmailMessageIndexDocument.Version)*/);
+            return Db.Table<McEmailMessage> ().Where ((e) => (e.IsIndexed > 0) && (e.IsIndexed < EmailMessageIndexDocument.Version));
         }
 
         public override int GetNumberOfObjects ()
@@ -24,27 +24,14 @@ namespace NachoCore.Model
         {
             NcIndex index;
             var indexes = new Dictionary<int, NcIndex> ();
-            foreach (var emailMessage in IndexedEmailMessages ()) {
-                token.ThrowIfCancellationRequested ();
-                if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
-                    index = NcBrain.SharedInstance.Index (emailMessage.AccountId);
-                    indexes.Add (emailMessage.AccountId, index);
-                    if (null != index) {
-                        index.BeginRemoveTransaction ();
-                    }
-                }
-                if (null == index) {
-                    continue;
-                }
-                index.BatchRemove ("message", emailMessage.Id.ToString ());
-                UpdateProgress (1);
+            foreach (var account in McAccount.GetAllAccounts()) {
+                index = NcBrain.SharedInstance.Index (account.Id);
+                index.BeginRemoveTransaction ();
+                var numUpdated = index.BulkRemoveEmailMessage ();
+                index.EndRemoveTransaction ();
+                UpdateProgress (numUpdated);
             }
-            foreach (var curIndex in indexes.Values) {
-                if (null == curIndex) {
-                    continue;
-                }
-                curIndex.EndRemoveTransaction ();
-            }
+            Db.Execute ("UPDATE McEmailMessage SET IsIndexed = 0");
         }
     }
 }
