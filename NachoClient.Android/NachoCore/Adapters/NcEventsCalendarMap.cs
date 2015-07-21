@@ -33,6 +33,8 @@ namespace NachoCore
 
         private bool isActive = false;
 
+        private object thisLock = new object ();
+
         private const int startingOffsetInDays = 30;
 
         /// <summary>
@@ -168,16 +170,20 @@ namespace NachoCore
             // take a long time.
             NcTask.Run (delegate {
 
-                lock (this) {
+                lock (thisLock) {
+
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
 
                     // Find all the events that are to be displayed.
                     var newEvents = GetEvents ();
+
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
 
                     // The start times for all-day events are stored differently from the start times
                     // for regular events.  This can result in the database returning the events in a
                     // slightly different order than what we want.  So the events need to be sorted.
                     // Hopefully this is fast, since the events should be in almost the correct order.
-                    newEvents.Sort(((McEvent x, McEvent y) => {
+                    newEvents.Sort ((McEvent x, McEvent y) => {
                         TimeSpan diff = x.GetStartTimeUtc () - y.GetStartTimeUtc ();
                         if (0 > diff.Ticks) {
                             return -1;
@@ -186,7 +192,9 @@ namespace NachoCore
                         } else {
                             return 0;
                         }
-                    }));
+                    });
+
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
 
                     // Make a copy of the end date, in case it changes while the events are being processed.
                     DateTime untilDate = finalDay;
@@ -219,6 +227,8 @@ namespace NachoCore
                     for (int day = numDays; 0 <= day && int.MaxValue == newDays [day]; --day) {
                         newDays [day] = endEvent;
                     }
+
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
 
                     // To avoid race conditions, updating "this" with the new values has to happen on the UI thread.
                     // The completion action also has to be run on the UI thread.
