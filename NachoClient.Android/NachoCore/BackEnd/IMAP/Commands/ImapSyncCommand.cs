@@ -15,6 +15,7 @@ using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
 using MailKit.Search;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -53,6 +54,7 @@ namespace NachoCore.IMAP
             IMailFolder mailKitFolder;
 
             Log.Info (Log.LOG_IMAP, "{0}: Processing {1}", Synckit.Folder.ImapFolderNameRedacted (), Synckit.ToString ());
+            Cts.Token.ThrowIfCancellationRequested ();
 
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
             mailKitFolder = GetOpenMailkitFolder (Synckit.Folder);
@@ -73,7 +75,7 @@ namespace NachoCore.IMAP
 
             case SyncKit.MethodEnum.Sync:
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
-                result = syncFolder (mailKitFolder, timespan);
+                result = syncFolder (mailKitFolder);
                 break;
 
             default:
@@ -102,68 +104,20 @@ namespace NachoCore.IMAP
             }
         }
 
-        public static bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
-        {
-            // Just load UID with SELECT.
-            Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
-
-            var query = SearchQuery.NotDeleted;
-            if (TimeSpan.Zero != timespan) {
-                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-            }
-            UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
-            Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
-                uids.ToString (),
-                folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-
-            query = SearchQuery.Deleted;
-            if (TimeSpan.Zero != timespan) {
-                query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
-            }
-            var deletedUids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query));
-            Log.Info (Log.LOG_IMAP, "{1}: DeletedUids from last {2} days: {0}",
-                deletedUids.ToString (),
-                folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
-            
-            UpdateImapSetting (mailKitFolder, ref folder);
-
-            if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
-                UniqueIdSet current;
-                if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
-                    var added = new UniqueIdSet (uids.Except (current));
-                    var removed = new UniqueIdSet (current.Except (uids));
-                    if (added.Any ()) {
-                        Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
-                    }
-                    if (removed.Any ()) {
-                        Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
-                    }
-                }
-            }
-
-            var uidstring = uids.ToString ();
-            folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                if (uidstring != target.ImapUidSet) {
-                    Log.Info (Log.LOG_IMAP, "Updating ImapUidSet");
-                    target.ImapUidSet = uidstring;
-                }
-                target.ImapLastExamine = DateTime.UtcNow;
-                return true;
-            });
-            return true;
-        }
-
-        private Event syncFolder (IMailFolder mailKitFolder, TimeSpan timespan)
+        private Event syncFolder (IMailFolder mailKitFolder)
         {
             NcAssert.True (SyncKit.MethodEnum.Sync == Synckit.Method);
 
             // First find all messages marked as /Deleted
             UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
+            Cts.Token.ThrowIfCancellationRequested ();
+
             // Process any new or changed messages. This will also tell us any messages that vanished.
             UniqueIdSet vanished;
             UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
+
+            Cts.Token.ThrowIfCancellationRequested ();
 
             // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
             toDelete.AddRange (vanished);
@@ -173,6 +127,9 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "Sending Info_EmailMessageSetChanged. Brain should see {0} messages", messages);
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
+
+            Cts.Token.ThrowIfCancellationRequested ();
+
             // remember where we sync'd
             uint MaxSynced = Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced);
             uint MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
@@ -182,13 +139,18 @@ namespace NachoCore.IMAP
                     Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
             }
 
+            // Update the sync count and last attempt and set the Highest and lowest sync'd
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.ImapUidHighestUidSynced = MaxSynced;
                 target.ImapUidLowestUidSynced = MinSynced;
                 target.ImapLastUidSynced = Synckit.SyncSet.Min ().Id;
+                target.SyncAttemptCount += 1;
+                target.LastSyncAttempt = DateTime.UtcNow;
                 return true;
             });
+
+            Cts.Token.ThrowIfCancellationRequested ();
 
             // update the protocol state
             var protocolState = BEContext.ProtocolState;
@@ -200,13 +162,6 @@ namespace NachoCore.IMAP
                 });
             }
 
-            // Update the sync count and last attempt
-            Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.SyncAttemptCount += 1;
-                target.LastSyncAttempt = DateTime.UtcNow;
-                return true;
-            });
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
@@ -373,7 +328,7 @@ namespace NachoCore.IMAP
         {
             // Check for deleted messages
             SearchQuery query = SearchQuery.Deleted;
-            UniqueIdSet messagesDeleted = SyncKit.MustUniqueIdSet (mailKitFolder.Search (uids, query));
+            UniqueIdSet messagesDeleted = SyncKit.MustUniqueIdSet (mailKitFolder.Search (uids, query, Cts.Token));
             return messagesDeleted;
         }
 

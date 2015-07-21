@@ -144,6 +144,7 @@
     <Compile Include="ImapOperationTest.cs" />
     <Compile Include="McEmailMessageScoreTest.cs" />
     <Compile Include="EmailMessageScoreTest.cs" />
+    <Compile Include="ContactsBinningHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

@@ -180,6 +180,7 @@ namespace NachoCore.Utils
             Info_MdmConfigMayHaveChanged,
             Info_AccountChanged,
             Info_BackEndStateChanged,
+            Info_ContactLocalSearchComplete,
         };
 
         public enum WhyEnum

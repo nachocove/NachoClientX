@@ -218,7 +218,15 @@ namespace NachoCore.Index
         public List<MatchedItem> SearchFields (string type, string queryString, string[] fields, int maxMatches = 1000, bool leadingWildcard = false)
         {
             string newQueryString = "";
-            var queryTokens = queryString.Trim ().Split ().Select (x => (leadingWildcard ? "*" : "") + QueryParser.Escape (x) + "*");
+            queryString = queryString
+                .Replace ("*", " ")
+                .Replace ("?", " ")
+                .Trim ();
+            if (String.IsNullOrEmpty (queryString)) {
+                return new List<MatchedItem> ();
+            }
+
+            var queryTokens = queryString.Split ().Select (x => (leadingWildcard ? "*" : "") + QueryParser.Escape (x) + "*");
             var fieldQuery = String.Join (" ", queryTokens);
 
             if (null != type) {

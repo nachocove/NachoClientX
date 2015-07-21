@@ -52,14 +52,33 @@ namespace NachoCore.Model
             return LastAccess;
         }
 
+        public void Eliminate ()
+        {
+            lock (LockObj) {
+                if (!DidDispose) {
+                    try {
+                        Dispose ();
+                        DidDispose = true;
+                    } catch (SQLiteException ex) {
+                        if (SQLite3.Result.Busy == ex.Result) {
+                            // We tried to close a conn with 
+                            // "unfinalized statements or unfinished backups".
+                            Log.Error (Log.LOG_DB, "Eliminate: unfinalized statements or unfinished backups.");
+                        } else {
+                            throw;
+                        }
+                    }
+                }
+            }
+        }
+
         public void EliminateIfStale (Action action)
         {
             lock (LockObj) {
                 var wayBack = DateTime.UtcNow.AddMinutes (-1);
                 if (LastAccess < wayBack) {
                     action ();
-                    Dispose ();
-                    DidDispose = true;
+                    Eliminate ();
                 }
             }
         }
@@ -113,6 +132,15 @@ namespace NachoCore.Model
                 }
                 return db;
             } 
+
+            set {
+                NcAssert.True (null == value);
+                var threadId = Thread.CurrentThread.ManagedThreadId;
+                NcSQLiteConnection db = null;
+                if (DbConns.TryRemove (threadId, out db)) {
+                    db.Eliminate (); 
+                }
+            }
         }
 
         private object _TeleDbLock;

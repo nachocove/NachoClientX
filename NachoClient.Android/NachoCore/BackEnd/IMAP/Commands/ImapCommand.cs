@@ -12,6 +12,7 @@ using MailKit.Security;
 using System.Text;
 using System.Net.Sockets;
 using HtmlAgilityPack;
+using MailKit.Search;
 
 namespace NachoCore.IMAP
 {
@@ -61,7 +62,11 @@ namespace NachoCore.IMAP
                         var authy = new ImapAuthenticateCommand (BEContext, Client);
                         authy.ConnectAndAuthenticate ();
                     }
-                    return ExecuteCommand ();
+                    using (var cap = NcCapture.CreateAndStart (this.GetType ().Name)) {
+                        var evt = ExecuteCommand ();
+                        cap.Stop ();
+                        return evt;
+                    }
                 } finally {
                     if (Client.MailKitProtocolLogger.Enabled ()) {
                         ProtocolLoggerStopAndPostTelemetry ();
@@ -148,7 +153,7 @@ namespace NachoCore.IMAP
 
         protected NcImapFolder GetOpenMailkitFolder(McFolder folder, FolderAccess access = FolderAccess.ReadOnly)
         {
-            var mailKitFolder = Client.GetFolder (folder.ServerId) as NcImapFolder;
+            var mailKitFolder = Client.GetFolder (folder.ServerId, Cts.Token) as NcImapFolder;
             if (null == mailKitFolder) {
                 return null;
             }
@@ -224,6 +229,73 @@ namespace NachoCore.IMAP
             return changed;
         }
 
+        /// <summary>
+        /// For a given folder, do IMAP searches:
+        /// 
+        /// - all emails currently in the folder for a given timespan
+        /// 
+        /// Calls UpdateImapSetting() to update the corresponding McFolder, and sets the ImapUidSet,
+        /// and ImapLastExamine.
+        /// </summary>
+        /// <returns><c>true</c>, if folder meta data was gotten, <c>false</c> otherwise.</returns>
+        /// <param name="folder">Folder.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="timespan">Timespan.</param>
+        public bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
+        {
+            using (var cap = NcCapture.CreateAndStart ("IMAP Folder Metadata")) {
+                // Just load UID with SELECT.
+                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
+
+                var query = SearchQuery.NotDeleted;
+                if (TimeSpan.Zero != timespan) {
+                    query = query.And (SearchQuery.DeliveredAfter (DateTime.UtcNow.Subtract (timespan)));
+                }
+                UniqueIdSet uids = SyncKit.MustUniqueIdSet (mailKitFolder.Search (query, Cts.Token));
+
+                Cts.Token.ThrowIfCancellationRequested ();
+
+                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
+                    uids.ToString (),
+                    folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
+
+                UpdateImapSetting (mailKitFolder, ref folder);
+
+                Cts.Token.ThrowIfCancellationRequested ();
+
+                if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
+                    UniqueIdSet current;
+                    if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
+                        var added = new UniqueIdSet (uids.Except (current));
+                        var removed = new UniqueIdSet (current.Except (uids));
+                        if (added.Any ()) {
+                            Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
+                        }
+                        if (removed.Any ()) {
+                            Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
+                        }
+                    }
+                }
+
+                Cts.Token.ThrowIfCancellationRequested ();
+
+                var uidstring = uids.ToString ();
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    if (uidstring != target.ImapUidSet) {
+                        Log.Info (Log.LOG_IMAP, "Updating ImapUidSet");
+                        target.ImapUidSet = uidstring;
+                    }
+                    target.ImapLastExamine = DateTime.UtcNow;
+                    return true;
+                });
+                cap.Stop ();
+                return true;
+            }
+        }
+
+        #region Html2text
+
         public static string Html2Text (string html)
         {
             HtmlDocument doc = new HtmlDocument ();
@@ -298,6 +370,8 @@ namespace NachoCore.IMAP
                 ConvertTo (subnode, outText);
             }
         }
+
+        #endregion
     }
 
     public class ImapWaitCommand : ImapCommand

@@ -119,7 +119,11 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
                 LoadContacts ();
                 var sb = SearchDisplayController.SearchBar;
-                contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
+                if (contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false)) {
+                    SearchDisplayController.SearchResultsTableView.ReloadData ();
+                }
+            }
+            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
             }
         }

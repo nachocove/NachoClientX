@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -63,9 +64,8 @@ namespace NachoCore.Utils
                     // Make sure that there is not another task by the same name already running
                     // No reverse mapping just walk. Should be few enough tasks that walking is not a problem.
                     foreach (var pair in TaskMap) {
-                        var taksname = pair.Value;
-                        if (taskName == name) {
-                            Log.Info (Log.LOG_SYS, "NcTask {0} already running", taskName);
+                        if (pair.Value.StartsWith (name)) {
+                            Log.Warn (Log.LOG_SYS, "NcTask {0} already running", pair.Value);
                             return null; // an entry exists
                         }
                     }
@@ -74,12 +74,18 @@ namespace NachoCore.Utils
                 WeakReference taskRef = null;
                 var task = Task.Run (delegate {
                     if (!stfu) {
-                        Log.Info (Log.LOG_SYS, "NcTask {0} started.", taskName);
+                        Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
                     }
                     try {
                         action.Invoke ();
                     } catch (OperationCanceledException) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
+                    } finally {
+                        var count = NcModel.Instance.NumberDbConnections;
+                        if (15 < count) {
+                            NcModel.Instance.Db = null;
+                            Log.Warn (Log.LOG_SYS, "NcTask: closing DB, connections: {0}", count);
+                        }
                     }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
@@ -108,7 +114,7 @@ namespace NachoCore.Utils
                         if (!((Task)taskRef.Target).IsCompleted) {
                             Log.Warn (Log.LOG_SYS, "Task {0} still running", pair.Value);
                         }
-                        if (!((Task)taskRef.Target).IsCanceled) {
+                        if (((Task)taskRef.Target).IsCanceled) {
                             Log.Info (Log.LOG_SYS, "Task {0} cancelled", pair.Value);
                         }
                     }
@@ -135,7 +141,7 @@ namespace NachoCore.Utils
                     if (!task.IsCompleted && warnLivedTasks) {
                         Log.Error (Log.LOG_SYS, "Task {0} survives across shutdown", pair.Value);
                     }
-                    Log.Info (Log.LOG_SYS, "Task {0}: IsCompleted={0}, IsCanceled={1}, IsFaulted={2}",
+                    Log.Info (Log.LOG_SYS, "Task {0}: IsCompleted={1}, IsCanceled={2}, IsFaulted={3}",
                         taskName, task.IsCompleted, task.IsCanceled, task.IsFaulted);
                 } catch {
                     // tasks may be going away as we iterate.
