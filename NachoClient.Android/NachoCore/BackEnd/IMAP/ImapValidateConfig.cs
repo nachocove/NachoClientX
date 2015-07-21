@@ -1,13 +1,12 @@
-//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Net;
-using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.Utils;
 
-namespace NachoCore.ActiveSync
+namespace NachoCore.IMAP
 {
-    public class AsValidateConfig : IBEContext
+    public class ImapValidateConfig : IBEContext
     {
         public enum Lst : uint
         {
@@ -17,34 +16,43 @@ namespace NachoCore.ActiveSync
         private IBEContext BEContext;
         private McServer ServerCandidate;
         private McCred CredCandidate;
-        private AsOptionsCommand OptCmd;
+        private ImapCommand Cmd;
+        NcImapClient Client;
         private NcStateMachine Sm;
 
-        public AsValidateConfig (IBEContext bEContext)
+        public ImapValidateConfig (IBEContext bEContext)
         {
             BEContext = bEContext;
-            Sm = new NcStateMachine ("ASVCONF") {
-                LocalEventType = typeof(AsProtoControl.AsEvt),
+            Client = new NcImapClient ();
+            Sm = new NcStateMachine ("IMAPVCONF") {
+                LocalEventType = typeof(ImapProtoControl.ImapEvt),
                 LocalStateType = typeof(Lst),
                 TransTable = new[] {
                     new Node {State = (uint)St.Start,
-                        Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
-                            (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
+                        Invalid = new [] {
+                            (uint)SmEvt.E.Success,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmEvt.E.HardFail, 
+                            (uint)ImapProtoControl.ImapEvt.E.ReDisc,
+                            (uint)ImapProtoControl.ImapEvt.E.AuthFail, 
                         },
                         On = new[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoVal, State = (uint)Lst.ValW },
                         }
                     },
                     new Node {State = (uint)Lst.ValW,
-                        Drop = new [] { (uint)SmEvt.E.Launch },
+                        Drop = new [] {
+                            (uint)SmEvt.E.Launch
+                        },
+                        Invalid = new [] {
+                            (uint)ImapProtoControl.ImapEvt.E.ReDisc,
+                        },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoYes, State = (uint)St.Stop },
+                            new Trans { Event = (uint)ImapProtoControl.ImapEvt.E.GetServConf, Act = DoNoComm, State = (uint)St.Stop },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoNoComm, State = (uint)St.Stop },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNoUOrC, State = (uint)St.Stop },
-                            new Trans { Event = (uint)AsProtoControl.AsEvt.E.ReDisc, Act = DoYes, State = (uint)St.Stop },
-                            new Trans { Event = (uint)AsProtoControl.AsEvt.E.ReProv, Act = DoYes, State = (uint)St.Stop },
-                            new Trans { Event = (uint)AsProtoControl.AsEvt.E.ReSync, Act = DoYes, State = (uint)St.Stop },
-                            new Trans { Event = (uint)AsProtoControl.AsEvt.E.AuthFail, Act = DoNoAuth, State = (uint)St.Stop },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNoComm, State = (uint)St.Stop },
+                            new Trans { Event = (uint)ImapProtoControl.ImapEvt.E.AuthFail, Act = DoNoAuth, State = (uint)St.Stop },
                         }
                     },
                 }
@@ -53,10 +61,8 @@ namespace NachoCore.ActiveSync
 
         private void DoVal ()
         {
-            OptCmd = new AsOptionsCommand (this) {
-                DontReportCommResult = true,
-            };
-            OptCmd.Execute (Sm);
+            Cmd = new ImapDiscoverCommand (this, Client);
+            Cmd.Execute (Sm);
         }
 
         private void DoYes ()
@@ -74,15 +80,6 @@ namespace NachoCore.ActiveSync
             BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth));
         }
 
-        private void DoNoUOrC ()
-        {
-            if (((int?)HttpStatusCode.NotFound) == Sm.Arg as int?) {
-                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedUser));
-            } else {
-                BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth));
-            }
-        }
-
         public void Execute (McServer server, McCred cred)
         {
             ServerCandidate = server;
@@ -92,11 +89,13 @@ namespace NachoCore.ActiveSync
 
         public void Cancel ()
         {
-            if (null != OptCmd) {
-                OptCmd.Cancel ();
-                OptCmd = null;
+            if (null != Cmd) {
+                Cmd.Cancel ();
+                Cmd = null;
             }
         }
+
+        #region IBEContext implementation
 
         public INcProtoControlOwner Owner {
             get { return BEContext.Owner; }
@@ -125,5 +124,8 @@ namespace NachoCore.ActiveSync
         public McCred Cred {
             get { return CredCandidate; }
         }
+
+        #endregion
     }
 }
+
