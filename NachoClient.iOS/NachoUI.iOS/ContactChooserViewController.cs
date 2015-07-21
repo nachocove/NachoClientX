@@ -12,6 +12,7 @@ using UIKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -225,16 +226,21 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public void UpdateAutocompleteResults (int forSearchOption, string forSearchString)
         {
-            if (null == forSearchString) {
+            if (String.IsNullOrEmpty (forSearchString)) {
                 searchResults = null;
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults");
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
-                searchResults = McContact.SearchIndexAllContacts (forSearchString, true, true);
-                resultsTableView.ReloadData ();
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
+                NcTask.Run (() => {
+                    var results = McContact.SearchIndexAllContacts (forSearchString, true, true);
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResults = results;
+                        resultsTableView.ReloadData ();
+                        NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
+                    });
+                }, "SearchLocalContacts2");
             }
         }
 
