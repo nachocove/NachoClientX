@@ -370,6 +370,7 @@ namespace NachoClient.iOS
 
         public void StartGoogleLogin ()
         {
+            Log.Info (Log.LOG_UI, "avl: StartGoogleSilentLogin");
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
             Google.iOS.GIDSignIn.SharedInstance.SignOut ();
@@ -378,6 +379,7 @@ namespace NachoClient.iOS
 
         public void StartGoogleSilentLogin ()
         {
+            Log.Info (Log.LOG_UI, "avl: StartGoogleSilentLogin");
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
             Google.iOS.GIDSignIn.SharedInstance.SignInSilently ();
@@ -389,21 +391,18 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "avl: DidSignInForUser {0}", error);
 
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (null != accountBeingConfigured) {
-                if (McAccount.ConfigurationInProgressEnum.GoogleCallback == accountBeingConfigured.ConfigurationInProgress) {
-                    Log.Info (Log.LOG_UI, "avl: deleting google placeholder account");
-                    accountBeingConfigured.Delete ();
-                } else {
-                    Log.Error (Log.LOG_UI, "avl: expected google placeholder account; got {0}", accountBeingConfigured.AccountService);
-                }
+            if (null == accountBeingConfigured) {
+                Log.Error (Log.LOG_UI, "avl: expected google placeholder account; got nil");
+            } else if (McAccount.ConfigurationInProgressEnum.GoogleCallback == accountBeingConfigured.ConfigurationInProgress) {
+                Log.Info (Log.LOG_UI, "avl: deleting google placeholder account");
+                accountBeingConfigured.Delete ();
+                account = null;
+            } else {
+                Log.Error (Log.LOG_UI, "avl: expected google placeholder account; got {0}", accountBeingConfigured.AccountService);
             }
 
             if (null != error) {
-                if (error.Code == (int)GIDSignInErrorCode.CodeCanceled) {
-                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: DidSignInForUser");
-                    return;
-                }
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: DidSignInForUser (unknown error)");
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: DidSignInForUser");
                 return;
             }
                 
