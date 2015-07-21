@@ -185,6 +185,10 @@ namespace NachoClient.iOS
                 contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
                 SearchDisplayController.SearchResultsTableView.ReloadData ();
             }
+            if (NcResult.SubKindEnum.Info_ContactLocalSearchComplete == s.Status.SubKind) {
+                RefreshContactsIfVisible ();
+                SearchDisplayController.SearchResultsTableView.ReloadData ();
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)

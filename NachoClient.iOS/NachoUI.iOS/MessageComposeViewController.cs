@@ -291,10 +291,16 @@ namespace NachoClient.iOS
                 NcActionSheet.Show (View, this,
                     new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, () => {
                         owner = null;
+                        if(null == NavigationController) {
+                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
+                        }
                         NavigationController.PopViewController (true);
                     }),
                     new NcAlertAction ("Save Draft", () => {
                         SaveDraft ();
+                        if(null == NavigationController) {
+                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
+                        }
                         NavigationController.PopViewController (true);
                     }),
                     new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
@@ -335,6 +341,8 @@ namespace NachoClient.iOS
             }
         }
 
+        NSObject notification;
+
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
@@ -343,6 +351,7 @@ namespace NachoClient.iOS
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
             }
+            notification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
@@ -355,7 +364,18 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NSNotificationCenter.DefaultCenter.RemoveObserver (notification);
             QRType = NcQuickResponse.QRTypeEnum.None;
+        }
+
+        private void OnBackgroundNotification (NSNotification notification)
+        {
+            if (null != this.NavigationController) {
+                var actionController = this.NavigationController.PresentedViewController as UIAlertController;
+                if (null != actionController) {
+                    actionController.DismissViewController (false, null);
+                }
+            }
         }
 
         public override bool HidesBottomBarWhenPushed {

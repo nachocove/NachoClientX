@@ -1571,6 +1571,9 @@
     <Compile Include="NachoUI.iOS\CertAskViewController.designer.cs">
       <DependentUpon>CertAskViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsBinningHelper.cs">
+      <Link>NachoCore\Utils\ContactsBinningHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
