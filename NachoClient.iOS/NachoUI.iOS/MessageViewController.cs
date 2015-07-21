@@ -64,6 +64,8 @@ namespace NachoClient.iOS
 
 
 
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -113,9 +115,18 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            // Can't switch acct; let's be sure for now
+            // When the app is re-started from a notification on a
+            // different account, the tab bar and nacho now should
+            // close all views & start in nach now. But perhaps it
+            // is possible for this view to become visible just as
+            // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
-            NcAssert.True ((null == message) || (NcApplication.Instance.Account.Id == message.AccountId));
+            if ((null != message) && (NcApplication.Instance.Account.Id != message.AccountId)) {
+                Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
+                if (null != NavigationController) {
+                    NavigationController.PopViewController (false);
+                }
+            }
         }
 
         public override void ViewDidAppear (bool animated)
