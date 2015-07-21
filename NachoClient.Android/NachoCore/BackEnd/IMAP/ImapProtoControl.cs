@@ -238,7 +238,6 @@ namespace NachoCore.IMAP
                         State = (uint)Lst.FSyncW,
                         Drop = new [] {
                             (uint)PcEvt.E.PendQ,
-                            (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new [] {
                             (uint)ImapEvt.E.PkWait,
@@ -261,6 +260,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoExtraOrDont, ActSetsState = true },
                         },
                     },
                     new Node {
