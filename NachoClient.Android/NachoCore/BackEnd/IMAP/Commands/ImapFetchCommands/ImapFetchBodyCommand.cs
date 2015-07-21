@@ -98,11 +98,17 @@ namespace NachoCore.IMAP
                     // TODO Do we need to filter by Content-Transfer-Encoding?
                     switch (body.BodyType) {
                     default:
+                        // Mime is good for us. Just copy over to the proper file
+                        // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
+                        // where it doesn't release the stream handles properly, and not using a temp file
+                        // leads to Sharing violations. This is fixed in more recent versions of MailKit.
                         st.CopyTo(bodyFile);
                         break;
 
                     case McAbstrFileDesc.BodyTypeEnum.HTML_2:
                     case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                        // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
+                        // to the proper place and remove the headers while we're doing so.
                         CopyBody(st, bodyFile);
                         break;
                     }
@@ -114,6 +120,7 @@ namespace NachoCore.IMAP
                 email.Update ();
 
                 if (string.IsNullOrEmpty (email.BodyPreview)) {
+                    // The Sync didn't create a preview. Do it now.
                     var preview = BodyToPreview (body);
                     if (!string.IsNullOrEmpty (preview)) {
                         email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -128,8 +135,8 @@ namespace NachoCore.IMAP
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
-                // TODO Need to narrow this down. Pull in latest MailKit and make it compile.
-                // the message doesn't exist. Delete it locally.
+                // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
+                // The message doesn't exist. Delete it locally.
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
                 body.DeleteFile ();
                 body.Delete ();
@@ -171,6 +178,15 @@ namespace NachoCore.IMAP
             }
         }   
 
+        /// <summary>
+        /// Find the message part of for a give UID. This makes a FETCH query to the server, similar to what sync
+        /// does (i.e. fetching BODYSTRUCTURE and some other things), but doesn't do the full fetch that sync does.
+        /// It then analyzes the BODYSTRUCTURE to find the relevant part we want to download.
+        /// </summary>
+        /// <returns>The body part.</returns>
+        /// <param name="uid">Uid.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="bodyType">Body type.</param>
         private NcResult messageBodyPart(UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
         {
             bodyType = McAbstrFileDesc.BodyTypeEnum.None;
@@ -205,6 +221,12 @@ namespace NachoCore.IMAP
             return result;
         }
 
+        /// <summary>
+        /// Given an IMAP summary, figure out the ContentType, and return the 
+        /// McAbstrFileDesc.BodyTypeEnum that corresponds to it.
+        /// </summary>
+        /// <returns>The type from summary.</returns>
+        /// <param name="summary">Summary.</param>
         private NcResult BodyTypeFromSummary (MessageSummary summary)
         {
             McAbstrFileDesc.BodyTypeEnum bodyType;
@@ -228,6 +250,14 @@ namespace NachoCore.IMAP
             return result;
         }
 
+        /// <summary>
+        /// Given a McBody, generate the preview from it.
+        /// Note: Similar functionality exists in MimeHelpers, but this is attempting to do everything it can
+        /// with files instead of memory. More work needed and we should combine this with the MimeHelpers.
+        /// </summary>
+        /// <returns>The to preview.</returns>
+        /// <param name="body">Body.</param>
+        /// <param name="previewLength">Preview length.</param>
         private static string BodyToPreview (McBody body, int previewLength = 500)
         {
             string preview = string.Empty;
