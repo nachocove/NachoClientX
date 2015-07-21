@@ -173,12 +173,19 @@ namespace NachoCore.IMAP
                     // Nothing to sync.
 
                     // if this is the inbox and we have nothing to do, we need to still mark protocolState.HasSyncedInbox as True.
-                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type && !protocolState.HasSyncedInbox) {
-                        protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                            var target = (McProtocolState)record;
-                            target.HasSyncedInbox = true;
-                            return true;
-                        });
+                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                        if (!protocolState.HasSyncedInbox) {
+                            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                                var target = (McProtocolState)record;
+                                target.HasSyncedInbox = true;
+                                return true;
+                            });
+                        }
+                        var exeCtxt = NcApplication.Instance.ExecutionContext;
+                        if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                            // Need to tell the BE that we did what it asked us to, i.e. sync. Even though there's nothing to do.
+                            BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+                        }
                     }
                     return null;
                 }
