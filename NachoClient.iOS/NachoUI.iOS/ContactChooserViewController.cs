@@ -12,6 +12,7 @@ using UIKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -234,7 +235,7 @@ namespace NachoClient.iOS
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
                 NcTask.Run (() => {
                     var results = McContact.SearchIndexAllContacts (forSearchString, true, true);
-                    InvokeOnMainThread (() => {
+                    InvokeOnUIThread.Instance.Invoke (() => {
                         searchResults = results;
                         resultsTableView.ReloadData ();
                         NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");

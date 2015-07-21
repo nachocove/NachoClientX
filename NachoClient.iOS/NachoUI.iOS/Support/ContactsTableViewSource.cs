@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using NachoPlatform;
 using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
@@ -402,7 +403,7 @@ namespace NachoClient.iOS
             } else {
                 NcTask.Run (() => {
                     var results = McContact.SearchIndexAllContacts (forSearchString, false, true);
-                    InvokeOnMainThread (() => {
+                    InvokeOnUIThread.Instance.Invoke (() => {
                         SetSearchResults (results);
                         NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
                         NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
