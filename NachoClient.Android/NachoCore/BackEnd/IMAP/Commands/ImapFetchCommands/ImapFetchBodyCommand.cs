@@ -7,8 +7,8 @@ using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
 using System.IO;
+using System.Collections.Generic;
 using System.Text;
-using System;
 
 namespace NachoCore.IMAP
 {
@@ -70,62 +70,57 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            MimeMessage imapbody = null;
-            try {
-                imapbody = mailKitFolder.GetMessage (ImapProtoControl.ImapMessageUid(pending.ServerId), Cts.Token);
-            } catch (ImapCommandException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
-                // TODO Need to narrow this down. Pull in latest MailKit and make it compile.
-                imapbody = null;
+            UniqueId uid = ImapProtoControl.ImapMessageUid (email.ServerId);
+            McAbstrFileDesc.BodyTypeEnum bodyType;
+            result = messageBodyPart (uid, mailKitFolder, out bodyType);
+            if (!result.isOK ()) {
+                return result;
             }
-            if (null == imapbody) {
-                // the message doesn't exist. Delete it locally.
-                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
-                email.Delete ();
-                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                result = NcResult.Error ("No Body found");
-            } else {
-                McAbstrFileDesc.BodyTypeEnum bodyType;
-                // FIXME Getting the 'body' string is inefficient and wasteful.
-                //   Perhaps use the WriteTo method on the Body, write to a file,
-                //   then open the file and pass that stream to UpdateData/InsertFile?
-                string bodyAsString;
-                if (imapbody.Body.ContentType.Matches ("multipart", "*")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                    bodyAsString = imapbody.Body.ToString ();
-                } else if (imapbody.Body.ContentType.Matches ("text", "*")) {
-                    if (imapbody.Body.ContentType.Matches ("text", "html")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                        bodyAsString = imapbody.HtmlBody;
-                    } else if (imapbody.Body.ContentType.Matches ("text", "plain")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        bodyAsString = imapbody.TextBody;
-                    } else {
-                        Log.Error (Log.LOG_IMAP, "Unhandled text subtype {0}", imapbody.Body.ContentType.MediaSubtype);
-                        return NcResult.Error ("Unhandled text subtype");
-                    }
-                } else {
-                    Log.Error (Log.LOG_IMAP, "Unhandled mime subtype {0}", imapbody.Body.ContentType.ToString ());
-                    return NcResult.Error ("Unhandled mimetype subtype");
-                }
+            BodyPart part = result.GetValue<BodyPart> ();
 
-                McBody body;
-                if (0 == email.BodyId) {
-                    body = McBody.InsertFile (pending.AccountId, bodyType, bodyAsString); 
-                    email.BodyId = body.Id;
-                } else {
-                    body = McBody.QueryById<McBody> (email.BodyId);
-                    body.UpdateData (bodyAsString);
+            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+            mailKitFolder.SetStreamContext (uid, tmp);
+            McBody body;
+            if (0 == email.BodyId) {
+                body = new McBody () {
+                    AccountId = BEContext.Account.Id,
+                    BodyType = bodyType,
+                };
+                body.Insert ();
+            } else {
+                body = McBody.QueryById<McBody> (email.BodyId);
+            }
+
+            try {
+                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token);
+                var path = body.GetFilePath ();
+                using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                    // TODO Do we need to filter by Content-Transfer-Encoding?
+                    switch (body.BodyType) {
+                    default:
+                        // Mime is good for us. Just copy over to the proper file
+                        // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
+                        // where it doesn't release the stream handles properly, and not using a temp file
+                        // leads to Sharing violations. This is fixed in more recent versions of MailKit.
+                        st.CopyTo(bodyFile);
+                        break;
+
+                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                    case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                        // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
+                        // to the proper place and remove the headers while we're doing so.
+                        CopyBody(st, bodyFile);
+                        break;
+                    }
                 }
-                body.BodyType = bodyType;
                 body.Truncated = false;
-                body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
-                body.FileSize = bodyAsString.Length;
-                body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Actual;
-                body.Update ();
-                result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+                body.UpdateSaveFinish ();
+
+                email.BodyId = body.Id;
                 email.Update ();
+
                 if (string.IsNullOrEmpty (email.BodyPreview)) {
+                    // The Sync didn't create a preview. Do it now.
                     var preview = BodyToPreview (body);
                     if (!string.IsNullOrEmpty (preview)) {
                         email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -136,10 +131,133 @@ namespace NachoCore.IMAP
                         StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                     }
                 }
+
+                result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
+            } catch (ImapCommandException ex) {
+                Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
+                // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
+                // The message doesn't exist. Delete it locally.
+                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
+                body.DeleteFile ();
+                body.Delete ();
+                email.Delete ();
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                result = NcResult.Error ("No Body found");
             }
+            mailKitFolder.UnsetStreamContext ();
             return result;
         }
 
+        /// <summary>
+        /// Copies a downloaded email from one stream to another, skipping the rfc822 mail headers.
+        /// The headers are separated from the body by an empty line, so look for that, and write everything after.
+        /// </summary>
+        /// <param name="src">Source stream</param>
+        /// <param name="dst">Dst stream</param>
+        /// <param name="terminator">Terminator (default "\r\n")</param>
+        private void CopyBody (Stream src, Stream dst, string terminator = "\r\n")
+        {
+            // TODO Need to pass in the encoding, instead of assuming UTF8?
+            Encoding enc = Encoding.UTF8;
+            int bufsize = 1024;
+            string line;
+            bool skip = true;
+            using (var streamReader = new StreamReader (src, enc, true, bufsize)) {
+                using (var streamWriter = new StreamWriter (dst, enc, bufsize, true)) {
+                    streamWriter.NewLine = terminator;
+                    while ((line = streamReader.ReadLine ()) != null) {
+                        if (skip && line.Equals (string.Empty)) {
+                            skip = false;
+                            continue; // skip the empty line. Next iteration will start writing.
+                        }
+                        if (!skip) {
+                            streamWriter.WriteLine (line);
+                        }
+                    }
+                }
+            }
+        }   
+
+        /// <summary>
+        /// Find the message part of for a give UID. This makes a FETCH query to the server, similar to what sync
+        /// does (i.e. fetching BODYSTRUCTURE and some other things), but doesn't do the full fetch that sync does.
+        /// It then analyzes the BODYSTRUCTURE to find the relevant part we want to download.
+        /// </summary>
+        /// <returns>The body part.</returns>
+        /// <param name="uid">Uid.</param>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="bodyType">Body type.</param>
+        private NcResult messageBodyPart(UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
+        {
+            bodyType = McAbstrFileDesc.BodyTypeEnum.None;
+            NcResult result;
+            var UidList = new List<UniqueId> ();
+            UidList.Add (uid);
+            MessageSummaryItems flags = MessageSummaryItems.BodyStructure | MessageSummaryItems.UniqueId;
+            HashSet<HeaderId> headers = new HashSet<HeaderId> ();
+            headers.Add (HeaderId.MimeVersion);
+            headers.Add (HeaderId.ContentType);
+            headers.Add (HeaderId.ContentTransferEncoding);
+
+            var isummary = mailKitFolder.Fetch (UidList, flags, headers, Cts.Token);
+            if (null == isummary || isummary.Count < 1) {
+                return NcResult.Error (string.Format ("Could not get summary for uid {0}", uid));
+            }
+
+            var summary = isummary [0] as MessageSummary;
+            if (null == summary) {
+                return NcResult.Error ("Could not convert summary to MessageSummary");
+            }
+
+            result = BodyTypeFromSummary (summary);
+            if (!result.isOK ()) {
+                return result;
+            }
+            bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
+
+            var part = summary.Body;
+            result = NcResult.OK ();
+            result.Value = part;
+            return result;
+        }
+
+        /// <summary>
+        /// Given an IMAP summary, figure out the ContentType, and return the 
+        /// McAbstrFileDesc.BodyTypeEnum that corresponds to it.
+        /// </summary>
+        /// <returns>The type from summary.</returns>
+        /// <param name="summary">Summary.</param>
+        private NcResult BodyTypeFromSummary (MessageSummary summary)
+        {
+            McAbstrFileDesc.BodyTypeEnum bodyType;
+            var part = summary.Body;
+
+            if (summary.Headers.Contains (HeaderId.MimeVersion) || part.ContentType.Matches ("multipart", "*")) {
+                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+            } else if (part.ContentType.Matches ("text", "*")) {
+                if (part.ContentType.Matches ("text", "html")) {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                } else if (part.ContentType.Matches ("text", "plain")) {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                } else {
+                    return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                }
+            } else {
+                return NcResult.Error (string.Format ("Unhandled mime subtype {0}", part.ContentType.MediaSubtype));
+            }
+            NcResult result = NcResult.OK ();
+            result.Value = bodyType;
+            return result;
+        }
+
+        /// <summary>
+        /// Given a McBody, generate the preview from it.
+        /// Note: Similar functionality exists in MimeHelpers, but this is attempting to do everything it can
+        /// with files instead of memory. More work needed and we should combine this with the MimeHelpers.
+        /// </summary>
+        /// <returns>The to preview.</returns>
+        /// <param name="body">Body.</param>
+        /// <param name="previewLength">Preview length.</param>
         private static string BodyToPreview (McBody body, int previewLength = 500)
         {
             string preview = string.Empty;
