@@ -9,7 +9,6 @@ using NachoCore.Model;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using System.Linq;
 
 namespace NachoCore.IMAP
 {
@@ -219,11 +218,9 @@ namespace NachoCore.IMAP
                 } else if (part.ContentType.Matches ("text", "plain")) {
                     bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                 } else {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.None;
                     return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
                 }
             } else {
-                bodyType = McAbstrFileDesc.BodyTypeEnum.None;
                 return NcResult.Error (string.Format ("Unhandled mime subtype {0}", part.ContentType.MediaSubtype));
             }
             NcResult result = NcResult.OK ();
