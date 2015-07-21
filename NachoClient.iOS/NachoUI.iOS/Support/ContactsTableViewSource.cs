@@ -389,12 +389,27 @@ namespace NachoClient.iOS
                 }
             }
 
-            // We immediately display matches from our db
+            // Optionally issue an asynchronous search. By default, return false to skip
+            // ReloadData() because the search result is usually not ready by the time this
+            // call returns.
+            bool result = false;
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
-            var results = McContact.SearchIndexAllContacts (forSearchString, false, true);
-            SetSearchResults (results);
-            NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
-            return true;
+            if (String.IsNullOrEmpty (forSearchString)) {
+                // If there is no search string, just update the search result synchronously
+                SetSearchResults (new List<McContactEmailAddressAttribute> ());
+                NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
+                result = true;
+            } else {
+                NcTask.Run (() => {
+                    var results = McContact.SearchIndexAllContacts (forSearchString, false, true);
+                    InvokeOnMainThread (() => {
+                        SetSearchResults (results);
+                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                        NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
+                    });
+                }, "SearchLocalContacts");
+            }
+            return result;
         }
 
         protected void DumpInfo (McContact contact)
