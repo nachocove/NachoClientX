@@ -15,6 +15,8 @@ namespace NachoCore.Utils
     /// </summary>
     public class Statistics2
     {
+        private object LockObj;
+
         private int _Min;
 
         public int Min {
@@ -57,29 +59,34 @@ namespace NachoCore.Utils
 
         public Statistics2 ()
         {
+            LockObj = new object ();
             Reset ();
         }
 
         public void Update (int value)
         {
-            Count += 1;
-            Total += value;
-            Total2 += value * value;
-            if (value < _Min) {
-                _Min = value;
-            }
-            if (value > _Max) {
-                _Max = value;
+            lock (LockObj) {
+                Count += 1;
+                Total += value;
+                Total2 += value * value;
+                if (value < _Min) {
+                    _Min = value;
+                }
+                if (value > _Max) {
+                    _Max = value;
+                }
             }
         }
 
         public void Reset ()
         {
-            _Min = int.MaxValue;
-            _Max = int.MinValue;
-            Count = 0;
-            Total = 0;
-            Total2 = 0;
+            lock (LockObj) {
+                _Min = int.MaxValue;
+                _Max = int.MinValue;
+                Count = 0;
+                Total = 0;
+                Total2 = 0;
+            }
         }
 
         public override string ToString ()
