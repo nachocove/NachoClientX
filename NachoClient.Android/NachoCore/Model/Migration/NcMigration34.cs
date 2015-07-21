@@ -23,7 +23,6 @@ namespace NachoCore.Model
         public override void Run (System.Threading.CancellationToken token)
         {
             NcIndex index;
-            var indexes = new Dictionary<int, NcIndex> ();
             foreach (var account in McAccount.GetAllAccounts()) {
                 index = NcBrain.SharedInstance.Index (account.Id);
                 if (index.BeginRemoveTransaction ()) {
