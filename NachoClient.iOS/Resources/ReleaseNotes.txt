@@ -1,11 +1,5 @@
-New features since the 1.0 release:
+Nacho Mail 2.0 Beta Release Notes
 
-. Support for Gmail, Yahoo, iCloud, and other IMAP e-mail servers.
+This version of Nacho Mail adds support for multiple accounts and for most types of email servers (IMAP and ActiveSync).
 
-. Support for multiple accounts within the app simultaneously.
-
-. Displaying events from the device's calendar in the app's calendar.
-
-Known limitations:
-
-. No calendar support for IMAP servers.
+In the case of certain servers the user may experience limited calendar functionality, although this will affect a limited set of users. Calendars are shared across all accounts, allowing users to see events from multiple accounts as well as from the devices themselves.
