@@ -179,9 +179,10 @@ namespace NachoCore.IMAP
                 folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
-            // If more than UidValidity is needed, add it here.
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
                 StatusItems items = StatusItems.UidValidity;
+                items |= StatusItems.UidNext; // needed by UpdateImapSetting
+                items |= StatusItems.Count;  // needed by UpdateImapSetting
                 mailKitFolder.Status (items);
             }
 
