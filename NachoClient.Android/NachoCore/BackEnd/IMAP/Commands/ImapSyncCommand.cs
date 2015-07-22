@@ -27,6 +27,7 @@ namespace NachoCore.IMAP
         private const string KImapSyncTiming = "IMAP Sync/Fetch";
         private const string KImapFetchTiming = "IMAP Summary Fetch";
         private const string KImapPreviewGeneration = "IMAP Preview Generation";
+        private const string KImapFetchPartialBody = "Imap Fetch Partial Body";
 
         public class MailSummary
         {
@@ -47,6 +48,7 @@ namespace NachoCore.IMAP
             NcCapture.AddKind (KImapSyncTiming);
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
+            NcCapture.AddKind (KImapFetchPartialBody);
         }
 
         protected override Event ExecuteCommand ()
@@ -188,7 +190,7 @@ namespace NachoCore.IMAP
                             createdUnread = true;
                         }
                         if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
-                            using (var cap2 = NcCapture.CreateAndStart ("Imap Fetch Partial Body")) {
+                            using (var cap2 = NcCapture.CreateAndStart (KImapFetchPartialBody)) {
                                 var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                                 if (!string.IsNullOrEmpty (preview)) {
                                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
