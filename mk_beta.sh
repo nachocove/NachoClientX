@@ -28,11 +28,6 @@ die () {
 ./scripts/fetch.py || die "fail to fetch all repos!"
 ./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
 
-# Need to fetch and change branch again because the branch may add new repos that is not
-# in master's repos_cfg.py.
-./scripts/fetch.py || die "fail to fetch all repos!"
-./scripts/repos.py checkout-tag --tag "$tag" || die "fail to switch to tag $tag"
-
 # Check if the branch matches the given one
 
 # Build everything else
