@@ -750,19 +750,29 @@ namespace NachoCore
             FillOutIdentInfo (jsonRequest);
 
             NcTask.Run (() => {
-                var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
-                if (null == task) {
+                var result =
+                    DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token,
+                        () => {
+                            NumRetries++;
+                            ScheduleRetry ((uint)SmEvt.E.Launch, "START_TIMEOUT");
+                        });
+                if (null == result) {
                     return;
                 }
-                ProcessStartSessionResult (task.Result);
+                ProcessStartSessionResult (result);
             }, "PushAssistStartSession");
         }
 
         private void ProcessStartSessionResult (PushAssistHttpResult result)
         {
             if (null != result.Exception) {
-                NumRetries++;
                 var ex = result.Exception;
+                if (ex is TimeoutException) {
+                    // Retry is handled by TimeoutTimer's callback.
+                    Log.Info (Log.LOG_PUSH, "PushAssistStartSession task timed out");
+                    return;
+                }
+                NumRetries++;
                 string mnemonic;
                 if (ex is OperationCanceledException) {
                     PostEvent (PAEvt.E.Park, "START_CANCELED");
@@ -770,8 +780,6 @@ namespace NachoCore
                 }
                 if (ex is WebException) {
                     mnemonic = "START_NET_RETRY";
-                } else if (ex is TimeoutException) {
-                    mnemonic = "START_TIMEOUT";
                 } else {
                     mnemonic = "START_UNEXPECTED_RETRY";
                 }
@@ -833,19 +841,29 @@ namespace NachoCore
             FillOutIdentInfo (jsonRequest);
 
             NcTask.Run (() => {
-                var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
-                if (null == task) {
+                var result =
+                    DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token,
+                        () => {
+                            NumRetries++;
+                            ScheduleRetry ((uint)PAEvt.E.Defer, "DEFER_TIMEOUT");
+                        });
+                if (null == result) {
                     return;
                 }
-                ProcessDeferSessionResult (task.Result);
+                ProcessDeferSessionResult (result);
             }, "PushAssistDeferSession");
         }
 
         private void ProcessDeferSessionResult (PushAssistHttpResult result)
         {
             if (null != result.Exception) {
-                NumRetries++;
                 var ex = result.Exception;
+                if (ex is TimeoutException) {
+                    // Retry is handled by TimeoutTimer's callback.
+                    Log.Info (Log.LOG_PUSH, "PushAssistDeferSession task timed out");
+                    return;
+                }
+                NumRetries++;
                 string mnemonic;
                 if (ex is OperationCanceledException) {
                     PostEvent (PAEvt.E.Park, "DEFER_CANCELED");
@@ -853,8 +871,6 @@ namespace NachoCore
                 }
                 if (ex is WebException) {
                     mnemonic = "DEFER_NET_RETRY";
-                } else if (ex is TimeoutException) {
-                    mnemonic = "DEFER_TIMEOUT";
                 } else {
                     mnemonic = "DEFER_UNEXPECTED_RETRY";
                 }
@@ -907,25 +923,33 @@ namespace NachoCore
             FillOutIdentInfo (jsonRequest);
 
             NcTask.Run (() => {
-                var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
-                if (null == task.Result) {
+                var result =
+                    DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token,
+                        () => {
+                            NumRetries++;
+                            PostTempFail ("STOP_TIMEOUT");
+                        });
+                if (null == result) {
                     return;
                 }
-                ProcessStopSessionResult (task.Result);
+                ProcessStopSessionResult (result);
             }, "PushAssistStopSession");
         }
 
         private void ProcessStopSessionResult (PushAssistHttpResult result)
         {
             if (null != result.Exception) {
-                NumRetries++;
                 var ex = result.Exception;
+                if (ex is TimeoutException) {
+                    // Retry is handled by TimeoutTimer's callback.
+                    Log.Info (Log.LOG_PUSH, "PushAssistStopSession task timed out");
+                    return;
+                }
+                NumRetries++;
                 if (ex is WebException) {
                     PostTempFail ("STOP_NET_ERROR");
                 } else if (ex is OperationCanceledException) {
                     PostTempFail ("STOP_CANCELED");
-                } else if (ex is TimeoutException) {
-                    PostTempFail ("STOP_TIMEOUT");
                 } else {
                     PostHardFail ("STOP_UNEXPECTED_ERROR");
                 }
@@ -1006,7 +1030,7 @@ namespace NachoCore
             return null;
         }
 
-        protected async Task<PushAssistHttpResult> DoHttpRequest (string url, object jsonRequest, CancellationToken cToken)
+        protected PushAssistHttpResult DoHttpRequest (string url, object jsonRequest, CancellationToken cToken, Action timeoutAction)
         {
             if (String.IsNullOrEmpty (url)) {
                 Log.Error (Log.LOG_PUSH, "null URL");
@@ -1035,22 +1059,23 @@ namespace NachoCore
 
             // Make the request
             var result = new PushAssistHttpResult ();
-            ResetTimeout ();
+            ResetTimeout (timeoutAction);
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource (cToken, Cts.Token)) {
                 try {
-                    var response = await Client
-                        .SendAsync (request, HttpCompletionOption.ResponseContentRead, cts.Token)
-                        .ConfigureAwait (false);
+                    var sendTask = Client.SendAsync (request, HttpCompletionOption.ResponseContentRead, cts.Token);
+                    sendTask.Wait ();
+                    var response = sendTask.Result;
+                    if (null != response.Content) {
+                        var readTask = response.Content.ReadAsStringAsync ();
+                        readTask.Wait ();
+                        result.Content = readTask.Result;
+                    }
                     if (HttpStatusCode.OK == response.StatusCode) {
-                        Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
-                            await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
+                        Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode, result.Content);
                     } else {
                         Log.Warn (Log.LOG_PUSH, "PA response: statusCode={0}", response.StatusCode);
                     }
                     result.Response = response;
-                    if (null != response.Content) {
-                        result.Content = await response.Content.ReadAsStringAsync ().ConfigureAwait (false);
-                    }
                 } catch (OperationCanceledException e) {
                     if (cToken.IsCancellationRequested) {
                         DisposeTimeoutTimer ();
@@ -1136,13 +1161,14 @@ namespace NachoCore
             }
         }
 
-        private void ResetTimeout ()
+        private void ResetTimeout (Action timeout)
         {
             DisposeTimeoutTimer ();
             DisposeCts ();
             Cts = new CancellationTokenSource ();
             TimeoutTimer = new NcTimer ("PATimeout", (state) => {
                 MayCancelHttpRequest ();
+                timeout ();
             }, null, new TimeSpan (0, 0, 0, 0, MaxTimeoutMsec), TimeSpan.Zero);
         }
 
