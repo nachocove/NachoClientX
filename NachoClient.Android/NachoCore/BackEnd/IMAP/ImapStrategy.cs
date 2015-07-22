@@ -9,6 +9,7 @@ using NachoCore.Model;
 using NachoPlatform;
 using System.Collections.Generic;
 using MimeKit;
+using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
@@ -68,9 +69,7 @@ namespace NachoCore.IMAP
                                               | MessageSummaryItems.Flags
                                               | MessageSummaryItems.InternalDate
                                               | MessageSummaryItems.MessageSize
-                                              | MessageSummaryItems.UniqueId
-                                              | MessageSummaryItems.GMailMessageId
-                                              | MessageSummaryItems.GMailThreadId;
+                                              | MessageSummaryItems.UniqueId;
 
         //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
@@ -192,6 +191,14 @@ namespace NachoCore.IMAP
                 UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
 
                 MessageSummaryItems flags = NewMessageFlags;
+
+                if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
+                    flags |= MessageSummaryItems.GMailMessageId;
+                    flags |= MessageSummaryItems.GMailThreadId;
+                    // TODO Perhaps we can use the gmail labels to give more hints to Brain, i.e. 'Important' or somesuch.
+                    //flags |= MessageSummaryItems.GMailLabels;
+                }
+
                 HashSet<HeaderId> headers = new HashSet<HeaderId> ();
                 headers.Add (HeaderId.Importance);
                 headers.Add (HeaderId.DkimSignature);

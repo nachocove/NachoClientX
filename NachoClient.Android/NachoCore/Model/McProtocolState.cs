@@ -60,6 +60,10 @@ namespace NachoCore.Model
             /// The server supports the <a href="https://tools.ietf.org/html/rfc4959">SASL-IR</a> extension.
             /// </summary>
             SaslIR           = 1 << 3,
+            /// <summary>
+            /// The server supports the <a href="https://developers.google.com/gmail/imap_extensions">X-GM-EXT1</a> extension (GMail).
+            /// </summary>
+            GMailExt1        = 1 << 4,
 
         }
 
@@ -214,6 +218,10 @@ namespace NachoCore.Model
             if (capabilities.HasFlag (ImapCapabilities.SaslIR)) {
                 cap |= NcImapCapabilities.SaslIR;
             }
+            if (capabilities.HasFlag (ImapCapabilities.GMailExt1)) {
+                cap |= NcImapCapabilities.GMailExt1;
+            }
+
             return cap;
         }
 
