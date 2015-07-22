@@ -69,8 +69,8 @@ namespace NachoCore
         NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
                         int folderId, bool originalEmailIsEmbedded);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
-        NcResult DeleteEmailCmd (int accountId, int emailMessageId);
-        List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds);
+        NcResult DeleteEmailCmd (int accountId, int emailMessageId, bool justDelete = false);
+        List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds, bool justDelete = false);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
         NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
         List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId);

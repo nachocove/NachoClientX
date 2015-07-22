@@ -101,7 +101,7 @@ namespace Test.iOS
             public void TestDeleteItemCmds ()
             {
                 TestDeletingItem<McEmailMessage> ((protoControl, itemId) => {
-                    return protoControl.DeleteEmailCmd (itemId);
+                    return protoControl.DeleteEmailCmd (itemId, true, false);
                 });
                 SetUp ();
                 TestDeletingItem<McCalendar> ((protoControl, itemId) => {

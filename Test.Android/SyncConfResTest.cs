@@ -510,7 +510,7 @@ namespace Test.iOS
                 SetUp ();
 
                 TestSyncChange<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId) => {
-                    return Context.ProtoControl.DeleteEmailCmd (itemId).GetValue<string> ();
+                    return Context.ProtoControl.DeleteEmailCmd (itemId, true, false).GetValue<string> ();
                 });
             }
 
@@ -559,7 +559,7 @@ namespace Test.iOS
             public void TestSyncDeleteForDeleteEmailCmd ()
             {
                 TestSyncDelete<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId) => {
-                    return Context.ProtoControl.DeleteEmailCmd (itemId).GetValue<string> ();
+                    return Context.ProtoControl.DeleteEmailCmd (itemId, true, false).GetValue<string> ();
                 });
             }
 
