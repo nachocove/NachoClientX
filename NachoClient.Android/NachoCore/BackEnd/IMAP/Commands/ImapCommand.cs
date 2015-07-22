@@ -55,7 +55,7 @@ namespace NachoCore.IMAP
 
             lock(Client.SyncRoot) {
                 try {
-                    if (null != RedactProtocolLogFunc) {
+                    if (null != RedactProtocolLogFunc && null != Client.MailKitProtocolLogger) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
@@ -68,7 +68,7 @@ namespace NachoCore.IMAP
                         return evt;
                     }
                 } finally {
-                    if (Client.MailKitProtocolLogger.Enabled ()) {
+                    if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
                         ProtocolLoggerStopAndPostTelemetry ();
                     }
                 }
