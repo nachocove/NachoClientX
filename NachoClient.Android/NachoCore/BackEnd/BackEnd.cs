@@ -370,16 +370,16 @@ namespace NachoCore
             return (List<NcResult>)outer.Value;
         }
 
-        public List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds)
+        public List<NcResult> DeleteEmailsCmd (int accountId, List<int> emailMessageIds, bool justDelete = false)
         {
             return DeleteMultiCmd (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, emailMessageIds, (service, id, lastInSeq) => {
-                return service.DeleteEmailCmd (id, lastInSeq);
+                return service.DeleteEmailCmd (id, lastInSeq, justDelete);
             });
         }
 
-        public NcResult DeleteEmailCmd (int accountId, int emailMessageId)
+        public NcResult DeleteEmailCmd (int accountId, int emailMessageId, bool justDelete = false)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.DeleteEmailCmd (emailMessageId));
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.DeleteEmailCmd (emailMessageId, true, justDelete));
         }
 
         public List<NcResult> MoveEmailsCmd (int accountId, List<int> emailMessageIds, int destFolderId)
