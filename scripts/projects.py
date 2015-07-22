@@ -74,7 +74,7 @@ projects = {
             'prefix': 'beta',
             'account_id': '610813048224',
             'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
-            'unauth_role_arn': 'arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole',
+            'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_beta_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
             's3_bucket': '3ca28b5e-beta-t3-',
         },
