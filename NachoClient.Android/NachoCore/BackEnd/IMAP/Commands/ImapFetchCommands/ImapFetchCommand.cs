@@ -118,6 +118,7 @@ namespace NachoCore.IMAP
 
         #region ITransferProgress implementation
 
+        const int kProgressReportBatchingBytes = 1024 * 500; // half a meg.
         Stopwatch ReportWatch;
         long lastSize = 0;
         float lastElapsed = 0;
@@ -128,28 +129,46 @@ namespace NachoCore.IMAP
             if (null == ReportWatch) {
                 ReportWatch = new Stopwatch ();
             }
-            float percentTransferred = ((float)bytesTransferred / (float)totalSize) * (float)100;
+            float percentTransferred = 0;
+            if (totalSize > 0) {
+                percentTransferred = ((float)bytesTransferred / (float)totalSize) * (float)100;
+            }
+
             if (!ReportWatch.IsRunning) {
                 ReportWatch.Start ();
-                Log.Info (Log.LOG_IMAP, "{0} Download progress {1}%: bytesTransferred {2} totalSize {3}",
-                    this.GetType ().Name,
-                    percentTransferred,
-                    bytesTransferred,
-                    totalSize);
+                if (totalSize > 0) {
+                    Log.Info (Log.LOG_IMAP, "{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3}",
+                        this.GetType ().Name,
+                        percentTransferred,
+                        bytesTransferred,
+                        totalSize);
+                } else {
+                    Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {1}",
+                        this.GetType ().Name,
+                        bytesTransferred);
+                }
             } else {
                 var bytesSinceLastIteration = bytesTransferred - lastSize;
                 float elapsed = (float)ReportWatch.ElapsedMilliseconds;
                 float kSecSinceLast = ((float)bytesSinceLastIteration / 1024) / ((elapsed - lastElapsed) / 1000);
                 float kSecTotal = ((float)bytesTransferred / 1024) / (elapsed / 1000);
-                var logStr = string.Format ("{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3} ({4:0.000} k/sec / {5:0.000} k/sec)",
-                                 this.GetType ().Name,
-                                 percentTransferred,
-                                 bytesTransferred,
-                                 totalSize,
-                                 kSecSinceLast,
-                                 kSecTotal);
-                if (lastReportBytes == 0 || bytesTransferred - lastReportBytes > 1024 * 100) {
-                    Log.Info (Log.LOG_IMAP, logStr);
+                if (lastReportBytes == 0 || bytesTransferred - lastReportBytes > kProgressReportBatchingBytes) {
+                    if (totalSize > 0) {
+                        Log.Info (Log.LOG_IMAP, "{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3} ({4:0.000} k/sec / {5:0.000} k/sec)",
+                                         this.GetType ().Name,
+                                         percentTransferred,
+                                         bytesTransferred,
+                                         totalSize,
+                                         kSecSinceLast,
+                                         kSecTotal);
+                    } else {
+                                Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
+                            this.GetType ().Name,
+                            bytesTransferred,
+                            kSecSinceLast,
+                            kSecTotal);
+                        
+                    }
                     lastReportBytes = bytesTransferred;
                 }
                 //Console.WriteLine (logStr);
@@ -160,7 +179,7 @@ namespace NachoCore.IMAP
 
         public void Report (long bytesTransferred)
         {
-            Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {1}", this.GetType ().Name, bytesTransferred);
+            Report (bytesTransferred, 0);
         }
 
         #endregion
