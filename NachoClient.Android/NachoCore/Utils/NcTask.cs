@@ -17,6 +17,12 @@ namespace NachoCore.Utils
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
         private static object LockObj = new object ();
 
+        public static int TaskCount {
+            get {
+                return TaskMap.Count;
+            }
+        }
+
         public static void StartService ()
         {
             if (null == TaskMap) {

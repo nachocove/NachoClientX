@@ -15,7 +15,16 @@ namespace Test.iOS
         {
             // if you want to use a different Application Delegate class from "UnitTestAppDelegate"
             // you can specify it here.
-            UIApplication.Main (args, null, "UnitTestAppDelegate");
+            try {
+                AppDomain.CurrentDomain.UnhandledException += (sender, e) => {
+                    Console.WriteLine ("Unhandle exception: {0}", e.ExceptionObject);
+                    throw e.ExceptionObject as Exception;
+                };
+                UIApplication.Main (args, null, "UnitTestAppDelegate");
+            } catch (Exception e) {
+                Console.WriteLine ("Uncaught exception: {0}", e);
+                throw;
+            }
         }
     }
 }
