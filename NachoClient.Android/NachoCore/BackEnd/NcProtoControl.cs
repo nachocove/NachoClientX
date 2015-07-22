@@ -452,7 +452,15 @@ namespace NachoCore
             return SendEmailCmd (newEmailMessageId);
         }
 
-        public virtual NcResult DeleteEmailCmd (int emailMessageId, bool lastInSeq = true)
+        /// <summary>
+        /// Deletes an email, with the caveat that it ONLY deletes the message if we send in justDelete=true,
+        /// or the folder we're deleting from is the trash folder. Otherwise, move the message to the trash ONLY.
+        /// </summary>
+        /// <returns>The email cmd.</returns>
+        /// <param name="emailMessageId">Email message identifier.</param>
+        /// <param name="lastInSeq">If set to <c>true</c> last in seq.</param>
+        /// <param name="justDelete">If set to <c>true</c> just delete.</param>
+        public virtual NcResult DeleteEmailCmd (int emailMessageId, bool lastInSeq, bool justDelete)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McEmailMessage emailMessage = null;
@@ -476,8 +484,11 @@ namespace NachoCore
                 }
 
                 McPending pending;
-                var trash = McFolder.GetDefaultDeletedFolder (Account.Id);
-                if (null == trash || trash.Id == primeFolder.Id) {
+                McFolder trash = null;
+                if (!justDelete) {
+                    trash = McFolder.GetDefaultDeletedFolder (Account.Id);
+                }
+                if (justDelete || null == trash || trash.Id == primeFolder.Id) {
                     pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                         Operation = McPending.Operations.EmailDelete,
                         ParentId = primeFolder.ServerId,
