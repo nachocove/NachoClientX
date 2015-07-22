@@ -36,6 +36,8 @@ namespace NachoCore
     {
         public HttpResponseMessage Response;
         public Exception Exception;
+        // Content of the response if it exists
+        public string Content;
     }
 
     public class PushAssist : IDisposable
@@ -686,7 +688,7 @@ namespace NachoCore
             }
         }
 
-        private async void DoStartSession ()
+        private void DoStartSession ()
         {
             // TODO - maybe turn these to debug logs once ping stablizes??
             Log.Info (Log.LOG_PUSH, "[PA] start session starts: client_id={0}, context={1}",
@@ -747,13 +749,20 @@ namespace NachoCore
             };
             FillOutIdentInfo (jsonRequest);
 
-            var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
-            if (null == task) {
-                return;
-            }
-            if (null != task.Result.Exception) {
+            NcTask.Run (() => {
+                var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
+                if (null == task) {
+                    return;
+                }
+                ProcessStartSessionResult (task.Result);
+            }, "PushAssistStartSession");
+        }
+
+        private void ProcessStartSessionResult (PushAssistHttpResult result)
+        {
+            if (null != result.Exception) {
                 NumRetries++;
-                var ex = task.Result.Exception;
+                var ex = result.Exception;
                 string mnemonic;
                 if (ex is OperationCanceledException) {
                     PostEvent (PAEvt.E.Park, "START_CANCELED");
@@ -769,7 +778,7 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, mnemonic);
                 return;
             }
-            var httpResponse = task.Result.Response;
+            var httpResponse = result.Response;
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
                 Log.Warn (Log.LOG_PUSH, "DoStartSession: HTTP failure (statusCode={0})",
                     httpResponse.StatusCode);
@@ -777,7 +786,7 @@ namespace NachoCore
                 ScheduleRetry ((uint)SmEvt.E.Launch, "START_HTTP_RETRY");
                 return;
             }
-            var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+            var jsonResponse = result.Content;
             var response = ParsePingerResponse (jsonResponse);
             if (!response.IsOkOrWarn () || String.IsNullOrEmpty (response.Token)) {
                 NumRetries++;
@@ -802,7 +811,7 @@ namespace NachoCore
             ResetDefer ();
         }
 
-        private async void DoDeferSession ()
+        private void DoDeferSession ()
         {
             Log.Info (Log.LOG_PUSH, "[PA] defer session starts: client_id={0}, context={1}, token={2}",
                 NcApplication.Instance.ClientId, ClientContext, DebugSessionToken);
@@ -823,13 +832,20 @@ namespace NachoCore
             };
             FillOutIdentInfo (jsonRequest);
 
-            var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
-            if (null == task) {
-                return;
-            }
-            if (null != task.Result.Exception) {
+            NcTask.Run (() => {
+                var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
+                if (null == task) {
+                    return;
+                }
+                ProcessDeferSessionResult (task.Result);
+            }, "PushAssistDeferSession");
+        }
+
+        private void ProcessDeferSessionResult (PushAssistHttpResult result)
+        {
+            if (null != result.Exception) {
                 NumRetries++;
-                var ex = task.Result.Exception;
+                var ex = result.Exception;
                 string mnemonic;
                 if (ex is OperationCanceledException) {
                     PostEvent (PAEvt.E.Park, "DEFER_CANCELED");
@@ -845,7 +861,7 @@ namespace NachoCore
                 ScheduleRetry ((uint)PAEvt.E.Defer, mnemonic);
                 return;
             }
-            var httpResponse = task.Result.Response;
+            var httpResponse = result.Response;
             NcAssert.True (null != httpResponse);
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
                 Log.Warn (Log.LOG_PUSH, "DoDeferSession: HTTP failure (statusCode={0})",
@@ -855,7 +871,7 @@ namespace NachoCore
                 return;
             }
 
-            var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+            var jsonResponse = result.Content;
             var response = ParsePingerResponse (jsonResponse);
             if (response.IsOk ()) {
                 ClearRetry ();
@@ -872,7 +888,7 @@ namespace NachoCore
             }
         }
 
-        private async void DoStopSession ()
+        private void DoStopSession ()
         {
             DisposeDeferTimer ();
             Sm.ClearEventQueue ();
@@ -890,13 +906,20 @@ namespace NachoCore
             };
             FillOutIdentInfo (jsonRequest);
 
-            var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
-            if (null == task.Result) {
-                return;
-            }
-            if (null != task.Result.Exception) {
+            NcTask.Run (() => {
+                var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
+                if (null == task.Result) {
+                    return;
+                }
+                ProcessStopSessionResult (task.Result);
+            }, "PushAssistStopSession");
+        }
+
+        private void ProcessStopSessionResult (PushAssistHttpResult result)
+        {
+            if (null != result.Exception) {
                 NumRetries++;
-                var ex = task.Result.Exception;
+                var ex = result.Exception;
                 if (ex is WebException) {
                     PostTempFail ("STOP_NET_ERROR");
                 } else if (ex is OperationCanceledException) {
@@ -908,8 +931,8 @@ namespace NachoCore
                 }
                 return;
             }
-            var httpResponse = task.Result.Response;
-            NcAssert.True (null != task.Result.Response);
+            var httpResponse = result.Response;
+            NcAssert.True (null != result.Response);
             if (HttpStatusCode.OK != httpResponse.StatusCode) {
                 Log.Warn (Log.LOG_PUSH, "DoStopSession: HTTP failure (statusCode={0})",
                     httpResponse.StatusCode);
@@ -917,7 +940,7 @@ namespace NachoCore
                 return;
             }
 
-            var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+            var jsonResponse = result.Content;
             var response = ParsePingerResponse (jsonResponse);
             if (!response.IsOk ()) {
                 PostTempFail ("STOP_SESS_ERROR");
@@ -1025,6 +1048,9 @@ namespace NachoCore
                         Log.Warn (Log.LOG_PUSH, "PA response: statusCode={0}", response.StatusCode);
                     }
                     result.Response = response;
+                    if (null != response.Content) {
+                        result.Content = await response.Content.ReadAsStringAsync ().ConfigureAwait (false);
+                    }
                 } catch (OperationCanceledException e) {
                     if (cToken.IsCancellationRequested) {
                         DisposeTimeoutTimer ();
