@@ -11,7 +11,7 @@ namespace NachoCore.IMAP
     {
         public NcMailKitProtocolLogger MailKitProtocolLogger { get; private set; }
 
-        public NcImapClient () : base()
+        public NcImapClient () : base(getLogger())
         {
             MailKitProtocolLogger = ProtocolLogger as NcMailKitProtocolLogger;
         }
