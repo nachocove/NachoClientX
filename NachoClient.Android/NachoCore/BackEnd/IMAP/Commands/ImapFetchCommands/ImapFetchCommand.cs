@@ -5,12 +5,15 @@ using System.Text.RegularExpressions;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using MailKit;
+using System.Diagnostics;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchCommand : ImapCommand
+    public class ImapFetchCommand : ImapCommand, ITransferProgress
     {
         private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
+
         public ImapFetchCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
@@ -113,6 +116,54 @@ namespace NachoCore.IMAP
             }
         }
 
+        #region ITransferProgress implementation
+
+        Stopwatch ReportWatch;
+        long lastSize = 0;
+        float lastElapsed = 0;
+        long lastReportBytes = 0;
+
+        public void Report (long bytesTransferred, long totalSize)
+        {
+            if (null == ReportWatch) {
+                ReportWatch = new Stopwatch ();
+            }
+            float percentTransferred = ((float)bytesTransferred / (float)totalSize) * (float)100;
+            if (!ReportWatch.IsRunning) {
+                ReportWatch.Start ();
+                Log.Info (Log.LOG_IMAP, "{0} Download progress {1}%: bytesTransferred {2} totalSize {3}",
+                    this.GetType ().Name,
+                    percentTransferred,
+                    bytesTransferred,
+                    totalSize);
+            } else {
+                var bytesSinceLastIteration = bytesTransferred - lastSize;
+                float elapsed = (float)ReportWatch.ElapsedMilliseconds;
+                float kSecSinceLast = ((float)bytesSinceLastIteration / 1024) / ((elapsed - lastElapsed) / 1000);
+                float kSecTotal = ((float)bytesTransferred / 1024) / (elapsed / 1000);
+                var logStr = string.Format ("{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3} ({4:0.000} k/sec / {5:0.000} k/sec)",
+                                 this.GetType ().Name,
+                                 percentTransferred,
+                                 bytesTransferred,
+                                 totalSize,
+                                 kSecSinceLast,
+                                 kSecTotal);
+                if (lastReportBytes == 0 || bytesTransferred - lastReportBytes > 1024 * 100) {
+                    Log.Info (Log.LOG_IMAP, logStr);
+                    lastReportBytes = bytesTransferred;
+                }
+                //Console.WriteLine (logStr);
+                lastElapsed = elapsed;
+            }
+            lastSize = bytesTransferred;
+        }
+
+        public void Report (long bytesTransferred)
+        {
+            Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {1}", this.GetType ().Name, bytesTransferred);
+        }
+
+        #endregion
     }
 }
 
