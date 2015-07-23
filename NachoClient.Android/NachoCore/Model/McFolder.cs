@@ -325,6 +325,25 @@ namespace NachoCore.Model
             return folders.First ();
         }
 
+        public int CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            return CountOfAllItems (AccountId, Id, classCode);
+        }
+
+        public static int CountOfAllItems (int accountId, int folderId, McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McEmailMessage AS e " +
+                "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                "WHERE " +
+                " likelihood (e.AccountId = ?, 1.0)  AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05)",
+                accountId, accountId, classCode, folderId);
+        }
+
         public static McFolder GetDefaultDeletedFolder (int accountId)
         {
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);

@@ -92,7 +92,7 @@ namespace NachoCore.IMAP
             }
 
             try {
-                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token);
+                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
                 var path = body.GetFilePath ();
                 using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
                     // TODO Do we need to filter by Content-Transfer-Encoding?
