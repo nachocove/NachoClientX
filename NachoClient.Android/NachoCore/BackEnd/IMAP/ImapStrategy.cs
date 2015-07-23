@@ -15,11 +15,30 @@ namespace NachoCore.IMAP
 {
     public class ImapStrategy : NcStrategy
     {
-        public const uint KBaseOverallWindowSize = 10;
-        public const int KBaseNoIdlePollTime = 60;
-        // seconds
-        public const int kFolderExamineInterval = 60 * 5;
-        public const int kFolderExamineQSInterval = 30;
+        /// <summary>
+        /// The base sync-window size
+        /// </summary>
+        const uint KBaseOverallWindowSize = 10;
+
+        /// <summary>
+        /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
+        /// </summary>
+        const int KFolderExamineInterval = 60 * 5;
+
+        /// <summary>
+        /// The default interface in seconds for QuickSync after which we'll re-examine the folder.
+        /// </summary>
+        const int KFolderExamineQSInterval = 30;
+
+        /// <summary>
+        /// The time in seconds after which we'll add the inbox to the top of the list in SyncFolderList.
+        /// </summary>
+        const int KInboxMinSyncTime = 15*60;
+
+        /// <summary>
+        /// The Inbox message count after which we'll transition out of Stage/Rung 0
+        /// </summary>
+        const int KImapSyncRung0InboxCount = 400;
 
         McFolder PrioSyncFolder { get; set; }
 
@@ -60,11 +79,9 @@ namespace NachoCore.IMAP
 
         private int FolderExamineInterval { 
             get {
-                return NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.Foreground ? kFolderExamineQSInterval : kFolderExamineInterval;
+                return NcApplication.Instance.ExecutionContext != NcApplication.ExecutionContextEnum.Foreground ? KFolderExamineQSInterval : KFolderExamineInterval;
             }
         }
-
-        private int NoIdlePollTime { get { return KBaseNoIdlePollTime; } }
 
         //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
@@ -476,15 +493,13 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        const int kImapSyncRung0InboxCount = 400;
-
         public static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState)
         {
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             uint rung = protocolState.ImapSyncRung;
             switch (protocolState.ImapSyncRung) {
             case 0:
-                if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > kImapSyncRung0InboxCount ||
+                if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
                     !SyncSet(ref protocolState, defInbox).Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
@@ -512,8 +527,6 @@ namespace NachoCore.IMAP
             }
             return rung;
         }
-
-        const int kInboxMinSyncTime = 15*60; // in seconds
 
         private List<McFolder> SyncFolderList (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt)
         {
@@ -544,7 +557,8 @@ namespace NachoCore.IMAP
                     break;
 
                 case 2:
-                    if (defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-kInboxMinSyncTime)) {
+                    // If inbox hasn't sync'd in kInboxMinSyncTime seconds, add it to the list at (or near) the top.
+                    if (defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-KInboxMinSyncTime)) {
                         maybeAddFolderToList(folderList, defInbox);
                     }
 
