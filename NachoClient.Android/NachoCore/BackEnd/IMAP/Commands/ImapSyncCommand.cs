@@ -55,7 +55,7 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
 
-            Log.Info (Log.LOG_IMAP, "Processing {1}", Synckit.ToString ());
+            Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
             Cts.Token.ThrowIfCancellationRequested ();
 
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
