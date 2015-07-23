@@ -513,13 +513,13 @@ namespace NachoCore.IMAP
             return rung;
         }
 
-        const int kInboxMinSyncTime = 15*60; // seconds
+        const int kInboxMinSyncTime = 15*60; // in seconds
 
         private List<McFolder> SyncFolderList (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt)
         {
             var folderList = new List<McFolder> ();
             if (null != PrioSyncFolder) {
-                folderList.Add (PrioSyncFolder);
+                maybeAddFolderToList(folderList, PrioSyncFolder);
                 // don't let the PrioSyncFolder exist past one round.
                 PrioSyncFolder = null;
             }
