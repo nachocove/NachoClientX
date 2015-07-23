@@ -55,62 +55,61 @@ namespace NachoCore.IMAP
             // Need to redact the entire Envelope and BODYSTRUCTURE filenames
 
             if (!isRequest) {
-                var cap = NcCapture.CreateAndStart (KImapSyncLogRedaction);
-                char[] delimiterChars = { '\n' };
-                if (!string.IsNullOrEmpty (lastIncompleteLine)) {
-                    logData = lastIncompleteLine + logData;
-                    lastIncompleteLine = null;
-                }
-                var lines = new List<string> (logData.Split (delimiterChars));
-                if (!logData.EndsWith ("\n")) {
-                    lastIncompleteLine = lines.Last ();
-                    lines = lines.Take (lines.Count () - 1).ToList ();
-                }
-                List<string> result = new List<string> ();
-                foreach (var line in lines) {
-                    if (FetchCmdRegex.IsMatch (line)) {
-                        inFetch = true;
-                        char[] space = { ' ' };
-                        bool inEnvelope = false;
-                        List<string> newLine = new List<string> ();
-                        foreach (var token in line.Split (space)) {
-                            switch (token) {
-                            case "ENVELOPE":
-                                inEnvelope = true;
-                                newLine.Add (token + " ( REDACTED )");
-                                continue;
-
-                            case "BODYSTRUCTURE":
-                                inEnvelope = false;
-                                newLine.Add (token);
-                                continue;
-
-                            default:
-                                if (!inEnvelope) {
-                                    newLine.Add (token);
-                                }
-                                break;
-                            }
-                        }
-                        result.Add (string.Join (" ", newLine));
-                    } else if (inFetch) {
-                        if (line.StartsWith (")")) {
-                            inFetch = false;
-                            result.Add (line);
-                        } else if ("\r" == line) {
-                            result.Add (line);
-                        } else {
-                            result.Add ("REDACTED\r");
-                        }
-                        continue;
-                    } else { // if (!inFetch)
-                        result.Add (line);
+                using (var cap = NcCapture.CreateAndStart (KImapSyncLogRedaction)) {
+                    char[] delimiterChars = { '\n' };
+                    if (!string.IsNullOrEmpty (lastIncompleteLine)) {
+                        logData = lastIncompleteLine + logData;
+                        lastIncompleteLine = null;
                     }
+                    var lines = new List<string> (logData.Split (delimiterChars));
+                    if (!logData.EndsWith ("\n")) {
+                        lastIncompleteLine = lines.Last ();
+                        lines = lines.Take (lines.Count () - 1).ToList ();
+                    }
+                    List<string> result = new List<string> ();
+                    foreach (var line in lines) {
+                        if (FetchCmdRegex.IsMatch (line)) {
+                            inFetch = true;
+                            char[] space = { ' ' };
+                            bool inEnvelope = false;
+                            List<string> newLine = new List<string> ();
+                            foreach (var token in line.Split (space)) {
+                                switch (token) {
+                                case "ENVELOPE":
+                                    inEnvelope = true;
+                                    newLine.Add (token + " ( REDACTED )");
+                                    continue;
+
+                                case "BODYSTRUCTURE":
+                                    inEnvelope = false;
+                                    newLine.Add (token);
+                                    continue;
+
+                                default:
+                                    if (!inEnvelope) {
+                                        newLine.Add (token);
+                                    }
+                                    break;
+                                }
+                            }
+                            result.Add (string.Join (" ", newLine));
+                        } else if (inFetch) {
+                            if (line.StartsWith (")")) {
+                                inFetch = false;
+                                result.Add (line);
+                            } else if ("\r" == line) {
+                                result.Add (line);
+                            } else {
+                                result.Add ("REDACTED\r");
+                            }
+                            continue;
+                        } else { // if (!inFetch)
+                            result.Add (line);
+                        }
+                    }
+                    var resultData = string.Join ("\n", result);
+                    return resultData;
                 }
-                cap.Stop ();
-                cap.Dispose ();
-                var resultData = string.Join ("\n", result);
-                return resultData;
             } else {
                 return logData;
             }
