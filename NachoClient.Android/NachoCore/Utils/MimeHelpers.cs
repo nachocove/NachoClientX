@@ -781,7 +781,242 @@ namespace NachoCore.Utils
             }
         }
     }
+
+    // This class is copied from MimeKit.AttachmentCollection.  Changes were made to reduce memory consumption.
+    // The stream that is passed to ContentObject is one for the file on disk rather than a MemoryBlockStream.
+    // The file streams are all closed in Dispose(), which means that NcAttachmentCollection must be properly
+    // disposed to avoid leaking file descriptors.
+    public class NcAttachmentCollection : IList<MimeEntity>, IDisposable
+    {
+        private readonly List<MimeEntity> attachments = new List<MimeEntity> ();
+        private readonly List<Stream> openFiles = new List<Stream> ();
+
+        public MimeEntity Add (string fileName)
+        {
+            if (null == fileName) {
+                throw new ArgumentNullException ("fileName");
+            }
+            if (0 == fileName.Length) {
+                throw new ArgumentException ("The specified file path is empty.", "fileName");
+            }
+
+            var attachment = new MimePart (ContentType.Parse (MimeTypes.GetMimeType (fileName)));
+            attachment.FileName = Path.GetFileName (fileName);
+            attachment.IsAttachment = true;
+            attachment.ContentTransferEncoding = ContentEncoding.Base64;
+
+            var stream = File.OpenRead (fileName);
+            attachment.ContentObject = new ContentObject (stream);
+
+            attachments.Add (attachment);
+            openFiles.Add (stream);
+
+            return attachment;
+        }
+
+        #region IList implementation
+
+        public int Count {
+            get { return attachments.Count; }
+        }
+
+        public bool IsReadOnly {
+            get { return false; }
+        }
+
+        public MimeEntity this [int index] {
+            get {
+                CheckIndexRange (index, "index");
+                return attachments [index];
+            }
+            set {
+                CheckIndexRange (index, "index");
+                CheckNullAttachment (value, "value");
+                attachments [index] = value;
+            }
+        }
+
+        public void Add (MimeEntity attachment)
+        {
+            CheckNullAttachment (attachment, "attachment");
+            attachments.Add (attachment);
+        }
+
+        public void Clear ()
+        {
+            attachments.Clear ();
+            CloseStreams ();
+        }
+
+        public bool Contains (MimeEntity attachment)
+        {
+            CheckNullAttachment (attachment, "attachment");
+            return attachments.Contains (attachment);
+        }
+
+        public void CopyTo (MimeEntity[] array, int arrayIndex)
+        {
+            if (null == array) {
+                throw new ArgumentNullException ("array");
+            }
+            if (0 > arrayIndex || arrayIndex >= array.Length) {
+                throw new ArgumentOutOfRangeException ("arrayIndex");
+            }
+            attachments.CopyTo (array, arrayIndex);
+        }
+
+        public int IndexOf (MimeEntity attachment)
+        {
+            CheckNullAttachment (attachment, "attachment");
+            return attachments.IndexOf (attachment);
+        }
+
+        public void Insert (int index, MimeEntity attachment)
+        {
+            CheckIndexRange (index, "index");
+            CheckNullAttachment (attachment, "attachment");
+            attachments.Insert (index, attachment);
+        }
+
+        public bool Remove (MimeEntity attachment)
+        {
+            CheckNullAttachment (attachment, "attachment");
+            return attachments.Remove (attachment);
+        }
+
+        public void RemoveAt (int index)
+        {
+            CheckIndexRange (index, "index");
+            attachments.RemoveAt (index);
+        }
+
+        #endregion
+
+        #region IEnumerable implementation
+
+        public IEnumerator<MimeEntity> GetEnumerator ()
+        {
+            return attachments.GetEnumerator ();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+        {
+            return GetEnumerator ();
+        }
+
+        #endregion
+
+        #region IDisposable implementation
+
+        public void Dispose ()
+        {
+            CloseStreams ();
+        }
+
+        #endregion
+
+        private void CloseStreams ()
+        {
+            foreach (var stream in openFiles) {
+                stream.Dispose ();
+            }
+            openFiles.Clear ();
+        }
+
+        private void CheckNullAttachment (MimeEntity attachment, string argName)
+        {
+            if (null == attachment) {
+                throw new ArgumentNullException (argName);
+            }
+        }
+
+        private void CheckIndexRange (int index, string argName)
+        {
+            if (0 > index || index > Count) {
+                throw new ArgumentOutOfRangeException (argName);
+            }
+        }
+    }
+
+    // This class was copied from class MimeKit.BodyBuilder.  The only changes are (1) to use NcAttachmentCollection
+    // instead of MimeKit.AttachmentCollection, (2) make the class IDisposable, and (3) get rid of LinkedAttachments
+    // because they aren't needed by the app code.
+    public class NcMimeBodyBuilder : IDisposable
+    {
+        public NcMimeBodyBuilder ()
+        {
+            Attachments = new NcAttachmentCollection ();
+        }
+
+        public NcAttachmentCollection Attachments {
+            get;
+            private set;
+        }
+
+        public string TextBody {
+            get;
+            set;
+        }
+
+        public string HtmlBody {
+            get;
+            set;
+        }
+
+        public MimeEntity ToMessageBody ()
+        {
+            Multipart alternative = null;
+            MimeEntity body = null;
+
+            if (!string.IsNullOrEmpty (TextBody)) {
+                var text = new TextPart ("plain");
+                text.Text = TextBody;
+
+                if (!string.IsNullOrEmpty (HtmlBody)) {
+                    alternative = new Multipart ("alternative");
+                    alternative.Add (text);
+                    body = alternative;
+                } else {
+                    body = text;
+                }
+            }
+
+            if (!string.IsNullOrEmpty (HtmlBody)) {
+                var html = new TextPart ("html");
+                html.ContentId = MimeKit.Utils.MimeUtils.GenerateMessageId ();
+                html.Text = HtmlBody;
+
+                if (null != alternative) {
+                    alternative.Add (html);
+                } else {
+                    body = html;
+                }
+            }
+
+            if (0 < Attachments.Count) {
+                var mixed = new Multipart ("mixed");
+
+                if (null != body) {
+                    mixed.Add (body);
+                }
+
+                foreach (var attachment in Attachments) {
+                    mixed.Add (attachment);
+                }
+
+                body = mixed;
+            }
+
+            return body ?? new TextPart ("plain") { Text = string.Empty };
+        }
+
+        #region IDisposable implementation
+
+        public void Dispose ()
+        {
+            Attachments.Dispose ();
+        }
+
+        #endregion
+    }
 }
-
-
-
