@@ -278,7 +278,7 @@ namespace NachoCore.IMAP
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
                 try {
-                    changed = updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    changed = updateFlags (emailMessage, imapSummary);
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
@@ -286,7 +286,7 @@ namespace NachoCore.IMAP
                 changed = true;
                 try {
                     emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary as MessageSummary);
-                    updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    updateFlags (emailMessage, imapSummary);
                     if (null == emailMessage.BodyPreview) {
                         emailMessage.IsIncomplete = true;
                     }
@@ -351,30 +351,14 @@ namespace NachoCore.IMAP
             return messagesDeleted;
         }
 
-        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, IMessageSummary summary)
-        {
-            if (!summary.Flags.HasValue) {
-                Log.Error (Log.LOG_IMAP, "Trying to update email message without any flags");
-                return false;
-            }
-            return UpdateEmailMetaData (emailMessage, summary.Flags.Value, summary.UserFlags);
-        }
-
-        public static bool UpdateEmailMetaData (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
-        {
-            bool changed = false;
-
-            // IMAP can only update flags. Anything else is a new UID/message.
-            if (updateFlags (emailMessage, Flags, UserFlags)) {
-                changed = true;
-            }
-            return changed;
-        }
-
-        private static bool updateFlags (McEmailMessage emailMessage, MessageFlags Flags, HashSet<string> UserFlags)
+        private static bool updateFlags (McEmailMessage emailMessage, MessageSummary summary)
         {
             bool changed = false;
             bool before = emailMessage.IsRead;
+
+            MessageFlags Flags = summary.Flags.Value;
+            HashSet<string> UserFlags = summary.UserFlags;
+
             emailMessage.IsRead = ((Flags & MessageFlags.Seen) == MessageFlags.Seen);
             if (emailMessage.IsRead != before) {
                 changed = true;
@@ -383,9 +367,10 @@ namespace NachoCore.IMAP
             if ((Flags & MessageFlags.Answered) == MessageFlags.Answered) {
             }
             if ((Flags & MessageFlags.Flagged) == MessageFlags.Flagged) {
-                //emailMessage.UserAction = 1;
+                emailMessage.UserAction = 1;
             }
             if ((Flags & MessageFlags.Deleted) == MessageFlags.Deleted) {
+                // TODO we really ought to stop here and delete the message!
             }
             if ((Flags & MessageFlags.Draft) == MessageFlags.Draft) {
             }
@@ -397,6 +382,41 @@ namespace NachoCore.IMAP
             if (null != UserFlags && UserFlags.Count > 0) {
                 // FIXME Where do we set these flags?
             }
+            if (summary.GMailLabels.Any ()) {
+                // This are pretty much the same as folders in gmail-land
+                foreach (var label in summary.GMailLabels) {
+                    if (!label.StartsWith ("\\")) {
+                        // these are user-labels. ignore these
+                        continue;
+                    }
+                        
+                    switch (label) {
+                    case "\\Starred":
+                        emailMessage.UserAction = 1;
+                        break;
+
+                    case "\\Deleted":
+                        // TODO we really ought to stop here and delete the message!
+                        break;
+
+                    case "\\Important":
+                        // TODO Should we honor this? It's from google's 'brain'.
+                        break;
+
+                    case "\\Inbox":
+                    case "\\Sent":
+                    case "\\Drafts":
+                    case "\\Trash":
+                        // various standard folder types (i.e. labels in gmail-land)
+                        break;
+
+                    default:
+                        Log.Warn (Log.LOG_IMAP, "Unhandled Gmail message label {0}", label);
+                        break;
+                    }
+                }
+            }
+
             return changed;
         }
 
@@ -495,7 +515,7 @@ namespace NachoCore.IMAP
             if (summary.GMailThreadId.HasValue) {
                 emailMessage.ConversationId = summary.GMailThreadId.Value.ToString ();
             }
-            if (string.Empty == emailMessage.MessageID && summary.GMailMessageId.HasValue) {
+            if (string.IsNullOrEmpty(emailMessage.MessageID) && summary.GMailMessageId.HasValue) {
                 emailMessage.MessageID = summary.GMailMessageId.Value.ToString ();
             }
             if (string.IsNullOrEmpty (emailMessage.ConversationId)) {
