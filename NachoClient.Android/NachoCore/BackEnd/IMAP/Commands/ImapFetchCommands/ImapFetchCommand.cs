@@ -5,12 +5,15 @@ using System.Text.RegularExpressions;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using MailKit;
+using System.Diagnostics;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchCommand : ImapCommand
+    public class ImapFetchCommand : ImapCommand, ITransferProgress
     {
         private const string KImapSyncLogRedaction = "IMAP Sync Log Redaction";
+
         public ImapFetchCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
@@ -52,67 +55,133 @@ namespace NachoCore.IMAP
             // Need to redact the entire Envelope and BODYSTRUCTURE filenames
 
             if (!isRequest) {
-                var cap = NcCapture.CreateAndStart (KImapSyncLogRedaction);
-                char[] delimiterChars = { '\n' };
-                if (!string.IsNullOrEmpty (lastIncompleteLine)) {
-                    logData = lastIncompleteLine + logData;
-                    lastIncompleteLine = null;
-                }
-                var lines = new List<string> (logData.Split (delimiterChars));
-                if (!logData.EndsWith ("\n")) {
-                    lastIncompleteLine = lines.Last ();
-                    lines = lines.Take (lines.Count () - 1).ToList ();
-                }
-                List<string> result = new List<string> ();
-                foreach (var line in lines) {
-                    if (FetchCmdRegex.IsMatch (line)) {
-                        inFetch = true;
-                        char[] space = { ' ' };
-                        bool inEnvelope = false;
-                        List<string> newLine = new List<string> ();
-                        foreach (var token in line.Split (space)) {
-                            switch (token) {
-                            case "ENVELOPE":
-                                inEnvelope = true;
-                                newLine.Add (token + " ( REDACTED )");
-                                continue;
-
-                            case "BODYSTRUCTURE":
-                                inEnvelope = false;
-                                newLine.Add (token);
-                                continue;
-
-                            default:
-                                if (!inEnvelope) {
-                                    newLine.Add (token);
-                                }
-                                break;
-                            }
-                        }
-                        result.Add (string.Join (" ", newLine));
-                    } else if (inFetch) {
-                        if (line.StartsWith (")")) {
-                            inFetch = false;
-                            result.Add (line);
-                        } else if ("\r" == line) {
-                            result.Add (line);
-                        } else {
-                            result.Add ("REDACTED\r");
-                        }
-                        continue;
-                    } else { // if (!inFetch)
-                        result.Add (line);
+                using (var cap = NcCapture.CreateAndStart (KImapSyncLogRedaction)) {
+                    char[] delimiterChars = { '\n' };
+                    if (!string.IsNullOrEmpty (lastIncompleteLine)) {
+                        logData = lastIncompleteLine + logData;
+                        lastIncompleteLine = null;
                     }
+                    var lines = new List<string> (logData.Split (delimiterChars));
+                    if (!logData.EndsWith ("\n")) {
+                        lastIncompleteLine = lines.Last ();
+                        lines = lines.Take (lines.Count () - 1).ToList ();
+                    }
+                    List<string> result = new List<string> ();
+                    foreach (var line in lines) {
+                        if (FetchCmdRegex.IsMatch (line)) {
+                            inFetch = true;
+                            char[] space = { ' ' };
+                            bool inEnvelope = false;
+                            List<string> newLine = new List<string> ();
+                            foreach (var token in line.Split (space)) {
+                                switch (token) {
+                                case "ENVELOPE":
+                                    inEnvelope = true;
+                                    newLine.Add (token + " ( REDACTED )");
+                                    continue;
+
+                                case "BODYSTRUCTURE":
+                                    inEnvelope = false;
+                                    newLine.Add (token);
+                                    continue;
+
+                                default:
+                                    if (!inEnvelope) {
+                                        newLine.Add (token);
+                                    }
+                                    break;
+                                }
+                            }
+                            result.Add (string.Join (" ", newLine));
+                        } else if (inFetch) {
+                            if (line.StartsWith (")")) {
+                                inFetch = false;
+                                result.Add (line);
+                            } else if ("\r" == line) {
+                                result.Add (line);
+                            } else {
+                                result.Add ("REDACTED\r");
+                            }
+                            continue;
+                        } else { // if (!inFetch)
+                            result.Add (line);
+                        }
+                    }
+                    var resultData = string.Join ("\n", result);
+                    return resultData;
                 }
-                cap.Stop ();
-                cap.Dispose ();
-                var resultData = string.Join ("\n", result);
-                return resultData;
             } else {
                 return logData;
             }
         }
 
+        #region ITransferProgress implementation
+
+        const int kProgressReportBatchingBytes = 1024 * 500; // half a meg.
+        Stopwatch ReportWatch;
+        long lastSize = 0;
+        float lastElapsed = 0;
+        long lastReportBytes = 0;
+
+        public void Report (long bytesTransferred, long totalSize)
+        {
+            if (null == ReportWatch) {
+                ReportWatch = new Stopwatch ();
+            }
+            float percentTransferred = 0;
+            if (totalSize > 0) {
+                percentTransferred = ((float)bytesTransferred / (float)totalSize) * (float)100;
+            }
+
+            if (!ReportWatch.IsRunning) {
+                ReportWatch.Start ();
+                if (totalSize > 0) {
+                    Log.Info (Log.LOG_IMAP, "{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3}",
+                        this.GetType ().Name,
+                        percentTransferred,
+                        bytesTransferred,
+                        totalSize);
+                } else {
+                    Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {1}",
+                        this.GetType ().Name,
+                        bytesTransferred);
+                }
+            } else {
+                var bytesSinceLastIteration = bytesTransferred - lastSize;
+                float elapsed = (float)ReportWatch.ElapsedMilliseconds;
+                float kSecSinceLast = ((float)bytesSinceLastIteration / 1024) / ((elapsed - lastElapsed) / 1000);
+                float kSecTotal = ((float)bytesTransferred / 1024) / (elapsed / 1000);
+                if (lastReportBytes == 0 || bytesTransferred - lastReportBytes > kProgressReportBatchingBytes) {
+                    if (totalSize > 0) {
+                        Log.Info (Log.LOG_IMAP, "{0} Download progress {1:0.0}%: bytesTransferred {2} totalSize {3} ({4:0.000} k/sec / {5:0.000} k/sec)",
+                                         this.GetType ().Name,
+                                         percentTransferred,
+                                         bytesTransferred,
+                                         totalSize,
+                                         kSecSinceLast,
+                                         kSecTotal);
+                    } else {
+                                Log.Info (Log.LOG_IMAP, "{0} Download progress: bytesTransferred {2} ({3:0.000} k/sec / {4:0.000} k/sec)",
+                            this.GetType ().Name,
+                            bytesTransferred,
+                            kSecSinceLast,
+                            kSecTotal);
+                        
+                    }
+                    lastReportBytes = bytesTransferred;
+                }
+                //Console.WriteLine (logStr);
+                lastElapsed = elapsed;
+            }
+            lastSize = bytesTransferred;
+        }
+
+        public void Report (long bytesTransferred)
+        {
+            Report (bytesTransferred, 0);
+        }
+
+        #endregion
     }
 }
 

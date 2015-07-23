@@ -444,7 +444,7 @@ namespace NachoClient.iOS
             }
 
             if (null == account) {
-                if (LoginHelpers.AccountExists (email)) {
+                if (LoginHelpers.ConfiguredAccountExists (email)) {
                     // Already have this one.
                     Log.Info (Log.LOG_UI, "avl: SaveUserSettings existing account: {0}", email);
                     return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
@@ -456,6 +456,7 @@ namespace NachoClient.iOS
             account.EmailAddr = email;
             account.Update ();
 
+            cred.Username = email;
             cred.UpdatePassword (password);
             cred.Update ();
 

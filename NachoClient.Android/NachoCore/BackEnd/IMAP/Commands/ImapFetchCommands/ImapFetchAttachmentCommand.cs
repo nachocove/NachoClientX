@@ -12,7 +12,7 @@ using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchAttachmentCommand : ImapFetchCommand, ITransferProgress
+    public class ImapFetchAttachmentCommand : ImapFetchCommand
     {
         public ImapFetchAttachmentCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
@@ -99,19 +99,5 @@ namespace NachoCore.IMAP
             var summary = isummary[0] as MessageSummary;
             return summary.BodyParts.Where (x => x.PartSpecifier == fileReference).FirstOrDefault ();
         }
-
-        #region ITransferProgress implementation
-
-        public void Report (long bytesTransferred, long totalSize)
-        {
-            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
-        }
-
-        public void Report (long bytesTransferred)
-        {
-            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
-        }
-
-        #endregion
     }
 }
