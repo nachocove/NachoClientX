@@ -573,12 +573,14 @@ namespace NachoClient.iOS
             }
 
             // Create or re-create the account if it's null.
-            // If the user didn't change anything, then the old account is still around.
+            // If the user didn't change the email address, then the old account is still around.
             if (null == account) {
                 account = NcAccountHandler.Instance.CreateAccount (service, email, password);
                 NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: CredentialsDismissed");
             } else {
+                var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+                cred.UpdatePassword (password);
                 BackEnd.Instance.Stop (account.Id);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ServerUpdate, "avl: CredentialsDismissed");
             }

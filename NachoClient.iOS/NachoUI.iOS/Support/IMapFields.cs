@@ -456,6 +456,7 @@ namespace NachoClient.iOS
             account.EmailAddr = email;
             account.Update ();
 
+            cred.Username = email;
             cred.UpdatePassword (password);
             cred.Update ();
 
