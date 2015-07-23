@@ -271,41 +271,6 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
-<<<<<<< HEAD
-        private bool HasNewMail (McFolder folder)
-        {
-            return ((0 != folder.ImapUidHighestUidSynced) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext -1));
-        }
-
-        private static bool HasDeletedMail (McFolder folder, UniqueIdSet currentMails, UniqueIdSet currentUidSet, out UniqueIdSet uids)
-        {
-            // Need to pass in the FULL currentUidSet, not one narrowed down by startingPoint and span!!
-            uids = new UniqueIdSet (currentMails.Except (currentUidSet));
-            return uids.Any ();
-        }
-
-        private bool HasChangedMails (McFolder folder, out UniqueIdSet uids)
-        {
-            uids = new UniqueIdSet ();
-            // FIXME How to determine (ignoring ModSeq for now)?
-            return false;
-        }
-
-        private UniqueIdSet NotOnDeviceUids (McFolder folder, UniqueIdSet currentMails, UniqueIdSet currentUidSet)
-        {
-            UniqueIdSet uids = new UniqueIdSet (currentUidSet.Except (currentMails).OrderByDescending (x => x).ToList ());
-            Log.Info (Log.LOG_IMAP, "GenSyncKit/NotOnDeviceUids {0}: ImapLastUidSynced {1}, ImapUidNext {2}, current mails: {{{3}}}",
-                folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, uids.ToString ());
-            return uids;
-        }
-
-        private UniqueIdSet ReSyncUids (McFolder folder, UniqueIdSet currentMails)
-        {
-            Log.Info (Log.LOG_IMAP, "GenSyncKit/ReSyncUids {0}: ImapLastUidSynced {1}, ImapUidNext {2}, current mails: {{{3}}}",
-                folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, folder.ImapUidNext, currentMails.ToString ());
-            return currentMails;
-        }
-
         public class NcEmailMessageUid
         {
             public uint Uid { set; get; }
