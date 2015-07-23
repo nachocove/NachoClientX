@@ -190,6 +190,24 @@ namespace NachoClient.iOS
             PerformSegue ("SegueToAccountType", this);
         }
 
+        // Google Apps and Office 365 have a single hard-wired
+        // server.  If we get a server conf callback, it means
+        // the domain associated with email couldn't be found.
+        // In this case, we re-prompt for credentials with an
+        // appropriate message.
+        public void ShowServerConfCallback ()
+        {
+            switch (service) {
+            case McAccount.AccountServiceEnum.GoogleExchange:
+            case McAccount.AccountServiceEnum.Office365Exchange:
+                PerformSegue ("SegueToAccountCredentials", new SegueHolder (NachoCredentialsRequestEnum.ServerConfCallback));
+                break;
+            default:
+                ShowAdvancedConfiguration (LoginProtocolControl.Prompt.ServerConf);
+                break;
+            }
+        }
+
         public void ShowAdvancedConfiguration (LoginProtocolControl.Prompt prompt)
         {
             RemoveWindows ();
@@ -201,7 +219,7 @@ namespace NachoClient.iOS
             // FIXME: Getting server conf callback for known servers
             var accountType = McAccount.GetAccountType (service);
 
-            if ((service != McAccount.AccountServiceEnum.Exchange) || (service != McAccount.AccountServiceEnum.IMAP_SMTP)) {
+            if ((service != McAccount.AccountServiceEnum.Exchange) && (service != McAccount.AccountServiceEnum.IMAP_SMTP)) {
                 Log.Error (Log.LOG_UI, "avl: Showing advanced view for {0}", service);
             }
 
@@ -351,7 +369,7 @@ namespace NachoClient.iOS
         public void PromptForCredentials ()
         {
             RemoveWindows ();
-            PerformSegue ("SegueToAccountCredentials", new SegueHolder (false));
+            PerformSegue ("SegueToAccountCredentials", new SegueHolder (NachoCredentialsRequestEnum.InitialAsk));
         }
 
         public void ShowCredReq ()
@@ -363,7 +381,7 @@ namespace NachoClient.iOS
                 break;
             default:
                 RemoveWindows ();
-                PerformSegue ("SegueToAccountCredentials", new SegueHolder (true));
+                PerformSegue ("SegueToAccountCredentials", new SegueHolder (NachoCredentialsRequestEnum.CredReqCallback));
                 break;
             }
         }
@@ -408,7 +426,7 @@ namespace NachoClient.iOS
                 
             service = McAccount.AccountServiceEnum.GoogleDefault;
 
-            if (LoginHelpers.AccountExists (user.Profile.Email)) {
+            if (LoginHelpers.ConfiguredAccountExists (user.Profile.Email)) {
                 // Already have this one.
                 Log.Info (Log.LOG_UI, "avl: AppDelegate DidSignInForUser existing account: {0}", user.Profile.Email);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: DidSignInForUser");
@@ -509,40 +527,7 @@ namespace NachoClient.iOS
             }
         }
 
-        // If there's a cred req callback but the email address
-        // changes, then we need to do a stop/start instead of a
-        // cred resp because the email address might auto-d to a
-        // different server.
-        bool UpdateCredentialsAndGo (McAccount account, string email, string password, bool credReqCallback)
-        {
-            if (null == account) {
-                return false;
-            }
-            if (!credReqCallback) {
-                return false;
-            }
-            if (account.EmailAddr != email) {
-                credReqCallback = false;
-                BackEnd.Instance.Stop (account.Id);
-            }
-            account.EmailAddr = email;
-            account.Update ();
-            var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
-            cred.UpdatePassword (password);
-            cred.Username = email;
-            cred.Update ();
-
-            Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
-
-            if (credReqCallback) {
-                BackEnd.Instance.CredResp (account.Id);
-            } else {
-                BackEnd.Instance.Start (account.Id);
-            }
-            return true;
-        }
-
-        public void CredentialsDismissed (UIViewController vc, bool startInAdvanced, string email, string password, bool credReqCallback, bool startOver)
+        public void CredentialsDismissed (UIViewController vc, bool startInAdvanced, string email, string password, NachoCredentialsRequestEnum why, bool startOver)
         {
             this.email = email;
             this.password = password;
@@ -555,19 +540,49 @@ namespace NachoClient.iOS
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.StartOver, "avl: CredentialsDismissed");
                 return;
             }
-            if (UpdateCredentialsAndGo (account, email, password, credReqCallback)) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
-                ShowWaitingScreen ("Verifying Your Server...");
-                return;
+
+            // If the email address has changed,
+            // remove the account being configured
+            if (null != account) {
+                if (!String.Equals (account.EmailAddr, email)) {
+                    NcAccountHandler.Instance.RemoveAccount (account.Id);
+                    account = null;
+                }
             }
-            if (LoginHelpers.AccountExists (email)) {
+
+            // Does this email address exist in the db?  Complain if not the 'in progress' account
+            if (LoginHelpers.ConfiguredAccountExists (email)) {
                 Log.Info (Log.LOG_UI, "avl: CredentialsDismissed existing account: {0}", email);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.DuplicateAccount, "avl: CredentialsDismissed");
                 return;
             }
-            account = NcAccountHandler.Instance.CreateAccount (service, email, password);
-            NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
-            loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: CredentialsDismissed");
+
+            // Is the email address unchanged & this a cred req?  Update creds & go.
+            if (null != account) {
+                if (NachoCredentialsRequestEnum.CredReqCallback == why) {
+                    var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+                    cred.UpdatePassword (password);
+                    cred.Username = email;
+                    cred.Update ();
+                    BackEnd.Instance.CredResp (account.Id);
+                    Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
+                    ShowWaitingScreen ("Verifying Your Server...");
+                    return;
+                }
+            }
+
+            // Create or re-create the account if it's null.
+            // If the user didn't change anything, then the old account is still around.
+            if (null == account) {
+                account = NcAccountHandler.Instance.CreateAccount (service, email, password);
+                NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: CredentialsDismissed");
+            } else {
+                BackEnd.Instance.Stop (account.Id);
+                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ServerUpdate, "avl: CredentialsDismissed");
+            }
+              
         }
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
@@ -680,8 +695,8 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToAccountCredentials")) {
                 var vc = (AccountCredentialsViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                var credReqCallback = (bool)holder.value;
-                vc.Setup (this, service, credReqCallback, email, password);
+                var reason = (NachoCredentialsRequestEnum)holder.value;
+                vc.Setup (this, service, reason, email, password);
                 return;
             }
             if (segue.Identifier.Equals ("SegueToSupport")) {

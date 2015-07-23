@@ -199,10 +199,14 @@ namespace NachoCore.Utils
             }
         }
 
-        public static bool AccountExists (string emailAddress)
+        public static bool ConfiguredAccountExists (string emailAddress)
         {
             var existingAccount = McAccount.QueryByEmailAddr (emailAddress).SingleOrDefault ();
-            return (null != existingAccount);
+            if (null != existingAccount) {
+                return (McAccount.ConfigurationInProgressEnum.Done == existingAccount.ConfigurationInProgress);
+            } else {
+                return false;
+            }
         }
     }
 }
