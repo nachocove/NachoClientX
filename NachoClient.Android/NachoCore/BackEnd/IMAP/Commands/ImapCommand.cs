@@ -183,10 +183,7 @@ namespace NachoCore.IMAP
             }
 
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
-                StatusItems items = StatusItems.UidValidity;
-                items |= StatusItems.UidNext; // needed by UpdateImapSetting
-                items |= StatusItems.Count;  // needed by UpdateImapSetting
-                mailKitFolder.Status (items);
+                mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
             }
 
             if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
@@ -217,6 +214,14 @@ namespace NachoCore.IMAP
                 });
                 added_or_changed = true;
             }
+
+            // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
+            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+                if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
+                    Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
+                }
+            }
+
             return added_or_changed;
         }
 

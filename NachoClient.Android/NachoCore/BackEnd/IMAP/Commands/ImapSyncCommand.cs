@@ -55,7 +55,7 @@ namespace NachoCore.IMAP
         {
             IMailFolder mailKitFolder;
 
-            Log.Info (Log.LOG_IMAP, "{0}: Processing {1}", Synckit.Folder.ImapFolderNameRedacted (), Synckit.ToString ());
+            Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
             Cts.Token.ThrowIfCancellationRequested ();
 
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
@@ -67,17 +67,19 @@ namespace NachoCore.IMAP
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
-            Event result;
+            Event evt;
             NcCapture cap;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
                 cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
-                result = getFolderMetaDataInternal (mailKitFolder, timespan);
+                evt = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
 
             case SyncKit.MethodEnum.Sync:
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
-                result = syncFolder (mailKitFolder);
+                evt = syncFolder (mailKitFolder);
+                var protocolState = BEContext.ProtocolState;
+                ImapStrategy.MaybeAdvanceSyncStage (ref protocolState);
                 break;
 
             default:
@@ -94,7 +96,7 @@ namespace NachoCore.IMAP
             Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
             cap.Stop ();
             cap.Dispose ();
-            return result;
+            return evt;
         }
 
         private Event getFolderMetaDataInternal (IMailFolder mailKitFolder, TimeSpan timespan)
