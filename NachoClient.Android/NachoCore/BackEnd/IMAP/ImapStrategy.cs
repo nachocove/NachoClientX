@@ -127,13 +127,7 @@ namespace NachoCore.IMAP
             bool hasNewMail = HasNewMail (folder);
             Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: NeedFullSync {1} HasNewMail {2}", folder.ImapFolderNameRedacted (), needSync, hasNewMail);
             if (needSync || hasNewMail) {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Resetting sync pointer to highest point", folder.ImapFolderNameRedacted ());
                 resetLastSyncPoint (ref folder);
-                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                    var target = (McFolder)record;
-                    target.ImapNeedFullSync = false;
-                    return true;
-                });
             }
 
             uint span = SpanSizeWithCommStatus ();
@@ -142,14 +136,17 @@ namespace NachoCore.IMAP
 
             UniqueIdSet currentMails = getCurrentEmailUids (folder, 0, (uint)startingPoint, span);
             UniqueIdSet currentUidSet = getCurrentUIDSet (folder, 0, (uint)startingPoint, span);
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: currentMails {{{1}}} currentUidSet {{{2}}}", folder.ImapFolderNameRedacted (), currentMails, currentUidSet);
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: currentMails(<{1}) {{{2}}} currentUidSet(<{1}) {{{3}}}",
+                folder.ImapFolderNameRedacted (),
+                startingPoint,
+                currentMails,
+                currentUidSet);
             if (!currentMails.Any () && !currentUidSet.Any ()) {
                 return new UniqueIdSet ();
             }
 
             UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
             if (HasNewMail (folder)) {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: HasNewMail", folder.ImapFolderNameRedacted ());
                 var highestUid = new UniqueId (folder.ImapUidNext - 1);
                 if (syncSet.Any () && !syncSet.Contains (highestUid)) {
                     // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
@@ -166,9 +163,11 @@ namespace NachoCore.IMAP
         private static void resetLastSyncPoint (ref McFolder folder)
         {
             if (folder.ImapLastUidSynced != folder.ImapUidNext) {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Resetting sync pointer to highest point", folder.ImapFolderNameRedacted ());
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     McFolder target = (McFolder)record;
                     target.ImapLastUidSynced = target.ImapUidNext; // reset to the top
+                    target.ImapNeedFullSync = false;
                     return true;
                 });
             }
@@ -197,8 +196,8 @@ namespace NachoCore.IMAP
             if (folder.ImapNoSelect) {
                 return null;
             }
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last checked: {1}, HighestSynced {2}, UidNext {3}, UserRequested {4})",
-                folder.ImapFolderNameRedacted (), folder.ImapLastExamine,
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last examined: {1}, HighestSynced {2}, UidNext {3}, UserRequested {4})",
+                folder.ImapFolderNameRedacted (), folder.ImapLastExamine.ToString("MM/dd/yyyy hh:mm:ss.fff tt"),
                 folder.ImapUidHighestUidSynced, folder.ImapUidNext,
                 UserRequested);
             
@@ -244,6 +243,13 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: New SyncKit {1}", folder.ImapFolderNameRedacted (), syncKit);
             } else {
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: No synckit for folder", folder.ImapFolderNameRedacted ());
+                // update the sync count, even though there was nothing to do.
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.SyncAttemptCount += 1;
+                    target.LastSyncAttempt = DateTime.UtcNow;
+                    return true;
+                });
             }
             return syncKit;
         }
@@ -497,6 +503,7 @@ namespace NachoCore.IMAP
             }
 
             if (rung != protocolState.ImapSyncRung) {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit: Strategy stage update {0} -> {1}", protocolState.ImapSyncRung, rung);
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.ImapSyncRung = rung;
@@ -553,7 +560,7 @@ namespace NachoCore.IMAP
                 break;
             }
             foreach (var folder in folderList) {
-                Log.Info (Log.LOG_IMAP, "SyncFolderList: {0}", folder.ServerId);
+                Log.Info (Log.LOG_IMAP, "SyncFolderList: {0} LastSyncAttempt {1}", folder.ImapFolderNameRedacted (), folder.LastSyncAttempt.ToString("MM/dd/yyyy hh:mm:ss.fff tt"));
             }
             return folderList;
         }
