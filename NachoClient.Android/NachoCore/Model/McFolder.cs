@@ -469,17 +469,6 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryByImapGuid (int accountId, string guid)
-        {
-            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.ImapGuid = ?, 0.05) ",
-                accountId, guid);
-            return folders.ToList ();
-        }
-
-
         // ONLY TO BE USED BY SERVER-END CODE.
         // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes
         // IsAwaitingCreate folders.

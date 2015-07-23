@@ -34,14 +34,13 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            var folderGuid = ImapProtoControl.ImapMessageFolderGuid (PendingSingle.ServerId);
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
-            NcAssert.Equals (folderGuid, folder.ImapGuid);
-            var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
+            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
             IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
             }
+            var uid = new UniqueId (email.ImapUid);
             mailKitFolder.SetFlags (uid, MessageFlags.Deleted, true, Cts.Token);
             if (Client.Capabilities.HasFlag (ImapCapabilities.UidPlus)) {
                 var list = new List<UniqueId> ();

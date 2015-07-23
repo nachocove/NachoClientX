@@ -223,6 +223,10 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// IMAP Stuff
+        [Indexed]       
+        public uint ImapUid { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///

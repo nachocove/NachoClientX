@@ -274,21 +274,46 @@ namespace NachoCore.IMAP
             return currentMails;
         }
 
+        public class NcEmailMessageUid
+        {
+            public uint Uid { set; get; }
+
+            public NcEmailMessageUid ()
+            {
+            }
+
+            public NcEmailMessageUid (uint Uid)
+            {
+                this.Uid = Uid;
+            }
+
+            public UniqueId UniqueId { get { return new UniqueId (Uid);} }
+        }
+
+
         private UniqueIdSet getCurrentEmailUids (McFolder folder, uint min, uint max, uint span)
         {
-            // FIXME Scalability
-            // FIXME: Turn into query, not loop!
+            // FIXME Jeff: What is the likelihood for ImapUid?
+            var uids = NcModel.Instance.Db.Query<NcEmailMessageUid> (
+                "SELECT e.ImapUid as Uid FROM McEmailMessage as e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (e.ImapUid >= ?, 1.0) AND " +
+                " likelihood (e.ImapUid < ?, 1.0) AND " +
+                " likelihood (m.FolderId != ?, 0.5) " +
+                " ORDER BY e.ImapUid DESC LIMIT ?",
+                folder.AccountId, folder.AccountId, McAbstrFolderEntry.ClassCodeEnum.Email,
+                min, max, folder.Id, span);
+
+            // Turn the result into a UniqueIdSet
             UniqueIdSet currentMails = new UniqueIdSet ();
-            foreach (McEmailMessage emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (folder.AccountId, folder.Id)
-                .OrderByDescending (x => ImapProtoControl.ImapMessageUid(x.ServerId))) {
-                var uid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-                if ((0 == min || uid.Id >= min) &&
-                    (0 == max || uid.Id < max)) {
-                    currentMails.Add (uid);
-                }
-                if (0 != span && currentMails.Count >= span) {
-                    break;
-                }
+            foreach (var u in uids) {
+                currentMails.Add (u.UniqueId);
             }
             return currentMails;
         }

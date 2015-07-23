@@ -70,7 +70,7 @@ namespace NachoCore.IMAP
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            UniqueId uid = ImapProtoControl.ImapMessageUid (email.ServerId);
+            UniqueId uid = new UniqueId (email.ImapUid);
             McAbstrFileDesc.BodyTypeEnum bodyType;
             result = messageBodyPart (uid, mailKitFolder, out bodyType);
             if (!result.isOK ()) {
