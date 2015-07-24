@@ -17,6 +17,8 @@ namespace NachoCore.Brain
 {
     public class NcTokenizer
     {
+        public delegate void HtmlWalker (HtmlNode node);
+
         // All these fields use lazy initialization pattern because we do not necessarily
         // do all the processing (indexing and all analyzers in one shot). So,
         // we only extract whatever as they are requested.
@@ -96,12 +98,77 @@ namespace NachoCore.Brain
         {
             return new NcMimeTokenizer (mimeMessage);
         }
+
+        protected void ExtractContentFromPlainText (string plainText)
+        {
+            try {
+                var words = WordsFromString (plainText);
+                _Content += plainText + ". ";
+                foreach (var word in words) {
+                    if (IsAllUpperCase (word)) {
+                        _Keywords.Add (word);
+                    }
+                }
+            } catch (Exception e) {
+                Log.Error (Log.LOG_BRAIN, "fail to parse text (exception={0})", e.Message);
+            }
+        }
+
+        protected bool IsEmphasisHtmlTag (string nodeName)
+        {
+            return ("b" == nodeName) || ("i" == nodeName) || ("u" == nodeName) || ("li" == nodeName);
+        }
+
+        protected void WalkHtmlNodes (HtmlNode node, HtmlWalker walker)
+        {
+            if (HtmlNodeType.Text == node.NodeType) {
+                walker (node);
+            }
+            foreach (var child in node.ChildNodes) {
+                if (("style" == child.Name) || ("script" == child.Name)) {
+                    continue; // skip all css and javascript
+                }
+                WalkHtmlNodes (child, walker);
+            }
+        }
+
+        protected void ExtractContentFromHtml (string rawHtml)
+        {
+            try {
+                HtmlDocument html = new HtmlDocument ();
+                html.LoadHtml (rawHtml);
+                WalkHtmlNodes (html.DocumentNode, (HtmlNode node) => {
+                    _Content += node.InnerText + ". ";
+                    var words = WordsFromString (node.InnerText);
+
+                    if (IsEmphasisHtmlTag (node.ParentNode.Name)) {
+                        _Keywords.AddRange (words);
+                    }
+                });
+            } catch (Exception e) {
+                Log.Error (Log.LOG_BRAIN, "fail to parse HTML (execption={0})", e.Message);
+            }
+        }
+    }
+
+    public class NcPlainTextTokenizer : NcTokenizer
+    {
+        public NcPlainTextTokenizer (string text)
+        {
+            ExtractContentFromPlainText (text);
+        }
+    }
+
+    public class NcHtmlTokenizer : NcTokenizer
+    {
+        public NcHtmlTokenizer (string html)
+        {
+            ExtractContentFromHtml (html);
+        }
     }
 
     public class NcMimeTokenizer : NcTokenizer
     {
-        public delegate void HtmlWalker (HtmlNode node);
-
         public List<TextPart> Parts { get; protected set; }
 
         protected List<TextPart> ProcessMimeEntity (MimeEntity part)
@@ -185,61 +252,10 @@ namespace NachoCore.Brain
             _Keywords = new List<string> ();
             foreach (TextPart part in Parts) {
                 if (part.ContentType.Matches ("text", "plain")) {
-                    ExtractContentFromPlainText (part);
+                    ExtractContentFromPlainText (part.Text);
                 } else if (part.ContentType.Matches ("text", "html")) {
-                    ExtractContentFromHtml (part);
+                    ExtractContentFromHtml (part.Text);
                 }
-            }
-        }
-
-        protected void ExtractContentFromPlainText (TextPart part)
-        {
-            try {
-                var words = WordsFromString (part.Text);
-                _Content += part.Text + ". ";
-                foreach (var word in words) {
-                    if (IsAllUpperCase (word)) {
-                        _Keywords.Add (word);
-                    }
-                }
-            } catch (Exception e) {
-                Log.Error (Log.LOG_BRAIN, "fail to parse text MIME (exception={0})", e.Message);
-            }
-        }
-
-        protected bool IsEmphasisHtmlTag (string nodeName)
-        {
-            return ("b" == nodeName) || ("i" == nodeName) || ("u" == nodeName) || ("li" == nodeName);
-        }
-
-        protected void ExtractContentFromHtml (TextPart part)
-        {
-            try {
-                HtmlDocument html = new HtmlDocument ();
-                html.LoadHtml (part.Text);
-                WalkHtmlNodes (html.DocumentNode, (HtmlNode node) => {
-                    _Content += node.InnerText + ". ";
-                    var words = WordsFromString (node.InnerText);
-
-                    if (IsEmphasisHtmlTag (node.ParentNode.Name)) {
-                        _Keywords.AddRange (words);
-                    }
-                });
-            } catch (Exception e) {
-                Log.Error (Log.LOG_BRAIN, "fail to parse HTML MIME (execption={0})", e.Message);
-            }
-        }
-
-        protected void WalkHtmlNodes (HtmlNode node, HtmlWalker walker)
-        {
-            if (HtmlNodeType.Text == node.NodeType) {
-                walker (node);
-            }
-            foreach (var child in node.ChildNodes) {
-                if (("style" == child.Name) || ("script" == child.Name)) {
-                    continue; // skip all css and javascript
-                }
-                WalkHtmlNodes (child, walker);
             }
         }
     }

@@ -31,6 +31,16 @@ namespace NachoCore.Brain
                 return null;
             }
         }
+
+        public static string ParseFileMessage (string path)
+        {
+            try {
+                return File.ReadAllText (path);
+            } catch (Exception e) {
+                Log.Error (Log.LOG_BRAIN, "fail to parse file message (exception={0})", e);
+                return null;
+            }
+        }
     }
 }
 
