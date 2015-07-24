@@ -171,7 +171,7 @@ namespace Test.Common
                 Content = tokenizer.Content,
                 ReceivedDate = message.Date.DateTime,
             };
-            var indexDoc = new EmailMessageIndexDocument (id, parameters, message);
+            var indexDoc = new EmailMessageIndexDocument (id, parameters);
             if (useBatch) {
                 bytesIndexed = Index.BatchAdd (indexDoc);
             } else {

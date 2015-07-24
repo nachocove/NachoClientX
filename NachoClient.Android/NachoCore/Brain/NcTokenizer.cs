@@ -155,6 +155,7 @@ namespace NachoCore.Brain
     {
         public NcPlainTextTokenizer (string text)
         {
+            _Keywords = new List<string> ();
             ExtractContentFromPlainText (text);
         }
     }
@@ -163,6 +164,7 @@ namespace NachoCore.Brain
     {
         public NcHtmlTokenizer (string html)
         {
+            _Keywords = new List<string> ();
             ExtractContentFromHtml (html);
         }
     }
