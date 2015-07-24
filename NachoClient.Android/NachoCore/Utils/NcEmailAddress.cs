@@ -301,7 +301,6 @@ namespace NachoCore.Utils
         {
             var parser = new CSharpNameParser.NameParser ();
             CSharpNameParser.Name parsedName = parser.Parse (address.Name);
-
             if (!String.IsNullOrEmpty (parsedName.FirstName)) {
                 contact.FirstName = parsedName.FirstName;
                 if (!String.IsNullOrEmpty (parsedName.MiddleInitials)) {
