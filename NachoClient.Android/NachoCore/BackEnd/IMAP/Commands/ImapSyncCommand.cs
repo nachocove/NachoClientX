@@ -429,7 +429,11 @@ namespace NachoCore.IMAP
                 McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                    emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    try {
+                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    } catch (System.ArgumentOutOfRangeException ex) {
+                        Log.Error (Log.LOG_IMAP, "EmailHelper.Initials exception: {0}", ex);
+                    }
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }
