@@ -137,7 +137,7 @@ namespace NachoCore.Model
 
         public string ImapFolderNameRedacted ()
         {
-            return string.Format ("{0}/{1}", ImapGuid, IsDistinguished ? ServerId : "User Folder");
+            return string.Format ("{0}<{1}>", ImapGuid, IsDistinguished ? ServerId : "User Folder");
         }
 
         // "factory" to create folders.
