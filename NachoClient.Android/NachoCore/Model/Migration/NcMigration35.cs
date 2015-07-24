@@ -8,12 +8,24 @@ namespace NachoClient.AndroidClient
 {
     public class NcMigration35 : NcMigration
     {
+        public override int GetNumberOfObjects ()
+        {
+            int count = 0;
+            foreach (var account in NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.IMAP_SMTP)) {
+                count += NcModel.Instance.Db.Table<McEmailMessage> ().Where (e => e.AccountId == account.Id && e.ImapUid == 0).Count ();
+            }
+            return count;
+        }
+
         public override void Run (System.Threading.CancellationToken token)
         {
-            var emails = NcModel.Instance.Db.Table<McEmailMessage> ();
-            foreach (McEmailMessage email in emails) {
-                Db.Execute ("UPDATE McEmailMessage SET ImapUid = ? WHERE Id = ?",
-                    ImapMessageUid(email.ServerId), email.Id);
+            foreach (var account in NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.IMAP_SMTP)) {
+                var emails = NcModel.Instance.Db.Table<McEmailMessage> ().Where (e => e.AccountId == account.Id && e.ImapUid == 0);
+                foreach (McEmailMessage email in emails) {
+                    token.ThrowIfCancellationRequested ();
+                    Db.Execute ("UPDATE McEmailMessage SET ImapUid = ? WHERE Id = ?",
+                        ImapMessageUid (email.ServerId), email.Id);
+                }
             }
         }
 
