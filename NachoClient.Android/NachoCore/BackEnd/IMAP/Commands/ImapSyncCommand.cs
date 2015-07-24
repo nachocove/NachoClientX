@@ -431,7 +431,7 @@ namespace NachoCore.IMAP
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
                     try {
                         emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
-                    } catch (System.ArgumentOutOfRangeException ex) {
+                    } catch (Exception ex) {
                         Log.Error (Log.LOG_IMAP, "EmailHelper.Initials exception: {0}", ex);
                     }
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
