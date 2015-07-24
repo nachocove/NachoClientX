@@ -194,7 +194,7 @@ namespace NachoCore.Brain
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.Forever:
-                from = DateTime.MaxValue;
+                from = DateTime.MaxValue.ToLocalTime ().ToUniversalTime ();
                 break;
             case MessageDeferralType.Custom:
                 from = customDate;
