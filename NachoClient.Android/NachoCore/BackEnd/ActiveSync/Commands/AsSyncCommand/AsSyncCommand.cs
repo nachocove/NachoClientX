@@ -958,7 +958,9 @@ namespace NachoCore.ActiveSync
                     if (null == pathElem) {
                         Log.Error (Log.LOG_AS, "ProcessImplicitResponses: McPath entry missing for Delete of {0}", pending.ServerId);
                     } else {
-                        pathElem.Delete ();
+                        NcModel.Instance.RunInTransaction (() => {
+                            pathElem.Delete ();
+                        });
                     }
                 }
                 // user-directed sync responses get processed here too.

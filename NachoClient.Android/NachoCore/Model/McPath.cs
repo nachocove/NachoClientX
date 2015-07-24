@@ -111,7 +111,7 @@ namespace NachoCore.Model
                     }
                     DeleteNonFolderByParentId (AccountId, ServerId);
                     retval = base.Delete ();
-                }, false);
+                }, true);
                 return retval;
             }
         }
