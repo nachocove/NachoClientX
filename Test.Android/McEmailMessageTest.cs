@@ -993,9 +993,9 @@ namespace Test.Common
         public void TestQueryByImapUidRange ()
         {
             var messages = new List<McEmailMessage> ();
-            for (uint i = 10; i > 0; i--) { // 0 is not a valid UID.
+            for (uint i = 1; i <= 10; i++) { // 0 is not a valid UID.
                 var message = new McEmailMessage () {
-                    AccountId = 1,
+                    AccountId = Folder.AccountId,
                     ServerId = i.ToString (),
                     Subject = string.Format ("Subject {0}", i),
                     ImapUid = i, 
@@ -1006,11 +1006,35 @@ namespace Test.Common
                 Folder.Link (message);
                 messages.Add (message);
             }
+            var SortedList = messages.OrderByDescending(x=>x.ImapUid).ToList();
 
-            var results1 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 10, 30);
-            Assert.AreEqual (10, results1.Count);
-            Assert.AreEqual (messages [2].ImapUid, results1 [0].Id);
-            Assert.AreEqual (messages [3].ImapUid, results1 [1].Id);
+            var num = McFolder.CountOfAllItems (Folder.AccountId, Folder.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+
+            var results1 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 11, 30);
+            Assert.AreEqual (SortedList.Count, results1.Count);
+            for (int i = 0; i < SortedList.Count; i++) {
+                Assert.AreEqual (SortedList [i].ImapUid, results1[i].Id);
+            }
+
+            for (uint i = 11; i <= 50; i++) {
+                var message = new McEmailMessage () {
+                    AccountId = Folder.AccountId,
+                    ServerId = i.ToString (),
+                    Subject = string.Format ("Subject {0}", i),
+                    ImapUid = i, 
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.True (0 < message.Id);
+                Folder.Link (message);
+                messages.Add (message);
+            }
+            SortedList = messages.OrderByDescending(x=>x.ImapUid).Take (30).ToList();
+            var results2 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 51, 30);
+            Assert.AreEqual (SortedList.Count, results2.Count);
+            for (int i = 0; i < SortedList.Count; i++) {
+                Assert.AreEqual (SortedList [i].ImapUid, results2[i].Id);
+            }
         }
     }
 }

@@ -685,7 +685,7 @@ namespace NachoCore.Model
                 " likelihood (m.AccountId = ?, 1.0) AND " +
                 " likelihood (m.ClassCode = ?, 0.2) AND " +
                 " likelihood (e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
-                " likelihood (m.FolderId != ?, 0.5) " +
+                " likelihood (m.FolderId = ?, 0.5) " +
                 " ORDER BY e.ImapUid DESC LIMIT ?",
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
                 min, max, folderId, limit);
