@@ -48,7 +48,6 @@ namespace NachoClient.iOS
         public void Update (McAccount account)
         {
             NcTask.Run (() => {
-                System.Threading.Thread.Sleep (4000);
                 int unreadMessageCount;
                 int deferredMessageCount;
                 int deadlineMessageCount;
