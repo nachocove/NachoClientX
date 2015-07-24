@@ -29,7 +29,7 @@ namespace Test.iOS
         uint defaultSpan = 30;
 
         McFolder TestFolder { get; set; }
-        McProtocolState protocolState { get; set; }
+        McProtocolState ProtocolState { get; set; }
 
         [SetUp]
         public void Setup ()
@@ -38,7 +38,12 @@ namespace Test.iOS
             Account.Insert ();
             TestFolder = McFolder.Create (Account.Id, false, false, true, "0", "someServerId", "MyFolder", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             TestFolder.Insert ();
-            protocolState = new McProtocolState ();
+            var p = new McProtocolState (){
+                AccountId = Account.Id,
+                ImapServerCapabilities = McProtocolState.NcImapCapabilities.None,
+            };
+            p.Insert ();
+            ProtocolState = p;
             NcCommStatus.Instance.Speed = NetStatusSpeedEnum.WiFi_0;
         }
 
@@ -94,11 +99,13 @@ namespace Test.iOS
             beContext.Account = Account;
             var Strategy = new ImapStrategy (beContext);
 
+            var protocolState = ProtocolState;
+
             // NoSelect (i.e. not a folder that can have messages).
             // Should return null, since there's no syncing we can even do.
             TestFolder.ImapNoSelect = true;
             TestFolder.ImapLastExamine = DateTime.UtcNow;
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.Null (syncKit);
             TestFolder.ImapNoSelect = false;
 
@@ -107,7 +114,7 @@ namespace Test.iOS
             // 
             // fresh install or new folder. UidNext is not set (i.e. 0) so we have to go open the folder.
             DoFakeFolderOpen (TestFolder, 0);
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly);
             Assert.Null (syncKit.SyncSet);
@@ -115,12 +122,12 @@ namespace Test.iOS
             var pending = new McPending ();
             pending.Operation = McPending.Operations.Sync;
             pending.ServerId = TestFolder.ServerId;
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, pending);
+            syncKit = Strategy.GenSyncKit (ref protocolState, pending);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly);
 
-            DoFakeFolderOpen (TestFolder, 1, DateTime.UtcNow.AddMinutes (-(6*60)));
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            TestFolder = DoFakeFolderOpen (TestFolder, 1, DateTime.UtcNow.AddMinutes (-(6*60)));
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly);
             Assert.Null (syncKit.SyncSet);
@@ -129,61 +136,58 @@ namespace Test.iOS
             // The rest should not ever get an OpenOnly
 
             // an empty folder (UidNext is 1, i.e. there's no messages at all)
-            DoFakeFolderOpen (TestFolder, 1);
-            TestFolder.ImapUidSet = string.Empty;
-            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
-            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            TestFolder = resetFolder (TestFolder);
+            TestFolder = DoFakeFolderOpen (TestFolder, 1);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.Null (syncKit); // no synckit. Nothing to do.
 
             // The next few tests simulate a folder with a bunch of messages in it.
             // This is the first sync, after we've discovered 123 as the UidNext value.
-            DoFakeFolderOpen (TestFolder, 123);
-            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
-            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            TestFolder = resetFolder (TestFolder);
+            TestFolder = DoFakeFolderOpen (TestFolder, 123);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (10, syncKit.SyncSet.Count);
+            Assert.AreEqual (defaultSpan, syncKit.SyncSet.Count);
             Assert.AreEqual (122, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (113, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (122-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             // This would be the second pass, where we sync the next batch.
             // In the previous 'sync' we synced UID's 113 - 122 (10 items).
             // This time, we should see 75 items, numbered 38 through 112
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (defaultSpan, syncKit.SyncSet.Count);
-            Assert.AreEqual (112, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (112-defaultSpan+1, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (92, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (92-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (30, syncKit.SyncSet.Count);
-            Assert.AreEqual (82, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (82-defaultSpan+1, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (defaultSpan, syncKit.SyncSet.Count);
+            Assert.AreEqual (62, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (62-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (30, syncKit.SyncSet.Count);
-            Assert.AreEqual (52, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (52-defaultSpan+1, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (defaultSpan, syncKit.SyncSet.Count);
+            Assert.AreEqual (32, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (32-defaultSpan+1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             // less than 30 items are left, so the span should be "the rest" (i.e. 2), numbered 1 through 22.
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (22, syncKit.SyncSet.Count);
-            Assert.AreEqual (22, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (2, syncKit.SyncSet.Count);
+            Assert.AreEqual (2, syncKit.SyncSet.Max ().Id);
             Assert.AreEqual (1, syncKit.SyncSet.Min ().Id);
             DoFakeSync (TestFolder, syncKit);
 
             // Simulate new message coming in. I.e. bump ImapUidNext by 1.
             // This will cause us to start at the top again and sync down for 30 items
             DoFakeFolderOpen (TestFolder, TestFolder.ImapUidNext + 1);
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.Sync);
             Assert.AreEqual (30, syncKit.SyncSet.Count);
@@ -194,7 +198,7 @@ namespace Test.iOS
             // Simulate 12 new message coming in. I.e. bump ImapUidNext by 12
             // this sync will get a batch of 10, starting at the latest/newest message, i.e. 135 to 126.
             DoFakeFolderOpen (TestFolder, TestFolder.ImapUidNext + 12);
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (30, syncKit.SyncSet.Count);
             Assert.AreEqual (135, syncKit.SyncSet.Max ().Id);
@@ -202,7 +206,7 @@ namespace Test.iOS
             DoFakeSync (TestFolder, syncKit);
 
             // and this sync continues downwards for 30 items.
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
             Assert.AreEqual (30, syncKit.SyncSet.Count);
             Assert.AreEqual (105, syncKit.SyncSet.Max ().Id);
@@ -212,68 +216,29 @@ namespace Test.iOS
             DeleteAllTestMail ();
 
             // Let's try some cornercases.
-            DoFakeFolderOpen (TestFolder, 9); // two less than the minimal span
-                                              // (UIDNEXT 9 means there's at most 1 through 8 in the mailbox)
-            TestFolder = TestFolder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapUidLowestUidSynced = UInt32.MaxValue;
-                target.ImapUidHighestUidSynced = UInt32.MinValue;
-                return true;
-            });
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            TestFolder = resetFolder (TestFolder);
+            TestFolder = DoFakeFolderOpen(TestFolder, defaultSpan);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (8, syncKit.SyncSet.Count);
-            Assert.AreEqual (8, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (29, syncKit.SyncSet.Count);
+            Assert.AreEqual (29, syncKit.SyncSet.Max ().Id);
             Assert.AreEqual (1, syncKit.SyncSet.Min ().Id);
 
-            DoFakeFolderOpen (TestFolder, 10); // one less than the span (1 - 9)
-            TestFolder = TestFolder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapUidLowestUidSynced = UInt32.MaxValue;
-                target.ImapUidHighestUidSynced = UInt32.MinValue;
-                return true;
-            });
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            TestFolder = resetFolder (TestFolder);
+            TestFolder = DoFakeFolderOpen(TestFolder, defaultSpan+1);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (9, syncKit.SyncSet.Count);
-            Assert.AreEqual (9, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (30, syncKit.SyncSet.Count);
+            Assert.AreEqual (30, syncKit.SyncSet.Max ().Id);
             Assert.AreEqual (1, syncKit.SyncSet.Min ().Id);
 
-            DoFakeFolderOpen(TestFolder, 11);
-            TestFolder.ImapUidLowestUidSynced = UInt32.MaxValue;
-            TestFolder.ImapUidHighestUidSynced = UInt32.MinValue;
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
+            TestFolder = resetFolder (TestFolder);
+            TestFolder = DoFakeFolderOpen(TestFolder, defaultSpan+2);
+            syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (10, syncKit.SyncSet.Count);
-            Assert.AreEqual (10, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (1, syncKit.SyncSet.Min ().Id);
-
-            DoFakeFolderOpen(TestFolder, 12);
-            TestFolder = TestFolder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapUidLowestUidSynced = UInt32.MaxValue;
-                target.ImapUidHighestUidSynced = UInt32.MinValue;
-                return true;
-            });
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
-            Assert.NotNull (syncKit);
-            Assert.AreEqual (10, syncKit.SyncSet.Count);
-            Assert.AreEqual (11, syncKit.SyncSet.Max ().Id);
+            Assert.AreEqual (30, syncKit.SyncSet.Count);
+            Assert.AreEqual (31, syncKit.SyncSet.Max ().Id);
             Assert.AreEqual (2, syncKit.SyncSet.Min ().Id);
-
-            DoFakeFolderOpen(TestFolder, 13);
-            TestFolder = TestFolder.UpdateWithOCApply<McFolder> ((record) => {
-                var target = (McFolder)record;
-                target.ImapUidLowestUidSynced = UInt32.MaxValue;
-                target.ImapUidHighestUidSynced = UInt32.MinValue;
-                return true;
-            });
-            syncKit = Strategy.GenSyncKit (Account.Id, protocolState, TestFolder);
-            Assert.NotNull (syncKit);
-            Assert.AreEqual (10, syncKit.SyncSet.Count);
-            Assert.AreEqual (12, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (3, syncKit.SyncSet.Min ().Id);
-
         }
 
         private void DeleteAllTestMail()
@@ -283,12 +248,12 @@ namespace Test.iOS
             }
         }
 
-        private void DoFakeFolderOpen(McFolder testFolder, uint ImapUidNext)
+        private McFolder DoFakeFolderOpen(McFolder testFolder, uint ImapUidNext)
         {
-            DoFakeFolderOpen (testFolder, ImapUidNext, DateTime.UtcNow);
+            return DoFakeFolderOpen (testFolder, ImapUidNext, DateTime.UtcNow);
         }
 
-        private void DoFakeFolderOpen(McFolder testFolder, uint ImapUidNext, DateTime LastExamine)
+        private McFolder DoFakeFolderOpen(McFolder testFolder, uint ImapUidNext, DateTime LastExamine)
         {
             string ImapUidSet;
             switch (ImapUidNext) {
@@ -304,7 +269,7 @@ namespace Test.iOS
                 ImapUidSet = new UniqueIdSet (new UniqueIdRange (new UniqueId (1), new UniqueId (ImapUidNext - 1))).ToString ();
                 break;
             }
-            testFolder = testFolder.UpdateWithOCApply<McFolder> ((record) => {
+            return testFolder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.ImapUidNext = ImapUidNext;
                 target.ImapUidSet = ImapUidSet;
@@ -346,6 +311,19 @@ namespace Test.iOS
                 target.ImapLastExamine = DateTime.UtcNow;
                 return true;
             });
+        }
+
+        private McFolder resetFolder(McFolder folder)
+        {
+            return folder.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ImapUidLowestUidSynced = UInt32.MaxValue;
+                target.ImapUidHighestUidSynced = UInt32.MinValue;
+                target.ImapLastUidSynced = UInt32.MinValue;
+                target.ImapUidSet = string.Empty;
+                return true;
+            });
+
         }
     }
 }
