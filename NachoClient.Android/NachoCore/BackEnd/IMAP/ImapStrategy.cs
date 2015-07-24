@@ -271,46 +271,12 @@ namespace NachoCore.IMAP
             return syncKit;
         }
 
-        public class NcEmailMessageUid
-        {
-            public uint Uid { set; get; }
-
-            public NcEmailMessageUid ()
-            {
-            }
-
-            public NcEmailMessageUid (uint Uid)
-            {
-                this.Uid = Uid;
-            }
-
-            public UniqueId UniqueId { get { return new UniqueId (Uid);} }
-        }
-
-
         private static UniqueIdSet getCurrentEmailUids (McFolder folder, uint min, uint max, uint span)
         {
-            // FIXME Jeff: What is the likelihood for ImapUid?
-            var uids = NcModel.Instance.Db.Query<NcEmailMessageUid> (
-                "SELECT e.ImapUid as Uid FROM McEmailMessage as e " +
-                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                " JOIN McFolder AS f ON m.FolderId = f.Id " +
-                " WHERE " +
-                " likelihood (e.AccountId = ?, 1.0) AND " +
-                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (m.AccountId = ?, 1.0) AND " +
-                " likelihood (m.ClassCode = ?, 0.2) AND " +
-                " likelihood (e.ImapUid >= ?, 1.0) AND " +
-                " likelihood (e.ImapUid < ?, 1.0) AND " +
-                " likelihood (m.FolderId != ?, 0.5) " +
-                " ORDER BY e.ImapUid DESC LIMIT ?",
-                folder.AccountId, folder.AccountId, McAbstrFolderEntry.ClassCodeEnum.Email,
-                min, max, folder.Id, span);
-
             // Turn the result into a UniqueIdSet
             UniqueIdSet currentMails = new UniqueIdSet ();
-            foreach (var u in uids) {
-                currentMails.Add (u.UniqueId);
+            foreach (var uid in McEmailMessage.QueryByImapUidRange(folder.AccountId, folder.Id, min, max, span)) {
+                currentMails.Add (new UniqueId ((uint)uid.Id));
             }
             return currentMails;
         }

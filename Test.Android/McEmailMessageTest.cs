@@ -988,6 +988,30 @@ namespace Test.Common
             Assert.AreEqual (messages [3].Id, results4 [0].Id);
             Assert.AreEqual (messages [4].Id, results4 [1].Id);
         }
+
+        [Test]
+        public void TestQueryByImapUidRange ()
+        {
+            var messages = new List<McEmailMessage> ();
+            for (uint i = 10; i > 0; i--) { // 0 is not a valid UID.
+                var message = new McEmailMessage () {
+                    AccountId = 1,
+                    ServerId = i.ToString (),
+                    Subject = string.Format ("Subject {0}", i),
+                    ImapUid = i, 
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.True (0 < message.Id);
+                Folder.Link (message);
+                messages.Add (message);
+            }
+
+            var results1 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 10, 30);
+            Assert.AreEqual (10, results1.Count);
+            Assert.AreEqual (messages [2].ImapUid, results1 [0].Id);
+            Assert.AreEqual (messages [3].ImapUid, results1 [1].Id);
+        }
     }
 }
 
