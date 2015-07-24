@@ -8,14 +8,21 @@ using NachoCore.Model;
 namespace NachoClient.iOS
 {
 
+    public enum NachoCredentialsRequestEnum
+    {
+        InitialAsk,
+        CredReqCallback,
+        ServerConfCallback,
+    };
+
     public interface INachoCredentials
     {
-        void Setup (INachoCredentialsDelegate owner, McAccount.AccountServiceEnum service, bool credReqCallback, string email, string password);
+        void Setup (INachoCredentialsDelegate owner, McAccount.AccountServiceEnum service, NachoCredentialsRequestEnum why, string email, string password);
     }
 
     public interface INachoCredentialsDelegate
     {
-        void CredentialsDismissed(UIViewController vc, bool startInAdvanced, string email, string password, bool credReqCallback, bool startOver);
+        void CredentialsDismissed (UIViewController vc, bool startInAdvanced, string email, string password, NachoCredentialsRequestEnum why, bool startOver);
     }
 }
 

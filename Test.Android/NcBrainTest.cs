@@ -52,6 +52,8 @@ namespace Test.Common
 
         McEmailMessage Message;
 
+        McAccount Account;
+
         WrappedNcBrain Brain;
 
         [SetUp]
@@ -63,14 +65,24 @@ namespace Test.Common
             NcBrain.StartupDelayMsec = 0;
             NcBrain.StartService ();
             Telemetry.ENABLED = false;
+
+            var bobCanonicalAddress = "bob@company.com";
+            var bobEmailAddress = "Bob <bob@company.com>";
+
+            Account = new McAccount () {
+                EmailAddr = bobCanonicalAddress,
+            };
+            Account.Insert ();
+
             Address = new McEmailAddress ();
-            Address.AccountId = 1;
-            Address.CanonicalEmailAddress = "bob@company.com";
+            Address.AccountId = Account.Id;
+            Address.CanonicalEmailAddress = bobCanonicalAddress;
             Address.Insert ();
 
             Message = new McEmailMessage ();
-            Message.AccountId = 1;
-            Message.From = "bob@company.com";
+            Message.AccountId = Account.Id;
+            Message.From = bobCanonicalAddress;
+            Message.To = bobEmailAddress;
             Message.DateReceived = DateTime.Now;
             Message.Insert ();
 
@@ -410,6 +422,21 @@ namespace Test.Common
             Assert.AreEqual (ContactIndexDocument.Version, contact3.IndexVersion);
             matches = index.SearchAllContactFields ("charles");
             CheckOneContact (contact3.Id, matches);
+        }
+
+        [Test]
+        public void TestQuickScore ()
+        {
+            var stateMachineEvent = new NcBrainStateMachineEvent (Message.AccountId);
+            Assert.AreEqual (0, Message.ScoreVersion);
+            Assert.AreEqual (0, Message.Score);
+
+            NcBrain.SharedInstance.Enqueue (stateMachineEvent);
+            WaitForBrain ();
+
+            var updatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
+            Assert.AreEqual (0, updatedMessage.ScoreVersion);
+            Assert.AreEqual (McEmailMessage.minHotScore, updatedMessage.Score);
         }
     }
 }
