@@ -12,7 +12,12 @@ namespace NachoClient.iOS
     {
         public DeferredViewController (IntPtr handle) : base (handle)
         {
-            SetEmailMessages (new NachoDeferredEmailMessages (NcApplication.Instance.Account.Id));
+            SetEmailMessages (GetNachoEmailMessages (NcApplication.Instance.Account.Id));
+        }
+
+        protected override INachoEmailMessages GetNachoEmailMessages (int accountId)
+        {
+            return new NachoDeferredEmailMessages (accountId);
         }
 
         protected override void SetRowHeight ()
@@ -21,7 +26,7 @@ namespace NachoClient.iOS
             searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.DATED_ROW_HEIGHT;
         }
 
-        public override bool HasAccountSwitcher()
+        public override bool HasAccountSwitcher ()
         {
             return true;
         }
