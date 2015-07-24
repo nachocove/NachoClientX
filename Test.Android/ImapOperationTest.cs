@@ -291,7 +291,6 @@ namespace Test.iOS
                         From = "test@example.com",
                         ServerId = ServerId,
                         IsIncomplete = true,
-                        ImapUid = uid.Id,
                     };
                     emailMessage.Insert ();
                     var map = new McMapFolderFolderEntry (Account.Id) {

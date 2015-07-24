@@ -1,28 +1,2 @@
 ﻿<Properties StartupItem="NachoClient.iOS/NachoClient.iOS.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.IPhone.IPhoneSimulatorTarget.IPhone5s.8.4" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="NachoClient.Android/NachoCore/BackEnd/IMAP/ImapStrategy.cs">
-    <Files>
-      <File FileName="NachoClient.Android/NachoCore/BackEnd/IMAP/Commands/ImapCommand.cs" Line="134" Column="102" />
-      <File FileName="NachoClient.Android/NachoCore/BackEnd/IMAP/Commands/ImapSyncCommand.cs" Line="426" Column="28" />
-      <File FileName="NachoClient.Android/NachoCore/NcApplication.cs" Line="277" Column="44" />
-      <File FileName="NachoClient.Android/NachoCore/BackEnd/IMAP/ImapStrategy.cs" Line="269" Column="20" />
-      <File FileName="Test.Android/McEmailMessageTest.cs" Line="1016" Column="1" />
-      <File FileName="Test.Android/LogTest.cs" Line="38" Column="20" />
-      <File FileName="NachoClient.Android/NachoCore/Model/McFolder.cs" Line="742" Column="1" />
-      <File FileName="NachoClient.Android/NachoCore/Model/McEmailMessage/McEmailMessage.cs" Line="688" Column="49" NotebookId="1" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
-  <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/BackEnd/IMAP/Commands/ImapEmailMarkReadCommand.cs" line="31" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/BackEnd/IMAP/Commands/ImapEmailMoveCommand.cs" line="39" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/Utils/EmailHelper.cs" line="93" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/BackEnd/SMTP/Commands/SmtpSendMailCommand.cs" line="24" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/BackEnd/IMAP/Commands/ImapCommand.cs" line="105" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/Utils/NcEmailAddress.cs" line="307" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/Test.Android/McEmailMessageTest.cs" line="1016" column="1" />
-      <Breakpoint file="/Users/jan_vilhuber/src/nacho/NachoClientX/NachoClient.Android/NachoCore/BackEnd/IMAP/ImapStrategy.cs" line="279" column="1" />
-    </BreakpointStore>
-  </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>
