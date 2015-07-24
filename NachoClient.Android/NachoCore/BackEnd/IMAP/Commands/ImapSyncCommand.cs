@@ -293,7 +293,7 @@ namespace NachoCore.IMAP
                     justCreated = true;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
-                    if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
+                    if (null == emailMessage || string.IsNullOrEmpty (emailMessage.ServerId)) {
                         emailMessage = new McEmailMessage () {
                             ServerId = McEmailMessageServerId,
                         };
@@ -343,7 +343,7 @@ namespace NachoCore.IMAP
             foreach (var uid in uids) {
                 var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
                 if (null != email) {
-                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ServerId);
+                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ImapUid);
                     email.Delete ();
                     messagesDeleted.Add (uid);
                 }
@@ -406,6 +406,7 @@ namespace NachoCore.IMAP
 
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
+                ImapUid = summary.UniqueId.Value.Id,
                 AccountId = accountId,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,

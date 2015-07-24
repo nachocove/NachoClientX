@@ -223,6 +223,10 @@ namespace NachoCore.Model
         /// Date and time when the action specified by the LastVerbExecuted element was performed on the msg (optional)
         public DateTime LastVerbExecutionTime { set; get; }
 
+        /// IMAP Stuff
+        [Indexed]       
+        public uint ImapUid { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///
@@ -665,6 +669,26 @@ namespace NachoCore.Model
                 emailMessageList = emailMessageList.Where (x => x.AccountId == accountId);
             }
             return emailMessageList.ToList ();
+        }
+
+        public static List<NcEmailMessageIndex> QueryByImapUidRange (int accountId, int folderId, uint min, uint max, uint limit)
+        {
+            // We'll just reuse NcEmailMessageIndex instead of making a new fake class to fetch the Uid's. It would
+            // look identical except for the Id argument, so what the heck.
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.ImapUid as Id FROM McEmailMessage as e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                " WHERE " +
+                " likelihood (e.AccountId = ?, 1.0) AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
+                " likelihood (m.FolderId = ?, 0.5) " +
+                " ORDER BY e.ImapUid DESC LIMIT ?",
+                accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                min, max, folderId, limit);
         }
 
         public override ClassCodeEnum GetClassCode ()

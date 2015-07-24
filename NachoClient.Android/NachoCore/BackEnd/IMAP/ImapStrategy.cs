@@ -273,19 +273,10 @@ namespace NachoCore.IMAP
 
         private static UniqueIdSet getCurrentEmailUids (McFolder folder, uint min, uint max, uint span)
         {
-            // FIXME Scalability
-            // FIXME: Turn into query, not loop!
+            // Turn the result into a UniqueIdSet
             UniqueIdSet currentMails = new UniqueIdSet ();
-            foreach (McEmailMessage emailMessage in McEmailMessage.QueryByFolderId<McEmailMessage> (folder.AccountId, folder.Id)
-                .OrderByDescending (x => ImapProtoControl.ImapMessageUid(x.ServerId))) {
-                var uid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-                if ((0 == min || uid.Id >= min) &&
-                    (0 == max || uid.Id < max)) {
-                    currentMails.Add (uid);
-                }
-                if (0 != span && currentMails.Count >= span) {
-                    break;
-                }
+            foreach (var uid in McEmailMessage.QueryByImapUidRange(folder.AccountId, folder.Id, min, max, span)) {
+                currentMails.Add (new UniqueId ((uint)uid.Id));
             }
             return currentMails;
         }
