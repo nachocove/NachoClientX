@@ -300,13 +300,8 @@ namespace NachoCore.Utils
         public static void ParseName (MailboxAddress address, ref McContact contact)
         {
             CSharpNameParser.Name parsedName;
-            try {
-                var parser = new CSharpNameParser.NameParser ();
-                parsedName = parser.Parse (address.Name);
-            } catch (Exception ex) {
-                Log.Error (Log.LOG_SYS, "CSharpNameParser.NameParser Exception: {0}", ex);
-                return;
-            }
+            var parser = new CSharpNameParser.NameParser ();
+            parsedName = parser.Parse (address.Name);
 
             if (!String.IsNullOrEmpty (parsedName.FirstName)) {
                 contact.FirstName = parsedName.FirstName;
