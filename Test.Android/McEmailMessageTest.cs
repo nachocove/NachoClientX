@@ -1008,8 +1008,6 @@ namespace Test.Common
             }
             var SortedList = messages.OrderByDescending(x=>x.ImapUid).ToList();
 
-            var num = McFolder.CountOfAllItems (Folder.AccountId, Folder.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
-
             var results1 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 11, 30);
             Assert.AreEqual (SortedList.Count, results1.Count);
             for (int i = 0; i < SortedList.Count; i++) {
