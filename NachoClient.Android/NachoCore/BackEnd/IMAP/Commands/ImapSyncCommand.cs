@@ -23,11 +23,11 @@ namespace NachoCore.IMAP
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
-        private const string KImapSyncOpenTiming = "IMAP Sync/Open";
-        private const string KImapSyncTiming = "IMAP Sync/Fetch";
-        private const string KImapFetchTiming = "IMAP Summary Fetch";
-        private const string KImapPreviewGeneration = "IMAP Preview Generation";
-        private const string KImapFetchPartialBody = "Imap Fetch Partial Body";
+        private const string KImapSyncOpenTiming = "ImapSyncCommand.OpenOnly";
+        private const string KImapSyncTiming = "ImapSyncCommand.Sync";
+        private const string KImapFetchTiming = "ImapSyncCommand.Summary";
+        private const string KImapPreviewGeneration = "ImapSyncCommand.Preview";
+        private const string KImapFetchPartialBody = "ImapSyncCommand.PartialBody";
 
         public class MailSummary
         {
