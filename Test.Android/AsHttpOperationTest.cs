@@ -46,6 +46,11 @@ namespace Test.iOS
 
         AsHttpOperation Op { set; get; }
 
+        public virtual double TimeoutInSeconds
+        {
+            get { return 0.0; }
+        }
+
         public virtual Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation sender)
         {
             return null;
