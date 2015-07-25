@@ -339,6 +339,10 @@ namespace Test.Android
             emailAddress = "\"MS\" lov2cod@gmail.com"; // This was an actual From address from Jan's imap
             initials = EmailHelper.Initials (emailAddress);
             Assert.AreEqual ("M", initials);
+
+            emailAddress = "MS lov2cod@gmail.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("M", initials);
         }
 
         class Info
