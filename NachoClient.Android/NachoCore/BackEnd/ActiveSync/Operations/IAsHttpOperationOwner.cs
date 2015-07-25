@@ -12,6 +12,11 @@ namespace NachoCore.ActiveSync
 {
     public interface IAsHttpOperationOwner
     {
+        /// <summary>
+        /// The number of seconds for the timeout timer for this command.  Return 0.0 to use the default timeout.
+        /// </summary>
+        double TimeoutInSeconds { get; }
+
         Dictionary<string,string> ExtraQueryStringParams (AsHttpOperation Sender);
         Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response);
         Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken);

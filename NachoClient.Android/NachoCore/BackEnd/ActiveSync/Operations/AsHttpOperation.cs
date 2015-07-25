@@ -109,8 +109,6 @@ namespace NachoCore.ActiveSync
         // Properties.
         // User for mocking.
         public INcCommStatus NcCommStatusSingleton { set; get; }
-        // Timer for timing out a single access.
-        public TimeSpan Timeout { set; get; }
         public double TimeoutExpander { set; get; }
         public uint MaxRetries { set; get; }
         // Numer of times we'll try again (remaining).
@@ -167,8 +165,6 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
-            Timeout = new TimeSpan (0, 0, timeoutSeconds);
             TimeoutExpander = KDefaultTimeoutExpander;
             MaxRetries = KDefaultRetries;
             TriesLeft = MaxRetries + 1;
@@ -288,9 +284,6 @@ namespace NachoCore.ActiveSync
         {
             if (0 < TriesLeft) {
                 --TriesLeft;
-                if (TriesLeft != MaxRetries) {
-                    Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * TimeoutExpander));
-                }
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 // Remove NcTask.Run once #1313 solved.
                 // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
@@ -460,7 +453,12 @@ namespace NachoCore.ActiveSync
                     // change the value once you start using the client. So we use our own per-request timeout.
 
                     // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
-                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
+                    var baseTimeout = Owner.TimeoutInSeconds;
+                    if (0.0 == baseTimeout) {
+                        baseTimeout = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
+                    }
+                    var timeoutValue = TimeSpan.FromSeconds (baseTimeout * Math.Pow (TimeoutExpander, MaxRetries - TriesLeft));
+                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, timeoutValue,
                         System.Threading.Timeout.InfiniteTimeSpan);
                     if (!CreateHttpRequest (out request, cToken)) {
                         Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
