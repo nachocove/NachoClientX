@@ -33,11 +33,6 @@ namespace NachoCore.Model
             RecentCommands,
         };
 
-        public enum ImapSyncTypeEnum {
-            Initial,
-            Regular,
-        };
-
         [Flags]
         public enum NcImapCapabilities {
             /// <summary>
@@ -159,7 +154,8 @@ namespace NachoCore.Model
         public McAccount.AccountServiceEnum ImapServiceType { get; set; }
 
         // The current sync type
-        public ImapSyncTypeEnum ImapSyncType { get; set; }
+        public uint ImapSyncRung { get; set; }
+
         /*
          * "Smtp" SMTP properties go here:
          */
