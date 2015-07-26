@@ -239,9 +239,6 @@ namespace NachoCore.IMAP
                 outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
                 if (syncSet.Any () || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
-                    if (outMessages.Any ()) {
-                        Log.Info (Log.LOG_IMAP, "Got messages");
-                    }
                     syncKit.UploadMessages = outMessages;
                 } else {
                     // Nothing to sync.
