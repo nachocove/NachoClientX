@@ -42,13 +42,6 @@ namespace NachoCore.SMTP
                     BEContext.ProtoControl,
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
-            if (McAccount.AccountServiceEnum.GoogleDefault != BEContext.ProtocolState.ImapServiceType) {
-                McFolder sentFolder = McFolder.GetDefaultSentFolder (BEContext.Account.Id);
-                if (null != sentFolder) {
-                    sentFolder.Link (EmailMessage);
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                }
-            }
             return Event.Create ((uint)SmEvt.E.Success, "SMTPCONNSUC");
         }
     }
