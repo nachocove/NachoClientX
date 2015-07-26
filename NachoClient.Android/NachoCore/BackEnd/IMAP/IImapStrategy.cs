@@ -38,6 +38,7 @@ namespace NachoCore.IMAP
         public UniqueIdSet SyncSet;
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
+        public List<McEmailMessage> UploadMessages;
 
         public SyncKit (McFolder folder)
         {
@@ -72,6 +73,7 @@ namespace NachoCore.IMAP
             case MethodEnum.Sync:
                 me += string.Format (" Flags {{{0}}}", Flags);
                 me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
+                me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
 
             default:

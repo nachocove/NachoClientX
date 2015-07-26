@@ -1034,6 +1034,31 @@ namespace Test.Common
                 Assert.AreEqual (SortedList [i].ImapUid, results2[i].Id);
             }
         }
+
+        [Test]
+        public void TestQueryImapMessagesToSend ()
+        {
+            var messages = new List<McEmailMessage> ();
+            for (uint i = 1; i <= 10; i++) { // 0 is not a valid UID.
+                var message = new McEmailMessage () {
+                    AccountId = Folder.AccountId,
+                    ServerId = i.ToString (),
+                    Subject = string.Format ("Subject {0}", i),
+                    ImapUid = 0,
+                    From = "bob@company.net",
+                };
+                Assert.AreEqual (1, message.Insert ());
+                Assert.AreEqual (i, message.Id);
+                Folder.Link (message);
+                messages.Add (message);
+            }
+            var results1 = McEmailMessage.QueryImapMessagesToSend (Folder.AccountId, Folder.Id, 30);
+            Assert.AreEqual (messages.Count, results1.Count);
+            var SortedList = messages.OrderBy(x=>x.Id).ToList();
+            for (int i = 0; i < messages.Count; i++) {
+                Assert.AreEqual (SortedList [i].Id, results1[i].Id);
+            }
+        }
     }
 }
 

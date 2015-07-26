@@ -136,9 +136,8 @@ namespace NachoCore.IMAP
         /// Generate the set of UIDs that we need to look at.
         /// </summary>
         /// <returns>A set of UniqueId's.</returns>
-        /// <param name="protocolState">Protocol state.</param>
         /// <param name="folder">Folder.</param>
-        public static UniqueIdSet SyncSet (ref McProtocolState protocolState, McFolder folder)
+        public static UniqueIdSet SyncSet (McFolder folder)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -158,19 +157,20 @@ namespace NachoCore.IMAP
                 startingPoint,
                 currentMails,
                 currentUidSet);
+            UniqueIdSet syncSet;
             if (!currentMails.Any () && !currentUidSet.Any ()) {
-                return new UniqueIdSet ();
-            }
-
-            UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
-            if (HasNewMail (folder)) {
-                var highestUid = new UniqueId (folder.ImapUidNext - 1);
-                if (syncSet.Any () && !syncSet.Contains (highestUid)) {
-                    // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
-                    syncSet.Add (highestUid);
-                    if (syncSet.Count > span) {
-                        var lowest = syncSet.Min ();
-                        syncSet.Remove (lowest);
+                syncSet = new UniqueIdSet ();
+            } else {
+                syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
+                if (HasNewMail (folder)) {
+                    var highestUid = new UniqueId (folder.ImapUidNext - 1);
+                    if (syncSet.Any () && !syncSet.Contains (highestUid)) {
+                        // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
+                        syncSet.Add (highestUid);
+                        if (syncSet.Count > span) {
+                            var lowest = syncSet.Min ();
+                            syncSet.Remove (lowest);
+                        }
                     }
                 }
             }
@@ -233,9 +233,16 @@ namespace NachoCore.IMAP
                 syncKit = new SyncKit (folder);
                 PrioSyncFolder = folder; // make sure when we get back to strategy after getting the requested info, we do this folder first.
             } else {
-                var syncSet = SyncSet (ref protocolState, folder);
-                if (syncSet.Any ()) {
+                List<McEmailMessage> outMessages;
+                var syncSet = SyncSet (folder);
+                uint span = SpanSizeWithCommStatus ();
+                outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
+                if (syncSet.Any () || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
+                    if (outMessages.Any ()) {
+                        Log.Info (Log.LOG_IMAP, "Got messages");
+                    }
+                    syncKit.UploadMessages = outMessages;
                 } else {
                     // Nothing to sync.
 
@@ -490,8 +497,9 @@ namespace NachoCore.IMAP
             uint rung = protocolState.ImapSyncRung;
             switch (protocolState.ImapSyncRung) {
             case 0:
+                var syncSet = SyncSet ( defInbox);
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
-                    !SyncSet(ref protocolState, defInbox).Any ()) {
+                    !syncSet.Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
                 }
