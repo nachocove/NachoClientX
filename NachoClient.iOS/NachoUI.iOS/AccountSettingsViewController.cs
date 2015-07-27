@@ -415,6 +415,7 @@ namespace NachoClient.iOS
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
             account.DaysToSyncEmail = code;
             account.Update ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_DaysToSyncChanged);
         }
 
         public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)
