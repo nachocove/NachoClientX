@@ -135,10 +135,9 @@ namespace NachoClient.iOS
             RefreshControl.TintColor = A.Color_NachoGreen;
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
+                rearmRefreshTimer ();
                 RefreshControl.BeginRefreshing ();
                 messageSource.GetNachoEmailMessages ().StartSync ();
-                RefreshThreadsIfVisible ();
-                new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };
 
             searchBar = new UISearchBar ();
@@ -171,11 +170,31 @@ namespace NachoClient.iOS
             searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
         }
 
-        protected void refreshCallback (object sender)
+        protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                 RefreshControl.EndRefreshing ();
             });
+        }
+
+        NcTimer refreshTimer;
+
+        void rearmRefreshTimer ()
+        {
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, 10000, 0); 
+        }
+
+        void cancelRefreshTimer ()
+        {
+            EndRefreshingOnUIThread (null);
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
         }
 
         protected virtual void CustomizeBackButton ()
@@ -310,6 +329,7 @@ namespace NachoClient.iOS
             }
 
             if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
 
@@ -339,6 +359,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            cancelRefreshTimer ();
             CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
@@ -363,7 +384,7 @@ namespace NachoClient.iOS
                 if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
                     return;
                 }
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName());
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName ());
 
             }
             switch (s.Status.SubKind) {
@@ -372,6 +393,10 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
+                break;
+            case NcResult.SubKindEnum.Error_SyncFailed:
+            case NcResult.SubKindEnum.Info_SyncSucceeded:
+                cancelRefreshTimer ();
                 break;
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
