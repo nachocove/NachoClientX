@@ -61,12 +61,12 @@ namespace NachoCore.IMAP
 
         private NcResult FetchOneBody (McPending pending)
         {
-            Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}", pending.ServerId);
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             if (null == email) {
                 Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
+            Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             NcResult result;
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
@@ -153,7 +153,7 @@ namespace NachoCore.IMAP
                         StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                     }
                 }
-                Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for {0} type {1}.", email.ServerId, body.BodyType);
+                Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for email {0}:{1} type {2}", email.Id, email.ServerId, body.BodyType);
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
