@@ -37,14 +37,12 @@ namespace NachoCore.ActiveSync
         private bool Cancelled = false;
         private bool ProcessResponseOwnsPendingCleanup = false;
 
-        private TimeSpan _Timeout;
-        public TimeSpan Timeout { 
-            set { _Timeout = value;
-                if (null != Op) {
-                    Op.Timeout = _Timeout;
-                }
-            } 
-            get { return _Timeout; } }
+        public virtual double TimeoutInSeconds
+        {
+            get {
+                return 0.0;
+            }
+        }
 
         public uint MaxTries { set; get; }
 
@@ -58,7 +56,6 @@ namespace NachoCore.ActiveSync
 
         public AsCommand (string commandName, IBEContext beContext) : base (beContext)
         {
-            Timeout = TimeSpan.Zero;
             CommandName = commandName;
         }
         // Virtual Methods.
@@ -67,9 +64,6 @@ namespace NachoCore.ActiveSync
             Op = new AsHttpOperation (CommandName, this, BEContext) {
                 DontReportCommResult = DontReportCommResult,
             };
-            if (TimeSpan.Zero != Timeout) {
-                Op.Timeout = Timeout;
-            }
             if (0 != MaxTries) {
                 Op.MaxRetries = MaxTries - 1;
                 Op.TriesLeft = MaxTries;

@@ -102,12 +102,14 @@ namespace NachoCore.IMAP
 
         private PushAssist PushAssist { set; get; }
 
+        private const string KImapStrategyPick = "ImapStrategy Pick";
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
             SetupAccount ();
             MainClient = new NcImapClient ();
+            NcCapture.AddKind (KImapStrategyPick);
 
             Sm = new NcStateMachine ("IMAPPC") { 
                 Name = string.Format ("IMAPPC({0})", AccountId),
@@ -237,7 +239,6 @@ namespace NachoCore.IMAP
                         State = (uint)Lst.FSyncW,
                         Drop = new [] {
                             (uint)PcEvt.E.PendQ,
-                            (uint)PcEvt.E.PendQHot,
                         },
                         Invalid = new [] {
                             (uint)ImapEvt.E.PkWait,
@@ -260,6 +261,7 @@ namespace NachoCore.IMAP
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetServConf, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)ImapEvt.E.Wait, Act = DoWait, State = (uint)Lst.IdleW },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoExtraOrDont, ActSetsState = true },
                         },
                     },
                     new Node {
@@ -564,17 +566,6 @@ namespace NachoCore.IMAP
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public static UniqueId ImapMessageUid (string MessageServerId)
-        {
-            uint x = UInt32.Parse (MessageServerId.Split (':') [1]);
-            return new UniqueId (x);
-        }
-
-        public static string ImapMessageFolderGuid (string MessageServerId)
-        {
-            return MessageServerId.Split (':') [0];
-        }
-
         public override void ForceStop ()
         {
             if (null != PushAssist) {
@@ -712,7 +703,7 @@ namespace NachoCore.IMAP
             Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
         }
 
-        private int MaxConcurrentExtraRequests = 2;
+        private const int MaxConcurrentExtraRequests = 4;
         private int ConcurrentExtraRequests = 0;
 
         private void DoExtraOrDont ()
@@ -813,7 +804,7 @@ namespace NachoCore.IMAP
             CancelCmd ();
             Sm.ClearEventQueue ();
             Tuple<PickActionEnum, ImapCommand> pack;
-            using (var cap = NcCapture.CreateAndStart ("ImapStrategy Pick")) {
+            using (var cap = NcCapture.CreateAndStart (KImapStrategyPick)) {
                 pack = Strategy.Pick (MainClient);
                 cap.Stop ();
             }
@@ -828,11 +819,7 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)ImapEvt.E.PkSync, "PCKSYNC", cmd);
                 break;
             case PickActionEnum.Ping:
-                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPDOPICKQSPARK");
-                } else {
-                    Sm.PostEvent ((uint)ImapEvt.E.PkPing, "PCKPING", cmd);
-                }
+                Sm.PostEvent ((uint)ImapEvt.E.PkPing, "PCKPING", cmd);
                 break;
             case PickActionEnum.HotQOp:
                 Sm.PostEvent ((uint)ImapEvt.E.PkHotQOp, "PCKHOTOP", cmd);
@@ -844,11 +831,7 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)ImapEvt.E.ReFSync, "PCKFSYNC", cmd);
                 break;
             case PickActionEnum.Wait:
-                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                    Sm.PostEvent ((uint)PcEvt.E.Park, "IMAPDOPICKQSPARK");
-                } else {
-                    Sm.PostEvent ((uint)ImapEvt.E.PkWait, "PCKWAIT", cmd);
-                }
+                Sm.PostEvent ((uint)ImapEvt.E.PkWait, "PCKWAIT", cmd);
                 break;
             default:
                 Log.Error (Log.LOG_IMAP, "Unknown PickAction {0}", transition.ToString ());

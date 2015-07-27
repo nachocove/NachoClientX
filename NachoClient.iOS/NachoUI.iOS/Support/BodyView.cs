@@ -600,27 +600,35 @@ namespace NachoClient.iOS
 
         private void RenderMime (McBody body)
         {
-            var message = MimeHelpers.LoadMessage (body);
-            var list = new List<MimeEntity> ();
-            int nativeBodyType = 0;
-            if (item is McEmailMessage) {
-                nativeBodyType = ((McEmailMessage)item).NativeBodyType;
-            } else if (item is McAbstrCalendarRoot) {
-                nativeBodyType = ((McAbstrCalendarRoot)item).NativeBodyType;
-            }
-            MimeHelpers.MimeDisplayList (message, list, MimeHelpers.MimeTypeFromNativeBodyType (nativeBodyType));
+            NcAssert.NotNull (body);
 
-            foreach (var entity in list) {
-                var part = (MimePart)entity;
-                if (part.ContentType.Matches ("text", "html")) {
-                    RenderHtmlPart (part);
-                } else if (part.ContentType.Matches ("text", "rtf")) {
-                    RenderRtfPart (part);
-                } else if (part.ContentType.Matches ("text", "*")) {
-                    RenderTextPart (part);
-                } else if (part.ContentType.Matches ("image", "*")) {
-                    RenderImagePart (part);
+            try {
+                var path = body.GetFilePath ();
+                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
+                    var message = MimeMessage.Load (fileStream, true);
+                    var list = new List<MimeEntity> ();
+                    int nativeBodyType = 0;
+                    if (item is McEmailMessage) {
+                        nativeBodyType = ((McEmailMessage)item).NativeBodyType;
+                    } else if (item is McAbstrCalendarRoot) {
+                        nativeBodyType = ((McAbstrCalendarRoot)item).NativeBodyType;
+                    }
+                    MimeHelpers.MimeDisplayList (message, list, MimeHelpers.MimeTypeFromNativeBodyType (nativeBodyType));
+                    foreach (var entity in list) {
+                        var part = (MimePart)entity;
+                        if (part.ContentType.Matches ("text", "html")) {
+                            RenderHtmlPart (part);
+                        } else if (part.ContentType.Matches ("text", "rtf")) {
+                            RenderRtfPart (part);
+                        } else if (part.ContentType.Matches ("text", "*")) {
+                            RenderTextPart (part);
+                        } else if (part.ContentType.Matches ("image", "*")) {
+                            RenderImagePart (part);
+                        }
+                    }
                 }
+            } catch {
+                RenderTextString ("");
             }
         }
 

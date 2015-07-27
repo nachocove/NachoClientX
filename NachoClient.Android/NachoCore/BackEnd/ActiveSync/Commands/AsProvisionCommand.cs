@@ -136,6 +136,12 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
         }
 
+        public override double TimeoutInSeconds {
+            get {
+                return AsAutodiscoverCommand.TestTimeoutSecs;
+            }
+        }
+
         public override void Execute (NcStateMachine sm)
         {
             OwnerSm = sm;

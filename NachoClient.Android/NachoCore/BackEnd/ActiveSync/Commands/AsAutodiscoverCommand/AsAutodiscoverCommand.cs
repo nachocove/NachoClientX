@@ -807,14 +807,12 @@ namespace NachoCore.ActiveSync
             if (ProtocolState.DisableProvisionCommand) {
                 TestCmd = new AsSettingsCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                     OmitDeviceInformation = true,
                 };
             } else {
                 TestCmd = new AsProvisionCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                 };
             }
@@ -826,7 +824,6 @@ namespace NachoCore.ActiveSync
             DoCancel ();
             TestCmd = new AsOptionsCommand (this) {
                 DontReportCommResult = true,
-                Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                 MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.

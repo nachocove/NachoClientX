@@ -94,6 +94,8 @@ namespace NachoClient.iOS
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
+
             // Start a background refresh, which will update the UI when it is done.
             calendarSource.Refresh (delegate {
                 ReloadDataWithoutScrolling ();

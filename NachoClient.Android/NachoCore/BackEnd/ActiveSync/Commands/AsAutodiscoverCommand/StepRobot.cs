@@ -486,6 +486,13 @@ namespace NachoCore.ActiveSync
                 StepSm.Validate ();
             }
 
+            public virtual double TimeoutInSeconds
+            {
+                get {
+                    return 10.0;
+                }
+            }
+
             public void Execute ()
             {
                 StepSm.Name = Command.Sm.Name + ":" + StepSm.Name + "(" + Enum.GetName (typeof(Steps), Step) + ")";
@@ -562,7 +569,6 @@ namespace NachoCore.ActiveSync
                     DontReportCommResult = true,
                     TriesLeft = 2,
                     TimeoutExpander = KDefaultTimeoutExpander,
-                    Timeout = new TimeSpan (0, 0, 10),
                     DontReUseHttpClient = true,
                 };
             }

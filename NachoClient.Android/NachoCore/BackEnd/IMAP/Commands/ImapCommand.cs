@@ -21,10 +21,14 @@ namespace NachoCore.IMAP
         protected NcImapClient Client { get; set; }
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
+        private const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
+
         public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
+            NcCapture.AddKind (this.GetType ().Name);
+            NcCapture.AddKind (KCaptureFolderMetadata);
         }
 
         // MUST be overridden by subclass.
@@ -55,7 +59,7 @@ namespace NachoCore.IMAP
 
             lock(Client.SyncRoot) {
                 try {
-                    if (null != RedactProtocolLogFunc) {
+                    if (null != RedactProtocolLogFunc && null != Client.MailKitProtocolLogger) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
@@ -64,11 +68,10 @@ namespace NachoCore.IMAP
                     }
                     using (var cap = NcCapture.CreateAndStart (this.GetType ().Name)) {
                         var evt = ExecuteCommand ();
-                        cap.Stop ();
                         return evt;
                     }
                 } finally {
-                    if (Client.MailKitProtocolLogger.Enabled ()) {
+                    if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
                         ProtocolLoggerStopAndPostTelemetry ();
                     }
                 }
@@ -179,8 +182,12 @@ namespace NachoCore.IMAP
                 folder = McFolder.GetUserFolders (BEContext.Account.Id, folderType, ParentId, mailKitFolder.Name).SingleOrDefault ();
             }
 
+            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+                mailKitFolder.Open (FolderAccess.ReadOnly, Cts.Token);
+            }
+
             if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
-                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} != {2})", mailKitFolder.FullName, folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
+                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
                 folder.Delete ();
                 folder = null;
             }
@@ -207,6 +214,14 @@ namespace NachoCore.IMAP
                 });
                 added_or_changed = true;
             }
+
+            // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
+            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+                if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
+                    Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
+                }
+            }
+
             return added_or_changed;
         }
 
@@ -243,7 +258,7 @@ namespace NachoCore.IMAP
         /// <param name="timespan">Timespan.</param>
         public bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
         {
-            using (var cap = NcCapture.CreateAndStart ("IMAP Folder Metadata")) {
+            using (var cap = NcCapture.CreateAndStart (KCaptureFolderMetadata)) {
                 // Just load UID with SELECT.
                 Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
 
@@ -289,7 +304,6 @@ namespace NachoCore.IMAP
                     target.ImapLastExamine = DateTime.UtcNow;
                     return true;
                 });
-                cap.Stop ();
                 return true;
             }
         }

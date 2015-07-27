@@ -90,6 +90,7 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             RefreshTableSource ();
         }
 

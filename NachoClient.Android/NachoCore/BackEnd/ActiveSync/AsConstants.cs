@@ -178,7 +178,7 @@ namespace NachoCore.ActiveSync
             public const string Collections = "Collections";
             public const string Commands = "Commands";
             public const string Delete = "Delete";
-            public const string DeleteAsMoves = "DeleteAsMoves";
+            public const string DeletesAsMoves = "DeletesAsMoves";
             public const string Fetch = "Fetch";
             public const string FilterType = "FilterType";
             public const string GetChanges = "GetChanges";

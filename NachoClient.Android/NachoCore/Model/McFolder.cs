@@ -137,7 +137,7 @@ namespace NachoCore.Model
 
         public string ImapFolderNameRedacted ()
         {
-            return string.Format ("{0}/{1}", ImapGuid, IsDistinguished ? ServerId : "User Folder");
+            return string.Format ("{0}<{1}>", ImapGuid, IsDistinguished ? ServerId : "User Folder");
         }
 
         // "factory" to create folders.
@@ -325,6 +325,25 @@ namespace NachoCore.Model
             return folders.First ();
         }
 
+        public int CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            return CountOfAllItems (AccountId, Id, classCode);
+        }
+
+        public static int CountOfAllItems (int accountId, int folderId, McAbstrFolderEntry.ClassCodeEnum classCode)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McEmailMessage AS e " +
+                "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                "WHERE " +
+                " likelihood (e.AccountId = ?, 1.0)  AND " +
+                " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                " likelihood (m.AccountId = ?, 1.0) AND " +
+                " likelihood (m.ClassCode = ?, 0.2) AND " +
+                " likelihood (m.FolderId = ?, 0.05)",
+                accountId, accountId, classCode, folderId);
+        }
+
         public static McFolder GetDefaultDeletedFolder (int accountId)
         {
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDeleted_4);
@@ -468,17 +487,6 @@ namespace NachoCore.Model
                               accountId, isClientOwned);
             return folders.ToList ();
         }
-
-        public static List<McFolder> QueryByImapGuid (int accountId, string guid)
-        {
-            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " likelihood (f.AccountId = ?, 1.0) AND " +
-                " likelihood (f.IsAwaitingDelete = 0, 1.0) AND " +
-                " likelihood (f.ImapGuid = ?, 0.05) ",
-                accountId, guid);
-            return folders.ToList ();
-        }
-
 
         // ONLY TO BE USED BY SERVER-END CODE.
         // ServerEndQueryXxx differs from QueryXxx in that it includes IsAwatingDelete folders and excludes

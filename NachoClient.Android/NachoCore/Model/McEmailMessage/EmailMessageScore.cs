@@ -77,7 +77,7 @@ namespace NachoCore.Model
             }
         }
 
-        private ConcurrentDictionary<int, string> _AccountAddresses = new ConcurrentDictionary<int, string> ();
+        private static ConcurrentDictionary<int, string> _AccountAddresses = new ConcurrentDictionary<int, string> ();
 
         private string AccountAddress (int accountId)
         {
@@ -94,7 +94,7 @@ namespace NachoCore.Model
                 _AccountAddresses.TryGetValue (accountId, out accountAddress);
                 return accountAddress;
             }
-            return accountAddress;
+            return account.EmailAddr;
         }
 
         public bool ShouldUpdate ()

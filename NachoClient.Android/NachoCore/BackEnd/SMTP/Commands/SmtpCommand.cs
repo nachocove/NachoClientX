@@ -32,17 +32,19 @@ namespace NachoCore.SMTP
         {
             lock (Client.SyncRoot) {
                 try {
-                    if (null != RedactProtocolLogFunc) {
+                    if (null != Client.MailKitProtocolLogger && null != RedactProtocolLogFunc) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
                         var authy = new SmtpAuthenticateCommand (BEContext, Client);
                         authy.ConnectAndAuthenticate ();
                     }
-                    Client.MailKitProtocolLogger.ResetBuffers ();
+                    if (null != Client.MailKitProtocolLogger) {
+                        Client.MailKitProtocolLogger.ResetBuffers ();
+                    }
                     return ExecuteCommand ();
                 } finally {
-                    if (Client.MailKitProtocolLogger.Enabled ()) {
+                    if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
                         ProtocolLoggerStopAndLog ();
                     }
                 }

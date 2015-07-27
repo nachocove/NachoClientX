@@ -1574,6 +1574,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsBinningHelper.cs">
       <Link>NachoCore\Utils\ContactsBinningHelper.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration35.cs">
+      <Link>NachoCore\Model\Migration\NcMigration35.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapValidateConfig.cs">
       <Link>NachoCore\BackEnd\IMAP\ImapValidateConfig.cs</Link>
     </Compile>

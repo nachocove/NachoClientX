@@ -23,10 +23,11 @@ namespace NachoCore.IMAP
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
-        private const string KImapSyncOpenTiming = "IMAP Sync/Open";
-        private const string KImapSyncTiming = "IMAP Sync/Fetch";
-        private const string KImapFetchTiming = "IMAP Summary Fetch";
-        private const string KImapPreviewGeneration = "IMAP Preview Generation";
+        private const string KImapSyncOpenTiming = "ImapSyncCommand.OpenOnly";
+        private const string KImapSyncTiming = "ImapSyncCommand.Sync";
+        private const string KImapFetchTiming = "ImapSyncCommand.Summary";
+        private const string KImapPreviewGeneration = "ImapSyncCommand.Preview";
+        private const string KImapFetchPartialBody = "ImapSyncCommand.PartialBody";
 
         public class MailSummary
         {
@@ -47,13 +48,14 @@ namespace NachoCore.IMAP
             NcCapture.AddKind (KImapSyncTiming);
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
+            NcCapture.AddKind (KImapFetchPartialBody);
         }
 
         protected override Event ExecuteCommand ()
         {
             IMailFolder mailKitFolder;
 
-            Log.Info (Log.LOG_IMAP, "{0}: Processing {1}", Synckit.Folder.ImapFolderNameRedacted (), Synckit.ToString ());
+            Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
             Cts.Token.ThrowIfCancellationRequested ();
 
             var timespan = BEContext.Account.DaysSyncEmailSpan ();
@@ -65,17 +67,19 @@ namespace NachoCore.IMAP
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
             }
-            Event result;
+            Event evt;
             NcCapture cap;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
                 cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
-                result = getFolderMetaDataInternal (mailKitFolder, timespan);
+                evt = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
 
             case SyncKit.MethodEnum.Sync:
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
-                result = syncFolder (mailKitFolder);
+                evt = syncFolder (mailKitFolder);
+                var protocolState = BEContext.ProtocolState;
+                ImapStrategy.MaybeAdvanceSyncStage (ref protocolState);
                 break;
 
             default:
@@ -92,7 +96,7 @@ namespace NachoCore.IMAP
             Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
             cap.Stop ();
             cap.Dispose ();
-            return result;
+            return evt;
         }
 
         private Event getFolderMetaDataInternal (IMailFolder mailKitFolder, TimeSpan timespan)
@@ -188,7 +192,7 @@ namespace NachoCore.IMAP
                             createdUnread = true;
                         }
                         if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
-                            using (var cap2 = NcCapture.CreateAndStart ("Imap Fetch Partial Body")) {
+                            using (var cap2 = NcCapture.CreateAndStart (KImapFetchPartialBody)) {
                                 var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                                 if (!string.IsNullOrEmpty (preview)) {
                                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
@@ -289,7 +293,7 @@ namespace NachoCore.IMAP
                     justCreated = true;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
-                    if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
+                    if (null == emailMessage || string.IsNullOrEmpty (emailMessage.ServerId)) {
                         emailMessage = new McEmailMessage () {
                             ServerId = McEmailMessageServerId,
                         };
@@ -339,7 +343,7 @@ namespace NachoCore.IMAP
             foreach (var uid in uids) {
                 var email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ImapProtoControl.MessageServerId (Synckit.Folder, uid));
                 if (null != email) {
-                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ServerId);
+                    Log.Info (Log.LOG_IMAP, "Deleting: {0}:{1}", Synckit.Folder.ImapFolderNameRedacted (), email.ImapUid);
                     email.Delete ();
                     messagesDeleted.Add (uid);
                 }
@@ -402,6 +406,7 @@ namespace NachoCore.IMAP
 
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
+                ImapUid = summary.UniqueId.Value.Id,
                 AccountId = accountId,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,

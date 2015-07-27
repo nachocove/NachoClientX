@@ -20,6 +20,12 @@ namespace NachoCore.ActiveSync
             // TODO: ability to have pending drive OOF setting, etc.
         }
 
+        public override double TimeoutInSeconds {
+            get {
+                return AsAutodiscoverCommand.TestTimeoutSecs;
+            }
+        }
+
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             // We ask for user information and send device information.

@@ -12,7 +12,7 @@ using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchAttachmentCommand : ImapFetchCommand, ITransferProgress
+    public class ImapFetchAttachmentCommand : ImapFetchCommand
     {
         public ImapFetchAttachmentCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
@@ -50,23 +50,31 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Could not find attachment for Id {0}", pending.AttachmentId);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
-            var folder = McFolder.QueryByImapGuid (BEContext.Account.Id, ImapProtoControl.ImapMessageFolderGuid (email.ServerId)).FirstOrDefault();
-            if (null == folder) {
-                Log.Error (Log.LOG_IMAP, "Could not find folder with ImapGuid {0}", ImapProtoControl.ImapMessageFolderGuid (email.ServerId));
+
+            // We don't really care which folder this email/attachment is in. If it's duplicated in multiple
+            // folders, the email and attachment will be the same. So find the first map and from that the folder.
+            var map = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (email.AccountId, email.Id, McAbstrFolderEntry.ClassCodeEnum.Email).FirstOrDefault ();
+            if (null == map) {
+                Log.Error (Log.LOG_IMAP, "Could not find folder from attachment Id {0}", pending.AttachmentId);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
+            McFolder folder = McFolder.QueryById<McFolder> (map.FolderId);
+            if (null == folder) {
+                Log.Error (Log.LOG_IMAP, "Could not find folder for ImapUid {0}", email.ImapUid);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+            }
+
             var mailKitFolder = GetOpenMailkitFolder (folder);
-            var uid = ImapProtoControl.ImapMessageUid (email.ServerId);
-            var part = attachmentBodyPart (uid, mailKitFolder, attachment.FileReference);
+            var part = attachmentBodyPart (new UniqueId(email.ImapUid), mailKitFolder, attachment.FileReference);
             if (null == part) {
                 Log.Error (Log.LOG_IMAP, "Could not find part with PartSpecifier {0} in summary", attachment.FileReference);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
 
             var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
-            mailKitFolder.SetStreamContext (ImapProtoControl.ImapMessageUid (email.ServerId), tmp);
+            mailKitFolder.SetStreamContext (new UniqueId (email.ImapUid), tmp);
             try {
-                Stream st = mailKitFolder.GetStream (ImapProtoControl.ImapMessageUid (email.ServerId), attachment.FileReference, Cts.Token, this);
+                Stream st = mailKitFolder.GetStream (new UniqueId (email.ImapUid), attachment.FileReference, Cts.Token, this);
                 var path = attachment.GetFilePath ();
                 using (var attachFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
                     using (var filtered = new FilteredStream (attachFile)) {
@@ -99,19 +107,5 @@ namespace NachoCore.IMAP
             var summary = isummary[0] as MessageSummary;
             return summary.BodyParts.Where (x => x.PartSpecifier == fileReference).FirstOrDefault ();
         }
-
-        #region ITransferProgress implementation
-
-        public void Report (long bytesTransferred, long totalSize)
-        {
-            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0} totalSize {1}", bytesTransferred, totalSize);
-        }
-
-        public void Report (long bytesTransferred)
-        {
-            //Log.Info (Log.LOG_IMAP, "Download progress: bytesTransferred {0}", bytesTransferred);
-        }
-
-        #endregion
     }
 }

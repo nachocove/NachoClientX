@@ -24,7 +24,7 @@ namespace NachoCore.SMTP
             }
             if (!Client.IsAuthenticated) {
                 RedactProtocolLogFuncDel RestartLog = null;
-                if (Client.MailKitProtocolLogger.Enabled ()) {
+                if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
                     ProtocolLoggerStopAndLog ();
                     RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
                 }
@@ -39,7 +39,7 @@ namespace NachoCore.SMTP
                     Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
                 }
                 Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
-                if (null != RestartLog) {
+                if (null != Client.MailKitProtocolLogger && null != RestartLog) {
                     Client.MailKitProtocolLogger.Start (RestartLog);
                 }
             }
