@@ -498,6 +498,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration34.cs" />
     <Compile Include="NachoCore\Utils\ContactsBinningHelper.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration35.cs" />
+    <Compile Include="NachoCore\Utils\SearchHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
