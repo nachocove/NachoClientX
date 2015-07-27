@@ -180,7 +180,7 @@ namespace NachoCore.Brain
                             Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid plain text message (emailMesssageId={0}, bodyId={1}, filePresence={2}",
                                 emailMessage.Id, emailMessage.BodyId, body.FilePresence);
                         } else {
-                            var tokenizer = new NcPlainTextTokenizer (textMessage);
+                            var tokenizer = new NcPlainTextTokenizer (textMessage, NcTask.Cts.Token);
                             parameters.Content = tokenizer.Content;
                         }
                         break;
@@ -190,7 +190,7 @@ namespace NachoCore.Brain
                             Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid HTML message (emailMessageId={0}, bodyId={1], filePresence={2}",
                                 emailMessage.Id, emailMessage.BodyId, body.FilePresence);
                         } else {
-                            var tokenizer = new NcHtmlTokenizer (htmlMessage);
+                            var tokenizer = new NcHtmlTokenizer (htmlMessage, NcTask.Cts.Token);
                             parameters.Content = tokenizer.Content;
                         }
                         break;
@@ -204,7 +204,7 @@ namespace NachoCore.Brain
                             Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, filePresence={2}",
                                 emailMessage.Id, emailMessage.BodyId, body.FilePresence);
                         } else {
-                            var tokenizer = new NcMimeTokenizer (mimeMessage);
+                            var tokenizer = new NcMimeTokenizer (mimeMessage, NcTask.Cts.Token);
                             parameters.Content = tokenizer.Content;
                         }
                         break;

@@ -161,7 +161,7 @@ namespace Test.Common
                 message.WriteTo (stream);
             }
             long bytesIndexed;
-            var tokenizer = new NcMimeTokenizer (message);
+            var tokenizer = new NcMimeTokenizer (message, null);
             var parameters = new EmailMessageIndexParameters () {
                 From = message.From,
                 To = message.To,

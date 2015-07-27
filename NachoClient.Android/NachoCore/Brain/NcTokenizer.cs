@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 using MimeKit;
 using Lucene.Net.Analysis.Standard;
@@ -55,8 +56,15 @@ namespace NachoCore.Brain
             }
         }
 
+        public CancellationToken? Token { get; set; }
+
         public NcTokenizer ()
         {
+        }
+
+        public NcTokenizer (CancellationToken? token)
+        {
+            Token = token;
         }
 
         protected virtual void ExtractContent ()
@@ -74,6 +82,13 @@ namespace NachoCore.Brain
             _Keywords = new List<string> ();
         }
 
+        protected void MayCancel ()
+        {
+            if (Token.HasValue) {
+                Token.Value.ThrowIfCancellationRequested ();
+            }
+        }
+
         // Helper functions for derived classes
         public List<string> WordsFromString (string s)
         {
@@ -81,6 +96,7 @@ namespace NachoCore.Brain
             using (var contentReader = new StringReader (s)) {
                 using (var tokenizer = new StandardTokenizer (LuceneVersion.LUCENE_30, contentReader)) {
                     while (tokenizer.IncrementToken ()) {
+                        MayCancel ();
                         var word = tokenizer.GetAttribute<Lucene.Net.Analysis.Tokenattributes.ITermAttribute> ().Term;
                         words.Add (word);
                     }
@@ -96,7 +112,7 @@ namespace NachoCore.Brain
 
         public NcTokenizer Create (MimeMessage mimeMessage)
         {
-            return new NcMimeTokenizer (mimeMessage);
+            return new NcMimeTokenizer (mimeMessage, NcTask.Cts.Token);
         }
 
         protected void ExtractContentFromPlainText (string plainText)
@@ -105,6 +121,7 @@ namespace NachoCore.Brain
                 var words = WordsFromString (plainText);
                 _Content += plainText + ". ";
                 foreach (var word in words) {
+                    MayCancel ();
                     if (IsAllUpperCase (word)) {
                         _Keywords.Add (word);
                     }
@@ -138,6 +155,7 @@ namespace NachoCore.Brain
                 HtmlDocument html = new HtmlDocument ();
                 html.LoadHtml (rawHtml);
                 WalkHtmlNodes (html.DocumentNode, (HtmlNode node) => {
+                    MayCancel ();
                     _Content += node.InnerText + ". ";
                     var words = WordsFromString (node.InnerText);
 
@@ -153,19 +171,33 @@ namespace NachoCore.Brain
 
     public class NcPlainTextTokenizer : NcTokenizer
     {
-        public NcPlainTextTokenizer (string text)
+        protected string Text;
+
+        public NcPlainTextTokenizer (string text, CancellationToken token) : base (token)
         {
             _Keywords = new List<string> ();
-            ExtractContentFromPlainText (text);
+            Text = text;
+        }
+
+        protected override void ExtractContent ()
+        {
+            ExtractContentFromPlainText (Text);
         }
     }
 
     public class NcHtmlTokenizer : NcTokenizer
     {
-        public NcHtmlTokenizer (string html)
+        protected string Html;
+
+        public NcHtmlTokenizer (string html, CancellationToken token) : base (token)
         {
             _Keywords = new List<string> ();
-            ExtractContentFromHtml (html);
+            Html = html;
+        }
+
+        protected override void ExtractContent ()
+        {
+            ExtractContentFromHtml (Html);
         }
     }
 
@@ -175,6 +207,7 @@ namespace NachoCore.Brain
 
         protected List<TextPart> ProcessMimeEntity (MimeEntity part)
         {
+            MayCancel ();
             if (null == part) {
                 return new List<TextPart> ();
             }
@@ -238,7 +271,7 @@ namespace NachoCore.Brain
             return parts;
         }
 
-        public NcMimeTokenizer (MimeMessage message)
+        public NcMimeTokenizer (MimeMessage message, CancellationToken? token) : base (token)
         {
             // Extract content from MIME messages. The rules are:
             // 1. For each multipart/mixed, iterate each subpart and concatenate the result.
