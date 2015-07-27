@@ -80,8 +80,6 @@ namespace NachoCore.IMAP
             }
             BodyPart part = result.GetValue<BodyPart> ();
 
-            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
-            mailKitFolder.SetStreamContext (uid, tmp);
             McBody body;
             if (0 == email.BodyId) {
                 if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
@@ -106,6 +104,8 @@ namespace NachoCore.IMAP
             }
 
             try {
+                var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+                mailKitFolder.SetStreamContext (uid, tmp);
                 Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
                 var path = body.GetFilePath ();
                 using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
@@ -165,8 +165,9 @@ namespace NachoCore.IMAP
                 email.Delete ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 result = NcResult.Error ("No Body found");
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
             }
-            mailKitFolder.UnsetStreamContext ();
             return result;
         }
 
