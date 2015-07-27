@@ -415,6 +415,7 @@ namespace NachoCore.IMAP
                 FromEmailAddressId = 0,
                 cachedFromLetters = string.Empty,
                 cachedFromColor = 1,
+                cachedHasAttachments = summary.Attachments.Any (),
             };
 
             emailMessage.To = summary.Envelope.To.ToString ();
