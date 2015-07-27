@@ -965,6 +965,10 @@ namespace NachoClient.iOS
         // It is okay if this function is called more than it needs to be.
         private void BadgeNotifUpdate ()
         {
+            // There are extra messages about individual messages being processed to help us debug
+            // https://github.com/nachocove/qa/issues/722.  The number of info messages should be
+            // reduced once that issue is dealt with.
+
             Log.Info (Log.LOG_UI, "BadgeNotifUpdate: called");
             if (!BadgeNotifAllowed) {
                 Log.Info (Log.LOG_UI, "BadgeNotifUpdate: early exit");
@@ -995,6 +999,7 @@ namespace NachoClient.iOS
                     account = newAccount;
                 }
                 if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Not notifying for message {0} because it doesn't match the account notification settings.", message.Id);
                     --badgeCount;
                     message.HasBeenNotified = true;
                     message.ShouldNotify = false;
@@ -1002,6 +1007,7 @@ namespace NachoClient.iOS
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
                     --badgeCount;
                     continue;
                 } else {
@@ -1011,7 +1017,7 @@ namespace NachoClient.iOS
                 message.HasBeenNotified = true;
                 message.ShouldNotify = true;
                 message.Update ();
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", message.Id);
                 --remainingVisibleSlots;
                 if (0 >= remainingVisibleSlots) {
                     break;
