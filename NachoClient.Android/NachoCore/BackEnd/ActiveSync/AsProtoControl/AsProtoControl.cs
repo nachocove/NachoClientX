@@ -1023,7 +1023,6 @@ namespace NachoCore.ActiveSync
             case PickActionEnum.Ping:
                 SetAndExecute (cmd);
                 return Lst.PingW;
-                break;
 
             case PickActionEnum.QOop:
                 SetAndExecute (cmd);

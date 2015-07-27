@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -951,7 +952,7 @@ namespace NachoCore.ActiveSync
                 if (response.Headers.Contains (HeaderRetryAfter)) {
                     try {
                         value = response.Headers.GetValues (HeaderRetryAfter).First ();
-                        bestSecs = (uint)double.Parse (value);
+                        bestSecs = (uint)double.Parse (value, CultureInfo.InvariantCulture);
                     } catch {
                         try {
                             var when = DateTime.Parse (value);
