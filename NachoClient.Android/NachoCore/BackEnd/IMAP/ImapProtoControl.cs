@@ -567,17 +567,6 @@ namespace NachoCore.IMAP
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public static UniqueId ImapMessageUid (string MessageServerId)
-        {
-            uint x = UInt32.Parse (MessageServerId.Split (':') [1]);
-            return new UniqueId (x);
-        }
-
-        public static string ImapMessageFolderGuid (string MessageServerId)
-        {
-            return MessageServerId.Split (':') [0];
-        }
-
         public override void ForceStop ()
         {
             if (null != PushAssist) {

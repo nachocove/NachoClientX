@@ -1574,6 +1574,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsBinningHelper.cs">
       <Link>NachoCore\Utils\ContactsBinningHelper.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration35.cs">
+      <Link>NachoCore\Model\Migration\NcMigration35.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

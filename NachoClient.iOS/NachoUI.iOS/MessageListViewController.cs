@@ -350,6 +350,7 @@ namespace NachoClient.iOS
             if (this.IsViewLoaded && null == this.NavigationController) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                 StatusIndCallbackIsSet = false;
+                threadsNeedsRefresh = true;
             }
         }
 
@@ -362,6 +363,8 @@ namespace NachoClient.iOS
                 if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
                     return;
                 }
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName());
+
             }
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
@@ -692,6 +695,11 @@ namespace NachoClient.iOS
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
+        protected virtual INachoEmailMessages GetNachoEmailMessages (int accountId)
+        {
+            return NcEmailManager.Inbox (accountId);
+        }
+
         void SwitchToAccount (McAccount account)
         {
             if (searchDisplayController.Active) {
@@ -700,7 +708,7 @@ namespace NachoClient.iOS
             messageSource.MultiSelectCancel (TableView);
             MultiSelectToggle (messageSource, false);
             switchAccountButton.SetAccountImage (account);
-            SetEmailMessages (NcEmailManager.Inbox (account.Id));
+            SetEmailMessages (GetNachoEmailMessages (account.Id));
             threadsNeedsRefresh = true;
             MaybeRefreshThreads ();
         }

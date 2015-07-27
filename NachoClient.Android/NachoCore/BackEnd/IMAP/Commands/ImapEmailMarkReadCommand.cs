@@ -28,15 +28,13 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            var folderGuid = ImapProtoControl.ImapMessageFolderGuid (PendingSingle.ServerId);
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
-            NcAssert.Equals (folderGuid, folder.ImapGuid);
-            var uid = ImapProtoControl.ImapMessageUid (PendingSingle.ServerId);
+            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
             IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMARKREADOPEN");
             }
-            mailKitFolder.SetFlags (uid, MessageFlags.Seen, true, Cts.Token);
+            mailKitFolder.SetFlags (new UniqueId (email.ImapUid), MessageFlags.Seen, true, Cts.Token);
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, 
                     NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMarkedReadSucceeded));

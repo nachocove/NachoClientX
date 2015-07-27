@@ -580,6 +580,10 @@ namespace NachoCore.Utils
         public static string Initials (string fromAddressString)
         {
             // Parse the from address
+            if (String.IsNullOrEmpty (fromAddressString)) {
+                Log.Error (Log.LOG_UTILS, "Initials passed a null or empty from string");
+                return "";
+            }
             var initials = "";
             var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (fromAddressString);
             if (null != mailboxAddress) {
