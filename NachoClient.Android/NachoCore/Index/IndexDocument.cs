@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MimeKit;
 using Lucene.Net.Documents;
+using NachoCore.Utils;
 
 namespace NachoCore.Index
 {
@@ -26,13 +27,15 @@ namespace NachoCore.Index
 
         public long BytesIndexed { protected set; get; }
 
-        public NcIndexDocument (string type, string id, string body)
+        public NcIndexDocument (string type, string id, EmailMessageIndexParameters parameters)
         {
             BytesIndexed = 0;
             Doc = new Document ();
             AddExactMatchOnlyField ("type", type);
             AddExactMatchOnlyField ("id", id);
-            AddIndexedField ("body", body);
+            if (null != parameters) {
+                AddIndexedField ("body", parameters.Content);
+            }
         }
 
         protected Field GetExactMatchOnlyField (string field, string value)
@@ -79,17 +82,6 @@ namespace NachoCore.Index
         }
     }
 
-    public class MimeIndexDocument : NcIndexDocument
-    {
-        protected MimeMessage Message;
-
-        public MimeIndexDocument (string type, string id, string content, MimeMessage message) :
-            base (type, id, content)
-        {
-            Message = message;
-        }
-    }
-
     public class EmailMessageIndexParameters
     {
         public InternetAddressList From;
@@ -102,12 +94,12 @@ namespace NachoCore.Index
         public DateTime ReceivedDate;
     }
 
-    public class EmailMessageIndexDocument : MimeIndexDocument
+    public class EmailMessageIndexDocument : NcIndexDocument
     {
         public const int Version = 3;
 
-        public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters, MimeMessage message) :
-            base ("message", id, parameters.Content, message)
+        public EmailMessageIndexDocument (string id, EmailMessageIndexParameters parameters) :
+            base ("message", id, parameters)
         {
             AddIndexedField ("subject", parameters.Subject);
 
