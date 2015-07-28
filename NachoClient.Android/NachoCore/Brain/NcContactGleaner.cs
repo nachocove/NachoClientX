@@ -95,7 +95,9 @@ namespace NachoCore.Brain
                 Source = McAbstrItem.ItemSource.Internal,
             };
 
-            gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
+            if (null == gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address)) {
+                return;
+            }
             NcEmailAddress.ParseName (mbAddr, ref gleanedContact);
             if (mbAddr.Address == mbAddr.Name) {
                 // Some mail clients generate email addresses like "bob@company.net <bob@company.net>"
