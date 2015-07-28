@@ -213,6 +213,7 @@ namespace NachoClient.iOS
                 })) {
                     // Can't find any account matching those contexts. Abort immediately
                     completionHandler (UIBackgroundFetchResult.NoData);
+                    return;
                 }
                 if (NcApplication.Instance.IsForeground) {
                     completionHandler (UIBackgroundFetchResult.NewData);
