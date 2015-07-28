@@ -26,9 +26,11 @@ namespace NachoCore.Utils
             new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "hotmail.com" },
             new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "outlook.com" },
             new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "live.com" },
+            new Info { s = McAccount.AccountServiceEnum.HotmailDefault, n = "msn.com" },
             new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "hotmail.com" },
             new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "outlook.com" },
             new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "live.com" },
+            new Info { s = McAccount.AccountServiceEnum.HotmailExchange, n = "msn.com" },
             new Info { s = McAccount.AccountServiceEnum.iCloud, n = "icloud.com" },
             new Info { s = McAccount.AccountServiceEnum.iCloud, n = "mac.com" },
             new Info { s = McAccount.AccountServiceEnum.iCloud, n = "me.com" },
@@ -37,6 +39,7 @@ namespace NachoCore.Utils
             new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "hotmail.com" },
             new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "outlook.com" },
             new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "live.com" },
+            new Info { s = McAccount.AccountServiceEnum.OutlookExchange, n = "msn.com" },
             new Info { s = McAccount.AccountServiceEnum.Yahoo, n = "yahoo.com" },
         };
 
