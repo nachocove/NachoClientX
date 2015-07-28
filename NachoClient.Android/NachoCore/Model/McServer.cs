@@ -72,10 +72,15 @@ namespace NachoCore.Model
             return HostIsGMail () || HostIsHotMail ();
         }
 
+        /// <summary>
+        /// Host is a hotmail server. Not intended as an email domain check.
+        /// </summary>
         public bool HostIsHotMail ()
         {
-            return Host.EndsWith (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
-            Host.EndsWith (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase);
+            // Includes s.outlook.com, blu403-m.outlook.com, etc.
+            var domain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Host);
+            return domain.Equals (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
+                domain.Equals (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase);
         }
 
         public bool HostIsGMail ()
