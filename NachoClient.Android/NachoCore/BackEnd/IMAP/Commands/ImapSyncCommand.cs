@@ -475,7 +475,7 @@ namespace NachoCore.IMAP
                         // according to https://tools.ietf.org/html/rfc2156
                         //       importance      = "low" / "normal" / "high"
                         // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
-                        switch (header.Value.ToLower ()) {
+                        switch (header.Value.ToLowerInvariant ()) {
                         case "low":
                             emailMessage.Importance = NcImportance.Low_0;
                             break;
