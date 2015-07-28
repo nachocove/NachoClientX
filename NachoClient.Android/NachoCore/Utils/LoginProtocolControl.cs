@@ -449,7 +449,7 @@ namespace NachoCore.Utils
 
         void ShowServerConfCallback ()
         {
-            ShowAdvancedConfiguration (Prompt.ServerConf);
+            owner.ShowServerConfCallback ();
         }
 
         void ShowAdvancedConfiguration ()
@@ -544,7 +544,7 @@ namespace NachoCore.Utils
             owner.ShowCredReq ();
         }
 
-        void ShowCertRejected()
+        void ShowCertRejected ()
         {
             owner.ShowCertRejected ();
         }

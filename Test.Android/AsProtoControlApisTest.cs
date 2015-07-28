@@ -16,19 +16,27 @@ namespace Test.iOS
         public class TestCreateAssertions : BaseProtoApisTest
         {
             [Test]
-            public void TestCreateItemCmds ()
+            public void TestCreateCalendarCmd ()
             {
                 TestCreatingItem<McCalendar> ((protoControl, itemId, folderId) => {
                     return protoControl.CreateCalCmd (itemId, folderId);
-                });
-                SetUp ();
+                }, NcResult.KindEnum.OK);
+            }
+
+            [Test]
+            public void TestCreateContactCmd ()
+            {
                 TestCreatingItem<McContact> ((protoControl, itemId, folderId) => {
                     return protoControl.CreateContactCmd (itemId, folderId);
-                });
-                SetUp ();
+                }, NcResult.KindEnum.OK);
+            }
+
+            [Test]
+            public void TestCreateTaskCmd ()
+            {
                 TestCreatingItem<McTask> ((protoControl, itemId, folderId) => {
                     return protoControl.CreateTaskCmd (itemId, folderId);
-                });
+                }, NcResult.KindEnum.Error);
             }
 
             [Test]
@@ -44,7 +52,7 @@ namespace Test.iOS
                 Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
             }
 
-            private void TestCreatingItem<T> (Func <AsProtoControl, int, int, NcResult> action) where T : McAbstrItem, new()
+            private void TestCreatingItem<T> (Func <AsProtoControl, int, int, NcResult> action, NcResult.KindEnum expectedKind) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -54,8 +62,10 @@ namespace Test.iOS
                 clientFolder.Link (clientItem);
 
                 var result = action (protoControl, clientItem.Id, clientFolder.Id);
-                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
-                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
+                Assert.AreEqual (result.Kind, expectedKind);
+                if (result.Kind == NcResult.KindEnum.Error) {
+                    Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
+                }
             }
         }
 
@@ -63,22 +73,30 @@ namespace Test.iOS
         public class TestUpdateAssertions : BaseProtoApisTest
         {
             [Test]
-            public void TestUpdateItemCmds ()
+            public void TestUpdateCalendarCmd ()
             {
                 TestUpdatingItem<McCalendar> ((protoControl, itemId) => {
                     return protoControl.UpdateCalCmd (itemId, false);
-                });
-                SetUp ();
-                TestUpdatingItem<McContact> ((protoControl, itemId) => {
-                    return protoControl.UpdateContactCmd (itemId);
-                });
-                SetUp ();
-                TestUpdatingItem<McTask> ((protoControl, itemId) => {
-                    return protoControl.UpdateTaskCmd (itemId);
-                });
+                }, NcResult.KindEnum.OK);
             }
 
-            private void TestUpdatingItem<T> (Func <AsProtoControl, int, NcResult> action) where T : McAbstrItem, new()
+            [Test]
+            public void TestUpdateContactCmd ()
+            {
+                TestUpdatingItem<McContact> ((protoControl, itemId) => {
+                    return protoControl.UpdateContactCmd (itemId);
+                }, NcResult.KindEnum.OK);
+            }
+
+            [Test]
+            public void TestUpdateTaskCmd ()
+            {
+                TestUpdatingItem<McTask> ((protoControl, itemId) => {
+                    return protoControl.UpdateTaskCmd (itemId);
+                }, NcResult.KindEnum.Error);
+            }
+
+            private void TestUpdatingItem<T> (Func <AsProtoControl, int, NcResult> action, NcResult.KindEnum expectedKind) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -88,8 +106,10 @@ namespace Test.iOS
                 clientFolder.Link (clientItem);
 
                 var result = action (protoControl, clientItem.Id);
-                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
-                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned); 
+                Assert.AreEqual (result.Kind, expectedKind);
+                if (result.Kind == NcResult.KindEnum.Error) {
+                    Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
+                }
             }
         }
 
@@ -98,23 +118,35 @@ namespace Test.iOS
         public class TestDeleteAssertions : BaseProtoApisTest
         {
             [Test]
-            public void TestDeleteItemCmds ()
+            public void TestDeleteEmailMessageCmd ()
             {
                 TestDeletingItem<McEmailMessage> ((protoControl, itemId) => {
-                    return protoControl.DeleteEmailCmd (itemId);
-                });
-                SetUp ();
+                    return protoControl.DeleteEmailCmd (itemId, true, false);
+                }, NcResult.KindEnum.Error);
+            }
+
+            [Test]
+            public void TestDeleteCalendarCmd ()
+            {
                 TestDeletingItem<McCalendar> ((protoControl, itemId) => {
                     return protoControl.DeleteCalCmd (itemId);
-                });
-                SetUp ();
+                }, NcResult.KindEnum.OK);
+            }
+
+            [Test]
+            public void TestDeleteContactCmd ()
+            {
                 TestDeletingItem<McContact> ((protoControl, itemId) => {
                     return protoControl.DeleteContactCmd (itemId);
-                });
-                SetUp ();
+                }, NcResult.KindEnum.OK);
+            }
+
+            [Test]
+            public void TestDeleteTaskCmd ()
+            {
                 TestDeletingItem<McTask> ((protoControl, itemId) => {
                     return protoControl.DeleteTaskCmd (itemId);
-                });
+                }, NcResult.KindEnum.Error);
             }
 
             [Test]
@@ -131,7 +163,7 @@ namespace Test.iOS
                 Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
             }
 
-            private void TestDeletingItem<T> (Func <AsProtoControl, int, NcResult> action) where T : McAbstrItem, new()
+            private void TestDeletingItem<T> (Func <AsProtoControl, int, NcResult> action, NcResult.KindEnum expectedKind) where T : McAbstrItem, new()
             {
                 int accountId = 1;
                 var protoControl = ProtoOps.CreateProtoControl (accountId);
@@ -141,8 +173,10 @@ namespace Test.iOS
                 clientFolder.Link (clientItem);
 
                 var result = action (protoControl, clientItem.Id);
-                Assert.AreEqual (result.Kind, NcResult.KindEnum.Error);
-                Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
+                Assert.AreEqual (result.Kind, expectedKind);
+                if (result.Kind == NcResult.KindEnum.Error) {
+                    Assert.AreEqual (result.SubKind, NcResult.SubKindEnum.Error_ClientOwned);
+                }
             }
         }
 

@@ -31,6 +31,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
             } else {
                 NcAssert.True (result.isError ());
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                 });
@@ -62,15 +63,16 @@ namespace NachoCore.IMAP
         {
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             if (null == email) {
-                Log.Error (Log.LOG_IMAP, "Could not find email for {0}", pending.ServerId);
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
+            Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             NcResult result;
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            UniqueId uid = ImapProtoControl.ImapMessageUid (email.ServerId);
+            UniqueId uid = new UniqueId (email.ImapUid);
             McAbstrFileDesc.BodyTypeEnum bodyType;
             result = messageBodyPart (uid, mailKitFolder, out bodyType);
             if (!result.isOK ()) {
@@ -78,10 +80,12 @@ namespace NachoCore.IMAP
             }
             BodyPart part = result.GetValue<BodyPart> ();
 
-            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
-            mailKitFolder.SetStreamContext (uid, tmp);
             McBody body;
             if (0 == email.BodyId) {
+                if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: unknown body type {0}. Using Default Mime", bodyType);
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                }
                 body = new McBody () {
                     AccountId = BEContext.Account.Id,
                     BodyType = bodyType,
@@ -89,10 +93,20 @@ namespace NachoCore.IMAP
                 body.Insert ();
             } else {
                 body = McBody.QueryById<McBody> (email.BodyId);
+                if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Existing body for {0} was saved with unknown body type {1}.", email.ServerId, body.BodyType);
+                    body = body.UpdateWithOCApply<McBody> ((record) => {
+                        var target = (McBody)record;
+                        target.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                        return true;
+                    });
+                }
             }
 
             try {
-                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token);
+                var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+                mailKitFolder.SetStreamContext (uid, tmp);
+                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
                 var path = body.GetFilePath ();
                 using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
                     // TODO Do we need to filter by Content-Transfer-Encoding?
@@ -115,6 +129,14 @@ namespace NachoCore.IMAP
                 }
                 body.Truncated = false;
                 body.UpdateSaveFinish ();
+                if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Body for {0} has unknown body type {1}. Using Default Mime.", email.ServerId, body.BodyType);
+                    body = body.UpdateWithOCApply<McBody> ((record) => {
+                        var target = (McBody)record;
+                        target.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                        return true;
+                    });
+                }
 
                 email.BodyId = body.Id;
                 email.Update ();
@@ -131,10 +153,10 @@ namespace NachoCore.IMAP
                         StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                     }
                 }
-
+                Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for email {0}:{1} type {2}", email.Id, email.ServerId, body.BodyType);
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
+                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
                 // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
                 // The message doesn't exist. Delete it locally.
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
@@ -143,8 +165,9 @@ namespace NachoCore.IMAP
                 email.Delete ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 result = NcResult.Error ("No Body found");
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
             }
-            mailKitFolder.UnsetStreamContext ();
             return result;
         }
 
@@ -214,7 +237,9 @@ namespace NachoCore.IMAP
                 return result;
             }
             bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
-
+            if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                Log.Error (Log.LOG_IMAP, "messageBodyPart: unknown body type {0}", bodyType);
+            }
             var part = summary.Body;
             result = NcResult.OK ();
             result.Value = part;

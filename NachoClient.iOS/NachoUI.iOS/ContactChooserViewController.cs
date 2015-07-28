@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         string contactSearchToken;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
+        protected SearchHelper searcher;
 
         public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType contactType)
         {
@@ -46,12 +47,35 @@ namespace NachoClient.iOS
             this.owner = null;
         }
 
+        protected void SetupSearcher ()
+        {
+            searcher = new SearchHelper ("ContactChooserUpdateAuotCompleteResults", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResults = null;
+                        resultsTableView.ReloadData ();
+                    });
+                } else {
+                    int curVersion = searcher.Version;
+                    var results = McContact.SearchIndexAllContacts (searchString, true, true);
+                    if (curVersion == searcher.Version) {
+                        InvokeOnUIThread.Instance.Invoke (() => {
+                            searchResults = results;
+                            resultsTableView.ReloadData ();
+                        });
+                    }
+                }
+            });
+        }
+
         public ContactChooserViewController (IntPtr handle) : base (handle)
         {
+            SetupSearcher ();
         }
 
         public ContactChooserViewController () : base ()
         {
+            SetupSearcher ();
         }
 
         public override void ViewDidLoad ()
@@ -226,22 +250,7 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public void UpdateAutocompleteResults (int forSearchOption, string forSearchString)
         {
-            if (String.IsNullOrEmpty (forSearchString)) {
-                searchResults = null;
-                NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults");
-                resultsTableView.ReloadData ();
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
-            } else {
-                NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
-                NcTask.Run (() => {
-                    var results = McContact.SearchIndexAllContacts (forSearchString, true, true);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        searchResults = results;
-                        resultsTableView.ReloadData ();
-                        NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
-                    });
-                }, "SearchLocalContacts2");
-            }
+            searcher.Search (forSearchString);
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)

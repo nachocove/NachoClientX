@@ -17,6 +17,12 @@ namespace NachoCore.Utils
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
         private static object LockObj = new object ();
 
+        public static int TaskCount {
+            get {
+                return TaskMap.Count;
+            }
+        }
+
         public static void StartService ()
         {
             if (null == TaskMap) {
@@ -105,6 +111,7 @@ namespace NachoCore.Utils
 
         public static void StopService ()
         {
+            Log.Info (Log.LOG_SYS, "NcTask: Stopping all NCTasks...");
             Cts.Cancel ();
             Task.WaitAny (new Task[] { Task.Delay (4 * MaxCancellationTestInterval) });
             foreach (var pair in TaskMap) {
@@ -112,16 +119,18 @@ namespace NachoCore.Utils
                     var taskRef = pair.Key;
                     if (taskRef.IsAlive) {
                         if (!((Task)taskRef.Target).IsCompleted) {
-                            Log.Warn (Log.LOG_SYS, "Task {0} still running", pair.Value);
+                            Log.Warn (Log.LOG_SYS, "NcTask: Task {0} still running", pair.Value);
                         }
                         if (((Task)taskRef.Target).IsCanceled) {
-                            Log.Info (Log.LOG_SYS, "Task {0} cancelled", pair.Value);
+                            Log.Info (Log.LOG_SYS, "NcTask: Task {0} cancelled", pair.Value);
                         }
                     }
-                } catch {
+                } catch (Exception e) {
                     // tasks may be going away as we iterate.
+                    Log.Info (Log.LOG_SYS, "NcTask: Error stopping NcTask {0}", e.Message);
                 }
             }
+            Log.Info (Log.LOG_SYS, "NcTask: Stopped all NCTasks.");
         }
 
         public static void Dump (bool warnLivedTasks = false)

@@ -614,7 +614,7 @@ namespace Test.iOS
                 );
 
                 TestSyncMatch<McEmailMessage> (TypeCode.DefaultInbox_2,
-                    (itemId, parentId) => Context.ProtoControl.DeleteEmailCmd (itemId).GetValue<string> (),
+                    (itemId, parentId) => Context.ProtoControl.DeleteEmailCmd (itemId, true, false).GetValue<string> (),
                     isDelete: true
                 );
             }
@@ -696,7 +696,7 @@ namespace Test.iOS
 
                 TestSyncDom<McEmailMessage> (TypeCode.DefaultInbox_2,
                     () => CreateSubTaskFolder (withPath: true),
-                    (itemId, folderId) => Context.ProtoControl.DeleteEmailCmd (itemId).GetValue<string> (),
+                    (itemId, folderId) => Context.ProtoControl.DeleteEmailCmd (itemId, true, false).GetValue<string> (),
                     isDelete: true
                 );
             }

@@ -123,6 +123,7 @@ namespace NachoClient.iOS
 
             var bodyText = ExtractBodyTextAsNSAttributedString (mimeMessage);
             bodyTextView.AttributedText = bodyText;
+            bodyTextView.Font = UIFont.PreferredBody;
 
             if (0 == draftMessage.ReferencedEmailId) {
                 action = EmailHelper.Action.Send;
@@ -154,41 +155,42 @@ namespace NachoClient.iOS
             var mutableBodyAttributedText = new NSMutableAttributedString (bodyAttributedText);
             mutableBodyAttributedText.AddAttribute (UIStringAttributeKey.Font, UIFont.FromName ("Helvetica", 12), new NSRange (0, mutableBodyAttributedText.Length));
 
-            var body = new BodyBuilder ();
-            body.TextBody = bodyTextView.Text;
+            using (var body = new NcMimeBodyBuilder ()) {
+                body.TextBody = bodyTextView.Text;
 
-            var length = Math.Min (bodyTextView.Text.Length, 256);
-            var preview = bodyTextView.Text.Substring (0, length);
+                var length = Math.Min (bodyTextView.Text.Length, 256);
+                var preview = bodyTextView.Text.Substring (0, length);
 
-            NSError error = null;
-            NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, mutableBodyAttributedText.Length),
-                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                  ref error);
-            body.HtmlBody = htmlData.ToString ();
+                NSError error = null;
+                NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
+                                      new NSRange (0, mutableBodyAttributedText.Length),
+                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                      ref error);
+                body.HtmlBody = htmlData.ToString ();
 
-            foreach (var attachment in attachmentView.AttachmentList) {
-                body.Attachments.Add (attachment.GetFilePath ());
-            }
+                foreach (var attachment in attachmentView.AttachmentList) {
+                    body.Attachments.Add (attachment.GetFilePath ());
+                }
 
-            mimeMessage.Body = body.ToMessageBody ();
+                mimeMessage.Body = body.ToMessageBody ();
 
-            var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
-            message.BodyPreview = preview;
-            message.Intent = messageIntent;
-            message.IntentDate = messageIntentDateTime;
-            message.IntentDateType = messageIntentDateType;
-            message.QRType = QRType;
+                var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
+                message.BodyPreview = preview;
+                message.Intent = messageIntent;
+                message.IntentDate = messageIntentDateTime;
+                message.IntentDateType = messageIntentDateType;
+                message.QRType = QRType;
 
-            message.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
-            message.ReferencedIsForward = (action == EmailHelper.Action.Forward);
-            message.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
+                message.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
+                message.ReferencedIsForward = (action == EmailHelper.Action.Forward);
+                message.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
 
-            message.Update ();
+                message.Update ();
 
-            EmailHelper.SaveEmailMessageInDrafts (message);
-            if (null != draftMessage) {
-                EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
+                EmailHelper.SaveEmailMessageInDrafts (message);
+                if (null != draftMessage) {
+                    EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
+                }
             }
         }
 
@@ -247,6 +249,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            composeFont = UIFont.PreferredBody;
+
             account = NcApplication.Instance.Account;
 
             sendButton = new NcUIBarButtonItem ();
@@ -291,15 +295,15 @@ namespace NachoClient.iOS
                 NcActionSheet.Show (View, this,
                     new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, () => {
                         owner = null;
-                        if(null == NavigationController) {
-                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
+                        if (null == NavigationController) {
+                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
                         }
                         NavigationController.PopViewController (true);
                     }),
                     new NcAlertAction ("Save Draft", () => {
                         SaveDraft ();
-                        if(null == NavigationController) {
-                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
+                        if (null == NavigationController) {
+                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
                         }
                         NavigationController.PopViewController (true);
                     }),
@@ -341,7 +345,8 @@ namespace NachoClient.iOS
             }
         }
 
-        NSObject notification;
+        NSObject backgroundNotification;
+        NSObject contentSizeCategoryChangedNotification;
 
         public override void ViewWillAppear (bool animated)
         {
@@ -351,7 +356,9 @@ namespace NachoClient.iOS
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
             }
-            notification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver(UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
@@ -364,7 +371,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NSNotificationCenter.DefaultCenter.RemoveObserver (notification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (backgroundNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (contentSizeCategoryChangedNotification);
+
             QRType = NcQuickResponse.QRTypeEnum.None;
         }
 
@@ -375,6 +384,16 @@ namespace NachoClient.iOS
                 if (null != actionController) {
                     actionController.DismissViewController (false, null);
                 }
+            }
+        }
+
+        void OnContentSizeCategoryChangedNotification (NSNotification notification)
+        {
+            if (null != bodyTextView) {
+                bodyTextView.Font = UIFont.PreferredBody;
+            }
+            if (null != showQuotedTextButton) {
+                showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
             }
         }
 
@@ -568,6 +587,7 @@ namespace NachoClient.iOS
 
             showQuotedTextButton = UIButton.FromType (UIButtonType.System);
             showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
             showQuotedTextButton.AccessibilityLabel = "Show quoted text";
             showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             showQuotedTextButton.SizeToFit ();
@@ -1202,7 +1222,7 @@ namespace NachoClient.iOS
             }
 
             // Compressing won't help
-            if ((sTotal == aTotal) && (mTotal == aTotal) && (lTotal == aTotal)) {
+            if ((sTotal >= aTotal) && (mTotal >= aTotal) && (lTotal >= aTotal)) {
                 NcActionSheet.Show (View, this, null,
                     String.Format ("This message is {0}", Pretty.PrettyFileSize (aTotal)),
                     new NcAlertAction ("Send", () => {
@@ -1225,9 +1245,21 @@ namespace NachoClient.iOS
                     ReallySendMessageAndClose ();
                 }),
                 new NcAlertAction (TextForScaling ("Medium", mTotal), () => {
+                    foreach (var attachment in attachmentView.AttachmentList) {
+                        var newAttachment = AttachmentHelper.ResizeAttachmentToSize (attachment, new CGSize (480, 640));
+                        if (null != newAttachment) {
+                            attachmentView.ReplaceAttachment (attachment, newAttachment);
+                        }
+                    }
                     ReallySendMessageAndClose ();
                 }),
                 new NcAlertAction (TextForScaling ("Large", lTotal), () => {
+                    foreach (var attachment in attachmentView.AttachmentList) {
+                        var newAttachment = AttachmentHelper.ResizeAttachmentToSize (attachment, new CGSize (960, 1280));
+                        if (null != newAttachment) {
+                            attachmentView.ReplaceAttachment (attachment, newAttachment);
+                        }
+                    }
                     ReallySendMessageAndClose ();
                 }),
                 new NcAlertAction (TextForScaling ("Actual Size", aTotal), () => {
@@ -1257,67 +1289,68 @@ namespace NachoClient.iOS
             var mutableBodyAttributedText = new NSMutableAttributedString (bodyAttributedText);
             mutableBodyAttributedText.AddAttribute (UIStringAttributeKey.Font, UIFont.FromName ("Helvetica", 12), new NSRange (0, mutableBodyAttributedText.Length));
 
-            var body = new BodyBuilder ();
-            body.TextBody = bodyTextView.Text;
+            using (var body = new NcMimeBodyBuilder ()) {
+                body.TextBody = bodyTextView.Text;
 
-            // For drafts in case message is viewed in Outbox
-            var length = Math.Min (bodyTextView.Text.Length, 256);
-            var preview = bodyTextView.Text.Substring (0, length);
+                // For drafts in case message is viewed in Outbox
+                var length = Math.Min (bodyTextView.Text.Length, 256);
+                var preview = bodyTextView.Text.Substring (0, length);
 
-            NSError error = null;
-            NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, mutableBodyAttributedText.Length),
-                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                  ref error);
-            body.HtmlBody = htmlData.ToString ();
+                NSError error = null;
+                NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
+                                      new NSRange (0, mutableBodyAttributedText.Length),
+                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                      ref error);
+                body.HtmlBody = htmlData.ToString ();
 
-            foreach (var attachment in attachmentView.AttachmentList) {
-                body.Attachments.Add (attachment.GetFilePath ());
-            }
-            bool attachmentNeedsDownloading = false;
-            if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
-                // The user edited the body of the message being forwarded. That means the server won't
-                // automatically include the attachments from the forwarded message (if any).  That needs
-                // to be done explicitly.  If all of the necessary attachments are available, go ahead and
-                // add them to the message now.  If any of the attachments need to be downloaded, then
-                // wait until later to add them.
-                var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
-                foreach (var attachment in originalAttachments) {
-                    if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
-                        attachmentNeedsDownloading = true;
-                        break;
-                    }
+                foreach (var attachment in attachmentView.AttachmentList) {
+                    body.Attachments.Add (attachment.GetFilePath ());
                 }
-                if (!attachmentNeedsDownloading) {
+                bool attachmentNeedsDownloading = false;
+                if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
+                    // The user edited the body of the message being forwarded. That means the server won't
+                    // automatically include the attachments from the forwarded message (if any).  That needs
+                    // to be done explicitly.  If all of the necessary attachments are available, go ahead and
+                    // add them to the message now.  If any of the attachments need to be downloaded, then
+                    // wait until later to add them.
+                    var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
                     foreach (var attachment in originalAttachments) {
-                        body.Attachments.Add (attachment.GetFilePath ());
+                        if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
+                            attachmentNeedsDownloading = true;
+                            break;
+                        }
+                    }
+                    if (!attachmentNeedsDownloading) {
+                        foreach (var attachment in originalAttachments) {
+                            body.Attachments.Add (attachment.GetFilePath ());
+                        }
                     }
                 }
-            }
 
-            mimeMessage.Body = body.ToMessageBody ();
-            var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-            messageToSend.BodyPreview = preview;
-            messageToSend.Intent = messageIntent;
-            messageToSend.IntentDate = messageIntentDateTime;
-            messageToSend.IntentDateType = messageIntentDateType;
-            messageToSend.QRType = QRType;
+                mimeMessage.Body = body.ToMessageBody ();
+                var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
+                messageToSend.BodyPreview = preview;
+                messageToSend.Intent = messageIntent;
+                messageToSend.IntentDate = messageIntentDateTime;
+                messageToSend.IntentDateType = messageIntentDateType;
+                messageToSend.QRType = QRType;
 
-            if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
-                messageToSend.ReferencedEmailId = referencedMessage.Id;
-                messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-            }
+                if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
+                    messageToSend.ReferencedEmailId = referencedMessage.Id;
+                    messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                    messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
+                    messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                }
 
-            messageToSend.Update ();
+                messageToSend.Update ();
 
-            // Send the mesage
-            EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);
+                // Send the mesage
+                EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);
 
-            // and remove the draft, if any
-            if (null != draftMessage) {
-                EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
+                // and remove the draft, if any
+                if (null != draftMessage) {
+                    EmailHelper.DeleteEmailMessageFromDrafts (draftMessage);
+                }
             }
 
             // And close

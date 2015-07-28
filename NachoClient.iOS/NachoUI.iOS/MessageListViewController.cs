@@ -12,6 +12,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
 using NachoCore.Brain;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -42,6 +43,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        protected SearchHelper searcher;
+
         bool StatusIndCallbackIsSet = false;
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -52,6 +55,28 @@ namespace NachoClient.iOS
         public MessageListViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource (this);
+            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    searchResultsMessages.UpdateMatches (null);
+                    return; 
+                }
+                // On-device index
+                int curVersion = searcher.Version;
+                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
+                var index = new NachoCore.Index.NcIndex (indexPath);
+                var matches = index.SearchAllEmailMessageFields (searchString, 100);
+                if (curVersion == searcher.Version) {
+                    searchResultsMessages.UpdateMatches (matches);
+                    List<int> adds;
+                    List<int> deletes;
+                    searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        if (null != searchDisplayController.SearchResultsTableView) {
+                            searchDisplayController.SearchResultsTableView.ReloadData ();
+                        }
+                    });
+                }
+            });
         }
 
         public override void ViewDidLoad ()
@@ -135,10 +160,9 @@ namespace NachoClient.iOS
             RefreshControl.TintColor = A.Color_NachoGreen;
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
+                rearmRefreshTimer ();
                 RefreshControl.BeginRefreshing ();
                 messageSource.GetNachoEmailMessages ().StartSync ();
-                RefreshThreadsIfVisible ();
-                new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };
 
             searchBar = new UISearchBar ();
@@ -171,11 +195,31 @@ namespace NachoClient.iOS
             searchDisplayController.SearchResultsTableView.RowHeight = MessageTableViewConstants.NORMAL_ROW_HEIGHT;
         }
 
-        protected void refreshCallback (object sender)
+        protected void EndRefreshingOnUIThread (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                 RefreshControl.EndRefreshing ();
             });
+        }
+
+        NcTimer refreshTimer;
+
+        void rearmRefreshTimer ()
+        {
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
+            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, 10000, 0); 
+        }
+
+        void cancelRefreshTimer ()
+        {
+            EndRefreshingOnUIThread (null);
+            if (null != refreshTimer) {
+                refreshTimer.Dispose ();
+                refreshTimer = null;
+            }
         }
 
         protected virtual void CustomizeBackButton ()
@@ -310,6 +354,7 @@ namespace NachoClient.iOS
             }
 
             if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
 
@@ -339,6 +384,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            cancelRefreshTimer ();
             CancelSearchIfActive ();
             // In case we exit during scrolling
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
@@ -350,6 +396,7 @@ namespace NachoClient.iOS
             if (this.IsViewLoaded && null == this.NavigationController) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                 StatusIndCallbackIsSet = false;
+                threadsNeedsRefresh = true;
             }
         }
 
@@ -362,6 +409,8 @@ namespace NachoClient.iOS
                 if ((null == m) || !m.IsCompatibleWithAccount (s.Account)) {
                     return;
                 }
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: {0} {1}", s.Status.SubKind, m.DisplayName ());
+
             }
             switch (s.Status.SubKind) {
             case NcResult.SubKindEnum.Info_EmailMessageSetChanged:
@@ -369,6 +418,10 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
+                break;
+            case NcResult.SubKindEnum.Error_SyncFailed:
+            case NcResult.SubKindEnum.Info_SyncSucceeded:
+                cancelRefreshTimer ();
                 break;
             case NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded:
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_EmailSearchCommandSucceeded");
@@ -621,23 +674,12 @@ namespace NachoClient.iOS
         protected void Search (UISearchBar searchBar)
         {
             if (String.IsNullOrEmpty (searchBar.Text)) {
-                searchResultsMessages.UpdateMatches (null);
                 searchResultsMessages.UpdateServerMatches (null);
-                return; 
+            } else {
+                // Ask the server
+                KickoffSearchApi (0, searchBar.Text);
             }
-            // Ask the server
-            KickoffSearchApi (0, searchBar.Text);
-            // On-device index
-            var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
-            var index = new NachoCore.Index.NcIndex (indexPath);
-            var matches = index.SearchAllEmailMessageFields (searchBar.Text, 100);
-            searchResultsMessages.UpdateMatches (matches);
-            List<int> adds;
-            List<int> deletes;
-            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-            if (null != searchDisplayController.SearchResultsTableView) {
-                searchDisplayController.SearchResultsTableView.ReloadData ();
-            }
+            searcher.Search (searchBar.Text);
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
@@ -692,6 +734,11 @@ namespace NachoClient.iOS
             SwitchAccountViewController.ShowDropdown (this, SwitchToAccount);
         }
 
+        protected virtual INachoEmailMessages GetNachoEmailMessages (int accountId)
+        {
+            return NcEmailManager.Inbox (accountId);
+        }
+
         void SwitchToAccount (McAccount account)
         {
             if (searchDisplayController.Active) {
@@ -700,7 +747,7 @@ namespace NachoClient.iOS
             messageSource.MultiSelectCancel (TableView);
             MultiSelectToggle (messageSource, false);
             switchAccountButton.SetAccountImage (account);
-            SetEmailMessages (NcEmailManager.Inbox (account.Id));
+            SetEmailMessages (GetNachoEmailMessages (account.Id));
             threadsNeedsRefresh = true;
             MaybeRefreshThreads ();
         }

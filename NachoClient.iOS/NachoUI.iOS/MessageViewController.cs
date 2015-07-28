@@ -58,14 +58,6 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
-
-
-
-
-
-
-
-
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -416,32 +408,39 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
             }
 
+            NachoCore.Utils.NcAbate.HighPriority ("MessageViewController");
+
             var message = thread.SingleMessageSpecialCase ();
 
             if (null == message) {
                 // TODO: Unavailable message
                 NavigationController.PopViewController (true);
+                NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
                 return;
             }
                 
             attachments = McAttachment.QueryByItemId (message);
+            attachmentListView.Hidden = !HasAttachments;
 
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageViewController");
+
+            // User image view
             var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
             var userLabelView = headerView.ViewWithTag ((int)TagType.USER_LABEL_TAG) as UILabel;
-            var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
+            userImageView.Hidden = true;
+            userLabelView.Hidden = true;
+
+            var userImage = Util.PortraitToImage (message.cachedPortraitId);
+
             if (null != userImage) {
                 userImageView.Hidden = false;
                 userImageView.Image = userImage;
-                userLabelView.Hidden = true;
             } else {
                 userLabelView.Hidden = false;
                 userLabelView.Text = message.cachedFromLetters;
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
-                userImageView.Hidden = true;
             }
-
-            attachmentListView.Hidden = !HasAttachments;
-
+                
             var cursor = new VerticalLayoutCursor (headerView);
             cursor.AddSpace (35); // for From and top inset
 

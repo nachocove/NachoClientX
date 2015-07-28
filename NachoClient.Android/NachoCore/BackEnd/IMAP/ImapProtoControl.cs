@@ -103,12 +103,14 @@ namespace NachoCore.IMAP
 
         private PushAssist PushAssist { set; get; }
 
+        private const string KImapStrategyPick = "ImapStrategy Pick";
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
             Capabilities = McAccount.ImapCapabilities;
             SetupAccount ();
             MainClient = new NcImapClient ();
+            NcCapture.AddKind (KImapStrategyPick);
 
             Sm = new NcStateMachine ("IMAPPC") { 
                 Name = string.Format ("IMAPPC({0})", AccountId),
@@ -565,17 +567,6 @@ namespace NachoCore.IMAP
             return string.Format ("{0}:{1}", folder.ImapGuid, ImapMessageUid);
         }
 
-        public static UniqueId ImapMessageUid (string MessageServerId)
-        {
-            uint x = UInt32.Parse (MessageServerId.Split (':') [1]);
-            return new UniqueId (x);
-        }
-
-        public static string ImapMessageFolderGuid (string MessageServerId)
-        {
-            return MessageServerId.Split (':') [0];
-        }
-
         public override void ForceStop ()
         {
             if (null != PushAssist) {
@@ -814,7 +805,7 @@ namespace NachoCore.IMAP
             CancelCmd ();
             Sm.ClearEventQueue ();
             Tuple<PickActionEnum, ImapCommand> pack;
-            using (var cap = NcCapture.CreateAndStart ("ImapStrategy Pick")) {
+            using (var cap = NcCapture.CreateAndStart (KImapStrategyPick)) {
                 pack = Strategy.Pick (MainClient);
                 cap.Stop ();
             }

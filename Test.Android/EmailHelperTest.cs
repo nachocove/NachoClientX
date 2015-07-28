@@ -335,6 +335,63 @@ namespace Test.Android
             emailAddress = "Microsoft Outlook"; // This was an actual From address from Outlook
             initials = EmailHelper.Initials (emailAddress);
             Assert.AreEqual ("M", initials);
+
+            emailAddress = "\"MS\" lov2cod@gmail.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("M", initials);
+
+            emailAddress = "MS lov2cod@gmail.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("M", initials);
+
+            emailAddress = "<ec2ubuntu+bncCNaemKzOFBDrw_vqBBoEJSf8eg@googlegroups.com>"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("E", initials);
+
+            emailAddress = "<jan.vilhuber+caf_=jan=vilhuber.com@gmail.com>"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("J", initials);
+
+            emailAddress = "MS <lov2cod@gmail.com>"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("M", initials);
+
+            emailAddress = "ec2ubuntu <ec2ubuntu@googlegroups.com>"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("E", initials);
+
+            emailAddress = "ec2ubuntu+unsubscribe@googlegroups.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("E", initials);
+
+            emailAddress = "ec2ubuntu-unsubscribe@googlegroups.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("E", initials);
+
+            emailAddress = "ec2ubuntu@googlegroups.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("E", initials);
+
+            // FIXME: Should be "JV"
+            emailAddress = "jan.vilhuber@gmail.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("J", initials);
+
+            emailAddress = "jan@vilhuber.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("J", initials);
+
+            emailAddress = "lov2cod@gmail.com"; // This was an actual From address from Jan's imap
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("L", initials);
+
+            emailAddress = "Phd <bob@gmail.com>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("P", initials);
+
+            emailAddress = "Mr. Phd <bob@gmail.com>";
+            initials = EmailHelper.Initials (emailAddress);
+            Assert.AreEqual ("P", initials);
         }
 
         class Info

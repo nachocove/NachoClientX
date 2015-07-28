@@ -20,6 +20,7 @@ namespace NachoClient.iOS
 
         AdvancedTextField emailView;
         AdvancedTextField passwordView;
+        AdvancedTextField usernameView;
 
         AdvancedTextField imapServerView;
         AdvancedTextField imapPortNumberView;
@@ -27,6 +28,8 @@ namespace NachoClient.iOS
         AdvancedTextField smtpPortNumberView;
 
         UILabel infoLabel;
+        UILabel imapLabel;
+        UILabel smtpLabel;
         UIButton connectButton;
         UIButton advancedButton;
         UIButton startOverButton;
@@ -110,7 +113,6 @@ namespace NachoClient.iOS
             accountImageView.ContentMode = UIViewContentMode.Center;
             contentView.AddSubview (accountImageView);
 
-
             accountEmailAddr = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));
             accountEmailAddr.Font = A.Font_AvenirNextRegular17;
             accountEmailAddr.TextColor = A.Color_NachoBlack;
@@ -149,6 +151,20 @@ namespace NachoClient.iOS
 
             yOffset += 25;
 
+            usernameView = new AdvancedTextField ("Username", "joe@bigdog.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
+            usernameView.EditingChangedCallback = MaybeEnableConnect;
+            contentView.AddSubview (usernameView);
+            yOffset += CELL_HEIGHT;
+
+            yOffset += 25;
+
+            imapLabel = new UILabel (new CGRect (15, yOffset, View.Frame.Width - 15, CELL_HEIGHT));
+            imapLabel.Font = A.Font_AvenirNextRegular17;
+            imapLabel.BackgroundColor = A.Color_NachoNowBackground;
+            imapLabel.Text = "Incoming Mail Server";
+            contentView.AddSubview (imapLabel);
+            yOffset += CELL_HEIGHT;
+
             imapServerView = new AdvancedTextField ("Server", "imap.domain.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             imapServerView.EditingChangedCallback = MaybeEnableConnect;
             contentView.AddSubview (imapServerView);
@@ -165,6 +181,13 @@ namespace NachoClient.iOS
             contentView.AddSubview (imapWhiteInset);
 
             yOffset += 25;
+
+            smtpLabel = new UILabel (new CGRect (15, yOffset, View.Frame.Width - 15, CELL_HEIGHT));
+            smtpLabel.Font = A.Font_AvenirNextRegular17;
+            smtpLabel.BackgroundColor = A.Color_NachoNowBackground;
+            smtpLabel.Text = "Outgoing Mail Server";
+            contentView.AddSubview (smtpLabel);
+            yOffset += CELL_HEIGHT;
 
             smtpServerView = new AdvancedTextField ("Server", "smtp.domain.com", true, new CGRect (0, yOffset, View.Frame.Width + 1, CELL_HEIGHT), UIKeyboardType.EmailAddress);
             smtpServerView.EditingChangedCallback = MaybeEnableConnect;
@@ -233,6 +256,7 @@ namespace NachoClient.iOS
                 passwordView,
             };
             advancedInputViews = new AdvancedTextField[] {
+                usernameView,
                 imapServerView,
                 imapPortNumberView,
                 smtpServerView,
@@ -307,6 +331,15 @@ namespace NachoClient.iOS
 
             if (showAdvancedSettings) {
                 yOffset += 20;
+                ViewFramer.Create (usernameView).Y (yOffset);
+                yOffset += CELL_HEIGHT;
+
+                yOffset += 20;
+
+                imapLabel.SizeToFit ();
+                ViewFramer.Create (imapLabel).Y (yOffset);
+                yOffset = imapLabel.Frame.Bottom + 5;
+
                 ViewFramer.Create (imapServerView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
 
@@ -315,6 +348,10 @@ namespace NachoClient.iOS
 
                 ViewFramer.Create (imapWhiteInset).Y (imapServerView.Frame.Top + (CELL_HEIGHT / 2));
                 yOffset += 20;
+
+                smtpLabel.SizeToFit ();
+                ViewFramer.Create (smtpLabel).Y (yOffset);
+                yOffset = smtpLabel.Frame.Bottom + 5;
 
                 ViewFramer.Create (smtpServerView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
@@ -347,7 +384,7 @@ namespace NachoClient.iOS
             yOffset += 20;
 
             MaybeEnableConnect (emailView.textField);
-            Util.SetHidden (!showAdvancedSettings, imapServerView, imapPortNumberView, imapWhiteInset, smtpServerView, smtpPortNumberView, smtpWhiteInset);
+            Util.SetHidden (!showAdvancedSettings, usernameView, imapLabel, imapServerView, imapPortNumberView, imapWhiteInset, smtpLabel, smtpServerView, smtpPortNumberView, smtpWhiteInset);
 
             ViewFramer.Create (scrollView).Height (height);
             scrollView.ContentSize = new CGSize (scrollView.Frame.Width, yOffset);
@@ -411,6 +448,8 @@ namespace NachoClient.iOS
             emailView.textField.Text = account.EmailAddr;
             passwordView.textField.Text = creds.GetPassword ();
 
+            usernameView.textField.Text = creds.Username;
+
             var imapServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
             if (null != imapServer) {
                 imapServerView.textField.Text = imapServer.Host;
@@ -435,6 +474,7 @@ namespace NachoClient.iOS
             }
             var email = emailView.textField.Text.Trim ();
             var password = passwordView.textField.Text;
+            var username = usernameView.textField.Text;
 
             // TODO: Ask jeff
             // Stop/Start did not recover from 2nd wrong password or wrong username
@@ -444,7 +484,7 @@ namespace NachoClient.iOS
             }
 
             if (null == account) {
-                if (LoginHelpers.AccountExists (email)) {
+                if (LoginHelpers.ConfiguredAccountExists (email)) {
                     // Already have this one.
                     Log.Info (Log.LOG_UI, "avl: SaveUserSettings existing account: {0}", email);
                     return AdvancedLoginViewController.ConnectCallbackStatusEnum.DuplicateAccount;
@@ -456,6 +496,8 @@ namespace NachoClient.iOS
             account.EmailAddr = email;
             account.Update ();
 
+            cred.Username = username;
+            cred.UserSpecifiedUsername = true;
             cred.UpdatePassword (password);
             cred.Update ();
 
@@ -519,6 +561,7 @@ namespace NachoClient.iOS
 
             var cred = new McCred ();
             cred.SetTestPassword (passwordView.textField.Text);          
+            cred.Username = usernameView.textField.Text;
 
             var imapServerName = imapServerView.textField.Text;
             var smtpServerName = smtpServerView.textField.Text;

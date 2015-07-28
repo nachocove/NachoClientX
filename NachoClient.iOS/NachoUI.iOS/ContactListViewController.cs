@@ -146,6 +146,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
             MaybeRefreshContacts ();
         }
 

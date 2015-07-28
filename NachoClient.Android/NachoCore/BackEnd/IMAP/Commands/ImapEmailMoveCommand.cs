@@ -61,9 +61,6 @@ namespace NachoCore.IMAP
         {
             NcResult result;
             UniqueId? newUid;
-            var folderGuid = ImapProtoControl.ImapMessageFolderGuid (emailMessage.ServerId);
-            var emailUid = ImapProtoControl.ImapMessageUid (emailMessage.ServerId);
-            NcAssert.Equals (folderGuid, src.ImapGuid);
             var srcFolder = Client.GetFolder (src.ServerId, Token);
             NcAssert.NotNull (srcFolder);
             var dstFolder = Client.GetFolder (dst.ServerId, Token);
@@ -71,11 +68,12 @@ namespace NachoCore.IMAP
 
             srcFolder.Open (FolderAccess.ReadWrite, Token);
             try {
-                newUid = srcFolder.MoveTo (emailUid, dstFolder, Token);
+                newUid = srcFolder.MoveTo (new UniqueId(emailMessage.ImapUid), dstFolder, Token);
                 if (null != newUid && newUid.HasValue && 0 != newUid.Value.Id) {
                     emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                         var target = (McEmailMessage)record;
-                        target.ServerId = ImapProtoControl.MessageServerId (dst, (UniqueId)newUid);
+                        target.ServerId = ImapProtoControl.MessageServerId (dst, newUid.Value);
+                        target.ImapUid = newUid.Value.Id;
                         return true;
                     });
                 } else {

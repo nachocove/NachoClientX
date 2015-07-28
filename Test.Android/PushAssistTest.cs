@@ -196,10 +196,11 @@ namespace Test.Common
         private void WaitForState (uint expectedState)
         {
             DateTime now = DateTime.UtcNow;
-            while ((0 < Wpa.EventQueueDepth) || (expectedState != Wpa.State)) {
+            while ((0 < Wpa.EventQueueDepth) || (expectedState != Wpa.State) || (0 < NcTask.TaskCount)) {
                 Thread.Sleep (100);
                 if (3000 < (DateTime.UtcNow - now).TotalMilliseconds) {
                     Assert.AreEqual (expectedState, Wpa.State);
+                    Assert.AreEqual (0, NcTask.TaskCount);
                 }
             }
             Assert.AreEqual (expectedState, Wpa.State);

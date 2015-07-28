@@ -497,6 +497,9 @@
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration34.cs" />
     <Compile Include="NachoCore\Utils\ContactsBinningHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration35.cs" />
+    <Compile Include="NachoCore\Utils\SearchHelper.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration36.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

@@ -52,6 +52,8 @@ namespace Test.Common
 
         McEmailMessage Message;
 
+        McAccount Account;
+
         WrappedNcBrain Brain;
 
         [SetUp]
@@ -63,14 +65,24 @@ namespace Test.Common
             NcBrain.StartupDelayMsec = 0;
             NcBrain.StartService ();
             Telemetry.ENABLED = false;
+
+            var bobCanonicalAddress = "bob@company.com";
+            var bobEmailAddress = "Bob <bob@company.com>";
+
+            Account = new McAccount () {
+                EmailAddr = bobCanonicalAddress,
+            };
+            Account.Insert ();
+
             Address = new McEmailAddress ();
-            Address.AccountId = 1;
-            Address.CanonicalEmailAddress = "bob@company.com";
+            Address.AccountId = Account.Id;
+            Address.CanonicalEmailAddress = bobCanonicalAddress;
             Address.Insert ();
 
             Message = new McEmailMessage ();
-            Message.AccountId = 1;
-            Message.From = "bob@company.com";
+            Message.AccountId = Account.Id;
+            Message.From = bobCanonicalAddress;
+            Message.To = bobEmailAddress;
             Message.DateReceived = DateTime.Now;
             Message.Insert ();
 
@@ -78,6 +90,7 @@ namespace Test.Common
 
             Directory.CreateDirectory (NcModel.Instance.GetAccountDirPath (TestIndexContactAccountId));
             Directory.CreateDirectory (NcModel.Instance.GetAccountDirPath (TestIndexEmailMessageAccountId));
+            Directory.CreateDirectory (System.IO.Path.Combine (NcModel.Instance.GetAccountDirPath (TestIndexEmailMessageAccountId), "tmp"));
         }
 
         [TearDown]
@@ -322,17 +335,18 @@ namespace Test.Common
             matches = index.SearchAllEmailMessageFields ("normal");
             CheckOneEmailMessage (message2.Id, matches);
 
-            // Index an email message that has a downloaded body
+            // Index an email message that has a downloaded plain text body
             var body3 = new McBody () {
                 AccountId = TestIndexEmailMessageAccountId,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1,
             };
             InsertAndCheck (body3);
+            body3.UpdateData ("This is a plaintext email");
             var message3 = new McEmailMessage () {
                 AccountId = TestIndexEmailMessageAccountId,
                 From = "ellen@company.net",
                 To = "fred@company.net",
-                Subject = "test email 3 - hot",
                 BodyId = body3.Id,
             };
             InsertAndCheck (message3);
@@ -340,8 +354,58 @@ namespace Test.Common
             Brain.TestCloseAllOpenedIndexes ();
 
             Assert.AreEqual (EmailMessageIndexDocument.Version, message3.IsIndexed);
-            matches = index.SearchAllEmailMessageFields ("hot");
+            matches = index.SearchAllEmailMessageFields ("plaintext");
             CheckOneEmailMessage (message3.Id, matches);
+
+            // Index an email message that has a downloaded HTML body
+            var body4 = new McBody () {
+                AccountId = TestIndexEmailMessageAccountId,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2,
+            };
+            InsertAndCheck (body4);
+            body4.UpdateData ("<html><p><ul><li>This is a HTML email</li></ul></p></html>");
+            var message4 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "ellen@company.net",
+                To = "fred@company.net",
+                BodyId = body4.Id,
+            };
+            InsertAndCheck (message4);
+            Brain.TestIndexEmailMessage (message4);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version, message4.IsIndexed);
+            matches = index.SearchAllEmailMessageFields ("html");
+            CheckOneEmailMessage (message4.Id, matches);
+
+            // Index an email message that has a downloaded MIME body
+            var body5 = new McBody () {
+                AccountId = TestIndexEmailMessageAccountId,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4,
+            };
+            InsertAndCheck (body5);
+            body5.UpdateData (@"Content-Type: text/plain; charset=""us-ascii""
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+From: ellen@company.net
+To: fred@company.net
+
+This is a MIME email");
+            var message5 = new McEmailMessage () {
+                AccountId = TestIndexEmailMessageAccountId,
+                From = "ellen@company.net",
+                To = "fred@company.net",
+                BodyId = body5.Id,
+            };
+            InsertAndCheck (message5);
+            Brain.TestIndexEmailMessage (message5);
+            Brain.TestCloseAllOpenedIndexes ();
+
+            Assert.AreEqual (EmailMessageIndexDocument.Version, message5.IsIndexed);
+            matches = index.SearchAllEmailMessageFields ("mime");
+            CheckOneEmailMessage (message5.Id, matches);
         }
 
         protected void CheckOneContact (int expectedId, List<MatchedItem> matches)
@@ -410,6 +474,21 @@ namespace Test.Common
             Assert.AreEqual (ContactIndexDocument.Version, contact3.IndexVersion);
             matches = index.SearchAllContactFields ("charles");
             CheckOneContact (contact3.Id, matches);
+        }
+
+        [Test]
+        public void TestQuickScore ()
+        {
+            var stateMachineEvent = new NcBrainStateMachineEvent (Message.AccountId);
+            Assert.AreEqual (0, Message.ScoreVersion);
+            Assert.AreEqual (0, Message.Score);
+
+            NcBrain.SharedInstance.Enqueue (stateMachineEvent);
+            WaitForBrain ();
+
+            var updatedMessage = McEmailMessage.QueryById<McEmailMessage> (Message.Id);
+            Assert.AreEqual (0, updatedMessage.ScoreVersion);
+            Assert.AreEqual (McEmailMessage.minHotScore, updatedMessage.Score);
         }
     }
 }

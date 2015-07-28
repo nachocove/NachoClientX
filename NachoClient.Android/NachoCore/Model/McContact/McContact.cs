@@ -516,11 +516,12 @@ namespace NachoCore.Model
             f.Value = value;
             f.ContactId = this.Id;
             McEmailAddress emailAddress;
-            if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
-                f.EmailAddress = emailAddress.Id;
-                if (0 == this.CircleColor) {
-                    this.CircleColor = emailAddress.ColorIndex;
-                }
+            if (!McEmailAddress.Get (AccountId, value, out emailAddress)) {
+                return null;
+            }
+            f.EmailAddress = emailAddress.Id;
+            if (0 == this.CircleColor) {
+                this.CircleColor = emailAddress.ColorIndex;
             }
             EmailAddresses.Add (f);
             return f;

@@ -17,6 +17,12 @@ namespace NachoCore.ActiveSync
         {
         }
 
+        public override double TimeoutInSeconds {
+            get {
+                return AsAutodiscoverCommand.TestTimeoutSecs;
+            }
+        }
+
         public override bool DoSendPolicyKey (AsHttpOperation Sender)
         {
             return false;

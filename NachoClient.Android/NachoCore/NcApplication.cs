@@ -599,11 +599,11 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
             MonitorStop ();
             CrlMonitor.StopService ();
-            if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
+            if ((null != Class4EarlyShowTimer) && Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
             }
 
-            if (Class4LateShowTimer.DisposeAndCheckHasFired ()) {
+            if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
@@ -1010,7 +1010,7 @@ namespace NachoCore
                 try {
                     File.Delete (startupLog);
                 } catch (Exception e) {
-                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", startupLog, e.Message);
                 }
             }
         }
