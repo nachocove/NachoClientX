@@ -29,6 +29,8 @@ namespace NachoCore.Model
         // Well know email domain name suffixes:
         public const string HotMail_Suffix = "hotmail.com";
         public const string Outlook_Suffix = "outlook.com";
+        public const string Live_Suffix = "live.com";
+        public const string MSN_Suffix = "msn.com";
         public const string GMail_Suffix = "gmail.com";
         public const string GMail_Suffix2 = "googlemail.com";
 
@@ -82,13 +84,20 @@ namespace NachoCore.Model
 
         public bool HostIsHotMail ()
         {
-            return Host.EndsWith (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
-            Host.EndsWith (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase);
+            return IsHotMail (Host);
+        }
+
+        public static bool IsHotMail (string hostname)
+        {
+            return (hostname.Equals (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
+                hostname.Equals (McServer.Outlook_Suffix, StringComparison.OrdinalIgnoreCase) ||
+                hostname.Equals (McServer.Live_Suffix, StringComparison.OrdinalIgnoreCase) ||
+                hostname.Equals (McServer.MSN_Suffix, StringComparison.OrdinalIgnoreCase));
         }
 
         public bool HostIsGMail ()
         {
-            return Host.EndsWith (McServer.GMail_Host, StringComparison.OrdinalIgnoreCase);
+            return Host.Equals (McServer.GMail_Host, StringComparison.OrdinalIgnoreCase);
         }
 
         public static McServer Create (int accountId, McAccount.AccountCapabilityEnum capabilities, Uri uri)
