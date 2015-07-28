@@ -162,6 +162,8 @@ namespace NachoCore.IMAP
                 return new UniqueIdSet ();
             }
 
+            // Take the union of the two sets, so that we get new (only in the currentUidSet)
+            // as well as removed (only in currentMails) Uids to look at when we perform the sync.
             UniqueIdSet syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
             if (HasNewMail (folder)) {
                 var highestUid = new UniqueId (folder.ImapUidNext - 1);
