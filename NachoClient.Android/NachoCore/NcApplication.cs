@@ -1010,7 +1010,7 @@ namespace NachoCore
                 try {
                     File.Delete (startupLog);
                 } catch (Exception e) {
-                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", startupLog, e.Message);
                 }
             }
         }
