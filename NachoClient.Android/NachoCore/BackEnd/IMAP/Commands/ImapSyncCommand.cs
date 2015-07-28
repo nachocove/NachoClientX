@@ -435,7 +435,7 @@ namespace NachoCore.IMAP
                     try {
                         emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
                     } catch (Exception ex) {
-                        Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials.");
+                        Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
                     }
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
