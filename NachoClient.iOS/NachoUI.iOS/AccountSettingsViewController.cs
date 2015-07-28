@@ -128,7 +128,7 @@ namespace NachoClient.iOS
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
                 Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Change Password", INDENT, 15, ChangePasswordTapHandler);
+                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Update Password", INDENT, 15, ChangePasswordTapHandler);
                 contentView.AddSubview (ChangePasswordBlock);
                 yOffset = ChangePasswordBlock.Frame.Bottom;
             }
@@ -415,6 +415,7 @@ namespace NachoClient.iOS
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
             account.DaysToSyncEmail = code;
             account.Update ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_DaysToSyncChanged);
         }
 
         public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)

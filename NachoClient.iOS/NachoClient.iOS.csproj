@@ -1577,6 +1577,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration35.cs">
       <Link>NachoCore\Model\Migration\NcMigration35.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SearchHelper.cs">
+      <Link>NachoCore\Utils\SearchHelper.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration36.cs">
       <Link>NachoCore\Model\Migration\NcMigration36.cs</Link>
     </Compile>

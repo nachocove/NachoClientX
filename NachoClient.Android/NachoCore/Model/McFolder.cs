@@ -1025,9 +1025,9 @@ namespace NachoCore.Model
 
         private static bool FolderMatchesStringList (string folderName, string[] tags)
         {
-            var folderLower = folderName.ToLower ();
-            for (int n = 0; n < tags.Length; n++) {
-                if (folderLower.Contains (tags [n])) {
+            var folderLower = folderName.ToLowerInvariant ();
+            foreach (var tag in tags) {
+                if (folderLower.Contains (tag)) {
                     return true;
                 }
             }

@@ -427,10 +427,17 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
                 emailMessage.From = summary.Envelope.From [0].ToString ();
+                if (string.IsNullOrEmpty (emailMessage.From)) {
+                    throw new Exception ("No emailMessage.From");
+                }
                 McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                    emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    try {
+                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
+                    }
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }

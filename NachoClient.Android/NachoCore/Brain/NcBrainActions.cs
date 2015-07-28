@@ -159,7 +159,6 @@ namespace NachoCore.Brain
                 return false;
             }
 
-            MimeMessage message = null;
             var parameters = new EmailMessageIndexParameters () {
                 From = NcEmailAddress.ParseAddressListString (emailMessage.From),
                 To = NcEmailAddress.ParseAddressListString (emailMessage.To),
@@ -174,14 +173,41 @@ namespace NachoCore.Brain
                 McBody body;
                 var messagePath = GetValidBodypath (emailMessage, "IndexEmailMessage", out body);
                 if (null != messagePath) {
-                    // Create the parsed object, its tokenizer, and its index document
-                    message = NcObjectParser.ParseMimeMessage (messagePath);
-                    if (null == message) {
-                        Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, bodyType={2}, filePresence={3}",
-                            emailMessage.Id, emailMessage.BodyId, body.BodyType, body.FilePresence);
-                    } else {
-                        var tokenizer = new NcMimeTokenizer (message);
-                        parameters.Content = tokenizer.Content;
+                    switch (body.BodyType) {
+                    case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                        var textMessage = NcObjectParser.ParseFileMessage (messagePath);
+                        if (null == textMessage) {
+                            Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid plain text message (emailMesssageId={0}, bodyId={1}, filePresence={2}",
+                                emailMessage.Id, emailMessage.BodyId, body.FilePresence);
+                        } else {
+                            var tokenizer = new NcPlainTextTokenizer (textMessage, NcTask.Cts.Token);
+                            parameters.Content = tokenizer.Content;
+                        }
+                        break;
+                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                        var htmlMessage = NcObjectParser.ParseFileMessage (messagePath);
+                        if (null == htmlMessage) {
+                            Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid HTML message (emailMessageId={0}, bodyId={1], filePresence={2}",
+                                emailMessage.Id, emailMessage.BodyId, body.FilePresence);
+                        } else {
+                            var tokenizer = new NcHtmlTokenizer (htmlMessage, NcTask.Cts.Token);
+                            parameters.Content = tokenizer.Content;
+                        }
+                        break;
+                    case McAbstrFileDesc.BodyTypeEnum.RTF_3:
+                        Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: do not support indexing RTF content yet (emailMessageId={0})", emailMessage.Id);
+                        break;
+                    case McAbstrFileDesc.BodyTypeEnum.MIME_4:
+                        // Create the parsed object, its tokenizer, and its index document
+                        var mimeMessage = NcObjectParser.ParseMimeMessage (messagePath);
+                        if (null == mimeMessage) {
+                            Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, filePresence={2}",
+                                emailMessage.Id, emailMessage.BodyId, body.FilePresence);
+                        } else {
+                            var tokenizer = new NcMimeTokenizer (mimeMessage, NcTask.Cts.Token);
+                            parameters.Content = tokenizer.Content;
+                        }
+                        break;
                     }
                 }
             }
@@ -193,7 +219,7 @@ namespace NachoCore.Brain
                     index.Remove ("message", id);
                     index = OpenedIndexes.Get (emailMessage.AccountId);
                 }
-                var indexDoc = new EmailMessageIndexDocument (id, parameters, message);
+                var indexDoc = new EmailMessageIndexDocument (id, parameters);
 
                 // Index the document
                 BytesIndexed += index.BatchAdd (indexDoc);

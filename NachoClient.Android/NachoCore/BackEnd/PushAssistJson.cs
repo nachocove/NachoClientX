@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace NachoCore
 {
@@ -111,7 +112,7 @@ namespace NachoCore
             }
             try {
                 var epoch = new DateTime (1970, 1, 1, 0, 0, 0, 0);
-                var seconds = double.Parse (unixTime);
+                var seconds = double.Parse (unixTime, CultureInfo.InvariantCulture);
                 timestamp = epoch.AddSeconds (seconds);
                 return true;
             } catch {

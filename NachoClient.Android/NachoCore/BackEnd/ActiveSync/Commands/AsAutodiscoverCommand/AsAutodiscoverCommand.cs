@@ -528,6 +528,7 @@ namespace NachoCore.ActiveSync
             case "outlook.com":
             case "live.com":
             case "hotmail.com":
+            case "msn.com":
                 return McServer.HotMail_Host;
             }
             return null;
