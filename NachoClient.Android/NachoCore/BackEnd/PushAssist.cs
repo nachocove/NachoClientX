@@ -1030,6 +1030,29 @@ namespace NachoCore
             return null;
         }
 
+        protected void HandleHttpRequestException (Exception e, CancellationToken cToken, ref PushAssistHttpResult result)
+        {
+            if (e is OperationCanceledException) {
+                if (cToken.IsCancellationRequested) {
+                    DisposeTimeoutTimer ();
+                    DisposeRetryTimer ();
+                    result.Exception = e;
+                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
+                } else if (Cts.Token.IsCancellationRequested) {
+                    result.Exception = new TimeoutException ("HTTP operation timed out");
+                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
+                } else {
+                    result.Exception = e;
+                }
+            } else if (e is WebException) {
+                result.Exception = e;
+                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
+            } else {
+                result.Exception = e;
+                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
+            }
+        }
+
         protected PushAssistHttpResult DoHttpRequest (string url, object jsonRequest, CancellationToken cToken, Action timeoutAction)
         {
             if (String.IsNullOrEmpty (url)) {
@@ -1076,24 +1099,10 @@ namespace NachoCore
                         Log.Warn (Log.LOG_PUSH, "PA response: statusCode={0}", response.StatusCode);
                     }
                     result.Response = response;
-                } catch (OperationCanceledException e) {
-                    if (cToken.IsCancellationRequested) {
-                        DisposeTimeoutTimer ();
-                        DisposeRetryTimer ();
-                        result.Exception = e;
-                        Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
-                    } else if (Cts.Token.IsCancellationRequested) {
-                        result.Exception = new TimeoutException ("HTTP operation timed out");
-                        Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
-                    } else {
-                        result.Exception = e;
-                    }
-                } catch (WebException e) {
-                    result.Exception = e;
-                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
+                } catch (AggregateException e) {
+                    HandleHttpRequestException (e.InnerException, cToken, ref result);
                 } catch (Exception e) {
-                    result.Exception = e;
-                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
+                    HandleHttpRequestException (e, cToken, ref result);
                 }
             }
             DisposeTimeoutTimer ();
