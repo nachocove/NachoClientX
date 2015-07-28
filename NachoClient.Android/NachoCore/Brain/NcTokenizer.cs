@@ -203,6 +203,8 @@ namespace NachoCore.Brain
 
     public class NcMimeTokenizer : NcTokenizer
     {
+        const int MaxAttachmentSize = 1 * 1000 * 1000;
+
         public List<TextPart> Parts { get; protected set; }
 
         protected List<TextPart> ProcessMimeEntity (MimeEntity part)
@@ -286,9 +288,12 @@ namespace NachoCore.Brain
             _Content = "";
             _Keywords = new List<string> ();
             foreach (TextPart part in Parts) {
-                if (part.ContentType.Matches ("text", "plain")) {
+                if (part.IsAttachment && (MaxAttachmentSize < part.Text.Length)) {
+                    continue;
+                }
+                if (part.IsPlain) {
                     ExtractContentFromPlainText (part.Text);
-                } else if (part.ContentType.Matches ("text", "html")) {
+                } else if (part.IsHtml) {
                     ExtractContentFromHtml (part.Text);
                 }
             }
