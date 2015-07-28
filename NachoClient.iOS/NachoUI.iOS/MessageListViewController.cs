@@ -12,6 +12,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
 using NachoCore.Brain;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -42,6 +43,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        protected SearchHelper searcher;
+
         bool StatusIndCallbackIsSet = false;
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -52,6 +55,28 @@ namespace NachoClient.iOS
         public MessageListViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource (this);
+            searcher = new SearchHelper ("MessageListViewController", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    searchResultsMessages.UpdateMatches (null);
+                    return; 
+                }
+                // On-device index
+                int curVersion = searcher.Version;
+                var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
+                var index = new NachoCore.Index.NcIndex (indexPath);
+                var matches = index.SearchAllEmailMessageFields (searchString, 100);
+                if (curVersion == searcher.Version) {
+                    searchResultsMessages.UpdateMatches (matches);
+                    List<int> adds;
+                    List<int> deletes;
+                    searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        if (null != searchDisplayController.SearchResultsTableView) {
+                            searchDisplayController.SearchResultsTableView.ReloadData ();
+                        }
+                    });
+                }
+            });
         }
 
         public override void ViewDidLoad ()
@@ -649,23 +674,12 @@ namespace NachoClient.iOS
         protected void Search (UISearchBar searchBar)
         {
             if (String.IsNullOrEmpty (searchBar.Text)) {
-                searchResultsMessages.UpdateMatches (null);
                 searchResultsMessages.UpdateServerMatches (null);
-                return; 
+            } else {
+                // Ask the server
+                KickoffSearchApi (0, searchBar.Text);
             }
-            // Ask the server
-            KickoffSearchApi (0, searchBar.Text);
-            // On-device index
-            var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
-            var index = new NachoCore.Index.NcIndex (indexPath);
-            var matches = index.SearchAllEmailMessageFields (searchBar.Text, 100);
-            searchResultsMessages.UpdateMatches (matches);
-            List<int> adds;
-            List<int> deletes;
-            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-            if (null != searchDisplayController.SearchResultsTableView) {
-                searchDisplayController.SearchResultsTableView.ReloadData ();
-            }
+            searcher.Search (searchBar.Text);
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
