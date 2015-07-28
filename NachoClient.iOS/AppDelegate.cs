@@ -584,6 +584,9 @@ namespace NachoClient.iOS
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
             }
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
+            }
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }
