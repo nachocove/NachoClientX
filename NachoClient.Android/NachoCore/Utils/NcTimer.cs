@@ -233,7 +233,9 @@ namespace NachoCore.Utils
 
         public static void StopService ()
         {
+            Log.Info (Log.LOG_TIMER, "NcTimer: Stopping NCTimers...");
             lock (StaticLockObj) {
+                Log.Info (Log.LOG_TIMER, "NcTimer: Active Timers Count {0}", ActiveTimers.Count);
                 while (0 < ActiveTimers.Count) {
                     var timer = ActiveTimers [0];
                     Log.Warn (Log.LOG_TIMER, "NcTimer.Stop having to call Dispose() for {0}/{1}",
@@ -243,6 +245,7 @@ namespace NachoCore.Utils
                     timer.Dispose ();
                 }
             }
+            Log.Info (Log.LOG_TIMER, "NcTimer: Stopped all NCTimers.");
         }
     }
 }
