@@ -1164,7 +1164,7 @@ namespace NachoClient.iOS
             c.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), c.StartTime).toEncodedTimeZone ();
 
             if (String.IsNullOrEmpty (c.UID)) {
-                c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
+                c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpperInvariant ();
             }
         }
 

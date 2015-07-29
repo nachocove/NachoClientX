@@ -213,6 +213,7 @@ namespace NachoClient.iOS
                 })) {
                     // Can't find any account matching those contexts. Abort immediately
                     completionHandler (UIBackgroundFetchResult.NoData);
+                    return;
                 }
                 if (NcApplication.Instance.IsForeground) {
                     completionHandler (UIBackgroundFetchResult.NewData);
@@ -583,6 +584,9 @@ namespace NachoClient.iOS
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
+            }
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
             }
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
@@ -979,8 +983,21 @@ namespace NachoClient.iOS
             int remainingVisibleSlots = 10;
             var accountTable = new Dictionary<int, McAccount> ();
 
+            var notifiedMessageIDs = new HashSet<string> ();
+
             foreach (var message in unreadAndHot) {
+                if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
+                    --badgeCount;
+                    message.HasBeenNotified = true;
+                    message.ShouldNotify = true;
+                    message.Update ();
+                    continue;
+                }
                 if (message.HasBeenNotified) {
+                    if (message.ShouldNotify && !string.IsNullOrEmpty (message.MessageID)) {
+                        notifiedMessageIDs.Add (message.MessageID);
+                    }
                     continue;
                 }
                 McAccount account = null;
@@ -1002,6 +1019,7 @@ namespace NachoClient.iOS
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
                     --badgeCount;
                     continue;
                 } else {
@@ -1011,7 +1029,10 @@ namespace NachoClient.iOS
                 message.HasBeenNotified = true;
                 message.ShouldNotify = true;
                 message.Update ();
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                if (!string.IsNullOrEmpty (message.MessageID)) {
+                    notifiedMessageIDs.Add (message.MessageID);
+                }
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", message.Id);
                 --remainingVisibleSlots;
                 if (0 >= remainingVisibleSlots) {
                     break;
