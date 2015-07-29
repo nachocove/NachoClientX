@@ -101,6 +101,15 @@ namespace NachoCore.Model
             }
             return emailAddressIdList;
         }
+
+        public static List<McEmailAddress> QueryToCcAddressByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.ObjectId " +
+                " WHERE (m.AddressType = ? OR m.AddressType = ?) AND (a.Id = ?)",
+                NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc, messageId);
+        }
     }
 }
 

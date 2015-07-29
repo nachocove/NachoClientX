@@ -127,35 +127,42 @@ namespace NachoCore.Model
                 return Score;
             }
 
-            McEmailAddress emailAddress;
+            McEmailAddress fromEmailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
             if (null == address) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
                 return score;
             }
-            bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+            bool found = McEmailAddress.Get (AccountId, address.Address, out fromEmailAddress);
             if (!found) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                 return score;
             }
 
             // TODO - Combine with content score... once we have such value
-            if (emailAddress.IsVip) {
+            if (fromEmailAddress.IsVip) {
                 score = VipScore;
             } else if (0 < UserAction) {
                 score = VipScore;
+            } else if (0 > UserAction) {
+                if (minHotScore <= score) {
+                    score = minHotScore - 0.01;
+                }
             } else {
-                score = emailAddress.Classify ();
+                int top = 0, bottom = 0;
+                fromEmailAddress.GetParts (ref top, ref bottom);
+
+                // Incorporate the To / Cc address
+                var otherEmailAddresses = McEmailAddress.QueryToCcAddressByMessageId (Id);
+                foreach (var emailAddress in otherEmailAddresses) {
+                    emailAddress.GetParts (ref top, ref bottom);
+                }
+                score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
                 NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
                 if (0 < tvList.Count) {
                     DateTime now = DateTime.UtcNow;
                     foreach (NcTimeVariance tv in tvList) {
                         score *= tv.Adjustment (now);
-                    }
-                }
-                if (0 > UserAction) {
-                    if (minHotScore <= score) {
-                        score = minHotScore - 0.01;
                     }
                 }
             }
