@@ -63,6 +63,9 @@ namespace NachoClient.iOS
 
 
 
+
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -883,7 +886,7 @@ namespace NachoClient.iOS
         private void onReplyButtonClicked (string action)
         {
             var message = thread.FirstMessageSpecialCase ();
-            MaySelectSendingAccount (message.AccountId, McAccount.AccountCapabilityEnum.EmailSender, 
+            MaySelectSendingAccount (message.AccountId, McAccount.AccountCapabilityEnum.EmailSender, "MessageViewToCompose",
                 (McAccount account) => {
                     return new SegueHolder (action, null, account);
                 }
@@ -1003,7 +1006,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void SelectSendingAccount (int messageAccountId, McAccount.AccountCapabilityEnum capability, string action,
+        protected void SelectSendingAccount (int messageAccountId, McAccount.AccountCapabilityEnum capability,
                                              string identifier, Func<McAccount, SegueHolder> segueHolderGenerator)
         {
             var canSendAccounts = McAccount.GetAccountsByCapability (capability);
