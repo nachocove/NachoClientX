@@ -34,17 +34,29 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
+            // FIXME This will not work once we turn on email-in-multiple-folders feature
+            uint uid;
+            if (!UInt32.TryParse (PendingSingle.ServerId.Split (':') [1], out uid)) {
+                Log.Error (Log.LOG_IMAP, "Could not extract UID from ServerId {0}", PendingSingle.ServerId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELPARSEFAIL");
+            }
+
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, PendingSingle.ParentId);
-            McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, PendingSingle.ServerId);
+            if (null == folder) {
+                Log.Error (Log.LOG_IMAP, "No server for {0}", PendingSingle.ParentId);
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELFOLDERFAIL");
+            }
             IMailFolder mailKitFolder = GetOpenMailkitFolder (folder, FolderAccess.ReadWrite);
             if (null == mailKitFolder) {
+                Log.Error (Log.LOG_IMAP, "No mailKitFolder for {0}", folder.ImapFolderNameRedacted ());
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPMSGDELOPEN");
             }
-            var uid = new UniqueId (email.ImapUid);
-            mailKitFolder.SetFlags (uid, MessageFlags.Deleted, true, Cts.Token);
+
+            UniqueId id = new UniqueId (uid);
+            mailKitFolder.SetFlags (id, MessageFlags.Deleted, true, Cts.Token);
             if (Client.Capabilities.HasFlag (ImapCapabilities.UidPlus)) {
                 var list = new List<UniqueId> ();
-                list.Add (uid);
+                list.Add (id);
                 mailKitFolder.Expunge (list, Cts.Token);
             }
             // TODO The set flags reply contains information we can use (S: * 5 FETCH (UID 8631 MODSEQ (948373) FLAGS (\Deleted))).
