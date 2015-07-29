@@ -74,9 +74,10 @@ def main():
         release = 'dev'
     if release not in projects:
         raise ValueError('Unknown release type %s' % release)
-    app_id = projects[release]['ios']['bundle_id']
-    icon_script = projects[release]['ios'].get('icon_script', None)
-    display_name = projects[release]['ios']['display_name']
+    ios = projects[release]['ios']
+    app_id = ios['bundle_id']
+    icon_script = ios.get('icon_script', None)
+    display_name = ios['display_name']
 
     project_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
     if icon_script is None:
@@ -98,6 +99,8 @@ def main():
     info_plist.replace('CFBundleVersion', build)
     info_plist.replace('CFBundleShortVersionString', version)
     info_plist.replace('CFBundleDisplayName', display_name)
+
+    info_plist.replace('UIFileSharingEnabled', ios['file_sharing'])
 
     # Copy the google info plsit over
     google_path = '%s/Resources/%s' % (project_dir, release_dir)
