@@ -58,6 +58,7 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -101,24 +102,6 @@ namespace NachoClient.iOS
         {
             NcAssert.True (1 == thread.Count);
             this.thread = thread;
-        }
-
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
-
-            // When the app is re-started from a notification on a
-            // different account, the tab bar and nacho now should
-            // close all views & start in nach now. But perhaps it
-            // is possible for this view to become visible just as
-            // it is about to be popped?  Catch & avoid that case.
-            var message = thread.FirstMessageSpecialCase ();
-            if ((null != message) && (NcApplication.Instance.Account.Id != message.AccountId)) {
-                Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
-                if (null != NavigationController) {
-                    NavigationController.PopViewController (false);
-                }
-            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -652,7 +635,11 @@ namespace NachoClient.iOS
                     vc.SetAction (thread, (string)h.value);
                     vc.SetOwner (this);  
                     if (null != h.value2) {
-                        vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
+                        if (h.value2 is McAccount) {
+                            vc.account = (McAccount)h.value2;
+                        } else {
+                            vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
+                        }
                     }
                 }
                 return;
@@ -887,7 +874,25 @@ namespace NachoClient.iOS
 
         private void onReplyButtonClicked (string action)
         {
-            PerformSegue ("MessageViewToCompose", new SegueHolder (action));
+            var message = thread.FirstMessageSpecialCase ();
+            if (message.AccountId != NcApplication.Instance.Account.Id) {
+                var canSendAccounts = McAccount.GetAccountsByCapability (McAccount.AccountCapabilityEnum.EmailSender);
+                var actions = new NcAlertAction[canSendAccounts.Count];
+                for (int n = 0; n < canSendAccounts.Count; n++) {
+                    var account = canSendAccounts [n];
+                    var displayName = account.DisplayName;
+                    actions [n] = new NcAlertAction (displayName, () => {
+                        PerformSegue ("MessageViewToCompose", new SegueHolder (action, account));
+                    });
+                    if (account.Id == message.AccountId) {
+                        actions [n].Style = NcAlertActionStyle.Destructive;
+                    }
+                }
+                NcActionSheet.Show (this.View, this, "Select sending account",
+                    "(Message account is in red)", actions);
+            } else {
+                PerformSegue ("MessageViewToCompose", new SegueHolder (action, NcApplication.Instance.Account));
+            }
         }
 
         private void DeferButtonClicked (object sender, EventArgs e)

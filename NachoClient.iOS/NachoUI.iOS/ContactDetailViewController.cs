@@ -22,11 +22,6 @@ namespace NachoClient.iOS
     {
         public McContact contact;
 
-        // This is used for viewing emails in interaction. If the email account is not the current account,
-        // save the current account and temporarily switch to the account of the email. When message view is
-        // dismissed, restore the account and clear this variable.
-        protected McAccount originalAccount;
-
         protected UIColor originalBarTintColor;
         protected UIBarButtonItem editContact;
 
@@ -117,10 +112,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != originalAccount) {
-                NcApplication.Instance.Account = originalAccount;
-                originalAccount = null;
-            }
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
                 originalBarTintColor = this.NavigationController.NavigationBar.BarTintColor;
@@ -225,11 +216,6 @@ namespace NachoClient.iOS
                 var vc = (INachoMessageViewer)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
-                var message = thread.FirstMessageSpecialCase ();
-                if (message.AccountId != NcApplication.Instance.Account.Id) {
-                    originalAccount = NcApplication.Instance.Account;
-                    NcApplication.Instance.Account = McAccount.QueryById<McAccount> (message.AccountId);
-                }
                 vc.SetSingleMessageThread (thread);
                 return;
             }

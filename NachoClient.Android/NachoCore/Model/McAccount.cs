@@ -319,7 +319,12 @@ namespace NachoCore.Model
 
         public static List<McAccount> GetCanAddContactAccounts ()
         {
-            return GetAllAccounts ().Where ((x) => x.CanAddContact ()).ToList ();
+            return GetAccountsByCapability (AccountCapabilityEnum.ContactWriter);
+        }
+
+        public static List<McAccount> GetAccountsByCapability (AccountCapabilityEnum capability)
+        {
+            return GetAllAccounts ().Where ((x) => x.AccountCapability.HasFlag (capability)).ToList ();
         }
 
         public static List<int> GetAllConfiguredNonDeviceAccountIds ()
@@ -342,20 +347,9 @@ namespace NachoCore.Model
             return (null != account) && (McAccount.ConfigurationInProgressEnum.Done != account.ConfigurationInProgress);
         }
 
-        public bool CanAddContact ()
+        public bool CanAddContacts ()
         {
-            AccountCapabilityEnum capabilities = 0;
-            switch (AccountType) {
-            case AccountTypeEnum.Exchange:
-                capabilities = ActiveSyncCapabilities;
-                break;
-            case AccountTypeEnum.IMAP_SMTP:
-                capabilities = ImapCapabilities;
-                break;
-            default:
-                break;
-            }
-            return capabilities.HasFlag (AccountCapabilityEnum.ContactWriter);
+            return HasCapability (AccountCapabilityEnum.ContactWriter);
         }
     }
 

@@ -27,7 +27,8 @@ namespace NachoClient.iOS
 
         public INachoMessageEditorParent owner;
 
-        protected McAccount account;
+        public McAccount account;
+
         protected McCalendar calendarInviteItem;
 
         protected McEmailMessage referencedMessage;
@@ -251,7 +252,9 @@ namespace NachoClient.iOS
 
             composeFont = UIFont.PreferredBody;
 
-            account = NcApplication.Instance.Account;
+            if (null == account) {
+                account = NcApplication.Instance.Account;
+            }
 
             sendButton = new NcUIBarButtonItem ();
             cancelButton = new NcUIBarButtonItem ();
@@ -357,7 +360,7 @@ namespace NachoClient.iOS
                 }
             }
             backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
-            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver(UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
 
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();

@@ -105,7 +105,7 @@ namespace NachoClient.iOS
             SwitchToAccount (NcApplication.Instance.Account);
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
-                if (NcApplication.Instance.Account.CanAddContact ()) {
+                if (NcApplication.Instance.Account.CanAddContacts ()) {
                     PerformSegue ("ContactsToContactEdit", new SegueHolder (NcApplication.Instance.Account));
                 } else {
                     var canAddAccounts = McAccount.GetCanAddContactAccounts ();
