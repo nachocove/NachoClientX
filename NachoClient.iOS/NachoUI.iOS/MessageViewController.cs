@@ -59,6 +59,10 @@ namespace NachoClient.iOS
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
 
+
+
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -367,7 +371,12 @@ namespace NachoClient.iOS
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
                 new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
-                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
+                    var message = thread.FirstMessageSpecialCase ();
+                    MaySelectSendingAccount (message.AccountId, McAccount.AccountCapabilityEnum.EmailSender, "MessageViewToCompose",
+                        (McAccount account) => {
+                            return new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply, account);
+                        }
+                    );
                 }),
                 new UIBlockMenu.Block ("email-calendartime", "Create Deadline", () => {
                     PerformSegue ("SegueToMessageDeadline", new SegueHolder (null));
@@ -635,11 +644,10 @@ namespace NachoClient.iOS
                     vc.SetAction (thread, (string)h.value);
                     vc.SetOwner (this);  
                     if (null != h.value2) {
-                        if (h.value2 is McAccount) {
-                            vc.account = (McAccount)h.value2;
-                        } else {
-                            vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
-                        }
+                        vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
+                    }
+                    if (null != h.value3) {
+                        vc.account = (McAccount)h.value3;
                     }
                 }
                 return;
@@ -875,24 +883,11 @@ namespace NachoClient.iOS
         private void onReplyButtonClicked (string action)
         {
             var message = thread.FirstMessageSpecialCase ();
-            if (message.AccountId != NcApplication.Instance.Account.Id) {
-                var canSendAccounts = McAccount.GetAccountsByCapability (McAccount.AccountCapabilityEnum.EmailSender);
-                var actions = new NcAlertAction[canSendAccounts.Count];
-                for (int n = 0; n < canSendAccounts.Count; n++) {
-                    var account = canSendAccounts [n];
-                    var displayName = account.DisplayName;
-                    actions [n] = new NcAlertAction (displayName, () => {
-                        PerformSegue ("MessageViewToCompose", new SegueHolder (action, account));
-                    });
-                    if (account.Id == message.AccountId) {
-                        actions [n].Style = NcAlertActionStyle.Destructive;
-                    }
+            MaySelectSendingAccount (message.AccountId, McAccount.AccountCapabilityEnum.EmailSender, 
+                (McAccount account) => {
+                    return new SegueHolder (action, null, account);
                 }
-                NcActionSheet.Show (this.View, this, "Select sending account",
-                    "(Message account is in red)", actions);
-            } else {
-                PerformSegue ("MessageViewToCompose", new SegueHolder (action, NcApplication.Instance.Account));
-            }
+            );
         }
 
         private void DeferButtonClicked (object sender, EventArgs e)
@@ -1008,5 +1003,33 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void SelectSendingAccount (int messageAccountId, McAccount.AccountCapabilityEnum capability, string action,
+                                             string identifier, Func<McAccount, SegueHolder> segueHolderGenerator)
+        {
+            var canSendAccounts = McAccount.GetAccountsByCapability (capability);
+            var actions = new NcAlertAction[canSendAccounts.Count];
+            for (int n = 0; n < canSendAccounts.Count; n++) {
+                var account = canSendAccounts [n];
+                var displayName = account.DisplayName;
+                actions [n] = new NcAlertAction (displayName, () => {
+                    PerformSegue (identifier, segueHolderGenerator (account));
+                });
+                if (account.Id == messageAccountId) {
+                    actions [n].Style = NcAlertActionStyle.Destructive;
+                }
+            }
+            NcActionSheet.Show (this.View, this, "Select sending account",
+                "(Message account is in red)", actions);
+        }
+
+        protected void MaySelectSendingAccount (int messageAccountId, McAccount.AccountCapabilityEnum capability,
+                                                string identifier, Func<McAccount, SegueHolder> segueHolderGenerator)
+        {
+            if (messageAccountId != NcApplication.Instance.Account.Id) {
+                SelectSendingAccount (messageAccountId, capability, identifier, segueHolderGenerator);
+            } else {
+                PerformSegue (identifier, segueHolderGenerator (NcApplication.Instance.Account));
+            }
+        }
     }
 }
