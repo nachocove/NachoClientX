@@ -672,6 +672,7 @@ namespace NachoCore.Model
         }
 
         const string KCapQueryByImapUidRange = "NcModel.McEmailMessage.QueryByImapUidRange";
+
         public static List<NcEmailMessageIndex> QueryByImapUidRange (int accountId, int folderId, uint min, uint max, uint limit)
         {
             NcCapture.AddKind (KCapQueryByImapUidRange);
@@ -1174,9 +1175,12 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             using (var capture = CaptureWithStart ("Delete")) {
-                int returnVal = base.Delete ();
-                NcBrain.UnindexEmailMessage (this);
-                DeleteScoreStates ();
+                int returnVal = 0;
+                NcModel.Instance.RunInTransaction (() => {
+                    returnVal = base.Delete ();
+                    NcBrain.UnindexEmailMessage (this);
+                    DeleteScoreStates ();
+                });
                 return returnVal;
             }
         }

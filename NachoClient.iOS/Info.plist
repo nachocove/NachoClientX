@@ -101,5 +101,7 @@
 	</array>
 	<key>XSLaunchImageAssets</key>
 	<string>Resources/Images.xcassets/LaunchImage.launchimage</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 </dict>
 </plist>

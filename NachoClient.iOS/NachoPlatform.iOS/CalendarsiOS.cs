@@ -181,7 +181,12 @@ namespace NachoPlatform
                     // iOS's NSTimeZone does not expose the daylight saving transition rules, so there is no way
                     // to construct a TimeZoneInfo object from the NSTimeZone object.  Instead we have to look
                     // up the TimeZoneInfo by its ID.
-                    eventTimeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                    try {
+                        eventTimeZone = TimeZoneInfo.FindSystemTimeZoneById (Event.TimeZone.Name);
+                    } catch (TimeZoneNotFoundException) {
+                        Log.Warn (Log.LOG_CALENDAR, "Device event has unknown time zone: {0}", Event.TimeZone.Name);
+                        // Leave eventTimeZone set to null, so it will be set to the local time zone below.
+                    }
                 }
                 if (null == eventTimeZone) {
                     // If the iOS event didn't specify a time zone, or if a time zone with that ID could not be

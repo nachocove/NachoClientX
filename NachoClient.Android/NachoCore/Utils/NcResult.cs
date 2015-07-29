@@ -181,6 +181,7 @@ namespace NachoCore.Utils
             Info_AccountChanged,
             Info_BackEndStateChanged,
             Info_ContactLocalSearchComplete,
+            Info_DaysToSyncChanged,
         };
 
         public enum WhyEnum

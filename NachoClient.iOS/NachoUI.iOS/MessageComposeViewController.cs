@@ -123,6 +123,7 @@ namespace NachoClient.iOS
 
             var bodyText = ExtractBodyTextAsNSAttributedString (mimeMessage);
             bodyTextView.AttributedText = bodyText;
+            bodyTextView.Font = UIFont.PreferredBody;
 
             if (0 == draftMessage.ReferencedEmailId) {
                 action = EmailHelper.Action.Send;
@@ -162,9 +163,9 @@ namespace NachoClient.iOS
 
                 NSError error = null;
                 NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, mutableBodyAttributedText.Length),
-                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                  ref error);
+                                      new NSRange (0, mutableBodyAttributedText.Length),
+                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                      ref error);
                 body.HtmlBody = htmlData.ToString ();
 
                 foreach (var attachment in attachmentView.AttachmentList) {
@@ -248,6 +249,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            composeFont = UIFont.PreferredBody;
+
             account = NcApplication.Instance.Account;
 
             sendButton = new NcUIBarButtonItem ();
@@ -292,15 +295,15 @@ namespace NachoClient.iOS
                 NcActionSheet.Show (View, this,
                     new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, () => {
                         owner = null;
-                        if(null == NavigationController) {
-                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
+                        if (null == NavigationController) {
+                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
                         }
                         NavigationController.PopViewController (true);
                     }),
                     new NcAlertAction ("Save Draft", () => {
                         SaveDraft ();
-                        if(null == NavigationController) {
-                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
+                        if (null == NavigationController) {
+                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
                         }
                         NavigationController.PopViewController (true);
                     }),
@@ -342,7 +345,8 @@ namespace NachoClient.iOS
             }
         }
 
-        NSObject notification;
+        NSObject backgroundNotification;
+        NSObject contentSizeCategoryChangedNotification;
 
         public override void ViewWillAppear (bool animated)
         {
@@ -352,7 +356,9 @@ namespace NachoClient.iOS
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
             }
-            notification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver(UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
@@ -365,7 +371,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NSNotificationCenter.DefaultCenter.RemoveObserver (notification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (backgroundNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (contentSizeCategoryChangedNotification);
+
             QRType = NcQuickResponse.QRTypeEnum.None;
         }
 
@@ -376,6 +384,16 @@ namespace NachoClient.iOS
                 if (null != actionController) {
                     actionController.DismissViewController (false, null);
                 }
+            }
+        }
+
+        void OnContentSizeCategoryChangedNotification (NSNotification notification)
+        {
+            if (null != bodyTextView) {
+                bodyTextView.Font = UIFont.PreferredBody;
+            }
+            if (null != showQuotedTextButton) {
+                showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
             }
         }
 
@@ -569,6 +587,7 @@ namespace NachoClient.iOS
 
             showQuotedTextButton = UIButton.FromType (UIButtonType.System);
             showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
             showQuotedTextButton.AccessibilityLabel = "Show quoted text";
             showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             showQuotedTextButton.SizeToFit ();
@@ -1279,9 +1298,9 @@ namespace NachoClient.iOS
 
                 NSError error = null;
                 NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, mutableBodyAttributedText.Length),
-                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                  ref error);
+                                      new NSRange (0, mutableBodyAttributedText.Length),
+                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                      ref error);
                 body.HtmlBody = htmlData.ToString ();
 
                 foreach (var attachment in attachmentView.AttachmentList) {

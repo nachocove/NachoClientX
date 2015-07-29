@@ -42,7 +42,7 @@ namespace NachoClient.iOS
 
         public void ChangePassword (McAccount account)
         {
-            this.title = "Change Password";
+            this.title = "Update Password";
             this.service = account.AccountService;
             this.account = account;
         }
@@ -162,7 +162,7 @@ namespace NachoClient.iOS
 
             yOffset = passwordBox.Frame.Bottom + 20f;
 
-            submitButton = Util.BlueButton ("Change", View.Frame.Width);
+            submitButton = Util.BlueButton ("Update", View.Frame.Width);
             ViewFramer.Create (submitButton).Y (yOffset);
             submitButton.TouchUpInside += SubmitButtonTouchUpInside;
             contentView.AddSubview (submitButton);

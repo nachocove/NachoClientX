@@ -88,8 +88,9 @@ namespace NachoCore.IMAP
             } catch (Exception e) {
                 Log.Error (Log.LOG_IMAP, "Could not GetBodyPart: {0}", e);
                 attachment.DeleteFile ();
-                mailKitFolder.UnsetStreamContext ();
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
             }
         }
 

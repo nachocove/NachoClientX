@@ -455,6 +455,7 @@ namespace NachoCore.IMAP
                 FromEmailAddressId = 0,
                 cachedFromLetters = string.Empty,
                 cachedFromColor = 1,
+                cachedHasAttachments = summary.Attachments.Any (),
             };
 
             emailMessage.To = summary.Envelope.To.ToString ();
@@ -466,10 +467,17 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
                 emailMessage.From = summary.Envelope.From [0].ToString ();
+                if (string.IsNullOrEmpty (emailMessage.From)) {
+                    throw new Exception ("No emailMessage.From");
+                }
                 McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
                     emailMessage.FromEmailAddressId = fromEmailAddress.Id;
-                    emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    try {
+                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
+                    }
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }
@@ -508,7 +516,7 @@ namespace NachoCore.IMAP
                         // according to https://tools.ietf.org/html/rfc2156
                         //       importance      = "low" / "normal" / "high"
                         // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
-                        switch (header.Value.ToLower ()) {
+                        switch (header.Value.ToLowerInvariant ()) {
                         case "low":
                             emailMessage.Importance = NcImportance.Low_0;
                             break;

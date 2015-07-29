@@ -272,10 +272,16 @@ namespace NachoCore.ActiveSync
                         new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode)));
                 }
                 // Commands.  
+                bool addedHardDeleteTag = false;
                 var commands = new XElement (m_ns + Xml.AirSync.Commands);
                 foreach (var pending in pendingSubList) {
                     switch (pending.Operation) {
                     case McPending.Operations.EmailDelete:
+                        // Looks like we only do delete when it is a hard delete - see NcProtoControl:DeleteEmailCmd (456)
+                        if (! addedHardDeleteTag) {
+                            collection.Add (new XElement (m_ns + Xml.AirSync.DeletesAsMoves, 0));
+                            addedHardDeleteTag = true;
+                        }
                         commands.Add (ToEmailDelete (pending));
                         break;
                     case McPending.Operations.EmailMarkRead:
@@ -952,7 +958,9 @@ namespace NachoCore.ActiveSync
                     if (null == pathElem) {
                         Log.Error (Log.LOG_AS, "ProcessImplicitResponses: McPath entry missing for Delete of {0}", pending.ServerId);
                     } else {
-                        pathElem.Delete ();
+                        NcModel.Instance.RunInTransaction (() => {
+                            pathElem.Delete ();
+                        });
                     }
                 }
                 // user-directed sync responses get processed here too.
