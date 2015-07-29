@@ -1586,6 +1586,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration37.cs">
       <Link>NachoCore\Model\Migration\NcMigration37.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
