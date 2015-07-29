@@ -324,14 +324,14 @@ namespace NachoCore
         public NcResult ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
                                          int folderId, bool originalEmailIsEmbedded)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailSender, (service) => service.ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
         public NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
                                        int folderId, bool originalEmailIsEmbedded)
         {
-            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailReaderWriter, (service) => service.ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
+            return ApplyToService (accountId, McAccount.AccountCapabilityEnum.EmailSender, (service) => service.ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
