@@ -854,11 +854,12 @@ namespace NachoCore.Utils
                         Log.Info (Log.LOG_CALENDAR, "DayOfWeekIsSet is false for yearly recurring event {0}. A reinstall of the app is needed to correct this.", c.Subject);
                         // throw new RecurrenceValidationException("The DayOfWeek field must be set in a weekly recurrence.");
                     }
-                    if (NcDayOfWeek.Sunday != r.DayOfWeek && NcDayOfWeek.Monday != r.DayOfWeek && NcDayOfWeek.Tuesday != r.DayOfWeek && NcDayOfWeek.Wednesday != r.DayOfWeek &&
-                        NcDayOfWeek.Thursday != r.DayOfWeek && NcDayOfWeek.Friday != r.DayOfWeek && NcDayOfWeek.Weekdays != r.DayOfWeek && NcDayOfWeek.WeekendDays != r.DayOfWeek &&
+                    if (NcDayOfWeek.Sunday != r.DayOfWeek && NcDayOfWeek.Monday != r.DayOfWeek && NcDayOfWeek.Tuesday != r.DayOfWeek &&
+                        NcDayOfWeek.Wednesday != r.DayOfWeek && NcDayOfWeek.Thursday != r.DayOfWeek && NcDayOfWeek.Friday != r.DayOfWeek &&
+                        NcDayOfWeek.Saturday != r.DayOfWeek && NcDayOfWeek.Weekdays != r.DayOfWeek && NcDayOfWeek.WeekendDays != r.DayOfWeek &&
                         NcDayOfWeek.LastDayOfTheMonth != r.DayOfWeek) {
                         throw new RecurrenceValidationException (string.Format (
-                            "The DayOfWeek field has an invalid value of {0} for a monthly recurrence. It must be one of: 1, 2, 4, 8, 16, 32, 62, 64, 65, 127.", (int)r.DayOfWeek));
+                            "The DayOfWeek field has an invalid value of {0} for a yearly recurrence. It must be one of: 1, 2, 4, 8, 16, 32, 62, 64, 65, 127.", (int)r.DayOfWeek));
                     }
                     if (NcDayOfWeek.LastDayOfTheMonth == r.DayOfWeek && 5 != r.WeekOfMonth) {
                         throw new RecurrenceValidationException (
