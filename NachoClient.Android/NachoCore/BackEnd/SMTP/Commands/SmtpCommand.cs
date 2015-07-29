@@ -28,6 +28,13 @@ namespace NachoCore.SMTP
             return null;
         }
 
+        public override void Cancel ()
+        {
+            base.Cancel ();
+            lock (Client.SyncRoot) {
+            }
+        }
+
         public Event ExecuteConnectAndAuthEvent ()
         {
             lock (Client.SyncRoot) {
@@ -96,13 +103,6 @@ namespace NachoCore.SMTP
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD2");
                 }
             }, this.GetType ().Name);
-        }
-
-        public override void Cancel ()
-        {
-            base.Cancel ();
-            lock (Client.SyncRoot) {
-            }
         }
 
         protected void ProtocolLoggerStopAndLog ()
