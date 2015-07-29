@@ -36,6 +36,7 @@ namespace NachoCore.Model
                         // Version 3 - No statistics is updated. Just need to re-compute the score which
                         // will be done at the end of Analyze().
                         { 4, AnalyzeOtherAddresses },
+                        { 5, AnalyzeSendAddresses },
                     };
                 }
                 return _AnalysisFunctions;
@@ -306,6 +307,20 @@ namespace NachoCore.Model
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
+        }
+
+        public void AnalyzeSendAddresses ()
+        {
+            if (!IsFromMe ()) {
+                return;
+            }
+            var otherAddresses = McEmailAddress.QueryToCcAddressByMessageId (Id);
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var emailAddress in otherAddresses) {
+                    emailAddress.IncrementEmailsSent ();
+                    emailAddress.ScoreStates.Update ();
+                }
+            });
         }
 
         public void Analyze ()
@@ -697,6 +712,18 @@ namespace NachoCore.Model
             DbScoreStates = null;
             McEmailMessageScore.DeleteByParentId (Id);
         }
+
+        public bool IsFromMe ()
+        {
+            if (String.IsNullOrEmpty (From)) {
+                return false;
+            }
+            MailboxAddress mbAddr = NcEmailAddress.ParseMailboxAddressString (From);
+            var accountAddress = AccountAddress (AccountId);
+            if (null == accountAddress) {
+                return false;
+            }
+            return accountAddress == mbAddr.Address;
+        }
     }
 }
-

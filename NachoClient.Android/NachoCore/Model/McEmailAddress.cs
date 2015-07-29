@@ -106,8 +106,9 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McEmailAddress> (
                 "SELECT a.* FROM McEmailAddress AS a " +
-                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.ObjectId " +
-                " WHERE (m.AddressType = ? OR m.AddressType = ?) AND (a.Id = ?)",
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
+                " WHERE (m.AddressType = ? OR m.AddressType = ?) AND (m.ObjectId = ?) " +
+                " GROUP BY a.Id",
                 NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc, messageId);
         }
     }

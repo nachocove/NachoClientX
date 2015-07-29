@@ -672,6 +672,7 @@ namespace NachoCore.Model
         }
 
         const string KCapQueryByImapUidRange = "NcModel.McEmailMessage.QueryByImapUidRange";
+
         public static List<NcEmailMessageIndex> QueryByImapUidRange (int accountId, int folderId, uint min, uint max, uint limit)
         {
             NcCapture.AddKind (KCapQueryByImapUidRange);

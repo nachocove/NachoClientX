@@ -136,6 +136,13 @@ namespace NachoCore.Model
             MarkDependencies (NcEmailAddress.Kind.From);
         }
 
+        public void IncrementEmailsSent (int count = 1)
+        {
+            ScoreStates.EmailsSent += count;
+            MarkDependencies (NcEmailAddress.Kind.To);
+            MarkDependencies (NcEmailAddress.Kind.Cc);
+        }
+
         ///////////////////// To address methods /////////////////////
         public void IncrementToEmailsReceived (int count = 1, bool markDependencies = true)
         {
