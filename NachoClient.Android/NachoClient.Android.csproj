@@ -501,6 +501,7 @@
     <Compile Include="NachoCore\Utils\SearchHelper.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration36.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration37.cs" />
+    <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
