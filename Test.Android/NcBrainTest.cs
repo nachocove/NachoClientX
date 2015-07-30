@@ -309,7 +309,7 @@ namespace Test.Common
             Brain.TestCloseAllOpenedIndexes (); // need to commit before search will return match
 
             // Make sure the index version (IsIndexed) is correct and the document is really in the index
-            Assert.AreEqual (EmailMessageIndexDocument.Version, message1.IsIndexed);
+            Assert.AreEqual (EmailMessageIndexDocument.Version - 1, message1.IsIndexed);
             var matches = index.SearchAllEmailMessageFields ("short");
             CheckOneEmailMessage (message1.Id, matches);
             // Not doing a thorough test of the indexing because that is done in IndexTest.
@@ -433,7 +433,7 @@ This is a MIME email");
             Brain.TestIndexContact (contact1);
             Brain.TestCloseAllOpenedIndexes ();
 
-            Assert.AreEqual (ContactIndexDocument.Version, contact1.IndexVersion);
+            Assert.AreEqual (ContactIndexDocument.Version - 1, contact1.IndexVersion);
             var matches = index.SearchAllContactFields ("alan");
             CheckOneContact (contact1.Id, matches);
 
