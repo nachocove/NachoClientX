@@ -227,6 +227,12 @@ namespace NachoCore.Model
         [Indexed]       
         public uint ImapUid { get; set; }
 
+        /// <summary>
+        /// Email headers only. Used for Brain to help with scoring, etc.
+        /// </summary>
+        /// <value>The headers.</value>
+        public string Headers { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///
