@@ -1592,6 +1592,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

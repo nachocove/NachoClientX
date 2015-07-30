@@ -3,35 +3,23 @@
 using System;
 using NachoCore.Model;
 using NachoCore.Utils;
-using MailKit;
 using MailKit.Security;
-using MailKit.Net.Imap;
+using MailKit;
 
-namespace NachoCore.IMAP
+namespace NachoCore.SMTP
 {
-    public class ImapValidateConfig : IBEContext
+    public class SmtpValidateConfig : IBEContext
     {
         private IBEContext BEContext;
         private McServer ServerCandidate;
         private McCred CredCandidate;
-        private ImapCommand Cmd;
-        NcImapClient Client;
+        private SmtpCommand Cmd;
+        NcSmtpClient Client;
 
-        public ImapValidateConfig (IBEContext bEContext)
+        public SmtpValidateConfig (IBEContext bEContext)
         {
             BEContext = bEContext;
-            Client = new NcImapClient ();
-        }
-
-        public void Execute (McServer server, McCred cred)
-        {
-            ServerCandidate = server;
-            CredCandidate = cred;
-            Cmd = new ImapDiscoverCommand (this, Client);
-            NcTask.Run (() => {
-                ExecuteValidation ();
-                Cmd = null;
-            }, "ImapValidateConfig");
+            Client = new NcSmtpClient ();
         }
 
         public void Cancel ()
@@ -42,21 +30,31 @@ namespace NachoCore.IMAP
             }
         }
 
+        public void Execute (McServer server, McCred cred)
+        {
+            ServerCandidate = server;
+            CredCandidate = cred;
+            Cmd = new SmtpDiscoveryCommand (this, Client);
+            NcTask.Run (() => {
+                ExecuteValidation ();
+                Cmd = null;
+            }, "SmtpValidateConfig");
+        }
         public void ExecuteValidation()
         {
             try {
                 Cmd.ExecuteConnectAndAuthEvent ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ValidateConfigSucceeded));
             } catch (OperationCanceledException) {
-                Log.Info (Log.LOG_IMAP, "OperationCanceledException");
+                Log.Info (Log.LOG_SMTP, "OperationCanceledException");
             } catch (AuthenticationException) {
-                Log.Info (Log.LOG_IMAP, "AuthenticationException");
+                Log.Info (Log.LOG_SMTP, "AuthenticationException");
                 BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth));
             } catch (ServiceNotAuthenticatedException) {
-                Log.Info (Log.LOG_IMAP, "ServiceNotAuthenticatedException");
+                Log.Info (Log.LOG_SMTP, "ServiceNotAuthenticatedException");
                 BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth));
             } catch (Exception ex) {
-                Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.Message);
+                Log.Error (Log.LOG_SMTP, "Exception : {0}", ex.Message);
                 BEContext.ProtoControl.StatusInd (NcResult.Error (NcResult.SubKindEnum.Error_ValidateConfigFailedComm));
             }
         }
@@ -94,4 +92,3 @@ namespace NachoCore.IMAP
         #endregion
     }
 }
-
