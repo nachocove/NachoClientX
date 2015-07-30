@@ -288,7 +288,7 @@ namespace NachoCore.Brain
             _Content = "";
             _Keywords = new List<string> ();
             foreach (TextPart part in Parts) {
-                if (part.IsAttachment && (MaxAttachmentSize < part.Text.Length)) {
+                if (part.IsAttachment) {
                     continue;
                 }
                 if (part.IsPlain) {
