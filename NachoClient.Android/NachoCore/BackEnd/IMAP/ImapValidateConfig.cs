@@ -5,7 +5,6 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using MailKit;
 using MailKit.Security;
-using MailKit.Net.Imap;
 
 namespace NachoCore.IMAP
 {
