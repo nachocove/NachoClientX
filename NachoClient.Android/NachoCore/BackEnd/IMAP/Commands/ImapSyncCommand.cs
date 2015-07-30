@@ -28,6 +28,7 @@ namespace NachoCore.IMAP
         private const string KImapFetchTiming = "ImapSyncCommand.Summary";
         private const string KImapPreviewGeneration = "ImapSyncCommand.Preview";
         private const string KImapFetchPartialBody = "ImapSyncCommand.PartialBody";
+        private const string KImapFetchHeaders = "ImapSyncCommand.Fetchheaders";
 
         public class MailSummary
         {
@@ -49,11 +50,12 @@ namespace NachoCore.IMAP
             NcCapture.AddKind (KImapFetchTiming);
             NcCapture.AddKind (KImapPreviewGeneration);
             NcCapture.AddKind (KImapFetchPartialBody);
+            NcCapture.AddKind (KImapFetchHeaders);
         }
 
         protected override Event ExecuteCommand ()
         {
-            IMailFolder mailKitFolder;
+            NcImapFolder mailKitFolder;
 
             Log.Info (Log.LOG_IMAP, "Processing {0}", Synckit.ToString ());
             Cts.Token.ThrowIfCancellationRequested ();
@@ -108,7 +110,7 @@ namespace NachoCore.IMAP
             }
         }
 
-        private Event syncFolder (IMailFolder mailKitFolder)
+        private Event syncFolder (NcImapFolder mailKitFolder)
         {
             NcAssert.True (SyncKit.MethodEnum.Sync == Synckit.Method);
 
@@ -169,7 +171,7 @@ namespace NachoCore.IMAP
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
-        private UniqueIdSet GetNewOrChangedMessages (IMailFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
+        private UniqueIdSet GetNewOrChangedMessages (NcImapFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
             bool createdUnread = false;
@@ -203,6 +205,19 @@ namespace NachoCore.IMAP
                                     });
                                 }
                                 cap2.Stop ();
+                            }
+                        }
+                        if (Synckit.GetHeaders && string.IsNullOrEmpty (emailMessage.Headers)) {
+                            using (var cap3 = NcCapture.CreateAndStart (KImapFetchHeaders)) {
+                                var headers = FetchHeaders (mailKitFolder, summ);
+                                Log.Info (Log.LOG_IMAP, "Headers fetched:\n{0}", headers);
+                                if (!string.IsNullOrEmpty (headers)) {
+                                    emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                        var target = (McEmailMessage)record;
+                                        target.Headers = headers;
+                                        return true;
+                                    });
+                                }
                             }
                         }
                         summaryUids.Add (imapSummary.UniqueId.Value);
@@ -513,6 +528,12 @@ namespace NachoCore.IMAP
             emailMessage.IsIncomplete = false;
 
             return emailMessage;
+        }
+
+        private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)
+        {
+            var body = mailKitFolder.GetBodyPart (summary.UniqueId.Value, summary.Body, true, Cts.Token);
+            return body.ToString ();
         }
 
         public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
