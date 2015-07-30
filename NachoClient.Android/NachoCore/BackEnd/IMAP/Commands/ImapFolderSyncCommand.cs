@@ -34,13 +34,13 @@ namespace NachoCore.IMAP
             // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
             // skip the GetFolders if it's semi-recent (seconds).
             if (Client.PersonalNamespaces.Count == 0) {
-                Log.Error (Log.LOG_IMAP, "No personal namespaces");
+                Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: No personal namespaces");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
             }
             // TODO Should we loop over all namespaces here? Typically there appears to be only one.
             IList<IMailFolder> folderList = Client.GetFolders (Client.PersonalNamespaces[0], false, Cts.Token).ToList ();
             if (null == folderList) {
-                Log.Error (Log.LOG_IMAP, "Could not refresh folder list");
+                Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: Could not refresh folder list");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD3");
             }
 
@@ -49,6 +49,7 @@ namespace NachoCore.IMAP
             bool added_or_changed = false;
 
             // First, look for all 'directory' (hasChildren) folders.
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Folders with Children");
             foreach (var mailKitFolder in folderList) {
                 McFolder folder;
                 ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
@@ -66,7 +67,7 @@ namespace NachoCore.IMAP
                         if (UpdateImapSetting (mailKitFolder, ref folder)) {
                             // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                             // Strategy will notice that modseq and/or noselect etc has changed, and resync.
-                            Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
+                            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Dir-Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
                         }
                     }
                 }
@@ -77,6 +78,7 @@ namespace NachoCore.IMAP
             bool haveTrash = false;
 
             // second, look for some folders we don't want to misidentify
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Special Folders");
             foreach (var mailKitFolder in folderList) {
                 Cts.Token.ThrowIfCancellationRequested ();
 
@@ -121,12 +123,13 @@ namespace NachoCore.IMAP
                     if (UpdateImapSetting (mailKitFolder, ref folder)) {
                         // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                         // Strategy will notice that modseq and/or noselect etc has changed, and resync.
-                        Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
+                        Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Special-Folder {0} {1} imap settings changed", folderType, folder.ImapFolderNameRedacted());
                     }
                 }
             }
 
             // look again and process the rest.
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for General Folders");
             foreach (var mailKitFolder in folderList) {
                 Cts.Token.ThrowIfCancellationRequested ();
 
@@ -183,16 +186,17 @@ namespace NachoCore.IMAP
                     if (UpdateImapSetting (mailKitFolder, ref folder)) {
                         // Don't set added_or_changed, as that would trigger a Info_FolderSetChanged indication, and the set didn't change.
                         // Strategy will notice that modseq and/or noselect etc has changed, and resync.
-                        Log.Info (Log.LOG_IMAP, "Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
+                        Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Folder {0} imap settings changed", folder.ImapFolderNameRedacted());
                     }
                 }
             }
 
             // Compare the incoming folders to the ones we know about. Delete any that disappeared.
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Deleted Folders");
             foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
                 Cts.Token.ThrowIfCancellationRequested ();
                 if (!foldernames.Contains (folder.ServerId)) {
-                    Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to disappeared from server", folder.ImapFolderNameRedacted());
+                    Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Deleting folder {0} due to disappearance from server", folder.ImapFolderNameRedacted());
                     // TODO Do applyCommand stuff here
                     // Delete folder and everything in and under it.
                     folder.Delete ();
@@ -212,6 +216,7 @@ namespace NachoCore.IMAP
                 target.AsLastFolderSync = DateTime.UtcNow;  // FIXME: Rename AsLastFolderSync to be generic.
                 return true;
             });
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Done");
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
     }

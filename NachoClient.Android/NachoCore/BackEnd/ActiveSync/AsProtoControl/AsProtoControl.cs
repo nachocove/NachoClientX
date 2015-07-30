@@ -712,6 +712,7 @@ namespace NachoCore.ActiveSync
             PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
         public override void Remove ()
@@ -722,6 +723,7 @@ namespace NachoCore.ActiveSync
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
                 PushAssist = null;
@@ -1181,6 +1183,24 @@ namespace NachoCore.ActiveSync
             } else {
                 // The "Down" case.
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
+            }
+        }
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            if (null == siea.Account || siea.Account.Id != AccountId) {
+                return;
+            }
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_DaysToSyncChanged:
+                if (Xml.Provision.MaxAgeFilterCode.SyncAll_0 == Account.DaysToSyncEmail) {
+                    foreach (var folder in McFolder.QueryByAccountId<McFolder>(AccountId)) {
+                        folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                    }
+                    Sm.PostEvent ((uint)SmEvt.E.Launch, "ASDAYS2SYNC");
+                }
+                break;
             }
         }
 

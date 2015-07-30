@@ -109,6 +109,13 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "IOException: {0}", ex.ToString ());
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPIO");
+            } catch (ImapProtocolException ex) {
+                // From MailKit: The exception that is thrown when there is an error communicating with an IMAP server. A
+                // <see cref="ImapProtocolException"/> is typically fatal and requires the <see cref="ImapClient"/>
+                // to be reconnected.
+                Log.Info (Log.LOG_IMAP, "ImapProtocolException: {0}", ex.ToString ());
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPPROTOTEMPFAIL");
             } catch (SocketException ex) {
                 // We check the server connectivity pretty well in Discovery. If this happens with
                 // other commands, it's probably a temporary failure.
@@ -187,7 +194,7 @@ namespace NachoCore.IMAP
             }
 
             if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
-                Log.Info (Log.LOG_IMAP, "Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
+                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
                 folder.Delete ();
                 folder = null;
             }
@@ -195,6 +202,7 @@ namespace NachoCore.IMAP
             if (null == folder) {
                 // Add it
                 folder = McFolder.Create (BEContext.Account.Id, false, false, isDisinguished, ParentId, mailKitFolder.FullName, mailKitFolder.Name, folderType);
+                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Adding folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder.ImapUidValidity = mailKitFolder.UidValidity;
                 folder.ImapNoSelect = mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect);
                 folder.Insert ();
@@ -204,6 +212,7 @@ namespace NachoCore.IMAP
                 folder.ParentId != ParentId ||
                 folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 // update.
+                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Updating folder {0} UidValidity {1}", folder.ImapFolderNameRedacted (), mailKitFolder.UidValidity.ToString ());
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     target.ServerId = mailKitFolder.FullName;
@@ -213,12 +222,16 @@ namespace NachoCore.IMAP
                     return true;
                 });
                 added_or_changed = true;
+            } else {
+                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} unchanged", folder.ImapFolderNameRedacted ());
+
             }
 
             // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
             if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} updating metadata", folder.ImapFolderNameRedacted ());
                 if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
-                    Log.Error (Log.LOG_IMAP, "{0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
+                    Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());
                 }
             }
 
@@ -260,7 +273,7 @@ namespace NachoCore.IMAP
         {
             using (var cap = NcCapture.CreateAndStart (KCaptureFolderMetadata)) {
                 // Just load UID with SELECT.
-                Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
+                Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
 
                 var query = SearchQuery.NotDeleted;
                 if (TimeSpan.Zero != timespan) {
@@ -270,7 +283,7 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
 
-                Log.Info (Log.LOG_IMAP, "{1}: Uids from last {2} days: {0}",
+                Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {1}: Uids from last {2} days: {0}",
                     uids.ToString (),
                     folder.ImapFolderNameRedacted (), TimeSpan.Zero == timespan ? "Forever" : timespan.Days.ToString ());
 
@@ -278,27 +291,13 @@ namespace NachoCore.IMAP
 
                 Cts.Token.ThrowIfCancellationRequested ();
 
-                if (!string.IsNullOrEmpty (folder.ImapUidSet)) {
-                    UniqueIdSet current;
-                    if (UniqueIdSet.TryParse (folder.ImapUidSet, out current)) {
-                        var added = new UniqueIdSet (uids.Except (current));
-                        var removed = new UniqueIdSet (current.Except (uids));
-                        if (added.Any ()) {
-                            Log.Info (Log.LOG_IMAP, "{0}: Added UIDs: {1}", folder.ImapFolderNameRedacted (), added.ToString ());
-                        }
-                        if (removed.Any ()) {
-                            Log.Info (Log.LOG_IMAP, "{0}: Removed UIDs: {1}", folder.ImapFolderNameRedacted (), removed.ToString ());
-                        }
-                    }
-                }
-
                 Cts.Token.ThrowIfCancellationRequested ();
 
                 var uidstring = uids.ToString ();
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     var target = (McFolder)record;
                     if (uidstring != target.ImapUidSet) {
-                        Log.Info (Log.LOG_IMAP, "Updating ImapUidSet");
+                        Log.Info (Log.LOG_IMAP, "GetFolderMetaData: Updating ImapUidSet");
                         target.ImapUidSet = uidstring;
                     }
                     target.ImapLastExamine = DateTime.UtcNow;

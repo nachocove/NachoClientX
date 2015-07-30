@@ -110,6 +110,26 @@ namespace Test.Android
             var x = McServer.QueryByHost (3, a.Host);
             Assert.AreEqual (100, x.Port);
         }
+
+        [Test]
+        public void TestHostIsHotMail ()
+        {
+            var serv = new McServer ();
+            serv.Host = "s.outlook.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+            serv.Host = "blu403-m.outlook.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+            serv.Host = "poutlook.com";
+            Assert.IsFalse (serv.HostIsHotMail ());
+            serv.Host = "blu403-moutlook.com";
+            Assert.IsFalse (serv.HostIsHotMail ());
+            serv.Host = "gmail.com";
+            Assert.IsFalse (serv.HostIsHotMail ());
+            serv.Host = "outlook.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+            serv.Host = "hotmail.com";
+            Assert.IsTrue (serv.HostIsHotMail ());
+        }
     }
 }
 

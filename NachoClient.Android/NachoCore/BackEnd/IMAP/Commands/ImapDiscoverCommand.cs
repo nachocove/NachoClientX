@@ -124,7 +124,7 @@ namespace NachoCore.IMAP
                 if (username.Contains ("@")) {
                     // https://support.apple.com/en-us/HT202304
                     var parts = username.Split ('@');
-                    if (DomainIsOrEndsWith(parts [1].ToLower (), "icloud.com")) {
+                    if (DomainIsOrEndsWith(parts [1].ToLowerInvariant (), "icloud.com")) {
                         username = parts [0];
                     }
                 }
@@ -149,7 +149,7 @@ namespace NachoCore.IMAP
                 return false;
             }
             if (emailAddress.Contains ("@")) {
-                var domain = emailAddress.Split ('@') [1].ToLower ();
+                var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
                 if (DomainIsOrEndsWith (domain, "icloud.com") ||
                     DomainIsOrEndsWith (domain, "me.com")) {
                     return true;
@@ -167,7 +167,7 @@ namespace NachoCore.IMAP
             // indicate that the DNS Server belongs to yahoo), but that would require a whole
             // new discovery statemachine. We'll see if this gets us far enough along.
             if (emailAddress.Contains ("@")) {
-                var domain = emailAddress.Split ('@') [1].ToLower ();
+                var domain = emailAddress.Split ('@') [1].ToLowerInvariant ();
                 if (DomainIsOrEndsWith (domain, "yahoo.com") ||
                     DomainIsOrEndsWith (domain, "yahoo.net") ||
                     DomainIsOrEndsWith (domain, "ymail.com") ||
