@@ -538,15 +538,15 @@ namespace Test.Common
             // Query up to 10 emails. Should return messages 6, 4, 2, 1
             var results1 = McEmailMessage.QueryNeedsIndexing (10);
             Assert.AreEqual (4, results1.Count);
-            CheckMessage (message6, results1 [1]);
-            CheckMessage (message4, results1 [2]);
-            CheckMessage (message2, results1 [3]);
-            CheckMessage (message1, results1 [4]);
+            CheckMessage (message6, results1 [0]);
+            CheckMessage (message4, results1 [1]);
+            CheckMessage (message2, results1 [2]);
+            CheckMessage (message1, results1 [3]);
 
             // Query up to 1 email. Should only return message3
             var results2 = McEmailMessage.QueryNeedsIndexing (1);
             Assert.AreEqual (1, results2.Count);
-            CheckMessage (message7, results2 [0]);
+            CheckMessage (message6, results2 [0]);
         }
 
         [Test]
