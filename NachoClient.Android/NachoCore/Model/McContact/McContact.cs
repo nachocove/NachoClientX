@@ -257,7 +257,9 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsVip { get; set; }
 
-        // 0 means unindexed. If IndexedVersion < ContactIndexDocument.Version, it needs to be re-indexed.
+        // 0 means unindexed. If IndexedVersion == ContactIndexDocument.Version - 1, only McContact fields
+        // are indexed. If IndexedVersion == ContactIndexDocument.Version, both fields and body (note) are
+        // indexed.
         [Indexed]
         public int IndexVersion { get; set; }
 
@@ -1945,7 +1947,7 @@ namespace NachoCore.Model
         public void SetIndexVersion ()
         {
             if (0 == BodyId) {
-                IndexVersion = ContactIndexDocument.Version;
+                IndexVersion = ContactIndexDocument.Version - 1;
             } else {
                 var body = GetBody ();
                 if ((null != body) && body.IsComplete ()) {

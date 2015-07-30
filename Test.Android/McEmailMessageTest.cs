@@ -503,8 +503,7 @@ namespace Test.Common
             // 4. Body, incomplete, not indexed
             // 5. Body, incomplete, partially indexed -> NOT MATCHED
             // 6. No body, --, not indexed
-            // 7. No body, --, partially indexed
-            // 8, No body, --, fully indexed -> NOT MATCHED
+            // 7. No body, --, partially indexed -> NOT MATCHED
             var body1 = BodyIndexing (McAbstrFileDesc.FilePresenceEnum.Complete);
             InsertAndCheck (body1);
             var message1 = EmailMessageIndexing (body1.Id, 0);
@@ -536,13 +535,9 @@ namespace Test.Common
             var message7 = EmailMessageIndexing (0, EmailMessageIndexDocument.Version - 1);
             InsertAndCheck (message7);
 
-            var message8 = EmailMessageIndexing (0, EmailMessageIndexDocument.Version);
-            InsertAndCheck (message8);
-
-            // Query up to 10 emails. Should return messages 7, 6, 4, 2, 1
+            // Query up to 10 emails. Should return messages 6, 4, 2, 1
             var results1 = McEmailMessage.QueryNeedsIndexing (10);
-            Assert.AreEqual (5, results1.Count);
-            CheckMessage (message7, results1 [0]);
+            Assert.AreEqual (4, results1.Count);
             CheckMessage (message6, results1 [1]);
             CheckMessage (message4, results1 [2]);
             CheckMessage (message2, results1 [3]);
@@ -1006,12 +1001,12 @@ namespace Test.Common
                 Folder.Link (message);
                 messages.Add (message);
             }
-            var SortedList = messages.OrderByDescending(x=>x.ImapUid).ToList();
+            var SortedList = messages.OrderByDescending (x => x.ImapUid).ToList ();
 
             var results1 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 11, 30);
             Assert.AreEqual (SortedList.Count, results1.Count);
             for (int i = 0; i < SortedList.Count; i++) {
-                Assert.AreEqual (SortedList [i].ImapUid, results1[i].Id);
+                Assert.AreEqual (SortedList [i].ImapUid, results1 [i].Id);
             }
 
             for (uint i = 11; i <= 50; i++) {
@@ -1027,11 +1022,11 @@ namespace Test.Common
                 Folder.Link (message);
                 messages.Add (message);
             }
-            SortedList = messages.OrderByDescending(x=>x.ImapUid).Take (30).ToList();
+            SortedList = messages.OrderByDescending (x => x.ImapUid).Take (30).ToList ();
             var results2 = McEmailMessage.QueryByImapUidRange (Folder.AccountId, Folder.Id, 0, 51, 30);
             Assert.AreEqual (SortedList.Count, results2.Count);
             for (int i = 0; i < SortedList.Count; i++) {
-                Assert.AreEqual (SortedList [i].ImapUid, results2[i].Id);
+                Assert.AreEqual (SortedList [i].ImapUid, results2 [i].Id);
             }
         }
     }
