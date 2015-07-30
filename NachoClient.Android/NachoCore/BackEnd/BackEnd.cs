@@ -233,12 +233,12 @@ namespace NachoCore
                 }, null, 1000, 2000);
                 PendingOnTimeTimer.Stfu = true;
             }
-            NcTask.Run (() => {
-                ApplyAcrossServices (accountId, "Start", (service) => {
+            ApplyAcrossServices (accountId, "Start", (service) => {
+                NcTask.Run (() => {
                     service.Execute ();
-                    return NcResult.OK ();
-                });
-            }, "Start");
+                }, "Start");
+                return NcResult.OK ();
+            });
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) exited", accountId);
         }
 
