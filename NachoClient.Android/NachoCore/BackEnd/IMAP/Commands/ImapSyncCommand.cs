@@ -210,7 +210,6 @@ namespace NachoCore.IMAP
                         if (Synckit.GetHeaders && string.IsNullOrEmpty (emailMessage.Headers)) {
                             using (var cap3 = NcCapture.CreateAndStart (KImapFetchHeaders)) {
                                 var headers = FetchHeaders (mailKitFolder, summ);
-                                Log.Info (Log.LOG_IMAP, "Headers fetched:\n{0}", headers);
                                 if (!string.IsNullOrEmpty (headers)) {
                                     emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                                         var target = (McEmailMessage)record;
@@ -532,8 +531,13 @@ namespace NachoCore.IMAP
 
         private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)
         {
-            var body = mailKitFolder.GetBodyPart (summary.UniqueId.Value, summary.Body, true, Cts.Token);
-            return body.ToString ();
+            var stream = mailKitFolder.GetStream (summary.UniqueId.Value, "HEADER", Cts.Token);
+            using (var decoded = new MemoryStream ()) {
+                stream.CopyTo (decoded);
+                var buffer = decoded.GetBuffer ();
+                var length = (int)decoded.Length;
+                return Encoding.UTF8.GetString (buffer, 0, length);
+            }
         }
 
         public static void InsertAttachments (McEmailMessage msg, MessageSummary imapSummary)
