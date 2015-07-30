@@ -154,10 +154,15 @@ namespace NachoCore.Model
                 fromEmailAddress.GetParts (ref top, ref bottom);
 
                 // Incorporate the To / Cc address
-                var otherEmailAddresses = McEmailAddress.QueryToCcAddressByMessageId (Id);
-                foreach (var emailAddress in otherEmailAddresses) {
-                    emailAddress.GetParts (ref top, ref bottom);
+                var toEmailAddresses = McEmailAddress.QueryToAddressesByMessageId (Id);
+                foreach (var emailAddress in toEmailAddresses) {
+                    emailAddress.GetToParts (ref top, ref bottom);
                 }
+                var ccEmailAddresses = McEmailAddress.QueryCcAddressesByMessageId (Id);
+                foreach (var emailAddress in ccEmailAddresses) {
+                    emailAddress.GetCcParts (ref top, ref bottom);
+                }
+
                 score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
                 NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
                 if (0 < tvList.Count) {
@@ -684,7 +689,7 @@ namespace NachoCore.Model
 
         public static void MarkAll ()
         {
-            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
+            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = m.NeedUpdate + 1");
         }
 
 

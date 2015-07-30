@@ -72,6 +72,18 @@ namespace NachoCore.Model
             bottom += ScoreStates.EmailsReceived + ScoreStates.EmailsSent + ScoreStates.EmailsDeleted;
         }
 
+        public void GetToParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.ToEmailsRead + ScoreStates.ToEmailsReplied;
+            bottom += ScoreStates.ToEmailsReceived + ScoreStates.ToEmailsDeleted;
+        }
+
+        public void GetCcParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.CcEmailsRead + ScoreStates.CcEmailsReplied;
+            bottom += ScoreStates.CcEmailsReceived + ScoreStates.CcEmailsDeleted;
+        }
+
         public double Classify ()
         {
             int top = 0, bottom = 0;

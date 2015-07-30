@@ -111,6 +111,26 @@ namespace NachoCore.Model
                 " GROUP BY a.Id",
                 NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc, messageId);
         }
+
+        public static List<McEmailAddress> QueryToAddressesByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
+                " WHERE m.AddressType = ? AND (m.ObjectId = ?) " +
+                " GROUP BY a.Id",
+                NcEmailAddress.Kind.To, messageId);
+        }
+
+        public static List<McEmailAddress> QueryCcAddressesByMessageId (int messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT a.* FROM McEmailAddress AS a " +
+                " JOIN McMapEmailAddressEntry AS m ON a.Id = m.EmailAddressId " +
+                " WHERE m.AddressType = ? AND (m.ObjectId = ?) " +
+                " GROUP BY a.Id",
+                NcEmailAddress.Kind.Cc, messageId);
+        }
     }
 }
 
