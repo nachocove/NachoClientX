@@ -6,7 +6,6 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
 using MailKit;
-using MailKit.Net.Imap;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using MailKit.Security;
@@ -882,6 +881,26 @@ namespace NachoCore.IMAP
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
+
+        #region ValidateConfig
+
+        private ImapValidateConfig Validator;
+        public override void ValidateConfig (McServer server, McCred cred)
+        {
+            CancelValidateConfig ();
+            Validator = new ImapValidateConfig (this);
+            Validator.Execute (server, cred);
+        }
+
+        public override void CancelValidateConfig ()
+        {
+            if (null != Validator) {
+                Validator.Cancel ();
+                Validator = null;
+            }
+        }
+
+        #endregion
 
         #region PushAssist support.
 
