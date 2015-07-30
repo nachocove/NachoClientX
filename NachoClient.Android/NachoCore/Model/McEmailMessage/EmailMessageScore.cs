@@ -107,9 +107,9 @@ namespace NachoCore.Model
         {
             double score = 0.0;
 
+            var accountAddress = AccountAddress (AccountId);
             if ((0 == ScoreVersion) && (0.0 == Score)) {
                 // Version 0 quick scoring
-                var accountAddress = AccountAddress (AccountId);
                 if (null != accountAddress) {
                     InternetAddressList addressList = NcEmailAddress.ParseAddressListString (To);
                     foreach (var addr in addressList) {
@@ -156,10 +156,16 @@ namespace NachoCore.Model
                 // Incorporate the To / Cc address
                 var toEmailAddresses = McEmailAddress.QueryToAddressesByMessageId (Id);
                 foreach (var emailAddress in toEmailAddresses) {
+                    if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                        continue;
+                    }
                     emailAddress.GetToParts (ref top, ref bottom);
                 }
                 var ccEmailAddresses = McEmailAddress.QueryCcAddressesByMessageId (Id);
                 foreach (var emailAddress in ccEmailAddresses) {
+                    if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                        continue;
+                    }
                     emailAddress.GetCcParts (ref top, ref bottom);
                 }
 
