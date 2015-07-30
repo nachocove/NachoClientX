@@ -6,6 +6,7 @@ using MailKit.Net.Imap;
 using NachoCore;
 using NachoCore.Model;
 using MailKit.Security;
+using NachoClient.Build;
 
 namespace NachoCore.IMAP
 {
@@ -62,7 +63,25 @@ namespace NachoCore.IMAP
                         return true;
                     });
                 }
+
+                ImapImplementation ourId = new ImapImplementation () {
+                    Name = "Nacho Mail",
+                    Version = string.Format ("{0}:{1}", BuildInfo.Version, BuildInfo.BuildNumber),
+                    ReleaseDate = BuildInfo.Time,
+                    SupportUrl = "https://support.nachocove.com/",
+                    Vendor = "Nacho Cove, Inc",
+                    OS = NachoPlatform.Device.Instance.BaseOs ().ToString (),
+                    OSVersion = NachoPlatform.Device.Instance.Os (),
+                };
+                Log.Info (Log.LOG_IMAP, "Our Id: {0}", dumpImapImplementation(ourId));
+                var serverId = Client.Identify (ourId, Cts.Token);
+                Log.Info (Log.LOG_IMAP, "Server ID: {0}", dumpImapImplementation (serverId));
             }
+        }
+
+        private string dumpImapImplementation (ImapImplementation imapId)
+        {
+            return string.Join (", ", imapId.Properties);
         }
 
         protected override Event ExecuteCommand ()
