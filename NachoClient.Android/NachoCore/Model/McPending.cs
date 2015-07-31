@@ -162,10 +162,9 @@ namespace NachoCore.Model
         public bool DeferredSerialIssueOnly { set; get; }
         // Valid when Deferred, Blocked, or Failed.
         [Indexed]
-        /// <summary>
-        /// Set if the McPending may not be delayed or deferred. Has the side-effect that it will be deleted on restart.
-        /// Always valid.
-        /// </summary>
+        // Set if the McPending may not be delayed or deferred.
+        // Has the side-effect that the McPending will be deleted on restart.
+        // Always valid.
         public bool DelayNotAllowed { set; get; }
 
         public XmlStatusKindEnum ResponseXmlStatusKind { set; get; }
