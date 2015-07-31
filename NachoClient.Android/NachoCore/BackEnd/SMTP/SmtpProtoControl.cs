@@ -17,6 +17,8 @@ namespace NachoCore.SMTP
 {
     public class SmtpProtoControl : NcProtoControl, IBEContext
     {
+        private const int KDiscoveryMaxRetries = 5;
+
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
@@ -165,12 +167,12 @@ namespace NachoCore.SMTP
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.ReConn,
-                            (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -428,8 +430,19 @@ namespace NachoCore.SMTP
 
         private void DoDisc ()
         {
-            var cmd = new SmtpDiscoveryCommand(this, SmtpClient);
+            var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
+        }
+
+        private int DiscoveryRetries = 0;
+        private void DoDiscTempFail ()
+        {
+            Log.Info (Log.LOG_SMTP, "SMTP DoDisc Attempt {0}", DiscoveryRetries++);
+            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
+                Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC");
+            } else {
+                DoDisc ();
+            }
         }
 
         private void DoUiServConfReq ()
@@ -480,6 +493,7 @@ namespace NachoCore.SMTP
 
         private void DoConn ()
         {
+            DiscoveryRetries = 0;
             var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
             cmd.Execute (Sm);
         }
