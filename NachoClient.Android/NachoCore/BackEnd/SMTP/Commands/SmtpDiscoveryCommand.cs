@@ -4,6 +4,9 @@ using System;
 using NachoCore.Utils;
 using System.IO;
 using MailKit.Net.Smtp;
+using MailKit.Security;
+using MailKit;
+using System.Net.Sockets;
 
 namespace NachoCore.SMTP
 {
@@ -17,16 +20,19 @@ namespace NachoCore.SMTP
 
         public override void Execute (NcStateMachine sm)
         {
-            Event evt = ExecuteCommand ();
-            sm.PostEvent (evt);
+            NcTask.Run (() => {
+                Event evt = ExecuteCommand ();
+                sm.PostEvent (evt);
+            }, "SmtpDiscoveryCommand");
         }
 
         protected override Event ExecuteCommand ()
         {
-            int retryCount = 0;
-            while (retryCount++ < KDiscoveryConnectCount) {
-                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: Attempt {0}", retryCount);
-                try {
+            var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+            errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
+            Event evt;
+            try {
+                lock (Client.SyncRoot) {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
@@ -34,31 +40,48 @@ namespace NachoCore.SMTP
                         var authy = new SmtpAuthenticateCommand (BEContext, Client);
                         authy.ConnectAndAuthenticate ();
                     }
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
-                    return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
-                } catch (NotSupportedException ex) {
-                    Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: NotSupportedException: {0}", ex.ToString ());
-                    return Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.UiSetServConf, "SMTPDISCCONF");
-                } catch (InvalidOperationException ex) {
-                    Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: InvalidOperationException: {0}", ex.ToString ());
-                    // try again.
-                } catch (SmtpProtocolException ex) {
-                    Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpProtocolException: {0}", ex.ToString ());
-                    // try again.
-                } catch (IOException ex) {
-                    Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.ToString ());
-                    // try again.
-                } catch (Exception ex) {
-                    Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
-                    return Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.UiSetServConf, "SMTPAUTHFAILUNDEF");
                 }
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
+                return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+            } catch (UriFormatException ex) {
+                Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
+                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", AutoDFailureReason.CannotFindServer);
+                errResult.Message = ex.Message;
+            } catch (SocketException ex) {
+                Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: SocketException: {0}", ex.Message);
+                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL", AutoDFailureReason.CannotFindServer);
+                errResult.Message = ex.Message;
+            } catch (AuthenticationException ex) {
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: AuthenticationException: {0}", ex.Message);
+                evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL1");
+                errResult.Message = ex.Message;
+            } catch (ServiceNotAuthenticatedException ex) {
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: ServiceNotAuthenticatedException: {0}", ex.Message);
+                evt =  Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.AuthFail, "SMTPAUTHFAIL2");
+                errResult.Message = ex.Message;
+            } catch (InvalidOperationException ex) {
+                Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: InvalidOperationException: {0}", ex.Message);
+                evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPINVOPTEMP");
+                errResult.Message = ex.Message;
+            } catch (SmtpProtocolException ex) {
+                Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpProtocolException: {0}", ex.Message);
+                evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPPROTOEXTEMP");
+                errResult.Message = ex.Message;
+            } catch (SmtpCommandException ex) {
+                Log.Info (Log.LOG_SMTP, "SmtpDiscoveryCommand: SmtpCommandException {0}", ex.Message);
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "SMTPCOMMEXTEMP");
+                errResult.Message = ex.Message;
+            } catch (IOException ex) {
+                Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: IOException: {0}", ex.Message);
+                evt =  Event.Create ((uint)SmEvt.E.TempFail, "SMTPIOEXTEMP");
+                errResult.Message = ex.Message;
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: {0}", ex);
+                evt =  Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPSERVFAILUNDEF");
+                errResult.Message = ex.Message;
             }
-            if (Client.IsConnected) {
-                Client.Disconnect (false, Cts.Token);
-            }
-            Log.Warn (Log.LOG_SMTP, "SmtpDiscoveryCommand: No more attempts allowed. Fail.", retryCount);
-            // if we got here, we can't continue.
-            return Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.UiSetServConf, "SMTPDISCHARDFINAL");
+            StatusInd (errResult);
+            return evt;
         }
     }
 }
