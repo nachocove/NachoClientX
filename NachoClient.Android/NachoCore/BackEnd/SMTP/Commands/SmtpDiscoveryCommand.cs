@@ -20,8 +20,10 @@ namespace NachoCore.SMTP
 
         public override void Execute (NcStateMachine sm)
         {
-            Event evt = ExecuteCommand ();
-            sm.PostEvent (evt);
+            NcTask.Run (() => {
+                Event evt = ExecuteCommand ();
+                sm.PostEvent (evt);
+            }, "SmtpDiscoveryCommand");
         }
 
         protected override Event ExecuteCommand ()
