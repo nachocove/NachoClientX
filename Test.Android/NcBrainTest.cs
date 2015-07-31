@@ -292,6 +292,8 @@ namespace Test.Common
             var david = "david@company.net";
             var ellen = "ellen@company.net";
 
+            Scoring.HeaderFilteringPenalty = 0.375;
+
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {
                 AccountId = accountId,
@@ -389,7 +391,51 @@ namespace Test.Common
 
             var message6 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
             Assert.AreEqual (Scoring.Version, message6.ScoreVersion);
-            Assert.AreEqual (15.0 / 25.0, message5.Score);
+            Assert.AreEqual (12.0 / 21.0, message5.Score);
+
+            var message7 = new McEmailMessage () {
+                AccountId = accountId,
+                From = charles,
+                IsRead = true,
+                LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
+                DateReceived = DateTime.UtcNow,
+                Headers =
+                    @"X-Apparently-To: henrykwok2000@yahoo.com; Thu, 30 Jul 2015 19:51:45 +0000
+Return-Path: <newsletter@response.sourceforge.com>
+Received-SPF: pass (domain of response.sourceforge.com designates 74.116.233.70 as permitted sender)
+X-Originating-IP: [74.116.233.70]
+Authentication-Results: mta1214.mail.ne1.yahoo.com  from=resources.sourceforge.com; domainkeys=neutral (no sig);  from=resources.sourceforge.com; dkim=pass (ok)
+Received: from 127.0.0.1  (EHLO response.sourceforge.com) (74.116.233.70)
+  by mta1214.mail.ne1.yahoo.com with SMTP; Thu, 30 Jul 2015 19:51:45 +0000
+Received: from mail4.elabs10.com (10.10.10.54) by response.sourceforge.com id hna0521lf14l for <henrykwok2000@yahoo.com>; Thu, 30 Jul 2015 12:51:23 -0700 (envelope-from <newsletter@response.sourceforge.com>)
+To: <henrykwok2000@yahoo.com>
+Subject: =?utf-8?Q?Network=20Requirements=20for=20Cloud=20Deployment?=
+Date: Thu, 30 Jul 2015 12:51:23 -0700
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=resources.sourceforge.com; s=s2010001400b;
+    h=Reply-To:From:MIME-Version:List-Unsubscribe:Content-description:Content-Type:Subject:To:Date;
+    bh=4B/2NWeFPI+QvcbL3TCtT6JZWYw=;
+    b=a+d58RsSlu+XjPp7Mb6QLt084YdiKCye27Tm5UC2Rshig4O3yCb4dCpXLp1Z3qdg7Tq
+    AR+h466luHhCmRHE8H4xpmKPPVTKJWuRnBLOxh2yo3ZunlrocNhqc81XavyMFaYwNvs
+    ncNR1PtWBXKqBYFXdY7NKqzaScXoEPUW/ypYc=
+X-EmailAdvisor: 3868089
+X-Delivery: Custom 2010001400
+Reply-To: sourceforge@resources.sourceforge.com
+List-Unsubscribe: <mailto:unsubscribe-6640@elabs10.com?subject=henrykwok2000@yahoo.com>
+Content-description: fa7443f781henrykwok2000%40yahoo.com!19f0!3b05b9!77ce2ff8!rynof10.pbz!
+X-Complaints-To: abuse@elabs10.com
+Message-Id: <20150730195142.FA7443F78166@elabs10.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+    boundary=""=_e3adbac3ddba403fea6831b29113cd8c""
+From: ""=?utf-8?Q?SourceForge=20Resources?="" <sourceforge@resources.sourceforge.com>
+Content-Length: 7096"
+            };
+            InsertAndCheck (message7);
+
+            Brain.TestAnalyzeEmailMessage (message7);
+
+            Assert.AreEqual (Scoring.Version, message7.ScoreVersion);
+            Assert.AreEqual (Scoring.HeaderFilteringPenalty, message7.Score);
         }
 
         protected void CheckOneEmailMessage (int expectedId, List<MatchedItem> matches)
