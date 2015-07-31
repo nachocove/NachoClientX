@@ -511,7 +511,6 @@ namespace NachoCore.IMAP
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
-            Log.Info (Log.LOG_IMAP, "UpdateSavedState called: {0}", Sm.State);
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
