@@ -233,6 +233,10 @@ namespace NachoCore.Model
         /// <value>The headers.</value>
         public string Headers { get; set; }
 
+        /// True if the message header matches some of the fields. A match can cause a 
+        /// message from being removed from the hot list.
+        public bool HeadersFiltered { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///

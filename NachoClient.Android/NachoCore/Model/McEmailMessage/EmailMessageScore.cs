@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using System.Text.RegularExpressions;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -14,6 +15,12 @@ namespace NachoCore.Model
 {
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
+        protected static Regex HeaderFilters = 
+            new Regex (
+                @"X-Campaign(.*):|" +
+                @"List-Unsubscribe:",
+                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
         public enum GleanPhaseEnum
         {
             NOT_GLEANED = 0,
@@ -37,6 +44,7 @@ namespace NachoCore.Model
                         // will be done at the end of Analyze().
                         { 4, AnalyzeOtherAddresses },
                         { 5, AnalyzeSendAddresses },
+                        { 6, AnalyzeHeaders },
                     };
                 }
                 return _AnalysisFunctions;
@@ -106,6 +114,7 @@ namespace NachoCore.Model
         public double Classify ()
         {
             double score = 0.0;
+            double headerFactor = HeadersFiltered ? Scoring.HeaderFilteringPenalty : 1.0;
 
             var accountAddress = AccountAddress (AccountId);
             if ((0 == ScoreVersion) && (0.0 == Score)) {
@@ -125,19 +134,19 @@ namespace NachoCore.Model
                 // the same items to quanlify for quick score again.
                 Score = 0.00000001;
                 UpdateByBrain ();
-                return Score;
+                return Score * headerFactor;
             }
 
             McEmailAddress fromEmailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
             if (null == address) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
-                return score;
+                return score * headerFactor;
             }
             bool found = McEmailAddress.Get (AccountId, address.Address, out fromEmailAddress);
             if (!found) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
-                return score;
+                return score * headerFactor;
             }
 
             // TODO - Combine with content score... once we have such value
@@ -179,7 +188,7 @@ namespace NachoCore.Model
                 }
             }
             Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score);
-            return score;
+            return score * headerFactor;
         }
 
         public void AnalyzeFromAddress ()
@@ -332,6 +341,11 @@ namespace NachoCore.Model
                     emailAddress.ScoreStates.Update ();
                 }
             });
+        }
+
+        public void AnalyzeHeaders ()
+        {
+            HeadersFiltered = String.IsNullOrEmpty (Headers) ? false : HeaderFilters.IsMatch (Headers);
         }
 
         public void Analyze ()

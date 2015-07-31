@@ -18,7 +18,11 @@ namespace NachoCore.Utils
         // Version 4 - Fill in address maps (McMapEmailAddressEntry) for To and Cc. Fill
         //             in the statistics for those two types of addresses.
         // Version 5 - 3-D approximate Bayesian estimator.
-        public const int Version = 5;
+        // Version 6 - Message header filtering.
+        public const int Version = 6;
+
+        // Header filtering penalty factor
+        public static double HeaderFilteringPenalty = 0.0;
 
         public static int ApplyAnalysisFunctions (AnalysisFunctionsTable analysisFunctions, int scoreVersion)
         {
