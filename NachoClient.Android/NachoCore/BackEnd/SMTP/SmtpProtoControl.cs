@@ -430,6 +430,21 @@ namespace NachoCore.SMTP
 
         private void DoDisc ()
         {
+            // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
+            // starts this service, and when the state gets properly recognized. This is 
+            // because there are two services (IMAP and SMTP) and either can run ahead of the other
+            // and send a StatusInd, causing the UI to check the services (both!) state
+            // via EventFromEnum(). This can lead to invalid states being recognized.
+            // Example: 
+            //  SMTP and IMAP Both have moved to DiscW, but only SMTP has actually started:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=CredWait
+            // The CredWait causes the login SM to move to:
+            //  STATE:Info:1:: SM(Account:3): S=SyncWait & E=CredReqCallback/avl: EventFromEnum cred req => S=SubmitWait
+            // Then, later, IMAP starts and sends a status Ind:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
+            // But this is an illegal state in SubMitWait:
+            //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            BackEndStatePreset = BackEndStateEnum.Running;
             var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
         }
@@ -575,6 +590,7 @@ namespace NachoCore.SMTP
         // State-machine's state persistance callback.
         private void UpdateSavedState ()
         {
+            Log.Info (Log.LOG_SMTP, "UpdateSavedState called: {0}", Sm.State);
             BackEndStatePreset = null;
             var protocolState = ProtocolState;
             uint stateToSave = Sm.State;
