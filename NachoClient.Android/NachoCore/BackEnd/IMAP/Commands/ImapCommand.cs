@@ -303,6 +303,7 @@ namespace NachoCore.IMAP
                     target.ImapLastExamine = DateTime.UtcNow;
                     return true;
                 });
+                McPending.MakeEligibleOnFMetaData (folder);
                 return true;
             }
         }
