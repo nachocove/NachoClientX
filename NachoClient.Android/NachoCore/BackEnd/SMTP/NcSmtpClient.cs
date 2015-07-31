@@ -18,6 +18,7 @@ namespace NachoCore.SMTP
         private static IProtocolLogger getLogger ()
         {
             //return new NcMailKitProtocolLogger("SMTP");
+            //return new NcDebugProtocolLogger (Log.LOG_SMTP);
             return new NullProtocolLogger ();
         }
     }
