@@ -66,8 +66,8 @@ namespace Test.Common
             NcBrain.StartService ();
             Telemetry.ENABLED = false;
 
-            var bobCanonicalAddress = "bob@company.com";
-            var bobEmailAddress = "Bob <bob@company.com>";
+            var bobCanonicalAddress = "bob@company.net";
+            var bobEmailAddress = "Bob <bob@company.net>";
 
             Account = new McAccount () {
                 EmailAddr = bobCanonicalAddress,
@@ -161,6 +161,31 @@ namespace Test.Common
             // Update again. Should get the same score with no update
             NcBrain.UpdateAddressScore (Address.AccountId, Address.Id);
             WaitForBrain ();
+
+            Assert.AreEqual (0.5, Address.Score);
+            Assert.AreEqual (origCount + 1, NcBrain.SharedInstance.McEmailAddressCounters.Update.Count); // no new update
+
+            // Adjust # replied
+            Address.ScoreStates.EmailsReplied = 1;
+            Address.ScoreStates.Update ();
+
+            NcBrain.UpdateAddressScore (Address.AccountId, Address.Id);
+            WaitForBrain ();
+
+            Address = McEmailAddress.QueryById<McEmailAddress> (Address.Id);
+            Assert.AreEqual (0.75, Address.Score);
+            Assert.AreEqual (origCount + 2, NcBrain.SharedInstance.McEmailAddressCounters.Update.Count);
+
+            // Adjust # sent
+            Address.ScoreStates.EmailsSent = 4;
+            Address.ScoreStates.Update ();
+
+            NcBrain.UpdateAddressScore (Address.AccountId, Address.Id);
+            WaitForBrain ();
+
+            Address = McEmailAddress.QueryById<McEmailAddress> (Address.Id);
+            Assert.AreEqual (0.875, Address.Score);
+            Assert.AreEqual (origCount + 3, NcBrain.SharedInstance.McEmailAddressCounters.Update.Count);
         }
 
         private void TestUpdateMessageScore (ref McEmailMessage message)
@@ -178,6 +203,7 @@ namespace Test.Common
             Address.ScoreStates.EmailsReceived = 3;
             Address.ScoreStates.Update ();
             Address.Score = 2.0 / 3.0;
+            Address.ScoreVersion = Scoring.Version;
             Address.Update ();
 
             // Setting UserAction to +1 changes the score to VipScore. 
@@ -241,10 +267,19 @@ namespace Test.Common
             Assert.True ((1 == rows) && (0 < item.Id));
         }
 
+        protected McEmailAddress GetAddress (int accountId, string emailAddress)
+        {
+            var id = McEmailAddress.Get (accountId, emailAddress);
+            if (0 == id) {
+                return null;
+            }
+            return McEmailAddress.QueryById<McEmailAddress> (id);
+        }
+
         [Test]
         public void TestAnalyzeEmail ()
         {
-            int accountId = 2;
+            int accountId = Account.Id;
             Brain = new WrappedNcBrain ("TestAnalyzeEmail");
 
             // Create a glean folder
@@ -256,6 +291,8 @@ namespace Test.Common
             var charles = "charles@company.net";
             var david = "david@company.net";
             var ellen = "ellen@company.net";
+
+            Scoring.HeaderFilteringPenalty = 0.375;
 
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {
@@ -277,9 +314,128 @@ namespace Test.Common
             CheckGleanedContact (accountId, david);
             CheckGleanedContact (accountId, ellen);
 
+            // Verify gleaned email address statistics.
+            var alanAddress = GetAddress (accountId, alan);
+            Assert.AreEqual (1, alanAddress.ScoreStates.EmailsReceived);
+
+            var bobAddress = GetAddress (accountId, bob);
+            Assert.AreEqual (1, bobAddress.ScoreStates.ToEmailsReceived);
+
+            var charlesAddress = GetAddress (accountId, charles);
+            Assert.AreEqual (1, charlesAddress.ScoreStates.ToEmailsReceived);
+
+            var davidAddress = GetAddress (accountId, david);
+            Assert.AreEqual (1, davidAddress.ScoreStates.CcEmailsReceived);
+
+            var ellenAddress = GetAddress (accountId, ellen);
+            Assert.AreEqual (1, ellenAddress.ScoreStates.CcEmailsReceived);
+
             // Verify the score version
             var message2 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
             Assert.AreEqual (Scoring.Version, message2.ScoreVersion);
+
+            // Insert an email that is originated from the user account. Verify AnalyzeSendaddresses()
+            var message3 = new McEmailMessage () {
+                AccountId = accountId,
+                From = bob,
+                To = alan,
+                IsRead = false,
+                LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
+            };
+
+            InsertAndCheck (message3);
+            Brain.TestAnalyzeEmailMessage (message3);
+
+            var address = GetAddress (accountId, alan);
+            Assert.AreEqual (1, address.ScoreStates.EmailsSent);
+            var message4 = McEmailMessage.QueryById<McEmailMessage> (message3.Id);
+            Assert.AreEqual (Scoring.Version, message4.ScoreVersion);
+
+            // Insert message 1 again but with the message being read. Also, no gleaning this time.
+            var message5 = new McEmailMessage () {
+                AccountId = accountId,
+                From = alan,
+                To = String.Join (",", bob, charles),
+                Cc = String.Join (",", david, ellen),
+                IsRead = true,
+                LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
+                DateReceived = DateTime.UtcNow,
+            };
+
+            alanAddress = GetAddress (accountId, alan);
+            alanAddress.ScoreStates.EmailsSent = 4;
+            alanAddress.ScoreStates.Update (); // top += 0+1+4, bottom += 1+1+4
+
+            bobAddress = GetAddress (accountId, bob);
+            bobAddress.ScoreStates.ToEmailsRead = 2;
+            bobAddress.ScoreStates.ToEmailsReceived = 3;
+            bobAddress.ScoreStates.Update (); // top += 1+2, bottom += 1+3
+
+            charlesAddress = GetAddress (accountId, charles);
+            charlesAddress.ScoreStates.ToEmailsReplied = 1;
+            charlesAddress.ScoreStates.ToEmailsReceived = 5;
+            charlesAddress.ScoreStates.Update (); // top += 1+1, bottom += 1+5
+
+            davidAddress = GetAddress (accountId, david);
+            davidAddress.ScoreStates.CcEmailsRead = 3;
+            davidAddress.ScoreStates.CcEmailsReceived = 5;
+            davidAddress.ScoreStates.Update (); // top += 1+3, bottom += 1+5
+
+            ellenAddress = GetAddress (accountId, ellen);
+            ellenAddress.ScoreStates.CcEmailsReplied = 0;
+            ellenAddress.ScoreStates.CcEmailsReceived = 2;
+            ellenAddress.ScoreStates.Update (); // top += 1+0, bottom += 2+1
+
+            InsertAndCheck (message5);
+            Brain.TestAnalyzeEmailMessage (message5);
+
+            var message6 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (Scoring.Version, message6.ScoreVersion);
+            Assert.AreEqual (12.0 / 21.0, message5.Score);
+
+            var message7 = new McEmailMessage () {
+                AccountId = accountId,
+                From = charles,
+                IsRead = true,
+                LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
+                DateReceived = DateTime.UtcNow,
+                Headers =
+                    @"X-Apparently-To: henrykwok2000@yahoo.com; Thu, 30 Jul 2015 19:51:45 +0000
+Return-Path: <newsletter@response.sourceforge.com>
+Received-SPF: pass (domain of response.sourceforge.com designates 74.116.233.70 as permitted sender)
+X-Originating-IP: [74.116.233.70]
+Authentication-Results: mta1214.mail.ne1.yahoo.com  from=resources.sourceforge.com; domainkeys=neutral (no sig);  from=resources.sourceforge.com; dkim=pass (ok)
+Received: from 127.0.0.1  (EHLO response.sourceforge.com) (74.116.233.70)
+  by mta1214.mail.ne1.yahoo.com with SMTP; Thu, 30 Jul 2015 19:51:45 +0000
+Received: from mail4.elabs10.com (10.10.10.54) by response.sourceforge.com id hna0521lf14l for <henrykwok2000@yahoo.com>; Thu, 30 Jul 2015 12:51:23 -0700 (envelope-from <newsletter@response.sourceforge.com>)
+To: <henrykwok2000@yahoo.com>
+Subject: =?utf-8?Q?Network=20Requirements=20for=20Cloud=20Deployment?=
+Date: Thu, 30 Jul 2015 12:51:23 -0700
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=resources.sourceforge.com; s=s2010001400b;
+    h=Reply-To:From:MIME-Version:List-Unsubscribe:Content-description:Content-Type:Subject:To:Date;
+    bh=4B/2NWeFPI+QvcbL3TCtT6JZWYw=;
+    b=a+d58RsSlu+XjPp7Mb6QLt084YdiKCye27Tm5UC2Rshig4O3yCb4dCpXLp1Z3qdg7Tq
+    AR+h466luHhCmRHE8H4xpmKPPVTKJWuRnBLOxh2yo3ZunlrocNhqc81XavyMFaYwNvs
+    ncNR1PtWBXKqBYFXdY7NKqzaScXoEPUW/ypYc=
+X-EmailAdvisor: 3868089
+X-Delivery: Custom 2010001400
+Reply-To: sourceforge@resources.sourceforge.com
+List-Unsubscribe: <mailto:unsubscribe-6640@elabs10.com?subject=henrykwok2000@yahoo.com>
+Content-description: fa7443f781henrykwok2000%40yahoo.com!19f0!3b05b9!77ce2ff8!rynof10.pbz!
+X-Complaints-To: abuse@elabs10.com
+Message-Id: <20150730195142.FA7443F78166@elabs10.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+    boundary=""=_e3adbac3ddba403fea6831b29113cd8c""
+From: ""=?utf-8?Q?SourceForge=20Resources?="" <sourceforge@resources.sourceforge.com>
+Content-Length: 7096"
+            };
+            InsertAndCheck (message7);
+
+            Brain.TestAnalyzeEmailMessage (message7);
+
+            Assert.AreEqual (Scoring.Version, message7.ScoreVersion);
+            Assert.AreEqual (Scoring.HeaderFilteringPenalty, message7.Score);
         }
 
         protected void CheckOneEmailMessage (int expectedId, List<MatchedItem> matches)
@@ -309,7 +465,7 @@ namespace Test.Common
             Brain.TestCloseAllOpenedIndexes (); // need to commit before search will return match
 
             // Make sure the index version (IsIndexed) is correct and the document is really in the index
-            Assert.AreEqual (EmailMessageIndexDocument.Version, message1.IsIndexed);
+            Assert.AreEqual (EmailMessageIndexDocument.Version - 1, message1.IsIndexed);
             var matches = index.SearchAllEmailMessageFields ("short");
             CheckOneEmailMessage (message1.Id, matches);
             // Not doing a thorough test of the indexing because that is done in IndexTest.
@@ -433,7 +589,7 @@ This is a MIME email");
             Brain.TestIndexContact (contact1);
             Brain.TestCloseAllOpenedIndexes ();
 
-            Assert.AreEqual (ContactIndexDocument.Version, contact1.IndexVersion);
+            Assert.AreEqual (ContactIndexDocument.Version - 1, contact1.IndexVersion);
             var matches = index.SearchAllContactFields ("alan");
             CheckOneContact (contact1.Id, matches);
 

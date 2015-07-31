@@ -326,6 +326,9 @@
     <Compile Include="..\Test.Android\ContactsBinningHelperTest.cs">
       <Link>ContactsBinningHelperTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McEmailAddressTest.cs">
+      <Link>McEmailAddressTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using System.Text.RegularExpressions;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -14,6 +15,12 @@ namespace NachoCore.Model
 {
     public partial class McEmailMessage : McAbstrItem, IScorable
     {
+        protected static Regex HeaderFilters = 
+            new Regex (
+                @"X-Campaign(.*):|" +
+                @"List-Unsubscribe:",
+                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
         public enum GleanPhaseEnum
         {
             NOT_GLEANED = 0,
@@ -36,6 +43,8 @@ namespace NachoCore.Model
                         // Version 3 - No statistics is updated. Just need to re-compute the score which
                         // will be done at the end of Analyze().
                         { 4, AnalyzeOtherAddresses },
+                        { 5, AnalyzeSendAddresses },
+                        { 6, AnalyzeHeaders },
                     };
                 }
                 return _AnalysisFunctions;
@@ -105,10 +114,11 @@ namespace NachoCore.Model
         public double Classify ()
         {
             double score = 0.0;
+            double headerFactor = HeadersFiltered ? Scoring.HeaderFilteringPenalty : 1.0;
 
+            var accountAddress = AccountAddress (AccountId);
             if ((0 == ScoreVersion) && (0.0 == Score)) {
                 // Version 0 quick scoring
-                var accountAddress = AccountAddress (AccountId);
                 if (null != accountAddress) {
                     InternetAddressList addressList = NcEmailAddress.ParseAddressListString (To);
                     foreach (var addr in addressList) {
@@ -124,28 +134,51 @@ namespace NachoCore.Model
                 // the same items to quanlify for quick score again.
                 Score = 0.00000001;
                 UpdateByBrain ();
-                return Score;
+                return Score * headerFactor;
             }
 
-            McEmailAddress emailAddress;
+            McEmailAddress fromEmailAddress;
             var address = NcEmailAddress.ParseMailboxAddressString (From);
             if (null == address) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
-                return score;
+                return score * headerFactor;
             }
-            bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
+            bool found = McEmailAddress.Get (AccountId, address.Address, out fromEmailAddress);
             if (!found) {
                 Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
-                return score;
+                return score * headerFactor;
             }
 
             // TODO - Combine with content score... once we have such value
-            if (emailAddress.IsVip) {
+            if (fromEmailAddress.IsVip) {
                 score = VipScore;
             } else if (0 < UserAction) {
                 score = VipScore;
+            } else if (0 > UserAction) {
+                if (minHotScore <= score) {
+                    score = minHotScore - 0.01;
+                }
             } else {
-                score = emailAddress.Classify ();
+                int top = 0, bottom = 0;
+                fromEmailAddress.GetParts (ref top, ref bottom);
+
+                // Incorporate the To / Cc address
+                var toEmailAddresses = McEmailAddress.QueryToAddressesByMessageId (Id);
+                foreach (var emailAddress in toEmailAddresses) {
+                    if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                        continue;
+                    }
+                    emailAddress.GetToParts (ref top, ref bottom);
+                }
+                var ccEmailAddresses = McEmailAddress.QueryCcAddressesByMessageId (Id);
+                foreach (var emailAddress in ccEmailAddresses) {
+                    if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                        continue;
+                    }
+                    emailAddress.GetCcParts (ref top, ref bottom);
+                }
+
+                score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
                 NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
                 if (0 < tvList.Count) {
                     DateTime now = DateTime.UtcNow;
@@ -153,14 +186,9 @@ namespace NachoCore.Model
                         score *= tv.Adjustment (now);
                     }
                 }
-                if (0 > UserAction) {
-                    if (minHotScore <= score) {
-                        score = minHotScore - 0.01;
-                    }
-                }
             }
             Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score);
-            return score;
+            return score * headerFactor;
         }
 
         public void AnalyzeFromAddress ()
@@ -299,6 +327,25 @@ namespace NachoCore.Model
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
+        }
+
+        public void AnalyzeSendAddresses ()
+        {
+            if (!IsFromMe ()) {
+                return;
+            }
+            var otherAddresses = McEmailAddress.QueryToCcAddressByMessageId (Id);
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var emailAddress in otherAddresses) {
+                    emailAddress.IncrementEmailsSent ();
+                    emailAddress.ScoreStates.Update ();
+                }
+            });
+        }
+
+        public void AnalyzeHeaders ()
+        {
+            HeadersFiltered = String.IsNullOrEmpty (Headers) ? false : HeaderFilters.IsMatch (Headers);
         }
 
         public void Analyze ()
@@ -662,7 +709,7 @@ namespace NachoCore.Model
 
         public static void MarkAll ()
         {
-            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
+            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = m.NeedUpdate + 1");
         }
 
 
@@ -690,6 +737,18 @@ namespace NachoCore.Model
             DbScoreStates = null;
             McEmailMessageScore.DeleteByParentId (Id);
         }
+
+        public bool IsFromMe ()
+        {
+            if (String.IsNullOrEmpty (From)) {
+                return false;
+            }
+            MailboxAddress mbAddr = NcEmailAddress.ParseMailboxAddressString (From);
+            var accountAddress = AccountAddress (AccountId);
+            if (null == accountAddress) {
+                return false;
+            }
+            return accountAddress == mbAddr.Address;
+        }
     }
 }
-

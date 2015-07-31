@@ -66,13 +66,32 @@ namespace NachoCore.Model
             return (0 < NeedUpdate);
         }
 
+        public void GetParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.EmailsRead + ScoreStates.EmailsReplied + ScoreStates.EmailsSent;
+            bottom += ScoreStates.EmailsReceived + ScoreStates.EmailsSent + ScoreStates.EmailsDeleted;
+        }
+
+        public void GetToParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.ToEmailsRead + ScoreStates.ToEmailsReplied;
+            bottom += ScoreStates.ToEmailsReceived + ScoreStates.ToEmailsDeleted;
+        }
+
+        public void GetCcParts (ref int top, ref int bottom)
+        {
+            top += ScoreStates.CcEmailsRead + ScoreStates.CcEmailsReplied;
+            bottom += ScoreStates.CcEmailsReceived + ScoreStates.CcEmailsDeleted;
+        }
+
         public double Classify ()
         {
-            int total = ScoreStates.EmailsReceived + ScoreStates.EmailsSent + ScoreStates.EmailsDeleted;
-            if (0 == total) {
+            int top = 0, bottom = 0;
+            GetParts (ref top, ref bottom);
+            if (0 == bottom) {
                 return 0.0;
             }
-            return (double)(ScoreStates.EmailsRead + ScoreStates.EmailsReplied + ScoreStates.EmailsSent) / (double)total;
+            return (double)top / (double)bottom;
         }
 
         public void Analyze ()
@@ -127,6 +146,13 @@ namespace NachoCore.Model
         {
             ScoreStates.EmailsDeleted += count;
             MarkDependencies (NcEmailAddress.Kind.From);
+        }
+
+        public void IncrementEmailsSent (int count = 1)
+        {
+            ScoreStates.EmailsSent += count;
+            MarkDependencies (NcEmailAddress.Kind.To);
+            MarkDependencies (NcEmailAddress.Kind.Cc);
         }
 
         ///////////////////// To address methods /////////////////////

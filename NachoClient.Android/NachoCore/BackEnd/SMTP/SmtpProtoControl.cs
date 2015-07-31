@@ -17,6 +17,8 @@ namespace NachoCore.SMTP
 {
     public class SmtpProtoControl : NcProtoControl, IBEContext
     {
+        private const int KDiscoveryMaxRetries = 5;
+
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
@@ -165,12 +167,12 @@ namespace NachoCore.SMTP
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.ReConn,
-                            (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -428,8 +430,34 @@ namespace NachoCore.SMTP
 
         private void DoDisc ()
         {
-            var cmd = new SmtpDiscoveryCommand(this, SmtpClient);
+            // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
+            // starts this service, and when the state gets properly recognized. This is 
+            // because there are two services (IMAP and SMTP) and either can run ahead of the other
+            // and send a StatusInd, causing the UI to check the services (both!) state
+            // via EventFromEnum(). This can lead to invalid states being recognized.
+            // Example: 
+            //  SMTP and IMAP Both have moved to DiscW, but only SMTP has actually started:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=CredWait
+            // The CredWait causes the login SM to move to:
+            //  STATE:Info:1:: SM(Account:3): S=SyncWait & E=CredReqCallback/avl: EventFromEnum cred req => S=SubmitWait
+            // Then, later, IMAP starts and sends a status Ind:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
+            // But this is an illegal state in SubMitWait:
+            //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            BackEndStatePreset = BackEndStateEnum.Running;
+            var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
+        }
+
+        private int DiscoveryRetries = 0;
+        private void DoDiscTempFail ()
+        {
+            Log.Info (Log.LOG_SMTP, "SMTP DoDisc Attempt {0}", DiscoveryRetries++);
+            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
+                Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC");
+            } else {
+                DoDisc ();
+            }
         }
 
         private void DoUiServConfReq ()
@@ -480,6 +508,7 @@ namespace NachoCore.SMTP
 
         private void DoConn ()
         {
+            DiscoveryRetries = 0;
             var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
             cmd.Execute (Sm);
         }
