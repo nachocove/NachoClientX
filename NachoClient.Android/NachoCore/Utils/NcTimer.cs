@@ -186,8 +186,8 @@ namespace NachoCore.Utils
                     if (MAX_DURATION < period) {
                         period = Timeout.Infinite;
                     }
-                    Log.Debug (Log.LOG_TIMER, "set: due={0}, period{1}", due, period);
                 }
+                Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} set: due={2}ms, period={3}", Id, Who, due, period);
                 Timer = (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback, Object_, due, period);
 
                 return true;

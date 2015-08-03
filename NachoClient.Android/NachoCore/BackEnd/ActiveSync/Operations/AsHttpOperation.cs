@@ -503,6 +503,8 @@ namespace NachoCore.ActiveSync
                         CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
+                    } else {
+                        Log.Error (Log.LOG_HTTP, "HTTPClient Exception due to cancellation! {0} {1}", RedactedServerUri, ex.Message);
                     }
                     return;
                 }
