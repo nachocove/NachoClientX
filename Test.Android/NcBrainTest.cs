@@ -206,7 +206,8 @@ namespace Test.Common
             Address.ScoreVersion = Scoring.Version;
             Address.Update ();
 
-            // Setting UserAction to +1 changes the score to VipScore. 
+            // Setting UserAction to +1 changes the score to VipScore.
+            Message.FromEmailAddressId = Address.Id;
             Message.Score = 2.0 / 3.0;
             Message.ScoreVersion = Scoring.Version;
             Message.UserAction = +1;
@@ -292,7 +293,7 @@ namespace Test.Common
             var david = "david@company.net";
             var ellen = "ellen@company.net";
 
-            Scoring.HeaderFilteringPenalty = 0.375;
+            McEmailMessage.MarketingMailDisqualifier.QualifiedFactor = 0.375;
 
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {
@@ -435,7 +436,7 @@ Content-Length: 7096"
             Brain.TestAnalyzeEmailMessage (message7);
 
             Assert.AreEqual (Scoring.Version, message7.ScoreVersion);
-            Assert.AreEqual (Scoring.HeaderFilteringPenalty, message7.Score);
+            Assert.AreEqual (McEmailMessage.MarketingMailDisqualifier.QualifiedFactor, message7.Score);
         }
 
         protected void CheckOneEmailMessage (int expectedId, List<MatchedItem> matches)

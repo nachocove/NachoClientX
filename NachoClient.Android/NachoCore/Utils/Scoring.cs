@@ -21,6 +21,14 @@ namespace NachoCore.Utils
         // Version 6 - Message header filtering.
         public const int Version = 6;
 
+        public const double Max = 1.0;
+
+        public const double Min = 0.0;
+
+        public static double MarkedHotFactor = 1.0;
+
+        public static double MarkedNotHotFactor = 0.0;
+
         // Header filtering penalty factor
         public static double HeaderFilteringPenalty = 0.0;
 
