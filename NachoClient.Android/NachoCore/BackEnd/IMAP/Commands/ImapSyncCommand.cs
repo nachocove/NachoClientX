@@ -83,7 +83,7 @@ namespace NachoCore.IMAP
             case SyncKit.MethodEnum.Sync:
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
-                ImapStrategy.ResolveFolderSync (BEContext, Synckit);
+                ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
             default:

@@ -259,7 +259,7 @@ namespace NachoCore.IMAP
                     }
                 } else {
                     // Nothing to sync.
-                    ResolveFolderSync (BEContext, ref protocolState, folder, pending);
+                    ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }
             }
             if (null != syncKit) {
@@ -490,14 +490,26 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        public static void ResolveFolderSync (IBEContext BEContext, SyncKit synckit)
+        /// <summary>
+        /// Resolves the one sync, i.e. One SyncKit.
+        /// </summary>
+        /// <param name="BEContext">BEContext.</param>
+        /// <param name="synckit">Synckit.</param>
+        public static void ResolveOneSync (IBEContext BEContext, SyncKit synckit)
         {
             var protocolState = BEContext.ProtocolState;
-            ResolveFolderSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
+            ResolveOneSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
             MaybeAdvanceSyncStage (ref protocolState);
         }
 
-        private static void ResolveFolderSync (IBEContext BEContext, ref McProtocolState protocolState, McFolder folder, McPending pending)
+        /// <summary>
+        /// Resolves the one sync.
+        /// </summary>
+        /// <param name="BEContext">BE context.</param>
+        /// <param name="protocolState">Protocol state.</param>
+        /// <param name="folder">The folder that was synced.</param>
+        /// <param name="pending">The McPending, if any (can be null).</param>
+        private static void ResolveOneSync (IBEContext BEContext, ref McProtocolState protocolState, McFolder folder, McPending pending)
         {
             // if this is the inbox and we have nothing to do, we need to still mark protocolState.HasSyncedInbox as True.
             if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
@@ -515,6 +527,7 @@ namespace NachoCore.IMAP
                 }
             }
 
+            // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
             if (null != pending) {
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
             } else {
