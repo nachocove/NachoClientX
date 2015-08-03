@@ -339,7 +339,7 @@ namespace NachoCore.Utils
 
         // The display name of the account is a nickname for
         // the account, like Exchange or My Work Account, etc.
-        // We do not support this yet, so null is teh right value.
+        // We do not support this yet, so null is the right value.
         static public string UserNameForAccount (McAccount account)
         {
             NcAssert.True (null == account.DisplayUserName);
