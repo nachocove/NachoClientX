@@ -913,17 +913,17 @@ namespace NachoClient.iOS
             }
         }
 
-        public McFolder GetFolder (FolderStruct folder)
+        McFolder GetFolder (FolderStruct folder)
         {
             return Folders.GetFolderByFolderID (folder.folderID);
         }
 
-        public McFolder GetParentFolder (McFolder folder)
+        McFolder GetParentFolder (McFolder folder)
         {
             return McFolder.QueryByServerId (currentAccount.Id, folder.ParentId);
         }
 
-        public void UpdateLastAccessed ()
+        void UpdateLastAccessed ()
         {
             var list = McFolder.QueryByMostRecentlyAccessedVisibleFolders (currentAccount.Id);
             recentFolderList = list.Take (MAX_RECENT_FOLDERS).ToList ();
