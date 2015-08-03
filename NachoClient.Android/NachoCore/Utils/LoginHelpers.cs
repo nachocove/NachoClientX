@@ -126,6 +126,17 @@ namespace NachoCore.Utils
             return (DateTime.MaxValue != gonnaExpireOn);
         }
 
+        static public void ClearPasswordExpiration (int accountId)
+        {
+            var creds = McCred.QueryByAccountId<McCred> (accountId);
+            if (null == creds) {
+                return;
+            }
+            foreach (var cred in creds) {
+                cred.ClearExpiry ();
+            }
+        }
+
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }

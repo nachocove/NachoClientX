@@ -14,9 +14,10 @@ namespace NachoCore.Model
 {
     public class McCred : McAbstrObjectPerAcc
     {
-        public enum CredTypeEnum { 
-            Password = 0, 
-            OAuth2, 
+        public enum CredTypeEnum
+        {
+            Password = 0,
+            OAuth2,
             SAML,
             // Only append - values stored in DB.
         };
@@ -96,7 +97,14 @@ namespace NachoCore.Model
             }
         }
 
-        static public string Join(string domain, string username)
+        public void ClearExpiry ()
+        {
+            Expiry = DateTime.MaxValue;
+            RectificationUrl = null;
+            Update ();
+        }
+
+        static public string Join (string domain, string username)
         {
             if (String.IsNullOrEmpty (domain)) {
                 return username;
@@ -105,7 +113,7 @@ namespace NachoCore.Model
             }
         }
 
-        static public void Split(string username, out string domain, out string user)
+        static public void Split (string username, out string domain, out string user)
         {
             user = "";
             domain = "";
@@ -116,7 +124,7 @@ namespace NachoCore.Model
             int slashIndex = username.IndexOf ("\\", StringComparison.OrdinalIgnoreCase);
             if (-1 == slashIndex) {
                 user = username;
-            } else if(username.Length == (slashIndex + 1)) {
+            } else if (username.Length == (slashIndex + 1)) {
                 user = username.Substring (0, slashIndex);
             } else {
                 domain = username.Substring (0, slashIndex);
@@ -135,7 +143,7 @@ namespace NachoCore.Model
             Password = password;
         }
 
-        public string GetTestPassword()
+        public string GetTestPassword ()
         {
             return Password;
         }
@@ -201,7 +209,9 @@ namespace NachoCore.Model
         private class OAuth2RefreshRespose
         {
             public string access_token { get; set; }
+
             public string expires_in { get; set; }
+
             public string token_type { get; set; }
         }
 
