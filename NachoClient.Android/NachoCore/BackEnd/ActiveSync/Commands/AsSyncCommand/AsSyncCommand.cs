@@ -1104,10 +1104,18 @@ namespace NachoCore.ActiveSync
                     ServerId = serverId,
                     ParentId = folder.ServerId,
                 };
-                item.ServerId = serverId;
                 NcModel.Instance.RunInTransaction (() => {
                     pathElem.Insert ();
-                    item.Update ();
+                    if (item is McEmailMessage) {
+                        item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            target.ServerId = serverId;
+                            return true;
+                        });
+                    } else {
+                        item.ServerId = serverId;
+                        item.Update ();
+                    }
                 });
             }
         }

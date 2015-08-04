@@ -329,8 +329,11 @@ namespace NachoCore.IMAP
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
                     } else {
-                        emailMessage.AccountId = folder.AccountId;
-                        emailMessage.Update ();
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            target.AccountId = folder.AccountId;
+                            return true;
+                        });
                     }
                 });
             }

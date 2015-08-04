@@ -107,13 +107,16 @@ namespace NachoCore.ActiveSync
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
                 // Set the Flag info in the DB item.
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
-                emailMessage.FlagType = flagType;
-                emailMessage.FlagStartDate = start;
-                emailMessage.FlagUtcStartDate = utcStart;
-                emailMessage.FlagDue = due;
-                emailMessage.FlagUtcDue = utcDue;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
+                    target.FlagType = flagType;
+                    target.FlagStartDate = start;
+                    target.FlagUtcStartDate = utcStart;
+                    target.FlagDue = due;
+                    target.FlagUtcDue = utcDue;
+                    return true;
+                });
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded));
             NcTask.Run (delegate {
@@ -141,8 +144,11 @@ namespace NachoCore.ActiveSync
                 };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                    return true;
+                });
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded));
             NcTask.Run (delegate {
@@ -172,10 +178,13 @@ namespace NachoCore.ActiveSync
                 };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
-                emailMessage.FlagCompleteTime = completeTime;
-                emailMessage.FlagDateCompleted = dateCompleted;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
+                    target.FlagCompleteTime = completeTime;
+                    target.FlagDateCompleted = dateCompleted;
+                    return true;
+                });
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCF");

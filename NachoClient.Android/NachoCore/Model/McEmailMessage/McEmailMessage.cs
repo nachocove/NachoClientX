@@ -346,8 +346,11 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 mime.WriteTo (stream);
             });
-            WaitingForAttachmentsToDownload = false;
-            this.Update ();
+            UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.WaitingForAttachmentsToDownload = false;
+                return true;
+            });
         }
 
         public void ConvertToRegularSend ()
@@ -379,11 +382,14 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 outgoingMime.WriteTo (stream);
             });
-            ReferencedEmailId = 0;
-            ReferencedBodyIsIncluded = false;
-            ReferencedIsForward = false;
-            WaitingForAttachmentsToDownload = false;
-            this.Update ();
+            UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.ReferencedEmailId = 0;
+                target.ReferencedBodyIsIncluded = false;
+                target.ReferencedIsForward = false;
+                target.WaitingForAttachmentsToDownload = false;
+                return true;
+            });
         }
 
         public void DeleteAttachments ()
@@ -1108,6 +1114,41 @@ namespace NachoCore.Model
             }
         }
 
+        public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
+        {
+            int myCount = 0;
+            T retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.UpdateWithOCApply<T> ((record) => {
+                    var target = (McEmailMessage)record;
+                    if (!target.HasBeenNotified) {
+                        target.HasBeenNotified = (NcApplication.Instance.IsForeground || target.IsRead);
+                    }
+                    return mutator (record);
+                }, out myCount, tries);
+                if (null == retval) {
+                    // We were not able to update the record.
+                    return;
+                }
+                SaveMeetingRequest ();
+                SaveCategories ();
+                if (emailAddressesChanged) {
+                    DeleteAddressMaps ();
+                    InsertAddressMaps ();
+                }
+                // Score states are only affected by brain which uses the score states Update() method.
+                // So, no need to update score states here
+            });
+            count = myCount;
+            return retval;
+        }
+
+        public override T UpdateWithOCApply<T> (Mutator mutator, int tries = 100)
+        {
+            int rc = 0;
+            return UpdateWithOCApply<T> (mutator, out rc, tries);
+        }
+
         public override int Update ()
         {
             using (var capture = CaptureWithStart ("Update")) {
@@ -1115,7 +1156,6 @@ namespace NachoCore.Model
                 if (!HasBeenNotified) {
                     HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
                 }
-
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Update ();
                     SaveMeetingRequest ();
@@ -1127,7 +1167,6 @@ namespace NachoCore.Model
                     // Score states are only affected by brain which uses the score states Update() method.
                     // So, no need to update score states here
                 });
-
                 return returnVal;
             }
         }

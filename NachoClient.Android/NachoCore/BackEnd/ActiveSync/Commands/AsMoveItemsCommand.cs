@@ -164,8 +164,16 @@ namespace NachoCore.ActiveSync
                                 }
                                 if (null != item) {
                                     // The item may have been subsequently deleted.
-                                    item.ServerId = newServerId;
-                                    item.Update ();
+                                    if (item is McEmailMessage) {
+                                        item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                            var target = (McEmailMessage)record;
+                                            target.ServerId = newServerId;
+                                            return true;
+                                        });
+                                    } else {
+                                        item.ServerId = newServerId;
+                                        item.Update ();
+                                    }
                                 }
                             }
                         }

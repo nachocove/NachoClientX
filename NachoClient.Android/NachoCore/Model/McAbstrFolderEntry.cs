@@ -100,8 +100,17 @@ namespace NachoCore.Model
                     if (null != folder) {
                         folder.UpdateSet_ServerId (newServerId);
                     } else {
-                        entry.ServerId = newServerId;
-                        entry.Update ();
+                        // TODO - figure out how to make this "scale".
+                        if (entry is McEmailMessage) {
+                            entry.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.ServerId = newServerId;
+                                return true;
+                            });
+                        } else {
+                            entry.ServerId = newServerId;
+                            entry.Update ();
+                        }
                     }
                 }
             }
