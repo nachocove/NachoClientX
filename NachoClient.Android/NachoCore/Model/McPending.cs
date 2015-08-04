@@ -348,6 +348,7 @@ namespace NachoCore.Model
                 var target = (McPending)record;
                 target.PriorityStamp = DateTime.UtcNow;
                 target.DelayNotAllowed = true;
+                Log.Info (Log.LOG_BACKEND, "Prioritized Pending {0}/{1}", target.Id, target.Token);
                 return true;
             });
         }

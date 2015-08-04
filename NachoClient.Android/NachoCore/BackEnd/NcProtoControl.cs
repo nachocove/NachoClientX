@@ -604,7 +604,10 @@ namespace NachoCore
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd({0}): IsDuplicate of Id/Token {1}/{2} for email {3}",
+                        emailMessage.AccountId,
+                        dup.Id, dup.Token,
+                        emailMessage.Id);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
@@ -613,6 +616,7 @@ namespace NachoCore
                 }
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
+                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})-{1}/{2} for email id {3}", emailMessage.AccountId, pending.Id, pending.Token, emailMessage.Id);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");

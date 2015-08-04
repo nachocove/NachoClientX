@@ -824,7 +824,6 @@ namespace NachoCore.Model
                     // Re-index the contact. Must do this after the contact update because
                     // re-indexing has a contact update (for updating IndexVersion) and
                     // doing this before contact update would set up a race.
-                    IndexVersion = 0;
                     NcBrain.ReindexContact (this);
                 });
                 return retval;
@@ -1956,6 +1955,91 @@ namespace NachoCore.Model
                     IndexVersion = ContactIndexDocument.Version - 1;
                 }
             }
+        }
+
+        protected static bool CompareLists<T> (List<T> list1, List<T> list2, Func<T,T,bool> comparer)
+        {
+            if (list1.Count != list2.Count) {
+                return false;
+            }
+            for (int n = 0; n < list1.Count; n++) {
+                if (!comparer (list1 [n], list2 [n])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        protected static bool CompareStringAttributeLists (List<McContactStringAttribute> list1, List<McContactStringAttribute> list2)
+        {
+            return CompareLists<McContactStringAttribute> (list1, list2,
+                (attr1, attr2) => (attr1.Type == attr2.Type) && (attr1.Value == attr2.Value) && (attr1.Label == attr2.Label));
+        }
+
+        public static bool CompareOnEditableFields (McContact a, McContact b)
+        {
+            if ((null == a) || (null == b)) {
+                return false;
+            }
+
+            string valueA, valueB;
+            string[] properties = new string[] {
+                "FirstName",
+                "MiddleName",
+                "LastName",
+                "Suffix",
+                "CompanyName",
+                "Alias",
+                "FileAs",
+                "JobTitle",
+                "OfficeLocation",
+                "Title",
+                "WebPage",
+                "AccountName",
+                "CustomerId",
+                "GovernmentId",
+                "MMS",
+                "NickName",
+                "YomiCompanyName",
+                "YomiFirstName",
+                "YomiLastName",
+            };
+
+            foreach (var prop in properties) {
+                valueA = (string)a.GetType ().GetProperty (prop).GetValue (a, null);
+                valueB = (string)b.GetType ().GetProperty (prop).GetValue (b, null);
+                if (valueA != valueB) {
+                    return false;
+                }
+            }
+
+            if (!CompareLists<McContactEmailAddressAttribute> (a.EmailAddresses, b.EmailAddresses,
+                    (attr1, attr2) => (attr1.Value == attr2.Value))) {
+                return false;
+            }
+            if (!CompareStringAttributeLists (a.PhoneNumbers, b.PhoneNumbers)) {
+                return false;
+            }
+            if (!CompareLists<McContactDateAttribute> (a.Dates, b.Dates,
+                    (attr1, attr2) => ((attr1.Label == attr2.Label) && (attr1.Value == attr2.Value)))) {
+                return false;
+            }
+            if (!CompareLists<McContactAddressAttribute> (a.Addresses, b.Addresses,
+                    (addr1, addr2) => (
+                        (addr1.City == addr2.City) && (addr1.Country == addr2.Country) &&
+                        (addr1.PostalCode == addr2.PostalCode) && (addr1.State == addr2.State) &&
+                        (addr1.Street == addr2.Street)
+                    ))) {
+                return false;
+            }
+            if (!CompareStringAttributeLists (a.IMAddresses, b.IMAddresses)) {
+                return false;
+            }
+            if (!CompareStringAttributeLists (a.Relationships, b.Relationships)) {
+                return false;
+            }
+
+            return true;
         }
     }
 }
