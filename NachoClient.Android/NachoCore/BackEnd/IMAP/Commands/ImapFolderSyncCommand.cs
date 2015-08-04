@@ -142,8 +142,6 @@ namespace NachoCore.IMAP
                     continue;
                 }
 
-                foldernames.Add (mailKitFolder.FullName);
-
                 McFolder folder;
                 ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
                 bool isDistinguished;
@@ -185,7 +183,7 @@ namespace NachoCore.IMAP
                 }
 
                 // FIXME: Catch errors here, so that an error for one folder doesn't blow up the entire FolderSync
-
+                foldernames.Add (mailKitFolder.FullName);
                 if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
                     added_or_changed = true;
                     // TODO do ApplyCommand stuff here
