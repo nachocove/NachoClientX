@@ -227,10 +227,23 @@ namespace NachoCore.ActiveSync
             if (1 != existingItems.Count) {
                 Log.Error (Log.LOG_AS, "{0} GAL-cache entries for email address {1}", existingItems.Count, emailAddress);
             }
+            var original = McContact.QueryByEmailAddressInFolder (accountId, galFolderId, emailAddress).First ();
             var existing = existingItems.First ();
             existing.RefreshFromGalXml (xmlProperties);
             existing.GalCacheToken = token;
-            existing.Update ();
+
+            // Check if the portraits are the same
+            bool doUpdate = true;
+            if ((0 != original.PortraitId) && (0 != existing.PortraitId)) {
+                var originalPortrait = McPortrait.QueryById<McPortrait> (original.PortraitId);
+                var existingPortrait = McPortrait.QueryById<McPortrait> (existing.PortraitId);
+                if (McPortrait.CompareData (originalPortrait, existingPortrait)) {
+                    doUpdate = false;
+                }
+            }
+            if (doUpdate || !McContact.CompareOnEditableFields (existing, original)) {
+                existing.Update ();
+            }
             return true;
         }
 

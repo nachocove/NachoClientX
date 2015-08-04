@@ -754,6 +754,9 @@ namespace NachoCore.Model
             if (null == accountAddress) {
                 return false;
             }
+            if (null == mbAddr) {
+                return false;
+            }
             return accountAddress == mbAddr.Address;
         }
     }
