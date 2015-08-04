@@ -750,6 +750,7 @@ namespace NachoCore.IMAP
                 if (null == pack) {
                     // If strategy could not find something to do, we won't be using the side channel.
                     Interlocked.Decrement (ref ConcurrentExtraRequests);
+                    Log.Info (Log.LOG_IMAP, "DoExtraOrDont: Strategy could not find anything to do.");
                 } else {
                     Log.Info (Log.LOG_IMAP, "DoExtraOrDont: starting extra request.");
                     var dummySm = new NcStateMachine ("IMAPPC:EXTRA") { 

@@ -586,6 +586,7 @@ namespace NachoCore
             NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
+            bool needPostEvent = false;
             NcModel.Instance.RunInTransaction (() => {
                 if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
                     result = NcResult.Error (subKind);
@@ -617,10 +618,13 @@ namespace NachoCore
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
                 Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})-{1}/{2} for email id {3}", emailMessage.AccountId, pending.Id, pending.Token, emailMessage.Id);
+                needPostEvent = true;
             });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");
-            }, "DnldEmailBodyCmd");
+            if (needPostEvent) {
+                NcTask.Run (delegate {
+                    Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");
+                }, "DnldEmailBodyCmd");
+            }
             return result;
         }
 
