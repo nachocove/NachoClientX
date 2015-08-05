@@ -439,8 +439,7 @@ namespace NachoCore.IMAP
                 if (null == fromAddr) {
                     throw new Exception(string.Format ("envlope from is not MailboxAddress: {0}", summary.Envelope.From [0].GetType ().Name));
                 }
-                //emailMessage.From = summary.Envelope.From [0].ToString ();
-                emailMessage.From = null;
+                emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
                     Log.Warn (Log.LOG_IMAP, "No emailMessage.From string ({0}): {1}", summary.Envelope.From [0].GetType ().Name, summary.UniqueId.Value);
                     emailMessage.From = fromAddr.Address;
