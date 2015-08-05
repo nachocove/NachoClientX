@@ -1156,7 +1156,8 @@ namespace NachoCore.ActiveSync
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
         {
-            if (e.ServerId == Server.Id) {
+            // added defensive check for Server existence
+            if ((null != Server)  && (e.ServerId == Server.Id)) {
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
                     Log.Info (Log.LOG_AS, "Server {0} communication quality OK.", Server.Host);
