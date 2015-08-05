@@ -72,9 +72,46 @@ namespace NachoCore.IMAP
                         BackEndStateEnum.PostAutoDPreInboxSync;
                     
                 default:
-                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
+            }
+        }
+
+        public static string StateName (uint state)
+        {
+            switch (state) {
+            case (uint)St.Start:
+                return "Start";
+            case (uint)St.Stop:
+                return "Stop";
+            case (uint)Lst.DiscW:
+                return "DiscW";
+            case (uint)Lst.UiCrdW:
+                return "UiCrdW";
+            case (uint)Lst.UiServConfW:
+                return "UiServConfW";
+            case (uint)Lst.FSyncW:
+                return "FSyncW";
+            case (uint)Lst.Pick:
+                return "Pick";
+            case (uint)Lst.SyncW:
+                return "SyncW";
+            case (uint)Lst.PingW:
+                return "PingW";
+            case (uint)Lst.QOpW:
+                return "QOpW";
+            case (uint)Lst.HotQOpW:
+                return "HotQOpW";
+            case (uint)Lst.FetchW:
+                return "FetchW";
+            case (uint)Lst.IdleW:
+                return "IdleW";
+            case (uint)Lst.Parked:
+                return "Parked";
+            default:
+                Log.Error (Log.LOG_IMAP, "Missing case in StateName {0}", state);
+                return state.ToString ();
             }
         }
 
@@ -579,7 +616,7 @@ namespace NachoCore.IMAP
         {
             // TODO Move to base
             if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
-                Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", Sm.State);
+                Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
