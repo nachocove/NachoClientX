@@ -843,6 +843,9 @@ namespace NachoCore.Model
 
             if (null == thread) {
                 thread = Source.GetEmailThreadMessages (FirstMessageId);
+                if (null == thread) {
+                    yield break; // thread is gone. Maybe backend removed it asynchronously
+                }
             }
             using (IEnumerator<McEmailMessageThread> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
