@@ -346,6 +346,9 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 cancelRefreshTimer ();
                 break;
+            case NcResult.SubKindEnum.Info_StatusBarHeightChanged:
+                LayoutView ();
+                break;
             }
         }
 

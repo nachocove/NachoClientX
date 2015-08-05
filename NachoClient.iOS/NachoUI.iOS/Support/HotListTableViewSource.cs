@@ -311,6 +311,9 @@ namespace NachoClient.iOS
             };
 
             var toolbar = (MessageToolbar)cell.ContentView.ViewWithTag (TOOLBAR_TAG);
+            var frame = new CGRect (0, 0, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 40);
+            ViewFramer.Create (toolbar).Y (frame.Height - 44);
+
             toolbar.OnClick = (object sender, EventArgs e) => {
                 var toolbarEventArgs = e as MessageToolbarEventArgs;
                 switch (toolbarEventArgs.Action) {
@@ -528,7 +531,7 @@ namespace NachoClient.iOS
                 return;
             }
             footer.ViewWithTag (HOT_LIST_LABEL).Hidden = false;
-            var unreadMessagesView = (UnreadMessagesView) footer.ViewWithTag (UNREAD_MESSAGES_VIEW);
+            var unreadMessagesView = (UnreadMessagesView)footer.ViewWithTag (UNREAD_MESSAGES_VIEW);
             unreadMessagesView.Update (NcApplication.Instance.Account);
         }
 
