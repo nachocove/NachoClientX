@@ -523,6 +523,24 @@ namespace Test.iOS
 
         public class TestResolveAsDeferred : BaseMcPendingTest
         {
+            McFolder TestFolder;
+
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                TestFolder = McFolder.Create (defaultAccountId, true, false, false, McFolder.AsRootServerId, "TestFoo", "TestFoo", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                TestFolder.Insert ();
+            }
+
+            [TearDown]
+            public new void TearDown ()
+            {
+                if (null != TestFolder) {
+                    TestFolder.Delete ();
+                }
+            }
+
             [Test]
             public void ResolveAsDeferredNonDispatched ()
             {
@@ -712,6 +730,31 @@ namespace Test.iOS
                 };
                 Func <List<McPending>> querySyncType = () => McPending.QueryDeferredFSync (defaultAccountId);
                 TestWithSyncTypeAndReason (reason, syncOp, querySyncType);
+            }
+
+            [Test]
+            public void TestDeferredFMetaData ()
+            {
+                var reason = DeferredEnum.UntilFMetaData;
+                // Create a 1nd Eligible state McPending and resolve deferred with reason UntilSync
+                var pending = CreateDeferredPending (protoControl, reason);
+                pending = pending.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.ServerId = TestFolder.ServerId;
+                    return true;
+                });
+                VerifyStateAndReason (pending.Id, StateEnum.Deferred, reason);
+
+                // Find only the 1st using QueryDeferredSync (int accountId).
+                var firstPend = McPending.QueryDeferredFMetaData (TestFolder);
+                Assert.AreEqual (1, firstPend.Count, "Should return a single object");
+                Assert.AreEqual (reason, firstPend.FirstOrDefault ().DeferredReason, "Deferred reason should be set to UntilFMetaData");
+
+                McPending.MakeEligibleOnFMetaData (TestFolder);
+
+                // Verify only the 1st is in Eligible state in DB.
+                var firstRetr = McPending.QueryById<McPending> (pending.Id);
+                Assert.AreEqual (StateEnum.Eligible, firstRetr.State, "should be in the eligible state in DB");
             }
 
             private void VerifyStateAndReason (int pendId, StateEnum state, DeferredEnum reason)
