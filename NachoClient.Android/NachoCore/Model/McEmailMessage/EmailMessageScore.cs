@@ -38,6 +38,7 @@ namespace NachoCore.Model
                         { 4, AnalyzeOtherAddresses },
                         { 5, AnalyzeSendAddresses },
                         { 6, AnalyzeHeaders },
+                        { 7, AnalyzeReplies },
                     };
                 }
                 return _AnalysisFunctions;
@@ -55,7 +56,7 @@ namespace NachoCore.Model
         public static NcRepliesToMyEmailsQualifier RepliesToMyEmailsQualifier = new NcRepliesToMyEmailsQualifier ();
 
         public static NcUserActionDisqualifier UserActionDisqualifier = new NcUserActionDisqualifier ();
-        public static NcMarketingMailDisqualifier MarketingMailDisqualifier = new NcMarketingMailDisqualifier ();
+        public static NcMarketingEmailDisqualifier MarketingMailDisqualifier = new NcMarketingEmailDisqualifier ();
 
         /// Did the user take explicit action?
         public int UserAction { get; set; }
@@ -352,6 +353,11 @@ namespace NachoCore.Model
         public void AnalyzeHeaders ()
         {
             MarketingMailDisqualifier.Analyze (this);
+        }
+
+        protected void AnalyzeReplies ()
+        {
+            RepliesToMyEmailsQualifier.Analyze (this);
         }
 
         public void Analyze ()

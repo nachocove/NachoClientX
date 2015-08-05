@@ -8,21 +8,21 @@ using NachoCore.Utils;
 namespace NachoCore.Brain
 {
     /// <summary>
-    /// A qualifoer / disqualifier is a discrete feature of an object that, if exists, immediately
+    /// A qualifier / disqualifier is a discrete feature of an object that, if exists, immediately
     /// qualifies or disqualifies an object as hot.
     ///
     /// This is the base class of all discrete qualifiers and disqualifiers and it must not be
     /// used directly. 
     /// </summary>
-    public class NcQualifier<T>
+    public class NcQualifierBase<T>
     {
         public string Description { get; protected set; }
 
-        public double QualifiedFactor { get; set; }
+        public double QualifiedFactor { get; protected set; }
 
-        public double NonQualifiedFactor { get; set; }
+        public double NonQualifiedFactor { get; protected set; }
 
-        public NcQualifier (string description, double qualified, double notQualifed)
+        public NcQualifierBase (string description, double qualified, double notQualifed)
         {
             Description = description;
             QualifiedFactor = qualified;
@@ -48,10 +48,27 @@ namespace NachoCore.Brain
     ////////////////////////////////////////////////////////////////////////////////////////////////
     /// Qualifiers
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    public class NcQualifier<T> : NcQualifierBase<T>
+    {
+        public double Weight {
+            get {
+                return QualifiedFactor;
+            }
+            set {
+                QualifiedFactor = value;
+            }
+        }
+
+        public NcQualifier (string description, double weight) :
+            base (description, weight, Scoring.Min)
+        {
+        }
+    }
+
     public class NcVipQualifier : NcQualifier<McEmailMessage>
     {
         public NcVipQualifier () :
-            base ("VipQualifer", 1.0, 0.0)
+            base ("VipQualifer", 1.0)
         {
         }
 
@@ -76,7 +93,7 @@ namespace NachoCore.Brain
     public class NcUserActionQualifier : NcQualifier<McEmailMessage>
     {
         public NcUserActionQualifier () :
-            base ("UserActionQualifier", 1.0, 0.0)
+            base ("UserActionQualifier", Scoring.MarkedHotWeight)
         {
         }
 
@@ -94,7 +111,7 @@ namespace NachoCore.Brain
     public class NcRepliesToMyEmailsQualifier : NcQualifier<McEmailMessage>
     {
         public NcRepliesToMyEmailsQualifier () :
-            base ("RepliesToMyEmailsQualifiier", 1.0, 0.0)
+            base ("RepliesToMyEmailsQualifiier", 1.0)
         {
         }
 
@@ -121,10 +138,27 @@ namespace NachoCore.Brain
     ////////////////////////////////////////////////////////////////////////////////////////////////
     /// Disqualifiers
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public class NcUserActionDisqualifier : NcQualifier<McEmailMessage>
+    public class NcDisqualifier<T> : NcQualifierBase<T>
+    {
+        public double Penalty {
+            get {
+                return QualifiedFactor;
+            }
+            set {
+                QualifiedFactor = value;
+            }
+        }
+
+        public NcDisqualifier (string description, double penalty) :
+            base (description, penalty, Scoring.Max)
+        {
+        }
+    }
+
+    public class NcUserActionDisqualifier : NcDisqualifier<McEmailMessage>
     {
         public NcUserActionDisqualifier () :
-            base ("UserActionDisqualifier", 0.0, 1.0)
+            base ("UserActionDisqualifier", Scoring.MarkedNotHotPenalty)
         {
         }
 
@@ -140,7 +174,7 @@ namespace NachoCore.Brain
     }
 
 
-    public class NcMarketingMailDisqualifier : NcQualifier<McEmailMessage>
+    public class NcMarketingEmailDisqualifier : NcDisqualifier<McEmailMessage>
     {
         protected static Regex HeaderFilters = 
             new Regex (
@@ -148,8 +182,8 @@ namespace NachoCore.Brain
                 @"List-Unsubscribe:",
                 RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
-        public NcMarketingMailDisqualifier () :
-            base ("MarketingMailDisqualifier", Scoring.HeaderFilteringPenalty, 1.0)
+        public NcMarketingEmailDisqualifier () :
+            base ("MarketingMailDisqualifier", Scoring.HeadersFilteringPenalty)
         {
         }
 

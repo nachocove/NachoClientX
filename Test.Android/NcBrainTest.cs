@@ -293,7 +293,7 @@ namespace Test.Common
             var david = "david@company.net";
             var ellen = "ellen@company.net";
 
-            McEmailMessage.MarketingMailDisqualifier.QualifiedFactor = 0.375;
+            McEmailMessage.MarketingMailDisqualifier.Penalty = 0.375;
 
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {
@@ -332,11 +332,11 @@ namespace Test.Common
             Assert.AreEqual (1, ellenAddress.ScoreStates.CcEmailsReceived);
 
             // Verify the score version
-            var message2 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
-            Assert.AreEqual (Scoring.Version, message2.ScoreVersion);
+            var message1b = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
+            Assert.AreEqual (Scoring.Version, message1b.ScoreVersion);
 
             // Insert an email that is originated from the user account. Verify AnalyzeSendaddresses()
-            var message3 = new McEmailMessage () {
+            var message2 = new McEmailMessage () {
                 AccountId = accountId,
                 From = bob,
                 To = alan,
@@ -344,16 +344,16 @@ namespace Test.Common
                 LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
             };
 
-            InsertAndCheck (message3);
-            Brain.TestAnalyzeEmailMessage (message3);
+            InsertAndCheck (message2);
+            Brain.TestAnalyzeEmailMessage (message2);
 
             var address = GetAddress (accountId, alan);
             Assert.AreEqual (1, address.ScoreStates.EmailsSent);
-            var message4 = McEmailMessage.QueryById<McEmailMessage> (message3.Id);
-            Assert.AreEqual (Scoring.Version, message4.ScoreVersion);
+            var message2b = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
+            Assert.AreEqual (Scoring.Version, message2b.ScoreVersion);
 
             // Insert message 1 again but with the message being read. Also, no gleaning this time.
-            var message5 = new McEmailMessage () {
+            var message3 = new McEmailMessage () {
                 AccountId = accountId,
                 From = alan,
                 To = String.Join (",", bob, charles),
@@ -387,14 +387,15 @@ namespace Test.Common
             ellenAddress.ScoreStates.CcEmailsReceived = 2;
             ellenAddress.ScoreStates.Update (); // top += 1+0, bottom += 2+1
 
-            InsertAndCheck (message5);
-            Brain.TestAnalyzeEmailMessage (message5);
+            InsertAndCheck (message3);
+            Brain.TestAnalyzeEmailMessage (message3);
 
-            var message6 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
-            Assert.AreEqual (Scoring.Version, message6.ScoreVersion);
-            Assert.AreEqual (12.0 / 21.0, message5.Score);
+            var message3b = McEmailMessage.QueryById<McEmailMessage> (message3.Id);
+            Assert.AreEqual (Scoring.Version, message3b.ScoreVersion);
+            Assert.AreEqual (12.0 / 21.0, message3b.Score);
 
-            var message7 = new McEmailMessage () {
+            // Insert an email with marketing headers
+            var message4 = new McEmailMessage () {
                 AccountId = accountId,
                 From = charles,
                 IsRead = true,
@@ -431,12 +432,46 @@ Content-Type: multipart/alternative;
 From: ""=?utf-8?Q?SourceForge=20Resources?="" <sourceforge@resources.sourceforge.com>
 Content-Length: 7096"
             };
-            InsertAndCheck (message7);
+            InsertAndCheck (message4);
 
-            Brain.TestAnalyzeEmailMessage (message7);
+            Brain.TestAnalyzeEmailMessage (message4);
 
-            Assert.AreEqual (Scoring.Version, message7.ScoreVersion);
-            Assert.AreEqual (McEmailMessage.MarketingMailDisqualifier.QualifiedFactor, message7.Score);
+            var message4b = McEmailMessage.QueryById<McEmailMessage> (message4.Id);
+            Assert.AreEqual (Scoring.Version, message4b.ScoreVersion);
+            Assert.AreEqual (McEmailMessage.MarketingMailDisqualifier.Penalty, message4b.Score);
+
+            // Add a sent email and a reply.
+            bobAddress.ScoreStates.ToEmailsRead = 0;
+            bobAddress.ScoreStates.ToEmailsReceived = 100;
+            bobAddress.ScoreStates.Update ();
+
+            var messageId = "<123@bob.company.net>";
+            var message5 = new McEmailMessage () {
+                AccountId = accountId,
+                From = bob,
+                To = charles,
+                LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
+                DateReceived = DateTime.UtcNow,
+                MessageID = messageId,
+            };
+            InsertAndCheck (message5);
+
+            var message6 = new McEmailMessage () {
+                AccountId = accountId,
+                From = charles,
+                To = bob,
+                LastVerbExecuted = (int)AsLastVerbExecutedType.UNKNOWN,
+                DateReceived = DateTime.UtcNow,
+                MessageID = "<456@bob.company.net>",
+                InReplyTo = messageId,
+            };
+            InsertAndCheck (message6);
+
+            Brain.TestAnalyzeEmailMessage (message6);
+            var message6b = McEmailMessage.QueryById<McEmailMessage> (message6.Id);
+
+            Assert.AreEqual (Scoring.Version, message6b.ScoreVersion);
+            Assert.AreEqual (McEmailMessage.RepliesToMyEmailsQualifier.Weight, message6b.Score);
         }
 
         protected void CheckOneEmailMessage (int expectedId, List<MatchedItem> matches)
