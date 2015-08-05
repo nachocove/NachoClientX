@@ -534,7 +534,7 @@ namespace Test.iOS
             }
 
             [TearDown]
-            public new void TearDown ()
+            public void TearDown ()
             {
                 if (null != TestFolder) {
                     TestFolder.Delete ();
