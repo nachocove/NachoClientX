@@ -1595,6 +1595,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
       <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQualifier.cs">
+      <Link>NachoCore\Brain\NcQualifier.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -303,6 +303,10 @@ namespace NachoCore.Model
         // as the settings can change during foreground.
         public bool ShouldNotify { get; set; }
 
+        /// True if its InReplyTo matches the MessageID of another McEmailMessage whose From
+        /// address matches one of the McAccount. Set by brain.
+        public bool IsReply { get; set; }
+
         /// Attachments are separate
 
         /// TODO: Support other types besides mime!
@@ -1216,6 +1220,12 @@ namespace NachoCore.Model
                     IsIndexed = EmailMessageIndexDocument.Version - 1;
                 }
             }
+        }
+
+        public static McEmailMessage QueryByMessageId (int accountId, string messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT * FROM McEmailMessage WHERE AccountId = ? AND MessageID = ?", accountId, messageId).FirstOrDefault ();
         }
     }
 }

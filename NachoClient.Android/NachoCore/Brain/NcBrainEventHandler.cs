@@ -189,9 +189,24 @@ namespace NachoCore.Brain
                     UpdateEmailAddressScore (emailAddress, updateAddressEvent.ForceUpdateDependentMessages);
                     break;
                 case NcBrainEventType.UPDATE_MESSAGE_SCORE:
-                    var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
-                    var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)updatedMessageEvent.EmailMessageId);
-                    UpdateEmailMessageScore (emailMessage);
+                    long emailMesasgeId;
+                    int action = 0;
+                    if (brainEvent is NcBrainUpdateUserActionEvent) {
+                        var updateActionEvent = brainEvent as NcBrainUpdateUserActionEvent;
+                        emailMesasgeId = updateActionEvent.EmailMessageId;
+                        action = updateActionEvent.Action;
+                    } else {
+                        var updatedMessageEvent = brainEvent as NcBrainUpdateMessageScoreEvent;
+                        emailMesasgeId = updatedMessageEvent.EmailMessageId;
+                    }
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
+                        UpdateEmailMessageScore (emailMessage);
+                        if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
+                            var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
+                            UpdateAddressUserAction (fromEmailAddress, action);
+                        }
+                    });
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
@@ -258,25 +273,6 @@ namespace NachoCore.Brain
                     address.UpdateByBrain ();
                 }
             }
-        }
-
-        private void ProcessUpdateAddressEvent (NcBrainUpdateAddressScoreEvent brainEvent)
-        {
-            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateAddressEvent: event={0}", brainEvent.ToString ());
-            McEmailAddress emailAddress =
-                McEmailAddress.QueryById<McEmailAddress> ((int)brainEvent.EmailAddressId);
-            bool updateDependencies = brainEvent.ForceUpdateDependentMessages;
-            if (UpdateEmailAddressScore (emailAddress, true) && updateDependencies) {
-                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
-            }
-        }
-
-        private void ProcessUpdateMessageEvent (NcBrainUpdateMessageScoreEvent brainEvent)
-        {
-            Log.Debug (Log.LOG_BRAIN, "ProcessUpdateMessageEvent: event={0}", brainEvent.ToString ());
-            McEmailMessage emailMessage =
-                McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
-            UpdateEmailMessageScore (emailMessage);
         }
 
         private int QuickScoreEmailMessages (int accountId, int count)
