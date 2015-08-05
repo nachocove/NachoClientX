@@ -34,6 +34,7 @@ namespace NachoCore.IMAP
 
         private Event ExecuteCommandInternal ()
         {
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
             var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
@@ -80,6 +81,8 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: Exception : {0}", ex);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPUNKFAIL");
                 errResult.Message = ex.Message;
+            } finally {
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
             }
             StatusInd (errResult);
             return evt;
