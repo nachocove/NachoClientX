@@ -35,6 +35,16 @@ namespace NachoCore.Brain
             SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
 
+        public static void UpdateUserAction (int accountId, int emailMessageId, int action)
+        {
+            if ((0 == accountId) || (0 == emailMessageId)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateUserActionEvent (accountId, emailMessageId, action);
+            PersistentEnqueue (accountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
+        }
+
         public static void UnindexEmailMessage (McEmailMessage emailMessage)
         {
             if ((null == emailMessage) || (0 == emailMessage.Id) || (0 == emailMessage.AccountId)) {

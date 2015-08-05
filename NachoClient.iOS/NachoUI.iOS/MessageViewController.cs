@@ -572,6 +572,8 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
+            ViewFramer.Create (headerView).Height (separator2YOffset);
+
             var separator1View = headerView.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
             ViewFramer.Create (separator1View).Y (separator1YOffset);
             var separator2View = headerView.ViewWithTag ((int)TagType.SEPARATOR2_TAG);

@@ -187,6 +187,10 @@ namespace NachoCore.IMAP
                         bool created1;
                         MessageSummary summ = imapSummary as MessageSummary;
                         var emailMessage = ServerSaysAddOrChangeEmail (BEContext.Account.Id, summ, Synckit.Folder, out changed1, out created1);
+                        if (null == emailMessage) {
+                            // something went wrong in the call, but it was logged there, too.
+                            continue;
+                        }
                         if (changed1) {
                             newOrChanged.Add (summ.UniqueId.Value);
                         }
@@ -297,22 +301,14 @@ namespace NachoCore.IMAP
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception updating: {0}", ex.ToString ());
                 }
             } else {
-                changed = true;
                 try {
                     emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary as MessageSummary);
                     updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
-                    if (null == emailMessage.BodyPreview) {
-                        emailMessage.IsIncomplete = true;
-                    }
+                    changed = true;
                     justCreated = true;
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
-                    if (null == emailMessage || string.IsNullOrEmpty (emailMessage.ServerId)) {
-                        emailMessage = new McEmailMessage () {
-                            ServerId = McEmailMessageServerId,
-                        };
-                    }
-                    emailMessage.IsIncomplete = true;
+                    return null;
                 }
             }
 
@@ -331,7 +327,7 @@ namespace NachoCore.IMAP
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
-                            target.AccountId = folder.AccountId;
+                            updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
                     }
@@ -445,7 +441,7 @@ namespace NachoCore.IMAP
                 }
                 emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
-                    throw new Exception ("No emailMessage.From");
+                    throw new Exception (string.Format ("No emailMessage.From ({0})", summary.Envelope.From [0].GetType ().Name));
                 }
                 McEmailAddress fromEmailAddress;
                 if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
@@ -458,7 +454,6 @@ namespace NachoCore.IMAP
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }
-
             if (summary.Envelope.ReplyTo.Count > 0) {
                 if (summary.Envelope.ReplyTo.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} ReplyTo entries in message.", summary.Envelope.ReplyTo.Count);

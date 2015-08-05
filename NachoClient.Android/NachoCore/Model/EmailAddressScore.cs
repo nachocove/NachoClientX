@@ -68,8 +68,17 @@ namespace NachoCore.Model
 
         public void GetParts (ref int top, ref int bottom)
         {
-            top += ScoreStates.EmailsRead + ScoreStates.EmailsReplied + ScoreStates.EmailsSent;
-            bottom += ScoreStates.EmailsReceived + ScoreStates.EmailsSent + ScoreStates.EmailsDeleted;
+            top += (
+                ScoreStates.EmailsRead + ScoreStates.EmailsReplied +
+                ScoreStates.EmailsSent +
+                ScoreStates.MarkedHot
+            );
+            bottom += (
+                ScoreStates.EmailsReceived +
+                ScoreStates.EmailsSent +
+                ScoreStates.EmailsDeleted +
+                ScoreStates.MarkedHot + ScoreStates.MarkedNotHot
+            );
         }
 
         public void GetToParts (ref int top, ref int bottom)

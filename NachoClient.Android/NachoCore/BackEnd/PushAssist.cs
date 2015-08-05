@@ -527,7 +527,9 @@ namespace NachoCore
         {
             var account = Owner.Account;
             if (account.FastNotificationEnabled) {
-                PostEvent (SmEvt.E.Launch, "PAEXE");
+                if (IsStartOrParked ()) {
+                    PostEvent (SmEvt.E.Launch, "PAEXE");
+                }
             } else {
                 Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
             }

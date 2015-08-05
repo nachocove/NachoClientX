@@ -272,6 +272,11 @@ namespace NachoCore.ActiveSync
                             case McPending.Operations.EmailBodyDownload:
                                 item = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
+                                if (null != pending) {
+                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", item.AccountId, pending.Id, pending.Token, item.Id);
+                                } else {
+                                    Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) for email {1}", item.AccountId, item.Id);
+                                }
                                 break;
                             case McPending.Operations.CalBodyDownload:
                                 item = McCalendar.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
