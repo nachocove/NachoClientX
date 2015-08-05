@@ -68,9 +68,41 @@ namespace NachoCore.SMTP
                     return BackEndStateEnum.PostAutoDPostInboxSync;
 
                 default:
-                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    NcAssert.CaseError (string.Format ("Unhandled state {0}", StateName ((uint)Sm.State)));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
+            }
+        }
+
+        public static string StateName (uint state)
+        {
+            switch (state) {
+            case (uint)St.Start:
+                return "Start";
+            case (uint)St.Stop:
+                return "Stop";
+            case (uint)Lst.DiscW:
+                return "DiscW";
+            case (uint)Lst.UiCrdW:
+                return "UiCrdW";
+            case (uint)Lst.UiCertOkW:
+                return "UiCertOkW";
+            case (uint)Lst.UiServConfW:
+                return "UiServConfW";
+            case (uint)Lst.ConnW:
+                return "ConnW";
+            case (uint)Lst.Pick:
+                return "Pick";
+            case (uint)Lst.QOpW:
+                return "QOpW";
+            case (uint)Lst.IdleW:
+                return "IdleW";
+            case (uint)Lst.HotQOpW:
+                return "HotQOpW";
+            case (uint)Lst.Parked:
+                return "Parked";
+            default:
+                return state.ToString ();
             }
         }
 
@@ -424,7 +456,7 @@ namespace NachoCore.SMTP
         {
             // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
             if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
-                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", Sm.State);
+                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
