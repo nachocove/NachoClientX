@@ -435,18 +435,35 @@ namespace NachoCore.IMAP
                 if (summary.Envelope.From.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
+                var fromAddr = summary.Envelope.From [0] as MailboxAddress;
+                if (null == fromAddr) {
+                    Log.Warn (Log.LOG_IMAP, "envelope from is not MailboxAddress: {0}", summary.Envelope.From [0].GetType ().Name);
+                }
+                // get the address via ToString from the parent class.
+                // This handles both MailboxAddress, and InternetAddress
+                // see MimeKit docs for details on what each are.
                 emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
-                    throw new Exception (string.Format ("No emailMessage.From ({0})", summary.Envelope.From [0].GetType ().Name));
+                    Log.Warn (Log.LOG_IMAP, "No emailMessage.From string: {1}", summary.UniqueId.Value);
+                    if (null != fromAddr) {
+                        emailMessage.From = fromAddr.Address;
+                        if (string.IsNullOrEmpty (emailMessage.From)) {
+                            Log.Error (Log.LOG_IMAP, "No emailMessage.From Address: {1}", summary.UniqueId.Value);
+                            emailMessage.From = string.Empty; // make sure it's at least empty, not null.
+                        }
+                    }
                 }
-                McEmailAddress fromEmailAddress;
-                if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
-                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
+                if (!string.IsNullOrEmpty (emailMessage.From)) {
                     try {
                         emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
                     } catch (Exception ex) {
                         Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
                     }
+                }
+
+                McEmailAddress fromEmailAddress;
+                if (null != fromAddr && McEmailAddress.Get (accountId, fromAddr, out fromEmailAddress)) {
+                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }
