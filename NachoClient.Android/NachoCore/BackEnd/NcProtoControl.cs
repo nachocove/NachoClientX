@@ -313,6 +313,11 @@ namespace NachoCore
         {
         }
 
+        public virtual void PendQHotInd ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPENDQHOTIND");
+        }
+
         public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)
         {
             var token = Guid.NewGuid ().ToString ();
