@@ -118,6 +118,7 @@ namespace NachoCore.Model
             UntilFSync,
             UntilFSyncThenSync,
             UntilTime,
+            UntilFMetaData,
         };
 
         public enum XmlStatusKindEnum
@@ -161,6 +162,8 @@ namespace NachoCore.Model
         public bool DeferredSerialIssueOnly { set; get; }
         // Valid when Deferred, Blocked, or Failed.
         [Indexed]
+        // Set if the McPending may not be delayed or deferred.
+        // Has the side-effect that the McPending will be deleted on restart.
         // Always valid.
         public bool DelayNotAllowed { set; get; }
 
@@ -894,6 +897,20 @@ namespace NachoCore.Model
             return (0 != makeEligible.Count);
         }
 
+        public static bool MakeEligibleOnFMetaData (McFolder folder)
+        {
+            var makeEligible = QueryDeferredFMetaData (folder);
+            foreach (var iter in makeEligible) {
+                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.State = StateEnum.Eligible;
+                    return true;
+                });
+                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFMetaData:{0}", pending.Id);
+            }
+            return (0 != makeEligible.Count);
+        }
+
         public static bool MakeEligibleOnTime ()
         {
             var makeEligible = QueryDeferredUntilNow ();
@@ -914,11 +931,19 @@ namespace NachoCore.Model
             return ResolveAsHardFail (control, result);
         }
 
-        public McPending ResolveAsDeferred (NcProtoControl control, DeferredEnum reason, NcResult onFail)
+        /// <summary>
+        /// Resolve a McPending as deferred
+        /// </summary>
+        /// <returns>The as deferred.</returns>
+        /// <param name="control">NcProtoControl.</param>
+        /// <param name="reason">DeferredEnum.</param>
+        /// <param name="onFail">NcResult, which gets used if we deferred too many times (or are not allowed).</param>
+        /// <param name="force">If set, ignore Force the deferral, ignoring things like DelayNotAllowed, but NOT the DefersRemaining.</param>
+        public McPending ResolveAsDeferred (NcProtoControl control, DeferredEnum reason, NcResult onFail, bool force = false)
         {
             NcAssert.True (StateEnum.Dispatched == State);
             // Added check in case of any bug causing underflow.
-            if (DelayNotAllowed || 0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
+            if ((DelayNotAllowed && !force) || 0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
                 return ResolveAsHardFail (control, onFail);
             } else {
                 Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferred:{0}:{1}", Id, Token);
@@ -1242,6 +1267,15 @@ namespace NachoCore.Model
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Deferred &&
             rec.DeferredReason == DeferredEnum.UntilSync).OrderBy (x => x.Priority).ToList ();
+        }
+
+        public static List<McPending> QueryDeferredFMetaData (McFolder folder)
+        {
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
+                rec.AccountId == folder.AccountId &&
+                rec.ServerId == folder.ServerId &&
+                rec.State == StateEnum.Deferred &&
+                rec.DeferredReason == DeferredEnum.UntilFMetaData).OrderBy (x => x.Priority).ToList ();
         }
 
         public static List<McPending> QueryDeferredUntilNow ()

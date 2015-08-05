@@ -73,6 +73,9 @@ namespace NachoCore.IMAP
             NcCapture cap;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
+                if (null != Synckit.PendingSingle) {
+                    Log.Error (Log.LOG_IMAP, "OpenOnly SyncKit with a pending is not allowed");
+                }
                 cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
                 evt = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
@@ -80,19 +83,11 @@ namespace NachoCore.IMAP
             case SyncKit.MethodEnum.Sync:
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
-                var protocolState = BEContext.ProtocolState;
-                ImapStrategy.MaybeAdvanceSyncStage (ref protocolState);
+                ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
-            }
-            if (PendingList.Any () || null != PendingSingle) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-                });
-            } else {
-                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
             cap.Pause ();
             Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
