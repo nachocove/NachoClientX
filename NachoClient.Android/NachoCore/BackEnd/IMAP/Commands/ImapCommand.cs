@@ -80,6 +80,7 @@ namespace NachoCore.IMAP
 
         public void ExecuteNoTask(NcStateMachine sm)
         {
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
             try {
                 Event evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
@@ -130,6 +131,8 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Exception : {0}", ex.ToString ());
                 ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
+            } finally {
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
             }
         }
 
@@ -194,7 +197,7 @@ namespace NachoCore.IMAP
             }
 
             if ((null != folder) && (folder.ImapUidValidity != mailKitFolder.UidValidity)) {
-                Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
+                Log.Warn (Log.LOG_IMAP, "CreateOrUpdateFolder: Deleting folder {0} due to UidValidity ({1} != {2})", folder.ImapFolderNameRedacted (), folder.ImapUidValidity, mailKitFolder.UidValidity.ToString ());
                 folder.Delete ();
                 folder = null;
             }

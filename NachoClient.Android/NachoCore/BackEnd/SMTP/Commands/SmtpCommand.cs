@@ -62,6 +62,7 @@ namespace NachoCore.SMTP
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
+                Log.Info (Log.LOG_SMTP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
                 try {
                     Event evt = ExecuteConnectAndAuthEvent ();
                     // In the no-exception case, ExecuteCommand is resolving McPending.
@@ -101,6 +102,8 @@ namespace NachoCore.SMTP
                     Log.Error (Log.LOG_SMTP, "Exception : {0}", ex.ToString ());
                     ResolveAllFailed (NcResult.WhyEnum.Unknown);
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD2");
+                } finally {
+                    Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
                 }
             }, this.GetType ().Name);
         }
