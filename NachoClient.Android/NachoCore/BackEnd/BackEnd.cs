@@ -230,7 +230,7 @@ namespace NachoCore
             if (null == PendingOnTimeTimer) {
                 PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => {
                     McPending.MakeEligibleOnTime ();
-                }, null, 1000, 2000);
+                }, null, 1000, 1000);
                 PendingOnTimeTimer.Stfu = true;
             }
             ApplyAcrossServices (accountId, "Start", (service) => {
