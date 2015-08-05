@@ -30,6 +30,8 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
+            McProtocolState protocolState = BEContext.ProtocolState;
+
             // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
             // An optimization might be to keep a timestamp since the last authenticate OR last Folder Sync, and
             // skip the GetFolders if it's semi-recent (seconds).
@@ -128,6 +130,8 @@ namespace NachoCore.IMAP
                 }
             }
 
+            bool haveNotes = false;
+
             // look again and process the rest.
             Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for General Folders");
             foreach (var mailKitFolder in folderList) {
@@ -137,8 +141,6 @@ namespace NachoCore.IMAP
                 if (foldernames.Contains (mailKitFolder.FullName)) {
                     continue;
                 }
-
-                foldernames.Add (mailKitFolder.FullName);
 
                 McFolder folder;
                 ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
@@ -158,18 +160,22 @@ namespace NachoCore.IMAP
                 }
                 else {
                     var folderName = mailKitFolder.Name;
-                    if (McFolder.MaybeNotesFolder (folderName)) {
+                    if (!haveNotes && McFolder.MaybeNotesFolder (protocolState.ImapServiceType, folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
                         isDistinguished = true;
-                    } else if (!haveSent && McFolder.MaybeSentFolder (folderName)) {
+                        haveNotes = true;
+                    } else if (!haveSent && McFolder.MaybeSentFolder (protocolState.ImapServiceType, folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
                         isDistinguished = true;
-                    } else if (!haveTrash && McFolder.MaybeTrashFolder (folderName)) {
+                        haveSent = true;
+                    } else if (!haveTrash && McFolder.MaybeTrashFolder (protocolState.ImapServiceType, folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
                         isDistinguished = true;
-                    } else if (!haveDraft && McFolder.MaybeDraftFolder (folderName)) {
+                        haveTrash = true;
+                    } else if (!haveDraft && McFolder.MaybeDraftFolder (protocolState.ImapServiceType, folderName)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
                         isDistinguished = true;
+                        haveDraft = true;
                     } else {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
                         isDistinguished = false;
@@ -177,7 +183,7 @@ namespace NachoCore.IMAP
                 }
 
                 // FIXME: Catch errors here, so that an error for one folder doesn't blow up the entire FolderSync
-
+                foldernames.Add (mailKitFolder.FullName);
                 if (CreateOrUpdateFolder (mailKitFolder, folderType, mailKitFolder.Name, isDistinguished, out folder)) {
                     added_or_changed = true;
                     // TODO do ApplyCommand stuff here
@@ -210,7 +216,6 @@ namespace NachoCore.IMAP
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
             }
 
-            var protocolState = BEContext.ProtocolState;
             protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                 var target = (McProtocolState)record;
                 target.AsLastFolderSync = DateTime.UtcNow;  // FIXME: Rename AsLastFolderSync to be generic.
