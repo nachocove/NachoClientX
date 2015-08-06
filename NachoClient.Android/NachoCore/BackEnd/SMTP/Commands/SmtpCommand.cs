@@ -98,6 +98,10 @@ namespace NachoCore.SMTP
                     Log.Error (Log.LOG_SMTP, "InvalidOperationException: {0}", ex.ToString ());
                     ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
                     sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPHARD1");
+                } catch (FormatException ex) {
+                    Log.Error (Log.LOG_SMTP, "FormatException: {0}", ex.ToString ());
+                    ResolveAllFailed (NcResult.WhyEnum.ProtocolError);
+                    sm.PostEvent ((uint)SmEvt.E.HardFail, "SMTPFORMATHARD");
                 } catch (Exception ex) {
                     Log.Error (Log.LOG_SMTP, "Exception : {0}", ex.ToString ());
                     ResolveAllFailed (NcResult.WhyEnum.Unknown);
