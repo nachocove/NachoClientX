@@ -24,14 +24,15 @@ namespace NachoCore.SMTP
         {
             // TODO Deal with memory issues, i.e. don't read everything into memory
             long length;
-            var stream = EmailMessage.ToMime (out length);
-            MimeMessage message = MimeHelpers.LoadMessage (McBody.QueryById<McBody> (EmailMessage.BodyId));
+            var BodyParser = new MimeParser (EmailMessage.ToMime (out length), true);
+            MimeMessage message = BodyParser.ParseMessage ();
             switch (PendingSingle.Operation) {
             case McPending.Operations.EmailForward:
             case McPending.Operations.EmailReply:
                 if (!PendingSingle.Smart_OriginalEmailIsEmbedded) {
                     McEmailMessage referencedEmail = McAbstrObject.QueryById<McEmailMessage> (int.Parse (PendingSingle.ServerId));
-                    MimeMessage referencedMime = MimeHelpers.LoadMessage (McBody.QueryById<McBody> (referencedEmail.BodyId));
+                    var ReferencedParser = new MimeParser (referencedEmail.ToMime (out length), true);
+                    MimeMessage referencedMime = ReferencedParser.ParseMessage ();
                     Multipart mixed = new Multipart ("mixed");
                     if (null != message.Body) {
                         mixed.Add (message.Body);
