@@ -66,11 +66,11 @@ namespace NachoClient.iOS
                 var index = new NachoCore.Index.NcIndex (indexPath);
                 var matches = index.SearchAllEmailMessageFields (searchString, 100);
                 if (curVersion == searcher.Version) {
-                    searchResultsMessages.UpdateMatches (matches);
-                    List<int> adds;
-                    List<int> deletes;
-                    searchResultsSource.RefreshEmailMessages (out adds, out deletes);
                     InvokeOnUIThread.Instance.Invoke (() => {
+                        searchResultsMessages.UpdateMatches (matches);
+                        List<int> adds;
+                        List<int> deletes;
+                        searchResultsSource.RefreshEmailMessages (out adds, out deletes);
                         if (null != searchDisplayController.SearchResultsTableView) {
                             searchDisplayController.SearchResultsTableView.ReloadData ();
                         }
