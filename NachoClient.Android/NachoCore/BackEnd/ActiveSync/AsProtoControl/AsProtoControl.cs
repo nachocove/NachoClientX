@@ -1156,6 +1156,10 @@ namespace NachoCore.ActiveSync
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
         {
+            if (null == Server) {
+                // This can happen when we're in AUTO-D and another account's server goes sideways.
+                return;
+            }
             if (e.ServerId == Server.Id) {
                 switch (e.Quality) {
                 case NcCommStatus.CommQualityEnum.OK:
@@ -1195,7 +1199,7 @@ namespace NachoCore.ActiveSync
             switch (siea.Status.SubKind) {
             case NcResult.SubKindEnum.Info_DaysToSyncChanged:
                 if (Xml.Provision.MaxAgeFilterCode.SyncAll_0 == Account.DaysToSyncEmail) {
-                    foreach (var folder in McFolder.QueryByAccountId<McFolder>(AccountId)) {
+                    foreach (var folder in McFolder.QueryByAccountId<McFolder> (AccountId)) {
                         folder.UpdateSet_AsSyncMetaToClientExpected (true);
                     }
                     Sm.PostEvent ((uint)SmEvt.E.Launch, "ASDAYS2SYNC");
