@@ -228,7 +228,7 @@ namespace NachoClient.iOS
 
             // Tapping on the view toggles between compact and regular size
             toggleCompactTapped = new UITapGestureRecognizer ();
-            toggleCompactTappedToken = toggleCompactTapped.AddTarget (ToggleCompactness);
+            toggleCompactTappedToken = toggleCompactTapped.AddTarget (ShowChooserOrToggleCompactness);
             contentView.AddGestureRecognizer (toggleCompactTapped);
         }
 
@@ -315,8 +315,22 @@ namespace NachoClient.iOS
 
         private void ChooserButtonClicked (object sender, EventArgs e)
         {
+            ShowChooser ();
+        }
+
+        private void ShowChooser()
+        {
             if (null != owner) {
                 owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
+            }
+        }
+
+        private void ShowChooserOrToggleCompactness()
+        {
+            if (0 == list.Count) {
+                ShowChooser ();
+            } else {
+                ToggleCompactness ();
             }
         }
 
