@@ -283,8 +283,12 @@ namespace NachoCore.Brain
                 if (IsInterrupted ()) {
                     break;
                 }
-                emailMessage.Score = emailMessage.Classify ();
-                emailMessage.UpdateByBrain ();
+                var newScore = emailMessage.Classify ();
+                emailMessage.UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.Score = newScore;
+                    return true;
+                });
                 numScored++;
             }
             if (0 != numScored) {
