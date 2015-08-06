@@ -30,7 +30,7 @@ namespace NachoCore.SMTP
             case McPending.Operations.EmailForward:
             case McPending.Operations.EmailReply:
                 if (!PendingSingle.Smart_OriginalEmailIsEmbedded) {
-                    McEmailMessage referencedEmail = McAbstrObject.QueryById<McEmailMessage> (int.Parse (PendingSingle.ServerId));
+                    McEmailMessage referencedEmail = McEmailMessage.QueryByServerId<McEmailMessage> (EmailMessage.AccountId, PendingSingle.ServerId);
                     var ReferencedParser = new MimeParser (referencedEmail.ToMime (out length), true);
                     MimeMessage referencedMime = ReferencedParser.ParseMessage ();
                     Multipart mixed = new Multipart ("mixed");
