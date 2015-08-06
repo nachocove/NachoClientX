@@ -3,11 +3,23 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
-using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
+using NachoCore.ActiveSync;
+
+ // For XML code values for now (Jan, I know...)
 
 namespace NachoCore
 {
-    public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
+    public enum PickActionEnum
+    {
+        Sync,
+        Ping,
+        QOop,
+        HotQOp,
+        Fetch,
+        Wait,
+        FSync}
+
+    ;
 
     public class NcProtoControl
     {
@@ -40,7 +52,7 @@ namespace NachoCore
 
         public McAccount Account {
             get {
-                return NcModel.Instance.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).Single ();
+                return NcModel.Instance.Db.Table<McAccount> ().Where (acc => acc.Id == AccountId).SingleOrDefault ();
             }
         }
 
@@ -77,6 +89,7 @@ namespace NachoCore
         }
 
         private AutoDInfoEnum _autoDInfo = AutoDInfoEnum.Unknown;
+
         public virtual AutoDInfoEnum AutoDInfo {
             get {
                 return _autoDInfo;
@@ -187,11 +200,11 @@ namespace NachoCore
         }
 
         protected bool GetItemAndFolder<T> (int itemId, 
-            out T item,
-            int folderId,
-            out McFolder folder,
-            out NcResult.SubKindEnum subKind,
-            bool clientOwnedOkay = false) where T : McAbstrItem, new()
+                                            out T item,
+                                            int folderId,
+                                            out McFolder folder,
+                                            out NcResult.SubKindEnum subKind,
+                                            bool clientOwnedOkay = false) where T : McAbstrItem, new()
         {
             folder = null;
             item = McAbstrObject.QueryById<T> (itemId);
@@ -217,8 +230,8 @@ namespace NachoCore
         }
 
         protected NcResult MoveItemCmd (McPending.Operations op, McAccount.AccountCapabilityEnum capability,
-            NcResult.SubKindEnum subKind,
-            McAbstrItem item, McFolder srcFolder, int destFolderId, bool lastInSeq)
+                                        NcResult.SubKindEnum subKind,
+                                        McAbstrItem item, McFolder srcFolder, int destFolderId, bool lastInSeq)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             if (null == srcFolder) {
@@ -441,13 +454,13 @@ namespace NachoCore
         }
 
         public virtual NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-                                                int folderId, bool originalEmailIsEmbedded)
+                                                 int folderId, bool originalEmailIsEmbedded)
         {
             return SendEmailCmd (newEmailMessageId);
         }
 
         public virtual NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-                                              int folderId, bool originalEmailIsEmbedded)
+                                               int folderId, bool originalEmailIsEmbedded)
         {
             return SendEmailCmd (newEmailMessageId);
         }
@@ -564,7 +577,7 @@ namespace NachoCore
 
 
         public virtual NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 
-                                                DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
+                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return null;
         }
@@ -575,7 +588,7 @@ namespace NachoCore
         }
 
         public virtual NcResult MarkEmailFlagDone (int emailMessageId,
-                                                  DateTime completeTime, DateTime dateCompleted)
+                                                   DateTime completeTime, DateTime dateCompleted)
         {
             return null;
         }
@@ -676,7 +689,7 @@ namespace NachoCore
             McCalendar cal;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind, clientOwnedOkay:true)) {
+                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind, clientOwnedOkay: true)) {
                     result = NcResult.Error (subKind);
                     return;
                 }
@@ -760,7 +773,7 @@ namespace NachoCore
             }
             return result;
         }
-       
+
         public virtual NcResult MoveCalCmd (int calId, int destFolderId, bool lastInSeq = true)
         {
             var cal = McAbstrObject.QueryById<McCalendar> (calId);
@@ -801,7 +814,7 @@ namespace NachoCore
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
                 NcResult.SubKindEnum subKind;
-                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind, clientOwnedOkay:true)) {
+                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind, clientOwnedOkay: true)) {
                     result = NcResult.Error (subKind);
                     return;
                 }
@@ -931,7 +944,7 @@ namespace NachoCore
         }
 
         public virtual NcResult CreateFolderCmd (int destFolderId, string displayName, 
-            NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode folderType)
+                                                 NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode folderType)
         {
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             var serverId = DateTime.UtcNow.Ticks.ToString ();
@@ -954,13 +967,13 @@ namespace NachoCore
                     destFldServerId = destFld.ServerId;
                 }
                 var folder = McFolder.Create (Account.Id,
-                    false,
-                    false,
-                    false,
-                    destFldServerId,
-                    serverId,
-                    displayName,
-                    folderType);
+                                 false,
+                                 false,
+                                 false,
+                                 destFldServerId,
+                                 serverId,
+                                 displayName,
+                                 folderType);
                 folder.IsAwaitingCreate = true;
                 folder.Insert ();
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
