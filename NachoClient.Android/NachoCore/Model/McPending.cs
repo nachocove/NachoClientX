@@ -1027,11 +1027,12 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-            rec.DelayNotAllowed &&
-            rec.State != StateEnum.Failed).All (y => {
-                y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
-                return true;
-            });
+                    (rec.Capability & control.Capabilities) == rec.Capability &&
+                    rec.DelayNotAllowed &&
+                    rec.State != StateEnum.Failed).All (y => {
+                        y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
+                        return true;
+                    });
         }
 
         public static void ResolveAllDispatchedAsDeferred (NcProtoControl control, int accountId)
@@ -1039,10 +1040,11 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-            rec.State == StateEnum.Dispatched).All (y => {
-                y.ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.InterruptedByAppExit);
-                return true;
-            });
+                    (rec.Capability & control.Capabilities) == rec.Capability &&
+                    rec.State == StateEnum.Dispatched).All (y => {
+                        y.ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.InterruptedByAppExit);
+                        return true;
+                    });
         }
 
         public override int Insert ()

@@ -96,7 +96,6 @@ namespace NachoCore
         {
             Owner = owner;
             AccountId = accountId;
-            // TODO - change ResolveAllDispatchedAsDeferred to be per-controller (capabilities).
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
         }
 
