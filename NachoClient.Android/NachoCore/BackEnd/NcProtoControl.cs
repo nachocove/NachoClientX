@@ -471,7 +471,7 @@ namespace NachoCore
                 result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "BACKPCSMF");
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSMF");
             }, "SmartEmailCmd");
             Log.Info (Log.LOG_BACKEND, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
             return result;
