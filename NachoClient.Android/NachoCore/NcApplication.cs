@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
+using System.Globalization;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -572,6 +573,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
+            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0}", CultureInfo.CurrentCulture);
             if (0 < BuildInfo.Source.Length) {
                 Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
             }
