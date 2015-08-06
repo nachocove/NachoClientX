@@ -245,8 +245,8 @@ namespace NachoCore.IMAP
                 });
                 if (null != pending) {
                     // dispatch it and mark it deferred for later.
-                    pending.MarkDispached ();
-                    pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFMetaData,
+                    pending = pending.MarkDispached ();
+                    pending = pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFMetaData,
                         NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
                 }
                 syncKit = new SyncKit (folder);
@@ -259,6 +259,14 @@ namespace NachoCore.IMAP
                     }
                 } else {
                     // Nothing to sync.
+                    if (null != pending && pending.State == McPending.StateEnum.Eligible) {
+                        // Mark the pending as dispatched, so we can resolve it right after.
+                        // This can happen if we JUST refreshed the folder metadata within the 
+                        // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
+                        // We need to dispatch the pending before ResolveOneSync() so we don't
+                        // try to ResolveAsSuccess an eligible pending (which leads to a crash).
+                        pending = pending.MarkDispached ();
+                    }
                     ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }
             }
