@@ -381,7 +381,7 @@ namespace NachoClient.iOS
             if (NcApplication.Instance.IsUp () && "SegueToTabController" == StartupViewController.NextSegue ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
+                Log.Info (Log.LOG_UI, "fast path to tab bar controller");
                 Window.RootViewController = (UIViewController)vc;
             }
 
