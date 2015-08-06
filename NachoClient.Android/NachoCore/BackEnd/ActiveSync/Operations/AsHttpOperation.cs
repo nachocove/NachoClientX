@@ -398,7 +398,9 @@ namespace NachoCore.ActiveSync
                                 Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
                             }
                         },
-                        cToken, 10 * 1000, System.Threading.Timeout.Infinite);
+                        cToken, 
+                        ((Owner.IsContentLarge (this)) ? 10 : 2) * 1000, 
+                        System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
                     capture.Stop ();

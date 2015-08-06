@@ -865,65 +865,72 @@ namespace NachoCore.Model
             DelayNotAllowed = true;
         }
 
-        public static bool MakeEligibleOnFSync (int accountId)
+        public static bool MakeEligibleCore (string methodName, List<McPending> makeEligible, Func<McPending, bool> proc)
         {
-            var makeEligible = QueryDeferredFSync (accountId);
-            foreach (var iter in makeEligible) {
-                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
+            var eligibleInds = new Dictionary<int,McAccount.AccountCapabilityEnum> ();
+            foreach (var pending in makeEligible) {
+                pending.UpdateWithOCApply<McPending> ((record) => {
                     var target = (McPending)record;
-                    if (DeferredEnum.UntilFSyncThenSync == target.DeferredReason) {
-                        target.DeferredReason = DeferredEnum.UntilSync;
-                    } else {
-                        target.State = StateEnum.Eligible;
+                    if (proc (target)) {
+                        if (eligibleInds.ContainsKey (target.AccountId)) {
+                            eligibleInds [target.AccountId] |= target.Capability;
+                        } else {
+                            eligibleInds [target.AccountId] = target.Capability;
+                        }
                     }
                     return true;
                 });
-                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFSync:{0}", pending.Id);
+                Log.Info (Log.LOG_SYNC, "Pending:{0}:{1}", methodName, pending.Id);
             }
-            return (0 != makeEligible.Count);
+            if (0 != makeEligible.Count) {
+                foreach (var accountId in eligibleInds.Keys) {
+                    BackEnd.Instance.PendQHotInd (accountId, eligibleInds [accountId]);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public static bool MakeEligibleOnFSync (int accountId)
+        {
+            return MakeEligibleCore ("MakeEligibleOnFSync", QueryDeferredFSync (accountId),
+                (pending) => {
+                    if (DeferredEnum.UntilFSyncThenSync == pending.DeferredReason) {
+                        pending.DeferredReason = DeferredEnum.UntilSync;
+                        return false;
+                    } 
+                    pending.State = StateEnum.Eligible;
+                    return true;
+                });
         }
 
         public static bool MakeEligibleOnSync (int accountId)
         {
-            var makeEligible = QueryDeferredSync (accountId);
-            foreach (var iter in makeEligible) {
-                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
-                    var target = (McPending)record;
-                    target.State = StateEnum.Eligible;
+            return MakeEligibleCore ("MakeEligibleOnSync", QueryDeferredSync (accountId),
+                (pending) => {
+                    pending.State = StateEnum.Eligible;
                     return true;
                 });
-                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnSync:{0}", pending.Id);
-            }
-            return (0 != makeEligible.Count);
         }
 
         public static bool MakeEligibleOnFMetaData (McFolder folder)
         {
-            var makeEligible = QueryDeferredFMetaData (folder);
-            foreach (var iter in makeEligible) {
-                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
-                    var target = (McPending)record;
-                    target.State = StateEnum.Eligible;
+            return MakeEligibleCore ("MakeEligibleOnFMetaData", QueryDeferredFMetaData (folder),
+                (pending) => {
+                    pending.State = StateEnum.Eligible;
                     return true;
                 });
-                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFMetaData:{0}", pending.Id);
-            }
-            return (0 != makeEligible.Count);
         }
 
         public static bool MakeEligibleOnTime ()
         {
-            var makeEligible = QueryDeferredUntilNow ();
-            foreach (var iter in makeEligible) {
-                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
-                    var target = (McPending)record;
-                    target.State = StateEnum.Eligible;
+            return MakeEligibleCore ("MakeEligibleOnTime", QueryDeferredUntilNow (),
+                (pending) => {
+                    pending.State = StateEnum.Eligible;
                     return true;
                 });
-                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnTime:{0}", pending.Id);
-            }
-            return (0 != makeEligible.Count);
         }
+
         // register for status-ind, look for FSync and Sync success.
         public McPending ResolveAsHardFail (NcProtoControl control, NcResult.WhyEnum why)
         {
@@ -1020,11 +1027,12 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-            rec.DelayNotAllowed &&
-            rec.State != StateEnum.Failed).All (y => {
-                y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
-                return true;
-            });
+                    (rec.Capability & control.Capabilities) == rec.Capability &&
+                    rec.DelayNotAllowed &&
+                    rec.State != StateEnum.Failed).All (y => {
+                        y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
+                        return true;
+                    });
         }
 
         public static void ResolveAllDispatchedAsDeferred (NcProtoControl control, int accountId)
@@ -1032,10 +1040,11 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
-            rec.State == StateEnum.Dispatched).All (y => {
-                y.ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.InterruptedByAppExit);
-                return true;
-            });
+                    (rec.Capability & control.Capabilities) == rec.Capability &&
+                    rec.State == StateEnum.Dispatched).All (y => {
+                        y.ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.InterruptedByAppExit);
+                        return true;
+                    });
         }
 
         public override int Insert ()

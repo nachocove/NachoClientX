@@ -230,7 +230,7 @@ namespace NachoCore
             if (null == PendingOnTimeTimer) {
                 PendingOnTimeTimer = new NcTimer ("BackEnd:PendingOnTimeTimer", state => {
                     McPending.MakeEligibleOnTime ();
-                }, null, 1000, 2000);
+                }, null, 1000, 1000);
                 PendingOnTimeTimer.Stfu = true;
             }
             ApplyAcrossServices (accountId, "Start", (service) => {
@@ -277,7 +277,17 @@ namespace NachoCore
             }, "CredResp");
         }
 
-       private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
+        public void PendQHotInd (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        {
+            ApplyAcrossServices (accountId, "PendQHotInd", (service) => {
+                if (0 != (capabilities & service.Capabilities)) {
+                    service.PendQHotInd ();
+                }
+                return NcResult.OK ();
+            });
+        }
+
+        private NcResult CmdInDoNotDelayContext (int accountId, McAccount.AccountCapabilityEnum capability, Func<NcProtoControl, NcResult> cmd)
         {
             return ApplyToService (accountId, capability, (service) => {
                 if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {

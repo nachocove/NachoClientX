@@ -96,7 +96,6 @@ namespace NachoCore
         {
             Owner = owner;
             AccountId = accountId;
-            // TODO - change ResolveAllDispatchedAsDeferred to be per-controller (capabilities).
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
         }
 
@@ -311,6 +310,11 @@ namespace NachoCore
 
         public virtual void CredResp ()
         {
+        }
+
+        public virtual void PendQHotInd ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPENDQHOTIND");
         }
 
         public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)
