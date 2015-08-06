@@ -73,6 +73,9 @@ namespace NachoCore.IMAP
             NcCapture cap;
             switch (Synckit.Method) {
             case SyncKit.MethodEnum.OpenOnly:
+                if (null != Synckit.PendingSingle) {
+                    Log.Error (Log.LOG_IMAP, "OpenOnly SyncKit with a pending is not allowed");
+                }
                 cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
                 evt = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
@@ -80,19 +83,11 @@ namespace NachoCore.IMAP
             case SyncKit.MethodEnum.Sync:
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
-                var protocolState = BEContext.ProtocolState;
-                ImapStrategy.MaybeAdvanceSyncStage (ref protocolState);
+                ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
             default:
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCHARDCASE");
-            }
-            if (PendingList.Any () || null != PendingSingle) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-                });
-            } else {
-                StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
             }
             cap.Pause ();
             Log.Info (Log.LOG_IMAP, "{0} Sync took {1}ms", Synckit.Folder.ImapFolderNameRedacted (), cap.ElapsedMilliseconds);
@@ -435,18 +430,35 @@ namespace NachoCore.IMAP
                 if (summary.Envelope.From.Count > 1) {
                     Log.Error (Log.LOG_IMAP, "Found {0} From entries in message.", summary.Envelope.From.Count);
                 }
+                var fromAddr = summary.Envelope.From [0] as MailboxAddress;
+                if (null == fromAddr) {
+                    Log.Warn (Log.LOG_IMAP, "envelope from is not MailboxAddress: {0}", summary.Envelope.From [0].GetType ().Name);
+                }
+                // get the address via ToString from the parent class.
+                // This handles both MailboxAddress, and InternetAddress
+                // see MimeKit docs for details on what each are.
                 emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
-                    throw new Exception (string.Format ("No emailMessage.From ({0})", summary.Envelope.From [0].GetType ().Name));
+                    Log.Warn (Log.LOG_IMAP, "No emailMessage.From string: {1}", summary.UniqueId.Value);
+                    if (null != fromAddr) {
+                        emailMessage.From = fromAddr.Address;
+                        if (string.IsNullOrEmpty (emailMessage.From)) {
+                            Log.Error (Log.LOG_IMAP, "No emailMessage.From Address: {1}", summary.UniqueId.Value);
+                            emailMessage.From = string.Empty; // make sure it's at least empty, not null.
+                        }
+                    }
                 }
-                McEmailAddress fromEmailAddress;
-                if (McEmailAddress.Get (accountId, summary.Envelope.From [0] as MailboxAddress, out fromEmailAddress)) {
-                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
+                if (!string.IsNullOrEmpty (emailMessage.From)) {
                     try {
                         emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
                     } catch (Exception ex) {
                         Log.Error (Log.LOG_IMAP, "Could not get Initials from email. Ignoring Initials. {0}", ex);
                     }
+                }
+
+                McEmailAddress fromEmailAddress;
+                if (null != fromAddr && McEmailAddress.Get (accountId, fromAddr, out fromEmailAddress)) {
+                    emailMessage.FromEmailAddressId = fromEmailAddress.Id;
                     emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
                 }
             }

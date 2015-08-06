@@ -352,6 +352,27 @@ namespace NachoCore.Brain
             }
             index.Remove ("contact", contactId.ToString ());
         }
+
+        protected bool UpdateAddressUserAction (McEmailAddress emailAddress, int action)
+        {
+            if ((null == emailAddress) || (0 == emailAddress.Id)) {
+                return false;
+            }
+
+            NcModel.Instance.RunInTransaction (() => {
+                if (+1 == action) {
+                    emailAddress.ScoreStates.MarkedHot += 1;
+                } else if (-1 == action) {
+                    emailAddress.ScoreStates.MarkedNotHot += 1;
+                } else {
+                    NcAssert.True (false);
+                }
+                emailAddress.ScoreStates.Update ();
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
+            });
+
+            return true;
+        }
     }
 }
 
