@@ -570,7 +570,7 @@ namespace NachoCore.SMTP
             if (forceAutodiscovery) {
                 Log.Error (Log.LOG_SMTP, "Why a forceautodiscovery?");
             }
-            Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "ASPCUSSC");
+            Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "SMTPPCUSSC");
         }
 
         private void DoConn ()
@@ -606,9 +606,13 @@ namespace NachoCore.SMTP
                 Log.Info (Log.LOG_SMTP, "Strategy:FG/BG:Send");
                 switch (send.Operation) {
                 case McPending.Operations.EmailSend:
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPSNDEMAIL", new SmtpSendMailCommand (this, SmtpClient, send));
+                    break;
                 case McPending.Operations.EmailForward:
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPFWDEMAIL", new SmtpForwardMailCommand (this, SmtpClient, send));
+                    break;
                 case McPending.Operations.EmailReply:
-                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT", new SmtpSendMailCommand (this, SmtpClient, send));
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPRPLYEMAIL", new SmtpReplyMailCommand (this, SmtpClient, send));
                     break;
                 default:
                     NcAssert.CaseError (send.Operation.ToString ());
@@ -707,6 +711,71 @@ namespace NachoCore.SMTP
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
             }
         }
+
+        #region Email sending/forwarding
+        private NcResult SmtpEmailForwardOrReplyCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            Log.Info (Log.LOG_SMTP, "SmtpEmailCmd({0},{1},{2},{3},{4})", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
+            McFolder folder;
+            NcModel.Instance.RunInTransaction (() => {
+                var refdEmailMessage = McEmailMessage.QueryById<McEmailMessage> (refdEmailMessageId);
+                var newEmailMessage = McEmailMessage.QueryById<McEmailMessage> (newEmailMessageId);
+                folder = McFolder.QueryById<McFolder> (folderId);
+                if (null == refdEmailMessage || null == newEmailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, newEmailMessage) {
+                    Operation = Op,
+                    ServerId = refdEmailMessage.Id.ToString (),
+                    ParentId = folder.Id.ToString (),
+                    Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "SMTPPCSMF");
+            }, "SmtpEmailCmd");
+            Log.Info (Log.LOG_SMTP, "SmtpEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
+            return result;
+        }
+
+        public override NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            Log.Info (Log.LOG_SMTP, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
+            return SmtpEmailForwardOrReplyCmd (McPending.Operations.EmailReply,
+                newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
+        }
+
+        public override NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            Log.Info (Log.LOG_SMTP, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+            if (originalEmailIsEmbedded) {
+                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
+                Log.Info (Log.LOG_SMTP, "ForwardEmailCmd: attachments = {0}", attachments.Count);
+                foreach (var attach in attachments) {
+                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
+                        var token = DnldAttCmd (attach.Id);
+                        if (null == token) {
+                            // FIXME - is this correct behavior in this case?
+                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
+                        }
+                    }
+                }
+            }
+            return SmtpEmailForwardOrReplyCmd (McPending.Operations.EmailForward,
+                newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+        }
+        #endregion
 
         #region ValidateConfig
 
