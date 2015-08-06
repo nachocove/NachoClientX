@@ -915,16 +915,11 @@ namespace NachoCore.Model
 
         public static bool MakeEligibleOnFMetaData (McFolder folder)
         {
-            var makeEligible = QueryDeferredFMetaData (folder);
-            foreach (var iter in makeEligible) {
-                var pending = iter.UpdateWithOCApply<McPending> ((record) => {
-                    var target = (McPending)record;
-                    target.State = StateEnum.Eligible;
+            return MakeEligibleCore ("MakeEligibleOnFMetaData", QueryDeferredFMetaData (folder),
+                (pending) => {
+                    pending.State = StateEnum.Eligible;
                     return true;
                 });
-                Log.Info (Log.LOG_SYNC, "Pending:MakeEligibleOnFMetaData:{0}", pending.Id);
-            }
-            return (0 != makeEligible.Count);
         }
 
         public static bool MakeEligibleOnTime ()
