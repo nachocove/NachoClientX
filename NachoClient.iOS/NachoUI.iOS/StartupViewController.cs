@@ -62,6 +62,13 @@ namespace NachoClient.iOS
                 return;
             }
 
+            // Is there a google sign in callback active?
+            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
+                Log.Info (Log.LOG_UI, "GetThisPartyStarted google sign in callback SegueToAdvancedLogin");
+                PerformSegue ("SegueToAdvancedLogin", this);
+                return;
+            }
+
             // Fresh start, let's create the first account
             if (null == NcApplication.Instance.Account) {
                 Log.Info (Log.LOG_UI, "GetThisPartyStarted SegueToLaunch because account is null");

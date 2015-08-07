@@ -219,5 +219,15 @@ namespace NachoCore.Utils
                 return false;
             }
         }
+
+        public static void SetGoogleSignInCallbackArrived (bool value)
+        {
+            McMutables.SetBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", value);
+        }
+
+        public static bool GetGoogleSignInCallbackArrived ()
+        {
+            return McMutables.GetOrCreateBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", false);
+        }
     }
 }

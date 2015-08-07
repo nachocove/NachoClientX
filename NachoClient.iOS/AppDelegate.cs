@@ -1114,11 +1114,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
                 return;
             }
-            var account = new McAccount ();
-            account.DisplayName = "Google placeholder account";
-            account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.GoogleCallback;
-            account.Insert ();
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount account created {0}", account.Id);
+            LoginHelpers.SetGoogleSignInCallbackArrived (true);
+            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount callback arrived");
         }
     }
 

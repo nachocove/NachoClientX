@@ -1078,6 +1078,9 @@ namespace NachoCore
             if (null != configAccount) {
                 return false;
             }
+            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
+                return false;
+            }
             return true;
         }
 
