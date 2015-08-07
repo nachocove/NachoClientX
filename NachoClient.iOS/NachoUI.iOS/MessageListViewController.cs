@@ -748,8 +748,8 @@ namespace NachoClient.iOS
             MultiSelectToggle (messageSource, false);
             switchAccountButton.SetAccountImage (account);
             SetEmailMessages (GetNachoEmailMessages (account.Id));
-            threadsNeedsRefresh = true;
-            MaybeRefreshThreads ();
+            threadsNeedsRefresh = false;
+            TableView.ReloadData ();
         }
     }
 
