@@ -296,14 +296,8 @@ namespace NachoCore
                 if (NcCommStatus.Instance.Quality (service.Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
                 }
-                switch (service.BackEndState) {
-                case BackEndStateEnum.PostAutoDPostInboxSync:
-                case BackEndStateEnum.PostAutoDPreInboxSync:
-                    break;
-                default:
-                    return NcResult.Error ((service.BackEndState == BackEndStateEnum.CredWait) ? 
-                        NcResult.SubKindEnum.Error_CredWait :
-                        NcResult.SubKindEnum.Info_ServiceUnavailable);
+                if (!service.IsDoNotDelayOk) {
+                    return NcResult.Error (service.DoNotDelaySubKind);
                 }
                 return cmd (service);
             });

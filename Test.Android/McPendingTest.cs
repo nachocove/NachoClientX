@@ -31,7 +31,7 @@ namespace Test.iOS
 
         public static McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
             McAccount.AccountCapabilityEnum capability = McAccount.AccountCapabilityEnum.EmailReaderWriter,
-            string token = "", string clientId = "", string parentId = "", string destId = "", McAbstrItem item = null)
+            string token = "", string clientId = "", string parentId = "", string destId = "", McAbstrItem item = null, StateEnum state = StateEnum.Eligible, bool doNotDelay = false)
         {
             McPending pending;
             if (item != null) {
@@ -46,6 +46,8 @@ namespace Test.iOS
             pending.ClientId = clientId;
             pending.ParentId = parentId;
             pending.DestParentId = destId;
+            pending.State = state;
+            pending.DelayNotAllowed = doNotDelay;
             pending.Insert ();
             return pending;
         }
@@ -808,6 +810,19 @@ namespace Test.iOS
                 CreatePending (accountId: 5); // pending in other account
                 var retrieved = McPending.QueryEligible (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 PendingsAreEqual (pendElig, retrieved.FirstOrDefault ());
+            }
+
+            [Test]
+            public void TestQueryAllNonDispachedDoNotDelay ()
+            {
+                CreatePending (doNotDelay: true, state: StateEnum.Dispatched); // dispatched, otherwise matching.
+                CreatePending (doNotDelay: true, accountId: 5); // in other account, otherwise matching.
+                CreatePending (); // do not delay false, otherwise matching.
+                CreatePending (doNotDelay: true, capability: McAccount.AccountCapabilityEnum.EmailSender); // other capability, otherwise matching.
+                var gonner = CreatePending (doNotDelay: true); // matching.
+                var retrieved = McPending.QueryAllNonDispachedDoNotDelay (gonner.AccountId, McAccount.ImapCapabilities);
+                Assert.AreEqual (1, retrieved.Count ());
+                Assert.AreEqual (gonner.Id, retrieved.First ().Id);
             }
 
             [Test]
