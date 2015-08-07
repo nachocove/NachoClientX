@@ -186,6 +186,12 @@ namespace NachoCore
             }
         }
 
+        protected NcResult.SubKindEnum SubKindDoNotDelayNotOk ()
+        {
+            return (BackEndState == BackEndStateEnum.CredWait) ? NcResult.SubKindEnum.Error_CredWait :
+                NcResult.SubKindEnum.Info_ServiceUnavailable;
+        }
+
         // recursively mark param and its children with isAwaitingDelete == true
         protected void MarkFoldersAwaitingDelete (McFolder folder)
         {
@@ -338,7 +344,7 @@ namespace NachoCore
         public virtual NcResult SearchEmailReq (string keywords, uint? maxResults, string token)
         {
             if (!DoNotDelayIsOk ()) {
-                return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                return NcResult.Error (SubKindDoNotDelayNotOk ());
             }
             McPending.ResolvePendingSearchReqs (Account.Id, token, true);
             var newSearch = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
@@ -366,7 +372,7 @@ namespace NachoCore
         public virtual NcResult SearchContactsReq (string prefix, uint? maxResults, string token)
         {
             if (!DoNotDelayIsOk ()) {
-                return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                return NcResult.Error (SubKindDoNotDelayNotOk ());
             }
             McPending.ResolvePendingSearchReqs (Account.Id, token, true);
             var newSearch = new McPending (Account.Id, McAccount.AccountCapabilityEnum.ContactReader) {
@@ -654,7 +660,7 @@ namespace NachoCore
         public virtual NcResult DnldEmailBodyCmd (int emailMessageId, bool doNotDelay = false)
         {
             if (doNotDelay && !DoNotDelayIsOk ()) {
-                return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                return NcResult.Error (SubKindDoNotDelayNotOk ());
             }
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcResult.SubKindEnum subKind;
@@ -701,7 +707,7 @@ namespace NachoCore
         public virtual NcResult DnldAttCmd (int attId, bool doNotDelay = false)
         {
             if (doNotDelay && !DoNotDelayIsOk ()) {
-                return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                return NcResult.Error (SubKindDoNotDelayNotOk ());
             }
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
@@ -1193,7 +1199,7 @@ namespace NachoCore
         public virtual NcResult SyncCmd (int folderId)
         {
             if (!DoNotDelayIsOk ()) {
-                return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                return NcResult.Error (SubKindDoNotDelayNotOk ());
             }
             NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McFolder folder;

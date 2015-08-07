@@ -182,6 +182,7 @@ namespace NachoCore.Utils
             Info_BackEndStateChanged,
             Info_ContactLocalSearchComplete,
             Info_DaysToSyncChanged,
+            Error_CredWait,
         };
 
         public enum WhyEnum
