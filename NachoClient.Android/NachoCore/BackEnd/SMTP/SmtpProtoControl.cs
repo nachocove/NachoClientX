@@ -570,7 +570,7 @@ namespace NachoCore.SMTP
             if (forceAutodiscovery) {
                 Log.Error (Log.LOG_SMTP, "Why a forceautodiscovery?");
             }
-            Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "ASPCUSSC");
+            Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "SMTPPCUSSC");
         }
 
         private void DoConn ()
@@ -606,9 +606,13 @@ namespace NachoCore.SMTP
                 Log.Info (Log.LOG_SMTP, "Strategy:FG/BG:Send");
                 switch (send.Operation) {
                 case McPending.Operations.EmailSend:
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPSNDEMAIL", new SmtpSendMailCommand (this, SmtpClient, send));
+                    break;
                 case McPending.Operations.EmailForward:
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPFWDEMAIL", new SmtpForwardMailCommand (this, SmtpClient, send));
+                    break;
                 case McPending.Operations.EmailReply:
-                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT", new SmtpSendMailCommand (this, SmtpClient, send));
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPRPLYEMAIL", new SmtpReplyMailCommand (this, SmtpClient, send));
                     break;
                 default:
                     NcAssert.CaseError (send.Operation.ToString ());
