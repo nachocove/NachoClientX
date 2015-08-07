@@ -47,6 +47,9 @@ namespace NachoClient.iOS
             labelLabel.TextAlignment = UITextAlignment.Left;
             labelLabel.Text = labelString;
             labelLabel.SizeToFit ();
+            if (labelLabel.Frame.X + labelLabel.Frame.Width > rightMargin) {
+                labelLabel.Frame = new CGRect(labelLabel.Frame.X, labelLabel.Frame.Y, rightMargin - labelLabel.Frame.X, labelLabel.Frame.Height);
+            }
             ViewFramer.Create (labelLabel).Height (rect.Height);
             this.AddSubview (labelLabel);
 
