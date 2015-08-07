@@ -55,17 +55,7 @@ namespace NachoCore.SMTP
         protected override Event ExecuteCommand ()
         {
             var mimeMessage = CreateMimeMessage ();
-            try {
-                Client.Send (mimeMessage, Cts.Token);
-            } catch (SmtpCommandException ex) {
-                Log.Info (Log.LOG_SMTP, "SmtpCommandException {0}", ex.Message);
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
-                            NcResult.WhyEnum.ProtocolError));
-                });
-                return Event.Create ((uint)SmEvt.E.HardFail, "SMTPSENDHARD");
-            }
+            Client.Send (mimeMessage, Cts.Token);
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (
                     BEContext.ProtoControl,
