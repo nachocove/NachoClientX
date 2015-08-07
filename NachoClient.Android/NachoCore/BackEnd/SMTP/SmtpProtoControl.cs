@@ -17,6 +17,8 @@ namespace NachoCore.SMTP
 {
     public class SmtpProtoControl : NcProtoControl, IBEContext
     {
+        private const int KDiscoveryMaxRetries = 5;
+
         public enum Lst : uint
         {
             DiscW = (St.Last + 1),
@@ -26,6 +28,7 @@ namespace NachoCore.SMTP
             ConnW,
             Pick,
             QOpW,
+            IdleW,
             HotQOpW,
             Parked,
         };
@@ -58,15 +61,48 @@ namespace NachoCore.SMTP
 
                 case (uint)Lst.ConnW:
                 case (uint)Lst.HotQOpW:
+                case (uint)Lst.IdleW:
                 case (uint)Lst.QOpW:
                 case (uint)Lst.Pick:
                 case (uint)Lst.Parked:
                     return BackEndStateEnum.PostAutoDPostInboxSync;
 
                 default:
-                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    NcAssert.CaseError (string.Format ("Unhandled state {0}", StateName ((uint)Sm.State)));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
+            }
+        }
+
+        public static string StateName (uint state)
+        {
+            switch (state) {
+            case (uint)St.Start:
+                return "Start";
+            case (uint)St.Stop:
+                return "Stop";
+            case (uint)Lst.DiscW:
+                return "DiscW";
+            case (uint)Lst.UiCrdW:
+                return "UiCrdW";
+            case (uint)Lst.UiCertOkW:
+                return "UiCertOkW";
+            case (uint)Lst.UiServConfW:
+                return "UiServConfW";
+            case (uint)Lst.ConnW:
+                return "ConnW";
+            case (uint)Lst.Pick:
+                return "Pick";
+            case (uint)Lst.QOpW:
+                return "QOpW";
+            case (uint)Lst.IdleW:
+                return "IdleW";
+            case (uint)Lst.HotQOpW:
+                return "HotQOpW";
+            case (uint)Lst.Parked:
+                return "Parked";
+            default:
+                return state.ToString ();
             }
         }
 
@@ -83,6 +119,7 @@ namespace NachoCore.SMTP
                 UiCertOkYes,
                 UiCertOkNo,
                 PkQOp,
+                PkIdle,
                 AuthFail,
                 Last = AuthFail,
             };
@@ -107,6 +144,7 @@ namespace NachoCore.SMTP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmtpEvt.E.UiSetCred,
                             (uint)SmtpEvt.E.UiSetServConf,
                             (uint)SmtpEvt.E.UiCertOkNo,
@@ -141,6 +179,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.UiSetCred, // TODO: should we re-consider?
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmtpEvt.E.GetServConf,
                         },
                         On = new [] {
@@ -159,18 +198,19 @@ namespace NachoCore.SMTP
                             (uint)PcEvt.E.PendQ,
                             (uint)PcEvt.E.PendQHot,
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
                         },
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.ReConn,
-                            (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmtpEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)SmtpEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -189,6 +229,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.ReDisc,
                             (uint)SmtpEvt.E.ReConn,
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
@@ -219,6 +260,7 @@ namespace NachoCore.SMTP
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.AuthFail,
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
@@ -236,6 +278,7 @@ namespace NachoCore.SMTP
                         State = (uint)Lst.ConnW,
                         Drop = new uint[] {
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                         },
                         Invalid = new uint[] {
                             (uint)SmtpEvt.E.ReDisc,
@@ -281,8 +324,36 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
+                            new Trans { Event = (uint)SmtpEvt.E.PkIdle, Act = DoIdle, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                         }
+                    },
+                    new Node {
+                        State = (uint)Lst.IdleW,
+                        Drop = new [] {
+                            (uint)PcEvt.E.PendQ,
+                            (uint)SmtpEvt.E.UiSetCred,
+                            (uint)SmtpEvt.E.UiSetServConf,
+                        },
+                        Invalid = new [] {
+                            (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
+                            (uint)SmtpEvt.E.GetCertOk,
+                            (uint)SmtpEvt.E.UiCertOkNo,
+                            (uint)SmtpEvt.E.UiCertOkYes,
+                            (uint)SmtpEvt.E.GetServConf,
+                            (uint)SmEvt.E.HardFail,
+                            (uint)SmEvt.E.TempFail,
+                            (uint)SmtpEvt.E.ReDisc,
+                            (uint)SmtpEvt.E.AuthFail,
+                            (uint)SmtpEvt.E.ReConn,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.IdleW },
+                            new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
+                        },
                     },
                     new Node {
                         State = (uint)Lst.QOpW,
@@ -293,6 +364,7 @@ namespace NachoCore.SMTP
                         },
                         Invalid = new [] {
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
@@ -319,6 +391,7 @@ namespace NachoCore.SMTP
                         },
                         Invalid = new [] {
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)SmtpEvt.E.GetCertOk,
                             (uint)SmtpEvt.E.UiCertOkNo,
                             (uint)SmtpEvt.E.UiCertOkYes,
@@ -340,6 +413,7 @@ namespace NachoCore.SMTP
                         State = (uint)Lst.Parked,
                         Drop = new uint[] {
                             (uint)SmtpEvt.E.PkQOp,
+                            (uint)SmtpEvt.E.PkIdle,
                             (uint)PcEvt.E.Park,
                         },
                         Invalid = new uint[] {
@@ -381,7 +455,9 @@ namespace NachoCore.SMTP
         public override void Remove ()
         {
             // TODO Move to base? That might require moving the NcCommStatus stuff to base as well.
-            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
+                Log.Warn (Log.LOG_SMTP, "SmtpProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
+            }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
@@ -393,15 +469,8 @@ namespace NachoCore.SMTP
             if (!base.Execute ()) {
                 return false;
             }
-            var exeCtxt = NcApplication.Instance.ExecutionContext;
-            switch (exeCtxt) {
-            default:
-                Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPCPARK");
-                return true;
-            case NcApplication.ExecutionContextEnum.Foreground:
-                Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
-                return true;
-            }
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "SMTPPCEXE");
+            return true;
         }
 
         private SmtpCommand Cmd;
@@ -428,8 +497,34 @@ namespace NachoCore.SMTP
 
         private void DoDisc ()
         {
-            var cmd = new SmtpDiscoveryCommand(this, SmtpClient);
+            // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
+            // starts this service, and when the state gets properly recognized. This is 
+            // because there are two services (IMAP and SMTP) and either can run ahead of the other
+            // and send a StatusInd, causing the UI to check the services (both!) state
+            // via EventFromEnum(). This can lead to invalid states being recognized.
+            // Example: 
+            //  SMTP and IMAP Both have moved to DiscW, but only SMTP has actually started:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=CredWait
+            // The CredWait causes the login SM to move to:
+            //  STATE:Info:1:: SM(Account:3): S=SyncWait & E=CredReqCallback/avl: EventFromEnum cred req => S=SubmitWait
+            // Then, later, IMAP starts and sends a status Ind:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
+            // But this is an illegal state in SubMitWait:
+            //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            BackEndStatePreset = BackEndStateEnum.Running;
+            var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
+        }
+
+        private int DiscoveryRetries = 0;
+        private void DoDiscTempFail ()
+        {
+            Log.Info (Log.LOG_SMTP, "SMTP DoDisc Attempt {0}", DiscoveryRetries++);
+            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
+                Sm.PostEvent ((uint)SmtpEvt.E.GetServConf, "SMTPMAXDISC");
+            } else {
+                DoDisc ();
+            }
         }
 
         private void DoUiServConfReq ()
@@ -475,11 +570,12 @@ namespace NachoCore.SMTP
             if (forceAutodiscovery) {
                 Log.Error (Log.LOG_SMTP, "Why a forceautodiscovery?");
             }
-            Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "ASPCUSSC");
+            Sm.PostEvent ((uint)SmtpEvt.E.UiSetServConf, "SMTPPCUSSC");
         }
 
         private void DoConn ()
         {
+            DiscoveryRetries = 0;
             var cmd = new SmtpAuthenticateCommand(this, SmtpClient);
             cmd.Execute (Sm);
         }
@@ -510,16 +606,20 @@ namespace NachoCore.SMTP
                 Log.Info (Log.LOG_SMTP, "Strategy:FG/BG:Send");
                 switch (send.Operation) {
                 case McPending.Operations.EmailSend:
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPSNDEMAIL", new SmtpSendMailCommand (this, SmtpClient, send));
+                    break;
                 case McPending.Operations.EmailForward:
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPFWDEMAIL", new SmtpForwardMailCommand (this, SmtpClient, send));
+                    break;
                 case McPending.Operations.EmailReply:
-                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPGETNEXT", new SmtpSendMailCommand (this, SmtpClient, send));
+                    Sm.PostEvent ((uint)SmtpEvt.E.PkQOp, "SMTPRPLYEMAIL", new SmtpReplyMailCommand (this, SmtpClient, send));
                     break;
                 default:
                     NcAssert.CaseError (send.Operation.ToString ());
                     break;
                 }
             } else {
-                Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPPICKPARK");
+                Sm.PostEvent ((uint)SmtpEvt.E.PkIdle, "SMTPPICKIDLE");
             }
         }
 
@@ -527,6 +627,12 @@ namespace NachoCore.SMTP
         {
             var cmd = Sm.Arg as SmtpCommand;
             SetCmd (cmd);
+            ExecuteCmd ();
+        }
+
+        protected void DoIdle ()
+        {
+            SetCmd (new SmtpDisconnectCommand (this, SmtpClient));
             ExecuteCmd ();
         }
 
@@ -611,6 +717,26 @@ namespace NachoCore.SMTP
                 Sm.PostEvent ((uint)PcEvt.E.Park, "NSEHPARK");
             }
         }
+
+        #region ValidateConfig
+
+        private SmtpValidateConfig Validator;
+        public override void ValidateConfig (McServer server, McCred cred)
+        {
+            CancelValidateConfig ();
+            Validator = new SmtpValidateConfig (this);
+            Validator.Execute (server, cred);
+        }
+
+        public override void CancelValidateConfig ()
+        {
+            if (null != Validator) {
+                Validator.Cancel ();
+                Validator = null;
+            }
+        }
+
+        #endregion
     }
 }
 

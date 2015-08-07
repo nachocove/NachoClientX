@@ -39,6 +39,7 @@ namespace NachoCore.IMAP
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
         public List<McEmailMessage> UploadMessages;
+        public bool GetHeaders;
 
         public SyncKit (McFolder folder)
         {
@@ -55,6 +56,7 @@ namespace NachoCore.IMAP
             Flags = flags;
             Headers = headers;
             GetPreviews = false;
+            GetHeaders = true;
         }
 
         public static UniqueIdSet MustUniqueIdSet (IList<UniqueId> uids)

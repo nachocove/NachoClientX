@@ -199,13 +199,14 @@ namespace NachoCore.Brain
                         break;
                     case McAbstrFileDesc.BodyTypeEnum.MIME_4:
                         // Create the parsed object, its tokenizer, and its index document
-                        var mimeMessage = NcObjectParser.ParseMimeMessage (messagePath);
+                        var mimeMessage = NcObjectParser.ParseMimeMessage (messagePath, NcTask.Cts.Token);
                         if (null == mimeMessage) {
                             Log.Warn (Log.LOG_BRAIN, "IndexEmailMessage: Invalid MIME message (emailMessageId={0}, bodyId={1}, filePresence={2}",
                                 emailMessage.Id, emailMessage.BodyId, body.FilePresence);
                         } else {
-                            var tokenizer = new NcMimeTokenizer (mimeMessage, NcTask.Cts.Token);
+                            var tokenizer = new NcMimeTokenizer (mimeMessage.Message, NcTask.Cts.Token);
                             parameters.Content = tokenizer.Content;
+                            mimeMessage.Dispose ();
                         }
                         break;
                     }
@@ -350,6 +351,27 @@ namespace NachoCore.Brain
                 return;
             }
             index.Remove ("contact", contactId.ToString ());
+        }
+
+        protected bool UpdateAddressUserAction (McEmailAddress emailAddress, int action)
+        {
+            if ((null == emailAddress) || (0 == emailAddress.Id)) {
+                return false;
+            }
+
+            NcModel.Instance.RunInTransaction (() => {
+                if (+1 == action) {
+                    emailAddress.ScoreStates.MarkedHot += 1;
+                } else if (-1 == action) {
+                    emailAddress.ScoreStates.MarkedNotHot += 1;
+                } else {
+                    NcAssert.True (false);
+                }
+                emailAddress.ScoreStates.Update ();
+                emailAddress.MarkDependencies (NcEmailAddress.Kind.From);
+            });
+
+            return true;
         }
     }
 }

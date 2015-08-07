@@ -227,6 +227,16 @@ namespace NachoCore.Model
         [Indexed]       
         public uint ImapUid { get; set; }
 
+        /// <summary>
+        /// Email headers only. Used for Brain to help with scoring, etc.
+        /// </summary>
+        /// <value>The headers.</value>
+        public string Headers { get; set; }
+
+        /// True if the message header matches some of the fields. A match can cause a 
+        /// message from being removed from the hot list.
+        public bool HeadersFiltered { get; set; }
+
         ///
         /// <Flag> STUFF.
         ///
@@ -278,8 +288,8 @@ namespace NachoCore.Model
         // (i.e. indexing of an email message without its body downloaded), it is changed to an int.
         // I didn't want to rename it to IndexVersion (like McContact) in order to avoid a migration.
         //
-        // For partially indexed messagess, the field has the value of EmailMessageIndexDocument.Version-1.
-        // For fully indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
+        // For header indexed messages, the field has the value of EmailMessageIndexDocument.Version-1.
+        // For header+body indexed messages, EmailMessageIndexDocument.Version. If a new indexing schema is needed,
         // just increment the version # and implement the new version of EmailMessageIndexDocument.
         // Brain will unindex all old version documents and re-index them using the new schema.
         public int IsIndexed { set; get; }
@@ -292,6 +302,10 @@ namespace NachoCore.Model
         // Note that this boolean is only meaningful within the context of a background duration;
         // as the settings can change during foreground.
         public bool ShouldNotify { get; set; }
+
+        /// True if its InReplyTo matches the MessageID of another McEmailMessage whose From
+        /// address matches one of the McAccount. Set by brain.
+        public bool IsReply { get; set; }
 
         /// Attachments are separate
 
@@ -599,12 +613,12 @@ namespace NachoCore.Model
                 " LEFT JOIN McBody as b ON b.Id == e.BodyId " +
                 " WHERE likelihood (e.IsIndexed < ?, 0.5) OR " +
                 "  (likelihood (e.IsIndexed < ?, 0.5) AND " +
-                "   (likelihood (e.BodyId = 0, 0.2) OR " +
-                "    (likelihood (b.FilePresence = ?, 0.5) AND likelihood (b.BodyType = ?, 0.9))))" +
+                "   likelihood (e.BodyId > 0, 0.2) AND " +
+                "   likelihood (b.FilePresence = ?, 0.5))" +
                 " ORDER BY e.DateReceived DESC " +
                 " LIMIT ?",
                 EmailMessageIndexDocument.Version - 1, EmailMessageIndexDocument.Version, 
-                McAbstrFileDesc.FilePresenceEnum.Complete, McAbstrFileDesc.BodyTypeEnum.MIME_4, maxMessages
+                McAbstrFileDesc.FilePresenceEnum.Complete, maxMessages
             );
         }
 
@@ -851,6 +865,9 @@ namespace NachoCore.Model
 
             if (null == thread) {
                 thread = Source.GetEmailThreadMessages (FirstMessageId);
+                if (null == thread) {
+                    yield break; // thread is gone. Maybe backend removed it asynchronously
+                }
             }
             using (IEnumerator<McEmailMessageThread> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
@@ -1219,7 +1236,7 @@ namespace NachoCore.Model
         {
             if (0 == BodyId) {
                 // No body to index. This message is fully indexed.
-                IsIndexed = EmailMessageIndexDocument.Version;
+                IsIndexed = EmailMessageIndexDocument.Version - 1;
             } else {
                 var body = GetBody ();
                 if ((null != body) && body.IsComplete ()) {
@@ -1228,6 +1245,12 @@ namespace NachoCore.Model
                     IsIndexed = EmailMessageIndexDocument.Version - 1;
                 }
             }
+        }
+
+        public static McEmailMessage QueryByMessageId (int accountId, string messageId)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT * FROM McEmailMessage WHERE AccountId = ? AND MessageID = ?", accountId, messageId).FirstOrDefault ();
         }
     }
 }

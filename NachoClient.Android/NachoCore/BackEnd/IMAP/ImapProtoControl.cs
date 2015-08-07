@@ -6,7 +6,6 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
 using MailKit;
-using MailKit.Net.Imap;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using MailKit.Security;
@@ -18,6 +17,7 @@ namespace NachoCore.IMAP
     public partial class ImapProtoControl : NcProtoControl, IPushAssistOwner
     {
         public NcImapClient MainClient;
+        private const int KDiscoveryMaxRetries = 5;
 
         public enum Lst : uint
         {
@@ -72,9 +72,46 @@ namespace NachoCore.IMAP
                         BackEndStateEnum.PostAutoDPreInboxSync;
                     
                 default:
-                    NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
+                    NcAssert.CaseError (string.Format ("BackEndState: Unhandled state {0}", StateName ((uint)Sm.State)));
                     return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
+            }
+        }
+
+        public static string StateName (uint state)
+        {
+            switch (state) {
+            case (uint)St.Start:
+                return "Start";
+            case (uint)St.Stop:
+                return "Stop";
+            case (uint)Lst.DiscW:
+                return "DiscW";
+            case (uint)Lst.UiCrdW:
+                return "UiCrdW";
+            case (uint)Lst.UiServConfW:
+                return "UiServConfW";
+            case (uint)Lst.FSyncW:
+                return "FSyncW";
+            case (uint)Lst.Pick:
+                return "Pick";
+            case (uint)Lst.SyncW:
+                return "SyncW";
+            case (uint)Lst.PingW:
+                return "PingW";
+            case (uint)Lst.QOpW:
+                return "QOpW";
+            case (uint)Lst.HotQOpW:
+                return "HotQOpW";
+            case (uint)Lst.FetchW:
+                return "FetchW";
+            case (uint)Lst.IdleW:
+                return "IdleW";
+            case (uint)Lst.Parked:
+                return "Parked";
+            default:
+                Log.Error (Log.LOG_IMAP, "Missing case in StateName {0}", state);
+                return state.ToString ();
             }
         }
 
@@ -163,12 +200,12 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.PkHotQOp,
                             (uint)ImapEvt.E.PkFetch,
                             (uint)ImapEvt.E.Wait,
+                            (uint)SmEvt.E.HardFail,
                         },
                         On = new Trans[] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDisc, State = (uint)Lst.DiscW },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoDiscTempFail, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)ImapEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiCrdW },
                             new Trans { Event = (uint)ImapEvt.E.UiSetCred, Act = DoDisc, State = (uint)Lst.DiscW },
@@ -579,7 +616,7 @@ namespace NachoCore.IMAP
         {
             // TODO Move to base
             if (!((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State)) {
-                Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", Sm.State);
+                Log.Warn (Log.LOG_IMAP, "ImapProtoControl.Remove called while state is {0}", StateName ((uint)Sm.State));
             }
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
@@ -602,8 +639,34 @@ namespace NachoCore.IMAP
 
         private void DoDisc ()
         {
+            // HACK HACK: There appears to be a race-condition when the NcBackend (via UI) 
+            // starts this service, and when the state gets properly recognized. This is 
+            // because there are two services (IMAP and SMTP) and either can run ahead of the other
+            // and send a StatusInd, causing the UI to check the services (both!) state
+            // via EventFromEnum(). This can lead to invalid states being recognized.
+            // Example: 
+            //  SMTP and IMAP Both have moved to DiscW, but only SMTP has actually started:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=CredWait
+            // The CredWait causes the login SM to move to:
+            //  STATE:Info:1:: SM(Account:3): S=SyncWait & E=CredReqCallback/avl: EventFromEnum cred req => S=SubmitWait
+            // Then, later, IMAP starts and sends a status Ind:
+            //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
+            // But this is an illegal state in SubMitWait:
+            //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            BackEndStatePreset = BackEndStateEnum.Running;
             SetCmd (new ImapDiscoverCommand (this, MainClient));
             ExecuteCmd ();
+        }
+
+        private int DiscoveryRetries = 0;
+        private void DoDiscTempFail ()
+        {
+            Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
+            if (DiscoveryRetries >= KDiscoveryMaxRetries) {
+                Sm.PostEvent ((uint)ImapEvt.E.GetServConf, "IMAPMAXDISC");
+            } else {
+                DoDisc ();
+            }
         }
 
         private void DoUiServConfReq ()
@@ -882,6 +945,26 @@ namespace NachoCore.IMAP
             // Send the request toward the UI.
             Owner.CredReq (this);
         }
+
+        #region ValidateConfig
+
+        private ImapValidateConfig Validator;
+        public override void ValidateConfig (McServer server, McCred cred)
+        {
+            CancelValidateConfig ();
+            Validator = new ImapValidateConfig (this);
+            Validator.Execute (server, cred);
+        }
+
+        public override void CancelValidateConfig ()
+        {
+            if (null != Validator) {
+                Validator.Cancel ();
+                Validator = null;
+            }
+        }
+
+        #endregion
 
         #region PushAssist support.
 

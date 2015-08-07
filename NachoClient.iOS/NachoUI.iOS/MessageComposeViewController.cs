@@ -1387,9 +1387,11 @@ namespace NachoClient.iOS
 
         void onShowQuotedTextButton (object sender, EventArgs e)
         {
+            var selectedRange = bodyTextView.SelectedRange;
             showQuotedTextButton.Hidden = true;
             InitializeQuotedText ();
             LayoutView ();
+            bodyTextView.SelectedRange = selectedRange;
         }
 
         void InitializeQuotedText ()

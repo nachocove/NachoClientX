@@ -5,38 +5,57 @@ using NachoCore.Model;
 using MimeKit;
 using NachoCore.Utils;
 using MailKit.Net.Smtp;
+using System.IO;
 
 namespace NachoCore.SMTP
 {
-    public class SmtpSendMailCommand : SmtpCommand
+    public class SmtpSendBaseCommand : SmtpCommand
     {
-        public SmtpSendMailCommand (IBEContext beContext, NcSmtpClient smtp, McPending pending) : base (beContext, smtp)
+        protected McEmailMessage EmailMessage;
+
+        public SmtpSendBaseCommand (IBEContext beContext, NcSmtpClient smtp, McPending pending) : base (beContext, smtp)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
+        }
+
+        protected virtual MimeMessage CreateMimeMessage()
+        {
+            // TODO Deal with memory issues, i.e. don't read everything into memory
+            long length;
+            var BodyParser = new MimeParser (EmailMessage.ToMime (out length), true);
+            MimeMessage message = BodyParser.ParseMessage ();
+            switch (PendingSingle.Operation) {
+            case McPending.Operations.EmailForward:
+            case McPending.Operations.EmailReply:
+                if (!PendingSingle.Smart_OriginalEmailIsEmbedded) {
+                    McEmailMessage referencedEmail = McEmailMessage.QueryByServerId<McEmailMessage> (EmailMessage.AccountId, PendingSingle.ServerId);
+                    var ReferencedParser = new MimeParser (referencedEmail.ToMime (out length), true);
+                    MimeMessage referencedMime = ReferencedParser.ParseMessage ();
+                    Multipart mixed = new Multipart ("mixed");
+                    if (null != message.Body) {
+                        mixed.Add (message.Body);
+                    }
+                    mixed.Add (new MessagePart { Message = referencedMime});
+                    message.Body = mixed;
+                }
+                break;
+
+            case McPending.Operations.EmailSend:
+                break;
+
+            default:
+                NcAssert.CaseError (string.Format ("Unknown McPending.Operations: {0}", PendingSingle.Operation));
+                break;
+            }
+            return message;
         }
 
         protected override Event ExecuteCommand ()
         {
-            McEmailMessage EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
-            McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
-            MimeMessage mimeMessage = MimeHelpers.LoadMessage (body);
-            var attachments = McAttachment.QueryByItemId (EmailMessage);
-            if (attachments.Count > 0) {
-                MimeHelpers.AddAttachments (mimeMessage, attachments);
-            }
-
-            try {
-                Client.Send (mimeMessage, Cts.Token);
-            } catch (SmtpCommandException ex) {
-                Log.Info (Log.LOG_SMTP, "SmtpCommandException {0}", ex.Message);
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                        NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageSendFailed,
-                            NcResult.WhyEnum.ProtocolError));
-                });
-                return Event.Create ((uint)SmEvt.E.HardFail, "SMTPSENDHARD");
-            }
+            var mimeMessage = CreateMimeMessage ();
+            Client.Send (mimeMessage, Cts.Token);
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (
                     BEContext.ProtoControl,
@@ -45,5 +64,27 @@ namespace NachoCore.SMTP
             return Event.Create ((uint)SmEvt.E.Success, "SMTPCONNSUC");
         }
     }
+
+    public class SmtpSendMailCommand : SmtpSendBaseCommand
+    {
+        public SmtpSendMailCommand (IBEContext beContext, NcSmtpClient smtp, McPending pending) : base (beContext, smtp, pending)
+        {
+        }
+    }
+
+    public class SmtpForwardMailCommand : SmtpSendBaseCommand
+    {
+        public SmtpForwardMailCommand (IBEContext beContext, NcSmtpClient smtp, McPending pending) : base (beContext, smtp, pending)
+        {
+        }
+    }
+
+    public class SmtpReplyMailCommand : SmtpSendBaseCommand
+    {
+        public SmtpReplyMailCommand (IBEContext beContext, NcSmtpClient smtp, McPending pending) : base (beContext, smtp, pending)
+        {
+        }
+    }
+
 }
 

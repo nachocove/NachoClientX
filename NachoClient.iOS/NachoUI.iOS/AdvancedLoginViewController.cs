@@ -112,7 +112,7 @@ namespace NachoClient.iOS
             if (null == account) {
                 // Configus interruptus?
                 account = McAccount.GetAccountBeingConfigured ();
-                if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback != account.ConfigurationInProgress)) {
+                if (null != account) {
                     Log.Info (Log.LOG_UI, "avl: AdvanceLoginViewController reloading account being configured");
                     email = account.EmailAddr;
                     service = account.AccountService;
@@ -121,10 +121,14 @@ namespace NachoClient.iOS
                 }
             }
 
-            // Returning to app from browser after a potentially successful login (see AppDelegate)
-            if ((null != account) && (McAccount.ConfigurationInProgressEnum.GoogleCallback == account.ConfigurationInProgress)) {
-                StartGoogleSilentLogin ();
-                return;
+            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
+                LoginHelpers.SetGoogleSignInCallbackArrived (false);
+                // Account should  be null but just in case
+                // don't usurp an in-progress configuration
+                if (null == account) {
+                    StartGoogleSilentLogin ();
+                    return;
+                }
             }
 
             if (McAccount.AccountServiceEnum.None == service) {
@@ -386,9 +390,16 @@ namespace NachoClient.iOS
             }
         }
 
+        // The signout/signin trick causes the
+        // Google UI to always prompt for user
+        // instead of automatically taking the
+        // currently signed-in user.
         public void StartGoogleLogin ()
         {
-            Log.Info (Log.LOG_UI, "avl: StartGoogleSilentLogin");
+            Log.Info (Log.LOG_UI, "avl: StartGoogleLogin");
+            // Uncomment to test with browser on simulator
+            // Google.iOS.GIDSignIn.SharedInstance.AllowsSignInWithBrowser = true;
+            // Google.iOS.GIDSignIn.SharedInstance.AllowsSignInWithWebView = false;
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
             Google.iOS.GIDSignIn.SharedInstance.SignOut ();
@@ -409,18 +420,15 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "avl: DidSignInForUser {0}", error);
 
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (null == accountBeingConfigured) {
-                Log.Error (Log.LOG_UI, "avl: expected google placeholder account; got nil");
-            } else if (McAccount.ConfigurationInProgressEnum.GoogleCallback == accountBeingConfigured.ConfigurationInProgress) {
-                Log.Info (Log.LOG_UI, "avl: deleting google placeholder account");
-                accountBeingConfigured.Delete ();
-                account = null;
-            } else {
-                Log.Error (Log.LOG_UI, "avl: expected google placeholder account; got {0}", accountBeingConfigured.AccountService);
+            if (null != accountBeingConfigured) {
+                Log.Error (Log.LOG_UI, "avl: DidSignInForUser did not expect to find an account being configured");
+                return;
             }
 
             if (null != error) {
-                loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: DidSignInForUser");
+                if (((int)Google.iOS.GIDSignInErrorCode.HasNoAuthInKeychain) != error.Code) {
+                    loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.Quit, "avl: DidSignInForUser");
+                }
                 return;
             }
                 

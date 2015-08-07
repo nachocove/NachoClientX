@@ -11,6 +11,7 @@ using NUnit.Framework;
 using NachoCore;
 using NachoCore.Utils;
 using NachoPlatform;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Test.iOS
 {
@@ -88,6 +89,17 @@ namespace Test.iOS
             public McCred Cred { get; set; }
         }
 
+        public class TestOwner : INcProtoControlOwner
+        {
+            public void StatusInd (NcProtoControl sender, NcResult status) {}
+            public void StatusInd (NcProtoControl sender, NcResult status, string[] tokens) {}
+            public void CredReq (NcProtoControl sender) {}
+            public void ServConfReq (NcProtoControl sender, object arg) {}
+            public void CertAskReq (NcProtoControl sender, X509Certificate2 certificate) {}
+            public void SearchContactsResp (NcProtoControl sender, string prefix, string token) {}
+            public void SendEmailResp (NcProtoControl sender, int emailMessageId, bool didSend) {}
+        }
+
         [Test]
         public void TestSyncStrategy ()
         {
@@ -97,6 +109,7 @@ namespace Test.iOS
             NachoCore.IMAP.SyncKit syncKit;
             TestBEContext beContext = new TestBEContext ();
             beContext.Account = Account;
+            beContext.Owner = new TestOwner ();
             var Strategy = new ImapStrategy (beContext);
 
             var protocolState = ProtocolState;

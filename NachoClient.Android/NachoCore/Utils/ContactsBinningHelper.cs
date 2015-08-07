@@ -24,16 +24,24 @@ namespace NachoCore.Utils
             }
         }
 
-        public static ContactBin[]  BinningContacts (List<NcContactIndex> contacts)
+        public static ContactBin[]  BinningContacts (ref List<NcContactIndex> contacts)
         {
+            var letterContacts = new List<NcContactIndex> ();
+            var nonLetterContacts = new List<NcContactIndex> ();
             foreach (var c in contacts) {
                 if (String.IsNullOrEmpty (c.FirstLetter)) {
                     c.FirstLetter = " ";
                 } else {
                     c.FirstLetter = c.FirstLetter.ToUpperInvariant ();
                 }
+                if (Char.IsLetter (c.FirstLetter [0])) {
+                    letterContacts.Add (c);
+                } else {
+                    nonLetterContacts.Add (c);
+                }
             }
-            contacts.Sort ();
+            contacts = letterContacts;
+            contacts.AddRange (nonLetterContacts);
 
             var bins = new ContactBin[27];
 

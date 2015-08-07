@@ -26,9 +26,14 @@ namespace NachoCore.IMAP
         const int KFolderExamineInterval = 60 * 5;
 
         /// <summary>
-        /// The default interface in seconds for QuickSync after which we'll re-examine the folder.
+        /// The default interval in seconds for QuickSync after which we'll re-examine the folder.
         /// </summary>
         const int KFolderExamineQSInterval = 30;
+
+        /// <summary>
+        /// The short interval in seconds for ForeGround after which we'll re-examine the folder.
+        /// </summary>
+        const int KFolderExamineFGShortInterval = 5;
 
         /// <summary>
         /// The time in seconds after which we'll add the inbox to the top of the list in SyncFolderList.
@@ -39,8 +44,6 @@ namespace NachoCore.IMAP
         /// The Inbox message count after which we'll transition out of Stage/Rung 0
         /// </summary>
         const int KImapSyncRung0InboxCount = 400;
-
-        McFolder PrioSyncFolder { get; set; }
 
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
@@ -56,11 +59,7 @@ namespace NachoCore.IMAP
             }
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (protocolState.AccountId, pending.ServerId);
-            var syncKit = GenSyncKit (ref protocolState, folder, true);
-            if (null != syncKit) {
-                syncKit.PendingSingle = pending;
-            }
-            return syncKit;
+            return GenSyncKit (ref protocolState, folder, pending);
         }
 
         private static uint SpanSizeWithCommStatus ()
@@ -192,14 +191,27 @@ namespace NachoCore.IMAP
             }
         }
 
+        private bool NeedFolderMetadata (McFolder folder, McPending pending)
+        {
+            if (0 == folder.ImapUidNext || null == folder.ImapUidSet) {
+                // new folder.
+                return true;
+            }
+            // If we have a pending, i.e. user-action (pull-to-refresh), then use a shorter timeout.
+            int folderMetaDataInterval = null != pending ? KFolderExamineFGShortInterval : FolderExamineInterval;
+            if (folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-folderMetaDataInterval)) {
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// GenSyncKit generates a data structure (SyncKit) that contains parameters and values
         /// needed for the BE to do a sync with the server.
         /// </summary>
-        /// <param name="accountId">The account Id.</param>
         /// <param name="protocolState">The protocol state.</param>
         /// <param name="folder">The folder to sync.</param>
-        /// <param name="UserRequested">Whether this is a user-requested action.</param>
+        /// <param name="pending">A pending (optional).</param>
         /// <remarks>
         /// This function reads folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced
         /// (and other values), but does NOT SET THEM. When the sync is executed (via ImapSymcCommand),
@@ -207,7 +219,7 @@ namespace NachoCore.IMAP
         /// GenSyncKit is called, these values are used to create the next SyncKit for ImapSyncCommand
         /// to consume.
         /// </remarks>
-        public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, bool UserRequested = false)
+        public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending = null)
         {
             if (null == folder) {
                 return null;
@@ -215,25 +227,29 @@ namespace NachoCore.IMAP
             if (folder.ImapNoSelect) {
                 return null;
             }
-            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last examined: {1}, HighestSynced {2}, UidNext {3}, UserRequested {4})",
+            bool havePending = null != pending;
+            Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last examined: {1}, HighestSynced {2}, UidNext {3}, Pending {4})",
                 folder.ImapFolderNameRedacted (), folder.ImapLastExamine.ToString("MM/dd/yyyy hh:mm:ss.fff tt"),
                 folder.ImapUidHighestUidSynced, folder.ImapUidNext,
-                UserRequested);
+                havePending);
             
             SyncKit syncKit = null;
-            if (UserRequested ||
-                0 == folder.ImapUidNext ||
-                null == folder.ImapUidSet ||
-                folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
+            if (NeedFolderMetadata(folder, pending)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: UserRequested {1} ImapUidSet {2} ImapLastExamine {3}", folder.ImapFolderNameRedacted (), UserRequested, folder.ImapUidSet, folder.ImapLastExamine);
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Pending {1} ImapUidSet {2} ImapLastExamine {3}",
+                    folder.ImapFolderNameRedacted (), havePending, folder.ImapUidSet, folder.ImapLastExamine);
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     McFolder target = (McFolder)record;
                     target.ImapNeedFullSync = true;
                     return true;
                 });
+                if (null != pending) {
+                    // dispatch it and mark it deferred for later.
+                    pending = pending.MarkDispached ();
+                    pending = pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFMetaData,
+                        NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
+                }
                 syncKit = new SyncKit (folder);
-                PrioSyncFolder = folder; // make sure when we get back to strategy after getting the requested info, we do this folder first.
             } else {
                 List<McEmailMessage> outMessages;
                 var syncSet = SyncSet (folder);
@@ -242,24 +258,20 @@ namespace NachoCore.IMAP
                 if (syncSet.Any () || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
                     syncKit.UploadMessages = outMessages;
+                    if (null != syncKit && null != pending) {
+                        syncKit.PendingSingle = pending;
+                    }
                 } else {
                     // Nothing to sync.
-
-                    // if this is the inbox and we have nothing to do, we need to still mark protocolState.HasSyncedInbox as True.
-                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
-                        if (!protocolState.HasSyncedInbox) {
-                            protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
-                                var target = (McProtocolState)record;
-                                target.HasSyncedInbox = true;
-                                return true;
-                            });
-                        }
-                        var exeCtxt = NcApplication.Instance.ExecutionContext;
-                        if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                            // Need to tell the BE that we did what it asked us to, i.e. sync. Even though there's nothing to do.
-                            BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
-                        }
+                    if (null != pending && pending.State == McPending.StateEnum.Eligible) {
+                        // Mark the pending as dispatched, so we can resolve it right after.
+                        // This can happen if we JUST refreshed the folder metadata within the 
+                        // time-window (see NeedFolderMetadata()), and skipped the OpenOnly step.
+                        // We need to dispatch the pending before ResolveOneSync() so we don't
+                        // try to ResolveAsSuccess an eligible pending (which leads to a crash).
+                        pending = pending.MarkDispached ();
                     }
+                    ResolveOneSync (BEContext, ref protocolState, folder, pending);
                 }
             }
             if (null != syncKit) {
@@ -490,7 +502,52 @@ namespace NachoCore.IMAP
 
         #endregion
 
-        public static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState)
+        /// <summary>
+        /// Resolves the one sync, i.e. One SyncKit.
+        /// </summary>
+        /// <param name="BEContext">BEContext.</param>
+        /// <param name="synckit">Synckit.</param>
+        public static void ResolveOneSync (IBEContext BEContext, SyncKit synckit)
+        {
+            var protocolState = BEContext.ProtocolState;
+            ResolveOneSync (BEContext, ref protocolState, synckit.Folder, synckit.PendingSingle);
+            MaybeAdvanceSyncStage (ref protocolState);
+        }
+
+        /// <summary>
+        /// Resolves the one sync.
+        /// </summary>
+        /// <param name="BEContext">BE context.</param>
+        /// <param name="protocolState">Protocol state.</param>
+        /// <param name="folder">The folder that was synced.</param>
+        /// <param name="pending">The McPending, if any (can be null).</param>
+        private static void ResolveOneSync (IBEContext BEContext, ref McProtocolState protocolState, McFolder folder, McPending pending)
+        {
+            // if this is the inbox and we have nothing to do, we need to still mark protocolState.HasSyncedInbox as True.
+            if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                if (!protocolState.HasSyncedInbox) {
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.HasSyncedInbox = true;
+                        return true;
+                    });
+                }
+                var exeCtxt = NcApplication.Instance.ExecutionContext;
+                if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                    // Need to tell the BE that we did what it asked us to, i.e. sync. Even though there's nothing to do.
+                    BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+                }
+            }
+
+            // If there's a pending, resolving it will send the StatusInd, otherwise, we need to send it ourselves.
+            if (null != pending) {
+                pending.ResolveAsSuccess (BEContext.ProtoControl);
+            } else {
+                BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded));
+            }
+        }
+
+        private static uint MaybeAdvanceSyncStage (ref McProtocolState protocolState)
         {
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             uint rung = protocolState.ImapSyncRung;
@@ -529,12 +586,6 @@ namespace NachoCore.IMAP
         private List<McFolder> SyncFolderList (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt)
         {
             var folderList = new List<McFolder> ();
-            if (null != PrioSyncFolder) {
-                maybeAddFolderToList(folderList, PrioSyncFolder);
-                // don't let the PrioSyncFolder exist past one round.
-                PrioSyncFolder = null;
-            }
-
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             switch (exeCtxt) {
             case NcApplication.ExecutionContextEnum.QuickSync:

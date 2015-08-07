@@ -36,6 +36,9 @@ namespace NachoCore.Model
                         // Version 3 - No statistics is updated. Just need to re-compute the score which
                         // will be done at the end of Analyze().
                         { 4, AnalyzeOtherAddresses },
+                        { 5, AnalyzeSendAddresses },
+                        { 6, AnalyzeHeaders },
+                        { 7, AnalyzeReplies },
                     };
                 }
                 return _AnalysisFunctions;
@@ -44,6 +47,16 @@ namespace NachoCore.Model
                 _AnalysisFunctions = value;
             }
         }
+
+        protected static NcMaxScoreCombiner<McEmailMessage> QualifiersCombiner = new NcMaxScoreCombiner<McEmailMessage> ();
+        protected static NcMinScoreCombiner<McEmailMessage> DisqualifiersCombiner = new NcMinScoreCombiner<McEmailMessage> ();
+
+        public static NcVipQualifier VipQualifier = new NcVipQualifier ();
+        public static NcUserActionQualifier UserActionQualifier = new NcUserActionQualifier ();
+        public static NcRepliesToMyEmailsQualifier RepliesToMyEmailsQualifier = new NcRepliesToMyEmailsQualifier ();
+
+        public static NcUserActionDisqualifier UserActionDisqualifier = new NcUserActionDisqualifier ();
+        public static NcMarketingEmailDisqualifier MarketingMailDisqualifier = new NcMarketingEmailDisqualifier ();
 
         /// Did the user take explicit action?
         public int UserAction { get; set; }
@@ -102,13 +115,12 @@ namespace NachoCore.Model
             return (0 < NeedUpdate);
         }
 
-        public double Classify ()
+        protected double BayesianLikelihood ()
         {
-            double score = 0.0;
-
+            double score;
+            var accountAddress = AccountAddress (AccountId);
             if ((0 == ScoreVersion) && (0.0 == Score)) {
                 // Version 0 quick scoring
-                var accountAddress = AccountAddress (AccountId);
                 if (null != accountAddress) {
                     InternetAddressList addressList = NcEmailAddress.ParseAddressListString (To);
                     foreach (var addr in addressList) {
@@ -127,38 +139,61 @@ namespace NachoCore.Model
                 return Score;
             }
 
-            McEmailAddress emailAddress;
-            var address = NcEmailAddress.ParseMailboxAddressString (From);
-            if (null == address) {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Cannot parse email address {1}", Id, From);
-                return score;
+            if (0 == FromEmailAddressId) {
+                return 0.0;
             }
-            bool found = McEmailAddress.Get (AccountId, address.Address, out emailAddress);
-            if (!found) {
-                Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
-                return score;
+            var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
+            if (null == fromEmailAddress) {
+                return 0.0;
             }
 
-            // TODO - Combine with content score... once we have such value
-            if (emailAddress.IsVip) {
-                score = VipScore;
-            } else if (0 < UserAction) {
-                score = VipScore;
-            } else {
-                score = emailAddress.Classify ();
-                NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
-                if (0 < tvList.Count) {
-                    DateTime now = DateTime.UtcNow;
-                    foreach (NcTimeVariance tv in tvList) {
-                        score *= tv.Adjustment (now);
-                    }
+            int top = 0, bottom = 0;
+            fromEmailAddress.GetParts (ref top, ref bottom);
+
+            // Incorporate the To / Cc address
+            var toEmailAddresses = McEmailAddress.QueryToAddressesByMessageId (Id);
+            foreach (var emailAddress in toEmailAddresses) {
+                if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                    continue;
                 }
-                if (0 > UserAction) {
-                    if (minHotScore <= score) {
-                        score = minHotScore - 0.01;
-                    }
+                emailAddress.GetToParts (ref top, ref bottom);
+            }
+            var ccEmailAddresses = McEmailAddress.QueryCcAddressesByMessageId (Id);
+            foreach (var emailAddress in ccEmailAddresses) {
+                if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                    continue;
+                }
+                emailAddress.GetCcParts (ref top, ref bottom);
+            }
+
+            score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
+            NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
+            if (0 < tvList.Count) {
+                DateTime now = DateTime.UtcNow;
+                foreach (NcTimeVariance tv in tvList) {
+                    score *= tv.Adjustment (now);
                 }
             }
+            return score;
+        }
+
+        public double Classify ()
+        {
+            double score =
+                QualifiersCombiner.Combine (this,
+                    // Qualifiers are evaluated first so qualification can cause early exit and avoid excessive compute
+                    VipQualifier.Classify,
+                    UserActionQualifier.Classify,
+                    RepliesToMyEmailsQualifier.Classify,
+                    (emailMessage1) => DisqualifiersCombiner.Combine (emailMessage1,
+                        // Disqualifiers are evaluated next. Again, can cause early exit and avoid excessive compute
+                        UserActionDisqualifier.Classify,
+                        MarketingMailDisqualifier.Classify,
+                        // The probablistic score is computed last because it is the most expensive.
+                        (emailMessage2) => emailMessage2.BayesianLikelihood ()
+                        // TODO - incorporate content score
+                    )
+                );
             Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}]: score = {1:F6}", Id, score);
             return score;
         }
@@ -299,6 +334,30 @@ namespace NachoCore.Model
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
+        }
+
+        public void AnalyzeSendAddresses ()
+        {
+            if (!IsFromMe ()) {
+                return;
+            }
+            var otherAddresses = McEmailAddress.QueryToCcAddressByMessageId (Id);
+            NcModel.Instance.RunInTransaction (() => {
+                foreach (var emailAddress in otherAddresses) {
+                    emailAddress.IncrementEmailsSent ();
+                    emailAddress.ScoreStates.Update ();
+                }
+            });
+        }
+
+        public void AnalyzeHeaders ()
+        {
+            MarketingMailDisqualifier.Analyze (this);
+        }
+
+        protected void AnalyzeReplies ()
+        {
+            RepliesToMyEmailsQualifier.Analyze (this);
         }
 
         public void Analyze ()
@@ -662,7 +721,7 @@ namespace NachoCore.Model
 
         public static void MarkAll ()
         {
-            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
+            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = m.NeedUpdate + 1");
         }
 
 
@@ -690,6 +749,21 @@ namespace NachoCore.Model
             DbScoreStates = null;
             McEmailMessageScore.DeleteByParentId (Id);
         }
+
+        public bool IsFromMe ()
+        {
+            if (String.IsNullOrEmpty (From)) {
+                return false;
+            }
+            MailboxAddress mbAddr = NcEmailAddress.ParseMailboxAddressString (From);
+            var accountAddress = AccountAddress (AccountId);
+            if (null == accountAddress) {
+                return false;
+            }
+            if (null == mbAddr) {
+                return false;
+            }
+            return accountAddress == mbAddr.Address;
+        }
     }
 }
-

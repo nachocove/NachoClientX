@@ -71,10 +71,9 @@ namespace NachoClient.iOS
         public void SetContacts (List<NcContactIndex> recent, List<NcContactIndex> contacts, bool multipleSections)
         {
             this.recent = recent;
+            sections = ContactsBinningHelper.BinningContacts (ref contacts);
             this.contacts = contacts;
             this.multipleSections = multipleSections;
-
-            sections = ContactsBinningHelper.BinningContacts (contacts);
 
             if (SearchDisplayController.Active) {
                 SearchDisplayController.Delegate.ShouldReloadForSearchScope (SearchDisplayController, 0);

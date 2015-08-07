@@ -57,7 +57,7 @@ namespace Test.Common
                 },
             };
 
-            var bins = ContactsBinningHelper.BinningContacts (contacts);
+            var bins = ContactsBinningHelper.BinningContacts (ref contacts);
             Assert.AreEqual (27, bins.Length);
             for (int n = 0; n < 27; n++) {
                 var bin = bins [n];

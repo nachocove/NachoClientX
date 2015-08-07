@@ -17,7 +17,29 @@ namespace NachoCore.Utils
         // Version 3 - Implement VIP email addresses and hot email messages.
         // Version 4 - Fill in address maps (McMapEmailAddressEntry) for To and Cc. Fill
         //             in the statistics for those two types of addresses.
-        public const int Version = 4;
+        // Version 5 - 3-D approximate Bayesian estimator.
+        // Version 6 - Message header filtering.
+        // Version 7 - Reply-to-me and marked hot qualifiers. Marked not hot disqualifier.
+        public const int Version = 7;
+
+        public const double Max = 1.0;
+
+        public const double Min = 0.0;
+
+        // The default weight for an email from a VIP
+        public static double VipWeight = 1.0;
+
+        // The default weight for an email manually marked hot (UserAction = 1)
+        public static double MarkedHotWeight = 1.0;
+
+        // The default weight for an email that is a reply to another email originated from me
+        public static double RepliesToMyEmailsWeight = 1.0;
+
+        // The default penalty for an email manually marked not hot (UserAction = -1)
+        public static double MarkedNotHotPenalty = 0.0;
+
+        // The default penalty factor for email contains marketing headers.
+        public static double HeadersFilteringPenalty = 0.0;
 
         public static int ApplyAnalysisFunctions (AnalysisFunctionsTable analysisFunctions, int scoreVersion)
         {

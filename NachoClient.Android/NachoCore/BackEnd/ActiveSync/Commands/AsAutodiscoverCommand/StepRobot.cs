@@ -96,8 +96,10 @@ namespace NachoCore.ActiveSync
             // Record re-dir source URLs to avoid any loops.
             private List<Uri> ReDirSource = new List<Uri> ();
             private Uri LastUri;
+            // A pointer to the cmd's event Q.
+            private ConcurrentQueue<Event> RobotEventsQ;
 
-            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain)
+            public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain, bool isUerSpecifiedDomain, ConcurrentQueue<Event> robotEventsQ)
             {
                 int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
                 CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
@@ -130,6 +132,7 @@ namespace NachoCore.ActiveSync
                 SrEmailAddr = emailAddr;
                 SrDomain = domain;
                 IsUserSpecifiedDomain = isUerSpecifiedDomain;
+                RobotEventsQ = robotEventsQ;
 
                 StepSm = new NcStateMachine ("AUTODSTEP") {
                     /* NOTE: There are three start states:
@@ -534,7 +537,7 @@ namespace NachoCore.ActiveSync
             {
                 // Once cancelled, we must post NO event to TL SM.
                 if (!Ct.IsCancellationRequested) {
-                    Command.ProcessEventFromRobot (Event, this);
+                    Command.ProcessEventFromRobot (Event, this, RobotEventsQ);
                 }
             }
 

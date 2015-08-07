@@ -1374,7 +1374,7 @@
       <Link>NachoCore\BackEnd\IMAP\ImapProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
-      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryEvent.cs">
       <Link>NachoCore\Utils\TelemetryEvent.cs</Link>
@@ -1577,6 +1577,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration35.cs">
       <Link>NachoCore\Model\Migration\NcMigration35.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapValidateConfig.cs">
+      <Link>NachoCore\BackEnd\IMAP\ImapValidateConfig.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\SearchHelper.cs">
       <Link>NachoCore\Utils\SearchHelper.cs</Link>
     </Compile>
@@ -1588,6 +1591,18 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs">
       <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDiscoveryCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs">
+      <Link>NachoCore\BackEnd\SMTP\SmtpValidateConfig.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQualifier.cs">
+      <Link>NachoCore\Brain\NcQualifier.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration38.cs">
+      <Link>NachoCore\Model\Migration\NcMigration38.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs">
+      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

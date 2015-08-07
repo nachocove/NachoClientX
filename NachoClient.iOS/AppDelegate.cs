@@ -402,8 +402,13 @@ namespace NachoClient.iOS
             if (NcApplication.ReadyToStartUI ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
-                Window.RootViewController = (UIViewController)vc;
+                if (null == vc) {
+                    // Might get null if we're running in background
+                    Log.Info (Log.LOG_UI, "fast path view controller is null");
+                } else {
+                    Log.Info (Log.LOG_UI, "fast path to tab bar controller");
+                    Window.RootViewController = (UIViewController)vc;
+                }
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
@@ -1109,11 +1114,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
                 return;
             }
-            var account = new McAccount ();
-            account.DisplayName = "Google placeholder account";
-            account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.GoogleCallback;
-            account.Insert ();
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount account created {0}", account.Id);
+            LoginHelpers.SetGoogleSignInCallbackArrived (true);
+            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount callback arrived");
         }
     }
 

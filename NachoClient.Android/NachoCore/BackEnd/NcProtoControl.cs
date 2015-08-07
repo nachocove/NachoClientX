@@ -96,7 +96,6 @@ namespace NachoCore
         {
             Owner = owner;
             AccountId = accountId;
-            // TODO - change ResolveAllDispatchedAsDeferred to be per-controller (capabilities).
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
         }
 
@@ -313,6 +312,11 @@ namespace NachoCore
         {
         }
 
+        public virtual void PendQHotInd ()
+        {
+            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPENDQHOTIND");
+        }
+
         public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)
         {
             var token = Guid.NewGuid ().ToString ();
@@ -440,16 +444,66 @@ namespace NachoCore
             return result;
         }
 
-        public virtual NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-                                                int folderId, bool originalEmailIsEmbedded)
+        protected virtual NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
         {
-            return SendEmailCmd (newEmailMessageId);
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            McFolder folder;
+            NcModel.Instance.RunInTransaction (() => {
+                var refdEmailMessage = McEmailMessage.QueryById<McEmailMessage> (refdEmailMessageId);
+                var newEmailMessage = McEmailMessage.QueryById<McEmailMessage> (newEmailMessageId);
+                folder = McFolder.QueryById<McFolder> (folderId);
+                if (null == refdEmailMessage || null == newEmailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
+                    return;
+                }
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, newEmailMessage) {
+                    Operation = Op,
+                    ServerId = refdEmailMessage.ServerId,
+                    ParentId = folder.ServerId,
+                    Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
+                };
+                pending.Insert ();
+                result = NcResult.OK (pending.Token);
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCSMF");
+            }, "SmartEmailCmd");
+            Log.Info (Log.LOG_BACKEND, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
+            return result;
+            
+        }
+        public virtual NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
+        {
+            Log.Info (Log.LOG_BACKEND, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
+            return SmartEmailCmd (McPending.Operations.EmailReply,
+                newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
-        public virtual NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-                                              int folderId, bool originalEmailIsEmbedded)
+        public virtual NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+            int folderId, bool originalEmailIsEmbedded)
         {
-            return SendEmailCmd (newEmailMessageId);
+            Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
+            if (originalEmailIsEmbedded) {
+                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
+                Log.Info (Log.LOG_BACKEND, "ForwardEmailCmd: attachments = {0}", attachments.Count);
+                foreach (var attach in attachments) {
+                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
+                        var token = DnldAttCmd (attach.Id);
+                        if (null == token) {
+                            // FIXME - is this correct behavior in this case?
+                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
+                        }
+                    }
+                }
+            }
+            return SmartEmailCmd (McPending.Operations.EmailForward,
+                newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
         /// <summary>
@@ -604,7 +658,10 @@ namespace NachoCore
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    Log.Info (Log.LOG_BACKEND, "DnldEmailBodyCmd({0}): IsDuplicate of Id/Token {1}/{2} for email {3}",
+                        emailMessage.AccountId,
+                        dup.Id, dup.Token,
+                        emailMessage.Id);
                     result = NcResult.OK (dup.Token);
                     return;
                 }
@@ -613,6 +670,7 @@ namespace NachoCore
                 }
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
+                Log.Info (Log.LOG_BACKEND, "Starting DnldEmailBodyCmd({0})-{1}/{2} for email id {3}", emailMessage.AccountId, pending.Id, pending.Token, emailMessage.Id);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQHot, "PCPCDNLDEBOD");

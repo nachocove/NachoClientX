@@ -76,7 +76,7 @@ namespace NachoCore.Model
         {
             Done = 0,
             InProgress,
-            GoogleCallback,
+            GoogleCallback, // Obsolete
         };
 
         // Flags an account that's being configured
