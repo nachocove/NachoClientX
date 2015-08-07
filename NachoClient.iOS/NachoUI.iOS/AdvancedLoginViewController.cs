@@ -388,7 +388,7 @@ namespace NachoClient.iOS
 
         public void StartGoogleLogin ()
         {
-            Log.Info (Log.LOG_UI, "avl: StartGoogleSilentLogin");
+            Log.Info (Log.LOG_UI, "avl: StartGoogleLogin");
             Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
             Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
             Google.iOS.GIDSignIn.SharedInstance.SignOut ();
