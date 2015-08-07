@@ -324,7 +324,7 @@ namespace NachoCore.SMTP
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)SmtpEvt.E.ReConn, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
-                            new Trans { Event = (uint)SmtpEvt.E.PkIdle, Act = DoNop, State = (uint)Lst.IdleW },
+                            new Trans { Event = (uint)SmtpEvt.E.PkIdle, Act = DoIdle, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
                         }
                     },
@@ -350,7 +350,7 @@ namespace NachoCore.SMTP
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoConn, State = (uint)Lst.ConnW },
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)PcEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         },
@@ -627,6 +627,12 @@ namespace NachoCore.SMTP
         {
             var cmd = Sm.Arg as SmtpCommand;
             SetCmd (cmd);
+            ExecuteCmd ();
+        }
+
+        protected void DoIdle ()
+        {
+            SetCmd (new SmtpDisconnectCommand (this, SmtpClient));
             ExecuteCmd ();
         }
 
