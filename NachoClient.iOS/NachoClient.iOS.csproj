@@ -1374,7 +1374,7 @@
       <Link>NachoCore\BackEnd\IMAP\ImapProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\SMTP\SmtpProtoControl.cs">
-      <Link>NachoCore\BackEnd\SMTP\Commands\SmtpProtoControl.cs</Link>
+      <Link>NachoCore\BackEnd\SMTP\SmtpProtoControl.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryEvent.cs">
       <Link>NachoCore\Utils\TelemetryEvent.cs</Link>
