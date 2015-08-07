@@ -25,6 +25,8 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer.Token callTapGestureHandlerToken;
         protected const int CALL_TAP_VIEW_TAG = 222;
 
+        protected UITapGestureRecognizer telemetryFlushGesture;
+
         public SupportViewController (IntPtr handle) : base (handle)
         {
         }
@@ -38,7 +40,7 @@ namespace NachoClient.iOS
             // If added back, because of crash when called at start up.
             // switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             // NavigationItem.TitleView = switchAccountButton;
-            NavigationItem.TitleView = new UIView();
+            NavigationItem.TitleView = new UIView ();
 
             UIView supportView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
@@ -148,6 +150,15 @@ namespace NachoClient.iOS
             versionLabel.Text = "Nacho Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
             supportView.AddSubview (versionLabel);
 
+            if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev) {
+                telemetryFlushGesture = new UITapGestureRecognizer (() => {
+                    Telemetry.JsonFileTable.FinalizeAll ();
+                    Console.WriteLine ("Flush all telemetry files");
+                });
+                telemetryFlushGesture.NumberOfTapsRequired = 3;
+                View.AddGestureRecognizer (telemetryFlushGesture);
+            }
+
             View.AddSubview (supportView);
         }
 
@@ -193,6 +204,10 @@ namespace NachoClient.iOS
             callTapGesture.ShouldRecognizeSimultaneously = null;
             UIView callTapView = (UIView)View.ViewWithTag (CALL_TAP_VIEW_TAG);
             callTapView.RemoveGestureRecognizer (callTapGesture);
+
+            if (BuildInfoHelper.IsAlpha || BuildInfoHelper.IsDev) {
+                View.RemoveGestureRecognizer (telemetryFlushGesture);
+            }
         }
 
         public override void ViewWillAppear (bool animated)
