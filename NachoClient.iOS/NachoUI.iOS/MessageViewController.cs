@@ -572,7 +572,11 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            ViewFramer.Create (headerView).Height (separator2YOffset);
+            // Header view is the background when loading a message.
+            // Size the header to be at least as large as the screen.
+
+            var headerSize = NMath.Max (separator2YOffset, View.Frame.Height);
+            ViewFramer.Create (headerView).Height (headerSize);
 
             var separator1View = headerView.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
             ViewFramer.Create (separator1View).Y (separator1YOffset);
