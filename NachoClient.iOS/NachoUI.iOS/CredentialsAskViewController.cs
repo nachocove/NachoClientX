@@ -161,6 +161,8 @@ namespace NachoClient.iOS
                     McCred UsersCredentials = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
                     UsersCredentials.UpdatePassword (passwordField.Text);
+                    McAccount account = McAccount.QueryById<McAccount> (theAccountId); 
+                    Log.Info (Log.LOG_UI, "CredentialAskViewController: CreateView - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
                     UsersCredentials.Update ();
                     BackEnd.Instance.CredResp (theAccountId);
                     View.EndEditing (true);
@@ -193,6 +195,8 @@ namespace NachoClient.iOS
 
             UITextField passwordField = (UITextField)View.ViewWithTag (PASSWORD_FIELD_TAG);
             passwordField.Text = GetPassword ();
+            McAccount account = McAccount.QueryById<McAccount> (theAccountId); 
+            Log.Info (Log.LOG_UI, "CredentialAskViewController: ConfigureView - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, passwordField.Text));              
             passwordField.TextColor = A.Color_NachoRed;
         }
 
@@ -206,6 +210,8 @@ namespace NachoClient.iOS
         {
 
             var cred = McCred.QueryByAccountId<McCred> (theAccountId).SingleOrDefault ();
+            McAccount account = McAccount.QueryById<McAccount> (theAccountId); 
+            Log.Info (Log.LOG_UI, "CredentialAskViewController: GetPassword - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, cred.GetPassword ()));              
             return cred.GetPassword ();
         }
 

@@ -75,7 +75,19 @@ namespace NachoPlatform
             return null;
         }
 
+        public string GetLogSalt (int handle)
+        {
+            NcAssert.True (false);
+            return null;
+        }
+
         public bool DeleteRefreshToken (int handle)
+        {
+            NcAssert.True (false);
+            return false;
+        }
+
+        public bool SetLogSalt(int handle, string logSalt)
         {
             NcAssert.True (false);
             return false;
@@ -93,5 +105,10 @@ namespace NachoPlatform
             return false;
         }
 
+        public bool DeleteLogSalt (int handle)
+        {
+            NcAssert.True (false);
+            return false;
+        }
     }
 }

@@ -117,6 +117,7 @@ namespace NachoClient.iOS
                     email = account.EmailAddr;
                     service = account.AccountService;
                     password = LoginHelpers.GetPassword (account);
+                    Log.Info (Log.LOG_UI, "avl: ViewDidAppear - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
                     BackEnd.Instance.Start (account.Id);
                 }
             }
@@ -248,7 +249,7 @@ namespace NachoClient.iOS
 
             this.email = email;
             this.password = password;
-
+            Log.Info (Log.LOG_UI, "avl: onConnect - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
             switch (connect) {
             case ConnectCallbackStatusEnum.Connect:
                 if (null == this.account) {
@@ -573,6 +574,7 @@ namespace NachoClient.iOS
                     cred.Username = email;
                     cred.Update ();
                     BackEnd.Instance.CredResp (account.Id);
+                    Log.Info (Log.LOG_UI, "avl: CredentialsDismissed - Updating creds - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
                     Log.Info (Log.LOG_UI, "avl: UpdateCredentialsAndGo a/c updated {0}/{1}", account.Id, cred.Id);
                     loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.CredUpdate, "avl: CredentialsDismissed");
                     ShowWaitingScreen ("Verifying Your Server...");
@@ -584,10 +586,12 @@ namespace NachoClient.iOS
             // If the user didn't change the email address, then the old account is still around.
             if (null == account) {
                 account = NcAccountHandler.Instance.CreateAccount (service, email, password);
+                Log.Info (Log.LOG_UI, "avl: CredentialsDismissed - Creating account - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
                 NcAccountHandler.Instance.MaybeCreateServersForIMAP (account, service);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: CredentialsDismissed");
             } else {
                 var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+                Log.Info (Log.LOG_UI, "avl: CredentialsDismissed - Updating password - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
                 cred.UpdatePassword (password);
                 BackEnd.Instance.Stop (account.Id);
                 loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.ServerUpdate, "avl: CredentialsDismissed");
