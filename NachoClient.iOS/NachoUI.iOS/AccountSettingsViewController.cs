@@ -468,6 +468,7 @@ namespace NachoClient.iOS
             }
 
             if (!String.IsNullOrEmpty (theCred.GetPassword ())) {
+                Log.Info (Log.LOG_UI, "AccountSettingsViewController: LoggablePasswordSaltedHash {0}", theCred.GetLoggablePassword ());              
                 passwordTextField.Text = theCred.GetPassword ();
             }
 
@@ -779,6 +780,7 @@ namespace NachoClient.iOS
                 originalUsernameValue = theCred.Username;
             }
             if (null != theCred.GetPassword ()) {
+                Log.Info (Log.LOG_UI, "AccountSettingsViewController: LoggablePasswordSaltedHash {0}", theCred.GetLoggablePassword ());              
                 originalPasswordValue = theCred.GetPassword ();
             }
             if (null != theAccount.EmailAddr) {
@@ -923,6 +925,7 @@ namespace NachoClient.iOS
                 SetHostAndPort (theServer, mailserverTextField.Text);
                 theCred.Username = usernameTextField.Text;
                 theCred.UpdatePassword (passwordTextField.Text);
+                Log.Info (Log.LOG_UI, "AccountSettingsViewController: Password Updated - new LoggablePasswordSaltedHash {0}", theCred.GetLoggablePassword ());              
                 theConference.DefaultPhoneNumber = conferenceTextField.Text;
 
                 theAccount.Update ();

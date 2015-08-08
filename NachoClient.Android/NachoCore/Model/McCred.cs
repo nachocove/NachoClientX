@@ -2,6 +2,7 @@ using System;
 using SQLite;
 using NachoCore.Utils;
 using NachoPlatform;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -97,6 +98,14 @@ namespace NachoCore.Model
             } else {
                 return Password;
             }
+        }
+
+        public string GetLoggablePassword ()
+        {
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            NcAssert.False (string.IsNullOrEmpty(account.GetLogSalt ()));
+            string hash = HashHelper.Sha256 (account.GetLogSalt () + GetPassword ());
+            return hash.Substring(hash.Length-2); // e.g. "f4"
         }
 
         public override int Delete ()

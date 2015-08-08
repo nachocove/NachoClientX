@@ -445,6 +445,7 @@ namespace NachoCore.ActiveSync
 
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
+                Log.Info (Log.LOG_HTTP, "AsHttpOperation: LoggablePasswordSaltedHash {0}", BEContext.Cred.GetLoggablePassword ());              
                 client = GetEncryptedClient (BEContext.Cred.Username, BEContext.Cred.GetPassword ());
             } else {
                 client = GetClearClient ();

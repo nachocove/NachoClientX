@@ -223,6 +223,12 @@ namespace NachoPlatform
         bool SetPassword (int handle, string password);
 
         bool DeletePassword (int handle);
+
+        string GetLogSalt (int handle);
+
+        bool SetLogSalt (int handle, string logSalt);
+
+        bool DeleteLogSalt (int handle);
     }
 
     public interface IPlatformUIRedirector

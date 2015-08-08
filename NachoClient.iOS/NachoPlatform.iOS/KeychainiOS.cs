@@ -26,6 +26,7 @@ namespace NachoPlatform
         }
 
         private const string KDefaultAccount = "device";
+        private const string KLogSalt = "LogSalt";
 
         public bool HasKeychain ()
         {
@@ -108,6 +109,79 @@ namespace NachoPlatform
                 }
             } else { 
                 Log.Error (Log.LOG_SYS, "DeletePassword: SecKeyChain.Delete returned {0} for handle {1}", res.ToString (), handle);
+                return false;
+            }
+            return true;        
+        }
+
+
+        private SecRecord CreateQuery (int handle, string subKey)
+        {
+            return CreateQuery (handle.ToString () + ":" + subKey);
+        }
+
+        public string GetLogSalt (int handle)
+        {
+            SecStatusCode res;
+            var match = SecKeyChain.QueryAsRecord (CreateQuery (handle, KLogSalt), out res);
+            if (SecStatusCode.Success == res) {
+                var iData = match.ValueData;
+                if ((null == iData) || (iData.Length == 0)) {
+                    Log.Error (Log.LOG_SYS, "GetLogSalt: SecKeyChain.QueryAsRecord returned ValueData of null/(length==0) for handle {0}", handle);
+                    return null;
+                }
+                var bytes = iData.ToArray ();
+                var logSalt = System.Text.Encoding.UTF8.GetString (bytes);
+                return logSalt;
+                // XAMMIT. 
+                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+                // return match.ValueData.ToString ();
+            } else {
+                Log.Error (Log.LOG_SYS, "GetLogSalt: SecKeyChain.QueryAsRecord returned status {0} for handle {1}", res.ToString (), handle);
+                // TODO : remove this before Appstore
+                if (match != null) {
+                    Log.Error (Log.LOG_SYS, "GetLogSalt: SecKeyChain.QueryAsRecord returned value {0} for handle {1}", match.ValueData.ToString (), handle);
+                }
+                return null;
+            }
+        }
+
+        public bool SetLogSalt (int handle, string logSalt)
+        {
+            SecStatusCode res;
+            var match = SecKeyChain.QueryAsRecord (CreateQuery (handle, KLogSalt), out res);
+            if (SecStatusCode.Success == res) {
+                match.ValueData = NSData.FromString (logSalt);
+                res = SecKeyChain.Update (CreateQuery (handle, KLogSalt), match);
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "SetLogSalt: SecKeyChain.Update returned {0} for handle {1}", res.ToString (), handle);
+                    return false;
+                }
+            } else {
+                var insert = CreateQuery (handle, KLogSalt);
+                insert.ValueData = NSData.FromString (logSalt);
+                insert.Accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly;
+                res = SecKeyChain.Add (insert);
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "SetLogSalt: SecKeyChain.Add returned {0} for handle {1}", res.ToString (), handle);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool DeleteLogSalt (int handle)
+        {
+            SecStatusCode res;
+            SecKeyChain.QueryAsRecord (CreateQuery (handle, KLogSalt), out res);
+            if (SecStatusCode.Success == res) {
+                res = SecKeyChain.Remove (CreateQuery (handle, KLogSalt));
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "DeleteLogSalt: SecKeyChain.Remove returned {0} for handle {1}", res.ToString (), handle);
+                    return false;
+                }
+            } else { 
+                Log.Error (Log.LOG_SYS, "DeleteLogSalt: SecKeyChain.Delete returned {0} for handle {1}", res.ToString (), handle);
                 return false;
             }
             return true;        

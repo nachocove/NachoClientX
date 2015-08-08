@@ -673,6 +673,7 @@ namespace NachoClient.iOS
                 var accountId = GetNcApplicationAccountId ();
                 theAccount.Account = McAccount.QueryById<McAccount> (accountId);
                 theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
+                Log.Info (Log.LOG_UI, "AdvancedLoginViewController: LoggablePasswordSaltedHash {0}", theAccount.Credentials.GetLoggablePassword ());              
                 gOriginalPassword = theAccount.Credentials.GetPassword ();
                 Log.Info (Log.LOG_UI, "avl: refresh the account");
             }
@@ -722,6 +723,7 @@ namespace NachoClient.iOS
                    
                 }
                 passwordView.textField.Text = theAccount.Credentials.GetPassword ();
+                Log.Info (Log.LOG_UI, "AdvancedLoginViewController: LoggablePasswordSaltedHash {0}", theAccount.Credentials.GetLoggablePassword ());              
             }
 
             if (null != theAccount.Server) {

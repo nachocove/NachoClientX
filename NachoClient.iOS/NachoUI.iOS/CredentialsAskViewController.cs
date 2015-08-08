@@ -216,6 +216,7 @@ namespace NachoClient.iOS
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
                 McCred Cred = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
+                Log.Info (Log.LOG_UI, "CredentialAskViewController: LoggablePasswordSaltedHash {0}", Cred.GetLoggablePassword ());              
                 return Cred.GetPassword ();
             } else {
                 return "";

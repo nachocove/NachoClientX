@@ -739,6 +739,7 @@ namespace NachoCore
                 PushToken = DeviceToken,
                 PushService = NcApplication.Instance.GetPushService (),
             };
+            Log.Info (Log.LOG_PUSH, "DoStartSession: LoggablePasswordSaltedHash {0}", cred.GetLoggablePassword ());              
             FillOutIdentInfo (jsonRequest);
 
             var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
