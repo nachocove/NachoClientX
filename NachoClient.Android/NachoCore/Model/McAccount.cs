@@ -163,6 +163,13 @@ namespace NachoCore.Model
             } 
             return base.Delete ();
         }
+            
+        public static string GetLoggablePassword (McAccount account, string password)
+        {
+            NcAssert.False (string.IsNullOrEmpty(account.GetLogSalt ()));
+            string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
+            return hash.Substring(hash.Length-3); // e.g. "f47"
+        }
     }
 
     public class ConstMcAccount : McAccount
