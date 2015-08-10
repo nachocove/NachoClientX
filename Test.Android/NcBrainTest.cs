@@ -207,25 +207,34 @@ namespace Test.Common
             Address.Update ();
 
             // Setting UserAction to +1 changes the score to VipScore.
-            Message.FromEmailAddressId = Address.Id;
-            Message.Score = 2.0 / 3.0;
-            Message.ScoreVersion = Scoring.Version;
-            Message.UserAction = +1;
-            Message.Update ();
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.FromEmailAddressId = Address.Id;
+                target.Score = 2.0 / 3.0;
+                target.ScoreVersion = Scoring.Version;
+                target.UserAction = +1;
+                return true;
+            });
 
             TestUpdateMessageScore (ref Message);
             Assert.AreEqual (McEmailMessage.VipScore, Message.Score);
 
             // Setting UserAction to -1 changes the score to less than minHotScore
-            Message.UserAction = -1;
-            Message.Update ();
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = -1;
+                return true;
+            });
 
             TestUpdateMessageScore (ref Message);
             Assert.True (McEmailMessage.VipScore > Message.Score);
 
             // Settting UserAction back to 0 changes it back to 2/3
-            Message.UserAction = 0;
-            Message.Update ();
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = 0;
+                return true;
+            });
 
             TestUpdateMessageScore (ref Message);
             Assert.AreEqual (2.0 / 3.0, Message.Score);
