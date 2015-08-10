@@ -386,6 +386,7 @@ namespace NachoCore.SMTP
             Sm.Validate ();
             Sm.State = ProtocolState.SmtpProtoControlState;
             LastBackEndState = BackEndState;
+            LastIsDoNotDelayOk = IsDoNotDelayOk;
             //SyncStrategy = new SmtpStrategy (this);
             //PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
@@ -640,6 +641,10 @@ namespace NachoCore.SMTP
                 StatusInd (res);
             }
             LastBackEndState = BackEndState;
+            if (LastIsDoNotDelayOk && !IsDoNotDelayOk) {
+                ResolveDoNotDelayAsHardFail ();
+            }
+            LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)

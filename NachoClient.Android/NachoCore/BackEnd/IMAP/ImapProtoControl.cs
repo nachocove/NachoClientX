@@ -428,6 +428,7 @@ namespace NachoCore.IMAP
             Sm.Validate ();
             Sm.State = ProtocolState.ImapProtoControlState;
             LastBackEndState = BackEndState;
+            LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new ImapStrategy (this);
             PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
@@ -454,6 +455,10 @@ namespace NachoCore.IMAP
                 StatusInd (res);
             }
             LastBackEndState = BackEndState;
+            if (LastIsDoNotDelayOk && !IsDoNotDelayOk) {
+                ResolveDoNotDelayAsHardFail ();
+            }
+            LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
 
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
