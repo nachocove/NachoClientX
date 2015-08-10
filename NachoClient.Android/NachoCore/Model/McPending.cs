@@ -1231,11 +1231,13 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority);
         }
 
-        public static IEnumerable<McPending> QueryAllNonDispachedDoNotDelay (int accountId, McAccount.AccountCapabilityEnum capabilities)
+        public static IEnumerable<McPending> QueryAllNonDispachedNonFailedDoNotDelay (int accountId, McAccount.AccountCapabilityEnum capabilities)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
                 rec.State != StateEnum.Dispatched &&
+                rec.State != StateEnum.Failed &&
+                rec.State != StateEnum.Deleted &&
                 rec.DelayNotAllowed == true &&
                 rec.Capability == (rec.Capability & capabilities));
         }

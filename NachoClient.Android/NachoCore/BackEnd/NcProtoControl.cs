@@ -197,7 +197,7 @@ namespace NachoCore
 
         protected void ResolveDoNotDelayAsHardFail ()
         {
-            var pendings = McPending.QueryAllNonDispachedDoNotDelay (AccountId, Capabilities);
+            var pendings = McPending.QueryAllNonDispachedNonFailedDoNotDelay (AccountId, Capabilities);
             foreach (var pending in pendings) {
                 pending.ResolveAsHardFail (this, NcResult.Error (DoNotDelaySubKind));
             }

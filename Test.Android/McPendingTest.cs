@@ -813,15 +813,17 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestQueryAllNonDispachedDoNotDelay ()
+            public void TestQueryAllNonDispachedNonFailedDoNotDelay ()
             {
-                CreatePending (doNotDelay: true, state: StateEnum.Dispatched); // dispatched, otherwise matching.
-                CreatePending (doNotDelay: true, accountId: 5); // in other account, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, state: StateEnum.Dispatched); // dispatched, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, accountId: 5); // in other account, otherwise matching.
                 CreatePending (); // do not delay false, otherwise matching.
-                CreatePending (doNotDelay: true, capability: McAccount.AccountCapabilityEnum.EmailSender); // other capability, otherwise matching.
-                var gonner = CreatePending (doNotDelay: true); // matching.
-                var retrieved = McPending.QueryAllNonDispachedDoNotDelay (gonner.AccountId, McAccount.ImapCapabilities);
-                Assert.AreEqual (1, retrieved.Count ());
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, capability: McAccount.AccountCapabilityEnum.EmailSender); // other capability, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, state: StateEnum.Failed); // failed, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, state: StateEnum.Deleted); // deleted, otherwise matching.
+                var gonner = CreatePending (operation: Operations.TaskCreate, doNotDelay: true); // matching.
+                var retrieved = McPending.QueryAllNonDispachedNonFailedDoNotDelay (gonner.AccountId, McAccount.ImapCapabilities).ToList ();
+                Assert.AreEqual (1, retrieved.Count);
                 Assert.AreEqual (gonner.Id, retrieved.First ().Id);
             }
 
