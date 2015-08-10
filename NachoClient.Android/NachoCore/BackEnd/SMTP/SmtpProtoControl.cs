@@ -26,7 +26,6 @@ namespace NachoCore.SMTP
             UiCertOkW,
             UiServConfW,
             ConnW,
-            xPick, // TODO: remove this and write a Migration to move states up.
             QOpW,
             IdleW,
             HotQOpW,

@@ -25,7 +25,6 @@ namespace NachoCore.IMAP
             UiCrdW,
             UiServConfW,
             FSyncW,
-            xPick, // TODO: remove this and write a Migration to move states up.
             SyncW,
             PingW,
             QOpW,
