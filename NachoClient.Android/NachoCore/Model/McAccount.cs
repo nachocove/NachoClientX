@@ -51,7 +51,6 @@ namespace NachoCore.Model
             DaysToSyncEmail = Xml.Provision.MaxAgeFilterCode.OneMonth_5;
             NotificationConfiguration = DefaultNotificationConfiguration;
             FastNotificationEnabled = true;
-            GenerateLogSalt ();
         }
 
         public AccountTypeEnum AccountType { get; set; }
@@ -132,7 +131,7 @@ namespace NachoCore.Model
         private void GenerateLogSalt ()
         { 
             RandomNumberGenerator rng = new RNGCryptoServiceProvider ();
-            byte[] randData = new byte[8];
+            byte[] randData = new byte[256];
             rng.GetBytes (randData);
             string randString = Convert.ToBase64String (randData);
             LogSalt = randString;
