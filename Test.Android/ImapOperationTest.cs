@@ -132,9 +132,12 @@ namespace Test.iOS
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly);
             Assert.Null (syncKit.SyncSet);
 
-            var pending = new McPending ();
-            pending.Operation = McPending.Operations.Sync;
-            pending.ServerId = TestFolder.ServerId;
+            var pending = new McPending (){
+                AccountId = Account.Id,
+                Operation = McPending.Operations.Sync,
+                ServerId = TestFolder.ServerId,
+            };
+            pending.Insert ();
             syncKit = Strategy.GenSyncKit (ref protocolState, pending);
             Assert.NotNull (syncKit);
             Assert.AreEqual (syncKit.Method, NachoCore.IMAP.SyncKit.MethodEnum.OpenOnly);
