@@ -1155,24 +1155,8 @@ namespace NachoCore.Model
 
         public override int Update ()
         {
-            using (var capture = CaptureWithStart ("Update")) {
-                int returnVal = -1;  
-                if (!HasBeenNotified) {
-                    HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
-                }
-                NcModel.Instance.RunInTransaction (() => {
-                    returnVal = base.Update ();
-                    SaveMeetingRequest ();
-                    SaveCategories ();
-                    if (emailAddressesChanged) {
-                        DeleteAddressMaps ();
-                        InsertAddressMaps ();
-                    }
-                    // Score states are only affected by brain which uses the score states Update() method.
-                    // So, no need to update score states here
-                });
-                return returnVal;
-            }
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
         }
 
         public void UpdateIsIndex (int newIsIndexed)
