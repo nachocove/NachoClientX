@@ -65,6 +65,7 @@ namespace NachoCore.Utils
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
+            DateTime spawnTime = DateTime.UtcNow;
             lock (LockObj) {
                 if (isUnique) {
                     // Make sure that there is not another task by the same name already running
@@ -79,6 +80,13 @@ namespace NachoCore.Utils
 
                 WeakReference taskRef = null;
                 var task = Task.Run (delegate {
+                    DateTime startTime = DateTime.UtcNow;
+                    double latency = (startTime - spawnTime).TotalMilliseconds;
+                    if (200 < latency) {
+                        Log.Warn (Log.LOG_UTILS, "Delay in running NcTask {0}, latency {1} msec", taskName, latency);
+                        NcApplication.Instance.MonitorReport ();
+                        NcTask.Dump ();
+                    }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
                     }

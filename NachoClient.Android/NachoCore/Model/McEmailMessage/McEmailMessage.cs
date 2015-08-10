@@ -861,9 +861,8 @@ namespace NachoCore.Model
 
         public IEnumerator<McEmailMessage> GetEnumerator ()
         {
-            NcAssert.NotNull (Source);
-
             if (null == thread) {
+                NcAssert.NotNull (Source);
                 thread = Source.GetEmailThreadMessages (FirstMessageId);
                 if (null == thread) {
                     yield break; // thread is gone. Maybe backend removed it asynchronously
