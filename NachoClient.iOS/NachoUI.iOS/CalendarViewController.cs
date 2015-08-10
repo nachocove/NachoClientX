@@ -19,6 +19,7 @@ namespace NachoClient.iOS
         protected INcEventProvider eventCalendarMap;
         protected UITableView calendarTableView;
         SwitchAccountButton switchAccountButton;
+        protected DateTime todayButtonDate;
         public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
         public nint selectedDateTag = 0;
@@ -57,12 +58,13 @@ namespace NachoClient.iOS
             //     NavigationItem.SetHidesBackButton (true, false);
             // }
                 
-            var todayButton = new NcUIBarButtonItem ();
-            Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage (DateTime.Now.Day.ToString ()));
+            todayButton = new NcUIBarButtonItem ();
             todayButton.AccessibilityLabel = "Today";
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
+            todayButtonDate = DateTime.MinValue;
+            UpdateDateInTodayButton ();
 
             var addEventButton = new NcUIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
@@ -101,6 +103,8 @@ namespace NachoClient.iOS
                 ReloadDataWithoutScrolling ();
                 UpdateDateDotView ();
             });
+
+            UpdateDateInTodayButton ();
 
             if (firstTime) {
                 firstTime = false;
@@ -172,6 +176,7 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
+
             switch (s.Status.SubKind) {
 
             // When the events change, or when the time zone changes, refresh the UI to reflect the changes.
@@ -181,6 +186,12 @@ namespace NachoClient.iOS
                     ReloadDataWithoutScrolling ();
                     UpdateDateDotView ();
                 });
+                break;
+
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    UpdateDateInTodayButton ();
+                }
                 break;
             }
         }
@@ -330,6 +341,16 @@ namespace NachoClient.iOS
             todayMonthTag = DateDotView.GetMonthTag (DateTime.Today);
             DateDotView.UpdateButtons ();
 
+        }
+
+        protected void UpdateDateInTodayButton ()
+        {
+            // Change the number in the "Today" button if necessary.
+            DateTime today = DateTime.Today;
+            if (today != todayButtonDate) {
+                todayButtonDate = today;
+                Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage (todayButtonDate.Day.ToString ()));
+            }
         }
 
         protected void DisableGestureRecognizers ()
