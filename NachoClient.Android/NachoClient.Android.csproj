@@ -507,6 +507,7 @@
     <Compile Include="NachoCore\Brain\NcQualifier.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration38.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration39.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
