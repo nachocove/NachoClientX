@@ -505,10 +505,19 @@ namespace NachoClient.iOS
                     PerformSegue ("SegueToCertAsk", new SegueHolder (McAccount.AccountCapabilityEnum.EmailSender));
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    PerformSegue ("SegueToAdvancedSettings", this);
+                    ShowServerErrorAlert(serverWithIssue);
                     break;
                 }
             }
+        }
+
+        void ShowServerErrorAlert(McServer server)
+        {
+            var message = String.Format ("Sorry, we were unable to contact the server '{0}'.  We will attempt to reconnect automatically.", server.Host);
+            UIAlertController alertController = UIAlertController.Create ("Server Error", message, UIAlertControllerStyle.Alert);
+            alertController.AddAction (UIAlertAction.Create ("Advanced Settings", UIAlertActionStyle.Default, alert => PerformSegue ("SegueToAdvancedSettings", this)));
+            alertController.AddAction(UIAlertAction.Create("OK", UIAlertActionStyle.Default, null));
+            PresentViewController (alertController, true, null);
         }
 
         void onDeleteAccount (object sender, EventArgs e)
