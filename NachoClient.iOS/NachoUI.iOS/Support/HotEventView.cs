@@ -164,6 +164,15 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 Configure ();
                 break;
+
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                // When the app goes into the background, eventEndTimer might get cancelled, but ViewWillAppear
+                // won't get called when the app returns to the foreground.  That might leave the view displaying
+                // an old event.  Watch for foreground events and refresh the view.
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    Configure ();
+                }
+                break;
             }
         }
 
