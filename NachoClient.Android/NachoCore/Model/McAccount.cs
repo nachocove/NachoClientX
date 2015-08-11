@@ -131,7 +131,7 @@ namespace NachoCore.Model
         private void GenerateLogSalt ()
         { 
             RandomNumberGenerator rng = new RNGCryptoServiceProvider ();
-            byte[] randData = new byte[256];
+            byte[] randData = new byte[32];
             rng.GetBytes (randData);
             string randString = Convert.ToBase64String (randData);
             LogSalt = randString;
