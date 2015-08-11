@@ -739,14 +739,9 @@ namespace NachoClient.iOS
                 postCleanup ();
                 return;
             }
-
-            Action action = () => {
-                NcAccountHandler.Instance.RemoveAccount (account.Id);
-                InvokeOnMainThread (() => {
-                    postCleanup ();
-                });
-            };
-            NcTask.Run (action, "RemoveAccount");
+            NcAccountHandler.Instance.RemoveAccount (account.Id);
+            account = null;
+            postCleanup ();
         }
 
         /// <summary>
