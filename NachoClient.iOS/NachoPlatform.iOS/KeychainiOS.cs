@@ -65,10 +65,6 @@ namespace NachoPlatform
                 // return match.ValueData.ToString ();
             } else {
                 Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned status {0} for handle {1}", res.ToString (), handle);
-                // TODO : remove this before Appstore
-                if (match != null) {
-                    Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned value {0} for handle {1}", match.ValueData.ToString (), handle);
-                }
                 return null;
             }
         }
@@ -138,10 +134,6 @@ namespace NachoPlatform
                 // return match.ValueData.ToString ();
             } else {
                 Log.Error (Log.LOG_SYS, "GetLogSalt: SecKeyChain.QueryAsRecord returned status {0} for handle {1}", res.ToString (), handle);
-                // TODO : remove this before Appstore
-                if (match != null) {
-                    Log.Error (Log.LOG_SYS, "GetLogSalt: SecKeyChain.QueryAsRecord returned value {0} for handle {1}", match.ValueData.ToString (), handle);
-                }
                 return null;
             }
         }
