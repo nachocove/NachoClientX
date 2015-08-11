@@ -300,8 +300,10 @@ namespace NachoCore.ActiveSync
                                 // TODO - make sure we're not leaking the body if it is already deleted.
                                 if (item is McEmailMessage) {
                                     item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
-                                        // FIXME DAVID
-                                        // ApplyAsXmlBody needs to be checked to ensure that it can be re-applied.
+                                        // In theory, ApplyAsXmlBody() can create an orphaned McBody if (1) UpdateWithOCApply repeats
+                                        // the mutator and (2) the XML has the text of the body in the <Data> element.  But #2 doesn't
+                                        // happen, since the WBXML code saves the <Data> to a McBody in advance.  So this is a theoretical
+                                        // problem, not a practical problem.
                                         item.ApplyAsXmlBody (xmlBody);
                                         return true;
                                     });

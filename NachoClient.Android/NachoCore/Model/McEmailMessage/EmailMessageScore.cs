@@ -750,12 +750,6 @@ namespace NachoCore.Model
             Log.Info (Log.LOG_BRAIN, "{0} time variances started", numStarted);
         }
 
-        public static void MarkAll ()
-        {
-            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = m.NeedUpdate + 1, RowVersion = RowVersion + 1");
-        }
-
-
         protected void InsertScoreStates ()
         {
             NcAssert.True ((0 < AccountId) && (0 < Id));
