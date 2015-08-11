@@ -255,11 +255,13 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            // TODO: Think about whether we want to users about errors during GAL search
-            if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
-            } else {
-                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+            if (account.HasCapability (McAccount.AccountCapabilityEnum.ContactReader)) {
+                // TODO: Think about whether we want to users about errors during GAL search
+                if (String.IsNullOrEmpty (contactSearchToken)) {
+                    contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
+                } else {
+                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+                }
             }
         }
 
