@@ -15,72 +15,15 @@ namespace NachoCore.ActiveSync
     public partial class AsProtoControl : NcProtoControl, IBEContext
     {
         
-        private NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
+        protected override NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
                                       int folderId, bool originalEmailIsEmbedded)
         {
-            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4})", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
             if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion, System.Globalization.CultureInfo.InvariantCulture)) {
                 return SendEmailCmd (newEmailMessageId);
             }
-            McFolder folder;
-            NcModel.Instance.RunInTransaction (() => {
-                var refdEmailMessage = McEmailMessage.QueryById<McEmailMessage> (refdEmailMessageId);
-                var newEmailMessage = McEmailMessage.QueryById<McEmailMessage> (newEmailMessageId);
-                folder = McFolder.QueryById<McFolder> (folderId);
-                if (null == refdEmailMessage || null == newEmailMessage) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
-                    return;
-                }
-                if (null == folder) {
-                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
-                    return;
-                }
-                var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, newEmailMessage) {
-                    Operation = Op,
-                    ServerId = refdEmailMessage.ServerId,
-                    ParentId = folder.ServerId,
-                    Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
-                };
-                pending.Insert ();
-                result = NcResult.OK (pending.Token);
-            });
-            NcTask.Run (delegate {
-                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "ASPCSMF");
-            }, "SmartEmailCmd");
-            Log.Info (Log.LOG_AS, "SmartEmailCmd({0},{1},{2},{3},{4}) returning {5}", Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded, result.Value as string);
-            return result;
+            return base.SmartEmailCmd (Op, newEmailMessageId, refdEmailMessageId, folderId, originalEmailIsEmbedded);
         }
-
-        public override NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
-                                              int folderId, bool originalEmailIsEmbedded)
-        {
-            Log.Info (Log.LOG_AS, "ReplyEmailCmd({0},{1},{2},{3})", newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
-            return SmartEmailCmd (McPending.Operations.EmailReply,
-                newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
-        }
-
-        public override NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
-                                                int folderId, bool originalEmailIsEmbedded)
-        {
-            Log.Info (Log.LOG_AS, "ForwardEmailCmd({0},{1},{2},{3})", newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-            if (originalEmailIsEmbedded) {
-                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
-                Log.Info (Log.LOG_AS, "ForwardEmailCmd: attachments = {0}", attachments.Count);
-                foreach (var attach in attachments) {
-                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
-                        var token = DnldAttCmd (attach.Id);
-                        if (null == token) {
-                            // FIXME - is this correct behavior in this case?
-                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
-                        }
-                    }
-                }
-            }
-            return SmartEmailCmd (McPending.Operations.EmailForward,
-                newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
-        }
-
 
         public override NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 
                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
@@ -107,13 +50,16 @@ namespace NachoCore.ActiveSync
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
                 // Set the Flag info in the DB item.
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
-                emailMessage.FlagType = flagType;
-                emailMessage.FlagStartDate = start;
-                emailMessage.FlagUtcStartDate = utcStart;
-                emailMessage.FlagDue = due;
-                emailMessage.FlagUtcDue = utcDue;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
+                    target.FlagType = flagType;
+                    target.FlagStartDate = start;
+                    target.FlagUtcStartDate = utcStart;
+                    target.FlagDue = due;
+                    target.FlagUtcDue = utcDue;
+                    return true;
+                });
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded));
             NcTask.Run (delegate {
@@ -141,8 +87,11 @@ namespace NachoCore.ActiveSync
                 };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                    return true;
+                });
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded));
             NcTask.Run (delegate {
@@ -172,10 +121,13 @@ namespace NachoCore.ActiveSync
                 };
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
-                emailMessage.FlagCompleteTime = completeTime;
-                emailMessage.FlagDateCompleted = dateCompleted;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
+                    target.FlagCompleteTime = completeTime;
+                    target.FlagDateCompleted = dateCompleted;
+                    return true;
+                });
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQ, "ASPCCF");

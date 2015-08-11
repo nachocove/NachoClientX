@@ -62,10 +62,13 @@ namespace NachoClient.iOS
         }
 
         bool firstTime = true;
+        bool animating = false;
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+
+            ViewFramer.Create (accountsTableView).Y (0);
 
             if (firstTime) {
                 firstTime = false;
@@ -73,11 +76,21 @@ namespace NachoClient.iOS
                 ViewFramer.Create (accountsTableView).Height (0);
                 UIView.Animate (0.4, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
+                        animating = true;
                         ViewFramer.Create (accountsTableView).Height (h);
                     },
                     () => {
+                        animating = false;
                     }
                 );
+            }
+        }
+
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
+            if (!animating) {
+                ViewFramer.Create (accountsTableView).Height (View.Frame.Height);
             }
         }
 
@@ -147,6 +160,7 @@ namespace NachoClient.iOS
         {
             UIView.Animate (0.3, 0, UIViewAnimationOptions.CurveLinear,
                 () => {
+                    animating = true;
                     ViewFramer.Create (accountsTableView).Height (0);
                 },
                 () => {
@@ -154,6 +168,7 @@ namespace NachoClient.iOS
                     if (null != callback) {
                         callback (account);
                     }
+                    animating = false;
                 });
         }
 

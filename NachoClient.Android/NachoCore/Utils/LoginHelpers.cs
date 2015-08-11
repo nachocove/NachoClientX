@@ -126,6 +126,17 @@ namespace NachoCore.Utils
             return (DateTime.MaxValue != gonnaExpireOn);
         }
 
+        static public void ClearPasswordExpiration (int accountId)
+        {
+            var creds = McCred.QueryByAccountId<McCred> (accountId);
+            if (null == creds) {
+                return;
+            }
+            foreach (var cred in creds) {
+                cred.ClearExpiry ();
+            }
+        }
+
         static public int GlobalAccountId {
             get { return McAccount.GetDeviceAccount ().Id; }
         }
@@ -207,6 +218,16 @@ namespace NachoCore.Utils
             } else {
                 return false;
             }
+        }
+
+        public static void SetGoogleSignInCallbackArrived (bool value)
+        {
+            McMutables.SetBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", value);
+        }
+
+        public static bool GetGoogleSignInCallbackArrived ()
+        {
+            return McMutables.GetOrCreateBool (GlobalAccountId, MODULE, "GoogleSignInCallbackArrived", false);
         }
     }
 }

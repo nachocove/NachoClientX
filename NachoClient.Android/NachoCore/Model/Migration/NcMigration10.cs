@@ -17,24 +17,27 @@ namespace NachoCore.Model
             foreach (var emailMessage in Db.Table<McEmailMessage> ()) {
                 token.ThrowIfCancellationRequested ();
                 McEmailAddress fromEmailAddress = null;
-                if (0 != emailMessage.FromEmailAddressId) {
-                    fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
-                }
-                if (0 == emailMessage.cachedFromColor) {
-                    if (null == fromEmailAddress) {
-                        emailMessage.cachedFromColor = 1;
-                    } else {
-                        emailMessage.cachedFromColor = fromEmailAddress.ColorIndex;
+                emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    if (0 != target.FromEmailAddressId) {
+                        fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (target.FromEmailAddressId);
                     }
-                }
-                if (String.IsNullOrEmpty (emailMessage.cachedFromLetters)) {
-                    if (null == fromEmailAddress) {
-                        emailMessage.cachedFromLetters = "";
-                    } else {
-                        emailMessage.cachedFromLetters = EmailHelper.Initials (emailMessage.From);
+                    if (0 == target.cachedFromColor) {
+                        if (null == fromEmailAddress) {
+                            target.cachedFromColor = 1;
+                        } else {
+                            target.cachedFromColor = fromEmailAddress.ColorIndex;
+                        }
                     }
-                }
-                emailMessage.Update ();
+                    if (String.IsNullOrEmpty (target.cachedFromLetters)) {
+                        if (null == fromEmailAddress) {
+                            target.cachedFromLetters = "";
+                        } else {
+                            target.cachedFromLetters = EmailHelper.Initials (target.From);
+                        }
+                    }
+                    return true;
+                });
                 UpdateProgress (1);
             }
         }

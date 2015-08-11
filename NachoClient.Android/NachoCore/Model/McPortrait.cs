@@ -29,5 +29,25 @@ namespace NachoCore.Model
             }
             return portrait.GetContentsByteArray ();
         }
+
+        public static bool CompareData (McPortrait a, McPortrait b)
+        {
+            if ((null == a) || (null == b)) {
+                return false;
+            }
+
+            // Q - Need to stream?
+            var dataA = a.GetContentsByteArray ();
+            var dataB = b.GetContentsByteArray ();
+            if (dataA.Length != dataB.Length) {
+                return false;
+            }
+            for (int n = 0; n < dataA.Length; n++) {
+                if (dataA [n] != dataB [n]) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

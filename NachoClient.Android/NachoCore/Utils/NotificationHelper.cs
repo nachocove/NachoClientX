@@ -2,6 +2,7 @@
 //
 using System;
 using NachoCore.Model;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Utils
 {
@@ -10,13 +11,29 @@ namespace NachoCore.Utils
         public static bool ShouldNotifyEmailMessage (McEmailMessage emailMessage, McAccount account)
         {
             NcAssert.True (emailMessage.AccountId == account.Id);
-            var config = account.NotificationConfiguration;
-            if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64)) {
-                return true;
+
+            var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (account.Id, emailMessage.Id);
+            foreach (var folder in folders) {
+                if (Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 == folder.Type) {
+                    // Don't notify the user about messages that have been deleted.
+                    return false;
+                }
             }
+
+            var config = account.NotificationConfiguration;
+
+            if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64)) {
+                foreach (var folder in folders) {
+                    if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                        return true;
+                    }
+                }
+            }
+
             if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_HOT_2) && emailMessage.isHot ()) {
                 return true;
             }
+
             if (config.HasFlag (McAccount.NotificationConfigurationEnum.ALLOW_VIP_4)) {
                 var emailAddress = NcEmailAddress.ParseMailboxAddressString (emailMessage.From);
                 if (null != emailAddress) {
@@ -27,8 +44,8 @@ namespace NachoCore.Utils
                         }
                     }
                 }
-                    
             }
+
             return false;
         }
     }

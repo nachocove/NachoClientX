@@ -34,12 +34,19 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
             return;
         }
             
-        using (var image = NachoClient.Util.captureView (this.SourceViewController.View.Window)) {
+        var outermostView = NachoClient.Util.FindOutermostView(this.SourceViewController.View);
+        var screenLocation = this.SourceViewController.View.ConvertPointToView (this.SourceViewController.View.Frame.Location, null);
+
+        // Capture the outermost view & adjust the bounds so it appears that
+        // the original view is still around as the account view animates down.
+        // Keep in mind the in-call and navigation status bars.
+        using (var image = NachoClient.Util.captureView (outermostView)) {
             var imageView = new UIImageView (image);
-            ViewFramer.Create (imageView).Y (-64);
+            ViewFramer.Create (imageView).Y (-screenLocation.Y + 64);
             this.DestinationViewController.View.AddSubview (imageView);
             this.DestinationViewController.View.SendSubviewToBack (imageView);
         }
+
         this.SourceViewController.NavigationController.PushViewController (this.DestinationViewController, false);
     }
 }

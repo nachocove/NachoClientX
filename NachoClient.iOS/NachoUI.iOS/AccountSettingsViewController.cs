@@ -24,6 +24,8 @@ namespace NachoClient.iOS
         UILabel EmailAddress;
         UcNameValuePair DisplayNameTextBlock;
         UcNameValuePair ChangePasswordBlock;
+        UcNameValuePair ExpiredPasswordBlock;
+        UcNameValuePair RectifyPasswordBlock;
         UcNameValuePair AdvancedSettingsBlock;
         UcNameValuePair SignatureBlock;
         UcNameValuePair DaysToSyncBlock;
@@ -128,7 +130,7 @@ namespace NachoClient.iOS
             var creds = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             if ((null != creds) && (McCred.CredTypeEnum.Password == creds.CredType)) {
                 Util.AddHorizontalLine (INDENT, yOffset, contentView.Frame.Width - INDENT, A.Color_NachoBorderGray, contentView);
-                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Change Password", INDENT, 15, ChangePasswordTapHandler);
+                ChangePasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), "Update Password", INDENT, 15, ChangePasswordTapHandler);
                 contentView.AddSubview (ChangePasswordBlock);
                 yOffset = ChangePasswordBlock.Frame.Bottom;
             }
@@ -215,6 +217,24 @@ namespace NachoClient.iOS
                 filler2.BackgroundColor = A.Color_NachoBackgroundGray;
                 contentView.AddSubview (filler2);
                 yOffset = filler2.Frame.Bottom + 5;
+            }
+
+            DateTime expiry;
+            string rectificationUrl;
+            if (LoginHelpers.PasswordWillExpire (account.Id, out expiry, out rectificationUrl)) {
+                var expiryText = "Password expires " + Pretty.ReminderDate (expiry);
+                ExpiredPasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), expiryText, INDENT, 15, ExpiredPasswordTapHandler);
+                contentView.AddSubview (ExpiredPasswordBlock);
+                yOffset = ExpiredPasswordBlock.Frame.Bottom;
+                if (!String.IsNullOrEmpty (rectificationUrl)) {
+                    RectifyPasswordBlock = new UcNameValuePair (new CGRect (0, yOffset, contentView.Frame.Width, HEIGHT), rectificationUrl, INDENT, 15, RectifyPasswordTapHandler);
+                    contentView.AddSubview (RectifyPasswordBlock);
+                    yOffset = RectifyPasswordBlock.Frame.Bottom;
+                }
+                var filler3 = new UIView (new CGRect (0, yOffset, contentView.Frame.Width, 20));
+                filler3.BackgroundColor = A.Color_NachoBackgroundGray;
+                contentView.AddSubview (filler3);
+                yOffset = filler3.Frame.Bottom + 5;
             }
                             
             DeleteAccountButton = UIButton.FromType (UIButtonType.System);
@@ -366,6 +386,37 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void ExpiredPasswordTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                NcActionSheet.Show (DaysToSyncBlock, this,
+                    new NcAlertAction ("Clear Notification", () => {
+                        LoginHelpers.ClearPasswordExpiration (account.Id);
+                        ExpiredPasswordBlock.SetLabel ("Password expiration cleared");
+                    }),
+                    new NcAlertAction ("Cancel", NcAlertActionStyle.Cancel, null)
+                );
+            }
+        }
+
+        protected void RectifyPasswordTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                DateTime expiry;
+                string rectificationUrl;
+                if (LoginHelpers.PasswordWillExpire (account.Id, out expiry, out rectificationUrl)) {
+                    if (!String.IsNullOrEmpty (rectificationUrl)) {
+                        var url = new NSUrl (rectificationUrl);
+                        if (UIApplication.SharedApplication.CanOpenUrl (url)) {
+                            UIApplication.SharedApplication.OpenUrl (url);
+                        }
+                    }
+                }
+            }
+        }
+
         protected void AdvancedSettingsTapHandler (NSObject sender)
         {
             var gesture = sender as UIGestureRecognizer;
@@ -415,6 +466,7 @@ namespace NachoClient.iOS
             DaysToSyncBlock.SetValue (Pretty.MaxAgeFilter (code));
             account.DaysToSyncEmail = code;
             account.Update ();
+            NcApplication.Instance.InvokeStatusIndEventInfo (account, NcResult.SubKindEnum.Info_DaysToSyncChanged);
         }
 
         public void UpdateNotificationConfiguration (int accountId, McAccount.NotificationConfigurationEnum choice)

@@ -4,6 +4,8 @@ using NachoCore.Utils;
 using MailKit;
 using System.IO;
 using MailKit.Net.Imap;
+using System.Linq;
+using System.Text;
 
 namespace NachoCore.IMAP
 {
@@ -24,6 +26,7 @@ namespace NachoCore.IMAP
         private static IProtocolLogger getLogger ()
         {
             //return new NcMailKitProtocolLogger ("IMAP");
+            //return new NcDebugProtocolLogger (Log.LOG_IMAP);
             return new NullProtocolLogger ();
         }
     }

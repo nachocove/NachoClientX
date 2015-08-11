@@ -172,6 +172,18 @@ namespace NachoCore.Brain
         }
     }
 
+    [Serializable]
+    public class NcBrainUpdateUserActionEvent : NcBrainUpdateMessageScoreEvent
+    {
+        public int Action;
+
+        public NcBrainUpdateUserActionEvent (Int64 accountId, Int64 emailMessageId, int action)
+            : base (accountId, emailMessageId)
+        {
+            Action = action;
+        }
+    }
+
     /// This event tells brain that user has changed either the due date or the deferred until date.
     /// Upon receiving this, brain will re-evaluate the time variance state machine for the
     /// email message

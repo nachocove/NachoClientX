@@ -213,6 +213,7 @@ namespace NachoClient.iOS
                 })) {
                     // Can't find any account matching those contexts. Abort immediately
                     completionHandler (UIBackgroundFetchResult.NoData);
+                    return;
                 }
                 if (NcApplication.Instance.IsForeground) {
                     completionHandler (UIBackgroundFetchResult.NewData);
@@ -401,8 +402,13 @@ namespace NachoClient.iOS
             if (NcApplication.ReadyToStartUI ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
-                Window.RootViewController = (UIViewController)vc;
+                if (null == vc) {
+                    // Might get null if we're running in background
+                    Log.Info (Log.LOG_UI, "fast path view controller is null");
+                } else {
+                    Log.Info (Log.LOG_UI, "fast path to tab bar controller");
+                    Window.RootViewController = (UIViewController)vc;
+                }
             }
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
@@ -583,6 +589,9 @@ namespace NachoClient.iOS
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
+            }
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
             }
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
@@ -979,8 +988,24 @@ namespace NachoClient.iOS
             int remainingVisibleSlots = 10;
             var accountTable = new Dictionary<int, McAccount> ();
 
+            var notifiedMessageIDs = new HashSet<string> ();
+
             foreach (var message in unreadAndHot) {
+                if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
+                    --badgeCount;
+                    message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.HasBeenNotified = true;
+                        target.ShouldNotify = true;
+                        return true;
+                    });
+                    continue;
+                }
                 if (message.HasBeenNotified) {
+                    if (message.ShouldNotify && !string.IsNullOrEmpty (message.MessageID)) {
+                        notifiedMessageIDs.Add (message.MessageID);
+                    }
                     continue;
                 }
                 McAccount account = null;
@@ -996,22 +1021,32 @@ namespace NachoClient.iOS
                 }
                 if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
                     --badgeCount;
-                    message.HasBeenNotified = true;
-                    message.ShouldNotify = false;
-                    message.Update ();
+                    message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.HasBeenNotified = true;
+                        target.ShouldNotify = false;
+                        return true;
+                    });
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
+                    Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification attempt for message {0} failed.", message.Id);
                     --badgeCount;
                     continue;
                 } else {
                     soundExpressed = true;
                 }
 
-                message.HasBeenNotified = true;
-                message.ShouldNotify = true;
-                message.Update ();
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: ScheduleLocalNotification");
+                var updatedMessage = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.HasBeenNotified = true;
+                    target.ShouldNotify = true;
+                    return true;
+                });
+                if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
+                    notifiedMessageIDs.Add (updatedMessage.MessageID);
+                }
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", updatedMessage.Id);
                 --remainingVisibleSlots;
                 if (0 >= remainingVisibleSlots) {
                     break;
@@ -1088,11 +1123,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
                 return;
             }
-            var account = new McAccount ();
-            account.DisplayName = "Google placeholder account";
-            account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.GoogleCallback;
-            account.Insert ();
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount account created {0}", account.Id);
+            LoginHelpers.SetGoogleSignInCallbackArrived (true);
+            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount callback arrived");
         }
     }
 

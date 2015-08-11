@@ -123,6 +123,7 @@ namespace NachoClient.iOS
 
             var bodyText = ExtractBodyTextAsNSAttributedString (mimeMessage);
             bodyTextView.AttributedText = bodyText;
+            bodyTextView.Font = UIFont.PreferredBody;
 
             if (0 == draftMessage.ReferencedEmailId) {
                 action = EmailHelper.Action.Send;
@@ -162,9 +163,9 @@ namespace NachoClient.iOS
 
                 NSError error = null;
                 NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, mutableBodyAttributedText.Length),
-                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                  ref error);
+                                      new NSRange (0, mutableBodyAttributedText.Length),
+                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                      ref error);
                 body.HtmlBody = htmlData.ToString ();
 
                 foreach (var attachment in attachmentView.AttachmentList) {
@@ -174,17 +175,19 @@ namespace NachoClient.iOS
                 mimeMessage.Body = body.ToMessageBody ();
 
                 var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                message.BodyPreview = preview;
-                message.Intent = messageIntent;
-                message.IntentDate = messageIntentDateTime;
-                message.IntentDateType = messageIntentDateType;
-                message.QRType = QRType;
+                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.BodyPreview = preview;
+                    target.Intent = messageIntent;
+                    target.IntentDate = messageIntentDateTime;
+                    target.IntentDateType = messageIntentDateType;
+                    target.QRType = QRType;
 
-                message.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
-                message.ReferencedIsForward = (action == EmailHelper.Action.Forward);
-                message.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
-
-                message.Update ();
+                    target.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
+                    target.ReferencedIsForward = (action == EmailHelper.Action.Forward);
+                    target.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
+                    return true;
+                });
 
                 EmailHelper.SaveEmailMessageInDrafts (message);
                 if (null != draftMessage) {
@@ -248,6 +251,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            composeFont = UIFont.PreferredBody;
+
             account = NcApplication.Instance.Account;
 
             sendButton = new NcUIBarButtonItem ();
@@ -292,15 +297,15 @@ namespace NachoClient.iOS
                 NcActionSheet.Show (View, this,
                     new NcAlertAction ("Discard Draft", NcAlertActionStyle.Destructive, () => {
                         owner = null;
-                        if(null == NavigationController) {
-                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
+                        if (null == NavigationController) {
+                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for discard draft");
                         }
                         NavigationController.PopViewController (true);
                     }),
                     new NcAlertAction ("Save Draft", () => {
                         SaveDraft ();
-                        if(null == NavigationController) {
-                            Log.Error(Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
+                        if (null == NavigationController) {
+                            Log.Error (Log.LOG_UI, "MessageComposeView null navigation controller for save draft");
                         }
                         NavigationController.PopViewController (true);
                     }),
@@ -342,7 +347,8 @@ namespace NachoClient.iOS
             }
         }
 
-        NSObject notification;
+        NSObject backgroundNotification;
+        NSObject contentSizeCategoryChangedNotification;
 
         public override void ViewWillAppear (bool animated)
         {
@@ -352,7 +358,9 @@ namespace NachoClient.iOS
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
             }
-            notification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
+            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver(UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
@@ -365,7 +373,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NSNotificationCenter.DefaultCenter.RemoveObserver (notification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (backgroundNotification);
+            NSNotificationCenter.DefaultCenter.RemoveObserver (contentSizeCategoryChangedNotification);
+
             QRType = NcQuickResponse.QRTypeEnum.None;
         }
 
@@ -376,6 +386,16 @@ namespace NachoClient.iOS
                 if (null != actionController) {
                     actionController.DismissViewController (false, null);
                 }
+            }
+        }
+
+        void OnContentSizeCategoryChangedNotification (NSNotification notification)
+        {
+            if (null != bodyTextView) {
+                bodyTextView.Font = UIFont.PreferredBody;
+            }
+            if (null != showQuotedTextButton) {
+                showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
             }
         }
 
@@ -569,6 +589,7 @@ namespace NachoClient.iOS
 
             showQuotedTextButton = UIButton.FromType (UIButtonType.System);
             showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.TitleLabel.Font = UIFont.PreferredCaption1;
             showQuotedTextButton.AccessibilityLabel = "Show quoted text";
             showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             showQuotedTextButton.SizeToFit ();
@@ -1279,9 +1300,9 @@ namespace NachoClient.iOS
 
                 NSError error = null;
                 NSData htmlData = mutableBodyAttributedText.GetDataFromRange (
-                                  new NSRange (0, mutableBodyAttributedText.Length),
-                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                                  ref error);
+                                      new NSRange (0, mutableBodyAttributedText.Length),
+                                      new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                      ref error);
                 body.HtmlBody = htmlData.ToString ();
 
                 foreach (var attachment in attachmentView.AttachmentList) {
@@ -1310,20 +1331,22 @@ namespace NachoClient.iOS
 
                 mimeMessage.Body = body.ToMessageBody ();
                 var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                messageToSend.BodyPreview = preview;
-                messageToSend.Intent = messageIntent;
-                messageToSend.IntentDate = messageIntentDateTime;
-                messageToSend.IntentDateType = messageIntentDateType;
-                messageToSend.QRType = QRType;
+                messageToSend = messageToSend.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.BodyPreview = preview;
+                    target.Intent = messageIntent;
+                    target.IntentDate = messageIntentDateTime;
+                    target.IntentDateType = messageIntentDateType;
+                    target.QRType = QRType;
 
-                if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
-                    messageToSend.ReferencedEmailId = referencedMessage.Id;
-                    messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                    messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                    messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                }
-
-                messageToSend.Update ();
+                    if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
+                        target.ReferencedEmailId = referencedMessage.Id;
+                        target.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                        target.ReferencedIsForward = EmailHelper.IsForwardAction (action);
+                        target.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                    }
+                    return true;
+                });
 
                 // Send the mesage
                 EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);
@@ -1368,9 +1391,11 @@ namespace NachoClient.iOS
 
         void onShowQuotedTextButton (object sender, EventArgs e)
         {
+            var selectedRange = bodyTextView.SelectedRange;
             showQuotedTextButton.Hidden = true;
             InitializeQuotedText ();
             LayoutView ();
+            bodyTextView.SelectedRange = selectedRange;
         }
 
         void InitializeQuotedText ()

@@ -20,8 +20,11 @@ namespace NachoCore.Model
             foreach (var emailMessage in Db.Table<McEmailMessage>().Where (x => x.ConversationId == null)) {
                 token.ThrowIfCancellationRequested ();
                 NcModel.Instance.RunInTransaction (() => {
-                    emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
-                    emailMessage.Update();
+                    emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.ConversationId = System.Guid.NewGuid ().ToString ();
+                        return true;
+                    });
                     UpdateProgress (1);
                 });
             }

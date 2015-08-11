@@ -31,6 +31,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
             } else {
                 NcAssert.True (result.isError ());
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsHardFail (BEContext.ProtoControl, result);
                 });
@@ -62,15 +63,16 @@ namespace NachoCore.IMAP
         {
             McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             if (null == email) {
-                Log.Error (Log.LOG_IMAP, "Could not find email for {0}", pending.ServerId);
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
+            Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             NcResult result;
             McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
-            UniqueId uid = ImapProtoControl.ImapMessageUid (email.ServerId);
+            UniqueId uid = new UniqueId (email.ImapUid);
             McAbstrFileDesc.BodyTypeEnum bodyType;
             result = messageBodyPart (uid, mailKitFolder, out bodyType);
             if (!result.isOK ()) {
@@ -78,10 +80,12 @@ namespace NachoCore.IMAP
             }
             BodyPart part = result.GetValue<BodyPart> ();
 
-            var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
-            mailKitFolder.SetStreamContext (uid, tmp);
             McBody body;
             if (0 == email.BodyId) {
+                if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: unknown body type {0}. Using Default Mime", bodyType);
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                }
                 body = new McBody () {
                     AccountId = BEContext.Account.Id,
                     BodyType = bodyType,
@@ -89,9 +93,19 @@ namespace NachoCore.IMAP
                 body.Insert ();
             } else {
                 body = McBody.QueryById<McBody> (email.BodyId);
+                if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Existing body for {0} was saved with unknown body type {1}.", email.ServerId, body.BodyType);
+                    body = body.UpdateWithOCApply<McBody> ((record) => {
+                        var target = (McBody)record;
+                        target.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                        return true;
+                    });
+                }
             }
 
             try {
+                var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
+                mailKitFolder.SetStreamContext (uid, tmp);
                 Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
                 var path = body.GetFilePath ();
                 using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
@@ -115,9 +129,20 @@ namespace NachoCore.IMAP
                 }
                 body.Truncated = false;
                 body.UpdateSaveFinish ();
+                if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Body for {0} has unknown body type {1}. Using Default Mime.", email.ServerId, body.BodyType);
+                    body = body.UpdateWithOCApply<McBody> ((record) => {
+                        var target = (McBody)record;
+                        target.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                        return true;
+                    });
+                }
 
-                email.BodyId = body.Id;
-                email.Update ();
+                email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.BodyId = body.Id;
+                    return true;
+                });
 
                 if (string.IsNullOrEmpty (email.BodyPreview)) {
                     // The Sync didn't create a preview. Do it now.
@@ -131,10 +156,10 @@ namespace NachoCore.IMAP
                         StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                     }
                 }
-
+                Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for email {0}:{1} type {2}", email.Id, email.ServerId, body.BodyType);
                 result = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded);
             } catch (ImapCommandException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapCommandException: {0}", ex.Message);
+                Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand ImapCommandException: {0}", ex.Message);
                 // TODO Probably want to narrow this down. Pull in latest MailKit and make it compile.
                 // The message doesn't exist. Delete it locally.
                 Log.Warn (Log.LOG_IMAP, "ImapFetchBodyCommand: no message found. Deleting local copy");
@@ -143,8 +168,9 @@ namespace NachoCore.IMAP
                 email.Delete ();
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 result = NcResult.Error ("No Body found");
+            } finally {
+                mailKitFolder.UnsetStreamContext ();
             }
-            mailKitFolder.UnsetStreamContext ();
             return result;
         }
 
@@ -208,14 +234,24 @@ namespace NachoCore.IMAP
             if (null == summary) {
                 return NcResult.Error ("Could not convert summary to MessageSummary");
             }
+            var part = summary.Body;
+            if (null == part) {
+                // No body fetched.
+                return NcResult.Error ("messageBodyPart: no body");
+            }
 
             result = BodyTypeFromSummary (summary);
             if (!result.isOK ()) {
-                return result;
+                // we couldn't find the content type. Try to continue assuming MIME.
+                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}", result.GetMessage ());
+                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+            } else {
+                bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
             }
-            bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
-
-            var part = summary.Body;
+            if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                // We don't like this, but keep going. The UI will try its best to figure it out.
+                Log.Error (Log.LOG_IMAP, "messageBodyPart: unknown body type {0}", bodyType);
+            }
             result = NcResult.OK ();
             result.Value = part;
             return result;
@@ -227,27 +263,47 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <returns>The type from summary.</returns>
         /// <param name="summary">Summary.</param>
-        private NcResult BodyTypeFromSummary (MessageSummary summary)
+        public static NcResult BodyTypeFromSummary (MessageSummary summary)
         {
             McAbstrFileDesc.BodyTypeEnum bodyType;
-            var part = summary.Body;
 
-            if (summary.Headers.Contains (HeaderId.MimeVersion) || part.ContentType.Matches ("multipart", "*")) {
-                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-            } else if (part.ContentType.Matches ("text", "*")) {
-                if (part.ContentType.Matches ("text", "html")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                } else if (part.ContentType.Matches ("text", "plain")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+            if (null == summary.Headers && null == summary.Body) {
+                return NcResult.Error (string.Format ("No headers nor body."));
+            }
+
+            // check headers first, because it's nice and easy.
+            if (null != summary.Headers && summary.Headers.Contains (HeaderId.MimeVersion)) {
+                NcResult result = NcResult.OK ();
+                result.Value = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                return result;
+            }
+
+            if (null != summary.Body) {
+                var part = summary.Body;
+                if (null == part.ContentType) {
+                    return NcResult.Error (string.Format ("No ContentType found in body."));
                 } else {
-                    return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                    // If we have a body and a content type, get the body type from that.
+                    if (part.ContentType.Matches ("multipart", "*")) {
+                        bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                    } else if (part.ContentType.Matches ("text", "*")) {
+                        if (part.ContentType.Matches ("text", "html")) {
+                            bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                        } else if (part.ContentType.Matches ("text", "plain")) {
+                            bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                        } else {
+                            return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                        }
+                    } else {
+                        return NcResult.Error (string.Format ("Unhandled contenttype {0}:{1}", part.ContentType.MediaType, part.ContentType.MediaSubtype));
+                    }
+                    NcResult result = NcResult.OK ();
+                    result.Value = bodyType;
+                    return result;
                 }
             } else {
-                return NcResult.Error (string.Format ("Unhandled mime subtype {0}", part.ContentType.MediaSubtype));
+                return NcResult.Error (string.Format ("No Body found"));
             }
-            NcResult result = NcResult.OK ();
-            result.Value = bodyType;
-            return result;
         }
 
         /// <summary>

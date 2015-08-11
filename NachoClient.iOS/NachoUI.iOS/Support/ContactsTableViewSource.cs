@@ -34,10 +34,29 @@ namespace NachoClient.iOS
         protected string searchToken;
         McAccount accountForSearchAPI;
 
+        protected SearchHelper searcher;
+
         public ContactsTableViewSource ()
         {
             owner = null;
             allowSwiping = false;
+            searcher = new SearchHelper ("ContactsTableViewSourceUpdateSearchResults", (searchString) => {
+                if (String.IsNullOrEmpty (searchString)) {
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        SetSearchResults (new List<McContactEmailAddressAttribute> ());
+                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                    });
+                } else {
+                    int curVersion = searcher.Version;
+                    var results = McContact.SearchIndexAllContacts (searchString, false, true);
+                    if (curVersion == searcher.Version) {
+                        InvokeOnUIThread.Instance.Invoke (() => {
+                            SetSearchResults (results);
+                            NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
+                        });
+                    }
+                }
+            });
         }
 
         public void SetOwner (IContactsTableViewSourceDelegate owner, McAccount accountForSearchAPI, bool allowSwiping, UISearchDisplayController SearchDisplayController)
@@ -52,10 +71,9 @@ namespace NachoClient.iOS
         public void SetContacts (List<NcContactIndex> recent, List<NcContactIndex> contacts, bool multipleSections)
         {
             this.recent = recent;
+            sections = ContactsBinningHelper.BinningContacts (ref contacts);
             this.contacts = contacts;
             this.multipleSections = multipleSections;
-
-            sections = ContactsBinningHelper.BinningContacts (contacts);
 
             if (SearchDisplayController.Active) {
                 SearchDisplayController.Delegate.ShouldReloadForSearchScope (SearchDisplayController, 0);
@@ -193,7 +211,9 @@ namespace NachoClient.iOS
         {
             string dummy;
             McContact contact = ContactFromIndexPath (tableView, indexPath, out dummy);
-            owner.ContactSelectedCallback (contact);
+            if (null != contact) {
+                owner.ContactSelectedCallback (contact);
+            }
             DumpInfo (contact);
             tableView.DeselectRow (indexPath, true);
         }
@@ -358,27 +378,10 @@ namespace NachoClient.iOS
                 }
             }
 
-            // Optionally issue an asynchronous search. By default, return false to skip
-            // ReloadData() because the search result is usually not ready by the time this
-            // call returns.
-            bool result = false;
-            NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
-            if (String.IsNullOrEmpty (forSearchString)) {
-                // If there is no search string, just update the search result synchronously
-                SetSearchResults (new List<McContactEmailAddressAttribute> ());
-                NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
-                result = true;
-            } else {
-                NcTask.Run (() => {
-                    var results = McContact.SearchIndexAllContacts (forSearchString, false, true);
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        SetSearchResults (results);
-                        NcApplication.Instance.InvokeStatusIndEventInfo (null, NcResult.SubKindEnum.Info_ContactLocalSearchComplete);
-                        NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
-                    });
-                }, "SearchLocalContacts");
-            }
-            return result;
+            // Issue an asynchronous search.
+            searcher.Search (forSearchString);
+
+            return false;
         }
 
         protected void DumpInfo (McContact contact)

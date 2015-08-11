@@ -49,6 +49,8 @@ namespace NachoCore
         void ServerConfResp (int accountId, McAccount.AccountCapabilityEnum capabilities, bool forceAutodiscovery);
         // let the BE know that the credentials have been updated for this account.
         void CredResp (int accountId);
+        // Indicate that pending Q items have been newly made eligible.
+        void PendQHotInd (int accountId, McAccount.AccountCapabilityEnum capabilities);
         // search email. returns token that can be used to cancel the search and all eclipsed searches.
         NcResult StartSearchEmailReq (int accountId, string prefix, uint? maxResults);
         // follow-on email search, using same token.

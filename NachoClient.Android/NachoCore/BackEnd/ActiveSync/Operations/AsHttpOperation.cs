@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -109,8 +110,6 @@ namespace NachoCore.ActiveSync
         // Properties.
         // User for mocking.
         public INcCommStatus NcCommStatusSingleton { set; get; }
-        // Timer for timing out a single access.
-        public TimeSpan Timeout { set; get; }
         public double TimeoutExpander { set; get; }
         public uint MaxRetries { set; get; }
         // Numer of times we'll try again (remaining).
@@ -167,8 +166,6 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToWbxmlStream);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
-            Timeout = new TimeSpan (0, 0, timeoutSeconds);
             TimeoutExpander = KDefaultTimeoutExpander;
             MaxRetries = KDefaultRetries;
             TriesLeft = MaxRetries + 1;
@@ -288,9 +285,6 @@ namespace NachoCore.ActiveSync
         {
             if (0 < TriesLeft) {
                 --TriesLeft;
-                if (TriesLeft != MaxRetries) {
-                    Timeout = new TimeSpan (0, 0, (int)(Timeout.Seconds * TimeoutExpander));
-                }
                 Log.Info (Log.LOG_HTTP, "ASHTTPOP: TriesLeft: {0}", TriesLeft);
                 // Remove NcTask.Run once #1313 solved.
                 // Note that even this is not foolproof, as Task.Run can choose to use the same thread.
@@ -404,7 +398,9 @@ namespace NachoCore.ActiveSync
                                 Log.Error (Log.LOG_HTTP, "AsHttpOperation:ToWbxmlStream wedged (#1313)");
                             }
                         },
-                        cToken, 10 * 1000, System.Threading.Timeout.Infinite);
+                        cToken, 
+                        ((Owner.IsContentLarge (this)) ? 10 : 2) * 1000, 
+                        System.Threading.Timeout.Infinite);
                     var capture = NcCapture.CreateAndStart (KToWbxmlStream);
                     var stream = doc.ToWbxmlStream (BEContext.Account.Id, Owner.IsContentLarge (this), cToken);
                     capture.Stop ();
@@ -460,7 +456,12 @@ namespace NachoCore.ActiveSync
                     // change the value once you start using the client. So we use our own per-request timeout.
 
                     // TimeoutTimer moved north of CreateHttpRequest because of #1313 lockup problem.
-                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
+                    var baseTimeout = Owner.TimeoutInSeconds;
+                    if (0.0 == baseTimeout) {
+                        baseTimeout = ((AsProtoControl)BEContext.ProtoControl).Strategy.DefaultTimeoutSecs;
+                    }
+                    var timeoutValue = TimeSpan.FromSeconds (baseTimeout * Math.Pow (TimeoutExpander, MaxRetries - TriesLeft));
+                    TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, timeoutValue,
                         System.Threading.Timeout.InfiniteTimeSpan);
                     if (!CreateHttpRequest (out request, cToken)) {
                         Log.Info (Log.LOG_HTTP, "Intentionally aborting HTTP operation.");
@@ -504,6 +505,8 @@ namespace NachoCore.ActiveSync
                         CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", RedactedServerUri));
+                    } else {
+                        Log.Error (Log.LOG_HTTP, "HTTPClient Exception due to cancellation! {0} {1}", RedactedServerUri, ex.Message);
                     }
                     return;
                 }
@@ -953,7 +956,7 @@ namespace NachoCore.ActiveSync
                 if (response.Headers.Contains (HeaderRetryAfter)) {
                     try {
                         value = response.Headers.GetValues (HeaderRetryAfter).First ();
-                        bestSecs = (uint)double.Parse (value);
+                        bestSecs = (uint)double.Parse (value, CultureInfo.InvariantCulture);
                     } catch {
                         try {
                             var when = DateTime.Parse (value);

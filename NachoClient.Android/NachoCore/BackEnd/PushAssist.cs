@@ -527,7 +527,9 @@ namespace NachoCore
         {
             var account = Owner.Account;
             if (account.FastNotificationEnabled) {
-                PostEvent (SmEvt.E.Launch, "PAEXE");
+                if (IsStartOrParked ()) {
+                    PostEvent (SmEvt.E.Launch, "PAEXE");
+                }
             } else {
                 Log.Info (Log.LOG_PUSH, "PA is disabled in account setting (accountId={0})", account.Id);
             }
@@ -1030,6 +1032,29 @@ namespace NachoCore
             return null;
         }
 
+        protected void HandleHttpRequestException (Exception e, CancellationToken cToken, ref PushAssistHttpResult result)
+        {
+            if (e is OperationCanceledException) {
+                if (cToken.IsCancellationRequested) {
+                    DisposeTimeoutTimer ();
+                    DisposeRetryTimer ();
+                    result.Exception = e;
+                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
+                } else if (Cts.Token.IsCancellationRequested) {
+                    result.Exception = new TimeoutException ("HTTP operation timed out");
+                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
+                } else {
+                    result.Exception = e;
+                }
+            } else if (e is WebException) {
+                result.Exception = e;
+                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
+            } else {
+                result.Exception = e;
+                Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
+            }
+        }
+
         protected PushAssistHttpResult DoHttpRequest (string url, object jsonRequest, CancellationToken cToken, Action timeoutAction)
         {
             if (String.IsNullOrEmpty (url)) {
@@ -1043,8 +1068,8 @@ namespace NachoCore
 
             // Set up the request
             HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, url);
-            Log.Info (Log.LOG_PUSH, "PA request: scheme={0}, url={1}, port={2}, method={3}",
-                request.RequestUri.Scheme, request.RequestUri.AbsoluteUri, request.RequestUri.Port, request.Method);
+            Log.Info (Log.LOG_PUSH, "PA request ({4}): scheme={0}, url={1}, port={2}, method={3}",
+                request.RequestUri.Scheme, request.RequestUri.AbsoluteUri, request.RequestUri.Port, request.Method, ClientContext);
 
             // Set up the POST content
             try {
@@ -1060,40 +1085,26 @@ namespace NachoCore
             // Make the request
             var result = new PushAssistHttpResult ();
             ResetTimeout (timeoutAction);
-            using (var cts = CancellationTokenSource.CreateLinkedTokenSource (cToken, Cts.Token)) {
+            using (var joinCts = CancellationTokenSource.CreateLinkedTokenSource (cToken, Cts.Token)) {
                 try {
-                    var sendTask = Client.SendAsync (request, HttpCompletionOption.ResponseContentRead, cts.Token);
-                    sendTask.Wait ();
+                    var sendTask = Client.SendAsync (request, HttpCompletionOption.ResponseContentRead, joinCts.Token);
+                    sendTask.Wait (joinCts.Token);
                     var response = sendTask.Result;
                     if (null != response.Content) {
                         var readTask = response.Content.ReadAsStringAsync ();
-                        readTask.Wait ();
+                        readTask.Wait (joinCts.Token);
                         result.Content = readTask.Result;
                     }
                     if (HttpStatusCode.OK == response.StatusCode) {
-                        Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode, result.Content);
+                        Log.Info (Log.LOG_PUSH, "PA response ({0}): statusCode={1}, content={2}", ClientContext, response.StatusCode, result.Content);
                     } else {
-                        Log.Warn (Log.LOG_PUSH, "PA response: statusCode={0}", response.StatusCode);
+                        Log.Warn (Log.LOG_PUSH, "PA response ({0}): statusCode={1}", ClientContext, response.StatusCode);
                     }
                     result.Response = response;
-                } catch (OperationCanceledException e) {
-                    if (cToken.IsCancellationRequested) {
-                        DisposeTimeoutTimer ();
-                        DisposeRetryTimer ();
-                        result.Exception = e;
-                        Log.Warn (Log.LOG_PUSH, "DoHttpRequest: canceled");
-                    } else if (Cts.Token.IsCancellationRequested) {
-                        result.Exception = new TimeoutException ("HTTP operation timed out");
-                        Log.Warn (Log.LOG_PUSH, "DoHttpRequest: timed out");
-                    } else {
-                        result.Exception = e;
-                    }
-                } catch (WebException e) {
-                    result.Exception = e;
-                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught network exception - {0}", e);
+                } catch (AggregateException e) {
+                    HandleHttpRequestException (e.InnerException, cToken, ref result);
                 } catch (Exception e) {
-                    result.Exception = e;
-                    Log.Warn (Log.LOG_PUSH, "DoHttpRequest: Caught unexpected http exception - {0}", e);
+                    HandleHttpRequestException (e, cToken, ref result);
                 }
             }
             DisposeTimeoutTimer ();

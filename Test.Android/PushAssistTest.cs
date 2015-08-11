@@ -627,17 +627,28 @@ namespace Test.Common
                 emails [n].Insert ();
             }
 
-            emails [1].Score = 1.0;
-            emails [1].Update ();
+            var inbox = McFolder.Create (Owner.Account.Id, false, false, true, "0", "made-up", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            inbox.Insert ();
+            inbox.Link (emails [0]);
+            inbox.Link (emails [1]);
 
-            emails [3].Score = 1.0;
-            emails [3].Update ();
+            emails [1] = emails [1].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Score = 1.0;
+                return true;
+            });
 
-            // Configuration #1 - All
+            emails [3].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Score = 1.0;
+                return true;
+            });
+
+            // Configuration #1 - Inbox
             var account = Owner.Account;
             account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_INBOX_64;
             account.Update ();
-            CheckShouldNotify (new bool[4] { true, true, true, true }, emails, account);
+            CheckShouldNotify (new bool[4] { true, true, false, false }, emails, account);
 
             // Configuration #2 - Hot only
             account.NotificationConfiguration = McAccount.NotificationConfigurationEnum.ALLOW_HOT_2;

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
+using System.Globalization;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -572,6 +573,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
             Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
+            Log.Info (Log.LOG_LIFECYCLE, "Culture: {0}", CultureInfo.CurrentCulture);
             if (0 < BuildInfo.Source.Length) {
                 Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
             }
@@ -599,11 +601,11 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
             MonitorStop ();
             CrlMonitor.StopService ();
-            if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
+            if ((null != Class4EarlyShowTimer) && Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
             }
 
-            if (Class4LateShowTimer.DisposeAndCheckHasFired ()) {
+            if ((null != Class4LateShowTimer) && Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
@@ -1010,7 +1012,7 @@ namespace NachoCore
                 try {
                     File.Delete (startupLog);
                 } catch (Exception e) {
-                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete startup log (file={0}, exception={1})", startupLog, e.Message);
                 }
             }
         }
@@ -1031,8 +1033,11 @@ namespace NachoCore
                 }
                 Log.Warn (Log.LOG_PUSH, "Unnotified email message (id={0}, dateReceived={1}, createdAt={2})",
                     message.Id, message.DateReceived, message.CreatedAt);
-                message.HasBeenNotified = true;
-                message.Update ();
+                message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.HasBeenNotified = true;
+                    return true;
+                });
             }
         }
 
@@ -1074,6 +1079,9 @@ namespace NachoCore
             }
             var configAccount = McAccount.GetAccountBeingConfigured ();
             if (null != configAccount) {
+                return false;
+            }
+            if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
                 return false;
             }
             return true;

@@ -31,7 +31,7 @@ namespace Test.iOS
 
         public static McPending CreatePending (int accountId = defaultAccountId, string serverId = "PhonyServer", Operations operation = Operations.FolderDelete,
             McAccount.AccountCapabilityEnum capability = McAccount.AccountCapabilityEnum.EmailReaderWriter,
-            string token = "", string clientId = "", string parentId = "", string destId = "", McAbstrItem item = null)
+            string token = "", string clientId = "", string parentId = "", string destId = "", McAbstrItem item = null, StateEnum state = StateEnum.Eligible, bool doNotDelay = false)
         {
             McPending pending;
             if (item != null) {
@@ -46,6 +46,8 @@ namespace Test.iOS
             pending.ClientId = clientId;
             pending.ParentId = parentId;
             pending.DestParentId = destId;
+            pending.State = state;
+            pending.DelayNotAllowed = doNotDelay;
             pending.Insert ();
             return pending;
         }
@@ -523,6 +525,24 @@ namespace Test.iOS
 
         public class TestResolveAsDeferred : BaseMcPendingTest
         {
+            McFolder TestFolder;
+
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                TestFolder = McFolder.Create (defaultAccountId, true, false, false, McFolder.AsRootServerId, "TestFoo", "TestFoo", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                TestFolder.Insert ();
+            }
+
+            [TearDown]
+            public void TearDown ()
+            {
+                if (null != TestFolder) {
+                    TestFolder.Delete ();
+                }
+            }
+
             [Test]
             public void ResolveAsDeferredNonDispatched ()
             {
@@ -714,6 +734,31 @@ namespace Test.iOS
                 TestWithSyncTypeAndReason (reason, syncOp, querySyncType);
             }
 
+            [Test]
+            public void TestDeferredFMetaData ()
+            {
+                var reason = DeferredEnum.UntilFMetaData;
+                // Create a 1nd Eligible state McPending and resolve deferred with reason UntilSync
+                var pending = CreateDeferredPending (protoControl, reason);
+                pending = pending.UpdateWithOCApply<McPending> ((record) => {
+                    var target = (McPending)record;
+                    target.ServerId = TestFolder.ServerId;
+                    return true;
+                });
+                VerifyStateAndReason (pending.Id, StateEnum.Deferred, reason);
+
+                // Find only the 1st using QueryDeferredSync (int accountId).
+                var firstPend = McPending.QueryDeferredFMetaData (TestFolder);
+                Assert.AreEqual (1, firstPend.Count, "Should return a single object");
+                Assert.AreEqual (reason, firstPend.FirstOrDefault ().DeferredReason, "Deferred reason should be set to UntilFMetaData");
+
+                McPending.MakeEligibleOnFMetaData (TestFolder);
+
+                // Verify only the 1st is in Eligible state in DB.
+                var firstRetr = McPending.QueryById<McPending> (pending.Id);
+                Assert.AreEqual (StateEnum.Eligible, firstRetr.State, "should be in the eligible state in DB");
+            }
+
             private void VerifyStateAndReason (int pendId, StateEnum state, DeferredEnum reason)
             {
                 // Verify state and reason in DB.
@@ -765,6 +810,21 @@ namespace Test.iOS
                 CreatePending (accountId: 5); // pending in other account
                 var retrieved = McPending.QueryEligible (defaultAccountId, McAccount.ActiveSyncCapabilities);
                 PendingsAreEqual (pendElig, retrieved.FirstOrDefault ());
+            }
+
+            [Test]
+            public void TestQueryAllNonDispachedNonFailedDoNotDelay ()
+            {
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, state: StateEnum.Dispatched); // dispatched, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, accountId: 5); // in other account, otherwise matching.
+                CreatePending (); // do not delay false, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, capability: McAccount.AccountCapabilityEnum.EmailSender); // other capability, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, state: StateEnum.Failed); // failed, otherwise matching.
+                CreatePending (operation: Operations.TaskCreate, doNotDelay: true, state: StateEnum.Deleted); // deleted, otherwise matching.
+                var gonner = CreatePending (operation: Operations.TaskCreate, doNotDelay: true); // matching.
+                var retrieved = McPending.QueryAllNonDispachedNonFailedDoNotDelay (gonner.AccountId, McAccount.ImapCapabilities).ToList ();
+                Assert.AreEqual (1, retrieved.Count);
+                Assert.AreEqual (gonner.Id, retrieved.First ().Id);
             }
 
             [Test]

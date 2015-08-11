@@ -236,6 +236,8 @@ namespace NachoClient.iOS
                 supportInfo.Add ("BuildNumber", Build.BuildInfo.BuildNumber);
 
                 Telemetry.StartService ();
+                // Close all JSON files so they can be immediately uploaded while the user enters the
+                Telemetry.JsonFileTable.FinalizeAll ();
                 Telemetry.RecordSupport (supportInfo, () => {
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),

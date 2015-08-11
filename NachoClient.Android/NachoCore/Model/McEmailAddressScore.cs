@@ -69,6 +69,12 @@ namespace NachoCore.Model
         // Number of emails sent to this contact
         public int EmailsSent { get; set; }
 
+        // Number of emails manually marked hot
+        public int MarkedHot { get; set; }
+
+        // Number of emails manually marked not hot
+        public int MarkedNotHot { get; set; }
+
         public static McEmailAddressScore QueryByParentId (int parentId)
         {
             return NcModel.Instance.Db.Query<McEmailAddressScore> (

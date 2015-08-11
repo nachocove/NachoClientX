@@ -73,9 +73,9 @@ namespace NachoCore
             return false;
         }
 
-        public void StartSync ()
+        public NcResult StartSync ()
         {
-            // TODO: Send status in as if deferreds have changed
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
@@ -153,9 +153,9 @@ namespace NachoCore
             return false;
         }
 
-        public void StartSync ()
+        public NcResult StartSync ()
         {
-            // TODO: Send status in as if deferreds have changed
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
