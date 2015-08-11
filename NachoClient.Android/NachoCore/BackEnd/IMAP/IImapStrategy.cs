@@ -28,6 +28,7 @@ namespace NachoCore.IMAP
         {
             Sync,
             OpenOnly,
+            QuickSync,
         };
 
         public MethodEnum Method;
@@ -35,10 +36,11 @@ namespace NachoCore.IMAP
         public MessageSummaryItems Flags;
         // PendingSingle is null if Strategy decided to Sync.
         public McPending PendingSingle;
-        public UniqueIdSet SyncSet;
+        public IList<UniqueId> SyncSet;
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
         public bool GetHeaders;
+        public uint QSpan; // Quick Sync Span
 
         public SyncKit (McFolder folder)
         {
@@ -46,6 +48,17 @@ namespace NachoCore.IMAP
             Folder = folder;
         }
 
+        public SyncKit (McFolder folder, uint span, McPending pending, MessageSummaryItems flags, HashSet<HeaderId> headers)
+        {
+            Method = MethodEnum.QuickSync;
+            Folder = folder;
+            QSpan = span;
+            Flags = flags;
+            Headers = headers;
+            GetPreviews = false;
+            GetHeaders = true;
+            PendingSingle = pending;
+        }
 
         public SyncKit (McFolder folder, UniqueIdSet uidset, MessageSummaryItems flags, HashSet<HeaderId> headers)
         {

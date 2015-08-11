@@ -38,7 +38,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The time in seconds after which we'll add the inbox to the top of the list in SyncFolderList.
         /// </summary>
-        const int KInboxMinSyncTime = 15*60;
+        const int KInboxMinSyncTime = 15 * 60;
 
         /// <summary>
         /// The Inbox message count after which we'll transition out of Stage/Rung 0
@@ -84,7 +84,7 @@ namespace NachoCore.IMAP
 
         //MessageSummaryItems FlagResyncFlags = MessageSummaryItems.Flags | MessageSummaryItems.UniqueId;
 
-        private static HashSet<HeaderId> ImapSummaryHeaders()
+        private static HashSet<HeaderId> ImapSummaryHeaders ()
         {
             HashSet<HeaderId> headers = new HashSet<HeaderId> ();
             headers.Add (HeaderId.Importance);
@@ -93,14 +93,15 @@ namespace NachoCore.IMAP
             return headers;
         }
 
-        private static MessageSummaryItems ImapSummaryitems(McProtocolState protocolState)
+        private static MessageSummaryItems ImapSummaryitems (McProtocolState protocolState)
         {
             MessageSummaryItems NewMessageFlags = MessageSummaryItems.BodyStructure
-                | MessageSummaryItems.Envelope
-                | MessageSummaryItems.Flags
-                | MessageSummaryItems.InternalDate
-                | MessageSummaryItems.MessageSize
-                | MessageSummaryItems.UniqueId;;
+                                                  | MessageSummaryItems.Envelope
+                                                  | MessageSummaryItems.Flags
+                                                  | MessageSummaryItems.InternalDate
+                                                  | MessageSummaryItems.MessageSize
+                                                  | MessageSummaryItems.UniqueId;
+            ;
 
             if (protocolState.ImapServerCapabilities.HasFlag (McProtocolState.NcImapCapabilities.GMailExt1)) {
                 NewMessageFlags |= MessageSummaryItems.GMailMessageId;
@@ -128,7 +129,7 @@ namespace NachoCore.IMAP
 
         private static bool HasNewMail (McFolder folder)
         {
-            return ((0 != folder.ImapUidHighestUidSynced) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext -1));
+            return ((0 != folder.ImapUidHighestUidSynced) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1));
         }
 
         /// <summary>
@@ -191,15 +192,14 @@ namespace NachoCore.IMAP
             }
         }
 
-        private bool NeedFolderMetadata (McFolder folder, McPending pending)
+        private bool NeedFolderMetadata (McFolder folder)
         {
             if (0 == folder.ImapUidNext || null == folder.ImapUidSet) {
                 // new folder.
                 return true;
             }
             // If we have a pending, i.e. user-action (pull-to-refresh), then use a shorter timeout.
-            int folderMetaDataInterval = null != pending ? KFolderExamineFGShortInterval : FolderExamineInterval;
-            if (folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-folderMetaDataInterval)) {
+            if (folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
                 return true;
             }
             return false;
@@ -229,15 +229,25 @@ namespace NachoCore.IMAP
             }
             bool havePending = null != pending;
             Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Checking folder (last examined: {1}, HighestSynced {2}, UidNext {3}, Pending {4})",
-                folder.ImapFolderNameRedacted (), folder.ImapLastExamine.ToString("MM/dd/yyyy hh:mm:ss.fff tt"),
+                folder.ImapFolderNameRedacted (), folder.ImapLastExamine.ToString ("MM/dd/yyyy hh:mm:ss.fff tt"),
                 folder.ImapUidHighestUidSynced, folder.ImapUidNext,
                 havePending);
             
             SyncKit syncKit = null;
-            if (NeedFolderMetadata(folder, pending)) {
+            if (havePending) {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: QuickSync",
+                    folder.ImapFolderNameRedacted (), folder.ImapUidSet, folder.ImapLastExamine);
+                syncKit = new SyncKit (folder, KBaseOverallWindowSize, pending,
+                    ImapSummaryitems (protocolState), ImapSummaryHeaders ());
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    McFolder target = (McFolder)record;
+                    target.ImapNeedFullSync = true;
+                    return true;
+                });
+            } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
-                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: Pending {1} ImapUidSet {2} ImapLastExamine {3}",
-                    folder.ImapFolderNameRedacted (), havePending, folder.ImapUidSet, folder.ImapLastExamine);
+                Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: ImapUidSet {1} ImapLastExamine {2}",
+                    folder.ImapFolderNameRedacted (), folder.ImapUidSet, folder.ImapLastExamine);
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                     McFolder target = (McFolder)record;
                     target.ImapNeedFullSync = true;
@@ -253,7 +263,7 @@ namespace NachoCore.IMAP
             } else {
                 var syncSet = SyncSet (ref protocolState, folder);
                 if (syncSet.Any ()) {
-                    syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
+                    syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
                     if (null != syncKit && null != pending) {
                         syncKit.PendingSingle = pending;
                     }
@@ -550,7 +560,7 @@ namespace NachoCore.IMAP
             switch (protocolState.ImapSyncRung) {
             case 0:
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
-                    !SyncSet(ref protocolState, defInbox).Any ()) {
+                    !SyncSet (ref protocolState, defInbox).Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
                 }
@@ -585,14 +595,14 @@ namespace NachoCore.IMAP
             switch (exeCtxt) {
             case NcApplication.ExecutionContextEnum.QuickSync:
                 // the prioFolder could be the inbox, so check first before adding
-                maybeAddFolderToList(folderList, defInbox);
+                maybeAddFolderToList (folderList, defInbox);
                 break;
 
             default:
                 switch (protocolState.ImapSyncRung) {
                 case 0:
                     // the prioFolder could be the inbox, so check first before adding
-                    maybeAddFolderToList(folderList, defInbox);
+                    maybeAddFolderToList (folderList, defInbox);
                     break;
 
                 case 1:
@@ -603,7 +613,7 @@ namespace NachoCore.IMAP
                 case 2:
                     // If inbox hasn't sync'd in kInboxMinSyncTime seconds, add it to the list at (or near) the top.
                     if (defInbox.LastSyncAttempt < DateTime.UtcNow.AddSeconds (-KInboxMinSyncTime)) {
-                        maybeAddFolderToList(folderList, defInbox);
+                        maybeAddFolderToList (folderList, defInbox);
                     }
 
                     foreach (var folder in McFolder.QueryByIsClientOwned (protocolState.AccountId, false).OrderBy (x => x.LastSyncAttempt)) {
@@ -616,9 +626,6 @@ namespace NachoCore.IMAP
                     break;
                 }
                 break;
-            }
-            foreach (var folder in folderList) {
-                Log.Info (Log.LOG_IMAP, "SyncFolderList: {0} LastSyncAttempt {1}", folder.ImapFolderNameRedacted (), folder.LastSyncAttempt.ToString("MM/dd/yyyy hh:mm:ss.fff tt"));
             }
             return folderList;
         }
