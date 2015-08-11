@@ -66,9 +66,6 @@ namespace NachoCore.IMAP
 
         protected override Event ExecuteCommand ()
         {
-            NcCapture.AddKind ("FOO");
-            var cap = NcCapture.CreateAndStart ("FOO");
-
             McProtocolState protocolState = BEContext.ProtocolState;
 
             // On startup, we just asked the server for a list of folder (via Client.Authenticate()).
@@ -203,9 +200,7 @@ namespace NachoCore.IMAP
                 target.AsLastFolderSync = DateTime.UtcNow;  // FIXME: Rename AsLastFolderSync to be generic.
                 return true;
             });
-            cap.Pause ();
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Done (rung {0}) took {1}", protocolState.ImapSyncRung, cap.ElapsedMilliseconds);
-            cap.Dispose ();
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Done");
             return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
     }
