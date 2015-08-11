@@ -433,6 +433,7 @@ namespace NachoCore.IMAP
             PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent += StatusIndEventHandler;
         }
 
         // State-machine's state persistance callback.
@@ -461,6 +462,7 @@ namespace NachoCore.IMAP
             LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
 
+        #region NcCommStatus
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
         {
             if (e.ServerId == Server.Id) {
@@ -492,6 +494,20 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)PcEvt.E.Park, "IMEHPARK");
             }
         }
+        #endregion
+
+        public void StatusIndEventHandler (Object sender, EventArgs ea)
+        {
+            var siea = (StatusIndEventArgs)ea;
+            if (null == siea.Account || siea.Account.Id != AccountId) {
+                return;
+            }
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_DaysToSyncChanged:
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPDAYSYNC");
+                break;
+            }
+        }
 
         public static string MessageServerId (McFolder folder, UniqueId ImapMessageUid)
         {
@@ -515,6 +531,7 @@ namespace NachoCore.IMAP
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            NcApplication.Instance.StatusIndEvent -= StatusIndEventHandler;
             if (null != PushAssist) {
                 PushAssist.Dispose ();
                 PushAssist = null;
