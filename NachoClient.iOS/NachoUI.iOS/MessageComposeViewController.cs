@@ -175,17 +175,19 @@ namespace NachoClient.iOS
                 mimeMessage.Body = body.ToMessageBody ();
 
                 var message = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                message.BodyPreview = preview;
-                message.Intent = messageIntent;
-                message.IntentDate = messageIntentDateTime;
-                message.IntentDateType = messageIntentDateType;
-                message.QRType = QRType;
+                message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.BodyPreview = preview;
+                    target.Intent = messageIntent;
+                    target.IntentDate = messageIntentDateTime;
+                    target.IntentDateType = messageIntentDateType;
+                    target.QRType = QRType;
 
-                message.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
-                message.ReferencedIsForward = (action == EmailHelper.Action.Forward);
-                message.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
-
-                message.Update ();
+                    target.ReferencedEmailId = (null == referencedMessage) ? 0 : referencedMessage.Id;
+                    target.ReferencedIsForward = (action == EmailHelper.Action.Forward);
+                    target.ReferencedBodyIsIncluded = !calendarInviteIsSet && null != initialQuotedText;
+                    return true;
+                });
 
                 EmailHelper.SaveEmailMessageInDrafts (message);
                 if (null != draftMessage) {
@@ -1329,20 +1331,22 @@ namespace NachoClient.iOS
 
                 mimeMessage.Body = body.ToMessageBody ();
                 var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                messageToSend.BodyPreview = preview;
-                messageToSend.Intent = messageIntent;
-                messageToSend.IntentDate = messageIntentDateTime;
-                messageToSend.IntentDateType = messageIntentDateType;
-                messageToSend.QRType = QRType;
+                messageToSend = messageToSend.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.BodyPreview = preview;
+                    target.Intent = messageIntent;
+                    target.IntentDate = messageIntentDateTime;
+                    target.IntentDateType = messageIntentDateType;
+                    target.QRType = QRType;
 
-                if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
-                    messageToSend.ReferencedEmailId = referencedMessage.Id;
-                    messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                    messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                    messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                }
-
-                messageToSend.Update ();
+                    if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
+                        target.ReferencedEmailId = referencedMessage.Id;
+                        target.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                        target.ReferencedIsForward = EmailHelper.IsForwardAction (action);
+                        target.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                    }
+                    return true;
+                });
 
                 // Send the mesage
                 EmailHelper.SendTheMessage (action, messageToSend, originalEmailIsEmbedded, referencedMessage, calendarInviteIsSet, calendarInviteItem);

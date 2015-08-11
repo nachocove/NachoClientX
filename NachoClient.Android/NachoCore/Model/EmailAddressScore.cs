@@ -252,7 +252,7 @@ namespace NachoCore.Model
                 delta = 1;
             }
             var queryString = String.Format (
-                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0} WHERE Id IN " +
+                                  "UPDATE McEmailMessage SET NeedUpdate = NeedUpdate + {0}, RowVersion = RowVersion + 1 WHERE Id IN " +
                                   " (SELECT m.ObjectId FROM McMapEmailAddressEntry AS m " +
                                   "  WHERE m.EmailAddressId = ? AND m.AddressType = ?)", delta);
             NcModel.Instance.RunInLock (() => {

@@ -138,8 +138,11 @@ namespace NachoCore.IMAP
                     });
                 }
 
-                email.BodyId = body.Id;
-                email.Update ();
+                email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.BodyId = body.Id;
+                    return true;
+                });
 
                 if (string.IsNullOrEmpty (email.BodyPreview)) {
                     // The Sync didn't create a preview. Do it now.

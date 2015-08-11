@@ -632,11 +632,17 @@ namespace Test.Common
             inbox.Link (emails [0]);
             inbox.Link (emails [1]);
 
-            emails [1].Score = 1.0;
-            emails [1].Update ();
+            emails [1] = emails [1].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Score = 1.0;
+                return true;
+            });
 
-            emails [3].Score = 1.0;
-            emails [3].Update ();
+            emails [3].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.Score = 1.0;
+                return true;
+            });
 
             // Configuration #1 - Inbox
             var account = Owner.Account;

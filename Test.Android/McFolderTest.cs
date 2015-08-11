@@ -1371,8 +1371,11 @@ namespace Test.iOS
             folder2.Link (email5);
             // email6 excluded (IsAwaitingDelete).
             McEmailMessage email6 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId: "10");
-            email6.IsAwaitingDelete = true;
-            email6.Update ();
+            email6.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.IsAwaitingDelete = true;
+                return true;
+            });
             folder1.Link (email6);
 
             var oldies = McEmailMessage.QueryOldEpochByFolderId<McEmailMessage> 

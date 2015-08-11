@@ -994,9 +994,12 @@ namespace NachoClient.iOS
                 if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
                     Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
                     --badgeCount;
-                    message.HasBeenNotified = true;
-                    message.ShouldNotify = true;
-                    message.Update ();
+                    message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.HasBeenNotified = true;
+                        target.ShouldNotify = true;
+                        return true;
+                    });
                     continue;
                 }
                 if (message.HasBeenNotified) {
@@ -1018,9 +1021,12 @@ namespace NachoClient.iOS
                 }
                 if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
                     --badgeCount;
-                    message.HasBeenNotified = true;
-                    message.ShouldNotify = false;
-                    message.Update ();
+                    message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.HasBeenNotified = true;
+                        target.ShouldNotify = false;
+                        return true;
+                    });
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
@@ -1031,13 +1037,16 @@ namespace NachoClient.iOS
                     soundExpressed = true;
                 }
 
-                message.HasBeenNotified = true;
-                message.ShouldNotify = true;
-                message.Update ();
-                if (!string.IsNullOrEmpty (message.MessageID)) {
-                    notifiedMessageIDs.Add (message.MessageID);
+                var updatedMessage = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.HasBeenNotified = true;
+                    target.ShouldNotify = true;
+                    return true;
+                });
+                if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
+                    notifiedMessageIDs.Add (updatedMessage.MessageID);
                 }
-                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", message.Id);
+                Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Notification for message {0}", updatedMessage.Id);
                 --remainingVisibleSlots;
                 if (0 >= remainingVisibleSlots) {
                     break;

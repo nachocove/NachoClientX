@@ -320,7 +320,11 @@ namespace NachoCore.IMAP
                         folder.Link (emailMessage);
                         InsertAttachments (emailMessage, imapSummary as MessageSummary);
                     } else {
-                        emailMessage.Update ();
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                            return true;
+                        });
                     }
                 });
             }

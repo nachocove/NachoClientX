@@ -91,20 +91,21 @@ namespace NachoClient.AndroidClient
 
             mimeMessage.Body = body.ToMessageBody ();
             var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-            messageToSend.BodyPreview = preview;
-            messageToSend.Intent = McEmailMessage.IntentType.None;
-            messageToSend.IntentDate = default(DateTime);
-            messageToSend.IntentDateType = MessageDeferralType.None;
-            messageToSend.QRType = NachoCore.Brain.NcQuickResponse.QRTypeEnum.None;
-
-            if (EmailHelper.IsForwardOrReplyAction (action)) {
-                messageToSend.ReferencedEmailId = referencedMessage.Id;
-                messageToSend.ReferencedBodyIsIncluded = false;
-                messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                messageToSend.WaitingForAttachmentsToDownload = false;
-            }
-
-            messageToSend.Update ();
+            messageToSend = messageToSend.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.BodyPreview = preview;
+                target.Intent = McEmailMessage.IntentType.None;
+                target.IntentDate = default(DateTime);
+                target.IntentDateType = MessageDeferralType.None;
+                target.QRType = NachoCore.Brain.NcQuickResponse.QRTypeEnum.None;
+                if (EmailHelper.IsForwardOrReplyAction (action)) {
+                    target.ReferencedEmailId = referencedMessage.Id;
+                    target.ReferencedBodyIsIncluded = false;
+                    target.ReferencedIsForward = EmailHelper.IsForwardAction (action);
+                    target.WaitingForAttachmentsToDownload = false;
+                }
+                return true;
+            });
 
             // Send the mesage
             EmailHelper.SendTheMessage (action, messageToSend, false, referencedMessage, false, null);

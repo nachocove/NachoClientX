@@ -350,8 +350,11 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 mime.WriteTo (stream);
             });
-            WaitingForAttachmentsToDownload = false;
-            this.Update ();
+            UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.WaitingForAttachmentsToDownload = false;
+                return true;
+            });
         }
 
         public void ConvertToRegularSend ()
@@ -383,11 +386,14 @@ namespace NachoCore.Model
             body.UpdateData ((FileStream stream) => {
                 outgoingMime.WriteTo (stream);
             });
-            ReferencedEmailId = 0;
-            ReferencedBodyIsIncluded = false;
-            ReferencedIsForward = false;
-            WaitingForAttachmentsToDownload = false;
-            this.Update ();
+            UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.ReferencedEmailId = 0;
+                target.ReferencedBodyIsIncluded = false;
+                target.ReferencedIsForward = false;
+                target.WaitingForAttachmentsToDownload = false;
+                return true;
+            });
         }
 
         public void DeleteAttachments ()
@@ -1114,35 +1120,52 @@ namespace NachoCore.Model
             }
         }
 
-        public override int Update ()
+        public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
-            using (var capture = CaptureWithStart ("Update")) {
-                int returnVal = -1;  
-                if (!HasBeenNotified) {
-                    HasBeenNotified = (NcApplication.Instance.IsForeground || IsRead);
-                }
-
-                NcModel.Instance.RunInTransaction (() => {
-                    returnVal = base.Update ();
-                    SaveMeetingRequest ();
-                    SaveCategories ();
-                    if (emailAddressesChanged) {
-                        DeleteAddressMaps ();
-                        InsertAddressMaps ();
+            int myCount = 0;
+            T retval = null;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.UpdateWithOCApply<T> ((record) => {
+                    var target = (McEmailMessage)record;
+                    if (!target.HasBeenNotified) {
+                        target.HasBeenNotified = (NcApplication.Instance.IsForeground || target.IsRead);
                     }
-                    // Score states are only affected by brain which uses the score states Update() method.
-                    // So, no need to update score states here
-                });
-
-                return returnVal;
-            }
+                    return mutator (record);
+                }, out myCount, tries);
+                if (null == retval) {
+                    // We were not able to update the record.
+                    return;
+                }
+                SaveMeetingRequest ();
+                SaveCategories ();
+                if (emailAddressesChanged) {
+                    DeleteAddressMaps ();
+                    InsertAddressMaps ();
+                }
+                // Score states are only affected by brain which uses the score states Update() method.
+                // So, no need to update score states here
+            });
+            count = myCount;
+            return retval;
         }
 
-        public void UpdateIsIndex ()
+        public override T UpdateWithOCApply<T> (Mutator mutator, int tries = 100)
+        {
+            int rc = 0;
+            return UpdateWithOCApply<T> (mutator, out rc, tries);
+        }
+
+        public override int Update ()
+        {
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
+        }
+
+        public void UpdateIsIndex (int newIsIndexed)
         {
             NcModel.Instance.BusyProtect (() => {
-                return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ? WHERE Id = ?",
-                    IsIndexed, Id);
+                return NcModel.Instance.Db.Execute ("UPDATE McEmailMessage SET IsIndexed = ?, RowVersion = RowVersion + 1 WHERE Id = ?",
+                    newIsIndexed, Id);
             });
         }
 
@@ -1209,19 +1232,21 @@ namespace NachoCore.Model
             return false;
         }
 
-        public void SetIndexVersion ()
+        public int SetIndexVersion ()
         {
+            int newIsIndexed;
             if (0 == BodyId) {
                 // No body to index. This message is fully indexed.
-                IsIndexed = EmailMessageIndexDocument.Version - 1;
+                newIsIndexed = EmailMessageIndexDocument.Version - 1;
             } else {
                 var body = GetBody ();
                 if ((null != body) && body.IsComplete ()) {
-                    IsIndexed = EmailMessageIndexDocument.Version;
+                    newIsIndexed = EmailMessageIndexDocument.Version;
                 } else {
-                    IsIndexed = EmailMessageIndexDocument.Version - 1;
+                    newIsIndexed = EmailMessageIndexDocument.Version - 1;
                 }
             }
+            return newIsIndexed;
         }
 
         public static McEmailMessage QueryByMessageId (int accountId, string messageId)

@@ -78,15 +78,17 @@ namespace NachoCore.Model
                     var accountId = emailMessage.AccountId;
                     var objectId = emailMessage.Id;
 
-                    emailMessage.FromEmailAddressId = 
-                        ProcessAddress (accountId, objectId, emailMessage.From, NcEmailAddress.Kind.From);
-                    emailMessage.SenderEmailAddressId =
-                        ProcessAddress (accountId, objectId, emailMessage.Sender, NcEmailAddress.Kind.Sender);
-                    ProcessAddressList (accountId, objectId, emailMessage.To, NcEmailAddress.Kind.To);
-                    ProcessAddressList (accountId, objectId, emailMessage.Cc, NcEmailAddress.Kind.Cc);
-
-                    emailMessage.MigrationVersion = thisVersion;
-                    emailMessage.Update ();
+                    emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.FromEmailAddressId = 
+                            ProcessAddress (accountId, objectId, target.From, NcEmailAddress.Kind.From);
+                        target.SenderEmailAddressId =
+                            ProcessAddress (accountId, objectId, target.Sender, NcEmailAddress.Kind.Sender);
+                        ProcessAddressList (accountId, objectId, target.To, NcEmailAddress.Kind.To);
+                        ProcessAddressList (accountId, objectId, target.Cc, NcEmailAddress.Kind.Cc);
+                        target.MigrationVersion = thisVersion;
+                        return true;
+                    });
                     UpdateProgress (1);
                 });
             }

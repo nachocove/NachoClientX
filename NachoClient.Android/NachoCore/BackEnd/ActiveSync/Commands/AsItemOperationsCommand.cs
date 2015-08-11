@@ -174,8 +174,11 @@ namespace NachoCore.ActiveSync
                     } else {
                         if (0 == item.BodyId) {
                             var body = McBody.InsertError (BEContext.Account.Id);
-                            item.BodyId = body.Id;
-                            item.Update ();
+                            item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.BodyId = body.Id;
+                                return true;
+                            });
                         } else {
                             var body = McBody.QueryById<McBody> (item.BodyId);
                             if (null == body) {
@@ -267,7 +270,7 @@ namespace NachoCore.ActiveSync
                             }
                             switch (op) {
                             case McPending.Operations.EmailBodyDownload:
-                                item = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
+                                item = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded;
                                 if (null != pending) {
                                     Log.Info (Log.LOG_AS, "Processing DnldEmailBodyCmd({0}) {1}/{2} for email {3}", item.AccountId, pending.Id, pending.Token, item.Id);
@@ -276,15 +279,15 @@ namespace NachoCore.ActiveSync
                                 }
                                 break;
                             case McPending.Operations.CalBodyDownload:
-                                item = McAbstrItem.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
+                                item = McCalendar.QueryByServerId<McCalendar> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_CalendarBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.ContactBodyDownload:
-                                item = McAbstrItem.QueryByServerId<McContact> (BEContext.Account.Id, serverId);
+                                item = McContact.QueryByServerId<McContact> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_ContactBodyDownloadSucceeded;
                                 break;
                             case McPending.Operations.TaskBodyDownload:
-                                item = McAbstrItem.QueryByServerId<McTask> (BEContext.Account.Id, serverId);
+                                item = McTask.QueryByServerId<McTask> (BEContext.Account.Id, serverId);
                                 successInd = NcResult.SubKindEnum.Info_TaskBodyDownloadSucceeded;
                                 break;
                             default:
@@ -295,8 +298,19 @@ namespace NachoCore.ActiveSync
                                 // We are ignoring all the other crap that can come down (for now). We just want the Body.
                                 // The item can be already deleted while we are waiting for this response.
                                 // TODO - make sure we're not leaking the body if it is already deleted.
-                                item.ApplyAsXmlBody (xmlBody);
-                                item.Update ();
+                                if (item is McEmailMessage) {
+                                    item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                        // In theory, ApplyAsXmlBody() can create an orphaned McBody if (1) UpdateWithOCApply repeats
+                                        // the mutator and (2) the XML has the text of the body in the <Data> element.  But #2 doesn't
+                                        // happen, since the WBXML code saves the <Data> to a McBody in advance.  So this is a theoretical
+                                        // problem, not a practical problem.
+                                        item.ApplyAsXmlBody (xmlBody);
+                                        return true;
+                                    });
+                                } else {
+                                    item.ApplyAsXmlBody (xmlBody);
+                                    item.Update ();
+                                }
                             }
                             Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", serverId, 
                                 (null == pending) ? "pre" : "");

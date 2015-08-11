@@ -1033,8 +1033,11 @@ namespace NachoCore
                 }
                 Log.Warn (Log.LOG_PUSH, "Unnotified email message (id={0}, dateReceived={1}, createdAt={2})",
                     message.Id, message.DateReceived, message.CreatedAt);
-                message.HasBeenNotified = true;
-                message.Update ();
+                message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.HasBeenNotified = true;
+                    return true;
+                });
             }
         }
 

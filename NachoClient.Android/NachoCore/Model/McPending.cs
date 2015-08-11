@@ -665,8 +665,10 @@ namespace NachoCore.Model
             }
             if (null == body) {
                 body = McBody.InsertError (accountId);
-                email.BodyId = body.Id;
-                email.Update ();
+                email = email.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    email.BodyId = body.Id;
+                    return true;
+                });
             } else {
                 body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
                 body.Update ();
@@ -1068,8 +1070,17 @@ namespace NachoCore.Model
                     }
                     if (null != Item) {
                         ItemId = Item.Id;
-                        Item.PendingRefCount++;
-                        Item.Update ();
+                        // TODO Implement OC for all McItem subclasses.
+                        if (Item is McEmailMessage) {
+                            Item = Item.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.PendingRefCount++;
+                                return true;
+                            });
+                        } else {
+                            Item.PendingRefCount++;
+                            Item.Update ();
+                        }
                     }
                     base.Insert ();
                     ++_Version;
@@ -1178,8 +1189,17 @@ namespace NachoCore.Model
                         }
                         NcAssert.NotNull (item);
                         NcAssert.True (0 < item.PendingRefCount);
-                        item.PendingRefCount--;
-                        item.Update ();
+                        // TODO Implement OC for all McItem subclasses.
+                        if (item is McEmailMessage) {
+                            item = item.UpdateWithOCApply<McEmailMessage> ((record) => {
+                                var target = (McEmailMessage)record;
+                                target.PendingRefCount --;
+                                return true;
+                            });
+                        } else {
+                            item.PendingRefCount--;
+                            item.Update ();
+                        }
                         Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
                         if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
                             item.Delete ();

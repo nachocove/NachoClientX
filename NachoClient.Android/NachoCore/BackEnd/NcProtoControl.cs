@@ -283,8 +283,11 @@ namespace NachoCore
                         markUpdate.Insert ();
 
                         // Mark the actual item.
-                        emailMessage.IsRead = true;
-                        emailMessage.Update ();
+                        emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                            var target = (McEmailMessage)record;
+                            target.IsRead = true;
+                            return true;
+                        });
                     }
                 }
                 var pending = new McPending (Account.Id, capability) {
@@ -622,8 +625,11 @@ namespace NachoCore
                 };   
                 pending.Insert ();
                 result = NcResult.OK (pending.Token);
-                emailMessage.IsRead = true;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.IsRead = true;
+                    return true;
+                });
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)PcEvt.E.PendQ, "PCPCMRMSG");
