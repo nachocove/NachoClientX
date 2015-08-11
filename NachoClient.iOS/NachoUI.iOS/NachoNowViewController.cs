@@ -55,9 +55,9 @@ namespace NachoClient.iOS
             refreshControl.TintColor = A.Color_NachoGreen;
             refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             refreshControl.ValueChanged += (object sender, EventArgs e) => {
-                rearmRefreshTimer ();
+                var nr = priorityInbox.StartSync ();
+                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
                 refreshControl.BeginRefreshing ();
-                priorityInbox.StartSync ();
             };
 
             tableViewController = new UITableViewController ();
@@ -76,13 +76,13 @@ namespace NachoClient.iOS
 
         NcTimer refreshTimer;
 
-        void rearmRefreshTimer ()
+        void rearmRefreshTimer (int seconds)
         {
             if (null != refreshTimer) {
                 refreshTimer.Dispose ();
                 refreshTimer = null;
             }
-            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, 10000, 0); 
+            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
         }
 
         void cancelRefreshTimer ()

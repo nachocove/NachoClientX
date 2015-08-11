@@ -6,6 +6,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -75,10 +76,12 @@ namespace NachoCore
             return false;
         }
 
-        public void StartSync ()
+        public NcResult StartSync ()
         {
             if (null != folder) {
-                BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
+                return BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
+            } else {
+                return NachoSyncResult.DoesNotSync ();
             }
         }
 
