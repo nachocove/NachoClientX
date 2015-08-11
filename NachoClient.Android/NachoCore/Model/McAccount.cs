@@ -4,6 +4,8 @@ using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
+using NachoPlatform;
+using System.Security.Cryptography;
 
 namespace NachoCore.Model
 {
@@ -54,6 +56,13 @@ namespace NachoCore.Model
         public AccountTypeEnum AccountType { get; set; }
 
         public AccountServiceEnum AccountService { get; set; }
+
+        /// <summary>
+        /// DO NOT ACCESS. Use UpdateLogSalt/GetLogSalt.
+        /// Property is here for SQLite.Net only!
+        /// </summary>
+        /// <value>The log salt.</value>
+        public string LogSalt { get; set; }
 
         public string EmailAddr { get; set; }
 
@@ -108,6 +117,57 @@ namespace NachoCore.Model
                 NcAssert.CaseError (String.Format ("AccountServiceName: unknown {0}", service));
                 return "";
             }
+        }
+
+        public string GetLogSalt ()
+        {
+            if (Keychain.Instance.HasKeychain () && null == LogSalt) {
+                return Keychain.Instance.GetLogSalt (Id);
+            } else {
+                return LogSalt;
+            }
+        }
+
+        private void GenerateLogSalt ()
+        { 
+            RandomNumberGenerator rng = new RNGCryptoServiceProvider ();
+            byte[] randData = new byte[32];
+            rng.GetBytes (randData);
+            string randString = Convert.ToBase64String (randData);
+            LogSalt = randString;
+        }
+
+        public void GenerateAndUpdateLogSalt ()
+        {
+            GenerateLogSalt ();
+            UpdateLogSalt ();
+        }
+
+        public void UpdateLogSalt ()
+        {
+            NcAssert.True (0 != Id);
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.SetLogSalt (Id, LogSalt);
+                LogSalt = null;
+            } 
+            Update ();
+        }
+
+        public override int Delete ()
+        {
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.DeleteLogSalt (Id);
+                LogSalt = null;
+                Update ();
+            } 
+            return base.Delete ();
+        }
+            
+        public static string GetLoggablePassword (McAccount account, string password)
+        {
+            NcAssert.False (string.IsNullOrEmpty(account.GetLogSalt ()));
+            string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
+            return hash.Substring(hash.Length-3); // e.g. "f47"
         }
     }
 

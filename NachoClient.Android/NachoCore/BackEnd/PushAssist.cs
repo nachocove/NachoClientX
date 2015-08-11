@@ -738,7 +738,10 @@ namespace NachoCore
                 WaitBeforeUse = parameters.WaitBeforeUseMsec,
                 PushToken = DeviceToken,
                 PushService = NcApplication.Instance.GetPushService (),
-            };
+            };           
+            McAccount account = McAccount.QueryById<McAccount> (AccountId);
+            string password = cred.GetPassword ();
+            Log.Info (Log.LOG_PUSH, "DoStartSession: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
             FillOutIdentInfo (jsonRequest);
 
             var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);

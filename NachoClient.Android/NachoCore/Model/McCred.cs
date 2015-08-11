@@ -2,6 +2,7 @@ using System;
 using SQLite;
 using NachoCore.Utils;
 using NachoPlatform;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {

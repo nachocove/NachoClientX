@@ -45,6 +45,7 @@ namespace NachoCore.Model
                 account.AccountService = service;
                 account.DisplayName = McAccount.AccountServiceName (service);
                 account.Insert ();
+                account.GenerateAndUpdateLogSalt ();
                 var cred = new McCred () { 
                     AccountId = account.Id,
                     Username = emailAddress,
