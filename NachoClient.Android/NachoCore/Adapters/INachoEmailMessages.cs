@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -23,7 +24,7 @@ namespace NachoCore
 
         string DisplayName ();
 
-        void StartSync ();
+        NcResult StartSync ();
 
         INachoEmailMessages GetAdapterForThread (string threadId);
 
@@ -32,5 +33,18 @@ namespace NachoCore
         bool HasDraftsSemantics ();
 
         bool IsCompatibleWithAccount (McAccount account);
+    }
+
+    public static class NachoSyncResult
+    {
+        public static NcResult DoesNotSync ()
+        {
+            return NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+        }
+
+        public static bool DoesNotSync (NcResult nr)
+        {
+            return nr.isError () && (NcResult.SubKindEnum.Error_ClientOwned == nr.SubKind);
+        }
     }
 }

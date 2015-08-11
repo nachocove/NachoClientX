@@ -6,6 +6,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -72,8 +73,9 @@ namespace NachoCore
             return false;
         }
 
-        public void StartSync ()
+        public NcResult StartSync ()
         {
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
@@ -152,8 +154,9 @@ namespace NachoCore
             return false;
         }
 
-        public void StartSync ()
+        public NcResult StartSync ()
         {
+            return NachoSyncResult.DoesNotSync ();
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
