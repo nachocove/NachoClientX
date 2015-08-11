@@ -231,20 +231,23 @@ namespace NachoCore.IMAP
             if (null == summary) {
                 return NcResult.Error ("Could not convert summary to MessageSummary");
             }
+            var part = summary.Body;
+            if (null == part) {
+                // No body fetched.
+                return NcResult.Error ("messageBodyPart: no body");
+            }
 
             result = BodyTypeFromSummary (summary);
             if (!result.isOK ()) {
+                // we couldn't find the content type. Try to continue assuming MIME.
                 Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}", result.GetMessage ());
                 bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
             } else {
                 bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
             }
             if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
+                // We don't like this, but keep going. The UI will try its best to figure it out.
                 Log.Error (Log.LOG_IMAP, "messageBodyPart: unknown body type {0}", bodyType);
-            }
-            var part = summary.Body;
-            if (null == part) {
-                return NcResult.Error ("messageBodyPart: no body");
             }
             result = NcResult.OK ();
             result.Value = part;
