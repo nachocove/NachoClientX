@@ -41,7 +41,7 @@ namespace NachoCore.IMAP
             mailKitFolder.Open (FolderAccess.ReadWrite, Cts.Token);
             mailKitFolder.Rename (encapsulatingFolder, PendingSingle.DisplayName);
 
-            if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, out folder)) {
+            if (CreateOrUpdateFolder (mailKitFolder, PendingSingle.Folder_Type, PendingSingle.DisplayName, folder.IsDistinguished, false, out folder)) {
                 UpdateImapSetting (mailKitFolder, ref folder);
                 // TODO Do applyCommand stuff here
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
