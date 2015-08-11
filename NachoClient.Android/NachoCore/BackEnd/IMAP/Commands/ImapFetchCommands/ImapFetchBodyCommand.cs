@@ -257,7 +257,7 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <returns>The type from summary.</returns>
         /// <param name="summary">Summary.</param>
-        private NcResult BodyTypeFromSummary (MessageSummary summary)
+        public static NcResult BodyTypeFromSummary (MessageSummary summary)
         {
             McAbstrFileDesc.BodyTypeEnum bodyType;
 
@@ -289,15 +289,14 @@ namespace NachoCore.IMAP
                             return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
                         }
                     } else {
-                        return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                        return NcResult.Error (string.Format ("Unhandled contenttype {0}:{1}", part.ContentType.MediaType, part.ContentType.MediaSubtype));
                     }
                     NcResult result = NcResult.OK ();
                     result.Value = bodyType;
                     return result;
                 }
             } else {
-                Log.Warn (Log.LOG_IMAP, "No Body found!");
-                return NcResult.Error (string.Format ("No headers in summary"));
+                return NcResult.Error (string.Format ("No Body found"));
             }
         }
 
