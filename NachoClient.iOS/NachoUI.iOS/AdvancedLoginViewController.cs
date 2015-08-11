@@ -502,6 +502,7 @@ namespace NachoClient.iOS
 
         public void Quit ()
         {
+            BackEnd.Instance.Start (); // earlier we stopped all others. Restart them now.
             RemoveWorkInProgress (() => {
                 RemoveWindows ();
                 NavigationController.PopToRootViewController (false);
@@ -510,6 +511,7 @@ namespace NachoClient.iOS
 
         public void StartOver ()
         {
+            BackEnd.Instance.Start (); // earlier we stopped all others. Restart them now.
             RemoveWorkInProgress (() => {
                 RemoveWindows ();
                 NavigationController.PopToRootViewController (false);
