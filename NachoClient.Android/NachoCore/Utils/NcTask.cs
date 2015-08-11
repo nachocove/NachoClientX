@@ -158,8 +158,8 @@ namespace NachoCore.Utils
                     if (!task.IsCompleted && warnLivedTasks) {
                         Log.Error (Log.LOG_SYS, "Task {0} survives across shutdown", pair.Value);
                     }
-                    Log.Info (Log.LOG_SYS, "Task {0}: IsCompleted={1}, IsCanceled={2}, IsFaulted={3}",
-                        taskName, task.IsCompleted, task.IsCanceled, task.IsFaulted);
+                    Log.Info (Log.LOG_SYS, "Task {0}: IsCompleted={1}, IsCanceled={2}, IsFaulted={3}, status={4}",
+                        taskName, task.IsCompleted, task.IsCanceled, task.IsFaulted, task.Status);
                 } catch {
                     // tasks may be going away as we iterate.
                 }
