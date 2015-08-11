@@ -201,10 +201,11 @@ namespace NachoCore.Brain
                     }
                     NcModel.Instance.RunInTransaction (() => {
                         var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)emailMesasgeId);
-                        UpdateEmailMessageScore (emailMessage);
-                        if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
-                            var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
-                            UpdateAddressUserAction (fromEmailAddress, action);
+                        if (UpdateEmailMessageScore (emailMessage)) {
+                            if ((0 != action) && (0 != emailMessage.FromEmailAddressId)) {
+                                var fromEmailAddress = McEmailAddress.QueryById<McEmailAddress> (emailMessage.FromEmailAddressId);
+                                UpdateAddressUserAction (fromEmailAddress, action);
+                            }
                         }
                     });
                     break;
