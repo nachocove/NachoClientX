@@ -298,7 +298,7 @@ namespace NachoCore.IMAP
             } else {
                 try {
                     emailMessage = ParseEmail (accountId, McEmailMessageServerId, imapSummary as MessageSummary);
-                    updateFlags (emailMessage, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                    updateFlags (emailMessage, imapSummary);
                     changed = true;
                     justCreated = true;
                 } catch (Exception ex) {
@@ -322,7 +322,7 @@ namespace NachoCore.IMAP
                     } else {
                         emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
                             var target = (McEmailMessage)record;
-                            updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
+                            updateFlags (target, imapSummary);
                             return true;
                         });
                     }
