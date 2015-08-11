@@ -78,6 +78,9 @@ namespace NachoCore.Brain
             if (address.Contains ("donotreply")) {
                 return true;
             }
+            if (address.Contains ("do_not_reply")) {
+                return true;
+            }
             return false;
         }
 
@@ -159,10 +162,17 @@ namespace NachoCore.Brain
             // Caller is responsible for making sure that this is not in a junk folder.
             // We do not check here in order to avoid a lot of db queries just for
             // gleaning.
-            bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
-                GleanContacts (emailMessage.To, emailMessage.AccountId, obeyAbatement);
-                GleanContacts (emailMessage.From, emailMessage.AccountId, obeyAbatement);
-            }, false);
+            bool gleaned;
+            var disqualifier = new NcMarketingEmailDisqualifier ();
+            if (emailMessage.HeadersFiltered || disqualifier.Analyze (emailMessage)) {
+                // Do not glean email addresses from marketing emails because they are usually junk
+                gleaned = true;
+            } else {
+                gleaned = InterruptibleGleaning ((obeyAbatement) => {
+                    GleanContacts (emailMessage.To, emailMessage.AccountId, obeyAbatement);
+                    GleanContacts (emailMessage.From, emailMessage.AccountId, obeyAbatement);
+                }, false);
+            }
             if (gleaned) {
                 emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1);
             }
@@ -174,11 +184,18 @@ namespace NachoCore.Brain
             // McEmailMessage.QueryNeedGleaning() should filter out all ungleaned emails
             // in any of the junk folders. So, we don't do the junk folder check again
             // because it costs an additional query (on McMapFolderFolderEntry) per email.
-            bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
-                GleanContacts (emailMessage.Cc, emailMessage.AccountId, obeyAbatement);
-                GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId, obeyAbatement);
-                GleanContacts (emailMessage.Sender, emailMessage.AccountId, obeyAbatement);
-            }, true);
+            bool gleaned;
+            var disqualifier = new NcMarketingEmailDisqualifier ();
+            if (emailMessage.HeadersFiltered || disqualifier.Analyze (emailMessage)) {
+                // Do not glean email addresses from marketing emails because they are usually junk
+                gleaned = true;
+            } else {
+                gleaned = InterruptibleGleaning ((obeyAbatement) => {
+                    GleanContacts (emailMessage.Cc, emailMessage.AccountId, obeyAbatement);
+                    GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId, obeyAbatement);
+                    GleanContacts (emailMessage.Sender, emailMessage.AccountId, obeyAbatement);
+                }, true);
+            }
             if (gleaned) {
                 emailMessage.MarkAsGleaned (McEmailMessage.GleanPhaseEnum.GLEAN_PHASE2);
             }
