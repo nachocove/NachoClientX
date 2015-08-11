@@ -141,25 +141,6 @@ namespace NachoCore
             });
         }
 
-        /// <summary>
-        /// Start a specific backend, possibly exclusively (i.e. stopping all others)
-        /// </summary>
-        /// <param name="accountId">Account identifier.</param>
-        /// <param name="exclusive">If set to <c>true</c> stop all others.</param>
-        public void Start (int accountId, bool exclusive=true)
-        {
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}, exclusive={1}) called", accountId, exclusive);
-            // The callee does Task.Run.
-            if (exclusive) {
-                ApplyAcrossAccounts ("Stop", (stopId) => {
-                    if (stopId != accountId) {
-                        Stop (stopId);
-                    }
-                });
-            }
-            Start (accountId);
-        }
-
         public void Start ()
         {
             Log.Info (Log.LOG_BACKEND, "BackEnd.Start() called");
@@ -239,9 +220,21 @@ namespace NachoCore
             });
         }
 
-        public void Start (int accountId)
+        /// <summary>
+        /// Start the specified account's services.
+        /// </summary>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="exclusive">Stop all others.</param>
+        public void Start (int accountId, bool exclusive=true)
         {
-            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}) called", accountId);
+            Log.Info (Log.LOG_BACKEND, "BackEnd.Start({0}, exclusive={1}) called", accountId, exclusive);
+            if (exclusive) {
+                ApplyAcrossAccounts ("Stop", (stopId) => {
+                    if (stopId != accountId) {
+                        Stop (stopId);
+                    }
+                });
+            }
             NcCommStatus.Instance.Refresh ();
             if (!AccountHasServices (accountId)) {
                 CreateServices (accountId);

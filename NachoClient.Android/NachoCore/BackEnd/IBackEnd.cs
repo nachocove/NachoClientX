@@ -36,7 +36,7 @@ namespace NachoCore
         // (if it isn't already running).
         void Start ();
         // attempt to (re)start a specific account.
-        void Start (int accountId);
+        void Start (int accountId, bool exclusive=true);
         // stop all activity in the BE.
         void Stop ();
         // ... for a specific account.
