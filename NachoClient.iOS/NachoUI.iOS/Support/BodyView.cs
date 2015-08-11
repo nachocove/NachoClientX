@@ -135,14 +135,8 @@ namespace NachoClient.iOS
                 }
             }
                 
-            // Clear out the existing BodyView
-            foreach (var subview in childViews) {
-                var view = subview.uiView ();
-                view.RemoveFromSuperview ();
-                ViewHelper.DisposeViewHierarchy (view);
-            }
-            childViews.Clear ();
-            errorMessage.Hidden = true;
+            RemoveChildViews ();
+
             downloadToken = null;
             if (statusIndicatorIsRegistered) {
                 NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
@@ -256,8 +250,11 @@ namespace NachoClient.iOS
                 throw new NcAssert.NachoDefaultCaseFailure (string.Format (
                     "Unhandled abstract item type {0}", item.GetType ().Name));
             }
-            downloadToken = nr.GetValue<string> ();
-
+            if (nr.isError ()) {
+                downloadToken = null;
+            } else {
+                downloadToken = nr.GetValue<string> ();
+            }
             if (null == downloadToken) {
                 // There is a race condition where the download of the body could complete
                 // in between checking the FilePresence value and calling DnldEmailBodyCmd.
@@ -297,15 +294,7 @@ namespace NachoClient.iOS
 
         private void ActivateSpinner ()
         {
-            // Remove everything else from the view. There can be stuff visible if the
-            // download was started by the user tapping on the "Download failed" message.
-            foreach (var subview in childViews) {
-                var view = subview.uiView ();
-                view.RemoveFromSuperview ();
-                ViewHelper.DisposeViewHierarchy (view);
-            }
-            childViews.Clear ();
-            errorMessage.Hidden = true;
+            RemoveChildViews ();
 
             if (variableHeight) {
                 // Try to put the spinner in the center of the screen.
@@ -441,6 +430,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             statusIndicatorIsRegistered = false;
             spinner.StopAnimating ();
+            RemoveChildViews ();
             string preview = item.GetBodyPreviewOrEmpty ();
             bool hasPreview = !string.IsNullOrEmpty (preview);
             string message;
@@ -652,6 +642,19 @@ namespace NachoClient.iOS
                 };
                 errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
             }
+        }
+
+        private void RemoveChildViews()
+        {
+            // Remove everything else from the view. There can be stuff visible if the
+            // download was started by the user tapping on the "Download failed" message.
+            foreach (var subview in childViews) {
+                var view = subview.uiView ();
+                view.RemoveFromSuperview ();
+                ViewHelper.DisposeViewHierarchy (view);
+            }
+            childViews.Clear ();
+            errorMessage.Hidden = true;
         }
     }
 

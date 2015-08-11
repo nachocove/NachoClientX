@@ -36,6 +36,12 @@ namespace NachoCore.Utils
             case NcResult.SubKindEnum.Error_AuthFailPasswordExpired:
                 message = "Your password has expired.";
                 break;
+            case NcResult.SubKindEnum.Error_CredWait:
+                message = "Your password may need to be updated.";
+                break;
+            case NcResult.SubKindEnum.Info_ServiceUnavailable:
+                message = "Service unavailable.";
+                break;
             }
             errorString = message;
             return (null != message);

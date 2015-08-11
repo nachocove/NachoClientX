@@ -27,6 +27,7 @@ namespace NachoCore
         {
         }
 
+        protected bool LastIsDoNotDelayOk;
         protected BackEndStateEnum LastBackEndState;
         protected BackEndStateEnum? BackEndStatePreset;
 
@@ -174,6 +175,33 @@ namespace NachoCore
         }
 
         public NcStateMachine Sm { set; get; }
+
+        public bool IsDoNotDelayOk {
+            get {
+                switch (BackEndState) {
+                case BackEndStateEnum.PostAutoDPostInboxSync:
+                case BackEndStateEnum.PostAutoDPreInboxSync:
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public NcResult.SubKindEnum DoNotDelaySubKind {
+            get {
+                return (BackEndState == BackEndStateEnum.CredWait) ? 
+                    NcResult.SubKindEnum.Error_CredWait :
+                    NcResult.SubKindEnum.Info_ServiceUnavailable;
+            }
+        }
+
+        protected void ResolveDoNotDelayAsHardFail ()
+        {
+            var pendings = McPending.QueryAllNonDispachedNonFailedDoNotDelay (AccountId, Capabilities);
+            foreach (var pending in pendings) {
+                pending.ResolveAsHardFail (this, NcResult.Error (DoNotDelaySubKind));
+            }
+        }
 
         // recursively mark param and its children with isAwaitingDelete == true
         protected void MarkFoldersAwaitingDelete (McFolder folder)

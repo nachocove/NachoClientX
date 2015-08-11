@@ -708,6 +708,7 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
             LastBackEndState = BackEndState;
+            LastIsDoNotDelayOk = IsDoNotDelayOk;
             Strategy = new AsStrategy (this);
             PushAssist = new PushAssist (this);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
@@ -795,6 +796,10 @@ namespace NachoCore.ActiveSync
                 StatusInd (res);
             }
             LastBackEndState = BackEndState;
+            if (LastIsDoNotDelayOk && !IsDoNotDelayOk) {
+                ResolveDoNotDelayAsHardFail ();
+            }
+            LastIsDoNotDelayOk = IsDoNotDelayOk;
         }
         // State-machine action methods.
         private void DoUiServConfReq ()

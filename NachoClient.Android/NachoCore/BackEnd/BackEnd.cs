@@ -296,6 +296,9 @@ namespace NachoCore
                 if (NcCommStatus.Instance.Quality (service.Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
                     return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
                 }
+                if (!service.IsDoNotDelayOk) {
+                    return NcResult.Error (service.DoNotDelaySubKind);
+                }
                 return cmd (service);
             });
         }
