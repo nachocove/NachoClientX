@@ -94,7 +94,7 @@ namespace NachoCore.IMAP
             } else {
                 body = McBody.QueryById<McBody> (email.BodyId);
                 if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
-                    Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Existing body for {0} was saved with unknown body type {1}.", email.ServerId, body.BodyType);
+                    Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Existing body for {0} was saved with unknown body type {1}.", email.ServerId, body.BodyType);
                     body = body.UpdateWithOCApply<McBody> ((record) => {
                         var target = (McBody)record;
                         target.BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
