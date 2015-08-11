@@ -234,13 +234,18 @@ namespace NachoCore.IMAP
 
             result = BodyTypeFromSummary (summary);
             if (!result.isOK ()) {
-                return result;
+                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}", result.GetMessage ());
+                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+            } else {
+                bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
             }
-            bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
             if (McAbstrFileDesc.BodyTypeEnum.None == bodyType) {
                 Log.Error (Log.LOG_IMAP, "messageBodyPart: unknown body type {0}", bodyType);
             }
             var part = summary.Body;
+            if (null == part) {
+                return NcResult.Error ("messageBodyPart: no body");
+            }
             result = NcResult.OK ();
             result.Value = part;
             return result;
@@ -255,24 +260,45 @@ namespace NachoCore.IMAP
         private NcResult BodyTypeFromSummary (MessageSummary summary)
         {
             McAbstrFileDesc.BodyTypeEnum bodyType;
-            var part = summary.Body;
 
-            if (summary.Headers.Contains (HeaderId.MimeVersion) || part.ContentType.Matches ("multipart", "*")) {
-                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-            } else if (part.ContentType.Matches ("text", "*")) {
-                if (part.ContentType.Matches ("text", "html")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                } else if (part.ContentType.Matches ("text", "plain")) {
-                    bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+            if (null == summary.Headers && null == summary.Body) {
+                return NcResult.Error (string.Format ("No headers nor body."));
+            }
+
+            // check headers first, because it's nice and easy.
+            if (null != summary.Headers && summary.Headers.Contains (HeaderId.MimeVersion)) {
+                NcResult result = NcResult.OK ();
+                result.Value = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                return result;
+            }
+
+            if (null != summary.Body) {
+                var part = summary.Body;
+                if (null == part.ContentType) {
+                    return NcResult.Error (string.Format ("No ContentType found in body."));
                 } else {
-                    return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                    // If we have a body and a content type, get the body type from that.
+                    if (part.ContentType.Matches ("multipart", "*")) {
+                        bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                    } else if (part.ContentType.Matches ("text", "*")) {
+                        if (part.ContentType.Matches ("text", "html")) {
+                            bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                        } else if (part.ContentType.Matches ("text", "plain")) {
+                            bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                        } else {
+                            return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                        }
+                    } else {
+                        return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
+                    }
+                    NcResult result = NcResult.OK ();
+                    result.Value = bodyType;
+                    return result;
                 }
             } else {
-                return NcResult.Error (string.Format ("Unhandled mime subtype {0}", part.ContentType.MediaSubtype));
+                Log.Warn (Log.LOG_IMAP, "No Body found!");
+                return NcResult.Error (string.Format ("No headers in summary"));
             }
-            NcResult result = NcResult.OK ();
-            result.Value = bodyType;
-            return result;
         }
 
         /// <summary>
