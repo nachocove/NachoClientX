@@ -40,7 +40,7 @@ namespace NachoCore.IMAP
             var newFolder = CreateFolderInNamespace (imapNameSpace, folderPath);
 
             McFolder folder;
-            if (CreateOrUpdateFolder (newFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, newFolder.Name, false, out folder)) {
+            if (CreateOrUpdateFolder (newFolder, NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, newFolder.Name, false, false, out folder)) {
                 // TODO do some ApplyCommand stuff here
                 // FIXME This is especially needed the first time you archive an email: there will be two
                 //   pendings in the queue. One to create the folder and one to move the message. The second one will
