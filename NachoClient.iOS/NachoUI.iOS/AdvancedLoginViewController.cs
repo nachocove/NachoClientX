@@ -494,6 +494,7 @@ namespace NachoClient.iOS
             // FIXME: Only set if null or device
             NcApplication.Instance.Account = account;
             LoginHelpers.SetSwitchToTime (account);
+            BackEnd.Instance.Start (); // earlier we stopped all others. Restart them now.
 
             RemoveWindows ();
             NavigationController.PopToRootViewController (true);
