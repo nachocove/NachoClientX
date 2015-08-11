@@ -1205,6 +1205,10 @@ namespace NachoCore
                     result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
+                if (folder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
                 var pending = new McPending (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter) {
                     Operation = McPending.Operations.Sync,
                     ServerId = folder.ServerId,

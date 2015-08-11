@@ -39,12 +39,12 @@ namespace NachoCore
     {
         public static NcResult DoesNotSync ()
         {
-            return NcResult.Info (NcResult.SubKindEnum.Info_DoesNotSync);
+            return NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
         }
 
         public static bool DoesNotSync (NcResult nr)
         {
-            return nr.isInfo () && (NcResult.SubKindEnum.Info_DoesNotSync == nr.SubKind);
+            return nr.isError () && (NcResult.SubKindEnum.Error_ClientOwned == nr.SubKind);
         }
     }
 }
