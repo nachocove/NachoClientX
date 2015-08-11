@@ -31,12 +31,13 @@ namespace NachoCore.Utils
                 SearchAction (searchString);
             }, "SearchHelper_" + Description).ContinueWith ((task) => {
                 lock (LockObj) {
+                    SearchQueue.Dequeue (); // remove the current search string
                     if (0 < SearchQueue.Count) {
-                        string newSearchString = null;
-                        while (0 < SearchQueue.Count) {
-                            newSearchString = SearchQueue.Dequeue ();
+                        // There is still another search queued up
+                        while (1 < SearchQueue.Count) {
+                            SearchQueue.Dequeue ();
                         }
-                        StartSearch (newSearchString);
+                        StartSearch (SearchQueue.Peek ());
                     } else {
                         NcAbate.RegularPriority (Description);
                     }
@@ -48,8 +49,8 @@ namespace NachoCore.Utils
         {
             lock (LockObj) {
                 Version += 1;
-                if (0 < SearchQueue.Count) {
-                    SearchQueue.Enqueue (searchString);
+                SearchQueue.Enqueue (searchString);
+                if (1 < SearchQueue.Count) {
                     return;
                 }
                 NcAbate.HighPriority (Description);
