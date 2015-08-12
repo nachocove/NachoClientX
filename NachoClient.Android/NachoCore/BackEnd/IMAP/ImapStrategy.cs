@@ -239,11 +239,6 @@ namespace NachoCore.IMAP
                     folder.ImapFolderNameRedacted (), folder.ImapUidSet, folder.ImapLastExamine);
                 syncKit = new SyncKit (folder, KBaseOverallWindowSize, pending,
                     ImapSummaryitems (protocolState), ImapSummaryHeaders ());
-                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                    McFolder target = (McFolder)record;
-                    target.ImapNeedFullSync = true;
-                    return true;
-                });
             } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: ImapUidSet {1} ImapLastExamine {2}",
