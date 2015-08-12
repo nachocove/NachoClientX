@@ -60,7 +60,7 @@ namespace NachoCore.IMAP
             PendingSingle = pending;
         }
 
-        public SyncKit (McFolder folder, UniqueIdSet uidset, MessageSummaryItems flags, HashSet<HeaderId> headers)
+        public SyncKit (McFolder folder, IList<UniqueId> uidset, MessageSummaryItems flags, HashSet<HeaderId> headers)
         {
             Method = MethodEnum.Sync;
             Folder = folder;

@@ -67,6 +67,8 @@ namespace NachoCore.IMAP
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
             }
+            UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
+
             if (UInt32.MinValue != Synckit.Folder.ImapUidValidity &&
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
@@ -107,17 +109,12 @@ namespace NachoCore.IMAP
         private Event QuickSync (NcImapFolder mailKitFolder, uint span)
         {
             bool changed = false;
-            uint highestUid = mailKitFolder.UidNext.Value.Id - 1;
-            if (highestUid > Synckit.Folder.ImapUidHighestUidSynced) {
-                uint lowest = (uint)Math.Max (highestUid - span, Synckit.Folder.ImapUidHighestUidSynced + 1);
-                Synckit.SyncSet = new UniqueIdRange (new UniqueId (highestUid), new UniqueId (lowest));
+            Synckit.SyncSet = ImapStrategy.QuickSyncSet (mailKitFolder.UidNext.Value.Id, Synckit.Folder, span);
+            if (Synckit.SyncSet.Any ()) {
                 UniqueIdSet vanished;
                 UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
                 var deleted = deleteEmails (vanished);
                 changed = deleted.Any () || newOrChanged.Any ();
-                if (lowest > Synckit.Folder.ImapUidHighestUidSynced + 1) {
-                    Log.Warn (Log.LOG_IMAP, "QuickSync still has {0} to sync", lowest - Synckit.Folder.ImapUidHighestUidSynced + 1);
-                }
             }
             Finish (changed);
             return Event.Create ((uint)SmEvt.E.Success, "IMAPQSSUCC");
