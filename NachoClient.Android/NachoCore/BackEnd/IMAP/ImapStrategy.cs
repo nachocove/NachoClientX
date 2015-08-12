@@ -136,7 +136,7 @@ namespace NachoCore.IMAP
 
         private static bool HasNewMail (McFolder folder)
         {
-            return ((0 != folder.ImapUidHighestUidSynced) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1));
+            return ((folder.ImapUidNext > 1) && (folder.ImapUidHighestUidSynced < folder.ImapUidNext - 1));
         }
 
         /// <summary>
@@ -181,17 +181,6 @@ namespace NachoCore.IMAP
             // Take the union of the two sets, so that we get new (only in the currentUidSet)
             // as well as removed (only in currentMails) Uids to look at when we perform the sync.
             syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
-            if (HasNewMail (folder)) {
-                var highestUid = new UniqueId (folder.ImapUidNext - 1);
-                if (syncSet.Any () && !syncSet.Contains (highestUid)) {
-                    // need to artificially add this to the set, otherwise we'll loop forever if there's a hole at the top.
-                    syncSet.Add (highestUid);
-                    if (syncSet.Count > span) {
-                        var lowest = syncSet.Min ();
-                        syncSet.Remove (lowest);
-                    }
-                }
-            }
             return syncSet;
         }
 
@@ -244,13 +233,14 @@ namespace NachoCore.IMAP
 
         private bool NeedFolderMetadata (McFolder folder)
         {
-            if (0 == folder.ImapUidNext || null == folder.ImapUidSet) {
-                // new folder.
-                return true;
+            if (0 == folder.ImapUidNext) {
+                return false;  // there's nothing in this folder.
             }
-            // If we have a pending, i.e. user-action (pull-to-refresh), then use a shorter timeout.
+            if (null == folder.ImapUidSet) {
+                return true; // new folder with emails
+            }
             if (folder.ImapLastExamine < DateTime.UtcNow.AddSeconds (-FolderExamineInterval)) {
-                return true;
+                return true;  // folder metadata is stale. Get new data.
             }
             return false;
         }
@@ -285,7 +275,7 @@ namespace NachoCore.IMAP
                 havePending, quickSync);
             
             SyncKit syncKit = null;
-            if (0 == folder.ImapLastUidSynced || HasNewMail (folder) || havePending || quickSync) {
+            if (HasNewMail (folder) || havePending || quickSync) {
                 // Let's try to get a chunk of new messages quickly.
                 uint span = SpanSizeWithCommStatus (protocolState);
                 syncKit = new SyncKit (folder, span, pending, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
@@ -305,7 +295,7 @@ namespace NachoCore.IMAP
                         NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
                 }
                 syncKit = new SyncKit (folder);
-            } else {
+            } else if (folder.ImapUidNext > 1) {
                 var syncSet = SyncSet (folder, ref protocolState);
                 if (syncSet.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
