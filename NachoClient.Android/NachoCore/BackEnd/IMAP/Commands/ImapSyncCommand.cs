@@ -88,9 +88,9 @@ namespace NachoCore.IMAP
                 ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
-            case SyncKit.MethodEnum.QuickSync:
+            case SyncKit.MethodEnum.Interactive:
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
-                evt = QuickSync (mailKitFolder, Synckit.QSpan);
+                evt = QuickSync (mailKitFolder, Synckit.Span);
                 ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 

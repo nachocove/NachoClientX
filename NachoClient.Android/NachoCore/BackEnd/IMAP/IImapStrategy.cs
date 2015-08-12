@@ -28,7 +28,7 @@ namespace NachoCore.IMAP
         {
             Sync,
             OpenOnly,
-            QuickSync,
+            Interactive,
         };
 
         public MethodEnum Method;
@@ -40,7 +40,7 @@ namespace NachoCore.IMAP
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
         public bool GetHeaders;
-        public uint QSpan; // Quick Sync Span
+        public uint Span; // Sync Span
 
         public SyncKit (McFolder folder)
         {
@@ -50,9 +50,9 @@ namespace NachoCore.IMAP
 
         public SyncKit (McFolder folder, uint span, McPending pending, MessageSummaryItems flags, HashSet<HeaderId> headers)
         {
-            Method = MethodEnum.QuickSync;
+            Method = MethodEnum.Interactive;
             Folder = folder;
-            QSpan = span;
+            Span = span;
             Flags = flags;
             Headers = headers;
             GetPreviews = false;
@@ -93,7 +93,7 @@ namespace NachoCore.IMAP
                 break;
             }
             if (null != PendingSingle) {
-                me += " UserRequested";
+                me += " pending=true";
             }
             me += ")";
             return me;
