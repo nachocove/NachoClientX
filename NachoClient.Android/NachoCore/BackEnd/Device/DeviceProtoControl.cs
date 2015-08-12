@@ -298,17 +298,29 @@ namespace NachoCore
 
         private void DeviceDbChange (object sender, EventArgs ea)
         {
-            Sm.PostEvent ((uint)DevEvt.E.SyncStart, "DEVCISTART");
+            // This method is always called on the UI thread.  The SyncStart event can result in a call
+            // to DoSync(), which gathers all the device contacts and calendar events before kicking off
+            // its own background thread.  Gathering the contacts and events can take a while, long enough
+            // that it shouldn't happen on the UI thread.  So kick off a task to post the event.
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)DevEvt.E.SyncStart, "DEVCISTART");
+            }, "DeviceProtoControl:DeviceDbChange");
         }
 
         // Start a new sync if needed, or resume an old one.
         private void DoSync ()
         {
-            if (null == DeviceContacts) {
-                DeviceContacts = new NcDeviceContacts ();
-            }
-            if (null == DeviceCalendars) {
-                DeviceCalendars = new NcDeviceCalendars ();
+            try {
+                if (null == DeviceContacts) {
+                    DeviceContacts = new NcDeviceContacts ();
+                }
+                if (null == DeviceCalendars) {
+                    DeviceCalendars = new NcDeviceCalendars ();
+                }
+            } catch (OperationCanceledException) {
+                // The app is shutting down.  Cancel the sync.
+                Sm.PostEvent ((uint)DevEvt.E.SyncDone, "DEVPCABORTED");
+                return;
             }
             var abateTokenSource = new CancellationTokenSource ();
             lock (CtsLock) {
