@@ -23,7 +23,7 @@ namespace NachoCore.IMAP
         /// <summary>
         /// The default interval in seconds after which we'll re-examine a folder (i.e. fetch its metadata)
         /// </summary>
-        const int KFolderExamineInterval = 60 * 5;
+        const int KFolderExamineInterval = 60 * 10;
 
         /// <summary>
         /// The default interval in seconds for QuickSync after which we'll re-examine the folder.
@@ -278,10 +278,10 @@ namespace NachoCore.IMAP
                 havePending, quickSync);
             
             SyncKit syncKit = null;
-            if (havePending || quickSync) {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit/QuickSync {0}", folder.ImapFolderNameRedacted ());
-                syncKit = new SyncKit (folder, 1, pending,
-                    ImapSummaryitems (protocolState), ImapSummaryHeaders ());
+            if (0 == folder.ImapLastUidSynced || HasNewMail (folder) || havePending || quickSync) {
+                // Let's try to get a chunk of new messages quickly.
+                uint span = SpanSizeWithCommStatus ();
+                syncKit = new SyncKit (folder, span, pending, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
             } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: ImapUidSet {1} ImapLastExamine {2}",
@@ -601,6 +601,12 @@ namespace NachoCore.IMAP
                     !SyncSet (defInbox).Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
+                    // reset the foldersync so we re-do it. In rung 0, we only sync'd Inbox.
+                    protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
+                        var target = (McProtocolState)record;
+                        target.AsLastFolderSync = DateTime.MinValue;
+                        return true;
+                    });
                 }
                 break;
 
@@ -616,7 +622,7 @@ namespace NachoCore.IMAP
             }
 
             if (rung != protocolState.ImapSyncRung) {
-                Log.Info (Log.LOG_IMAP, "GenSyncKit: Strategy stage update {0} -> {1}", protocolState.ImapSyncRung, rung);
+                Log.Info (Log.LOG_IMAP, "GenSyncKit: Strategy rung update {0} -> {1}", protocolState.ImapSyncRung, rung);
                 protocolState = protocolState.UpdateWithOCApply<McProtocolState> ((record) => {
                     var target = (McProtocolState)record;
                     target.ImapSyncRung = rung;
