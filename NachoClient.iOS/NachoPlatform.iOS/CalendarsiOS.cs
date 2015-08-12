@@ -512,7 +512,9 @@ namespace NachoPlatform
             var predicate = Es.PredicateForEvents (DateTime.UtcNow.AddDays (-31).ToNSDate (), DateTime.UtcNow.AddYears (1).ToNSDate (), allCalendars);
             var deviceEvents = Es.EventsMatching (predicate);
             if (null != deviceEvents) {
+                var cancellationToken = NcTask.Cts.Token;
                 foreach (var deviceEvent in deviceEvents) {
+                    cancellationToken.ThrowIfCancellationRequested ();
                     result.Add (new PlatformCalendarRecordiOS () {
                         Event = deviceEvent,
                     });
