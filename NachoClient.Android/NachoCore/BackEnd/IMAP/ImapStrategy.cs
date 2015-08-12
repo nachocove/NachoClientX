@@ -138,7 +138,7 @@ namespace NachoCore.IMAP
         /// <returns>A set of UniqueId's.</returns>
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="folder">Folder.</param>
-        public static UniqueIdSet SyncSet (ref McProtocolState protocolState, McFolder folder)
+        public static UniqueIdSet SyncSet (McFolder folder)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -257,7 +257,7 @@ namespace NachoCore.IMAP
                 }
                 syncKit = new SyncKit (folder);
             } else {
-                var syncSet = SyncSet (ref protocolState, folder);
+                var syncSet = SyncSet (folder);
                 if (syncSet.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
                     if (null != syncKit && null != pending) {
@@ -556,7 +556,7 @@ namespace NachoCore.IMAP
             switch (protocolState.ImapSyncRung) {
             case 0:
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
-                    !SyncSet (ref protocolState, defInbox).Any ()) {
+                    !SyncSet (defInbox).Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
                 }
