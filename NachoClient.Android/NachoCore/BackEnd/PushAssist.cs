@@ -749,6 +749,9 @@ namespace NachoCore
                 IMAPEXISTSCount = parameters.IMAPEXISTSCount,
                 IMAPUIDNEXT = parameters.IMAPUIDNEXT,
             };
+            McAccount account = McAccount.QueryById<McAccount> (AccountId);
+            string password = cred.GetPassword ();
+            Log.Info (Log.LOG_PUSH, "PushAssist->DoStartSession: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
             FillOutIdentInfo (jsonRequest);
 
             NcTask.Run (() => {
