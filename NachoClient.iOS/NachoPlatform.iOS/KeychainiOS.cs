@@ -30,6 +30,7 @@ namespace NachoPlatform
         private const string KAccessToken = "AccessToken";
         private const string KRefreshToken = "RefreshToken";
         private const string KUserId = "UserId";
+        private const string KLogSalt = "LogSalt";
 
         /*
          * For better or worse...
@@ -90,6 +91,22 @@ namespace NachoPlatform
             return Setter (CreateQuery (key), NSData.FromString (value));
         }
 
+        public string GetLogSalt (int handle)
+        {
+            var data = Getter (CreateQuery (handle, KLogSalt));
+            return StringFromNSData (data);
+        }
+
+        public bool SetLogSalt (int handle, string logSalt)
+        {
+            return Setter (CreateQuery (handle, KLogSalt), NSData.FromString (logSalt));
+        }
+
+        public bool DeleteLogSalt (int handle)
+        {
+            return Deleter (CreateQuery (handle, KLogSalt));     
+        }
+            
         public string GetIdentifierForVendor ()
         {
             return GetStringForKey (KIdentifierForVendor);
