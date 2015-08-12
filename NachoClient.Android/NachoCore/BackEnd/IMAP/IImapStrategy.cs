@@ -28,7 +28,7 @@ namespace NachoCore.IMAP
         {
             Sync,
             OpenOnly,
-            Interactive,
+            QuickSync,
         };
 
         public MethodEnum Method;
@@ -50,7 +50,7 @@ namespace NachoCore.IMAP
 
         public SyncKit (McFolder folder, uint span, McPending pending, MessageSummaryItems flags, HashSet<HeaderId> headers)
         {
-            Method = MethodEnum.Interactive;
+            Method = MethodEnum.QuickSync;
             Folder = folder;
             Span = span;
             Flags = flags;

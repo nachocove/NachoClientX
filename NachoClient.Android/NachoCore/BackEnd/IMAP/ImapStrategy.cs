@@ -59,7 +59,7 @@ namespace NachoCore.IMAP
             }
             NcAssert.True (McPending.Operations.Sync == pending.Operation);
             var folder = McFolder.QueryByServerId<McFolder> (protocolState.AccountId, pending.ServerId);
-            return GenSyncKit (ref protocolState, folder, pending);
+            return GenSyncKit (ref protocolState, folder, pending, true);
         }
 
         private static uint SpanSizeWithCommStatus ()
@@ -212,6 +212,7 @@ namespace NachoCore.IMAP
         /// <param name="protocolState">The protocol state.</param>
         /// <param name="folder">The folder to sync.</param>
         /// <param name="pending">A pending (optional).</param>
+        /// <param name="quickSync">Perform a quick sync, not a full sync</param>
         /// <remarks>
         /// This function reads folder.ImapUidHighestUidSynced and folder.ImapUidLowestUidSynced
         /// (and other values), but does NOT SET THEM. When the sync is executed (via ImapSymcCommand),
@@ -219,7 +220,7 @@ namespace NachoCore.IMAP
         /// GenSyncKit is called, these values are used to create the next SyncKit for ImapSyncCommand
         /// to consume.
         /// </remarks>
-        public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending = null)
+        public SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync)
         {
             if (null == folder) {
                 return null;
@@ -234,7 +235,7 @@ namespace NachoCore.IMAP
                 havePending);
             
             SyncKit syncKit = null;
-            if (havePending) {
+            if (havePending || quickSync) {
                 Log.Info (Log.LOG_IMAP, "GenSyncKit {0}: QuickSync",
                     folder.ImapFolderNameRedacted (), folder.ImapUidSet, folder.ImapLastExamine);
                 syncKit = new SyncKit (folder, KBaseOverallWindowSize, pending,
@@ -394,7 +395,7 @@ namespace NachoCore.IMAP
 
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 foreach (var folder in SyncFolderList (ref protocolState, exeCtxt)) {
-                    SyncKit syncKit = GenSyncKit (ref protocolState, folder);
+                    SyncKit syncKit = GenSyncKit (ref protocolState, folder, null, true);
                     if (null != syncKit) {
                         Log.Info (Log.LOG_IMAP, "Strategy:QS:Sync {0}", folder.ImapFolderNameRedacted ());
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
@@ -479,7 +480,7 @@ namespace NachoCore.IMAP
 
                 // (FG/BG) Sync
                 foreach (var folder in SyncFolderList (ref protocolState, exeCtxt)) {
-                    SyncKit syncKit = GenSyncKit (ref protocolState, folder);
+                    SyncKit syncKit = GenSyncKit (ref protocolState, folder, null, false);
                     if (null != syncKit) {
                         Log.Info (Log.LOG_IMAP, "Strategy:FG/BG:Sync {0}", folder.ImapFolderNameRedacted ());
                         return Tuple.Create<PickActionEnum, ImapCommand> (PickActionEnum.Sync, 
