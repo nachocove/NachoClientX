@@ -110,11 +110,13 @@ namespace NachoCore.IMAP
         {
             bool changed = false;
             Synckit.SyncSet = ImapStrategy.QuickSyncSet (mailKitFolder.UidNext.Value.Id, Synckit.Folder, span);
-            if (Synckit.SyncSet.Any ()) {
+            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
                 UniqueIdSet vanished;
                 UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
                 var deleted = deleteEmails (vanished);
                 changed = deleted.Any () || newOrChanged.Any ();
+            } else {
+                Log.Info (Log.LOG_IMAP, "QuickSync: Nothing to do");
             }
             Finish (changed);
             return Event.Create ((uint)SmEvt.E.Success, "IMAPQSSUCC");
