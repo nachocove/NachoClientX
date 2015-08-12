@@ -45,14 +45,6 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
-
-            NcCapture.AddKind (KImapSyncOpenTiming);
-            NcCapture.AddKind (KImapSyncTiming);
-            NcCapture.AddKind (KImapFetchTiming);
-            NcCapture.AddKind (KImapPreviewGeneration);
-            NcCapture.AddKind (KImapFetchPartialBody);
-            NcCapture.AddKind (KImapFetchHeaders);
-            NcCapture.AddKind (KImapQuickSyncTiming);
         }
 
         protected override Event ExecuteCommand ()
@@ -80,17 +72,20 @@ namespace NachoCore.IMAP
                 if (null != Synckit.PendingSingle) {
                     Log.Error (Log.LOG_IMAP, "OpenOnly SyncKit with a pending is not allowed");
                 }
+                NcCapture.AddKind (KImapSyncOpenTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
                 evt = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
 
             case SyncKit.MethodEnum.Sync:
+                NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
                 ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
             case SyncKit.MethodEnum.QuickSync:
+                NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
                 evt = QuickSync (mailKitFolder, Synckit.Span);
                 ImapStrategy.ResolveOneSync (BEContext, Synckit);
@@ -206,6 +201,7 @@ namespace NachoCore.IMAP
             UniqueIdSet summaryUids = new UniqueIdSet ();
             IList<IMessageSummary> imapSummaries = getMessageSummaries (mailKitFolder, uidset);
             if (imapSummaries.Any ()) {
+                NcCapture.AddKind (KImapPreviewGeneration);
                 using (var cap = NcCapture.CreateAndStart (KImapPreviewGeneration)) {
                     foreach (var imapSummary in imapSummaries) {
                         if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
@@ -226,6 +222,7 @@ namespace NachoCore.IMAP
                             createdUnread = true;
                         }
                         if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
+                            NcCapture.AddKind (KImapFetchPartialBody);
                             using (var cap2 = NcCapture.CreateAndStart (KImapFetchPartialBody)) {
                                 var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                                 if (!string.IsNullOrEmpty (preview)) {
@@ -240,6 +237,7 @@ namespace NachoCore.IMAP
                             }
                         }
                         if (Synckit.GetHeaders && string.IsNullOrEmpty (emailMessage.Headers)) {
+                            NcCapture.AddKind (KImapFetchHeaders);
                             using (var cap3 = NcCapture.CreateAndStart (KImapFetchHeaders)) {
                                 var headers = FetchHeaders (mailKitFolder, summ);
                                 if (!string.IsNullOrEmpty (headers)) {
@@ -267,6 +265,7 @@ namespace NachoCore.IMAP
 
         private IList<IMessageSummary> getMessageSummaries (IMailFolder mailKitFolder, IList<UniqueId> uidset)
         {
+            NcCapture.AddKind (KImapFetchTiming);
             IList<IMessageSummary> imapSummaries = null;
             try {
                 using (var cap = NcCapture.CreateAndStart (KImapFetchTiming)) {
