@@ -45,6 +45,13 @@ namespace NachoCore.IMAP
         /// </summary>
         const int KImapSyncRung0InboxCount = 400;
 
+        /// <summary>
+        /// The size of the initial (rung 0) sync window size
+        /// </summary>
+        const uint KRung0SyncWindowSize = 5;
+
+        private static uint[] KRungSyncWindowSize = new uint[] {KRung0SyncWindowSize, KBaseOverallWindowSize, KBaseOverallWindowSize};
+
         public ImapStrategy (IBEContext becontext) : base (becontext)
         {
         }
@@ -62,9 +69,9 @@ namespace NachoCore.IMAP
             return GenSyncKit (ref protocolState, folder, pending, true);
         }
 
-        private static uint SpanSizeWithCommStatus ()
+        private static uint SpanSizeWithCommStatus (McProtocolState protocolState)
         {
-            uint overallWindowSize = KBaseOverallWindowSize;
+            uint overallWindowSize = KRungSyncWindowSize[protocolState.ImapSyncRung];
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast_1:
                 overallWindowSize *= 2;
@@ -138,7 +145,7 @@ namespace NachoCore.IMAP
         /// <returns>A set of UniqueId's.</returns>
         /// <param name="protocolState">Protocol state.</param>
         /// <param name="folder">Folder.</param>
-        public static IList<UniqueId> SyncSet (McFolder folder)
+        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -147,7 +154,7 @@ namespace NachoCore.IMAP
                 resetLastSyncPoint (ref folder);
             }
 
-            uint span = SpanSizeWithCommStatus ();
+            uint span = SpanSizeWithCommStatus (protocolState);
             IList<UniqueId> syncSet;
             // first see if there's new stuff to fetch
             syncSet = QuickSyncSet (folder.ImapUidNext, folder, span);
@@ -280,7 +287,7 @@ namespace NachoCore.IMAP
             SyncKit syncKit = null;
             if (0 == folder.ImapLastUidSynced || HasNewMail (folder) || havePending || quickSync) {
                 // Let's try to get a chunk of new messages quickly.
-                uint span = SpanSizeWithCommStatus ();
+                uint span = SpanSizeWithCommStatus (protocolState);
                 syncKit = new SyncKit (folder, span, pending, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
             } else if (NeedFolderMetadata (folder)) {
                 // We really need to do an Open/SELECT to get UidNext, etc before we can sync this folder.
@@ -299,7 +306,7 @@ namespace NachoCore.IMAP
                 }
                 syncKit = new SyncKit (folder);
             } else {
-                var syncSet = SyncSet (folder);
+                var syncSet = SyncSet (folder, ref protocolState);
                 if (syncSet.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
                     if (null != syncKit && null != pending) {
@@ -598,7 +605,7 @@ namespace NachoCore.IMAP
             switch (protocolState.ImapSyncRung) {
             case 0:
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
-                    !SyncSet (defInbox).Any ()) {
+                    !SyncSet (defInbox, ref protocolState).Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
                     rung = 2;
                     // reset the foldersync so we re-do it. In rung 0, we only sync'd Inbox.
