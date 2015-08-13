@@ -187,7 +187,7 @@ namespace NachoCore.IMAP
                             continue;
                         }
                         if (changed1) {
-                            newOrChanged.Add (summ.UniqueId.Value);
+                            newOrChanged.Add (summ.UniqueId);
                         }
                         if (created1 && false == emailMessage.IsRead) {
                             createdUnread = true;
@@ -218,7 +218,7 @@ namespace NachoCore.IMAP
                                 }
                             }
                         }
-                        summaryUids.Add (imapSummary.UniqueId.Value);
+                        summaryUids.Add (imapSummary.UniqueId);
                     }
                     cap.Pause ();
                     Log.Info (Log.LOG_IMAP, "ImapSyncCommand {0}: Processed {1} message summaries in {2}ms ({3} new or changed)", Synckit.Folder.ImapFolderNameRedacted (), imapSummaries.Count, cap.ElapsedMilliseconds, newOrChanged.Count);
@@ -282,12 +282,12 @@ namespace NachoCore.IMAP
             changed = false;
             created = false;
             bool justCreated = false;
-            if (null == imapSummary.UniqueId || string.Empty == imapSummary.UniqueId.Value.ToString ()) {
+            if (null == imapSummary.UniqueId || string.Empty == imapSummary.UniqueId.ToString ()) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
                 return null;
             }
 
-            string McEmailMessageServerId = ImapProtoControl.MessageServerId (folder, imapSummary.UniqueId.Value);
+            string McEmailMessageServerId = ImapProtoControl.MessageServerId (folder, imapSummary.UniqueId);
             McEmailMessage emailMessage = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, McEmailMessageServerId);
             if (null != emailMessage) {
                 try {
@@ -414,7 +414,7 @@ namespace NachoCore.IMAP
 
             var emailMessage = new McEmailMessage () {
                 ServerId = ServerId,
-                ImapUid = summary.UniqueId.Value.Id,
+                ImapUid = summary.UniqueId.Id,
                 AccountId = accountId,
                 Subject = summary.Envelope.Subject,
                 InReplyTo = summary.Envelope.InReplyTo,
@@ -443,11 +443,11 @@ namespace NachoCore.IMAP
                 // see MimeKit docs for details on what each are.
                 emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
-                    Log.Warn (Log.LOG_IMAP, "No emailMessage.From string: {0}", summary.UniqueId.Value);
+                    Log.Warn (Log.LOG_IMAP, "No emailMessage.From string: {0}", summary.UniqueId);
                     if (null != fromAddr) {
                         emailMessage.From = fromAddr.Address;
                         if (string.IsNullOrEmpty (emailMessage.From)) {
-                            Log.Error (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId.Value);
+                            Log.Error (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId);
                             emailMessage.From = string.Empty; // make sure it's at least empty, not null.
                         }
                     }
@@ -541,7 +541,7 @@ namespace NachoCore.IMAP
 
         private string FetchHeaders (NcImapFolder mailKitFolder, MessageSummary summary)
         {
-            var stream = mailKitFolder.GetStream (summary.UniqueId.Value, "HEADER", Cts.Token);
+            var stream = mailKitFolder.GetStream (summary.UniqueId, "HEADER", Cts.Token);
             using (var decoded = new MemoryStream ()) {
                 stream.CopyTo (decoded);
                 var buffer = decoded.GetBuffer ();
@@ -611,7 +611,7 @@ namespace NachoCore.IMAP
                     }
                     Stream stream;
                     try {
-                        stream = mailKitFolder.GetStream (summary.UniqueId.Value, partSpecifier, 0, previewBytes, Cts.Token);
+                        stream = mailKitFolder.GetStream (summary.UniqueId, partSpecifier, 0, previewBytes, Cts.Token);
                     } catch (ImapCommandException e) {
                         Log.Error (Log.LOG_IMAP, "Could not fetch stream: {0}", e);
                         return null;
@@ -635,7 +635,7 @@ namespace NachoCore.IMAP
 
             if (string.Empty == preview) {
                 // This can happen if there's only attachments in the message.
-                Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId.Value);
+                Log.Info (Log.LOG_IMAP, "IMAP uid {0} Could not find Content to make preview from", summary.UniqueId);
             }
             return preview;
         }
