@@ -24,6 +24,7 @@ namespace NachoCore.IMAP
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;
         private const string KImapSyncOpenTiming = "ImapSyncCommand.OpenOnly";
+        private const string KImapQuickSyncTiming = "ImapSyncCommand.QuickSync";
         private const string KImapSyncTiming = "ImapSyncCommand.Sync";
         private const string KImapFetchTiming = "ImapSyncCommand.Summary";
         private const string KImapPreviewGeneration = "ImapSyncCommand.Preview";
@@ -44,13 +45,6 @@ namespace NachoCore.IMAP
             if (null != PendingSingle) {
                 PendingSingle.MarkDispached ();
             }
-
-            NcCapture.AddKind (KImapSyncOpenTiming);
-            NcCapture.AddKind (KImapSyncTiming);
-            NcCapture.AddKind (KImapFetchTiming);
-            NcCapture.AddKind (KImapPreviewGeneration);
-            NcCapture.AddKind (KImapFetchPartialBody);
-            NcCapture.AddKind (KImapFetchHeaders);
         }
 
         protected override Event ExecuteCommand ()
@@ -65,6 +59,8 @@ namespace NachoCore.IMAP
             if (null == mailKitFolder) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCNOOPEN2");
             }
+            UpdateImapSetting (mailKitFolder, ref Synckit.Folder);
+
             if (UInt32.MinValue != Synckit.Folder.ImapUidValidity &&
                 Synckit.Folder.ImapUidValidity != mailKitFolder.UidValidity) {
                 return Event.Create ((uint)ImapProtoControl.ImapEvt.E.ReFSync, "IMAPSYNCUIDINVAL");
@@ -76,13 +72,22 @@ namespace NachoCore.IMAP
                 if (null != Synckit.PendingSingle) {
                     Log.Error (Log.LOG_IMAP, "OpenOnly SyncKit with a pending is not allowed");
                 }
+                NcCapture.AddKind (KImapSyncOpenTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncOpenTiming);
                 evt = getFolderMetaDataInternal (mailKitFolder, timespan);
                 break;
 
             case SyncKit.MethodEnum.Sync:
+                NcCapture.AddKind (KImapSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapSyncTiming);
                 evt = syncFolder (mailKitFolder);
+                ImapStrategy.ResolveOneSync (BEContext, Synckit);
+                break;
+
+            case SyncKit.MethodEnum.QuickSync:
+                NcCapture.AddKind (KImapQuickSyncTiming);
+                cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
+                evt = QuickSync (mailKitFolder, Synckit.Span);
                 ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
@@ -96,7 +101,23 @@ namespace NachoCore.IMAP
             return evt;
         }
 
-        private Event getFolderMetaDataInternal (IMailFolder mailKitFolder, TimeSpan timespan)
+        private Event QuickSync (NcImapFolder mailKitFolder, uint span)
+        {
+            bool changed = false;
+            Synckit.SyncSet = ImapStrategy.QuickSyncSet (mailKitFolder.UidNext.Value.Id, Synckit.Folder, span);
+            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
+                UniqueIdSet vanished;
+                UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
+                var deleted = deleteEmails (vanished);
+                changed = deleted.Any () || newOrChanged.Any ();
+            } else {
+                Log.Info (Log.LOG_IMAP, "QuickSync: Nothing to do");
+            }
+            Finish (changed);
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPQSSUCC");
+        }
+
+        private Event getFolderMetaDataInternal (NcImapFolder mailKitFolder, TimeSpan timespan)
         {
             if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL");
@@ -123,19 +144,22 @@ namespace NachoCore.IMAP
             // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
             toDelete.AddRange (vanished);
             var deleted = deleteEmails (toDelete);
-            if (deleted.Any () || newOrChanged.Any ()) {
-                var messages = McEmailMessage.QueryNeedQuickScoring (BEContext.Account.Id, 100).Count;
-                Log.Info (Log.LOG_IMAP, "Sending Info_EmailMessageSetChanged. Brain should see {0} messages", messages);
+
+            Finish (deleted.Any () || newOrChanged.Any ());
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
+        }
+
+        private void Finish (bool emailSetChanged)
+        {
+            Cts.Token.ThrowIfCancellationRequested ();
+            if (emailSetChanged) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
-
-            Cts.Token.ThrowIfCancellationRequested ();
-
             // remember where we sync'd
-            uint MaxSynced = Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced);
-            uint MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
-            if (MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
-                MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
+            uint MaxSynced = Synckit.SyncSet != null ? Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced) : 0;
+            uint MinSynced = Synckit.SyncSet != null ? Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced) : 0;
+            if (MaxSynced != 0 && MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
+                MinSynced != 0 && MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
                 Log.Info (Log.LOG_IMAP, "{0}: Set ImapUidHighestUidSynced {1} ImapUidLowestUidSynced {2}",
                     Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
             }
@@ -143,9 +167,15 @@ namespace NachoCore.IMAP
             // Update the sync count and last attempt and set the Highest and lowest sync'd
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
-                target.ImapUidHighestUidSynced = MaxSynced;
-                target.ImapUidLowestUidSynced = MinSynced;
-                target.ImapLastUidSynced = Synckit.SyncSet.Min ().Id;
+                if (MaxSynced != 0) {
+                    target.ImapUidHighestUidSynced = MaxSynced;
+                }
+                if (MinSynced != 0) {
+                    target.ImapUidLowestUidSynced = MinSynced;
+                }
+                if (Synckit.SyncSet != null) {
+                    target.ImapLastUidSynced = Synckit.SyncSet.Min ().Id;
+                }
                 target.SyncAttemptCount += 1;
                 target.LastSyncAttempt = DateTime.UtcNow;
                 return true;
@@ -162,17 +192,16 @@ namespace NachoCore.IMAP
                     return true;
                 });
             }
-
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
-        private UniqueIdSet GetNewOrChangedMessages (NcImapFolder mailKitFolder, UniqueIdSet uidset, out UniqueIdSet vanished)
+        private UniqueIdSet GetNewOrChangedMessages (NcImapFolder mailKitFolder, IList<UniqueId> uidset, out UniqueIdSet vanished)
         {
             UniqueIdSet newOrChanged = new UniqueIdSet ();
             bool createdUnread = false;
             UniqueIdSet summaryUids = new UniqueIdSet ();
             IList<IMessageSummary> imapSummaries = getMessageSummaries (mailKitFolder, uidset);
             if (imapSummaries.Any ()) {
+                NcCapture.AddKind (KImapPreviewGeneration);
                 using (var cap = NcCapture.CreateAndStart (KImapPreviewGeneration)) {
                     foreach (var imapSummary in imapSummaries) {
                         if (imapSummary.Flags.Value.HasFlag (MessageFlags.Deleted)) {
@@ -193,6 +222,7 @@ namespace NachoCore.IMAP
                             createdUnread = true;
                         }
                         if (Synckit.GetPreviews && string.IsNullOrEmpty (emailMessage.BodyPreview)) {
+                            NcCapture.AddKind (KImapFetchPartialBody);
                             using (var cap2 = NcCapture.CreateAndStart (KImapFetchPartialBody)) {
                                 var preview = getPreviewFromSummary (imapSummary as MessageSummary, mailKitFolder);
                                 if (!string.IsNullOrEmpty (preview)) {
@@ -207,6 +237,7 @@ namespace NachoCore.IMAP
                             }
                         }
                         if (Synckit.GetHeaders && string.IsNullOrEmpty (emailMessage.Headers)) {
+                            NcCapture.AddKind (KImapFetchHeaders);
                             using (var cap3 = NcCapture.CreateAndStart (KImapFetchHeaders)) {
                                 var headers = FetchHeaders (mailKitFolder, summ);
                                 if (!string.IsNullOrEmpty (headers)) {
@@ -232,8 +263,9 @@ namespace NachoCore.IMAP
             return newOrChanged;
         }
 
-        private IList<IMessageSummary> getMessageSummaries (IMailFolder mailKitFolder, UniqueIdSet uidset)
+        private IList<IMessageSummary> getMessageSummaries (IMailFolder mailKitFolder, IList<UniqueId> uidset)
         {
+            NcCapture.AddKind (KImapFetchTiming);
             IList<IMessageSummary> imapSummaries = null;
             try {
                 using (var cap = NcCapture.CreateAndStart (KImapFetchTiming)) {
@@ -336,7 +368,7 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
-        private UniqueIdSet FindDeletedUids (IMailFolder mailKitFolder, UniqueIdSet uids)
+        private UniqueIdSet FindDeletedUids (IMailFolder mailKitFolder, IList<UniqueId> uids)
         {
             // Check for deleted messages
             SearchQuery query = SearchQuery.Deleted;
@@ -443,11 +475,10 @@ namespace NachoCore.IMAP
                 // see MimeKit docs for details on what each are.
                 emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
-                    Log.Warn (Log.LOG_IMAP, "No emailMessage.From string: {0}", summary.UniqueId.Value);
                     if (null != fromAddr) {
                         emailMessage.From = fromAddr.Address;
                         if (string.IsNullOrEmpty (emailMessage.From)) {
-                            Log.Error (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId.Value);
+                            Log.Info (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId.Value);
                             emailMessage.From = string.Empty; // make sure it's at least empty, not null.
                         }
                     }
