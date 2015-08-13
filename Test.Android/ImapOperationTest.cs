@@ -127,6 +127,20 @@ namespace Test.iOS
             Assert.AreEqual (10, syncSet.Max ().Id);
             Assert.AreEqual (1, syncSet.Min ().Id);
 
+            // ImapUidHighestUidSynced 109176 ImapUidLowestUidSynced 108911 UidNext was 109177
+            // new message comes in.
+
+            //Last 109178 UidNext 109178 Highest 109176
+            TestFolder.ImapLastUidSynced = 109178;
+            TestFolder.ImapUidHighestUidSynced = 109176;
+            TestFolder.ImapUidLowestUidSynced = 108911;
+            TestFolder.ImapUidNext = 109178;
+            syncSet = ImapStrategy.QuickSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
+            Assert.NotNull (syncSet);
+            Assert.AreEqual (1, syncSet.Count);
+            Assert.AreEqual (109177, syncSet.Max ().Id);
+            Assert.AreEqual (109177, syncSet.Min ().Id);
+
             var protocolState = ProtocolState;
             NachoCore.IMAP.SyncKit syncKit;
             TestFolder = resetFolder (TestFolder);

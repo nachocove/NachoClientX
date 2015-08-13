@@ -207,7 +207,7 @@ namespace NachoCore.IMAP
                     lowest = currentMails.Max ().Id + 1;
                 }
             }
-            if (lowest < highest) {
+            if (lowest <= highest) {
                 Log.Info (Log.LOG_IMAP, "GenSyncKit/Quick {0}: Last {1} UidNext {2} Syncing {3}:{4}",
                     folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, UidNext, highest, lowest);
                 return new UniqueIdRange (new UniqueId (highest), new UniqueId (lowest));
