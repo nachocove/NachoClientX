@@ -13,9 +13,9 @@ namespace NachoCore.Utils
     {
         public const int MaxCancellationTestInterval = 100;
         private static ConcurrentDictionary<WeakReference,string> TaskMap;
+        private static ConcurrentDictionary<string,string> UniqueList;
         private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
-        private static object LockObj = new object ();
 
         public static int TaskCount {
             get {
@@ -27,6 +27,9 @@ namespace NachoCore.Utils
         {
             if (null == TaskMap) {
                 TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+            }
+            if (null == UniqueList) {
+                UniqueList = new ConcurrentDictionary<string, string> ();
             }
             Dump (true);
             Cts = new CancellationTokenSource ();
@@ -67,59 +70,56 @@ namespace NachoCore.Utils
             var taskName = name + taskId.ToString ();
             DateTime spawnTime = DateTime.UtcNow;
 
-            Task task;
-            WeakReference taskRef;
-
-            lock (LockObj) {
-                if (isUnique) {
-                    // Make sure that there is not another task by the same name already running
-                    // No reverse mapping just walk. Should be few enough tasks that walking is not a problem.
-                    foreach (var pair in TaskMap) {
-                        if (pair.Value.StartsWith (name)) {
-                            Log.Warn (Log.LOG_SYS, "NcTask {0} already running", pair.Value);
-                            return null; // an entry exists
-                        }
-                    }
+            if (isUnique && !UniqueList.TryAdd (name, taskName)) {
+                string runningTaskName;
+                if (UniqueList.TryGetValue (name, out runningTaskName)) {
+                    Log.Warn (Log.LOG_SYS, "NcTask {0} already running {1}", name, runningTaskName);
+                } else {
+                    Log.Warn (Log.LOG_SYS, "NcTask {0} running instance has disappeared", name);
                 }
-                var spawningId = Thread.CurrentThread.ManagedThreadId;
-                task = new Task (delegate {
-                    DateTime startTime = DateTime.UtcNow;
-                    double latency = (startTime - spawnTime).TotalMilliseconds;
-                    if (200 < latency) {
-                        Log.Warn (Log.LOG_UTILS, "Delay in running NcTask {0}, latency {1} msec", taskName, latency);
-                        NcApplication.Instance.MonitorReport ();
-                        NcTask.Dump ();
-                    }
-                    if (Thread.CurrentThread.ManagedThreadId == spawningId) {
-                        Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawnning id", taskName);
-                    }
-                    if (!stfu) {
-                        Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
-                    }
-                    try {
-                        action.Invoke ();
-                    } catch (OperationCanceledException) {
-                        Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
-                    } finally {
-                        var count = NcModel.Instance.NumberDbConnections;
-                        if (15 < count) {
-                            NcModel.Instance.Db = null;
-                            Log.Warn (Log.LOG_SYS, "NcTask: closing DB, connections: {0}", count);
-                        }
-                    }
-                    if (!stfu) {
-                        Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
-                    }
-                }, Cts.Token);
-                taskRef = new WeakReference (task);
-                if (!TaskMap.TryAdd (taskRef, taskName)) {
-                    Log.Error (Log.LOG_SYS, "Task already added to TaskMap ({0}).", taskName);
-                }
+                return null; // an entry exists
             }
-            task.Start ();
+
+            var spawningId = Thread.CurrentThread.ManagedThreadId;
+            var task = Task.Run (delegate {
+                DateTime startTime = DateTime.UtcNow;
+                double latency = (startTime - spawnTime).TotalMilliseconds;
+                if (200 < latency) {
+                    Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1} msec", taskName, latency);
+                    NcApplication.Instance.MonitorReport ();
+                    NcTask.Dump ();
+                }
+                if (Thread.CurrentThread.ManagedThreadId == spawningId) {
+                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawnning id", taskName);
+                }
+                if (!stfu) {
+                    Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
+                }
+                try {
+                    action.Invoke ();
+                } catch (OperationCanceledException) {
+                    Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
+                } finally {
+                    var count = NcModel.Instance.NumberDbConnections;
+                    if (15 < count) {
+                        NcModel.Instance.Db = null;
+                        Log.Warn (Log.LOG_SYS, "NcTask closing DB, connections: {0}", count);
+                    }
+                }
+                if (!stfu) {
+                    Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
+                }
+            }, Cts.Token);
+            var taskRef = new WeakReference (task);
+            if (!TaskMap.TryAdd (taskRef, taskName)) {
+                Log.Error (Log.LOG_SYS, "NcTask: Task already added to TaskMap ({0}).", taskName);
+            }
             return task.ContinueWith (delegate {
                 if (!TaskMap.TryRemove (taskRef, out dummy)) {
-                    Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
+                    Log.Error (Log.LOG_SYS, "NcTask: Task already removed from TaskMap ({0}).", taskName);
+                }
+                if (isUnique && !UniqueList.TryRemove (name, out dummy)) {
+                    Log.Error (Log.LOG_SYS, "NcTask: Task already removed from UniqueList ({0}).", taskName);
                 }
             });
         }
