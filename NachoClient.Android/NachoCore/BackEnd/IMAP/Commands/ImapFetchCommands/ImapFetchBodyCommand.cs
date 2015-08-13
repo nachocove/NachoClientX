@@ -153,7 +153,9 @@ namespace NachoCore.IMAP
                             target.BodyPreview = preview;
                             return true;
                         });
-                        StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                        var status = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageChanged);
+                        status.Value = email.Id;
+                        StatusInd (status);
                     }
                 }
                 Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Fetched body for email {0}:{1} type {2}", email.Id, email.ServerId, body.BodyType);

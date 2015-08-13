@@ -14,6 +14,7 @@ namespace NachoClient.iOS
 {
     public class MessageTableViewSource : UITableViewSource, IMessageTableViewSource, INachoMessageEditorParent, INachoFolderChooserParent
     {
+        bool scrolling;
         string messageWhenEmpty;
         INachoEmailMessages messageThreads;
         protected const string NoMessagesReuseIdentifier = "UICell";
@@ -132,6 +133,25 @@ namespace NachoClient.iOS
                     }
                 }
             }
+        }
+
+        protected bool MaybeUpdateMessageInCache (int id)
+        {
+            foreach (var c in cache) {
+                if (null == c) {
+                    continue;
+                }
+                for (int i = 0; i < c.Count; i++) {
+                    var m = c [i];
+                    if (null != m) {
+                        if (m.Id == id) {
+                            c [i] = McEmailMessage.QueryById<McEmailMessage> (id);
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         public MessageTableViewSource (IMessageTableViewSourceDelegate owner)
@@ -716,7 +736,7 @@ namespace NachoClient.iOS
             var pending = McPending.QueryByEmailMessageId (message.AccountId, message.Id);
             var errorImageView = (UIImageView)cell.ContentView.ViewWithTag (MESSAGE_ERROR_TAG);
             errorImageView.Hidden = (null == pending) || (NcResult.KindEnum.Error != pending.ResultKind);
-            ViewFramer.Create(errorImageView).CenterY(0, HeightForMessage(message));
+            ViewFramer.Create (errorImageView).CenterY (0, HeightForMessage (message));
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
@@ -776,6 +796,15 @@ namespace NachoClient.iOS
                     if (null != cell) {
                         ConfigureCell (tableView, cell, path);
                     }
+                }
+            }
+        }
+
+        public void EmailMessageChanged (UITableView tableView, int id)
+        {
+            if (MaybeUpdateMessageInCache (id)) {
+                if (!scrolling) {
+                    ReconfigureVisibleCells (tableView);
                 }
             }
         }
@@ -921,16 +950,19 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
+            scrolling = true;
             NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
+            scrolling = false;
             NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
+            scrolling = false;
             if (!willDecelerate) {
                 NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
