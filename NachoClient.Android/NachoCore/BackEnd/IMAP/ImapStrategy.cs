@@ -188,7 +188,7 @@ namespace NachoCore.IMAP
         {
             Log.Info (Log.LOG_IMAP, "GenSyncKit/Quick {0}: Last {1} UidNext {2} Highest {3}",
                 folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, UidNext, folder.ImapUidHighestUidSynced);
-            uint highest = UidNext - 1;
+            uint highest = UidNext > 1 ? UidNext - 1 : 0;
             if (highest <= 0) {
                 return null;
             }
@@ -196,12 +196,12 @@ namespace NachoCore.IMAP
             uint lowest;
             if (highest > folder.ImapUidHighestUidSynced) {
                 // there's new mail
-                lowest = (uint)Math.Max (highest - span + 1, folder.ImapUidHighestUidSynced + 1);
+                lowest = Math.Max(span > highest ? 1 : highest - span + 1, folder.ImapUidHighestUidSynced + 1);
             } else {
                 // there might still be new mail. See if there's a range we can sync that's between
                 // ImapLastUidSynced and the highest email in the DB.
-                highest = folder.ImapLastUidSynced - 1;
-                lowest = highest <= span ? 1 : highest - span + 1;
+                highest = folder.ImapLastUidSynced > 2 ? folder.ImapLastUidSynced - 1 : 1;
+                lowest = span > highest ? 1 : highest - span + 1;
                 UniqueIdSet currentMails = getCurrentEmailUids (folder, lowest, highest + 1, span);
                 if (currentMails.Any ()) {
                     lowest = currentMails.Max ().Id + 1;

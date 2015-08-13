@@ -105,12 +105,28 @@ namespace Test.iOS
         [Test]
         public void TestQuickSyncSet ()
         {
-            TestBEContext beContext = new TestBEContext ();
-            beContext.Account = Account;
-            beContext.Owner = new TestOwner ();
-            var Strategy = new ImapStrategy (beContext);
-
             IList<UniqueId> syncSet;
+
+            // start with an empty folder with no emails. Do some boundary checking.
+            TestFolder = resetFolder (TestFolder);
+            syncSet = ImapStrategy.QuickSyncSet (6, TestFolder, 10);
+            Assert.NotNull (syncSet);
+            Assert.AreEqual (5, syncSet.Count);
+            Assert.AreEqual (5, syncSet.Max ().Id);
+            Assert.AreEqual (1, syncSet.Min ().Id);
+
+            syncSet = ImapStrategy.QuickSyncSet (10, TestFolder, 10);
+            Assert.NotNull (syncSet);
+            Assert.AreEqual (9, syncSet.Count);
+            Assert.AreEqual (9, syncSet.Max ().Id);
+            Assert.AreEqual (1, syncSet.Min ().Id);
+
+            syncSet = ImapStrategy.QuickSyncSet (11, TestFolder, 10);
+            Assert.NotNull (syncSet);
+            Assert.AreEqual (10, syncSet.Count);
+            Assert.AreEqual (10, syncSet.Max ().Id);
+            Assert.AreEqual (1, syncSet.Min ().Id);
+
             var protocolState = ProtocolState;
             NachoCore.IMAP.SyncKit syncKit;
             TestFolder = resetFolder (TestFolder);
@@ -144,6 +160,11 @@ namespace Test.iOS
             // don't sync. See what a normal GenSyncKit does. It should give us the same range.
             // get the latest data for the folder
             TestFolder = McFolder.QueryById<McFolder> (TestFolder.Id);
+            TestBEContext beContext = new TestBEContext ();
+            beContext.Account = Account;
+            beContext.Owner = new TestOwner ();
+            var Strategy = new ImapStrategy (beContext);
+
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
             Assert.AreEqual (5, syncSet.Count);
