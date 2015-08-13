@@ -41,6 +41,8 @@ namespace NachoClient.iOS
 
         UITableViewSource GetTableViewSource ();
 
+        void EmailMessageChanged (UITableView tableView, int id);
+
     }
 
     public interface IMessageTableViewSourceDelegate
