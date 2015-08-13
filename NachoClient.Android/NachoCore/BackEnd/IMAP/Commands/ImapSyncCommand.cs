@@ -475,11 +475,10 @@ namespace NachoCore.IMAP
                 // see MimeKit docs for details on what each are.
                 emailMessage.From = summary.Envelope.From [0].ToString ();
                 if (string.IsNullOrEmpty (emailMessage.From)) {
-                    Log.Warn (Log.LOG_IMAP, "No emailMessage.From string: {0}", summary.UniqueId.Value);
                     if (null != fromAddr) {
                         emailMessage.From = fromAddr.Address;
                         if (string.IsNullOrEmpty (emailMessage.From)) {
-                            Log.Error (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId.Value);
+                            Log.Info (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId.Value);
                             emailMessage.From = string.Empty; // make sure it's at least empty, not null.
                         }
                     }
