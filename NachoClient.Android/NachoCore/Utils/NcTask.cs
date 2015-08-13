@@ -66,6 +66,10 @@ namespace NachoCore.Utils
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
             DateTime spawnTime = DateTime.UtcNow;
+
+            Task task;
+            WeakReference taskRef;
+
             lock (LockObj) {
                 if (isUnique) {
                     // Make sure that there is not another task by the same name already running
@@ -77,15 +81,17 @@ namespace NachoCore.Utils
                         }
                     }
                 }
-
-                WeakReference taskRef = null;
-                var task = Task.Run (delegate {
+                var spawningId = Thread.CurrentThread.ManagedThreadId;
+                task = new Task (delegate {
                     DateTime startTime = DateTime.UtcNow;
                     double latency = (startTime - spawnTime).TotalMilliseconds;
                     if (200 < latency) {
                         Log.Warn (Log.LOG_UTILS, "Delay in running NcTask {0}, latency {1} msec", taskName, latency);
                         NcApplication.Instance.MonitorReport ();
                         NcTask.Dump ();
+                    }
+                    if (Thread.CurrentThread.ManagedThreadId == spawningId) {
+                        Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawnning id", taskName);
                     }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
@@ -109,12 +115,13 @@ namespace NachoCore.Utils
                 if (!TaskMap.TryAdd (taskRef, taskName)) {
                     Log.Error (Log.LOG_SYS, "Task already added to TaskMap ({0}).", taskName);
                 }
-                return task.ContinueWith (delegate {
-                    if (!TaskMap.TryRemove (taskRef, out dummy)) {
-                        Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
-                    }
-                });
             }
+            task.Start ();
+            return task.ContinueWith (delegate {
+                if (!TaskMap.TryRemove (taskRef, out dummy)) {
+                    Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
+                }
+            });
         }
 
         public static void StopService ()
