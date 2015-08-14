@@ -461,7 +461,7 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
             }
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
-                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0}", application.BackgroundTimeRemaining);
+                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0:n2}", application.BackgroundTimeRemaining);
                 FinalShutdown (null);
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
@@ -539,7 +539,7 @@ namespace NachoClient.iOS
             }
             DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
-            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
+            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0:n2}", timeRemaining);
             if (25.0 > timeRemaining) {
                 FinalShutdown (null);
             } else {
@@ -550,7 +550,7 @@ namespace NachoClient.iOS
                         // iOS caveat: BackgroundTimeRemaining can be MAX_DOUBLE early on.
                         // It also seems to return to MAX_DOUBLE value after we call EndBackgroundTask().
                         var remaining = application.BackgroundTimeRemaining;
-                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0}", remaining);
+                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0:n2}", remaining);
                         if (!didShutdown && 25.0 > remaining) {
                             didShutdown = true;
                             FinalShutdown (opaque);
