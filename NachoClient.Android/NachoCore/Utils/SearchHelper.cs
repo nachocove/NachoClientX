@@ -38,6 +38,8 @@ namespace NachoCore.Utils
                             SearchQueue.Dequeue ();
                         }
                         StartSearch (SearchQueue.Peek ());
+                    } else {
+                        NcAbate.RegularPriority(Description);
                     }
                 }
             });
@@ -51,6 +53,7 @@ namespace NachoCore.Utils
                 if (1 < SearchQueue.Count) {
                     return;
                 }
+                NcAbate.HighPriority (Description);
                 StartSearch (searchString);
             }
         }
