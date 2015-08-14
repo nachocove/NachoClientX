@@ -96,12 +96,13 @@
 	<false/>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
-		<dict>
-		</dict>
+		<dict/>
 	</array>
 	<key>XSLaunchImageAssets</key>
 	<string>Resources/Images.xcassets/LaunchImage.launchimage</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 </dict>
 </plist>

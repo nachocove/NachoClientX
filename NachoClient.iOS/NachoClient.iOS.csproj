@@ -1617,6 +1617,7 @@
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
+    <InterfaceDefinition Include="LaunchScreen.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
@@ -2598,5 +2599,9 @@
     <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-568h%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-667h%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\LaunchImage.launchimage\Default-736h%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1%403x.png" />
   </ItemGroup>
 </Project>
