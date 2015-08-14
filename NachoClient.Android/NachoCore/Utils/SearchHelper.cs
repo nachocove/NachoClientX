@@ -39,7 +39,7 @@ namespace NachoCore.Utils
                         }
                         StartSearch (SearchQueue.Peek ());
                     } else {
-                        NcAbate.RegularPriority(Description);
+                        NcAbate.RegularPriority (Description);
                     }
                 }
             });
