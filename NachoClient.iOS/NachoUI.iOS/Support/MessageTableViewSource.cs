@@ -655,13 +655,6 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
-
-            // Since there is a decent chance that the user will open this message, go ahead and
-            // download its body.
-            var body = message.GetBody ();
-            if (null == body || McBody.FilePresenceEnum.None == body.FilePresence) {
-                BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id, doNotDelay: true);
-            }
         }
 
         protected void ConfigureDraftMessageCell (UITableView tableView, UITableViewCell cell, int messageThreadIndex)
