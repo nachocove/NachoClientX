@@ -85,9 +85,7 @@ namespace NachoCore.Utils
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;
                 if (200 < latency) {
-                    Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1} msec", taskName, latency);
-                    NcApplication.Instance.MonitorReport ();
-                    NcTask.Dump ();
+                    Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1:n0} msec", taskName, latency);
                 }
                 if (Thread.CurrentThread.ManagedThreadId == spawningId) {
                     Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawnning id", taskName);
