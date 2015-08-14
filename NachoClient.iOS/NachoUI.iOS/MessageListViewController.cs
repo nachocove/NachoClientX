@@ -425,7 +425,9 @@ namespace NachoClient.iOS
                 RefreshThreadsIfVisible ();
                 break;
             case NcResult.SubKindEnum.Info_EmailMessageChanged:
-                RefreshMessage ((int)s.Status.Value);
+                if (s.Status.Value is int) {
+                    RefreshMessage ((int)s.Status.Value);
+                }
                 break;
             case NcResult.SubKindEnum.Error_SyncFailed:
             case NcResult.SubKindEnum.Info_SyncSucceeded:
