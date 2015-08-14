@@ -54,7 +54,7 @@ namespace NachoCore.IMAP
             SyncSet = uidset;
             Flags = flags;
             Headers = headers;
-            GetPreviews = false;
+            GetPreviews = true;
             GetHeaders = true;
         }
 
