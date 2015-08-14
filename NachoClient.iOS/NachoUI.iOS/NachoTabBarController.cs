@@ -88,7 +88,7 @@ namespace NachoClient.iOS
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
-                UpdateNotificationBadge (NcApplication.Instance.Account.Id);
+                UpdateNotificationBadge ();
             };
 
             ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
@@ -105,16 +105,16 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoGreen;
 
-            UpdateNotificationBadge (NcApplication.Instance.Account.Id);
+            UpdateNotificationBadge ();
 
             var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
-            if(0 != eventNotifications.Count) {
+            if (0 != eventNotifications.Count) {
                 Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow for event notification");
                 SwitchToNachoNow ();
             }
 
             var emailNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey);
-            if(0 != emailNotifications.Count) {
+            if (0 != emailNotifications.Count) {
                 Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow for email notification");
                 SwitchToNachoNow ();
             }
@@ -148,16 +148,16 @@ namespace NachoClient.iOS
                 LayoutMoreTable ();
             }
             if (NcResult.SubKindEnum.Info_UserInterventionFlagChanged == s.Status.SubKind) {
-                UpdateNotificationBadge (s.Account.Id);
+                UpdateNotificationBadge ();
             }
             if (NcResult.SubKindEnum.Error_PasswordWillExpire == s.Status.SubKind) {
-                UpdateNotificationBadge (s.Account.Id);
+                UpdateNotificationBadge ();
             }
             if (NcResult.SubKindEnum.Info_McCredPasswordChanged == s.Status.SubKind) {
-                UpdateNotificationBadge (s.Account.Id);
+                UpdateNotificationBadge ();
             }
-            if(NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
-                UpdateSwitchAccountButton();
+            if (NcResult.SubKindEnum.Info_AccountChanged == s.Status.SubKind) {
+                UpdateSwitchAccountButton ();
             }
         }
 
@@ -180,7 +180,7 @@ namespace NachoClient.iOS
         void SwitchTo (UITabBarItem item)
         {
             var tab = FindTabRoot (item);
-            tab.PopToRootViewController(false);
+            tab.PopToRootViewController (false);
             this.SelectedViewController = tab;
         }
 
@@ -284,7 +284,7 @@ namespace NachoClient.iOS
             return false;
         }
 
-        protected void UpdateNotificationBadge (int accountId)
+        protected void UpdateNotificationBadge ()
         {
             var showNotificationBadge = LoginHelpers.ShouldAlertUser ();
 
@@ -338,6 +338,7 @@ namespace NachoClient.iOS
         // ViewDidAppear is not reliable
         protected void LayoutMoreTable ()
         {
+            UpdateNotificationBadge ();
             UpdateSwitchAccountButton ();
             var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
             if (null != tableView) {
@@ -346,7 +347,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void UpdateSwitchAccountButton()
+        protected void UpdateSwitchAccountButton ()
         {
             if ((null != switchAccountButton) && (null != NcApplication.Instance.Account)) {
                 switchAccountButton.SetAccountImage (NcApplication.Instance.Account);
@@ -391,7 +392,7 @@ namespace NachoClient.iOS
 
         void SwitchAccountButtonPressed ()
         {
-            SwitchAccountViewController.ShowDropdown (MoreNavigationController.ViewControllers[0], SwitchToAccount);
+            SwitchAccountViewController.ShowDropdown (MoreNavigationController.ViewControllers [0], SwitchToAccount);
         }
 
         void SwitchToAccount (McAccount account)
