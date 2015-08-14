@@ -61,7 +61,9 @@ namespace NachoClient.iOS
                     if (curVersion == searcher.Version) {
                         InvokeOnUIThread.Instance.Invoke (() => {
                             searchResults = results;
+                            NcAbate.HighPriority("ContactChooserUpdateAuotCompleteResults");
                             resultsTableView.ReloadData ();
+                            NcAbate.RegularPriority("ContactChooserUpdateAuotCompleteResults");
                         });
                     }
                 }
