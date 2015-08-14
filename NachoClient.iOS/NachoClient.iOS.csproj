@@ -1613,6 +1613,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration41.cs">
       <Link>NachoCore\Model\Migration\NcMigration41.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcActivityIndicatorView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2603,5 +2604,9 @@
     <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1.png" />
     <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\NachoMailCircle.imageset\Bootscreen-1%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip%403x.png" />
   </ItemGroup>
 </Project>
