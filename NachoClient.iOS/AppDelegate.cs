@@ -399,18 +399,6 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (NcApplication.ReadyToStartUI ()) {
-                var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var vc = storyboard.InstantiateViewController ("NachoTabBarController");
-                if (null == vc) {
-                    // Might get null if we're running in background
-                    Log.Info (Log.LOG_UI, "fast path view controller is null");
-                } else {
-                    Log.Info (Log.LOG_UI, "fast path to tab bar controller");
-                    Window.RootViewController = (UIViewController)vc;
-                }
-            }
-
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;

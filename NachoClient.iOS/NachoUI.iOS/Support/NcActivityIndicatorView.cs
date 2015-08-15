@@ -8,6 +8,7 @@ using Foundation;
 
 namespace NachoClient.iOS
 {
+    [Register ("NcActivityIndicatorView")]
     public class NcActivityIndicatorView : UIView
     {
 
@@ -25,9 +26,21 @@ namespace NachoClient.iOS
             }
         }
 
+
+        public NcActivityIndicatorView (IntPtr handle) : base (handle)
+        {
+            SetupIndicator ();
+        }
+
         public NcActivityIndicatorView (CGRect frame) : base(frame)
         {
+            SetupIndicator ();
+        }
+
+        private void SetupIndicator ()
+        {
             UIImage stripImage = UIImage.FromBundle ("NachoActivityIndicatorStrip");
+            Layer.MasksToBounds = true;
             stripImageLayer = new CALayer();
             stripImageLayer.ContentsScale = stripImage.CurrentScale;
             stripImageLayer.Contents = stripImage.CGImage;
@@ -35,24 +48,39 @@ namespace NachoClient.iOS
             stripImageLayer.AnchorPoint = new CGPoint (0.5, 1.0);
             stripImageLayer.Opaque = true;
             maskLayer = new CALayer ();
-            maskLayer.Frame = frame;
+            maskLayer.Frame = Frame;
             maskLayer.MasksToBounds = true;
-            stripImageLayer.Position = new CGPoint (0, frame.Size.Height);
+            stripImageLayer.Position = new CGPoint (0, Frame.Size.Height);
             maskLayer.AddSublayer (stripImageLayer);
             Layer.AddSublayer (maskLayer);
             ResizeIndicator ();
         }
 
-        private void ResizeIndicator ()
+        public override void LayoutSubviews ()
         {
+            ResizeIndicator ();
+        }
+
+        public void ResizeIndicator ()
+        {
+            var keys = Layer.AnimationKeys;
+            CATransaction.Begin ();
+            if (keys != null && keys.Length > 0) {
+                var animation = Layer.AnimationForKey (keys[0]);
+                CATransaction.AnimationDuration = animation.Duration;
+                CATransaction.AnimationTimingFunction = animation.TimingFunction;
+            } else {
+                CATransaction.DisableActions = true;
+            }
             // Known issue: this resize code probably doesn't work while the animation is running.
             // Ideally, any fix would continue animation smoothly as the size changes.
             indicatorSize = (nfloat)Math.Min ((double)Frame.Width, (double)Frame.Height);
             maskLayer.Frame = new CGRect ((Frame.Width - indicatorSize) / 2.0, (Frame.Height - indicatorSize) / 2.0, indicatorSize, indicatorSize);
             maskLayer.CornerRadius = indicatorSize / 2.0f;
-            stripImageLayer.Position = new CGPoint (maskLayer.Bounds.Width / 2.0, stripImageLayer.Position.Y);
+            stripImageLayer.Position = new CGPoint (maskLayer.Bounds.Width / 2.0, Frame.Height);
             nfloat scale = indicatorSize / stripImageLayer.Bounds.Width;
             stripImageLayer.Transform = CATransform3D.MakeScale (scale, scale, 1.0f);
+            CATransaction.Commit ();
         }
 
         private void SetupAnimation ()

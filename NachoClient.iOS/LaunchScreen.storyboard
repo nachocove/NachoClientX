@@ -30,6 +30,7 @@
                             <constraint firstAttribute="centerX" secondItem="M9U-sI-LtG" secondAttribute="centerX" constant="-0.5" id="kMM-oo-BNe"/>
                         </constraints>
                     </view>
+                    <simulatedStatusBarMetrics key="simulatedStatusBarMetrics" statusBarStyle="lightContent"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cT1-tq-DMB" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>

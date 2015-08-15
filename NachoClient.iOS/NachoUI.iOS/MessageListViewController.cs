@@ -448,9 +448,6 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "SegueToNachoNow") {
-                return;
-            }
             if (segue.Identifier == "MessageListToCompose") {
                 return;
             }

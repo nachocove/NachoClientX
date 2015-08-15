@@ -1614,11 +1614,20 @@
       <Link>NachoCore\Model\Migration\NcMigration41.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcActivityIndicatorView.cs" />
+    <Compile Include="NachoUI.iOS\StartupMigrationViewController.cs" />
+    <Compile Include="NachoUI.iOS\StartupMigrationViewController.designer.cs">
+      <DependentUpon>StartupMigrationViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\StartupRecoveryViewController.cs" />
+    <Compile Include="NachoUI.iOS\StartupRecoveryViewController.designer.cs">
+      <DependentUpon>StartupRecoveryViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>

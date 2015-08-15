@@ -148,9 +148,6 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToAdvancedLoginView")) {
                 return;
             }
-            if (segue.Identifier.Equals ("SegueToLaunch")) {
-                return;
-            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
