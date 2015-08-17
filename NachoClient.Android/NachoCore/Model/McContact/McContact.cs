@@ -1466,44 +1466,33 @@ namespace NachoCore.Model
 
             // Query the index for contacts up to 100 of them
             var allContacts = new List<McContact> ();
-            var lockObj = new object ();
-            var tasks = new List<Task> ();
             foreach (var account in McAccount.GetAllAccounts()) {
-                var task = NcTask.Run (() => {
-                    var index = NcBrain.SharedInstance.Index (account.Id);
-                    var matches = index.SearchAllContactFields (searchFor, maxResults);
-                    if (0 == matches.Count) {
-                        return;
-                    }
-                    var idList = matches.Select (x => x.Id).Distinct ().ToList ();
-                    var contacts = McContact.QueryByIds (idList);
-                    if (idList.Count > contacts.Count) {
-                        // Some ids in the index are no longer value. We need to remove those entries in the index
-                        var hash = new HashSet<int> ();
-                        contacts.ForEach ((x) => {
-                            hash.Add (x.Id);
-                        });
-                        foreach (var match in matches) {
-                            var id = int.Parse (match.Id);
-                            if (!hash.Contains (id)) {
-                                NcBrain.UnindexContact (new McContact () {
-                                    Id = int.Parse (match.Id),
-                                    AccountId = account.Id,
-                                });
-                            }
+                var index = NcBrain.SharedInstance.Index (account.Id);
+                var matches = index.SearchAllContactFields (searchFor, maxResults);
+                if (0 == matches.Count) {
+                    continue;
+                }
+                var idList = matches.Select (x => x.Id).Distinct ().ToList ();
+                var contacts = McContact.QueryByIds (idList);
+                if (idList.Count > contacts.Count) {
+                    // Some ids in the index are no longer value. We need to remove those entries in the index
+                    var hash = new HashSet<int> ();
+                    contacts.ForEach ((x) => {
+                        hash.Add (x.Id);
+                    });
+                    foreach (var match in matches) {
+                        var id = int.Parse (match.Id);
+                        if (!hash.Contains (id)) {
+                            NcBrain.UnindexContact (new McContact () {
+                                Id = int.Parse (match.Id),
+                                AccountId = account.Id,
+                            });
                         }
-                    } else {
-                        NcAssert.True (idList.Count == contacts.Count);
                     }
-
-                    lock (lockObj) {
-                        allContacts.AddRange (contacts);
-                    }
-                }, "SearchContactOneAccount");
-                tasks.Add (task);
-            }
-            foreach (var task in tasks) {
-                task.Wait ();
+                } else {
+                    NcAssert.True (idList.Count == contacts.Count);
+                }
+                allContacts.AddRange (contacts);
             }
             allContacts.Sort (new McContactNameComparer ());
 

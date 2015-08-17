@@ -661,12 +661,13 @@ namespace NachoCore.ActiveSync
                                     }
                                 },
                                              cToken, 180 * 1000, System.Threading.Timeout.Infinite);
-                            var capture = NcCapture.Create (KLoadBytes);
-                            capture.Start ();
-                            decoder.LoadBytes (BEContext.Account.Id, ContentData);
-                            capture.Stop ();
-                            if (1000 < capture.ElapsedMilliseconds) {
-                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0}ms", capture.ElapsedMilliseconds);
+                            long loadBytesDuration;
+                            using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
+                                decoder.LoadBytes (BEContext.Account.Id, ContentData);
+                                loadBytesDuration = capture.ElapsedMilliseconds;
+                            }
+                            if (1000 < loadBytesDuration) {
+                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes", loadBytesDuration, response.Content.Headers.ContentLength ?? -1);
                             }
                             diaper.Dispose ();
                             if (isWedged) {

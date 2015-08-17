@@ -689,12 +689,13 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed,
                 NachoPlatform.Power.Instance.BatteryLevel * 100.0, NachoPlatform.Power.Instance.PowerState);
             Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
-            Log.Info (Log.LOG_SYS, "Monitor: FD Max open files {0}", PlatformProcess.GetCurrentNumberOfFileDescriptors ());
-            Log.Info (Log.LOG_SYS, "Monitor: FD Current open files {0}", PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
+            Log.Info (Log.LOG_SYS, "Monitor: Files: Max {0}, Currently open {1}",
+                PlatformProcess.GetCurrentNumberOfFileDescriptors (), PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ());
             if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
                 Log.DumpFileDescriptors ();
             }
             NcModel.Instance.DumpLastAccess ();
+            NcTask.Dump ();
 
             if (null != MonitorEvent) {
                 MonitorEvent (this, EventArgs.Empty);
