@@ -55,7 +55,7 @@ namespace NachoCore.IMAP
             Span = span;
             Flags = flags;
             Headers = headers;
-            GetPreviews = false;
+            GetPreviews = true;
             GetHeaders = true;
             PendingSingle = pending;
         }
