@@ -88,7 +88,7 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1:n0} msec", taskName, latency);
                 }
                 if (Thread.CurrentThread.ManagedThreadId == spawningId) {
-                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawnning id", taskName);
+                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread", taskName);
                 }
                 if (!stfu) {
                     Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
@@ -105,7 +105,12 @@ namespace NachoCore.Utils
                     }
                 }
                 if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
+                    var finishTime = DateTime.UtcNow;
+                    if (Thread.CurrentThread.ManagedThreadId == spawningId) {
+                        Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec on spawning thread.", taskName, (finishTime - spawnTime).TotalMilliseconds);
+                    } else {
+                        Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec.", taskName, (finishTime - spawnTime).TotalMilliseconds);
+                    }
                 }
             }, Cts.Token);
             var taskRef = new WeakReference (task);
