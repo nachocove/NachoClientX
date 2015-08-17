@@ -202,6 +202,15 @@ namespace Test.iOS
             Assert.AreEqual (5, syncSet.Count);
             Assert.AreEqual (14, syncSet.Max ().Id);
             Assert.AreEqual (10, syncSet.Min ().Id);
+            // don't sync. Try a test with UidSet
+
+            TestFolder.ImapUidSet = "12:30";
+            syncSet = ImapStrategy.QuickSyncSet (15, TestFolder, 10);
+            Assert.NotNull (syncSet);
+            Assert.AreEqual (3, syncSet.Count);
+            Assert.AreEqual (14, syncSet.Max ().Id);
+            Assert.AreEqual (12, syncSet.Min ().Id);
+
             // don't sync. Try another set
 
             TestFolder = DoFakeFolderOpen (TestFolder, 25);

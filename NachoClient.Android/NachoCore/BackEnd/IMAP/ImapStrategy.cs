@@ -210,6 +210,14 @@ namespace NachoCore.IMAP
                 }
             }
             if (lowest <= highest) {
+                // if we have the UidSet (happens after the first sync, quick or not), check if we're past our limit
+                // the uidSet will contain all UID's that fall into the timespan specified by the user.
+                var uidSet = getCurrentUIDSet (folder, 0, 0, 0);
+                if (uidSet != null && uidSet.Any () && uidSet.Min ().Id >= lowest) {
+                    lowest = uidSet.Min ().Id;
+                }
+            }
+            if (lowest <= highest) {
                 Log.Info (Log.LOG_IMAP, "GenSyncKit/Quick {0}: Last {1} UidNext {2} Syncing {3}:{4}",
                     folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, UidNext, highest, lowest);
                 return new UniqueIdRange (new UniqueId (highest), new UniqueId (lowest));
@@ -637,7 +645,7 @@ namespace NachoCore.IMAP
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             switch (exeCtxt) {
             case NcApplication.ExecutionContextEnum.QuickSync:
-                // the prioFolder could be the inbox, so check first before adding
+            case NcApplication.ExecutionContextEnum.Background:
                 maybeAddFolderToList (folderList, defInbox);
                 break;
 

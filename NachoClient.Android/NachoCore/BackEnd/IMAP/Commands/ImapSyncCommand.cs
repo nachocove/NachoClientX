@@ -87,7 +87,7 @@ namespace NachoCore.IMAP
             case SyncKit.MethodEnum.QuickSync:
                 NcCapture.AddKind (KImapQuickSyncTiming);
                 cap = NcCapture.CreateAndStart (KImapQuickSyncTiming);
-                evt = QuickSync (mailKitFolder, Synckit.Span);
+                evt = QuickSync (mailKitFolder, Synckit.Span, timespan);
                 ImapStrategy.ResolveOneSync (BEContext, Synckit);
                 break;
 
@@ -101,7 +101,7 @@ namespace NachoCore.IMAP
             return evt;
         }
 
-        private Event QuickSync (NcImapFolder mailKitFolder, uint span)
+        private Event QuickSync (NcImapFolder mailKitFolder, uint span, TimeSpan timespan)
         {
             bool changed = false;
             Synckit.SyncSet = ImapStrategy.QuickSyncSet (mailKitFolder.UidNext.Value.Id, Synckit.Folder, span);
@@ -114,6 +114,10 @@ namespace NachoCore.IMAP
                 Log.Info (Log.LOG_IMAP, "QuickSync: Nothing to do");
             }
             Finish (changed);
+            if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
+                Log.Warn (Log.LOG_IMAP, "Could not get folder metadata");
+                // ignore the error, though.
+            }
             return Event.Create ((uint)SmEvt.E.Success, "IMAPQSSUCC");
         }
 
