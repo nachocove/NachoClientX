@@ -190,6 +190,8 @@ namespace NachoCore.IMAP
                 folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, UidNext, folder.ImapUidHighestUidSynced);
             uint highest = UidNext > 1 ? UidNext - 1 : 0;
             if (highest <= 0) {
+                Log.Info (Log.LOG_IMAP, "GenSyncKit/Quick {0}: empty folder.",
+                    folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, UidNext, folder.ImapUidHighestUidSynced);
                 return null;
             }
 
