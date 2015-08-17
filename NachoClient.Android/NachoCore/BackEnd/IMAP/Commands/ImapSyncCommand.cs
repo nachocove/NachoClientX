@@ -314,7 +314,7 @@ namespace NachoCore.IMAP
             changed = false;
             created = false;
             bool justCreated = false;
-            if (null == imapSummary.UniqueId || string.Empty == imapSummary.UniqueId.ToString ()) {
+            if (string.Empty == imapSummary.UniqueId.ToString ()) {
                 Log.Error (Log.LOG_IMAP, "ServerSaysAddOrChangeEmail: No Summary ServerId present.");
                 return null;
             }
@@ -478,7 +478,7 @@ namespace NachoCore.IMAP
                     if (null != fromAddr) {
                         emailMessage.From = fromAddr.Address;
                         if (string.IsNullOrEmpty (emailMessage.From)) {
-                            Log.Info (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId.Value);
+                            Log.Info (Log.LOG_IMAP, "No emailMessage.From Address: {0}", summary.UniqueId);
                             emailMessage.From = string.Empty; // make sure it's at least empty, not null.
                         }
                     }
