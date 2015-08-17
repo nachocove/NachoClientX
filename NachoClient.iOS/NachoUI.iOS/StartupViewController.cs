@@ -52,8 +52,6 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI, "StartupViewController: viewdidload");
 
-            this.View.BackgroundColor = A.Color_NachoGreen;
-
             if (!NcMigration.IsCompatible ()) {
                 currentState = StartupViewState.Incompatible;
                 // Display an alert view and wait to get out
@@ -66,12 +64,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-                if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                    this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
-                }
-            }
             if (currentState == StartupViewState.Setup) {
                 ShowApplication ();
             }
@@ -148,7 +140,12 @@ namespace NachoClient.iOS
                 DismissViewController(false, null);
             }
             Log.Info (Log.LOG_UI, "StartupViewController ShowSetupScreen");
-            UIViewController vc = null;
+            var storyboard = UIStoryboard.FromName ("Welcome", null);
+            UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
+            var gettingStartedViewController = (GettingStartedViewController)vc.ViewControllers [0];
+            if (currentState == StartupViewState.Startup) {
+                gettingStartedViewController.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
+            }
             PresentViewController (vc, false, null);
             currentState = StartupViewState.Setup;
         }
@@ -200,12 +197,16 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier == "migration") {
                 var vc = (StartupMigrationViewController)segue.DestinationViewController;
-                vc.AnimateFromLaunch = currentState == StartupViewState.Startup;
+                if (currentState == StartupViewState.Startup) {
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView(circleImageView.Frame, View);
+                }
                 return;
             }
             if (segue.Identifier == "recovery") {
                 var vc = (StartupRecoveryViewController)segue.DestinationViewController;
-                vc.AnimateFromLaunch = currentState == StartupViewState.Startup;
+                if (currentState == StartupViewState.Startup) {
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView(circleImageView.Frame, View);
+                }
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

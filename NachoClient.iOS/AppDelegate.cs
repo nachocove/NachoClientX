@@ -332,6 +332,7 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
+            UINavigationBar.Appearance.ShadowImage = new UIImage();
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
             UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
 

@@ -1622,12 +1622,18 @@
     <Compile Include="NachoUI.iOS\StartupRecoveryViewController.designer.cs">
       <DependentUpon>StartupRecoveryViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\GettingStartedViewController.cs" />
+    <Compile Include="NachoUI.iOS\GettingStartedViewController.designer.cs">
+      <DependentUpon>GettingStartedViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcSimpleColorButton.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
     <InterfaceDefinition Include="NachoUI.iOS\MainStoryboard_iPhone.storyboard" />
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
@@ -2617,5 +2623,13 @@
     <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip.png" />
     <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip%402x.png" />
     <ImageAsset Include="Resources\Images.xcassets\NachoActivityIndicatorStrip.imageset\ActivityIndicatorStrip%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\triangles.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\triangles%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\LeftBottomDarkTriangles.imageset\triangles%403x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\Contents.json" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles.png" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles%402x.png" />
+    <ImageAsset Include="Resources\Images.xcassets\RightBottomDarkTriangles.imageset\triangles%403x.png" />
   </ItemGroup>
 </Project>

@@ -4,6 +4,7 @@ using System;
 
 using Foundation;
 using UIKit;
+using CoreGraphics;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -14,7 +15,8 @@ namespace NachoClient.iOS
 	{
 
         bool StatusIndCallbackIsSet = false;
-        public bool AnimateFromLaunch = false;
+        public CGRect? AnimateFromLaunchImageFrame = null;
+        private CGSize originalIndiatorSize;
 
 
 		public StartupMigrationViewController (IntPtr handle) : base (handle)
@@ -39,12 +41,15 @@ namespace NachoClient.iOS
         public override void ViewWillAppear(bool animated)
         {
             base.ViewWillAppear (animated);
-            if (AnimateFromLaunch) {
-                migrationLabel.Alpha = 0.0f;
-                activityHeightConstraint.Constant = 119;
-                activityWidthConstraint.Constant = 119;
-                activityCenterYConstraint.Constant = 0;
+            if (AnimateFromLaunchImageFrame != null) {
+                View.LayoutIfNeeded ();
+                originalIndiatorSize = activityIndicator.Frame.Size;
+                activityWidthConstraint.Constant = AnimateFromLaunchImageFrame.Value.Width;
+                activityHeightConstraint.Constant = AnimateFromLaunchImageFrame.Value.Height;
+                activityIndicator.Superview.RemoveConstraint (activityCenterYConstraint);
                 activityIndicator.Superview.LayoutIfNeeded ();
+                activityIndicator.Frame = activityIndicator.Superview.ConvertRectFromView (AnimateFromLaunchImageFrame.Value, View);
+                migrationLabel.Alpha = 0.0f;
             }
         }
 
@@ -52,16 +57,19 @@ namespace NachoClient.iOS
         {
             base.ViewDidAppear (animated);
             StartListeningForApplicationStatus ();
-            if (AnimateFromLaunch) {
-                activityHeightConstraint.Constant = 60;
-                activityWidthConstraint.Constant = 60;
-                activityCenterYConstraint.Constant = 20;
-                UIView.AnimateNotify (0.5, () => {
-                    migrationLabel.Alpha = 1.0f;
+            if (AnimateFromLaunchImageFrame != null) {
+                AnimateFromLaunchImageFrame = null;
+                activityWidthConstraint.Constant = originalIndiatorSize.Width;
+                activityHeightConstraint.Constant = originalIndiatorSize.Height;
+                activityIndicator.Superview.AddConstraint (activityCenterYConstraint);
+                UIView.Animate (0.5, () => {
                     activityIndicator.Superview.LayoutIfNeeded ();
-                }, (bool finished) => {
+                }, () => {
                     activityIndicator.StartAnimating ();
                 });
+                UIView.Animate (0.2, 0.3, 0, () => {
+                    migrationLabel.Alpha = 1.0f;
+                }, null);
             }
         }
 
