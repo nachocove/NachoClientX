@@ -143,7 +143,9 @@ namespace NachoCore.Brain
                 if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
                     throw new NcGleaningInterruptedException ();
                 }
-                CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
+                if (mbAddr is MailboxAddress) {
+                    CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
+                }
             }
         }
 
