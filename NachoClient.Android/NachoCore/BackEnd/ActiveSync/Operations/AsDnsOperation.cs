@@ -147,9 +147,14 @@ namespace NachoCore.ActiveSync
                 complete = true;
                 StopTimer ();
                 if (null != answer) {
-                    DnsQueryResponse response = new DnsQueryResponse ();
-                    response.ParseResponse (answer, answerLength);
-                    stateMachine.PostEvent (owner.ProcessResponse (this, response));
+                    try {
+                        DnsQueryResponse response = new DnsQueryResponse ();
+                        response.ParseResponse (answer, answerLength);
+                        stateMachine.PostEvent (owner.ProcessResponse (this, response));
+                    } catch (Exception e) {
+                        Log.Error (Log.LOG_DNS, "DNS response parsing failed with an exception, likely because the response is malformed: {0}", e.ToString ());
+                        stateMachine.PostEvent ((uint)SmEvt.E.HardFail, "DNSHARDFAILEX");
+                    }
                 } else {
                     stateMachine.PostEvent ((uint)SmEvt.E.HardFail, "DNSHARDFAIL");
                 }

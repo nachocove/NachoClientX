@@ -182,7 +182,7 @@ namespace NachoCore.IMAP
                 mailKitFolder.ParentFolder.FullName : McFolder.AsRootServerId;
         }
 
-        protected bool CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished, out McFolder folder)
+        protected bool CreateOrUpdateFolder (IMailFolder mailKitFolder, ActiveSync.Xml.FolderHierarchy.TypeCode folderType, string folderDisplayName, bool isDisinguished, bool doFolderMetadata, out McFolder folder)
         {
             bool added_or_changed = false;
             var ParentId = GetParentId (mailKitFolder);
@@ -231,7 +231,7 @@ namespace NachoCore.IMAP
             }
 
             // Get the current list of UID's. Don't set added_or_changed. Sync will notice later.
-            if (!mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
+            if (doFolderMetadata && !mailKitFolder.Attributes.HasFlag (FolderAttributes.NoSelect)) {
                 Log.Info (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0} updating metadata", folder.ImapFolderNameRedacted ());
                 if (!GetFolderMetaData (ref folder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
                     Log.Error (Log.LOG_IMAP, "CreateOrUpdateFolder: Folder {0}: Could not refresh folder metadata", folder.ImapFolderNameRedacted ());

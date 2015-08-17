@@ -26,15 +26,15 @@ namespace NachoClient.AndroidClient
 		
 		public static void UpdateIdValues()
 		{
-			global::DDay.Collections.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
-			global::DDay.iCal.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
-			global::antlr.runtime.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::NachoPlatformBinding.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::Lucene.Net.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::ModernHttpClient.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::DnDns.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::AWSSDK_XMOBILE.Resource.String.ApplicationName = global::NachoClient.AndroidClient.Resource.String.ApplicationName;
 			global::AWSSDK_XMOBILE.Resource.String.Hello = global::NachoClient.AndroidClient.Resource.String.Hello;
+			global::antlr.runtime.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::DDay.Collections.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::DDay.iCal.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 		}
 		
 		public partial class Animation
@@ -3483,11 +3483,11 @@ namespace NachoClient.AndroidClient
 		public partial class String
 		{
 			
-			// aapt resource value: 0x7f070041
-			public const int ApplicationName = 2131165249;
+			// aapt resource value: 0x7f070042
+			public const int ApplicationName = 2131165250;
 			
-			// aapt resource value: 0x7f070040
-			public const int Hello = 2131165248;
+			// aapt resource value: 0x7f070041
+			public const int Hello = 2131165249;
 			
 			// aapt resource value: 0x7f07002e
 			public const int abc_action_bar_home_description = 2131165230;
@@ -3711,8 +3711,8 @@ namespace NachoClient.AndroidClient
 			// aapt resource value: 0x7f070052
 			public const int inbox = 2131165266;
 			
-			// aapt resource value: 0x7f070042
-			public const int library_name = 2131165250;
+			// aapt resource value: 0x7f070040
+			public const int library_name = 2131165248;
 			
 			// aapt resource value: 0x7f070053
 			public const int mail = 2131165267;

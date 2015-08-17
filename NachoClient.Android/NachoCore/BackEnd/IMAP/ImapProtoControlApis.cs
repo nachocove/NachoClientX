@@ -23,13 +23,16 @@ namespace NachoCore.IMAP
                 }
                 // TODO Do something to save this on the server.
                 // Set the Flag info in the DB item.
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
-                emailMessage.FlagType = flagType;
-                emailMessage.FlagStartDate = start;
-                emailMessage.FlagUtcStartDate = utcStart;
-                emailMessage.FlagDue = due;
-                emailMessage.FlagUtcDue = utcDue;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
+                    target.FlagType = flagType;
+                    target.FlagStartDate = start;
+                    target.FlagUtcStartDate = utcStart;
+                    target.FlagDue = due;
+                    target.FlagUtcDue = utcDue;
+                    return true;
+                });
                 result = NcResult.OK ();
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded));
@@ -50,8 +53,11 @@ namespace NachoCore.IMAP
                 }
 
                 result = NcResult.OK ();
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage>((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                    return true;
+                });
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded));
             Log.Warn (Log.LOG_IMAP, "Flag cleared in DB, but not on server.");
@@ -71,10 +77,13 @@ namespace NachoCore.IMAP
                     return;
                 }
                 result = NcResult.OK ();
-                emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
-                emailMessage.FlagCompleteTime = completeTime;
-                emailMessage.FlagDateCompleted = dateCompleted;
-                emailMessage.Update ();
+                emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
+                    target.FlagCompleteTime = completeTime;
+                    target.FlagDateCompleted = dateCompleted;
+                    return true;
+                });
             });
             Log.Warn (Log.LOG_IMAP, "Marked Done in DB, but not on server.");
             return result;

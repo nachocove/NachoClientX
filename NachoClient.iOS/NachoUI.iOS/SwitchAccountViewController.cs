@@ -89,7 +89,6 @@ namespace NachoClient.iOS
         public override void ViewDidLayoutSubviews ()
         {
             base.ViewDidLayoutSubviews ();
-            Console.WriteLine ("{0} {1}", accountsTableView.Frame.Height, View.Frame.Height);
             if (!animating) {
                 ViewFramer.Create (accountsTableView).Height (View.Frame.Height);
             }

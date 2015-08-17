@@ -160,9 +160,9 @@ namespace NachoClient.iOS
             RefreshControl.TintColor = A.Color_NachoGreen;
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
-                rearmRefreshTimer ();
+                var nr = messageSource.GetNachoEmailMessages ().StartSync ();
+                rearmRefreshTimer (NachoSyncResult.DoesNotSync (nr) ? 3 : 10);
                 RefreshControl.BeginRefreshing ();
-                messageSource.GetNachoEmailMessages ().StartSync ();
             };
 
             searchBar = new UISearchBar ();
@@ -204,13 +204,13 @@ namespace NachoClient.iOS
 
         NcTimer refreshTimer;
 
-        void rearmRefreshTimer ()
+        void rearmRefreshTimer (int seconds)
         {
             if (null != refreshTimer) {
                 refreshTimer.Dispose ();
                 refreshTimer = null;
             }
-            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, 10000, 0); 
+            refreshTimer = new NcTimer ("MessageListViewController refresh", EndRefreshingOnUIThread, null, seconds * 1000, 0); 
         }
 
         void cancelRefreshTimer ()
@@ -282,6 +282,11 @@ namespace NachoClient.iOS
                 return -1;
             }
             return path.Row;
+        }
+
+        protected void RefreshMessage (int id)
+        {
+            messageSource.EmailMessageChanged (TableView, id);
         }
 
         protected void RefreshThreadsIfVisible ()
@@ -418,6 +423,11 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
+                break;
+            case NcResult.SubKindEnum.Info_EmailMessageChanged:
+                if (s.Status.Value is int) {
+                    RefreshMessage ((int)s.Status.Value);
+                }
                 break;
             case NcResult.SubKindEnum.Error_SyncFailed:
             case NcResult.SubKindEnum.Info_SyncSucceeded:

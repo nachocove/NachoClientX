@@ -207,25 +207,34 @@ namespace Test.Common
             Address.Update ();
 
             // Setting UserAction to +1 changes the score to VipScore.
-            Message.FromEmailAddressId = Address.Id;
-            Message.Score = 2.0 / 3.0;
-            Message.ScoreVersion = Scoring.Version;
-            Message.UserAction = +1;
-            Message.Update ();
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.FromEmailAddressId = Address.Id;
+                target.Score = 2.0 / 3.0;
+                target.ScoreVersion = Scoring.Version;
+                target.UserAction = +1;
+                return true;
+            });
 
             TestUpdateMessageScore (ref Message);
             Assert.AreEqual (McEmailMessage.VipScore, Message.Score);
 
             // Setting UserAction to -1 changes the score to less than minHotScore
-            Message.UserAction = -1;
-            Message.Update ();
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = -1;
+                return true;
+            });
 
             TestUpdateMessageScore (ref Message);
             Assert.True (McEmailMessage.VipScore > Message.Score);
 
             // Settting UserAction back to 0 changes it back to 2/3
-            Message.UserAction = 0;
-            Message.Update ();
+            Message = Message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = 0;
+                return true;
+            });
 
             TestUpdateMessageScore (ref Message);
             Assert.AreEqual (2.0 / 3.0, Message.Score);
@@ -501,6 +510,7 @@ Content-Length: 7096"
             Brain.TestCloseAllOpenedIndexes (); // need to commit before search will return match
 
             // Make sure the index version (IsIndexed) is correct and the document is really in the index
+            message1 = McEmailMessage.QueryById<McEmailMessage> (message1.Id);
             Assert.AreEqual (EmailMessageIndexDocument.Version - 1, message1.IsIndexed);
             var matches = index.SearchAllEmailMessageFields ("short");
             CheckOneEmailMessage (message1.Id, matches);
@@ -523,6 +533,7 @@ Content-Length: 7096"
             Brain.TestIndexEmailMessage (message2);
             Brain.TestCloseAllOpenedIndexes ();
 
+            message2 = McEmailMessage.QueryById<McEmailMessage> (message2.Id);
             Assert.AreEqual (EmailMessageIndexDocument.Version - 1, message2.IsIndexed);
             matches = index.SearchAllEmailMessageFields ("normal");
             CheckOneEmailMessage (message2.Id, matches);
@@ -545,6 +556,7 @@ Content-Length: 7096"
             Brain.TestIndexEmailMessage (message3);
             Brain.TestCloseAllOpenedIndexes ();
 
+            message3 = McEmailMessage.QueryById<McEmailMessage> (message3.Id);
             Assert.AreEqual (EmailMessageIndexDocument.Version, message3.IsIndexed);
             matches = index.SearchAllEmailMessageFields ("plaintext");
             CheckOneEmailMessage (message3.Id, matches);
@@ -567,6 +579,7 @@ Content-Length: 7096"
             Brain.TestIndexEmailMessage (message4);
             Brain.TestCloseAllOpenedIndexes ();
 
+            message4 = McEmailMessage.QueryById<McEmailMessage> (message4.Id);
             Assert.AreEqual (EmailMessageIndexDocument.Version, message4.IsIndexed);
             matches = index.SearchAllEmailMessageFields ("html");
             CheckOneEmailMessage (message4.Id, matches);
@@ -595,6 +608,7 @@ This is a MIME email");
             Brain.TestIndexEmailMessage (message5);
             Brain.TestCloseAllOpenedIndexes ();
 
+            message5 = McEmailMessage.QueryById<McEmailMessage> (message5.Id);
             Assert.AreEqual (EmailMessageIndexDocument.Version, message5.IsIndexed);
             matches = index.SearchAllEmailMessageFields ("mime");
             CheckOneEmailMessage (message5.Id, matches);

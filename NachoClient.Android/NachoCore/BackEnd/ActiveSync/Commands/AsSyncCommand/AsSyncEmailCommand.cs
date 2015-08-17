@@ -73,10 +73,13 @@ namespace NachoCore.ActiveSync
                     folder.Link (emailMessage);
                     aHelp.InsertAttachments (emailMessage);
                 } else {
-                    emailMessage.AccountId = folder.AccountId;
-                    emailMessage.Id = eMsg.Id;
+                    emailMessage = emailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                        var target = (McEmailMessage)record;
+                        target.AccountId = folder.AccountId;
+                        target.Id = eMsg.Id;
+                        return true;
+                    });
                     folder.UpdateLink (emailMessage);
-                    emailMessage.Update ();
                 }
             });
 

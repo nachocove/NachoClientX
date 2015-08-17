@@ -261,6 +261,12 @@ namespace NachoPlatform
         string GetUserId ();
 
         bool SetUserId (string userId);
+
+        string GetLogSalt (int handle);
+
+        bool SetLogSalt (int handle, string logSalt);
+
+        bool DeleteLogSalt (int handle);
     }
 
     public interface IPlatformUIRedirector

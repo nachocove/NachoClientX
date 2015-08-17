@@ -59,8 +59,11 @@ namespace NachoCore.Brain
             }
             foreach (var message in thread) {
                 if (null != message) {
-                    message.DeferralType = deferralType;
-                    message.Update ();
+                    message.UpdateWithOCApply<McEmailMessage> ((item) => {
+                        var em = (McEmailMessage)item;
+                        em.DeferralType = deferralType;
+                        return true;
+                    });
                     var utc = deferUntil;
                     var local = deferUntil.LocalT ();
                     BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);

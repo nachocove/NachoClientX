@@ -20,7 +20,7 @@ namespace NachoCore
             return inboxFolder;
         }
 
-        public static INachoEmailMessages Inbox (int accountId )
+        public static INachoEmailMessages Inbox (int accountId)
         {
             var inboxFolder = InboxFolder (accountId);
             if (null == inboxFolder) {
@@ -88,9 +88,9 @@ namespace NachoCore
                 return false;
             }
 
-            public void StartSync ()
+            public NcResult StartSync ()
             {
-                return;
+                return NachoSyncResult.DoesNotSync ();
             }
 
             public INachoEmailMessages GetAdapterForThread (string threadId)

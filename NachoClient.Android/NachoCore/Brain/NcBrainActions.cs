@@ -229,8 +229,8 @@ namespace NachoCore.Brain
             }
  
             // Mark the email message indexed
-            emailMessage.SetIndexVersion ();
-            emailMessage.UpdateIsIndex ();
+            var newIsIndexed = emailMessage.SetIndexVersion ();
+            emailMessage.UpdateIsIndex (newIsIndexed);
 
             return true;
         }

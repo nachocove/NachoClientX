@@ -134,8 +134,11 @@ namespace NachoCore.Model
                 }
                 // Assign a non-zero value that it is effectively 0 but it prevents
                 // the same items to quanlify for quick score again.
-                Score = 0.00000001;
-                UpdateByBrain ();
+                UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.Score = 0.00000001;
+                    return true;
+                });
                 return Score;
             }
 
@@ -362,11 +365,20 @@ namespace NachoCore.Model
 
         public void Analyze ()
         {
-            ScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            var newScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
             InitializeTimeVariance ();
-            Score = Classify ();
-            NeedUpdate = 0;
-            UpdateByBrain ();
+            var newScore = Classify ();
+            var newState = TimeVarianceState;
+            var newTYpe = TimeVarianceType;
+            UpdateByBrain ((item) => {
+                var em = (McEmailMessage)item;
+                em.Score = newScore;
+                em.ScoreVersion = newScoreVersion;
+                em.NeedUpdate = 0;
+                em.TimeVarianceState = newState;
+                em.TimeVarianceType = newTYpe;
+                return true;
+            });
         }
 
         public void IncrementTimesRead (int count = 1)
@@ -592,7 +604,16 @@ namespace NachoCore.Model
             }
 
             if (UpdateTimeVarianceStates (tvList, now)) {
-                UpdateByBrain ();
+                var newScore = Score;
+                var newState = TimeVarianceState;
+                var newType = TimeVarianceType;
+                UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.Score = newScore;
+                    em.TimeVarianceState = newState;
+                    em.TimeVarianceType = newType;
+                    return true;
+                });
             }
         }
 
@@ -612,14 +633,13 @@ namespace NachoCore.Model
             }
         }
 
-        public void UpdateByBrain ()
+        public void UpdateByBrain (Mutator change)
         {
-            int rc = Update ();
-            if (0 < rc) {
-                NcBrain brain = NcBrain.SharedInstance;
-                brain.McEmailMessageCounters.Update.Click ();
-                brain.NotifyEmailMessageUpdates ();
-            }
+            int rc;
+            UpdateWithOCApply<McEmailMessage> (change, out rc);
+            NcBrain brain = NcBrain.SharedInstance;
+            brain.McEmailMessageCounters.Update.Click ();
+            brain.NotifyEmailMessageUpdates ();
         }
 
         public void DeleteByBrain ()
@@ -649,9 +669,12 @@ namespace NachoCore.Model
 
         public void MarkAsGleaned (GleanPhaseEnum phase)
         {
-            HasBeenGleaned = (int)phase;
             if (0 < Id) {
-                Update ();
+                UpdateWithOCApply<McEmailMessage> ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.HasBeenGleaned = (int)phase;
+                    return true;
+                });
             }
         }
 
@@ -678,7 +701,15 @@ namespace NachoCore.Model
             if (fullUpdateNeeded || scoreChanged) {
                 emailMessage.NeedUpdate = 0;
                 if (fullUpdateNeeded) {
-                    emailMessage.UpdateByBrain ();
+                    var newState = emailMessage.TimeVarianceState;
+                    var newType = emailMessage.TimeVarianceType;
+                    emailMessage.UpdateByBrain ((item) => {
+                        var em = (McEmailMessage)item;
+                        em.Score = newScore;
+                        em.TimeVarianceState = newState;
+                        em.TimeVarianceType = newType;
+                        return true;
+                    });
                 } else {
                     emailMessage.UpdateScoreAndNeedUpdate ();
                 }
@@ -718,12 +749,6 @@ namespace NachoCore.Model
             }
             Log.Info (Log.LOG_BRAIN, "{0} time variances started", numStarted);
         }
-
-        public static void MarkAll ()
-        {
-            NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = m.NeedUpdate + 1");
-        }
-
 
         protected void InsertScoreStates ()
         {

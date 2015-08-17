@@ -11,29 +11,35 @@ namespace NachoCore.Utils
     {
         public static void ToggleHotOrNot (McEmailMessage message)
         {
-            var ua = message.UserAction;
+            int oldUserAction = message.UserAction;
+            int newUserAction = 0;
 
-            switch (message.UserAction) {
+            switch (oldUserAction) {
             case 0:
-                message.UserAction = (message.isHot () ? -1 : 1);
+                newUserAction = (message.isHot () ? -1 : 1);
                 break;
             case 1:
-                message.UserAction = -1;
+                newUserAction = -1;
                 break;
             case -1:
-                message.UserAction = 1;
+                newUserAction = 1;
                 break;
             default:
                 NcAssert.CaseError ();
                 break;
             }
-            Log.Info (Log.LOG_BRAIN, "HotOrNot: Was = {0}, New = {1}", ua, message.UserAction);
-            message.Update ();
+            NcAssert.True (-1 == newUserAction || 1 == newUserAction);
+            Log.Info (Log.LOG_BRAIN, "HotOrNot: Was = {0}, New = {1}", oldUserAction, newUserAction);
+            message = message.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = newUserAction;
+                return true;
+            });
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
                 Account = McAccount.QueryById<McAccount> (message.AccountId),
             });
-            if (ua != message.UserAction) {
+            if (oldUserAction != newUserAction) {
                 NcBrain.UpdateUserAction (message.AccountId, message.Id, message.UserAction);
             }
         }

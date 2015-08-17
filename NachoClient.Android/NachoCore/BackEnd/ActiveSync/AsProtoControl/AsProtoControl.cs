@@ -929,7 +929,7 @@ namespace NachoCore.ActiveSync
              */
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
-                2 > ConcurrentExtraRequests) {
+                4 > ConcurrentExtraRequests) {
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = Strategy.PickUserDemand ();
                 if (null == pack) {

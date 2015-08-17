@@ -367,7 +367,11 @@ namespace NachoClient.iOS
         /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
         public bool UpdateSearchResults (nint forSearchOption, string forSearchString, bool doGalSearch = true)
         {
-            if ((null != accountForSearchAPI) && doGalSearch) {
+            // Issue an asynchronous search.
+            searcher.Search (forSearchString);
+
+            // Issue a backend search command, e.g. GAL search for EAS
+            if ((null != accountForSearchAPI) && accountForSearchAPI.HasCapability(McAccount.AccountCapabilityEnum.ContactReader) && doGalSearch) {
                 // Issue a GAL search. The status indication handler will update the search results
                 // (with doGalSearch = false) to reflect potential matches from GAL.
                 if (String.IsNullOrEmpty (searchToken)) {
@@ -377,9 +381,6 @@ namespace NachoClient.iOS
                     BackEnd.Instance.SearchContactsReq (accountForSearchAPI.Id, forSearchString, null, searchToken);
                 }
             }
-
-            // Issue an asynchronous search.
-            searcher.Search (forSearchString);
 
             return false;
         }

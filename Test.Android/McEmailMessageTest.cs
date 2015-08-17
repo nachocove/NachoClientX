@@ -103,9 +103,12 @@ namespace Test.Common
             ex1.DateReceived = retardedSince.AddMinutes (1.0);
             ex1.ShouldNotify = true;
             ex1.Insert ();
-            ex1.CreatedAt = since.AddMinutes (1.0);
-            ex1.HasBeenNotified = false;
-            ex1.Update ();
+            ex1 = ex1.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.CreatedAt = since.AddMinutes (1.0);
+                target.HasBeenNotified = false;
+                return true;
+            });
             // excluded because of CreatedAt too long ago.
             var ex2 = new McEmailMessage ();
             ex2.AccountId = 1;
@@ -114,9 +117,12 @@ namespace Test.Common
             ex2.ShouldNotify = true;
             ex2.ConversationId = "ex2";
             ex2.Insert ();
-            ex2.CreatedAt = since.AddYears (-1);
-            ex2.HasBeenNotified = false;
-            ex2.Update ();
+            ex2 = ex2.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.CreatedAt = since.AddYears (-1);
+                target.HasBeenNotified = false;
+                return true;
+            });
             // excluded because of DateReceived too long ago.
             var ex3 = new McEmailMessage ();//!!!
             ex3.AccountId = 1;
@@ -125,9 +131,12 @@ namespace Test.Common
             ex3.ShouldNotify = true;
             ex3.ConversationId = "ex3";
             ex3.Insert ();
-            ex3.CreatedAt = since.AddMinutes (1.0);
-            ex3.HasBeenNotified = false;
-            ex3.Update ();
+            ex3 = ex3.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.CreatedAt = since.AddMinutes (1.0);
+                target.HasBeenNotified = false;
+                return true;
+            });
             // excluded because of HasBeenNotified == true && ShouldNotify == false.
             var ex4 = new McEmailMessage ();
             ex4.AccountId = 1;
@@ -136,9 +145,12 @@ namespace Test.Common
             ex4.ShouldNotify = false;
             ex4.ConversationId = "ex4";
             ex4.Insert ();
-            ex4.CreatedAt = since.AddMinutes (1.0);
-            ex4.HasBeenNotified = true;
-            ex4.Update ();
+            ex4 = ex4.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.CreatedAt = since.AddMinutes (1.0);
+                target.HasBeenNotified = true;
+                return true;
+            });
 
             // included with early DateReceived. HasBeenNotified == false && ShouldNotify == false.
             var early = new McEmailMessage ();
@@ -148,9 +160,12 @@ namespace Test.Common
             early.ShouldNotify = false;
             early.ConversationId = "early";
             early.Insert ();
-            early.CreatedAt = since.AddMinutes (1.0);
-            early.HasBeenNotified = false;
-            early.Update ();
+            early = early.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.CreatedAt = since.AddMinutes (1.0);
+                target.HasBeenNotified = false;
+                return true;
+            });
 
             // included with late DateRecieved. HasBeenNotified == true && ShouldNotify == true.
             var late = new McEmailMessage ();
@@ -160,9 +175,12 @@ namespace Test.Common
             late.ShouldNotify = true;
             late.ConversationId = "late";
             late.Insert ();
-            late.CreatedAt = since.AddMinutes (1.0);
-            late.HasBeenNotified = true;
-            late.Update ();
+            late = late.UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.CreatedAt = since.AddMinutes (1.0);
+                target.HasBeenNotified = true;
+                return true;
+            });
 
             var unha = McEmailMessage.QueryUnreadAndHotAfter (since);
             Assert.AreEqual (2, unha.Count);
@@ -198,17 +216,29 @@ namespace Test.Common
             messages [4] = SetupMessage (addresses [4], new DateTime (2014, 8, 15, 4, 0, 0));
             messages [5] = SetupMessage (addresses [5], new DateTime (2014, 8, 15, 5, 0, 0));
             messages [6] = SetupMessage (addresses [6], new DateTime (2014, 8, 15, 6, 0, 0));
-            messages [6].IsAwaitingDelete = true;
-            messages [6].Update ();
+            messages [6] = messages [6].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.IsAwaitingDelete = true;
+                return true;
+            });
             messages [7] = SetupMessage (addresses [7], new DateTime (2014, 8, 15, 7, 0, 0));
-            messages [7].FlagUtcStartDate = DateTime.MaxValue;
-            messages [7].Update ();
+            messages [7] = messages [7].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.FlagUtcStartDate = DateTime.MaxValue;
+                return true;
+            });
             messages [8] = SetupMessage (addresses [8], new DateTime (2014, 8, 15, 8, 0, 0));
-            messages [8].UserAction = 1;
-            messages [8].Update ();
+            messages [8] = messages [8].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = 1;
+                return true;
+            });
             messages [9] = SetupMessage (addresses [9], new DateTime (2014, 8, 15, 9, 0, 0));
-            messages [9].UserAction = -1;
-            messages [9].Update ();
+            messages [9] = messages [9].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = -1;
+                return true;
+            });
 
             for (int n = 0; n < 10; n++) {
                 Folder.Link (messages [n]);
@@ -670,17 +700,29 @@ namespace Test.Common
             messages [4] = SetupMessage (addresses [4], new DateTime (2014, 8, 15, 4, 0, 0));
             messages [5] = SetupMessage (addresses [5], new DateTime (2014, 8, 15, 5, 0, 0), conversationId: "foo");
             messages [6] = SetupMessage (addresses [6], new DateTime (2014, 8, 15, 6, 0, 0));
-            messages [6].IsAwaitingDelete = true;
-            messages [6].Update ();
+            messages [6] = messages [6].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.IsAwaitingDelete = true;
+                return true;
+            });
             messages [7] = SetupMessage (addresses [7], new DateTime (2014, 8, 15, 7, 0, 0));
-            messages [7].FlagUtcStartDate = DateTime.MaxValue;
-            messages [7].Update ();
+            messages [7] = messages [7].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.FlagUtcStartDate = DateTime.MaxValue;
+                return true;
+            });
             messages [8] = SetupMessage (addresses [8], new DateTime (2014, 8, 15, 8, 0, 0));
-            messages [8].UserAction = 1;
-            messages [8].Update ();
+            messages [8] = messages [8].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = 1;
+                return true;
+            });
             messages [9] = SetupMessage (addresses [9], new DateTime (2014, 8, 15, 9, 0, 0));
-            messages [9].UserAction = -1;
-            messages [9].Update ();
+            messages [9] = messages [9].UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.UserAction = -1;
+                return true;
+            });
 
             for (int n = 0; n < 10; n++) {
                 Folder.Link (messages [n]);

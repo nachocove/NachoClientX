@@ -115,7 +115,9 @@ namespace NachoPlatform
                 }
                 var sources = Ab.GetAllSources ();
                 Log.Info (Log.LOG_SYS, "GetContacts: Processing {0} sources", sources.Length);
+                var cancellationToken = NcTask.Cts.Token;
                 foreach (var source in sources) {
+                    cancellationToken.ThrowIfCancellationRequested ();
                     switch (source.SourceType) {
                     // FIXME - exclude only those sources we cover in EAS.
                     case ABSourceType.Exchange:
@@ -125,6 +127,7 @@ namespace NachoPlatform
                         var peeps = Ab.GetPeople (source);
                         Log.Info (Log.LOG_SYS, "GetContacts: Processing source {0} with {1} contacts", source.SourceType, peeps.Length);
                         foreach (var peep in peeps) {
+                            cancellationToken.ThrowIfCancellationRequested ();
                             retval.Add (new PlatformContactRecordiOS () {
                                 Person = peep,
                             });
