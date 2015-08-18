@@ -27,8 +27,6 @@ namespace NachoCore.IMAP
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
-            NcCapture.AddKind (this.GetType ().Name);
-            NcCapture.AddKind (KCaptureFolderMetadata);
         }
 
         // MUST be overridden by subclass.
@@ -55,6 +53,7 @@ namespace NachoCore.IMAP
 
         public Event ExecuteConnectAndAuthEvent()
         {
+            NcCapture.AddKind (this.GetType ().Name);
             ImapDiscoverCommand.guessServiceType (BEContext);
 
             lock(Client.SyncRoot) {
@@ -274,6 +273,7 @@ namespace NachoCore.IMAP
         /// <param name="timespan">Timespan.</param>
         public bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
         {
+            NcCapture.AddKind (KCaptureFolderMetadata);
             using (var cap = NcCapture.CreateAndStart (KCaptureFolderMetadata)) {
                 // Just load UID with SELECT.
                 Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
