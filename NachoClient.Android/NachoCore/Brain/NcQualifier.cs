@@ -191,7 +191,7 @@ namespace NachoCore.Brain
         {
             var isFiltered =
                 String.IsNullOrEmpty (emailMessage.Headers) ? false : HeaderFilters.IsMatch (emailMessage.Headers);
-            if (isFiltered != emailMessage.HeadersFiltered) {
+            if (isFiltered && (false == emailMessage.HeadersFiltered)) {
                 emailMessage.HeadersFiltered = isFiltered;
                 return true;
             }
@@ -202,6 +202,36 @@ namespace NachoCore.Brain
         {
             return emailMessage.HeadersFiltered;
         }
+    }
+
+    public class NcYahooBulkEmailDisqualifier : NcDisqualifier<McEmailMessage>
+    {
+        protected static Regex HeaderFilters =
+            new Regex (
+                @"X-YahooFilteredBulk:",
+                RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+        public NcYahooBulkEmailDisqualifier () :
+            base ("BulkEmailDisqualifier", Scoring.HeadersFilteringPenalty)
+        {
+        }
+
+        public override bool Analyze (McEmailMessage emailMessage)
+        {
+            var isBulk =
+                String.IsNullOrEmpty (emailMessage.Headers) ? false : HeaderFilters.IsMatch (emailMessage.Headers);
+            if (isBulk && (false == emailMessage.HeadersFiltered)) {
+                emailMessage.HeadersFiltered = isBulk;
+                return true;
+            }
+            return false;
+        }
+
+        public override bool ConditionMet (McEmailMessage emailMessage)
+        {
+            return emailMessage.HeadersFiltered;
+        }
+
     }
 }
 

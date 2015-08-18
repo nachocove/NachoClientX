@@ -159,14 +159,27 @@ namespace NachoCore.Brain
             return true;
         }
 
+        protected static bool CheckDisqualification (McEmailMessage emailMessage)
+        {
+            var disqualifiers = new List<NcDisqualifier<McEmailMessage>> () {
+                new NcMarketingEmailDisqualifier (),
+                new NcYahooBulkEmailDisqualifier (),
+            };
+            foreach (var dq in disqualifiers) {
+                if (dq.Analyze (emailMessage)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage)
         {
             // Caller is responsible for making sure that this is not in a junk folder.
             // We do not check here in order to avoid a lot of db queries just for
             // gleaning.
             bool gleaned;
-            var disqualifier = new NcMarketingEmailDisqualifier ();
-            if (emailMessage.HeadersFiltered || disqualifier.Analyze (emailMessage)) {
+            if (emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
                 // Do not glean email addresses from marketing emails because they are usually junk
                 gleaned = true;
             } else {
@@ -186,9 +199,8 @@ namespace NachoCore.Brain
             // McEmailMessage.QueryNeedGleaning() should filter out all ungleaned emails
             // in any of the junk folders. So, we don't do the junk folder check again
             // because it costs an additional query (on McMapFolderFolderEntry) per email.
-            bool gleaned;
-            var disqualifier = new NcMarketingEmailDisqualifier ();
-            if (emailMessage.HeadersFiltered || disqualifier.Analyze (emailMessage)) {
+            bool gleaned = false;
+            if (emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
                 // Do not glean email addresses from marketing emails because they are usually junk
                 gleaned = true;
             } else {
