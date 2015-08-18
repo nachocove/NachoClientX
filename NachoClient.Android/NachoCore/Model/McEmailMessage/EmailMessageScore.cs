@@ -371,7 +371,7 @@ namespace NachoCore.Model
                     var em = (McEmailMessage)item;
                     em.ScoreVersion = newScoreVersion;
                     // If we scoring the last version, need to mark for update to recompute the score later
-                    em.NeedUpdate = Scoring.Version == newScoreVersion;
+                    em.NeedUpdate = (Scoring.Version == newScoreVersion ? 1 : 0);
                     return true;
                 });
                 return;
