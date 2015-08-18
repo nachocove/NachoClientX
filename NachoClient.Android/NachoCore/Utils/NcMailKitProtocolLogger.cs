@@ -303,7 +303,7 @@ namespace NachoCore.Utils
         #region IProtocolLogger implementation
         public void LogConnect (System.Uri uri)
         {
-            Log.Info (LogModule, "{0}: Connect {1}", LogPrefix, uri);
+            Console.WriteLine ("{0}: Connect {1}", LogPrefix, uri);
         }
         public void LogClient (byte[] buffer, int offset, int count)
         {
@@ -323,9 +323,9 @@ namespace NachoCore.Utils
         private void logBuffer (bool isRequest, byte[] buffer, int offset, int count)
         {
             byte[] logData = buffer.Skip (offset).Take (count).ToArray ();
-            Log.Info (LogModule, "{0}: {1}:{2}",
+            Console.WriteLine ("{0}: {1}: {2}",
                 LogPrefix,
-                isRequest ? "C: " : "S: ",
+                isRequest ? "C" : "S",
                 Encoding.UTF8.GetString (logData));
         }
     }
