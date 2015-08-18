@@ -20,7 +20,8 @@ namespace NachoCore.Utils
         // Version 5 - 3-D approximate Bayesian estimator.
         // Version 6 - Message header filtering.
         // Version 7 - Reply-to-me and marked hot qualifiers. Marked not hot disqualifier.
-        public const int Version = 7;
+        // Version 8 - Yahoo bulk mails disqualifier.
+        public const int Version = 8;
 
         public const double Max = 1.0;
 
