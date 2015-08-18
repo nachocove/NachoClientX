@@ -302,7 +302,9 @@ namespace Test.Common
             var david = "david@company.net";
             var ellen = "ellen@company.net";
 
-            McEmailMessage.MarketingMailDisqualifier.Penalty = 0.375;
+            double testPenalty = 0.375;
+            McEmailMessage.MarketingMailDisqualifier.Penalty = testPenalty;
+            McEmailMessage.YahooBUlkEmailDisqualifier.Penalty = testPenalty;
 
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {
