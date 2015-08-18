@@ -452,7 +452,7 @@ namespace NachoClient.iOS
             loginProtocolControl.sm.PostEvent ((uint)LoginProtocolControl.Events.E.AccountCreated, "avl: DidSignInForUser");
 
             if (user.Profile.HasImage) {
-                FetchGooglePortrait (account, user.Profile.ImageURL (40));
+                FetchGooglePortrait (account, user.Profile.ImageURL (200));
             }
         }
 
@@ -703,14 +703,14 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("SegueToAccountType")) {
                 var vc = (AccountTypeViewController)segue.DestinationViewController;
-                vc.ServiceSelected = ServiceSelected;
+//                vc.ServiceSelected = ServiceSelected;
                 return;
             }
             if (segue.Identifier.Equals ("SegueToAccountCredentials")) {
                 var vc = (AccountCredentialsViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
                 var reason = (NachoCredentialsRequestEnum)holder.value;
-                vc.Setup (this, service, reason, email, password);
+//                vc.Setup (this, service, reason, email, password);
                 return;
             }
             if (segue.Identifier.Equals ("SegueToSupport")) {

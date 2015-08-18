@@ -163,16 +163,14 @@ namespace NachoClient.iOS
 
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
 
-            UINavigationItem navItems = new UINavigationItem ("Support");
+            UINavigationItem navItems = new UINavigationItem ("Message Support");
 
-            using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                UIBarButtonItem backButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                var DismissButton = new NcUIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
                     this.DismissViewController (true, null);
                 });
-                backButton.Title = "Back";
-                backButton.AccessibilityLabel = "Back";
-                backButton.TintColor = A.Color_NachoBlue;
-                navItems.SetLeftBarButtonItem (backButton, true);
+                DismissButton.AccessibilityLabel = "Dismiss";
+                navItems.LeftBarButtonItem = DismissButton;
             }
           
             Util.SetAutomaticImageForButton (sendButton, "icn-send");

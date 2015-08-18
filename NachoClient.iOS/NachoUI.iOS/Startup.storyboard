@@ -18,7 +18,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="NachoMailCircle" translatesAutoresizingMaskIntoConstraints="NO" id="Jp7-g0-vdk">
-                                <rect key="frame" x="241" y="203.5" width="119" height="119"/>
+                                <rect key="frame" x="241" y="204" width="119" height="119"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="119" id="f0U-nd-Oy0"/>
                                     <constraint firstAttribute="width" constant="119" id="pf4-cf-5eZ"/>
@@ -80,7 +80,7 @@
                                 <rect key="frame" x="16" y="226" width="568" height="148"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Updating your app with the latest features..." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yuq-VI-N9P">
-                                        <rect key="frame" x="0.0" y="103.5" width="568" height="23.5"/>
+                                        <rect key="frame" x="0.0" y="103" width="568" height="24"/>
                                         <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="17"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                         <nil key="highlightedColor"/>
@@ -166,7 +166,7 @@
                                 <rect key="frame" x="16" y="226" width="568" height="148"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Sorry for the crash!  We are recovering." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Okr-I2-CGo">
-                                        <rect key="frame" x="0.0" y="103" width="568" height="23.5"/>
+                                        <rect key="frame" x="0.0" y="103" width="568" height="24"/>
                                         <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="17"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                         <nil key="highlightedColor"/>

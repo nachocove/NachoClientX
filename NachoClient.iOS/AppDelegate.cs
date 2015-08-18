@@ -340,6 +340,10 @@ namespace NachoClient.iOS
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
             navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
+            using (var arrow = UIImage.FromFile ("nav-backarrow")) {
+                UINavigationBar.Appearance.BackIndicatorImage = arrow;
+                UINavigationBar.Appearance.BackIndicatorTransitionMaskImage = arrow;
+            }
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
                 // iOS 8 and after

@@ -36,11 +36,11 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="536"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="m6b-5n-6db">
-                                <rect key="frame" x="121" y="96" width="358" height="217"/>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="m6b-5n-6db">
+                                <rect key="frame" x="121" y="91" width="358" height="226"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qUy-Yy-05A" customClass="NcSimpleColorButton">
-                                        <rect key="frame" x="38.5" y="171.5" width="280" height="46"/>
+                                        <rect key="frame" x="39" y="172" width="280" height="46"/>
                                         <color key="backgroundColor" red="0.0" green="0.81568627450980391" blue="0.76470588235294112" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <accessibility key="accessibilityConfiguration" label="Get Started"/>
                                         <constraints>
@@ -56,13 +56,13 @@
                                         </connections>
                                     </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Start by choosing your email service provider" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yeA-iY-b0a">
-                                        <rect key="frame" x="8" y="118" width="341.5" height="23.5"/>
+                                        <rect key="frame" x="8" y="118" width="342" height="24"/>
                                         <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="17"/>
                                         <color key="textColor" red="0.97254902119999997" green="0.97254902119999997" blue="0.97254902119999997" alpha="1" colorSpace="calibratedRGB"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" image="NachoMailCircle" translatesAutoresizingMaskIntoConstraints="NO" id="n14-LN-Wkj">
-                                        <rect key="frame" x="138.5" y="8" width="80" height="80"/>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="NachoMailCircle" translatesAutoresizingMaskIntoConstraints="NO" id="n14-LN-Wkj">
+                                        <rect key="frame" x="139" y="8" width="80" height="80"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="80" id="PyC-ge-WeR"/>
                                             <constraint firstAttribute="width" constant="80" id="b9H-RP-0D9"/>

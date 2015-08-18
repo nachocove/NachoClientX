@@ -26,6 +26,7 @@ namespace NachoClient.iOS
         void StartListeningForApplicationStatus ()
         {
             if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
         }

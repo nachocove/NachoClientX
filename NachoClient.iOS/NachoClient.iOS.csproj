@@ -1627,6 +1627,15 @@
       <DependentUpon>GettingStartedViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcSimpleColorButton.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAccountTypeCollectionViewCell.cs" />
+    <Compile Include="NachoUI.iOS\Support\NcAccountTypeCollectionViewCell.designer.cs">
+      <DependentUpon>NcAccountTypeCollectionViewCell.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountSyncingViewController.cs" />
+    <Compile Include="NachoUI.iOS\AccountSyncingViewController.designer.cs">
+      <DependentUpon>AccountSyncingViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcAdjustableLayoutTextField.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1634,6 +1643,7 @@
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Startup.storyboard" />
     <InterfaceDefinition Include="NachoUI.iOS\Welcome.storyboard" />
+    <InterfaceDefinition Include="NachoUI.iOS\AccountCreation.storyboard" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
@@ -2523,6 +2533,7 @@
     <BundleResource Include="Resources\gen-avatar-alert%403x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%404x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%406x.png" />
+    <BundleResource Include="Resources\NachoUI.iOS\.DS_Store" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

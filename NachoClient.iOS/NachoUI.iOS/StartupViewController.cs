@@ -10,7 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class StartupViewController : NcUIViewController
+    public partial class StartupViewController : NcUIViewController, GettingStartedViewControllerDelegate
     {
 
         bool StatusIndCallbackIsSet = false;
@@ -34,6 +34,7 @@ namespace NachoClient.iOS
         void StartListeningForApplicationStatus ()
         {
             if (!StatusIndCallbackIsSet) {
+                StatusIndCallbackIsSet = true;
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
         }
@@ -143,6 +144,7 @@ namespace NachoClient.iOS
             var storyboard = UIStoryboard.FromName ("Welcome", null);
             UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
             var gettingStartedViewController = (GettingStartedViewController)vc.ViewControllers [0];
+            gettingStartedViewController.Delegate = this;
             if (currentState == StartupViewState.Startup) {
                 gettingStartedViewController.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
             }
@@ -175,11 +177,11 @@ namespace NachoClient.iOS
             // Swap us out as the window's root view controller because we are no longer needed
             if (currentState == StartupViewState.Startup) {
                 currentState = StartupViewState.App;
-                View.Window.RootViewController = appViewController;
+                UIApplication.SharedApplication.Delegate.GetWindow().RootViewController = appViewController;
             } else {
                 // TODO: animate with fade
                 currentState = StartupViewState.App;
-                View.Window.RootViewController = appViewController;
+                UIApplication.SharedApplication.Delegate.GetWindow().RootViewController = appViewController;
             }
         }
 
@@ -211,6 +213,11 @@ namespace NachoClient.iOS
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        public void GettingStartedViewControllerDidComplete (GettingStartedViewController vc)
+        {
+            ShowApplication ();
         }
     }
 }

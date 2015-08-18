@@ -5,17 +5,30 @@ using System;
 using Foundation;
 using UIKit;
 using CoreGraphics;
+using NachoCore.Model;
+using NachoCore;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class GettingStartedViewController : UIViewController
+
+    public interface GettingStartedViewControllerDelegate
     {
+        void GettingStartedViewControllerDidComplete (GettingStartedViewController vc);
+    }
+
+    public partial class GettingStartedViewController : UIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
+    {
+        public GettingStartedViewControllerDelegate Delegate;
         public CGRect? AnimateFromLaunchImageFrame = null;
         private CGSize originalCircleImageSize;
         private nfloat originalCircleImageOffset;
+        private UIStoryboard accountStoryboard;
 
         public GettingStartedViewController (IntPtr handle) : base (handle)
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         public override void ViewDidLoad ()
@@ -23,6 +36,11 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             getStartedButton.Layer.CornerRadius = 6.0f;
             Util.ConfigureNavBar (false, NavigationController);
+            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
+            if (accountBeingConfigured != null) {
+                introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
+                getStartedButton.SetTitle ("Continue", UIControlState.Normal);
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -60,8 +78,52 @@ namespace NachoClient.iOS
             }
         }
 
-        partial void getStarted(NSObject sender)
+        partial void getStarted (NSObject sender)
         {
+            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
+            if (accountBeingConfigured != null){
+                var vc = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
+                vc.AccountDelegate = this;
+                vc.Account = accountBeingConfigured;
+                NavigationController.PushViewController (vc, true);
+            }else{
+                var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+                vc.AccountDelegate = this;
+                NavigationController.PushViewController (vc, true);
+            }
+        }
+
+        public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
+        {
+            if (service == McAccount.AccountServiceEnum.GoogleDefault) {
+                // Do the google thing
+            } else if (service == McAccount.AccountServiceEnum.IMAP_SMTP) {
+                // Show advanced settings
+            } else {
+                var credentialsViewController = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
+                credentialsViewController.Service = service;
+                credentialsViewController.AccountDelegate = this;
+                NavigationController.PushViewController (credentialsViewController, true);
+            }
+        }
+
+        public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
+        {
+            BackEnd.Instance.Start (account.Id);
+            var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+            syncingViewController.AccountDelegate = this;
+            syncingViewController.Account = account;
+            NavigationController.PushViewController (syncingViewController, true);
+            // push tutorial view
+        }
+
+        public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
+        {
+            // FIXME: Only set if null or device
+            NcApplication.Instance.Account = vc.Account;
+            LoginHelpers.SetSwitchToTime (vc.Account);
+            Delegate.GettingStartedViewControllerDidComplete (this);
         }
     }
 }
