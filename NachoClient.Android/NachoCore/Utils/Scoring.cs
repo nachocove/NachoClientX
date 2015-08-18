@@ -50,6 +50,10 @@ namespace NachoCore.Utils
                 }
                 scoreVersion++;
                 NcAssert.True (scoreVersion == ver);
+
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    break;
+                }
             }
             return scoreVersion;
         }
