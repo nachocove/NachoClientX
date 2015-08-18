@@ -366,6 +366,16 @@ namespace NachoCore.Model
         public void Analyze ()
         {
             var newScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            if (NcTask.Cts.Token.IsCancellationRequested) {
+                UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.ScoreVersion = newScoreVersion;
+                    // If we scoring the last version, need to mark for update to recompute the score later
+                    em.NeedUpdate = Scoring.Version == newScoreVersion;
+                    return true;
+                });
+                return;
+            }
             InitializeTimeVariance ();
             var newScore = Classify ();
             var newState = TimeVarianceState;
