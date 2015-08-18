@@ -293,10 +293,10 @@ namespace NachoCore.Utils
     public class NcDebugProtocolLogger : IProtocolLogger
     {
         string LogPrefix;
-        ulong LogModule;
+        //ulong LogModule;
         public NcDebugProtocolLogger (ulong logModule)
         {
-            LogModule = logModule;
+            //LogModule = logModule;
             LogPrefix = Log.ModuleString (logModule);
         }
 
