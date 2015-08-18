@@ -171,21 +171,9 @@ namespace Test.iOS
             Assert.AreEqual (30, TestFolder.ImapUidHighestUidSynced);
             Assert.AreEqual (21, TestFolder.ImapLastUidSynced);
 
-            // proceed with sync
+            // proceed with sync. Since there's no new mail, QuickSync will return a null.
             syncSet = ImapStrategy.QuickSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
-            Assert.NotNull (syncSet);
-            Assert.AreEqual (10, syncSet.Count);
-            Assert.AreEqual (20, syncSet.Max ().Id);
-            Assert.AreEqual (11, syncSet.Min ().Id);
-
-            // don't sync and try some more corner-cases
-            TestFolder.ImapLastUidSynced = 12;
-
-            syncSet = ImapStrategy.QuickSyncSet (TestFolder.ImapUidNext, TestFolder, 10);
-            Assert.NotNull (syncSet);
-            Assert.AreEqual (1, syncSet.Count);
-            Assert.AreEqual (11, syncSet.Max ().Id);
-            Assert.AreEqual (11, syncSet.Min ().Id);
+            Assert.Null (syncSet);
 
             DeleteAllTestMail ();
 
@@ -202,15 +190,6 @@ namespace Test.iOS
             Assert.AreEqual (5, syncSet.Count);
             Assert.AreEqual (14, syncSet.Max ().Id);
             Assert.AreEqual (10, syncSet.Min ().Id);
-            // don't sync. Try a test with UidSet
-
-            TestFolder.ImapUidSet = "12:30";
-            syncSet = ImapStrategy.QuickSyncSet (15, TestFolder, 10);
-            Assert.NotNull (syncSet);
-            Assert.AreEqual (3, syncSet.Count);
-            Assert.AreEqual (14, syncSet.Max ().Id);
-            Assert.AreEqual (12, syncSet.Min ().Id);
-
             // don't sync. Try another set
 
             TestFolder = DoFakeFolderOpen (TestFolder, 25);
@@ -221,26 +200,18 @@ namespace Test.iOS
             Assert.AreEqual (15, syncSet.Min ().Id);
             TestFolder = DoFakeSync (TestFolder, syncSet); // creates emails 24-15
 
-            // we now have emails 1-9 and 24-15. The next sync, looking for
-            // at most 10 new emails to sync will get 10-14
-            syncSet = ImapStrategy.QuickSyncSet (25, TestFolder, 10);
-            Assert.NotNull (syncSet);
-            Assert.AreEqual (5, syncSet.Count);
-            Assert.AreEqual (14, syncSet.Max ().Id);
-            Assert.AreEqual (10, syncSet.Min ().Id);
-            // don't sync. See what a normal GenSyncKit does. It should give us the same range.
-            // get the latest data for the folder
             TestFolder = McFolder.QueryById<McFolder> (TestFolder.Id);
             TestBEContext beContext = new TestBEContext ();
             beContext.Account = Account;
             beContext.Owner = new TestOwner ();
             var Strategy = new ImapStrategy (beContext);
 
+            // this uses the default span of 30
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.NotNull (syncKit);
-            Assert.AreEqual (5, syncSet.Count);
+            Assert.AreEqual (14, syncKit.SyncSet.Count);
             Assert.AreEqual (14, syncKit.SyncSet.Max ().Id);
-            Assert.AreEqual (10, syncKit.SyncSet.Min ().Id);
+            Assert.AreEqual (1, syncKit.SyncSet.Min ().Id);
         }
 
         [Test]
@@ -295,6 +266,7 @@ namespace Test.iOS
             var Strategy = new ImapStrategy (beContext);
 
             var protocolState = ProtocolState;
+            TestFolder = resetFolder (TestFolder);
 
             // NoSelect (i.e. not a folder that can have messages).
             // Should return null, since there's no syncing we can even do.
@@ -304,7 +276,8 @@ namespace Test.iOS
             Assert.Null (syncKit);
             TestFolder.ImapNoSelect = false;
 
-            // fresh install or new folder. UidNext is not set (i.e. 0) so we have to go open the folder.
+            TestFolder = resetFolder (TestFolder);
+            // UidNext of 0 isn't valid. Expect a null
             TestFolder = DoFakeFolderOpen (TestFolder, 0);
             syncKit = Strategy.GenSyncKit (ref protocolState, TestFolder, null, false);
             Assert.Null (syncKit);
@@ -479,6 +452,7 @@ namespace Test.iOS
                 target.ImapUidHighestUidSynced = UInt32.MinValue;
                 target.ImapLastUidSynced = UInt32.MinValue;
                 target.ImapUidSet = string.Empty;
+                target.ImapLastExamine = DateTime.MinValue;
                 return true;
             });
 

@@ -156,11 +156,6 @@ namespace NachoCore.IMAP
 
             uint span = SpanSizeWithCommStatus (protocolState);
             IList<UniqueId> syncSet;
-            // first see if there's new stuff to fetch
-            syncSet = QuickSyncSet (folder.ImapUidNext, folder, span);
-            if (null != syncSet && syncSet.Any ()) {
-                return syncSet;
-            }
 
             // there's no new stuff to fetch. See about older stuff.
             int startingPoint = (int)(0 != folder.ImapLastUidSynced ? folder.ImapLastUidSynced : folder.ImapUidNext);
@@ -199,25 +194,6 @@ namespace NachoCore.IMAP
             if (highest > folder.ImapUidHighestUidSynced) {
                 // there's new mail
                 lowest = Math.Max(span > highest ? 1 : highest - span + 1, folder.ImapUidHighestUidSynced + 1);
-            } else {
-                // there might still be new mail. See if there's a range we can sync that's between
-                // ImapLastUidSynced and the highest email in the DB.
-                highest = folder.ImapLastUidSynced > 2 ? folder.ImapLastUidSynced - 1 : 1;
-                lowest = span > highest ? 1 : highest - span + 1;
-                UniqueIdSet currentMails = getCurrentEmailUids (folder, lowest, highest + 1, span);
-                if (currentMails.Any ()) {
-                    lowest = currentMails.Max ().Id + 1;
-                }
-            }
-            if (lowest <= highest) {
-                // if we have the UidSet (happens after the first sync, quick or not), check if we're past our limit
-                // the uidSet will contain all UID's that fall into the timespan specified by the user.
-                var uidSet = getCurrentUIDSet (folder, 0, 0, 0);
-                if (uidSet != null && uidSet.Any () && uidSet.Min ().Id >= lowest) {
-                    lowest = uidSet.Min ().Id;
-                }
-            }
-            if (lowest <= highest) {
                 Log.Info (Log.LOG_IMAP, "GenSyncKit/Quick {0}: Last {1} UidNext {2} Syncing {3}:{4}",
                     folder.ImapFolderNameRedacted (), folder.ImapLastUidSynced, UidNext, highest, lowest);
                 return new UniqueIdRange (new UniqueId (highest), new UniqueId (lowest));
@@ -285,7 +261,7 @@ namespace NachoCore.IMAP
                 havePending, quickSync);
             
             SyncKit syncKit = null;
-            if (HasNewMail (folder) || havePending || quickSync) {
+            if (HasNewMail (folder) || havePending || quickSync || folder.ImapLastExamine == DateTime.MinValue) {
                 // Let's try to get a chunk of new messages quickly.
                 uint span = SpanSizeWithCommStatus (protocolState);
                 syncKit = new SyncKit (folder, span, pending, ImapSummaryitems (protocolState), ImapSummaryHeaders ());

@@ -104,21 +104,17 @@ namespace NachoCore.IMAP
         private Event QuickSync (NcImapFolder mailKitFolder, uint span, TimeSpan timespan)
         {
             bool changed = false;
-            Synckit.SyncSet = ImapStrategy.QuickSyncSet (mailKitFolder.UidNext.Value.Id, Synckit.Folder, span);
-            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
-                UniqueIdSet vanished;
-                UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
-                var deleted = deleteEmails (vanished);
-                changed = deleted.Any () || newOrChanged.Any ();
-            } else {
-                Log.Info (Log.LOG_IMAP, "QuickSync: Nothing to do");
-            }
-            Finish (changed);
             if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
                 Log.Warn (Log.LOG_IMAP, "Could not get folder metadata");
-                // ignore the error, though.
+                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL1");
             }
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPQSSUCC");
+            var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
+            if (null == syncSet || !syncSet.Any ()) {
+                Finish (false);
+                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
+            }
+            Synckit.SyncSet = syncSet;
+            return syncFolder (mailKitFolder);
         }
 
         private Event getFolderMetaDataInternal (NcImapFolder mailKitFolder, TimeSpan timespan)
@@ -132,8 +128,6 @@ namespace NachoCore.IMAP
 
         private Event syncFolder (NcImapFolder mailKitFolder)
         {
-            NcAssert.True (SyncKit.MethodEnum.Sync == Synckit.Method);
-
             // First find all messages marked as /Deleted
             UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
