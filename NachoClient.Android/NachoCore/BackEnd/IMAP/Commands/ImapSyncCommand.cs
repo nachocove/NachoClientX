@@ -103,7 +103,6 @@ namespace NachoCore.IMAP
 
         private Event QuickSync (NcImapFolder mailKitFolder, uint span, TimeSpan timespan)
         {
-            bool changed = false;
             if (!GetFolderMetaData (ref Synckit.Folder, mailKitFolder, timespan)) {
                 Log.Warn (Log.LOG_IMAP, "Could not get folder metadata");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSYNCMETAFAIL1");
