@@ -4,11 +4,16 @@ using System;
 using NachoCore.IMAP;
 using NachoCore.Utils;
 using NachoCore.Model;
+using MailKit.Security;
+using MailKit;
+using MailKit.Net.Smtp;
 
 namespace NachoCore.SMTP
 {
     public class SmtpAuthenticateCommand : SmtpCommand
     {
+        const int KAuthRetries = 2;
+
         public SmtpAuthenticateCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext, smtp)
         {
         }
@@ -29,15 +34,41 @@ namespace NachoCore.SMTP
                     RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
                 }
 
+                string username = BEContext.Cred.Username;
+                string cred;
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
-                    // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
-                    Client.AuthenticationMechanisms.Remove ("LOGIN");
-                    Client.AuthenticationMechanisms.Remove ("PLAIN");
-                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
+                    cred = BEContext.Cred.GetAccessToken ();
                 } else {
-                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
-                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
+                    cred = BEContext.Cred.GetPassword ();
                 }
+
+                Exception ex = null;
+                for (var i = 0; i++ < KAuthRetries; ) {
+                    try {
+                        try {
+                            ex = null;
+                            Client.Authenticate (username, cred, Cts.Token);
+                            break;
+                        } catch (SmtpProtocolException e) {
+                            Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);
+                            // some servers (icloud.com) seem to close the connection on a bad password/username.
+                            throw new AuthenticationException (e.Message);
+                        }
+                    } catch (AuthenticationException e) {
+                        ex = e;
+                        Log.Warn (Log.LOG_SMTP, "AuthenticationException: {0}", ex.Message);
+                        continue;
+                    } catch (ServiceNotAuthenticatedException e) {
+                        ex = e;
+                        Log.Warn (Log.LOG_SMTP, "ServiceNotAuthenticatedException: {0}", e.Message);
+                    }
+                }
+                if (null != ex) {
+                    throw ex;
+                }
+
                 Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
                 if (null != Client.MailKitProtocolLogger && null != RestartLog) {
                     Client.MailKitProtocolLogger.Start (RestartLog);
