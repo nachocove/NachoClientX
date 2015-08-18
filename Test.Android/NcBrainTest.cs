@@ -304,7 +304,7 @@ namespace Test.Common
 
             double testPenalty = 0.375;
             McEmailMessage.MarketingMailDisqualifier.Penalty = testPenalty;
-            McEmailMessage.YahooBUlkEmailDisqualifier.Penalty = testPenalty;
+            McEmailMessage.YahooBulkEmailDisqualifier.Penalty = testPenalty;
 
             // Insert one email that isn't read
             var message1 = new McEmailMessage () {

@@ -58,7 +58,7 @@ namespace NachoCore.Model
 
         public static NcUserActionDisqualifier UserActionDisqualifier = new NcUserActionDisqualifier ();
         public static NcMarketingEmailDisqualifier MarketingMailDisqualifier = new NcMarketingEmailDisqualifier ();
-        public static NcYahooBulkEmailDisqualifier YahooBUlkEmailDisqualifier = new NcYahooBulkEmailDisqualifier ();
+        public static NcYahooBulkEmailDisqualifier YahooBulkEmailDisqualifier = new NcYahooBulkEmailDisqualifier ();
 
         /// Did the user take explicit action?
         public int UserAction { get; set; }
@@ -194,7 +194,7 @@ namespace NachoCore.Model
                         // Disqualifiers are evaluated next. Again, can cause early exit and avoid excessive compute
                         UserActionDisqualifier.Classify,
                         MarketingMailDisqualifier.Classify,
-                        YahooBUlkEmailDisqualifier.Classify,
+                        YahooBulkEmailDisqualifier.Classify,
                         // The probablistic score is computed last because it is the most expensive.
                         (emailMessage2) => emailMessage2.BayesianLikelihood ()
                         // TODO - incorporate content score
@@ -368,7 +368,7 @@ namespace NachoCore.Model
 
         protected void AnalyzeYahooBulkEmails ()
         {
-            YahooBUlkEmailDisqualifier.Analyze (this);
+            YahooBulkEmailDisqualifier.Analyze (this);
         }
 
         public void Analyze ()

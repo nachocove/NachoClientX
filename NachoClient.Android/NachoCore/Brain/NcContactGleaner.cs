@@ -179,7 +179,8 @@ namespace NachoCore.Brain
             // We do not check here in order to avoid a lot of db queries just for
             // gleaning.
             bool gleaned;
-            if (isJunk || emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
+            if (isJunk || emailMessage.HeadersFiltered || CheckDisqualification (emailMessage) ||
+                ((0 == emailMessage.FromEmailAddressId) && String.IsNullOrEmpty (emailMessage.To))) {
                 // Do not glean email addresses from marketing emails because they are usually junk
                 gleaned = true;
             } else {
