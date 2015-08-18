@@ -621,7 +621,6 @@ namespace NachoCore.IMAP
             McFolder defInbox = McFolder.GetDefaultInboxFolder (protocolState.AccountId);
             switch (exeCtxt) {
             case NcApplication.ExecutionContextEnum.QuickSync:
-            case NcApplication.ExecutionContextEnum.Background:
                 maybeAddFolderToList (folderList, defInbox);
                 break;
 
