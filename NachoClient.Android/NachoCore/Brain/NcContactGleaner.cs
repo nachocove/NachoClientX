@@ -173,13 +173,13 @@ namespace NachoCore.Brain
             return false;
         }
 
-        public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage)
+        public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage, bool isJunk)
         {
             // Caller is responsible for making sure that this is not in a junk folder.
             // We do not check here in order to avoid a lot of db queries just for
             // gleaning.
             bool gleaned;
-            if (emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
+            if (isJunk || emailMessage.HeadersFiltered || CheckDisqualification (emailMessage)) {
                 // Do not glean email addresses from marketing emails because they are usually junk
                 gleaned = true;
             } else {
