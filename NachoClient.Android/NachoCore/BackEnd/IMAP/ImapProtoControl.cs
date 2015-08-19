@@ -549,7 +549,6 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
-            ForceStopped = false;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }

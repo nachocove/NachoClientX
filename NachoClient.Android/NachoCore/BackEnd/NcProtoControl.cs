@@ -325,7 +325,7 @@ namespace NachoCore
             return true;
         }
 
-        public bool ForceStopped { get; set; }
+        public bool ForceStopped { get; protected set; }
         public virtual void ForceStop ()
         {
             ForceStopped = true;
