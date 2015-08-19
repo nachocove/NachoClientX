@@ -144,9 +144,6 @@ namespace NachoCore.IMAP
                 // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
                 toDelete.AddRange (vanished);
                 var deleted = deleteEmails (toDelete);
-                if (deleted.Any () || newOrChanged.Any ()) {
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                }
 
                 Cts.Token.ThrowIfCancellationRequested ();
                 changed |= deleted.Any () || newOrChanged.Any ();
@@ -154,6 +151,7 @@ namespace NachoCore.IMAP
 
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
                 foreach (var message in Synckit.UploadMessages) {
+                    Cts.Token.ThrowIfCancellationRequested ();
                     AppendMessage (mailKitFolder, Synckit.Folder, message);
                     changed = true;
                 }
