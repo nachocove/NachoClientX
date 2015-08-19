@@ -98,6 +98,10 @@ namespace NachoClient.iOS
                 statusLabel.Text = "Verifying your information...";
                 UpdateForSubmitting(true);
                 StartListeningForApplicationStatus();
+                if (Account != null && !String.Equals (Account.EmailAddr, email)) {
+                    NcAccountHandler.Instance.RemoveAccount (Account.Id);
+                    Account = null;
+                }
                 if (Account == null){
                     Account = NcAccountHandler.Instance.CreateAccount (Service, email, password);
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
@@ -105,9 +109,8 @@ namespace NachoClient.iOS
                 }else{
                     var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
                     cred.UpdatePassword (password);
-                    cred.Username = email;
-                    cred.Update ();
-                    BackEnd.Instance.CredResp (Account.Id);
+                    BackEnd.Instance.Stop (Account.Id);
+                    BackEnd.Instance.Start (Account.Id);
                 }
             }else{
                 NcAlertView.ShowMessage (this, "Nacho Mail", issue);
@@ -171,7 +174,7 @@ namespace NachoClient.iOS
                 emailField.Enabled = true;
                 passwordField.Enabled = true;
                 supportButton.Hidden = false;
-                advancedButton.Hidden = false;
+                advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange;
                 UpdateSubmitEnabled ();
             }
         }
@@ -244,8 +247,8 @@ namespace NachoClient.iOS
                         UpdateForSubmitting (false);
                         PerformSegue ("cert-ask", null);
                     }
-                } else if ((BackEndStateEnum.PostAutoDPreInboxSync == senderState) && (BackEndStateEnum.PostAutoDPreInboxSync == readerState)) {
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController PostAutoDPreInboxSync for reader and writer");
+                } else if ((senderState >= BackEndStateEnum.PostAutoDPreInboxSync) && (readerState >= BackEndStateEnum.PostAutoDPreInboxSync)) {
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController PostAutoDPreInboxSync for reader or writer");
                     StopListeningForApplicationStatus ();
                     AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
                 }

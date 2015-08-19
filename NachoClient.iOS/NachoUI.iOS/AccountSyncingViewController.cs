@@ -105,7 +105,7 @@ namespace NachoClient.iOS
                     if (IsVisible) {
                         activityIndicatorView.StopAnimating ();
                     }
-                    NavigationItem.Title = "Done";
+                    NavigationItem.Title = "Account Created";
                     statusLabel.Text = "Your account is ready!";
                 } else {
                     if (IsVisible) {
@@ -123,7 +123,7 @@ namespace NachoClient.iOS
                 InvokeOnUIThread.Instance.Invoke (() => {
                     Dismiss ();
                 });
-            }, null, TimeSpan.FromSeconds(1), TimeSpan.Zero);
+            }, null, TimeSpan.FromSeconds(2), TimeSpan.Zero);
 
         }
 

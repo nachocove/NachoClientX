@@ -127,7 +127,7 @@ namespace NachoClient.iOS
             if (LoginHelpers.HasViewedTutorial ()) {
                 NavigationController.PushViewController (syncingViewController, true);
             } else {
-                PerformSegue ("tutorial", null);
+                PerformSegue ("tutorial", null); 
             }
         }
 

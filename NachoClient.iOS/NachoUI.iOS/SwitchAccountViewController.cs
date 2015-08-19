@@ -13,15 +13,18 @@ using NachoClient;
 
 namespace NachoClient.iOS
 {
-    public partial class SwitchAccountViewController : UIViewController, IUIViewControllerTransitioningDelegate, INachoAccountsTableDelegate
+    public partial class SwitchAccountViewController : UIViewController, IUIViewControllerTransitioningDelegate, INachoAccountsTableDelegate, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
     {
         public SwitchAccountViewController (IntPtr handle) : base (handle)
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         UITableView accountsTableView;
         SwitchAccountButton switchAccountButton;
         AccountsTableViewSource accountsTableViewSource;
+        UIStoryboard accountStoryboard;
 
         public delegate void SwitchAccountCallback (McAccount account);
 
@@ -30,74 +33,41 @@ namespace NachoClient.iOS
         public static void ShowDropdown (UIViewController fromViewController, SwitchAccountCallback switchAccountCallback)
         {
             var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var toViewController = (SwitchAccountViewController)storyboard.InstantiateViewController ("SwitchAccountViewController");
-            var segue = new SwitchAccountCustomSegue ("", fromViewController, toViewController);
-            toViewController.switchAccountCallback = switchAccountCallback;
+            var switchViewController = (SwitchAccountViewController)storyboard.InstantiateViewController ("SwitchAccountViewController");
+            var navViewController = new UINavigationController (switchViewController);
+            Util.ConfigureNavBar (false, navViewController);
+            switchViewController.switchAccountCallback = switchAccountCallback;
+            var segue = new SwitchAccountCustomSegue ("", fromViewController, navViewController);
             segue.Perform ();
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
             switchAccountButton = new SwitchAccountButton (SwitchAccountButtonPressed);
             switchAccountButton.SetImage ("gen-avatar-backarrow");
-
             accountsTableView = new UITableView (View.Frame);
             accountsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
             accountsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
             accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
             accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
-
             accountsTableViewSource = new AccountsTableViewSource ();
             accountsTableViewSource.Setup (this, showAccessory: false, showUnreadCount:true);
             accountsTableView.Source = accountsTableViewSource;
-
             View.AddSubview (accountsTableView);
-
-            View.BringSubviewToFront (accountsTableView);
-
-            NavigationItem.HidesBackButton = true;
             NavigationItem.TitleView = switchAccountButton;
         }
-
-        bool firstTime = true;
-        bool animating = false;
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-
             ViewFramer.Create (accountsTableView).Y (0);
-
-            if (firstTime) {
-                firstTime = false;
-                var h = View.Frame.Height;
-                ViewFramer.Create (accountsTableView).Height (0);
-                UIView.Animate (0.4, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        animating = true;
-                        ViewFramer.Create (accountsTableView).Height (h);
-                    },
-                    () => {
-                        animating = false;
-                    }
-                );
-            }
         }
 
         public override void ViewDidLayoutSubviews ()
         {
             base.ViewDidLayoutSubviews ();
-            if (!animating) {
-                ViewFramer.Create (accountsTableView).Height (View.Frame.Height);
-            }
-        }
-
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                return true;
-            }
+            ViewFramer.Create (accountsTableView).Height (View.Frame.Height);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -120,7 +90,7 @@ namespace NachoClient.iOS
             switchAccountButton.UserInteractionEnabled = false;
 
             Deactivate (null, (McAccount account) => {
-                NavigationController.PopViewController (false);
+                DismissViewController (false, null);
             });
         }
 
@@ -138,9 +108,9 @@ namespace NachoClient.iOS
             Deactivate (null, (McAccount acct) => {
                 UIView.Animate (0.75, () => {
                     UIView.SetAnimationCurve (UIViewAnimationCurve.EaseInOut);
-                    UIView.SetAnimationTransition (UIViewAnimationTransition.FlipFromRight, NavigationController.View, false);
+                    UIView.SetAnimationTransition (UIViewAnimationTransition.FlipFromRight, NavigationController.View.Window, false);
                 });
-                NavigationController.PopViewController (false);
+                DismissViewController (false, null);
             });
         }
 
@@ -153,23 +123,23 @@ namespace NachoClient.iOS
         // INachoAccountsTableDelegate
         public void AddAccountSelected ()
         {
-            LaunchViewController.StartAccountSetup (this);
+            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+            vc.AccountDelegate = this;
+            NavigationController.PushViewController (vc, true);
         }
 
         public void Deactivate (McAccount account, SwitchAccountCallback callback)
         {
-            UIView.Animate (0.3, 0, UIViewAnimationOptions.CurveLinear,
-                () => {
-                    animating = true;
-                    ViewFramer.Create (accountsTableView).Height (0);
-                },
-                () => {
-                    switchAccountButton.Alpha = 0;
-                    if (null != callback) {
-                        callback (account);
-                    }
-                    animating = false;
-                });
+            var shadeView = NavigationController.View.ViewWithTag (SwitchAccountCustomSegue.ShadeViewTag);
+            UIView.Animate (0.2, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
+                if (shadeView != null){
+                    shadeView.Alpha = 0.0f;
+                }
+                View.Transform = CGAffineTransform.MakeTranslation(0, -View.Frame.Height);
+            }, () => {
+                callback (account);
+            });
         }
 
         protected const float LINE_HEIGHT = 20;
@@ -253,7 +223,7 @@ namespace NachoClient.iOS
             switchAccountButton.UserInteractionEnabled = false;
 
             Deactivate (null, (McAccount account) => {
-                NavigationController.PopViewController (false);
+                DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();
                 nachoTabBar.SwitchToInbox ();
             });
@@ -265,7 +235,7 @@ namespace NachoClient.iOS
             switchAccountButton.UserInteractionEnabled = false;
 
             Deactivate (null, (McAccount account) => {
-                NavigationController.PopViewController (false);
+                DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();
                 nachoTabBar.SwitchToDeferred ();
             });
@@ -277,10 +247,38 @@ namespace NachoClient.iOS
             switchAccountButton.UserInteractionEnabled = false;
 
             Deactivate (null, (McAccount account) => {
-                NavigationController.PopViewController (false);
+                DismissViewController (false, null);
                 var nachoTabBar = Util.GetActiveTabBar ();
                 nachoTabBar.SwitchToDeadlines ();
             });
+        }
+
+        public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
+        {
+            if (service == McAccount.AccountServiceEnum.GoogleDefault) {
+                // Do the google thing
+            } else if (service == McAccount.AccountServiceEnum.IMAP_SMTP) {
+                // Show advanced settings
+            } else {
+                var credentialsViewController = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
+                credentialsViewController.Service = service;
+                credentialsViewController.AccountDelegate = this;
+                NavigationController.PushViewController (credentialsViewController, true);
+            }
+        }
+
+        public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
+        {
+            var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+            syncingViewController.AccountDelegate = this;
+            syncingViewController.Account = account;
+            BackEnd.Instance.Start (syncingViewController.Account.Id);
+            NavigationController.PushViewController (syncingViewController, true);
+        }
+
+        public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
+        {
+            AccountSelected (vc.Account);
         }
     }
 

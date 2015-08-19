@@ -255,7 +255,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="M8S-2S-EAE">
-                                <rect key="frame" x="16" y="219" width="568" height="98"/>
+                                <rect key="frame" x="16" y="155" width="568" height="98"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="zof-nk-cwK" customClass="NcActivityIndicatorView">
                                         <rect key="frame" x="254" y="0.0" width="60" height="60"/>
@@ -286,7 +286,7 @@
                         <color key="backgroundColor" red="0.047058823530000002" green="0.25882352939999997" blue="0.29411764709999999" alpha="1" colorSpace="calibratedRGB"/>
                         <constraints>
                             <constraint firstItem="M8S-2S-EAE" firstAttribute="trailing" secondItem="jrP-0h-mMa" secondAttribute="trailingMargin" id="1Kc-bb-j0v"/>
-                            <constraint firstAttribute="centerY" secondItem="M8S-2S-EAE" secondAttribute="centerY" id="UM3-oa-jU0"/>
+                            <constraint firstAttribute="centerY" secondItem="M8S-2S-EAE" secondAttribute="centerY" constant="64" id="UM3-oa-jU0"/>
                             <constraint firstItem="M8S-2S-EAE" firstAttribute="leading" secondItem="jrP-0h-mMa" secondAttribute="leadingMargin" id="tN4-db-PBL"/>
                         </constraints>
                     </view>
