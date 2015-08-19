@@ -131,6 +131,7 @@ namespace NachoCore.IMAP
         private PushAssist PushAssist { set; get; }
 
         private const string KImapStrategyPick = "ImapStrategy Pick";
+
         public ImapProtoControl (INcProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
@@ -408,11 +409,11 @@ namespace NachoCore.IMAP
                             (uint)PcEvt.E.Park,
                             (uint)ImapEvt.E.UiSetCred,
                             (uint)ImapEvt.E.UiSetServConf,
+                            (uint)SmEvt.E.TempFail,
                         },
                         Invalid = new uint[] {
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
-                            (uint)SmEvt.E.TempFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.ReFSync,
                             (uint)ImapEvt.E.Wait,
@@ -463,6 +464,7 @@ namespace NachoCore.IMAP
         }
 
         #region NcCommStatus
+
         public void ServerStatusEventHandler (Object sender, NcCommStatusServerEventArgs e)
         {
             if (e.ServerId == Server.Id) {
@@ -494,6 +496,7 @@ namespace NachoCore.IMAP
                 Sm.PostEvent ((uint)PcEvt.E.Park, "IMEHPARK");
             }
         }
+
         #endregion
 
         public void StatusIndEventHandler (Object sender, EventArgs ea)
@@ -516,6 +519,8 @@ namespace NachoCore.IMAP
 
         public override void ForceStop ()
         {
+            base.ForceStop ();
+
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
@@ -544,6 +549,7 @@ namespace NachoCore.IMAP
             if (!base.Execute ()) {
                 return false;
             }
+            ForceStopped = false;
             Sm.PostEvent ((uint)SmEvt.E.Launch, "IMAPPCEXE");
             return true;
         }
@@ -570,6 +576,7 @@ namespace NachoCore.IMAP
         }
 
         private int DiscoveryRetries = 0;
+
         private void DoDiscTempFail ()
         {
             Log.Info (Log.LOG_SMTP, "IMAP DoDisc Attempt {0}", DiscoveryRetries++);
@@ -683,8 +690,7 @@ namespace NachoCore.IMAP
              */
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
                 NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
-                MaxConcurrentExtraRequests > ConcurrentExtraRequests)
-            {
+                MaxConcurrentExtraRequests > ConcurrentExtraRequests) {
                 NcImapClient Client = new NcImapClient ();  // Presumably this will get cleaned up by GC?
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 var pack = Strategy.PickUserDemand (Client);
@@ -840,8 +846,12 @@ namespace NachoCore.IMAP
             // Because we are going to stop for a while, we need to fail any
             // pending that aren't allowed to be delayed.
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
-            lock (MainClient.SyncRoot) {
-                MainClient.Disconnect (true); // TODO Where does the Cancellation token come from?
+
+            var disconnect = new ImapDisconnectCommand (this, MainClient);
+            try {
+                disconnect.Execute (this.Sm);
+            } catch (ImapCommand.ImapCommandLockTimeOutException ex) {
+                Log.Warn (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
             }
         }
 
@@ -863,6 +873,7 @@ namespace NachoCore.IMAP
         #region ValidateConfig
 
         private ImapValidateConfig Validator;
+
         public override void ValidateConfig (McServer server, McCred cred)
         {
             CancelValidateConfig ();
@@ -920,8 +931,7 @@ namespace NachoCore.IMAP
             string command = string.Format ("AUTHENTICATE {0}", sasl.MechanismName);
             if (sasl.SupportsInitialResponse &&
                 (0 != (ProtoControl.ProtocolState.ImapServerCapabilitiesUnAuth & McProtocolState.NcImapCapabilities.SaslIR)) ||
-                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR)))
-            {
+                (0 != (ProtoControl.ProtocolState.ImapServerCapabilities & McProtocolState.NcImapCapabilities.SaslIR))) {
                 command += " ";
             } else {
                 command += "\n";

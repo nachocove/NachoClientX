@@ -39,12 +39,17 @@ namespace NachoCore.IMAP
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
             try {
-                lock (Client.SyncRoot) {
+                return TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
                     return base.ExecuteConnectAndAuthEvent ();
-                }
+                });
+            } catch (ImapCommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandLockTimeOutException: {1}", ex.Message);
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
+                errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
                 evt = Event.Create ((uint)ImapProtoControl.ImapEvt.E.GetServConf, "IMAPCONNFAIL2", AutoDFailureReason.CannotFindServer);

@@ -98,6 +98,7 @@ namespace NachoCore
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
+            ForceStopped = false;
         }
 
         protected void SetupAccount ()
@@ -319,12 +320,15 @@ namespace NachoCore
                 Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
                 return false;
             }
+            ForceStopped = false;
             // TODO - extract more from the EAS class and stuff here.
             return true;
         }
 
+        public bool ForceStopped { get; set; }
         public virtual void ForceStop ()
         {
+            ForceStopped = true;
         }
 
         public virtual void Remove ()

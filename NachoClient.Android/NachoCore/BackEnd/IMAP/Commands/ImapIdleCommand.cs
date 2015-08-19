@@ -14,7 +14,7 @@ namespace NachoCore.IMAP
     public class ImapIdleCommand : ImapCommand
     {
         McFolder IdleFolder;
-        bool ENABLED = false;
+        bool ENABLED = true;
 
         public ImapIdleCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
