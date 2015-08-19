@@ -101,6 +101,7 @@ namespace NachoClient.iOS
 
         partial void Submit (NSObject sender)
         {
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController submitting");
             var email = emailField.Text.Trim ();
             var password = passwordField.Text;
             var issue = IssueWithCredentials(email, password);
@@ -112,23 +113,29 @@ namespace NachoClient.iOS
                 StartListeningForApplicationStatus();
                 scrollView.SetContentOffset(new CGPoint(0, 0), true);
                 if (Account != null && (!String.Equals (Account.EmailAddr, email) || IsShowingAdvanced)) {
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController removing account ID{0}", Account.Id);
                     NcAccountHandler.Instance.RemoveAccount (Account.Id);
                     Account = null;
                 }
                 if (Account == null){
                     Account = NcAccountHandler.Instance.CreateAccount (Service, email, password);
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController created account ID{0}", Account.Id);
                     if (IsShowingAdvanced){
                         advancedFieldsViewController.PopulateAccountWithFields (Account);
                     }
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController Instace.Start for ID{0}", Account.Id);
                     BackEnd.Instance.Start (Account.Id);
                 }else{
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController updating account ID{0}", Account.Id);
                     var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
                     cred.UpdatePassword (password);
+                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController stop/start ID{0}", Account.Id);
                     BackEnd.Instance.Stop (Account.Id);
                     BackEnd.Instance.Start (Account.Id);
                 }
             }else{
+                Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
                 NcAlertView.ShowMessage (this, "Nacho Mail", issue);
             }
         }
@@ -159,6 +166,7 @@ namespace NachoClient.iOS
 
         partial void Support (NSObject sender)
         {
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController showing support");
             var storyboard = UIStoryboard.FromName("MainStoryboard_iPhone", null);
             var vc = (SupportViewController)storyboard.InstantiateViewController("SupportViewController");
             vc.HideNavTitle = false;
@@ -167,6 +175,7 @@ namespace NachoClient.iOS
 
         partial void Advanced (NSObject sender)
         {
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController advanced toggle from {0} requested", IsShowingAdvanced);
             ToggleAdvancedFields();
         }
 
@@ -336,6 +345,7 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void DontAcceptCertificate (int accountId)
         {
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController certificate rejected by user");
             IsSubmitting = false;
             StopListeningForApplicationStatus ();
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
@@ -348,6 +358,7 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void AcceptCertificate (int accountId)
         {
+            Log.Info (Log.LOG_UI, "AccountCredentialsViewController certificate accepted by user");
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
             LoginHelpers.UserInterventionStateChanged (accountId);
             DismissViewController (true, null);

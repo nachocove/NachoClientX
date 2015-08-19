@@ -45,9 +45,11 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             if (accountBeingConfigured != null || StartWithTutorial) {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with account being configured (or just tutorial left)");
                 introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
                 getStartedButton.SetTitle ("Continue", UIControlState.Normal);
             } else {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with no account");
                 introLabel.Text = "Start by choosing your email service provider";
                 getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
             }
@@ -91,13 +93,16 @@ namespace NachoClient.iOS
             accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
             if (accountBeingConfigured != null){
+                Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue account ID{0} config", accountBeingConfigured.Id);
                 var vc = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
                 vc.AccountDelegate = this;
                 vc.Account = accountBeingConfigured;
                 NavigationController.PushViewController (vc, true);
             }else if (StartWithTutorial){
+                Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue with tutorial");
                 PerformSegue ("tutorial", null);
             }else{
+                Log.Info (Log.LOG_UI, "GettingStartedViewController going to start with fresh account");
                 var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
                 vc.AccountDelegate = this;
                 NavigationController.PushViewController (vc, true);
@@ -107,8 +112,10 @@ namespace NachoClient.iOS
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
         {
             if (service == McAccount.AccountServiceEnum.GoogleDefault) {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController need google credentials");
                 // Do the google thing
             } else {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController prompting for credentials for {0}", service);
                 var credentialsViewController = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
                 credentialsViewController.Service = service;
                 credentialsViewController.AccountDelegate = this;
@@ -118,13 +125,16 @@ namespace NachoClient.iOS
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
         {
+            Log.Info (Log.LOG_UI, "GettingStartedViewController account ID{0} is validated, starting sync", account.Id);
             syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
             syncingViewController.AccountDelegate = this;
             syncingViewController.Account = account;
             BackEnd.Instance.Start (syncingViewController.Account.Id);
             if (LoginHelpers.HasViewedTutorial ()) {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController tutorial has been viewed, just showing sync");
                 NavigationController.PushViewController (syncingViewController, true);
             } else {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController showing tutorial over sync");
                 PerformSegue ("tutorial", null); 
             }
         }
@@ -139,6 +149,7 @@ namespace NachoClient.iOS
 
         public void HomeViewControllerDidAppear (HomeViewController vc)
         {
+            Log.Info (Log.LOG_UI, "GettingStartedViewController inserting sync view under tutorial");
             UIViewController[] viewControllers = new UIViewController[NavigationController.ViewControllers.Length + 1];
             var i = 0;
             for (; i < NavigationController.ViewControllers.Length - 1; ++i) {
@@ -151,6 +162,7 @@ namespace NachoClient.iOS
 
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
         {
+            Log.Info (Log.LOG_UI, "GettingStartedViewController syncing complete");
             // FIXME: Only set if null or device
             NcApplication.Instance.Account = vc.Account;
             LoginHelpers.SetSwitchToTime (vc.Account);

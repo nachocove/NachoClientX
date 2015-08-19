@@ -54,6 +54,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "StartupViewController: viewdidload");
 
             if (!NcMigration.IsCompatible ()) {
+                Log.Info (Log.LOG_UI, "StartupViewController: found incompatible migration");
                 currentState = StartupViewState.Incompatible;
                 // Display an alert view and wait to get out
                 NcAlertView.ShowMessage (this,
@@ -72,6 +73,7 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
 
             if (currentState == StartupViewState.Startup) {
+                Log.Info (Log.LOG_UI, "StartupViewController: viewDidAppear in Startup state, determining where to go");
                 ShowScreenForApplicationState ();
             }
         }
@@ -83,29 +85,36 @@ namespace NachoClient.iOS
                 var configAccount = McAccount.GetAccountBeingConfigured ();
                 var deviceAccount = McAccount.GetDeviceAccount ();
                 if (null != configAccount) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: found account being configured");
                     ShowSetupScreen ();
                 } else if (null == NcApplication.Instance.Account) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: null NcApplication.Instance.Account");
                     ShowSetupScreen ();
                 } else if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: NcApplication.Instance.Account is deviceAccount");
                     ShowSetupScreen ();
                 } else if (!NcApplication.ReadyToStartUI ()) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: not ready to start UI, assuming tutorial still needs display");
                     // This should only be if the app closed before the tutorial was dismissed;
                     ShowSetupScreen (true);
                 } else {
+                    Log.Info (Log.LOG_UI, "StartupViewController: Ready to go, showing application");
                     ShowApplication ();
                 }
             } else {
                 StartListeningForApplicationStatus ();
                 if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Migrating) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: instance isn't up yet, in Migrating state");
                     ShowMigrationScreen ();
                 } else if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Initializing) {
+                    Log.Info (Log.LOG_UI, "StartupViewController: instance isn't up yet, in Initializing state");
                     ShowRecoveryScreen ();
                 } else {
                     // I don't think we can ever get here based on the definition of NcApplication.IsUp.  If things
                     // change (like a new state is added to NcApplication), this will just result in a blank screen
                     // until the application is up.
                     currentState = StartupViewState.Blank;
-                    Log.Info (Log.LOG_UI, "StartupViewController ShowScreenForApplicationState -> BLANK");
+                    Log.Info (Log.LOG_UI, "StartupViewController instance isn't up yet, in unexpected state, showing BLANK");
                 }
             }
         }
@@ -185,6 +194,7 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "StartupViewController got ExecutionContextChanged event");
                 InvokeOnMainThread (() => {
                     ShowScreenForApplicationState();
                 });
@@ -213,6 +223,7 @@ namespace NachoClient.iOS
 
         public void GettingStartedViewControllerDidComplete (GettingStartedViewController vc)
         {
+            Log.Info (Log.LOG_UI, "StartupViewController tutorial was dismissed, going direct to application");
             ShowApplication ();
         }
     }

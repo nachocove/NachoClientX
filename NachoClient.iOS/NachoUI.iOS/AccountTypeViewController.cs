@@ -87,6 +87,7 @@ namespace NachoClient.iOS
         {
             if (AccountDelegate != null) {
                 var accountType = accountTypes [indexPath.Item];
+                Log.Info (Log.LOG_UI, "AccountTypeViewController selected {0}", accountType);
                 AccountDelegate.AccountTypeViewControllerDidSelectService (this, accountType);
             }
         }

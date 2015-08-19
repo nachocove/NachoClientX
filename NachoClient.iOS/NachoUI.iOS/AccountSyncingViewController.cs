@@ -92,8 +92,10 @@ namespace NachoClient.iOS
             StopListeningForApplicationStatus ();
             Update ();
             if (IsVisible) {
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay immediately");
                 DismissAfterDelay ();
             } else {
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay on visible");
                 DismissOnVisible = true;
             }
         }
@@ -119,6 +121,7 @@ namespace NachoClient.iOS
 
         void DismissAfterDelay ()
         {
+            Log.Info (Log.LOG_UI, "AccountSyncingViewController starting dismiss timer");
             DismissTimer = new NcTimer ("AccountSyncViewControllerDismiss", (state) => {
                 InvokeOnUIThread.Instance.Invoke (() => {
                     Dismiss ();
@@ -129,6 +132,7 @@ namespace NachoClient.iOS
 
         private void Dismiss ()
         {
+            Log.Info (Log.LOG_UI, "AccountSyncingViewController dismissing by calling delegate");
             DismissTimer.Dispose ();
             DismissTimer = null;
             AccountDelegate.AccountSyncingViewControllerDidComplete (this);
@@ -136,11 +140,17 @@ namespace NachoClient.iOS
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
+            if (!StatusIndCallbackIsSet) {
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController ignoring status callback because listening has been disabled");
+                return;
+            }
             var s = (StatusIndEventArgs)e;
             if (s.Account != null && s.Account.Id == Account.Id) {
                 var senderState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailSender);
                 var readerState = BackEnd.Instance.BackEndState (Account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+                Log.Info (Log.LOG_UI, "AccountSyncingViewController senderState {0}, readerState {1}", senderState, readerState);
                 if ((senderState == BackEndStateEnum.PostAutoDPostInboxSync) && (readerState == BackEndStateEnum.PostAutoDPostInboxSync)) {
+                    Log.Info (Log.LOG_UI, "AccountSyncingViewController saw PostAutoDBPostInboxSync for both sender and reader, account ID{0}", Account.Id);
                     Complete ();
                 }
             }
