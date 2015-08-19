@@ -40,6 +40,9 @@ namespace NachoCore.Utils
         private static Table UiTable;
         private static Table WbxmlTable;
 
+        private static int t2EventCount = -1;
+        private static int t2SupportEventCount = -1;
+
         private static string ClientId {
             get {
                 return Device.Instance.Identity ();
@@ -105,6 +108,17 @@ namespace NachoCore.Utils
             }
                 
             Retry (() => {
+                if (-1 == t2EventCount) {
+                    t2EventCount = McTelemetryEvent.QueryCount ();
+                }
+                if (-1 == t2SupportEventCount) {
+                    t2SupportEventCount = McTelemetrySupportEvent.QueryCount ();
+                }
+                if ((0 == t2EventCount) && (0 == t2SupportEventCount)) {
+                    // Do not iniitalize DynamoDB client and tables if teledb is empty. This allows
+                    // us to remove DynamoDB tables in AWS for dev and alpha projects.
+                    return;
+                }
                 Client = new AmazonDynamoDBClient (credentials, config);
 
                 LogTable = Table.LoadTableAsync (Client, TableName ("log"), NcTask.Cts.Token);

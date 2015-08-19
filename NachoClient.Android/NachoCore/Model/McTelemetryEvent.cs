@@ -87,21 +87,8 @@ namespace NachoCore.Model
 
         public int Insert ()
         {
-            NcAssert.True (0 == Id);
-            try {
-                InsertCapture.Start ();
-                int rc = NcModel.Instance.TeleDb.Insert (this);
-                InsertCapture.Stop ();
-                InsertCapture.Reset ();
-                return rc;
-            } catch (SQLiteException e) {
-                if (SQLite3.Result.Corrupt == e.Result) {
-                    NcModel.Instance.ResetTeleDb ();
-                    return 0;
-                } else {
-                    throw;
-                }
-            }
+            NcAssert.True (false); // T2 should not be used anymore.
+            return 0;
         }
 
         public int Delete ()
