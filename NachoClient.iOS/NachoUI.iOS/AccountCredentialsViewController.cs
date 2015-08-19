@@ -159,7 +159,7 @@ namespace NachoClient.iOS
                 return "No network connection. Please check that you have internet access.";
             }
             if (IsShowingAdvanced) {
-                return advancedFieldsViewController.IssueWithFields ();
+                return advancedFieldsViewController.IssueWithFields (email);
             }
             return null;
         }

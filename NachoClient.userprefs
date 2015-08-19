@@ -1,6 +1,13 @@
 ﻿<Properties StartupItem="NachoClient.iOS/NachoClient.iOS.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.IPhone.IPhoneSimulatorTarget.IPhone6.8.4" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|iPhone" PreferredExecutionTarget="MonoDevelop.IPhone.IPhoneDeviceTarget.OPS 5" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="NachoClient.iOS/NachoUI.iOS/Support/SwitchAccountButton.cs">
+    <Files>
+      <File FileName="NachoClient.iOS/NachoUI.iOS/Support/SwitchAccountCustomSegue.cs" Line="34" Column="9" />
+      <File FileName="NachoClient.iOS/NachoUI.iOS/SwitchAccountViewController.cs" Line="134" Column="52" />
+      <File FileName="NachoClient.iOS/NachoUI.iOS/NachoNowViewController.cs" Line="118" Column="58" />
+      <File FileName="NachoClient.iOS/NachoUI.iOS/Support/SwitchAccountButton.cs" Line="63" Column="10" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
       <Breakpoint file="/Users/oshaw/Documents/Nacho/NachoClientX/NachoClient.Android/NachoCore/Brain/NcMessageArchiver.cs" line="89" column="1" />

@@ -78,8 +78,31 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public override string IssueWithFields ()
+        public override string IssueWithFields (String email)
         {
+            String serviceName;
+            if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
+                return String.Format("Nacho Mail does not support {0} yet.", serviceName);
+            }
+            if (!EmailHelper.IsValidHost (incomingServerField.Text)) {
+                return "Invalid incoming server name. Please check that you typed it in correctly.";
+            }
+            if (!EmailHelper.IsValidHost (outgoingServerField.Text)) {
+                return "Invalid outgoing server name. Please check that you typed it in correctly.";
+            }
+            if (incomingServerField.Text.Contains (":")) {
+                return "Invalid incoming server name. Scheme or port number is not allowed.";
+            }
+            if (outgoingServerField.Text.Contains (":")) {
+                return "Invalid outgoing server name. Scheme or port number is not allowed.";
+            }
+            int result;
+            if (!int.TryParse (incomingPortField.Text, out result)) {
+                return "Invalid incoming port number. It must be a number.";
+            }
+            if (!int.TryParse (outgoingPortField.Text, out result)) {
+                return "Invalid outgoing port number. It must be a number.";
+            }
             return null;
         }
 
@@ -128,8 +151,8 @@ namespace NachoClient.iOS
                     incomingServerField.Text = imapServer.Host;
                     incomingPortField.Text = imapServer.Port.ToString ();
                 } else {
-                    incomingServerField.Text = "";
-                    incomingPortField.Text = "";
+                    incomingServerField.Text = "993";
+                    incomingPortField.Text = "587";
                 }
                 var smtpServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailSender);
                 if (null != smtpServer) {
@@ -139,9 +162,9 @@ namespace NachoClient.iOS
             } else {
                 usernameField.Text = "";
                 incomingServerField.Text = "";
-                incomingPortField.Text = "";
+                incomingPortField.Text = "993";
                 outgoingServerField.Text = "";
-                outgoingPortField.Text = "";
+                outgoingPortField.Text = "587";
             }
         }
 

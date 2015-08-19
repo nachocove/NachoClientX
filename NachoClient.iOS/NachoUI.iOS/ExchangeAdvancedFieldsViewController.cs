@@ -65,8 +65,16 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public override string IssueWithFields ()
+        public override string IssueWithFields (String email)
         {
+            var result = EmailHelper.IsValidServer (serverField.Text);
+            if (EmailHelper.ParseServerWhyEnum.Success_0 != result) {
+                return EmailHelper.ParseServerWhyEnumToString (result);
+            }
+            string serviceName;
+            if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
+                return String.Format ("Nacho Mail does not support {0} yet.", serviceName);
+            }
             return null;
         }
 

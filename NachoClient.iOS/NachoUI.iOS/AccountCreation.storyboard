@@ -326,7 +326,7 @@
                                             <action selector="textFieldChanged:" destination="0Rl-TJ-qxT" eventType="editingChanged" id="kLa-4M-fd3"/>
                                         </connections>
                                     </textField>
-                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="imap.example.com" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="dar-CW-rI0" customClass="NcAdjustableLayoutTextField">
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="smtp.example.com" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="dar-CW-rI0" customClass="NcAdjustableLayoutTextField">
                                         <rect key="frame" x="0.0" y="250" width="284" height="46"/>
                                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <accessibility key="accessibilityConfiguration" label="Email Address"/>

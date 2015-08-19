@@ -20,7 +20,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public abstract String IssueWithFields ();
+        public abstract String IssueWithFields (String email);
         public abstract bool CanSubmitFields ();
         public abstract void PopulateFieldsWithAccount (McAccount account);
         public abstract void PopulateAccountWithFields (McAccount account);
