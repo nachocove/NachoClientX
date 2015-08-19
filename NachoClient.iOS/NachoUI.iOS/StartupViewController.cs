@@ -179,14 +179,21 @@ namespace NachoClient.iOS
                 navController.PushViewController (vc, false);
             }
 
+            var window = UIApplication.SharedApplication.Delegate.GetWindow ();
             // Swap us out as the window's root view controller because we are no longer needed
             if (currentState == StartupViewState.Startup) {
                 currentState = StartupViewState.App;
-                UIApplication.SharedApplication.Delegate.GetWindow().RootViewController = appViewController;
+                window.RootViewController = appViewController;
             } else {
-                // TODO: animate with fade
-                currentState = StartupViewState.App;
-                UIApplication.SharedApplication.Delegate.GetWindow().RootViewController = appViewController;
+                var windowSnapshot = window.SnapshotView (false);
+                window.RootViewController = appViewController;
+                windowSnapshot.Frame = new CoreGraphics.CGRect (0, -appViewController.View.Frame.Top, windowSnapshot.Frame.Width, windowSnapshot.Frame.Height);
+                appViewController.View.AddSubview (windowSnapshot);
+                UIView.Animate (0.75, 0.0, 0, () => {
+                    windowSnapshot.Alpha = 0.0f;
+                }, () => {
+                    windowSnapshot.RemoveFromSuperview ();
+                });
             }
         }
 

@@ -33,6 +33,9 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
         }
 
         var sourceSnapshot = SourceViewController.View.Window.SnapshotView (false);
+        // taking a second snapshot and adding it to the source window to prevent a button flicker
+        var sourceSnapshot2 = SourceViewController.View.Window.SnapshotView (false);
+        SourceViewController.View.Window.AddSubview (sourceSnapshot2);
         var sourceNavbarSnapshot = SourceViewController.NavigationController.NavigationBar.SnapshotView (false);
         var sourceNavbarFrame = SourceViewController.NavigationController.View.ConvertRectToView (SourceViewController.NavigationController.NavigationBar.Frame, SourceViewController.View.Window); 
         var destinationSnapshot = new UIImageView (DestinationViewController.View.Frame);
@@ -61,6 +64,7 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
         destinationSnapshot.Layer.ShadowRadius = 10.0f;
         SourceViewController.PresentViewController (this.DestinationViewController, false, () => {
             destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height);
+            sourceSnapshot2.RemoveFromSuperview ();
             UIView.Animate (0.3, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
                 shadeView.Alpha = 0.6f;
                 destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, 20);

@@ -17,7 +17,7 @@ namespace NachoClient.iOS
         void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account);
     }
 
-    public partial class AccountCredentialsViewController : NcUIViewControllerNoLeaks, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate
+    public partial class AccountCredentialsViewController : NcUIViewControllerNoLeaks, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate, IUITextFieldDelegate
     {
 
         public AccountCredentialsViewControllerDelegate AccountDelegate;
@@ -63,6 +63,7 @@ namespace NachoClient.iOS
                 var creds = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
                 passwordField.Text = creds.GetPassword ();
             }
+            passwordField.WeakDelegate = this;
             accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
             var imageName = Util.GetAccountServiceImageName (Service);
             using (var image = UIImage.FromBundle (imageName)) {
@@ -377,6 +378,17 @@ namespace NachoClient.iOS
         public void AdvancedFieldsControllerDidChange (AccountAdvancedFieldsViewController vc)
         {
             UpdateSubmitEnabled ();
+        }
+
+        [Export("textFieldShouldReturn:")]
+        public bool ShouldReturn (UITextField textField)
+        {
+            if (submitButton.Enabled) {
+                textField.ResignFirstResponder ();
+                Submit (textField);
+                return true;
+            }
+            return false;
         }
 
         protected override void CreateViewHierarchy ()
