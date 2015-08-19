@@ -21,6 +21,7 @@ repos = (
     'lucene.net-3.0.3',
     'MobileHtmlAgilityPack',
     'Google.iOS',
+    'Xamarin.Auth',
     'Portable.Text.Encoding',
     # This is always the last one
     'NachoClientX'

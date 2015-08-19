@@ -10,11 +10,14 @@ using NachoCore.Utils;
 using System.Linq;
 using NachoCore;
 using NachoPlatform;
-using Google.iOS;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net;
+using Xamarin.Auth;
 
 namespace NachoClient.iOS
 {
-    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks, IGIDSignInDelegate, IGIDSignInUIDelegate
+    public partial class AccountSettingsViewController : NcUIViewControllerNoLeaks
     {
         protected UIView contentView;
         protected UIScrollView scrollView;
@@ -556,30 +559,87 @@ namespace NachoClient.iOS
                 return false;
             }
 
-            NcAlertView.Show (this, "Sign In",
-                String.Format ("Please sign in to your Google account for {0}.", account.EmailAddr),
-                new NcAlertAction ("Yes", () => {
-                    StartGoogleLogin ();
-                }),
-                new NcAlertAction ("Cancel", () => {
+            StartGoogleLogin ();
 
-                }));
             return true;
         }
 
+
         public void StartGoogleLogin ()
         {
-            Google.iOS.GIDSignIn.SharedInstance.Delegate = this;
-            Google.iOS.GIDSignIn.SharedInstance.UIDelegate = this;
-            Google.iOS.GIDSignIn.SharedInstance.SignOut ();
-            Google.iOS.GIDSignIn.SharedInstance.SignIn ();
+            var scopes = new List<string> ();
+            scopes.Add ("email");
+            scopes.Add ("profile");
+            scopes.Add ("https://mail.google.com");
+            scopes.Add ("https://www.googleapis.com/auth/calendar");
+            scopes.Add ("https://www.google.com/m8/feeds/");
+            var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
+                           clientId: "135541750674-3bmfkmlm767ipe0ih0trqf9o4jgum27h.apps.googleusercontent.com",
+                           clientSecret: "T08VVinKbAPiXjIlV3U5O12S",
+                           scope: String.Join (" ", scopes.ToArray ()),
+                           accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
+                           authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),
+                           redirectUrl: new Uri ("http://www.nachocove.com/authorization_callback"),
+                           loginHint: account.EmailAddr);
+
+            auth.AllowCancel = true;
+
+            // If authorization succeeds or is canceled, .Completed will be fired.
+            auth.Completed += (s, e) => {
+                DismissViewController (true, () => {
+                    if (!e.IsAuthenticated) {
+                        return;
+                    }
+
+                    string access_token;
+                    e.Account.Properties.TryGetValue ("access_token", out access_token);
+
+                    string refresh_token;
+                    e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
+
+                    int expires = 0;
+                    string expiresString = "0";
+                    DateTime expirationDateTime = DateTime.UtcNow;
+                    if (e.Account.Properties.TryGetValue ("expires", out expiresString)) {
+                        if (int.TryParse (expiresString, out expires)) {
+                            expirationDateTime = expirationDateTime.AddSeconds (expires);
+                        }
+                    }
+
+                    var url = String.Format ("https://www.googleapis.com/oauth2/v1/userinfo?access_token={0}", access_token);
+                    var userInfoString = new WebClient ().DownloadString (url);
+
+                    var userInfo = Newtonsoft.Json.Linq.JObject.Parse (userInfoString);
+                   
+                    if (!String.Equals (account.EmailAddr, (string)userInfo ["email"], StringComparison.OrdinalIgnoreCase)) {
+                        // Can't change your email address
+                        NcAlertView.ShowMessage (this, "Settings", "You may not change your email address.  Create a new account to use a new email address.");
+                        return;
+                    }
+
+                    var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
+                    cred.UpdateOauth2 (access_token, refresh_token, expirationDateTime);
+                    cred.Update ();
+
+                    BackEnd.Instance.CredResp (account.Id);
+
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_McCredPasswordChanged);
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = account,
+                    });
+                });
+            };
+
+            auth.Error += (object sender, AuthenticatorErrorEventArgs e) => {
+                DismissViewController (true, () => {
+                });
+            };
+
+            UIViewController vc = auth.GetUI ();
+            this.PresentViewController (vc, true, null);
         }
 
-        // GIDSignInDelegate
-        public void DidSignInForUser (GIDSignIn signIn, GIDGoogleUser user, NSError error)
-        {
-            Log.Info (Log.LOG_UI, "avl: AccountSettingsView DidSignInForUser {0}", error);
-        }
 
     }
 }

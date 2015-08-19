@@ -30,7 +30,6 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
-using Google.iOS;
 
 namespace NachoClient.iOS
 {
@@ -388,15 +387,6 @@ namespace NachoClient.iOS
                 }
             }
 
-            // Initialize Google and add scope to give full access to email
-            var googleInfo = NSDictionary.FromFile ("GoogleService-Info.plist");
-            GIDSignIn.SharedInstance.ClientID = googleInfo [new NSString ("CLIENT_ID")].ToString ();
-            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
-
             NcKeyboardSpy.Instance.Init ();
 
             if (NcApplication.ReadyToStartUI ()) {
@@ -423,11 +413,6 @@ namespace NachoClient.iOS
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
-
-            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                CreateGooglePlaceholderAccount ();
-                return true;
-            }
 
             if (!url.IsFileUrl) {
                 return false;
@@ -1115,17 +1100,6 @@ namespace NachoClient.iOS
             }
         }
 
-        // Creates an in-progress account for AdvancedLoginView
-        void CreateGooglePlaceholderAccount ()
-        {
-            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (null != accountBeingConfigured) {
-                Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
-                return;
-            }
-            LoginHelpers.SetGoogleSignInCallbackArrived (true);
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount callback arrived");
-        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
