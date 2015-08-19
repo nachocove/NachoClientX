@@ -99,6 +99,12 @@
                                             <constraint firstAttribute="height" constant="80" id="xYQ-oO-s1I"/>
                                         </constraints>
                                     </imageView>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Enter your account information" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IzI-ua-2Rd">
+                                        <rect key="frame" x="18" y="154" width="564" height="24"/>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Email Address" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="yZe-2C-eOT" customClass="NcAdjustableLayoutTextField">
                                         <rect key="frame" x="158" y="208" width="284" height="46"/>
                                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
@@ -113,24 +119,6 @@
                                             <action selector="TextFieldChanged:" destination="AaL-5e-fUA" eventType="editingChanged" id="Hbe-bh-k14"/>
                                         </connections>
                                     </textField>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Enter your account information" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IzI-ua-2Rd">
-                                        <rect key="frame" x="18" y="154" width="564" height="24"/>
-                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
-                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="phn-YJ-6LK">
-                                        <rect key="frame" x="237" y="394" width="126" height="33"/>
-                                        <accessibility key="accessibilityConfiguration" label="Customer Support"/>
-                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="15"/>
-                                        <state key="normal" title="Customer Support">
-                                            <color key="titleColor" red="0.0" green="0.81568627449999997" blue="0.76470588240000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="Support:" destination="AaL-5e-fUA" eventType="touchUpInside" id="ckG-VZ-xtM"/>
-                                        </connections>
-                                    </button>
                                     <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Password" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="dCm-mU-vPx" customClass="NcAdjustableLayoutTextField">
                                         <rect key="frame" x="158" y="262" width="284" height="46"/>
                                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
@@ -145,6 +133,14 @@
                                             <action selector="TextFieldChanged:" destination="AaL-5e-fUA" eventType="editingChanged" id="WMg-0E-0YJ"/>
                                         </connections>
                                     </textField>
+                                    <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hQf-G7-Ypx" userLabel="Advanced View">
+                                        <rect key="frame" x="158" y="316" width="284" height="0.0"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" id="Fev-id-i9y"/>
+                                            <constraint firstAttribute="width" constant="284" id="Vvu-ke-I7O"/>
+                                        </constraints>
+                                    </view>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="53m-EO-fBv" customClass="NcSimpleColorButton">
                                         <rect key="frame" x="158" y="328" width="284" height="46"/>
                                         <color key="backgroundColor" red="0.0" green="0.81568627449999997" blue="0.76470588240000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -161,6 +157,18 @@
                                             <action selector="Submit:" destination="AaL-5e-fUA" eventType="touchUpInside" id="7kC-DO-75F"/>
                                         </connections>
                                     </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="phn-YJ-6LK">
+                                        <rect key="frame" x="237" y="394" width="126" height="33"/>
+                                        <accessibility key="accessibilityConfiguration" label="Customer Support"/>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="15"/>
+                                        <state key="normal" title="Customer Support">
+                                            <color key="titleColor" red="0.0" green="0.81568627449999997" blue="0.76470588240000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="Support:" destination="AaL-5e-fUA" eventType="touchUpInside" id="ckG-VZ-xtM"/>
+                                        </connections>
+                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xOP-hg-BDu">
                                         <rect key="frame" x="241" y="432" width="119" height="33"/>
                                         <accessibility key="accessibilityConfiguration" label="Advanced Sign In"/>
@@ -175,11 +183,14 @@
                                     </button>
                                 </subviews>
                                 <constraints>
+                                    <constraint firstAttribute="centerX" secondItem="hQf-G7-Ypx" secondAttribute="centerX" id="0rX-Ht-kLN"/>
+                                    <constraint firstItem="53m-EO-fBv" firstAttribute="top" secondItem="hQf-G7-Ypx" secondAttribute="bottom" constant="12" id="2gg-f8-bey"/>
                                     <constraint firstAttribute="centerX" secondItem="53m-EO-fBv" secondAttribute="centerX" id="3fO-Tx-h1Q"/>
                                     <constraint firstItem="phn-YJ-6LK" firstAttribute="top" secondItem="53m-EO-fBv" secondAttribute="bottom" constant="20" id="4J8-wl-SrR"/>
                                     <constraint firstAttribute="centerX" secondItem="phn-YJ-6LK" secondAttribute="centerX" id="8cQ-au-kVb"/>
                                     <constraint firstAttribute="centerX" secondItem="6JY-dT-aJa" secondAttribute="centerX" id="G35-Q5-gPs"/>
                                     <constraint firstItem="dCm-mU-vPx" firstAttribute="top" secondItem="yZe-2C-eOT" secondAttribute="bottom" constant="8" id="GnX-46-qpr"/>
+                                    <constraint firstItem="hQf-G7-Ypx" firstAttribute="top" secondItem="dCm-mU-vPx" secondAttribute="bottom" constant="8" id="I2c-pC-eXF"/>
                                     <constraint firstAttribute="centerX" secondItem="dCm-mU-vPx" secondAttribute="centerX" id="JbP-LS-JoP"/>
                                     <constraint firstAttribute="bottom" secondItem="xOP-hg-BDu" secondAttribute="bottom" constant="20" id="Kwm-qq-EXS"/>
                                     <constraint firstItem="71q-HD-Ejm" firstAttribute="centerX" secondItem="6JY-dT-aJa" secondAttribute="centerX" id="LA7-ej-nt5"/>
@@ -191,7 +202,6 @@
                                     <constraint firstItem="IzI-ua-2Rd" firstAttribute="leading" secondItem="elK-iM-9C1" secondAttribute="leading" constant="18" id="d33-fw-aUb"/>
                                     <constraint firstAttribute="trailing" secondItem="IzI-ua-2Rd" secondAttribute="trailing" constant="18" id="hVE-o6-0nF"/>
                                     <constraint firstItem="6JY-dT-aJa" firstAttribute="top" secondItem="elK-iM-9C1" secondAttribute="top" constant="44" id="jC1-Gq-H57"/>
-                                    <constraint firstItem="53m-EO-fBv" firstAttribute="top" secondItem="dCm-mU-vPx" secondAttribute="bottom" constant="20" id="oBd-ex-dHV"/>
                                     <constraint firstAttribute="centerX" secondItem="yZe-2C-eOT" secondAttribute="centerX" id="tCm-uY-7us"/>
                                     <constraint firstItem="yZe-2C-eOT" firstAttribute="top" secondItem="IzI-ua-2Rd" secondAttribute="bottom" constant="30" id="uH3-Q6-axe"/>
                                 </constraints>
@@ -211,6 +221,8 @@
                         <outlet property="accountIconView" destination="6JY-dT-aJa" id="FaK-LE-D6w"/>
                         <outlet property="activityIndicatorView" destination="71q-HD-Ejm" id="rUi-gN-9fm"/>
                         <outlet property="advancedButton" destination="xOP-hg-BDu" id="KbM-0u-8ds"/>
+                        <outlet property="advancedHeightConstraint" destination="Fev-id-i9y" id="ZSU-eM-BVb"/>
+                        <outlet property="advancedView" destination="hQf-G7-Ypx" id="fdY-xp-Ntl"/>
                         <outlet property="emailField" destination="yZe-2C-eOT" id="TVQ-p2-Mk2"/>
                         <outlet property="passwordField" destination="dCm-mU-vPx" id="4lq-E4-PJR"/>
                         <outlet property="scrollView" destination="elK-iM-9C1" id="u3W-sA-aRJ"/>
@@ -241,6 +253,154 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="OSg-8G-Tff" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1965" y="1272"/>
+        </scene>
+        <!--Imap Advanced Fields View Controller-->
+        <scene sceneID="wuQ-Cu-CON">
+            <objects>
+                <viewController storyboardIdentifier="ImapAdvancedFields" autoresizesArchivedViewToFullSize="NO" automaticallyAdjustsScrollViewInsets="NO" id="0Rl-TJ-qxT" customClass="ImapAdvancedFieldsViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="aUU-hq-6dM"/>
+                        <viewControllerLayoutGuide type="bottom" id="YAK-gc-ziX"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="YF4-J4-rFG">
+                        <rect key="frame" x="0.0" y="0.0" width="284" height="400"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LKU-mw-ZjJ">
+                                <rect key="frame" x="0.0" y="0.0" width="284" height="370"/>
+                                <subviews>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Username" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="3YI-1R-4CH" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="0.0" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="kip-Pw-74q"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="0Rl-TJ-qxT" eventType="editingChanged" id="12b-hq-Czj"/>
+                                        </connections>
+                                    </textField>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Incoming Mail Server" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UyD-tn-scV">
+                                        <rect key="frame" x="0.0" y="66" width="284" height="24"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="24" id="sPj-MC-7pG"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Outgoing Mail Server" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Gci-gt-wyB">
+                                        <rect key="frame" x="0.0" y="218" width="284" height="24"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="24" id="d1Q-H9-uxB"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="imap.example.com" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="6pa-2h-Dmh" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="98" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="B8f-jA-HRb"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="0Rl-TJ-qxT" eventType="editingChanged" id="lqV-BG-gKG"/>
+                                        </connections>
+                                    </textField>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="ObC-Wz-O9K" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="152" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="gII-Ga-Tmw"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="0Rl-TJ-qxT" eventType="editingChanged" id="kLa-4M-fd3"/>
+                                        </connections>
+                                    </textField>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="imap.example.com" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="dar-CW-rI0" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="250" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="eOo-yy-w7E"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="0Rl-TJ-qxT" eventType="editingChanged" id="TQy-nP-q4j"/>
+                                        </connections>
+                                    </textField>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="3Ix-9z-ccR" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="304" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="Bkn-9v-kQU"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="0Rl-TJ-qxT" eventType="editingChanged" id="LYc-E1-yUf"/>
+                                        </connections>
+                                    </textField>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="trailing" secondItem="3Ix-9z-ccR" secondAttribute="trailing" id="68u-Xo-0Aa"/>
+                                    <constraint firstItem="3Ix-9z-ccR" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="7Q0-NT-Q8j"/>
+                                    <constraint firstItem="6pa-2h-Dmh" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="9mm-BE-QI8"/>
+                                    <constraint firstAttribute="trailing" secondItem="Gci-gt-wyB" secondAttribute="trailing" id="Ava-Di-g0y"/>
+                                    <constraint firstItem="ObC-Wz-O9K" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="BBC-JM-AnA"/>
+                                    <constraint firstItem="dar-CW-rI0" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="CFP-sR-Wf1"/>
+                                    <constraint firstItem="UyD-tn-scV" firstAttribute="top" secondItem="3YI-1R-4CH" secondAttribute="bottom" constant="20" id="FSW-c4-sFe"/>
+                                    <constraint firstAttribute="trailing" secondItem="ObC-Wz-O9K" secondAttribute="trailing" id="Irh-vI-paH"/>
+                                    <constraint firstAttribute="trailing" secondItem="3YI-1R-4CH" secondAttribute="trailing" id="NJX-kX-pdn"/>
+                                    <constraint firstItem="3YI-1R-4CH" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="Pbo-hG-P8D"/>
+                                    <constraint firstItem="UyD-tn-scV" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="Q3p-0c-BmH"/>
+                                    <constraint firstAttribute="trailing" secondItem="UyD-tn-scV" secondAttribute="trailing" id="RHj-e9-DOs"/>
+                                    <constraint firstItem="dar-CW-rI0" firstAttribute="top" secondItem="Gci-gt-wyB" secondAttribute="bottom" constant="8" id="TWI-83-hq3"/>
+                                    <constraint firstAttribute="bottom" secondItem="3Ix-9z-ccR" secondAttribute="bottom" constant="20" id="Vsl-S7-L1V"/>
+                                    <constraint firstItem="3YI-1R-4CH" firstAttribute="top" secondItem="LKU-mw-ZjJ" secondAttribute="top" id="Y9d-WH-L7y"/>
+                                    <constraint firstAttribute="trailing" secondItem="dar-CW-rI0" secondAttribute="trailing" id="cCN-M9-mK4"/>
+                                    <constraint firstItem="ObC-Wz-O9K" firstAttribute="top" secondItem="6pa-2h-Dmh" secondAttribute="bottom" constant="8" id="fQn-to-cvB"/>
+                                    <constraint firstItem="3Ix-9z-ccR" firstAttribute="top" secondItem="dar-CW-rI0" secondAttribute="bottom" constant="8" id="hId-t5-Oa8"/>
+                                    <constraint firstAttribute="trailing" secondItem="6pa-2h-Dmh" secondAttribute="trailing" id="imz-ej-JQ7"/>
+                                    <constraint firstItem="6pa-2h-Dmh" firstAttribute="top" secondItem="UyD-tn-scV" secondAttribute="bottom" constant="8" id="la3-6S-85r"/>
+                                    <constraint firstItem="Gci-gt-wyB" firstAttribute="top" secondItem="ObC-Wz-O9K" secondAttribute="bottom" constant="20" id="pJe-E8-tEe"/>
+                                    <constraint firstItem="Gci-gt-wyB" firstAttribute="leading" secondItem="LKU-mw-ZjJ" secondAttribute="leading" id="s9e-j7-8lw"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" red="0.047058823530000002" green="0.25882352939999997" blue="0.29411764709999999" alpha="1" colorSpace="calibratedRGB"/>
+                        <constraints>
+                            <constraint firstItem="LKU-mw-ZjJ" firstAttribute="leading" secondItem="YF4-J4-rFG" secondAttribute="leading" id="1zX-Cf-cby"/>
+                            <constraint firstItem="LKU-mw-ZjJ" firstAttribute="top" secondItem="aUU-hq-6dM" secondAttribute="bottom" id="GqT-qG-i3K"/>
+                            <constraint firstAttribute="trailing" secondItem="LKU-mw-ZjJ" secondAttribute="trailing" id="RP4-gJ-oI9"/>
+                        </constraints>
+                    </view>
+                    <nil key="simulatedStatusBarMetrics"/>
+                    <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+                    <size key="freeformSize" width="284" height="400"/>
+                    <connections>
+                        <outlet property="incomingPortField" destination="ObC-Wz-O9K" id="bN7-ox-AgC"/>
+                        <outlet property="incomingServerField" destination="6pa-2h-Dmh" id="PNL-Hn-82v"/>
+                        <outlet property="outgoingPortField" destination="3Ix-9z-ccR" id="5jk-2J-uks"/>
+                        <outlet property="outgoingServerField" destination="dar-CW-rI0" id="Fv0-Pd-pgq"/>
+                        <outlet property="usernameField" destination="3YI-1R-4CH" id="oAB-jt-aAo"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="yg8-uU-pYy" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2608" y="1272"/>
         </scene>
         <!--Syncing...-->
         <scene sceneID="81K-ow-3ju">
@@ -300,6 +460,96 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TLn-Cc-2zM" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="2754" y="513"/>
+        </scene>
+        <!--Exchange Advanced Fields View Controller-->
+        <scene sceneID="xwM-dj-d3w">
+            <objects>
+                <viewController storyboardIdentifier="ExchangeAdvancedFields" autoresizesArchivedViewToFullSize="NO" automaticallyAdjustsScrollViewInsets="NO" id="e5D-MC-p44" customClass="ExchangeAdvancedFieldsViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="K7j-kx-fp9"/>
+                        <viewControllerLayoutGuide type="bottom" id="XLy-Dq-ybx"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="Kxa-9V-6nG">
+                        <rect key="frame" x="0.0" y="0.0" width="284" height="400"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="fWT-C7-Mh6">
+                                <rect key="frame" x="0.0" y="0.0" width="284" height="206"/>
+                                <subviews>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Server" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="BgF-IF-7iw" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="20" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="ZWn-X0-btQ"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="e5D-MC-p44" eventType="editingChanged" id="aKk-DK-yJL"/>
+                                        </connections>
+                                    </textField>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Domain" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="nLS-18-JbP" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="86" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="ogW-YM-iUP"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="e5D-MC-p44" eventType="editingChanged" id="IjB-cG-14r"/>
+                                        </connections>
+                                    </textField>
+                                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Username" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="2y6-cA-FqX" customClass="NcAdjustableLayoutTextField">
+                                        <rect key="frame" x="0.0" y="140" width="284" height="46"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                        <accessibility key="accessibilityConfiguration" label="Email Address"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="46" id="OLe-2Q-wXx"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Avenir-Medium" family="Avenir" pointSize="17"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
+                                        <connections>
+                                            <action selector="textFieldChanged:" destination="e5D-MC-p44" eventType="editingChanged" id="GwF-UW-RTL"/>
+                                        </connections>
+                                    </textField>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="trailing" secondItem="2y6-cA-FqX" secondAttribute="trailing" id="14J-yu-as2"/>
+                                    <constraint firstAttribute="trailing" secondItem="BgF-IF-7iw" secondAttribute="trailing" id="4eW-cx-oEL"/>
+                                    <constraint firstItem="2y6-cA-FqX" firstAttribute="top" secondItem="nLS-18-JbP" secondAttribute="bottom" constant="8" id="A1C-Rv-BO4"/>
+                                    <constraint firstItem="nLS-18-JbP" firstAttribute="leading" secondItem="fWT-C7-Mh6" secondAttribute="leading" id="Eiu-C3-ypa"/>
+                                    <constraint firstItem="nLS-18-JbP" firstAttribute="top" secondItem="BgF-IF-7iw" secondAttribute="bottom" constant="20" id="FJC-3W-IDh"/>
+                                    <constraint firstItem="BgF-IF-7iw" firstAttribute="top" secondItem="fWT-C7-Mh6" secondAttribute="top" constant="20" id="JdX-47-vDh"/>
+                                    <constraint firstItem="BgF-IF-7iw" firstAttribute="leading" secondItem="fWT-C7-Mh6" secondAttribute="leading" id="Teo-VI-ylD"/>
+                                    <constraint firstItem="2y6-cA-FqX" firstAttribute="leading" secondItem="fWT-C7-Mh6" secondAttribute="leading" id="fRy-DX-Mkk"/>
+                                    <constraint firstAttribute="bottom" secondItem="2y6-cA-FqX" secondAttribute="bottom" constant="20" id="kNQ-Lu-EaN"/>
+                                    <constraint firstAttribute="trailing" secondItem="nLS-18-JbP" secondAttribute="trailing" id="wrV-ns-xs8"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" red="0.047058823530000002" green="0.25882352939999997" blue="0.29411764709999999" alpha="1" colorSpace="calibratedRGB"/>
+                        <constraints>
+                            <constraint firstItem="fWT-C7-Mh6" firstAttribute="leading" secondItem="Kxa-9V-6nG" secondAttribute="leading" id="gor-2b-Y8T"/>
+                            <constraint firstAttribute="trailing" secondItem="fWT-C7-Mh6" secondAttribute="trailing" id="ipB-fN-RFw"/>
+                            <constraint firstItem="fWT-C7-Mh6" firstAttribute="top" secondItem="K7j-kx-fp9" secondAttribute="bottom" id="rfc-ol-cg6"/>
+                        </constraints>
+                    </view>
+                    <nil key="simulatedStatusBarMetrics"/>
+                    <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+                    <size key="freeformSize" width="284" height="400"/>
+                    <connections>
+                        <outlet property="domainField" destination="nLS-18-JbP" id="fOj-8c-mBt"/>
+                        <outlet property="serverField" destination="BgF-IF-7iw" id="egA-Kb-H4e"/>
+                        <outlet property="usernameField" destination="2y6-cA-FqX" id="lQ3-br-4pb"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="1Xq-FL-F7H" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3012" y="1272"/>
         </scene>
     </scenes>
 </document>

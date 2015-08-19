@@ -17,13 +17,18 @@ namespace NachoClient.iOS
         void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account);
     }
 
-    public partial class AccountCredentialsViewController : NcUIViewControllerNoLeaks, INachoCertificateResponderParent
+    public partial class AccountCredentialsViewController : NcUIViewControllerNoLeaks, INachoCertificateResponderParent, AccountAdvancedFieldsViewControllerDelegate
     {
 
         public AccountCredentialsViewControllerDelegate AccountDelegate;
         public McAccount.AccountServiceEnum Service;
         public McAccount Account;
         private bool StatusIndCallbackIsSet;
+        private bool IsShowingAdvanced;
+        private bool IsSubmitting;
+        private UIView advancedSubview;
+        private NSLayoutConstraint[] advancedConstraints;
+        AccountAdvancedFieldsViewController advancedFieldsViewController;
        
 
         public AccountCredentialsViewController (IntPtr handle) : base (handle)
@@ -51,9 +56,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            IsShowingAdvanced = false;
             if (Account != null) {
                 Service = Account.AccountService;
                 emailField.Text = Account.EmailAddr;
+                var creds = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
+                passwordField.Text = creds.GetPassword ();
             }
             accountIconView.Layer.CornerRadius = accountIconView.Frame.Size.Width / 2.0f;
             var imageName = Util.GetAccountServiceImageName (Service);
@@ -76,6 +84,9 @@ namespace NachoClient.iOS
                 passwordField.AdjustedLeftViewRect = new CGRect(15, 15, 14, 15);
                 passwordField.LeftView = new UIImageView(icon);
             }
+            if (Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
+                ToggleAdvancedFields ();
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -96,14 +107,19 @@ namespace NachoClient.iOS
             if (issue == null){
                 View.EndEditing(false);
                 statusLabel.Text = "Verifying your information...";
-                UpdateForSubmitting(true);
+                IsSubmitting = true;
+                UpdateForSubmitting();
                 StartListeningForApplicationStatus();
-                if (Account != null && !String.Equals (Account.EmailAddr, email)) {
+                scrollView.SetContentOffset(new CGPoint(0, 0), true);
+                if (Account != null && (!String.Equals (Account.EmailAddr, email) || IsShowingAdvanced)) {
                     NcAccountHandler.Instance.RemoveAccount (Account.Id);
                     Account = null;
                 }
                 if (Account == null){
                     Account = NcAccountHandler.Instance.CreateAccount (Service, email, password);
+                    if (IsShowingAdvanced){
+                        advancedFieldsViewController.PopulateAccountWithFields (Account);
+                    }
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                     BackEnd.Instance.Start (Account.Id);
                 }else{
@@ -135,6 +151,9 @@ namespace NachoClient.iOS
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 return "No network connection. Please check that you have internet access.";
             }
+            if (IsShowingAdvanced) {
+                return advancedFieldsViewController.IssueWithFields ();
+            }
             return null;
         }
 
@@ -148,6 +167,7 @@ namespace NachoClient.iOS
 
         partial void Advanced (NSObject sender)
         {
+            ToggleAdvancedFields();
         }
 
         partial void TextFieldChanged (NSObject sender)
@@ -155,9 +175,52 @@ namespace NachoClient.iOS
             UpdateSubmitEnabled();
         }
 
-        void UpdateForSubmitting (bool isSubmitting)
+        void ToggleAdvancedFields()
         {
-            if (isSubmitting) {
+            if (!IsShowingAdvanced) {
+                if (Service == McAccount.AccountServiceEnum.Exchange || Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
+                    IsShowingAdvanced = true;
+                    advancedButton.SetTitle ("Hide Advanced", UIControlState.Normal);
+                    if (advancedFieldsViewController == null) {
+                        if (Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
+                            advancedFieldsViewController = (ImapAdvancedFieldsViewController)Storyboard.InstantiateViewController ("ImapAdvancedFields");
+                        } else if (Service == McAccount.AccountServiceEnum.Exchange) {
+                            advancedFieldsViewController = (ExchangeAdvancedFieldsViewController)Storyboard.InstantiateViewController ("ExchangeAdvancedFields");
+                        }
+                        if (advancedFieldsViewController != null) {
+                            advancedSubview = advancedFieldsViewController.View.Subviews [0];
+                            advancedFieldsViewController.AccountDelegate = this;
+                            advancedFieldsViewController.PopulateFieldsWithAccount (Account);
+                        }
+                    }
+                    if (advancedSubview != null) {
+                        advancedSubview.Frame = new CGRect (0, 0, advancedView.Frame.Width, advancedSubview.Frame.Height);
+                        advancedView.AddSubview (advancedSubview);
+                        advancedConstraints = NSLayoutConstraint.FromVisualFormat ("|-0-[view]-0-|", 0, null, NSDictionary.FromObjectAndKey (advancedSubview, (NSString)"view"));
+                        advancedConstraints = advancedConstraints.Concat(NSLayoutConstraint.FromVisualFormat ("V:|-0-[view]-0-|", 0, null, NSDictionary.FromObjectAndKey (advancedSubview, (NSString)"view"))).ToArray();
+                        advancedView.RemoveConstraint (advancedHeightConstraint);
+                        advancedView.AddConstraints (advancedConstraints);
+                    }
+                    advancedView.LayoutIfNeeded ();
+                }
+            } else {
+                if (Service == McAccount.AccountServiceEnum.Exchange) {
+                    IsShowingAdvanced = false;
+                    advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
+                    advancedHeightConstraint.Constant = 0.0f;
+                    if (advancedSubview != null && advancedSubview.Superview != null) {
+                        advancedView.RemoveConstraints (advancedConstraints);
+                        advancedConstraints = null;
+                        advancedSubview.RemoveFromSuperview ();
+                        advancedView.AddConstraint (advancedHeightConstraint);
+                    }
+                }
+            }
+        }
+
+        void UpdateForSubmitting ()
+        {
+            if (IsSubmitting) {
                 activityIndicatorView.Hidden = false;
                 accountIconView.Hidden = true;
                 activityIndicatorView.StartAnimating ();
@@ -167,6 +230,9 @@ namespace NachoClient.iOS
                 submitButton.Alpha = 0.5f;
                 supportButton.Hidden = true;
                 advancedButton.Hidden = true;
+                if (IsShowingAdvanced) {
+                    advancedFieldsViewController.SetFieldsEnabled (false);
+                }
             } else {
                 activityIndicatorView.StopAnimating ();
                 activityIndicatorView.Hidden = true;
@@ -176,18 +242,25 @@ namespace NachoClient.iOS
                 supportButton.Hidden = false;
                 advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange;
                 UpdateSubmitEnabled ();
+                if (IsShowingAdvanced) {
+                    advancedFieldsViewController.SetFieldsEnabled (true);
+                }
             }
         }
 
         void ShowCredentialsError (String statusText)
         {
-            UpdateForSubmitting (false);
+            UpdateForSubmitting ();
             statusLabel.Text = statusText;
         }
 
         void UpdateSubmitEnabled ()
         {
-            if (emailField.Text.Length > 0 && passwordField.Text.Length > 0) {
+            bool isAdvancedComplete = true;
+            if (IsShowingAdvanced) {
+                isAdvancedComplete = advancedFieldsViewController.CanSubmitFields ();
+            }
+            if (isAdvancedComplete && emailField.Text.Length > 0 && passwordField.Text.Length > 0) {
                 submitButton.Alpha = 1.0f;
                 submitButton.Enabled = true;
             }else{
@@ -226,16 +299,21 @@ namespace NachoClient.iOS
 
                 if ((BackEndStateEnum.ServerConfWait == senderState) || (BackEndStateEnum.ServerConfWait == readerState)) {
                     StopListeningForApplicationStatus ();
+                    IsSubmitting = false;
                     if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
                         Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
                         ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again");
                     } else {
                         Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
-                        UpdateForSubmitting (false);
-                        // show advanced
+                        UpdateForSubmitting ();
+                        statusLabel.Text = "We were unable to verify your informiation.  Please enter advanced configuration information.";
+                        if (!IsShowingAdvanced) {
+                            ToggleAdvancedFields ();
+                        }
                     }
                 } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CredWait for service {0}", Service);
+                    IsSubmitting = false;
                     StopListeningForApplicationStatus ();
                     ShowCredentialsError ("Invalid username or password.  Please adjust and try again.");
                 } else if ((BackEndStateEnum.CertAskWait == senderState) || (BackEndStateEnum.CertAskWait == readerState)) {
@@ -244,10 +322,10 @@ namespace NachoClient.iOS
                         NcApplication.Instance.CertAskResp (Account.Id, McAccount.AccountCapabilityEnum.EmailSender, true);
                     } else {
                         Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, user must approve", Service);
-                        UpdateForSubmitting (false);
                         PerformSegue ("cert-ask", null);
                     }
                 } else if ((senderState >= BackEndStateEnum.PostAutoDPreInboxSync) && (readerState >= BackEndStateEnum.PostAutoDPreInboxSync)) {
+                    IsSubmitting = false;
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController PostAutoDPreInboxSync for reader or writer");
                     StopListeningForApplicationStatus ();
                     AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
@@ -258,11 +336,13 @@ namespace NachoClient.iOS
         // INachoCertificateResponderParent
         public void DontAcceptCertificate (int accountId)
         {
+            IsSubmitting = false;
             StopListeningForApplicationStatus ();
             NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
             LoginHelpers.UserInterventionStateChanged (accountId);
-            DismissViewController (true, null);
+            UpdateForSubmitting ();
             statusLabel.Text = "Account not created because the certificate was not accepted";
+            DismissViewController (true, null);
         }
 
         // INachoCertificateResponderParent
@@ -281,6 +361,11 @@ namespace NachoClient.iOS
                 vc.Setup (Account, McAccount.AccountCapabilityEnum.EmailSender);
                 vc.CertificateDelegate = this;
             }
+        }
+
+        public void AdvancedFieldsControllerDidChange (AccountAdvancedFieldsViewController vc)
+        {
+            UpdateSubmitEnabled ();
         }
 
         protected override void CreateViewHierarchy ()

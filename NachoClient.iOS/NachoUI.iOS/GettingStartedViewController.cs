@@ -108,8 +108,6 @@ namespace NachoClient.iOS
         {
             if (service == McAccount.AccountServiceEnum.GoogleDefault) {
                 // Do the google thing
-            } else if (service == McAccount.AccountServiceEnum.IMAP_SMTP) {
-                // Show advanced settings
             } else {
                 var credentialsViewController = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
                 credentialsViewController.Service = service;

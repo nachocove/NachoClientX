@@ -1636,6 +1636,15 @@
       <DependentUpon>AccountSyncingViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcAdjustableLayoutTextField.cs" />
+    <Compile Include="NachoUI.iOS\ImapAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\ImapAdvancedFieldsViewController.designer.cs">
+      <DependentUpon>ImapAdvancedFieldsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\ExchangeAdvancedFieldsViewController.cs" />
+    <Compile Include="NachoUI.iOS\ExchangeAdvancedFieldsViewController.designer.cs">
+      <DependentUpon>ExchangeAdvancedFieldsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\AccountAdvancedFieldsViewController.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

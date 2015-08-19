@@ -22,6 +22,12 @@ namespace NachoClient.iOS
 		UIKit.UIButton advancedButton { get; set; }
 
 		[Outlet]
+		UIKit.NSLayoutConstraint advancedHeightConstraint { get; set; }
+
+		[Outlet]
+		UIKit.UIView advancedView { get; set; }
+
+		[Outlet]
 		NachoClient.iOS.NcAdjustableLayoutTextField emailField { get; set; }
 
 		[Outlet]
@@ -96,6 +102,16 @@ namespace NachoClient.iOS
 			if (supportButton != null) {
 				supportButton.Dispose ();
 				supportButton = null;
+			}
+
+			if (advancedHeightConstraint != null) {
+				advancedHeightConstraint.Dispose ();
+				advancedHeightConstraint = null;
+			}
+
+			if (advancedView != null) {
+				advancedView.Dispose ();
+				advancedView = null;
 			}
 		}
 	}
