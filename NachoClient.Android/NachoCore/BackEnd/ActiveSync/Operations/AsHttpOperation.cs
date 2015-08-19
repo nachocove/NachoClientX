@@ -653,21 +653,25 @@ namespace NachoCore.ActiveSync
                         var decoder = new ASWBXML (cToken);
                         try {
                             var isWedged = false;
+                            int timeoutInSeconds = (response.Content.Headers.ContentLength ?? -1) >= 100000 ? 60 : 20;
                             var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
                                              (state) => {
                                     if (!cToken.IsCancellationRequested) {
+                                        Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes",
+                                            timeoutInSeconds, response.Content.Headers.ContentLength ?? -1);
                                         isWedged = true;
                                         TimeoutTimerCallback (state);
                                     }
                                 },
-                                             cToken, 180 * 1000, System.Threading.Timeout.Infinite);
+                                cToken, timeoutInSeconds * 1000, System.Threading.Timeout.Infinite);
                             long loadBytesDuration;
                             using (var capture = NcCapture.CreateAndStart (KLoadBytes)) {
                                 decoder.LoadBytes (BEContext.Account.Id, ContentData);
                                 loadBytesDuration = capture.ElapsedMilliseconds;
                             }
                             if (1000 < loadBytesDuration) {
-                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes", loadBytesDuration, response.Content.Headers.ContentLength ?? -1);
+                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes",
+                                    loadBytesDuration, response.Content.Headers.ContentLength ?? -1);
                             }
                             diaper.Dispose ();
                             if (isWedged) {

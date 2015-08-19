@@ -262,10 +262,9 @@ namespace NachoCore.Utils
                         Log.Error (Log.LOG_STATE, "No transition for SM {0} on {1}", Name, FireEventCode);
                         NcAssert.True (false);
                     }
-                    if (!hotTrans.ActSetsState) {
-                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
-                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
-                    }
+                    string stateName = !hotTrans.ActSetsState ? StateName (hotTrans.State) : string.Format ("(TBD {0}.{1}())", hotTrans.Act.Target.GetType ().Name, hotTrans.Act.Method.Name);
+                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, stateName), Message));
                     Action = hotTrans.Act;
                     NextState = hotTrans.State;
                     var oldState = State;

@@ -14,6 +14,8 @@ namespace NachoCore.IMAP
 {
     public class ImapFetchBodyCommand : ImapFetchCommand
     {
+        const string KImapFetchBodyCommandFetch = "ImapFetchBodyCommand.Fetch";
+
         public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
         {
             pending.MarkDispached ();
@@ -106,26 +108,36 @@ namespace NachoCore.IMAP
             try {
                 var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
                 mailKitFolder.SetStreamContext (uid, tmp);
-                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
-                var path = body.GetFilePath ();
-                using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
-                    // TODO Do we need to filter by Content-Transfer-Encoding?
-                    switch (body.BodyType) {
-                    default:
-                        // Mime is good for us. Just copy over to the proper file
-                        // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
-                        // where it doesn't release the stream handles properly, and not using a temp file
-                        // leads to Sharing violations. This is fixed in more recent versions of MailKit.
-                        st.CopyTo(bodyFile);
-                        break;
+                NcCapture.AddKind (KImapFetchBodyCommandFetch);
+                long bytes;
+                using (var cap = NcCapture.CreateAndStart (KImapFetchBodyCommandFetch)) {
+                    Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
+                    var path = body.GetFilePath ();
+                    using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                        // TODO Do we need to filter by Content-Transfer-Encoding?
+                        switch (body.BodyType) {
+                        default:
+                            // Mime is good for us. Just copy over to the proper file
+                            // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
+                            // where it doesn't release the stream handles properly, and not using a temp file
+                            // leads to Sharing violations. This is fixed in more recent versions of MailKit.
+                            st.CopyTo(bodyFile);
+                            break;
 
-                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                    case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                        // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
-                        // to the proper place and remove the headers while we're doing so.
-                        CopyBody(st, bodyFile);
-                        break;
+                        case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                        case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                            // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
+                            // to the proper place and remove the headers while we're doing so.
+                            CopyBody(st, bodyFile);
+                            break;
+                        }
+                        bytes = st.Length;
                     }
+                    cap.Pause ();
+                    float kBytes = (float)bytes/(float)1024.0;
+                    Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Body download of size {0}k took {1}ms ({2}k/sec; {3})",
+                        bytes, cap.ElapsedMilliseconds,
+                        kBytes/((float)cap.ElapsedMilliseconds/(float)1000.0), NcCommStatus.Instance.Speed);
                 }
                 body.Truncated = false;
                 body.UpdateSaveFinish ();

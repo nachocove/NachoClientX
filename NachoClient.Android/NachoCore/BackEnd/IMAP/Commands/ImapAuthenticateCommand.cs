@@ -7,11 +7,13 @@ using NachoCore;
 using NachoCore.Model;
 using MailKit.Security;
 using NachoClient.Build;
+using MailKit;
 
 namespace NachoCore.IMAP
 {
     public class ImapAuthenticateCommand : ImapCommand
     {
+        const int KAuthRetries = 2;
         public ImapAuthenticateCommand (IBEContext beContext, NcImapClient imap) : base (beContext, imap)
         {
             RedactProtocolLogFunc = RedactProtocolLog;
@@ -39,21 +41,41 @@ namespace NachoCore.IMAP
                 }
             }
             if (!Client.IsAuthenticated) {
+                string username = BEContext.Cred.Username;
+                string cred;
                 if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
-                    // FIXME - be exhaustive w/Remove when we know we MUST use an auth mechanism.
-                    Client.AuthenticationMechanisms.Remove ("LOGIN");
-                    Client.AuthenticationMechanisms.Remove ("PLAIN");
-                    Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetAccessToken (), Cts.Token);
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
+                    cred = BEContext.Cred.GetAccessToken ();
                 } else {
-                    Client.AuthenticationMechanisms.Remove ("XOAUTH2");
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
+                    cred = BEContext.Cred.GetPassword ();
+                }
+
+                Exception ex = null;
+                for (var i = 0; i < KAuthRetries; i++) {
                     try {
-                        Client.Authenticate (BEContext.Cred.Username, BEContext.Cred.GetPassword (), Cts.Token);
-                    } catch (ImapProtocolException ex) {
-                        Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", ex);
-                        // some servers (icloud.com) seem to close the connection on a bad password/username.
-                        throw new AuthenticationException ();
+                        try {
+                            Client.Authenticate (username, cred, Cts.Token);
+                            break;
+                        } catch (ImapProtocolException e) {
+                            Log.Info (Log.LOG_IMAP, "Protocol Error during auth: {0}", e);
+                            // some servers (icloud.com) seem to close the connection on a bad password/username.
+                            throw new AuthenticationException (ex.Message);
+                        }
+                    } catch (AuthenticationException e) {
+                        ex = e;
+                        Log.Warn (Log.LOG_IMAP, "AuthenticationException: {0}", e.Message);
+                        continue;
+                    } catch (ServiceNotAuthenticatedException e) {
+                        ex = e;
+                        Log.Warn (Log.LOG_IMAP, "ServiceNotAuthenticatedException: {0}", e.Message);
+                        continue;
                     }
                 }
+                if (null != ex) {
+                    throw ex;
+                }
+
                 Log.Info (Log.LOG_IMAP, "IMAP Server capabilities: {0}", Client.Capabilities.ToString ());
                 var capAuth = McProtocolState.FromImapCapabilities (Client.Capabilities);
                 if (capAuth != BEContext.ProtocolState.ImapServerCapabilities) {
