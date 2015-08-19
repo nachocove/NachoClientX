@@ -1075,7 +1075,7 @@ namespace Test.Common
         [Test]
         public void TestQueryImapMessagesToSend ()
         {
-            var messages = new List<McEmailMessage> ();
+            var messages = new List<NcEmailMessageIndex> ();
             for (uint i = 1; i <= 10; i++) { // 0 is not a valid UID.
                 var message = new McEmailMessage () {
                     AccountId = Folder.AccountId,
@@ -1087,7 +1087,7 @@ namespace Test.Common
                 Assert.AreEqual (1, message.Insert ());
                 Assert.AreEqual (i, message.Id);
                 Folder.Link (message);
-                messages.Add (message);
+                messages.Add (new NcEmailMessageIndex(message.Id));
             }
             var results1 = McEmailMessage.QueryImapMessagesToSend (Folder.AccountId, Folder.Id, 30);
             Assert.AreEqual (messages.Count, results1.Count);
