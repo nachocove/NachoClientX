@@ -65,9 +65,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (currentState == StartupViewState.Setup) {
-                ShowApplication ();
-            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -87,15 +84,13 @@ namespace NachoClient.iOS
                 var deviceAccount = McAccount.GetDeviceAccount ();
                 if (null != configAccount) {
                     ShowSetupScreen ();
-                } else if (LoginHelpers.GetGoogleSignInCallbackArrived ()) {
-                    ShowSetupScreen ();
                 } else if (null == NcApplication.Instance.Account) {
                     ShowSetupScreen ();
                 } else if ((null != deviceAccount) && (deviceAccount.Id == NcApplication.Instance.Account.Id)) {
                     ShowSetupScreen ();
                 } else if (!NcApplication.ReadyToStartUI ()) {
                     // This should only be if the app closed before the tutorial was dismissed;
-                    ShowSetupScreen ();
+                    ShowSetupScreen (true);
                 } else {
                     ShowApplication ();
                 }
@@ -135,7 +130,7 @@ namespace NachoClient.iOS
             currentState = StartupViewState.Recovery;
         }
 
-        void ShowSetupScreen ()
+        void ShowSetupScreen (bool startWithTutorial = false)
         {
             if (PresentedViewController != null) {
                 DismissViewController(false, null);
@@ -144,7 +139,8 @@ namespace NachoClient.iOS
             var storyboard = UIStoryboard.FromName ("Welcome", null);
             UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
             var gettingStartedViewController = (GettingStartedViewController)vc.ViewControllers [0];
-            gettingStartedViewController.Delegate = this;
+            gettingStartedViewController.StartWithTutorial = startWithTutorial;
+            gettingStartedViewController.AccountDelegate = this;
             if (currentState == StartupViewState.Startup) {
                 gettingStartedViewController.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
             }

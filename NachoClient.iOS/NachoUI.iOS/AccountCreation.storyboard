@@ -217,11 +217,30 @@
                         <outlet property="statusLabel" destination="IzI-ua-2Rd" id="E9A-JZ-ng2"/>
                         <outlet property="submitButton" destination="53m-EO-fBv" id="vdf-dZ-0H2"/>
                         <outlet property="supportButton" destination="phn-YJ-6LK" id="JbF-xJ-ko3"/>
+                        <segue destination="FKi-cK-xjj" kind="presentation" identifier="cert-ask" id="PTf-oF-gIe"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9Hh-Op-KJH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1965" y="513"/>
+        </scene>
+        <!--Cert Ask View Controller-->
+        <scene sceneID="yyf-hU-d85">
+            <objects>
+                <viewController modalTransitionStyle="crossDissolve" modalPresentationStyle="formSheet" id="FKi-cK-xjj" customClass="CertAskViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="viQ-HD-xaG"/>
+                        <viewControllerLayoutGuide type="bottom" id="mA8-hH-9kh"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="LJm-qE-uNc">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="OSg-8G-Tff" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1965" y="1272"/>
         </scene>
         <!--Syncing...-->
         <scene sceneID="81K-ow-3ju">

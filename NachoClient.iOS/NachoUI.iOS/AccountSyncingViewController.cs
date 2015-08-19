@@ -6,6 +6,8 @@ using Foundation;
 using UIKit;
 using NachoCore.Model;
 using NachoCore;
+using NachoCore.Utils;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -23,6 +25,7 @@ namespace NachoClient.iOS
         private bool IsSyncingComplete;
         private bool IsVisible;
         private bool DismissOnVisible;
+        private NcTimer DismissTimer;
 
         public McAccount Account {
             get {
@@ -56,11 +59,19 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            Update ();
+        }
+
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
             IsVisible = true;
-            activityIndicatorView.StartAnimating ();
+            if (!IsSyncingComplete) {
+                activityIndicatorView.StartAnimating ();
+            }
             if (DismissOnVisible) {
                 DismissAfterDelay ();
             }
@@ -79,7 +90,7 @@ namespace NachoClient.iOS
             Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
             Account.Update ();
             StopListeningForApplicationStatus ();
-            IndicateComplete ();
+            Update ();
             if (IsVisible) {
                 DismissAfterDelay ();
             } else {
@@ -87,14 +98,39 @@ namespace NachoClient.iOS
             }
         }
 
-        void IndicateComplete ()
+        void Update ()
         {
-            activityIndicatorView.StopAnimating ();
-            statusLabel.Text = "Your account is ready!";
+            if (IsViewLoaded) {
+                if (IsSyncingComplete) {
+                    if (IsVisible) {
+                        activityIndicatorView.StopAnimating ();
+                    }
+                    NavigationItem.Title = "Done";
+                    statusLabel.Text = "Your account is ready!";
+                } else {
+                    if (IsVisible) {
+                        activityIndicatorView.StopAnimating ();
+                    }
+                    NavigationItem.Title = "Syncing...";
+                    statusLabel.Text = "Syncing your inbox...";
+                }
+            }
         }
 
         void DismissAfterDelay ()
         {
+            DismissTimer = new NcTimer ("AccountSyncViewControllerDismiss", (state) => {
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    Dismiss ();
+                });
+            }, null, TimeSpan.FromSeconds(1), TimeSpan.Zero);
+
+        }
+
+        private void Dismiss ()
+        {
+            DismissTimer.Dispose ();
+            DismissTimer = null;
             AccountDelegate.AccountSyncingViewControllerDidComplete (this);
         }
 

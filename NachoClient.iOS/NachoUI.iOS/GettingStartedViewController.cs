@@ -17,13 +17,15 @@ namespace NachoClient.iOS
         void GettingStartedViewControllerDidComplete (GettingStartedViewController vc);
     }
 
-    public partial class GettingStartedViewController : UIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
+    public partial class GettingStartedViewController : UIViewController, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate, HomeViewControllerDelegate
     {
-        public GettingStartedViewControllerDelegate Delegate;
+        public GettingStartedViewControllerDelegate AccountDelegate;
         public CGRect? AnimateFromLaunchImageFrame = null;
         private CGSize originalCircleImageSize;
         private nfloat originalCircleImageOffset;
         private UIStoryboard accountStoryboard;
+        public bool StartWithTutorial;
+        AccountSyncingViewController syncingViewController;
 
         public GettingStartedViewController (IntPtr handle) : base (handle)
         {
@@ -36,16 +38,19 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             getStartedButton.Layer.CornerRadius = 6.0f;
             Util.ConfigureNavBar (false, NavigationController);
-            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (accountBeingConfigured != null) {
-                introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
-                getStartedButton.SetTitle ("Continue", UIControlState.Normal);
-            }
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
+            if (accountBeingConfigured != null || StartWithTutorial) {
+                introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
+                getStartedButton.SetTitle ("Continue", UIControlState.Normal);
+            } else {
+                introLabel.Text = "Start by choosing your email service provider";
+                getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
+            }
             if (AnimateFromLaunchImageFrame != null) {
                 View.LayoutIfNeeded ();
                 originalCircleImageSize = circleImageView.Frame.Size;
@@ -76,6 +81,9 @@ namespace NachoClient.iOS
                     getStartedButton.Alpha = 1.0f;
                 }, null);
             }
+            if (StartWithTutorial) {
+                AccountDelegate.GettingStartedViewControllerDidComplete (this);
+            }
         }
 
         partial void getStarted (NSObject sender)
@@ -87,6 +95,8 @@ namespace NachoClient.iOS
                 vc.AccountDelegate = this;
                 vc.Account = accountBeingConfigured;
                 NavigationController.PushViewController (vc, true);
+            }else if (StartWithTutorial){
+                PerformSegue ("tutorial", null);
             }else{
                 var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
                 vc.AccountDelegate = this;
@@ -110,12 +120,35 @@ namespace NachoClient.iOS
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
         {
-            BackEnd.Instance.Start (account.Id);
-            var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+            syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
             syncingViewController.AccountDelegate = this;
             syncingViewController.Account = account;
-            NavigationController.PushViewController (syncingViewController, true);
-            // push tutorial view
+            BackEnd.Instance.Start (syncingViewController.Account.Id);
+            if (LoginHelpers.HasViewedTutorial ()) {
+                NavigationController.PushViewController (syncingViewController, true);
+            } else {
+                PerformSegue ("tutorial", null);
+            }
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "tutorial") {
+                var vc = (HomeViewController)segue.DestinationViewController;
+                vc.AccountDelegate = this;
+            }
+        }
+
+        public void HomeViewControllerDidAppear (HomeViewController vc)
+        {
+            UIViewController[] viewControllers = new UIViewController[NavigationController.ViewControllers.Length + 1];
+            var i = 0;
+            for (; i < NavigationController.ViewControllers.Length - 1; ++i) {
+                viewControllers [i] = NavigationController.ViewControllers [i];
+            }
+            viewControllers [i] = syncingViewController;
+            viewControllers [i + 1] = NavigationController.ViewControllers [i];
+            NavigationController.SetViewControllers (viewControllers, false);
         }
 
         public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
@@ -123,7 +156,7 @@ namespace NachoClient.iOS
             // FIXME: Only set if null or device
             NcApplication.Instance.Account = vc.Account;
             LoginHelpers.SetSwitchToTime (vc.Account);
-            Delegate.GettingStartedViewControllerDidComplete (this);
+            AccountDelegate.GettingStartedViewControllerDidComplete (this);
         }
     }
 }

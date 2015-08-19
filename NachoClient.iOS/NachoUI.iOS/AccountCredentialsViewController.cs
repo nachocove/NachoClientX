@@ -17,7 +17,7 @@ namespace NachoClient.iOS
         void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account);
     }
 
-    public partial class AccountCredentialsViewController : NcUIViewControllerNoLeaks
+    public partial class AccountCredentialsViewController : NcUIViewControllerNoLeaks, INachoCertificateResponderParent
     {
 
         public AccountCredentialsViewControllerDelegate AccountDelegate;
@@ -75,6 +75,16 @@ namespace NachoClient.iOS
                 passwordField.LeftViewMode = UITextFieldViewMode.Always;
                 passwordField.AdjustedLeftViewRect = new CGRect(15, 15, 14, 15);
                 passwordField.LeftView = new UIImageView(icon);
+            }
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            if (IsMovingFromParentViewController) {
+                if (Account != null) {
+                    NcAccountHandler.Instance.RemoveAccount (Account.Id);
+                }
             }
         }
 
@@ -232,13 +242,41 @@ namespace NachoClient.iOS
                     } else {
                         Log.Info (Log.LOG_UI, "AccountCredentialsViewController got CertAskWait for service {0}, user must approve", Service);
                         UpdateForSubmitting (false);
-                        // show cert
+                        PerformSegue ("cert-ask", null);
                     }
                 } else if ((BackEndStateEnum.PostAutoDPreInboxSync == senderState) && (BackEndStateEnum.PostAutoDPreInboxSync == readerState)) {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController PostAutoDPreInboxSync for reader and writer");
                     StopListeningForApplicationStatus ();
                     AccountDelegate.AccountCredentialsViewControllerDidValidateAccount (this, Account);
                 }
+            }
+        }
+
+        // INachoCertificateResponderParent
+        public void DontAcceptCertificate (int accountId)
+        {
+            StopListeningForApplicationStatus ();
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, false);
+            LoginHelpers.UserInterventionStateChanged (accountId);
+            DismissViewController (true, null);
+            statusLabel.Text = "Account not created because the certificate was not accepted";
+        }
+
+        // INachoCertificateResponderParent
+        public void AcceptCertificate (int accountId)
+        {
+            NcApplication.Instance.CertAskResp (accountId, McAccount.AccountCapabilityEnum.EmailSender, true);
+            LoginHelpers.UserInterventionStateChanged (accountId);
+            DismissViewController (true, null);
+        }
+
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier == "cert-ask") {
+                var vc = (CertAskViewController)segue.DestinationViewController;
+                vc.Setup (Account, McAccount.AccountCapabilityEnum.EmailSender);
+                vc.CertificateDelegate = this;
             }
         }
 

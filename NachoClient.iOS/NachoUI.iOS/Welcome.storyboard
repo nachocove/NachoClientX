@@ -121,11 +121,30 @@
                         <outlet property="introLabel" destination="yeA-iY-b0a" id="m3G-11-9HT"/>
                         <outlet property="leftTriangleImageView" destination="76r-fb-noT" id="4Ze-fe-Kf4"/>
                         <outlet property="rightTriangleImageView" destination="2wC-D8-vTW" id="eFF-KY-v3P"/>
+                        <segue destination="oF4-UF-xMW" kind="show" identifier="tutorial" id="d5Z-nf-rUs"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1iO-xA-hQx" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="698" y="357"/>
+        </scene>
+        <!--Home View Controller-->
+        <scene sceneID="sri-Vy-bVA">
+            <objects>
+                <viewController id="oF4-UF-xMW" customClass="HomeViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="y59-hy-w0j"/>
+                        <viewControllerLayoutGuide type="bottom" id="FYF-hO-6o6"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="zR7-I8-b5L">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="536"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" red="0.047058823530000002" green="0.25882352939999997" blue="0.29411764709999999" alpha="1" colorSpace="calibratedRGB"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dRp-HN-pcB" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1461" y="357"/>
         </scene>
     </scenes>
     <resources>
