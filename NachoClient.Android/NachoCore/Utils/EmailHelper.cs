@@ -110,6 +110,7 @@ namespace NachoCore.Utils
                     if (null != defSent && null != outbox) {
                         defSent.Link (message);
                         outbox.Unlink (message);
+                        NachoCore.BackEnd.Instance.SyncCmd (accountId, defSent.Id);
                     } else {
                         Log.Error (Log.LOG_EMAIL, "SendEmailRespCallback could not find sent {0} or outbox {1}", defSent, outbox);
                         message.Delete ();
