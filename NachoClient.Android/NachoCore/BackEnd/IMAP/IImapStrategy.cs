@@ -39,7 +39,7 @@ namespace NachoCore.IMAP
         public IList<UniqueId> SyncSet;
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
-        public List<McEmailMessage> UploadMessages;
+        public List<NcEmailMessageIndex> UploadMessages;
         public bool GetHeaders;
         public uint Span; // Sync Span
 

@@ -717,12 +717,12 @@ namespace NachoCore.Model
         }
 
         const string KCapQueryImapMessagesToSend = "NcModel.McEmailMessage.QueryImapMessagesToSend";
-        public static List<McEmailMessage> QueryImapMessagesToSend (int accountId, int folderId, uint limit)
+        public static List<NcEmailMessageIndex> QueryImapMessagesToSend (int accountId, int folderId, uint limit)
         {
             NcCapture.AddKind (KCapQueryImapMessagesToSend);
             using (var cap = NcCapture.CreateAndStart (KCapQueryImapMessagesToSend)) {
-                return NcModel.Instance.Db.Query<McEmailMessage> (
-                    "SELECT e.* FROM McEmailMessage as e " +
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    "SELECT e.Id FROM McEmailMessage as e " +
                     " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                     " JOIN McFolder AS f ON m.FolderId = f.Id " +
                     " WHERE " +

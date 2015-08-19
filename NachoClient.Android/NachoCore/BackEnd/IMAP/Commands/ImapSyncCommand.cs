@@ -150,9 +150,9 @@ namespace NachoCore.IMAP
             }
 
             if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
-                foreach (var message in Synckit.UploadMessages) {
+                foreach (var messageId in Synckit.UploadMessages) {
                     Cts.Token.ThrowIfCancellationRequested ();
-                    AppendMessage (mailKitFolder, Synckit.Folder, message);
+                    AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
                     changed = true;
                 }
             }
@@ -385,8 +385,9 @@ namespace NachoCore.IMAP
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="folder">Folder.</param>
         /// <param name="EmailMessage">Email message.</param>
-        private McEmailMessage AppendMessage (IMailFolder mailKitFolder, McFolder folder, McEmailMessage EmailMessage)
+        private McEmailMessage AppendMessage (IMailFolder mailKitFolder, McFolder folder, int EmailMessageId)
         {
+            McEmailMessage EmailMessage = McEmailMessage.QueryById<McEmailMessage> (EmailMessageId);
             McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
             MimeMessage mimeMessage = MimeHelpers.LoadMessage (body);
             var attachments = McAttachment.QueryByItemId (EmailMessage);

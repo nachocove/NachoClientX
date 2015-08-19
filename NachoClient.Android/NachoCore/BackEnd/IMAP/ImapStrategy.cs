@@ -144,7 +144,8 @@ namespace NachoCore.IMAP
         /// </summary>
         /// <returns>A set of UniqueId's.</returns>
         /// <param name="folder">Folder.</param>
-        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
+        /// <param name="protocolState">Protocol state.</param>
+        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState, uint span)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -153,7 +154,6 @@ namespace NachoCore.IMAP
                 resetLastSyncPoint (ref folder);
             }
 
-            uint span = SpanSizeWithCommStatus (protocolState);
             IList<UniqueId> syncSet;
 
             // there's no new stuff to fetch. See about older stuff.
@@ -176,6 +176,12 @@ namespace NachoCore.IMAP
                 syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
             }
             return syncSet;
+        }
+
+        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
+        {
+            uint span = SpanSizeWithCommStatus (protocolState);
+            return SyncSet (folder, ref protocolState, span);
         }
 
         public static UniqueIdRange QuickSyncSet (uint UidNext, McFolder folder, uint span)
@@ -281,11 +287,9 @@ namespace NachoCore.IMAP
                 }
                 syncKit = new SyncKit (folder);
             } else {
-            //} else if (folder.ImapUidNext > 1) {
-                List<McEmailMessage> outMessages;
-                var syncSet = SyncSet (folder, ref protocolState);
                 uint span = SpanSizeWithCommStatus (protocolState);
-                outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
+                var syncSet = SyncSet (folder, ref protocolState, span);
+                var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
                 if (syncSet.Any () || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
                     syncKit.UploadMessages = outMessages;
