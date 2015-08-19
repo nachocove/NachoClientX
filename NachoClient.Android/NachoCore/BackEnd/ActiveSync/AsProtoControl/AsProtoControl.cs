@@ -1138,6 +1138,7 @@ namespace NachoCore.ActiveSync
 
         public override void ForceStop ()
         {
+            base.ForceStop ();
             if (null != PushAssist) {
                 PushAssist.Park ();
             }
