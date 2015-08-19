@@ -8,6 +8,7 @@ using NachoCore.Model;
 using MailKit.Security;
 using NachoClient.Build;
 using MailKit;
+using System.Collections.Generic;
 
 namespace NachoCore.IMAP
 {
@@ -103,7 +104,7 @@ namespace NachoCore.IMAP
 
         private string dumpImapImplementation (ImapImplementation imapId)
         {
-            return string.Join (", ", imapId.Properties);
+            return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
         }
 
         protected override Event ExecuteCommand ()
