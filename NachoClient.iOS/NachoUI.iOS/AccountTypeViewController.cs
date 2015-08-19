@@ -19,7 +19,7 @@ namespace NachoClient.iOS
         const float BUTTON_PADDING_HEIGHT = 15;
         const float BUTTON_PADDING_WIDTH = 35;
 
-        public delegate void ServiceSelectedCallback (McAccount.AccountServiceEnum service);
+        public delegate void ServiceSelectedCallback (UIViewController vc, McAccount.AccountServiceEnum service);
 
         public ServiceSelectedCallback ServiceSelected;
 
@@ -135,15 +135,14 @@ namespace NachoClient.iOS
 
         void DismissButton_Clicked (object sender, EventArgs e)
         {
-            DismissModalViewController (true);
+            ServiceSelected (this, McAccount.AccountServiceEnum.None);
         }
 
         void ServiceSelected_Clicked (McAccount.AccountServiceEnum service)
         {
             if (null != ServiceSelected) {
-                ServiceSelected (service);
+                ServiceSelected (this, service);
             }
-            DismissModalViewController (false);
         }
 
     }

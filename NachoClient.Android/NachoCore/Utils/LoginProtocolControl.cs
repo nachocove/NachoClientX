@@ -115,6 +115,7 @@ namespace NachoCore.Utils
                     new Node {
                         State = (uint)States.ServiceWait,
                         Drop = new uint [] {
+                            (uint)Events.E.NoService
                         },
                         Invalid = new uint [] {
                             (uint)Events.E.AccountCreated,
@@ -130,7 +131,6 @@ namespace NachoCore.Utils
                             (uint)Events.E.NotYetStarted,
                             (uint)Events.E.PostAutoDPostInboxSync,
                             (uint)Events.E.PostAutoDPreInboxSync,
-                            (uint)Events.E.Quit,
                             (uint)Events.E.Running,
                             (uint)Events.E.ServerConfCallback,
                             (uint)Events.E.ServerUpdate,
@@ -144,7 +144,7 @@ namespace NachoCore.Utils
                             new Trans { Event = (uint)Events.E.ImapPicked, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
                             new Trans { Event = (uint)Events.E.KnownServicePicked, Act = PromptForCredentials, State = (uint)States.CredentialsWait },
                             new Trans { Event = (uint)Events.E.ShowAdvanced, Act = ShowAdvancedConfiguration, State = (uint)States.SubmitWait },
-                            new Trans { Event = (uint)Events.E.NoService, Act = Quit, State = (uint)States.Park },
+                            new Trans { Event = (uint)Events.E.Quit, Act = Quit, State = (uint)States.Park },
                             new Trans { Event = (uint)Events.E.ShowSupport, Act = ShowSupport, State = (uint)States.TutorialSupportWait },
                         }
                     },
