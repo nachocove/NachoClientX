@@ -384,7 +384,7 @@ namespace NachoCore.IMAP
         /// <returns>McEmailMessage</returns>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="folder">Folder.</param>
-        /// <param name="EmailMessage">Email message.</param>
+        /// <param name="EmailMessageId">Email message Id.</param>
         private McEmailMessage AppendMessage (IMailFolder mailKitFolder, McFolder folder, int EmailMessageId)
         {
             McEmailMessage EmailMessage = McEmailMessage.QueryById<McEmailMessage> (EmailMessageId);

@@ -145,6 +145,7 @@ namespace NachoCore.IMAP
         /// <returns>A set of UniqueId's.</returns>
         /// <param name="folder">Folder.</param>
         /// <param name="protocolState">Protocol state.</param>
+        /// <param name="span">Span</param>
         public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState, uint span)
         {
             bool needSync = needFullSync (folder);
@@ -178,6 +179,12 @@ namespace NachoCore.IMAP
             return syncSet;
         }
 
+        /// <summary>
+        /// Generate the set of UIDs that we need to look at.
+        /// </summary>
+        /// <returns>A set of UniqueId's.</returns>
+        /// <param name="folder">Folder.</param>
+        /// <param name="protocolState">Protocol state.</param>
         public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
         {
             uint span = SpanSizeWithCommStatus (protocolState);
