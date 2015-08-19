@@ -39,6 +39,7 @@ namespace NachoCore.IMAP
         public IList<UniqueId> SyncSet;
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
+        public List<NcEmailMessageIndex> UploadMessages;
         public bool GetHeaders;
         public uint Span; // Sync Span
 
@@ -87,6 +88,7 @@ namespace NachoCore.IMAP
             case MethodEnum.Sync:
                 me += string.Format (" Flags {{{0}}}", Flags);
                 me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
+                me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
 
             default:

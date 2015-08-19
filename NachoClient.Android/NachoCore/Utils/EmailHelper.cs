@@ -81,6 +81,13 @@ namespace NachoCore.Utils
 
         }
 
+        private static bool MustSaveMessageToSent(int accountId)
+        {
+            var account = McAccount.QueryById<McAccount> (accountId);
+            return McAccount.AccountTypeEnum.IMAP_SMTP == account.AccountType &&
+            McAccount.AccountServiceEnum.GoogleDefault != account.AccountService;
+        }
+
         /// <summary>
         /// Emails are added to the per-account on-device outbox folder just
         /// before calling one of the send-mail APIs. After the back end has
@@ -97,7 +104,20 @@ namespace NachoCore.Utils
                 return;
             }
             if (didSend) {
-                message.Delete ();
+                if (MustSaveMessageToSent (accountId)) {
+                    var defSent = McFolder.GetDefaultSentFolder (accountId);
+                    var outbox = McFolder.GetClientOwnedOutboxFolder (accountId);
+                    if (null != defSent && null != outbox) {
+                        defSent.Link (message);
+                        outbox.Unlink (message);
+                        NachoCore.BackEnd.Instance.SyncCmd (accountId, defSent.Id);
+                    } else {
+                        Log.Error (Log.LOG_EMAIL, "SendEmailRespCallback could not find sent {0} or outbox {1}", defSent, outbox);
+                        message.Delete ();
+                    }
+                } else {
+                    message.Delete ();
+                }
             } else {
                 // OutboxTableViewSource handles the details
             }

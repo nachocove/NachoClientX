@@ -143,9 +143,10 @@ namespace NachoCore.IMAP
         /// Generate the set of UIDs that we need to look at.
         /// </summary>
         /// <returns>A set of UniqueId's.</returns>
-        /// <param name="protocolState">Protocol state.</param>
         /// <param name="folder">Folder.</param>
-        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
+        /// <param name="protocolState">Protocol state.</param>
+        /// <param name="span">Span</param>
+        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState, uint span)
         {
             bool needSync = needFullSync (folder);
             bool hasNewMail = HasNewMail (folder);
@@ -154,7 +155,6 @@ namespace NachoCore.IMAP
                 resetLastSyncPoint (ref folder);
             }
 
-            uint span = SpanSizeWithCommStatus (protocolState);
             IList<UniqueId> syncSet;
 
             // there's no new stuff to fetch. See about older stuff.
@@ -177,6 +177,18 @@ namespace NachoCore.IMAP
             // as well as removed (only in currentMails) Uids to look at when we perform the sync.
             syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
             return syncSet;
+        }
+
+        /// <summary>
+        /// Generate the set of UIDs that we need to look at.
+        /// </summary>
+        /// <returns>A set of UniqueId's.</returns>
+        /// <param name="folder">Folder.</param>
+        /// <param name="protocolState">Protocol state.</param>
+        public static IList<UniqueId> SyncSet (McFolder folder, ref McProtocolState protocolState)
+        {
+            uint span = SpanSizeWithCommStatus (protocolState);
+            return SyncSet (folder, ref protocolState, span);
         }
 
         public static UniqueIdRange QuickSyncSet (uint UidNext, McFolder folder, uint span)
@@ -281,10 +293,13 @@ namespace NachoCore.IMAP
                         NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete, NcResult.WhyEnum.UnavoidableDelay), true);
                 }
                 syncKit = new SyncKit (folder);
-            } else if (folder.ImapUidNext > 1) {
-                var syncSet = SyncSet (folder, ref protocolState);
-                if (syncSet.Any ()) {
-                    syncKit = new SyncKit (folder, syncSet, ImapSummaryitems (protocolState), ImapSummaryHeaders ());
+            } else {
+                uint span = SpanSizeWithCommStatus (protocolState);
+                var syncSet = SyncSet (folder, ref protocolState, span);
+                var outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
+                if (syncSet.Any () || outMessages.Any ()) {
+                    syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
+                    syncKit.UploadMessages = outMessages;
                     if (null != syncKit && null != pending) {
                         syncKit.PendingSingle = pending;
                     }

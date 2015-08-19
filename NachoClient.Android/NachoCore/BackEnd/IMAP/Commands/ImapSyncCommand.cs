@@ -113,6 +113,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
             }
             Synckit.SyncSet = syncSet;
+            Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
             return syncFolder (mailKitFolder);
         }
 
@@ -127,22 +128,35 @@ namespace NachoCore.IMAP
 
         private Event syncFolder (NcImapFolder mailKitFolder)
         {
-            // First find all messages marked as /Deleted
-            UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
+            bool changed = false;
+            if (Synckit.SyncSet.Any ()) {
+                // First find all messages marked as /Deleted
+                UniqueIdSet toDelete = FindDeletedUids (mailKitFolder, Synckit.SyncSet);
 
-            Cts.Token.ThrowIfCancellationRequested ();
+                Cts.Token.ThrowIfCancellationRequested ();
 
-            // Process any new or changed messages. This will also tell us any messages that vanished.
-            UniqueIdSet vanished;
-            UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
+                // Process any new or changed messages. This will also tell us any messages that vanished.
+                UniqueIdSet vanished;
+                UniqueIdSet newOrChanged = GetNewOrChangedMessages (mailKitFolder, Synckit.SyncSet, out vanished);
 
-            Cts.Token.ThrowIfCancellationRequested ();
+                Cts.Token.ThrowIfCancellationRequested ();
 
-            // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
-            toDelete.AddRange (vanished);
-            var deleted = deleteEmails (toDelete);
+                // add the vanished emails to the toDelete list (it's a set, so duplicates will be handled), then delete them.
+                toDelete.AddRange (vanished);
+                var deleted = deleteEmails (toDelete);
 
-            Finish (deleted.Any () || newOrChanged.Any ());
+                Cts.Token.ThrowIfCancellationRequested ();
+                changed |= deleted.Any () || newOrChanged.Any ();
+            }
+
+            if (null != Synckit.UploadMessages && Synckit.UploadMessages.Any ()) {
+                foreach (var messageId in Synckit.UploadMessages) {
+                    Cts.Token.ThrowIfCancellationRequested ();
+                    AppendMessage (mailKitFolder, Synckit.Folder, messageId.Id);
+                    changed = true;
+                }
+            }
+            Finish (changed);
             return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCSUC");
         }
 
@@ -153,14 +167,17 @@ namespace NachoCore.IMAP
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
             // remember where we sync'd
-            uint MaxSynced = Synckit.SyncSet != null ? Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced) : 0;
-            uint MinSynced = Synckit.SyncSet != null ? Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced) : 0;
-            if (MaxSynced != 0 && MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
-                MinSynced != 0 && MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
-                Log.Info (Log.LOG_IMAP, "{0}: Set ImapUidHighestUidSynced {1} ImapUidLowestUidSynced {2}",
-                    Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
+            uint MaxSynced = 0;
+            uint MinSynced = 0;
+            if (null != Synckit.SyncSet && Synckit.SyncSet.Any ()) {
+                MaxSynced = Math.Max (Synckit.SyncSet.Max ().Id, Synckit.Folder.ImapUidHighestUidSynced);
+                MinSynced = Math.Min (Synckit.SyncSet.Min ().Id, Synckit.Folder.ImapUidLowestUidSynced);
+                if (MaxSynced != 0 && MaxSynced != Synckit.Folder.ImapUidHighestUidSynced ||
+                    MinSynced != 0 && MinSynced != Synckit.Folder.ImapUidLowestUidSynced) {
+                    Log.Info (Log.LOG_IMAP, "{0}: Set ImapUidHighestUidSynced {1} ImapUidLowestUidSynced {2}",
+                        Synckit.Folder.ImapFolderNameRedacted (), MaxSynced, MinSynced);
+                }
             }
-
             // Update the sync count and last attempt and set the Highest and lowest sync'd
             Synckit.Folder = Synckit.Folder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
@@ -170,7 +187,7 @@ namespace NachoCore.IMAP
                 if (MinSynced != 0) {
                     target.ImapUidLowestUidSynced = MinSynced;
                 }
-                if (Synckit.SyncSet != null) {
+                if (Synckit.SyncSet != null && Synckit.SyncSet.Any ()) {
                     target.ImapLastUidSynced = Synckit.SyncSet.Min ().Id;
                 }
                 target.SyncAttemptCount += 1;
@@ -359,6 +376,36 @@ namespace NachoCore.IMAP
             }
             created = justCreated;
             return emailMessage;
+        }
+
+        /// <summary>
+        /// Adds the message to the given IMAP folder
+        /// </summary>
+        /// <returns>McEmailMessage</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="folder">Folder.</param>
+        /// <param name="EmailMessageId">Email message Id.</param>
+        private McEmailMessage AppendMessage (IMailFolder mailKitFolder, McFolder folder, int EmailMessageId)
+        {
+            McEmailMessage EmailMessage = McEmailMessage.QueryById<McEmailMessage> (EmailMessageId);
+            McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
+            MimeMessage mimeMessage = MimeHelpers.LoadMessage (body);
+            var attachments = McAttachment.QueryByItemId (EmailMessage);
+            if (attachments.Count > 0) {
+                MimeHelpers.AddAttachments (mimeMessage, attachments);
+            }
+            MessageFlags flags = MessageFlags.None;
+            var uid = mailKitFolder.Append (mimeMessage, flags, Cts.Token);
+            if (uid.HasValue) {
+                EmailMessage = EmailMessage.UpdateWithOCApply<McEmailMessage> ((record) => {
+                    var target = (McEmailMessage)record;
+                    target.ImapUid = uid.Value.Id;
+                    return true;
+                });
+            } else {
+                Log.Error (Log.LOG_IMAP, "Append to Folder did not return a uid!");
+            }
+            return EmailMessage;
         }
 
         private UniqueIdSet FindDeletedUids (IMailFolder mailKitFolder, IList<UniqueId> uids)
