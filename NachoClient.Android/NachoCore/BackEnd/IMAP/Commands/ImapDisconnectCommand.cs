@@ -21,7 +21,7 @@ namespace NachoCore.IMAP
                     return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUC");
                 });
             } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDisconnectCommand:ImapCommandLockTimeOutException: {0}", ex.Message);
+                Log.Error (Log.LOG_IMAP, "ImapDisconnectCommand({0}:ImapCommandLockTimeOutException: {1}", BEContext.Account.Id, ex.Message);
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOTEMP");
             }
             sm.PostEvent (evt);

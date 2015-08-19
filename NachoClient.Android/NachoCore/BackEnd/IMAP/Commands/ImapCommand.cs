@@ -75,7 +75,7 @@ namespace NachoCore.IMAP
             try {
                 TryLock (Client.SyncRoot, timeout);
             } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "{0}.Cancel: {1}", this.GetType ().Name, ex.Message);
+                Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
             }
         }
 
