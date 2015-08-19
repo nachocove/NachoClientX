@@ -19,14 +19,7 @@ namespace NachoCore.Utils
     {
         #if __IOS__
         public static bool ENABLED = true;
-        
-
-
-
-
-
-
-#else
+        #else
         public static bool ENABLED = false;
         #endif
 
