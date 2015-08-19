@@ -412,7 +412,6 @@ namespace NachoCore.IMAP
                             (uint)SmEvt.E.TempFail,
                         },
                         Invalid = new uint[] {
-                            (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)ImapEvt.E.AuthFail,
                             (uint)ImapEvt.E.ReFSync,
@@ -420,6 +419,7 @@ namespace NachoCore.IMAP
                             (uint)ImapEvt.E.GetServConf,
                         },
                         On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPark, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                             new Trans { Event = (uint)ImapEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
