@@ -378,6 +378,13 @@ namespace NachoCore.IMAP
             return emailMessage;
         }
 
+        /// <summary>
+        /// Adds the message to the given IMAP folder
+        /// </summary>
+        /// <returns>McEmailMessage</returns>
+        /// <param name="mailKitFolder">Mail kit folder.</param>
+        /// <param name="folder">Folder.</param>
+        /// <param name="EmailMessage">Email message.</param>
         private McEmailMessage AppendMessage (IMailFolder mailKitFolder, McFolder folder, McEmailMessage EmailMessage)
         {
             McBody body = McBody.QueryById<McBody> (EmailMessage.BodyId);
