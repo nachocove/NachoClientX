@@ -168,7 +168,6 @@ namespace NachoCore.IMAP
                 startingPoint,
                 currentMails,
                 currentUidSet);
-            UniqueIdSet syncSet;
             if (!currentMails.Any () && !currentUidSet.Any ()) {
                 syncSet = new UniqueIdSet ();
             } else {
@@ -284,8 +283,8 @@ namespace NachoCore.IMAP
             } else {
             //} else if (folder.ImapUidNext > 1) {
                 List<McEmailMessage> outMessages;
-                var syncSet = SyncSet (folder);
-                uint span = SpanSizeWithCommStatus ();
+                var syncSet = SyncSet (folder, ref protocolState);
+                uint span = SpanSizeWithCommStatus (protocolState);
                 outMessages = McEmailMessage.QueryImapMessagesToSend (protocolState.AccountId, folder.Id, span);
                 if (syncSet.Any () || outMessages.Any ()) {
                     syncKit = new SyncKit (folder, syncSet, ImapSummaryitems(protocolState), ImapSummaryHeaders());
@@ -585,7 +584,6 @@ namespace NachoCore.IMAP
             uint rung = protocolState.ImapSyncRung;
             switch (protocolState.ImapSyncRung) {
             case 0:
-                var syncSet = SyncSet ( defInbox);
                 if (defInbox.CountOfAllItems (McAbstrFolderEntry.ClassCodeEnum.Email) > KImapSyncRung0InboxCount ||
                     !SyncSet (defInbox, ref protocolState).Any ()) {
                     // TODO For now skip stage 1, since it's not implemented.
