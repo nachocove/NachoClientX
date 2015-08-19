@@ -12,15 +12,18 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks, INachoAccountsTableDelegate
+    public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks, INachoAccountsTableDelegate, AccountTypeViewControllerDelegate, AccountCredentialsViewControllerDelegate, AccountSyncingViewControllerDelegate
     {
         UITableView accountsTableView;
         AccountsTableViewSource accountsTableViewSource;
+        UIStoryboard accountStoryboard;
 
         SwitchAccountButton switchAccountButton;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
+            NavigationItem.BackBarButtonItem = new UIBarButtonItem ();
+            NavigationItem.BackBarButtonItem.Title = "";
         }
 
         public override void ViewDidLoad ()
@@ -127,7 +130,11 @@ namespace NachoClient.iOS
         public void AddAccountSelected ()
         {
             View.EndEditing (true);
-            LaunchViewController.StartAccountSetup (this);
+            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+            var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+            vc.AccountDelegate = this;
+            vc.HidesBottomBarWhenPushed = true;
+            NavigationController.PushViewController (vc, true);
         }
 
         // INachoAccountsTableDelegate
@@ -150,6 +157,37 @@ namespace NachoClient.iOS
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
+        {
+            if (service == McAccount.AccountServiceEnum.GoogleDefault) {
+                // Do the google thing
+            } else if (service == McAccount.AccountServiceEnum.IMAP_SMTP) {
+                // Show advanced settings
+            } else {
+                var credentialsViewController = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
+                credentialsViewController.Service = service;
+                credentialsViewController.AccountDelegate = this;
+                NavigationController.PushViewController (credentialsViewController, true);
+            }
+        }
+
+        public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)
+        {
+            var syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+            syncingViewController.AccountDelegate = this;
+            syncingViewController.Account = account;
+            BackEnd.Instance.Start (syncingViewController.Account.Id);
+            NavigationController.PushViewController (syncingViewController, true);
+        }
+
+        public void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc)
+        {
+            accountsTableViewSource.Refresh ();
+            accountsTableView.ReloadData ();
+            NavigationController.PopToViewController (this, true);
+
         }
     }
 }

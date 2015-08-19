@@ -56,10 +56,13 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
         ViewFramer.Create (sourceNavbarSnapshot).Y (sourceNavbarFrame.Top - DestinationViewController.View.Frame.Top);
         ViewFramer.Create (destinationSnapshot).Y (-DestinationViewController.View.Frame.Top);
         destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height);
+        destinationSnapshot.Layer.ShadowColor = UIColor.Black.CGColor;
+        destinationSnapshot.Layer.ShadowOpacity = 0.4f;
+        destinationSnapshot.Layer.ShadowRadius = 10.0f;
         SourceViewController.PresentViewController (this.DestinationViewController, false, () => {
             destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height);
-            UIView.Animate (0.2, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
-                shadeView.Alpha = 0.4f;
+            UIView.Animate (0.3, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
+                shadeView.Alpha = 0.6f;
                 destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, 20);
             }, () => {
                 DestinationViewController.View.SendSubviewToBack(shadeView);

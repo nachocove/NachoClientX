@@ -132,7 +132,10 @@ namespace NachoClient.iOS
         public void Deactivate (McAccount account, SwitchAccountCallback callback)
         {
             var shadeView = NavigationController.View.ViewWithTag (SwitchAccountCustomSegue.ShadeViewTag);
-            UIView.Animate (0.2, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
+            View.Layer.ShadowColor = UIColor.Black.CGColor;
+            View.Layer.ShadowOpacity = 0.4f;
+            View.Layer.ShadowRadius = 10.0f;
+            UIView.Animate (0.3, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
                 if (shadeView != null){
                     shadeView.Alpha = 0.0f;
                 }
