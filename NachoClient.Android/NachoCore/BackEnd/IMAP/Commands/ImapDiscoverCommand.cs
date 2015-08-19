@@ -96,7 +96,7 @@ namespace NachoCore.IMAP
         protected override Event ExecuteCommand ()
         {
             BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOSUC");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPDISCOVSUC");
         }
 
         /// <summary>
