@@ -502,6 +502,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration40.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration41.cs" />
     <Compile Include="NachoCore\Utils\GoogleOAuth2Authenticator.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />

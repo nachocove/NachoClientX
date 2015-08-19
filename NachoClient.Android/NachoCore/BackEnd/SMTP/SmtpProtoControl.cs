@@ -395,6 +395,7 @@ namespace NachoCore.SMTP
 
         public override void ForceStop ()
         {
+            base.ForceStop ();
             Sm.PostEvent ((uint)PcEvt.E.Park, "SMTPFORCESTOP");
         }
 

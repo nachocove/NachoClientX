@@ -29,6 +29,7 @@ namespace NachoCore.Utils
         IMAP_REQUEST,
         IMAP_RESPONSE,
         TIME_SERIES,
+        SUPPORT_REQUEST,
         MAX_TELEMETRY_EVENT_TYPE,
     };
 
@@ -362,7 +363,7 @@ namespace NachoCore.Utils
                 return _Support;
             }
             set {
-                NcAssert.True (IsSupportEvent ());
+                NcAssert.True (IsSupportEvent () || IsSupportRequestEvent ());
                 _Support = value;
             }
         }
@@ -374,7 +375,7 @@ namespace NachoCore.Utils
                 return _Callback;
             }
             set {
-                NcAssert.True (IsSupportEvent ());
+                NcAssert.True (IsSupportRequestEvent ());
                 _Callback = value;
             }
         }
@@ -423,6 +424,11 @@ namespace NachoCore.Utils
             return (TelemetryEventType.SUPPORT == type);
         }
 
+        public static bool IsSupportRequestEvent (TelemetryEventType type)
+        {
+            return (TelemetryEventType.SUPPORT_REQUEST == type);
+        }
+
         public bool IsLogEvent ()
         {
             return IsLogEvent (Type);
@@ -461,6 +467,11 @@ namespace NachoCore.Utils
         public bool IsSupportEvent ()
         {
             return IsSupportEvent (Type);
+        }
+
+        public bool IsSupportRequestEvent ()
+        {
+            return IsSupportRequestEvent (Type);
         }
 
         public TelemetryEvent (TelemetryEventType type)

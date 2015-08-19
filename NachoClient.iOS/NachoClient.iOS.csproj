@@ -1612,6 +1612,8 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\GoogleOAuth2Authenticator.cs">
       <Link>NachoCore\Utils\GoogleOAuth2Authenticator.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

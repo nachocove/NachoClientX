@@ -133,6 +133,8 @@ namespace NachoCore.Utils
         Counter,
         // TIME_SERIES
         Time_Series,
+        // SUPPORT_REQUEST
+        Support_Request,
     };
 
     public class TelemetryJsonFileTable
@@ -199,6 +201,9 @@ namespace NachoCore.Utils
                 break;
             case TelemetryTimeSeriesEvent.TIME_SERIES:
                 eventClass = TelemetryEventClass.Time_Series;
+                break;
+            case TelemetrySupportRequestEvent.SUPPORT_REQUEST:
+                eventClass = TelemetryEventClass.Support_Request;
                 break;
             default:
                 var msg = String.Format ("GetEventClass: unknown type {0}", eventType);
@@ -309,7 +314,7 @@ namespace NachoCore.Utils
                     return false;
                 } else {
                     doFinalize = false;
-                    if (TelemetryEventClass.Support == eventClass) {
+                    if ((TelemetryEventClass.Support == eventClass) || (TelemetryEventClass.Support_Request == eventClass)) {
                         doFinalize = true; // always finalize AdSupport FileShare after each write
                         // Since each SUPPORT event is its own file, it is possible that two quick
                         // back-to-back SUPPORT events have the same timestamp down to millisecond resolution.
