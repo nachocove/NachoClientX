@@ -170,12 +170,12 @@ namespace NachoCore.IMAP
                 currentMails,
                 currentUidSet);
             if (!currentMails.Any () && !currentUidSet.Any ()) {
-                syncSet = new UniqueIdSet ();
-            } else {
-                // Take the union of the two sets, so that we get new (only in the currentUidSet)
-                // as well as removed (only in currentMails) Uids to look at when we perform the sync.
-                syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
+                return new UniqueIdSet ();
             }
+
+            // Take the union of the two sets, so that we get new (only in the currentUidSet)
+            // as well as removed (only in currentMails) Uids to look at when we perform the sync.
+            syncSet = SyncKit.MustUniqueIdSet (currentMails.Union (currentUidSet).OrderByDescending (x => x).Take ((int)span).ToList ());
             return syncSet;
         }
 
