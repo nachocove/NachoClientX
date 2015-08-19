@@ -125,9 +125,6 @@ namespace NachoCore.IMAP
                     service = McAccount.AccountServiceEnum.Yahoo;
                 } else {
                     // we don't know (or don't care)
-                    if (username.Contains ("@")) {
-                        Log.Info (Log.LOG_IMAP, "Unknown generic IMAP server for domain {0}", username.Split ('@') [1]);
-                    }
                     service = BEContext.Account.AccountService;
                 }
                 break;
