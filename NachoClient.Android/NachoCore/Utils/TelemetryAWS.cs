@@ -333,30 +333,37 @@ namespace NachoCore.Utils
             }
         }
 
-        protected string GetS3Path (string filePath)
+        protected string GetS3Path (string filePath, out string s3Bucket)
         {
             var fileName = Path.GetFileName (filePath);
             var startTimeStamp = fileName.Substring (0, 17);
             var jsonType = fileName.Substring (36);
             var date = startTimeStamp.Substring (0, 8);
 
-            var s3Path = Path.Combine (
-                             date,
-                             HashUserId,
-                             NcApplication.Instance.UserId,
-                             NcApplication.Instance.ClientId,
-                             "NachoMail",
-                             jsonType + '-' + startTimeStamp + ".gz");
+            string s3Path;
+            if (jsonType == TelemetrySupportRequestEvent.SUPPORT_REQUEST.ToLower ()) {
+                s3Path = NcApplication.Instance.ClientId + '-' + startTimeStamp + ".gz";
+                s3Bucket = BuildInfo.SupportS3Bucket;
+            } else {
+                var s3FileName = jsonType + '-' + startTimeStamp + ".gz";
+                s3Path = Path.Combine (
+                    date,
+                    HashUserId,
+                    NcApplication.Instance.UserId,
+                    NcApplication.Instance.ClientId,
+                    "NachoMail",
+                    s3FileName);
+                var eventClass = s3FileName.Substring (0, s3FileName.LastIndexOf ('-')).Replace ('_', '-');
+                s3Bucket = BuildInfo.S3Bucket + eventClass;
+            }
             return s3Path;
         }
 
-        protected bool UploadFileToS3 (string filePath, string s3Key)
+        protected bool UploadFileToS3 (string filePath, string s3Key, string s3Bucket)
         {
             NcAssert.True (filePath.EndsWith (".gz"));
-            var fileName = Path.GetFileName (s3Key);
-            var eventClass = fileName.Substring (0, fileName.LastIndexOf ('-')).Replace ('_', '-');
             var uploadRequest = new PutObjectRequest () {
-                BucketName = BuildInfo.S3Bucket + eventClass,
+                BucketName = s3Bucket,
                 Key = s3Key,
                 FilePath = filePath,
             };
@@ -392,8 +399,9 @@ namespace NachoCore.Utils
             }
 
             // Extract timestamps from the file path
-            var s3Path = GetS3Path (jsonFilePath);
-            return UploadFileToS3 (gzJsonFilePath, s3Path);
+            string s3Bucket;
+            var s3Path = GetS3Path (jsonFilePath, out s3Bucket);
+            return UploadFileToS3 (gzJsonFilePath, s3Path, s3Bucket);
         }
 
         private bool SendDeviceInfo ()
@@ -422,7 +430,8 @@ namespace NachoCore.Utils
             var readFilePath = TelemetryJsonFileTable.GetReadFilePath (
                                    Path.Combine (NcApplication.GetDataDirPath (), "device_info"),
                                    timestamp, timestamp);
-            var s3Path = GetS3Path (readFilePath);
+            string s3Bucket;
+            var s3Path = GetS3Path (readFilePath, out s3Bucket);
             var gzJsonFilePath = readFilePath + ".gz";
             using (var gzJsonStream = File.Open (gzJsonFilePath, FileMode.CreateNew, FileAccess.Write))
             using (var gzipStream = new GZipStream (gzJsonStream, CompressionMode.Compress))
@@ -430,7 +439,7 @@ namespace NachoCore.Utils
                 streamWriter.Write (json);
             }
 
-            return UploadFileToS3 (gzJsonFilePath, s3Path);
+            return UploadFileToS3 (gzJsonFilePath, s3Path, s3Bucket);
         }
 
         private Document LogEvent (TelemetryEvent tEvent)
