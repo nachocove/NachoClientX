@@ -627,21 +627,27 @@ namespace NachoClient.iOS
         {
             // TODO - need to wait for ALL accounts to complete, not just 1st!
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
+            int accountId = (null != statusEvent.Account) ? statusEvent.Account.Id : -1;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox account {0}", accountId);
                 fetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
-                if ((null != statusEvent.Account) && (0 < statusEvent.Account.Id)) {
-                    fetchAccounts.Remove (statusEvent.Account.Id);
-                } else {
-                    Log.Error (Log.LOG_PUSH, "Info_SyncSucceeded for unknown account {0}", statusEvent.Account.Id);
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded for unspecified account {0}", accountId);
                 }
+                bool fetchWasComplete = fetchComplete;
+                fetchAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
                 if (fetchComplete) {
-                    BadgeNotifUpdate ();
+                    // There will sometimes be duplicate Info_SyncSucceeded for an account.
+                    // Only call BadgeNotifUpdate once.
+                    if (!fetchWasComplete) {
+                        BadgeNotifUpdate ();
+                    }
                     if (pushAssistArmComplete) {
                         CompletePerformFetch ();
                     }
@@ -649,17 +655,35 @@ namespace NachoClient.iOS
                 break;
 
             case NcResult.SubKindEnum.Info_PushAssistArmed:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
-                pushAccounts.Remove (statusEvent.Account.Id);
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed for unspecified account {0}", accountId);
+                }
+                pushAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
                 if (fetchComplete && pushAssistArmComplete) {
                     CompletePerformFetch ();
                 }
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed");
-                fetchResult = UIBackgroundFetchResult.Failed;
-                CompletePerformFetch ();
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed for unspecified account {0}", accountId);
+                }
+                fetchAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
+                // If one account found some new messages and a different account failed to sync,
+                // return a successful result.
+                if (UIBackgroundFetchResult.NoData == fetchResult) {
+                    fetchResult = UIBackgroundFetchResult.Failed;
+                }
+                if (fetchComplete) {
+                    BadgeNotifUpdate ();
+                    if (pushAssistArmComplete) {
+                        CompletePerformFetch ();
+                    }
+                }
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
@@ -735,8 +759,12 @@ namespace NachoClient.iOS
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             performFetchTimer = new Timer (((object state) => {
-                // When the timer expires, just fire an event.  The status callback will take
-                // care of shutting everything down.
+                // Stop the back end right away, so that any accounts still synching
+                // will stop ASAP, freeing the CPU for the rest of the shutdown work.
+                // Then fire an event.  The listener for the event will take care of
+                // the rest of the shutdown process.
+                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired. Shutting down the app.");
+                BackEnd.Instance.Stop ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = NcApplication.Instance.Account,
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
@@ -835,7 +863,10 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
+            // When the app is in QuickSync mode, BadgeNotifUpdate will be called when
+            // QuickSync is done.  There isn't a need to call it when each account's sync
+            // completes.
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
                 BadgeNotifUpdate ();
             }
         }
