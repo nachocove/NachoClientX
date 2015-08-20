@@ -52,6 +52,62 @@ namespace NachoCore.Model
         {
             NcModel.Instance.Db.Execute ("DELETE FROM McEmailMessageScore WHERE ParentId = ?", parentId);
         }
+
+        public static bool ShouldUpdateMinimum (DateTime currentTime, DateTime newTime)
+        {
+            if (DateTime.MinValue == currentTime) {
+                return DateTime.MinValue != newTime;
+            }
+            if (DateTime.MinValue == newTime) {
+                return true; // read status is being cleared
+            }
+            return (currentTime > newTime);
+        }
+
+        public bool UpdateNotificationTime (DateTime notificationTime, double variance)
+        {
+            var original = NotificationTime;
+            var newStates = UpdateWithOCApply<McEmailMessageScore> ((item) => {
+                if (!ShouldUpdateMinimum (NotificationTime, notificationTime)) {
+                    notificationTime = NotificationTime;
+                }
+                var ems = (McEmailMessageScore)item;
+                ems.NotificationTime = notificationTime;
+                ems.NotificationVariance = variance;
+                return true;
+            });
+            return original != newStates.NotificationTime;
+        }
+
+        public bool UpdateReadTime (DateTime readTime, double variance)
+        {
+            var original = ReadTime;
+            var newStates = UpdateWithOCApply<McEmailMessageScore> ((item) => {
+                if (!ShouldUpdateMinimum (ReadTime, readTime)) {
+                    readTime = ReadTime;
+                }
+                var ems = (McEmailMessageScore)item;
+                ems.ReadTime = readTime;
+                ems.ReadVariance = variance;
+                return true;
+            });
+            return original != newStates.ReadTime;
+        }
+
+        public bool UpdateReplyTime (DateTime replyTime, double variance)
+        {
+            var original = ReplyTime;
+            var newStates = UpdateWithOCApply<McEmailMessageScore> ((item) => {
+                if (!ShouldUpdateMinimum (ReplyTime, replyTime)) {
+                    replyTime = ReplyTime;
+                }
+                var ems = (McEmailMessageScore)item;
+                ems.ReplyTime = replyTime;
+                ems.ReplyVariance = variance;
+                return true;
+            });
+            return original != newStates.ReadTime;
+        }
     }
 }
 

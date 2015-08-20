@@ -216,7 +216,7 @@ namespace NachoCore.Brain
                     NcModel.Instance.RunInTransaction (() => {
                         var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)notifiedEvent.EmailMessageId);
                         if (null != emailMessage) {
-                            emailMessage.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
+                            emailMessage.ScoreStates.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
                         }
                     });
                     break;

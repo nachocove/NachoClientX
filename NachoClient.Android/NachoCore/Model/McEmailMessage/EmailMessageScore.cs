@@ -811,101 +811,62 @@ namespace NachoCore.Model
             return accountAddress == mbAddr.Address;
         }
 
-        public bool ShouldUpdateMinimum (DateTime currentTime, DateTime newTime)
-        {
-            if (DateTime.MinValue == currentTime) {
-                return DateTime.MinValue != newTime;
-            }
-            if (DateTime.MinValue == newTime) {
-                return true; // read status is being cleared
-            }
-            return (currentTime > newTime);
-        }
-
-        public bool UpdateNotificationTime (DateTime notificationTime, double variance)
-        {
-            var original = ScoreStates.NotificationTime;
-            var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {
-                if (!ShouldUpdateMinimum (ScoreStates.NotificationTime, notificationTime)) {
-                    return false;
-                }
-                var ems = (McEmailMessageScore)item;
-                ems.NotificationTime = notificationTime;
-                ems.NotificationVariance = variance;
-                return true;
-            });
-            return original != newEmailMessage.NotificationTime;
-        }
-
-        protected bool UpdateReadTime (DateTime readTime, double variance)
-        {
-            var original = ScoreStates.ReadTime;
-            var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {
-                if (!ShouldUpdateMinimum (ScoreStates.ReadTime, readTime)) {
-                    return false;
-                }
-                var ems = (McEmailMessageScore)item;
-                ems.ReadTime = readTime;
-                ems.ReadVariance = variance;
-                return true;
-            });
-            return original != newEmailMessage.ReadTime;
-        }
-
-        protected bool UpdateReplyTime (DateTime replyTime, double variance)
-        {
-            var original = ScoreStates.ReplyTime;
-            var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {
-                if (!ShouldUpdateMinimum (ScoreStates.ReplyTime, replyTime)) {
-                    return false;
-                }
-                var ems = (McEmailMessageScore)item;
-                ems.ReplyTime = replyTime;
-                ems.ReplyVariance = variance;
-                return true;
-            });
-            return original != newEmailMessage.ReadTime;
-        }
-
-        protected void UpdateAnalysisInternal (DateTime newTime, double variance, Func<DateTime, double, bool> updateFunc, Action<McEmailAddress, int> fromFunc,
-                                               Action<McEmailAddress, int> toFunc, Action<McEmailAddress, int> ccFunc)
+        protected void UpdateAnalysisInternal (DateTime newTime, double variance, Func<DateTime, double, bool> updateFunc, Func<bool, bool> setFunc, 
+                                               Action<McEmailAddress, int> fromFunc, Action<McEmailAddress, int> toFunc, Action<McEmailAddress, int> ccFunc)
         {
             NcModel.Instance.RunInTransaction (() => {
                 if (updateFunc (newTime, variance)) {
                     int delta = DateTime.MinValue == newTime ? -1 : +1;
-                    if (ScoreVersion >= 1) {
+                    bool shouldUpdate = false;
+                    if (1 <= ScoreVersion) {
                         var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
                         if (null != emailAddress) {
                             fromFunc (emailAddress, delta);
                             emailAddress.ScoreStates.Update ();
                         }
                     }
-                    if (ScoreVersion >= 4) {
+                    if (2 <= ScoreVersion) {
+                        if (setFunc (DateTime.MinValue != newTime)) {
+                            ScoreStates.Update ();
+                        }
+                    }
+                    if (4 <= ScoreVersion) {
+                        var accountAddress = AccountAddress (AccountId);
                         foreach (var emailAddressId in ToEmailAddressId) {
                             var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressId);
-                            if (null != emailAddress) {
-                                toFunc (emailAddress, delta);
-                                emailAddress.ScoreStates.Update ();
+                            if (null == emailAddress) {
+                                continue;
                             }
+                            if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                                continue;
+                            }
+                            toFunc (emailAddress, delta);
+                            emailAddress.ScoreStates.Update ();
                         }
                         foreach (var emailAddressId in CcEmailAddressId) {
                             var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressId);
-                            if (null != emailAddress) {
-                                ccFunc (emailAddress, delta);
-                                emailAddress.ScoreStates.Update ();
+                            if (null == emailAddress) {
+                                continue;
                             }
+                            if (accountAddress == emailAddress.CanonicalEmailAddress) {
+                                continue;
+                            }
+                            ccFunc (emailAddress, delta);
+                            emailAddress.ScoreStates.Update ();
                         }
                     }
-                    Score = Classify ();
-                    NeedUpdate = 0;
-                    UpdateScoreAndNeedUpdate ();
+                    if (Scoring.Version == ScoreVersion) {
+                        Score = Classify ();
+                        NeedUpdate = 0;
+                        UpdateScoreAndNeedUpdate ();
+                    }
                 }
             });
         }
 
         public void UpdateReadAnalysis (DateTime readTime, double variance)
         {
-            UpdateAnalysisInternal (readTime, variance, UpdateReadTime,
+            UpdateAnalysisInternal (readTime, variance, ScoreStates.UpdateReadTime, SetScoreIsRead,
                 (emailAdddress, delta) => {
                     emailAdddress.IncrementEmailsRead (delta);
                 },
@@ -920,7 +881,7 @@ namespace NachoCore.Model
 
         public void UpdateReplyAnalysis (DateTime replyTime, double variance)
         {
-            UpdateAnalysisInternal (replyTime, variance, UpdateReplyTime,
+            UpdateAnalysisInternal (replyTime, variance, ScoreStates.UpdateReplyTime, SetScoreIsReplied,
                 (emailAddress, delta) => {
                     emailAddress.IncrementEmailsReplied (delta);
                 },
@@ -931,6 +892,11 @@ namespace NachoCore.Model
                     emailAddress.IncrementCcEmailsReplied (delta);
                 }
             );
+            if (2 <= ScoreVersion) {
+                if (SetScoreIsReplied (DateTime.MinValue != replyTime)) {
+                    ScoreStates.Update ();
+                }
+            }
         }
     }
 }

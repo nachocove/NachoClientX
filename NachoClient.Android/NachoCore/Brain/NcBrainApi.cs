@@ -108,7 +108,7 @@ namespace NachoCore.Brain
                 return;
             }
             // Sanity check if this may require an actual update
-            if (!emailMessage.ShouldUpdateMinimum (emailMessage.ScoreStates.NotificationTime, notificationTime)) {
+            if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.NotificationTime, notificationTime)) {
                 return;
             }
             var brainEvent = new NcBrainUpdateMessageNotificationStatusEvent (emailMessage.AccountId, emailMessage.Id) {
@@ -124,7 +124,7 @@ namespace NachoCore.Brain
                 return;
             }
             // Sanity check if this may require an actual update
-            if (!emailMessage.ShouldUpdateMinimum (emailMessage.ScoreStates.ReadTime, readTime)) {
+            if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.ReadTime, readTime)) {
                 return;
             }
             var brainEvent = new NcBrainUpdateMessageReadStatusEvent (emailMessage.AccountId, emailMessage.Id) {
@@ -140,7 +140,7 @@ namespace NachoCore.Brain
                 return;
             }
             // Sanity check if this may require an actual update
-            if (!emailMessage.ShouldUpdateMinimum (emailMessage.ScoreStates.ReplyTime, replyTime)) {
+            if (!McEmailMessageScore.ShouldUpdateMinimum (emailMessage.ScoreStates.ReplyTime, replyTime)) {
                 return;
             }
             var brainEvent = new NcBrainUpdateMessageReplyStatusEvent (emailMessage.AccountId, emailMessage.Id) {
