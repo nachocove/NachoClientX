@@ -811,7 +811,7 @@ namespace NachoCore.Model
             return accountAddress == mbAddr.Address;
         }
 
-        protected bool ShouldUpdateMinimum (DateTime currentTime, DateTime newTime)
+        public bool ShouldUpdateMinimum (DateTime currentTime, DateTime newTime)
         {
             if (DateTime.MinValue == currentTime) {
                 return DateTime.MinValue != newTime;
@@ -822,7 +822,7 @@ namespace NachoCore.Model
             return (currentTime > newTime);
         }
 
-        protected bool UpdateNotificationTime (DateTime notificationTime, double variance)
+        public bool UpdateNotificationTime (DateTime notificationTime, double variance)
         {
             var original = ScoreStates.NotificationTime;
             var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {

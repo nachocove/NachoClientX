@@ -22,6 +22,7 @@ namespace NachoCore.Brain
         UNINDEX_CONTACT,
         PERSISTENT_QUEUE,
         REINDEX_CONTACT,
+        UPDATE_MESSAGE_NOTIFICATION_STATUS,
         UPDATE_MESSAGE_READ_STATUS,
         UPDATE_MESSAGE_REPLY_STATUS,
     };
@@ -203,6 +204,19 @@ namespace NachoCore.Brain
     {
         public NcBrainUnindexMessageEvent (Int64 accountId, Int64 emailMessageId)
             : base (NcBrainEventType.UNINDEX_MESSAGE, accountId, emailMessageId)
+        {
+        }
+    }
+
+    [Serializable]
+    public class NcBrainUpdateMessageNotificationStatusEvent : NcBrainMessageEvent
+    {
+        public DateTime NotificationTime;
+
+        public double Variance;
+
+        public NcBrainUpdateMessageNotificationStatusEvent (Int64 accountId, Int64 emailMessageId)
+            : base (NcBrainEventType.UPDATE_MESSAGE_NOTIFICATION_STATUS, accountId, emailMessageId)
         {
         }
     }

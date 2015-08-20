@@ -63,6 +63,9 @@ namespace NachoClient.iOS
 
 
 
+
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -125,7 +128,7 @@ namespace NachoClient.iOS
                         NavigationController.PopViewController (false);
                     }
                 }
-                NcBrain.UpdateMessageReadStatus (message.AccountId, message.Id, DateTime.UtcNow, 0.1);
+                NcBrain.MessageReadStatusUpdated (message, DateTime.UtcNow, 0.1);
             }
         }
 

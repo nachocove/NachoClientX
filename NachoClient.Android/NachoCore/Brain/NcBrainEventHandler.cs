@@ -211,13 +211,32 @@ namespace NachoCore.Brain
                         }
                     });
                     break;
-                case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
-                    var updateEvent = (NcBrainUpdateMessageReadStatusEvent)brainEvent;
+                case NcBrainEventType.UPDATE_MESSAGE_NOTIFICATION_STATUS:
+                    var notifiedEvent = (NcBrainUpdateMessageNotificationStatusEvent)brainEvent;
                     NcModel.Instance.RunInTransaction (() => {
-                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)updateEvent.EmailMessageId);
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)notifiedEvent.EmailMessageId);
+                        if (null != emailMessage) {
+                            emailMessage.UpdateNotificationTime (notifiedEvent.NotificationTime, notifiedEvent.Variance);
+                        }
+                    });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+                    var readEvent = (NcBrainUpdateMessageReadStatusEvent)brainEvent;
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)readEvent.EmailMessageId);
+                        if (null != emailMessage) {
+                            emailMessage.UpdateReadAnalysis (readEvent.ReadTime, readEvent.Variance);
+                        }
                     });
                     break;
                 case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
+                    var replyEvent = (NcBrainUpdateMessageReplyStatusEvent)brainEvent;
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)replyEvent.EmailMessageId);
+                        if (null != emailMessage) {
+                            emailMessage.UpdateReplyAnalysis (replyEvent.ReplyTime, replyEvent.Variance);
+                        }
+                    });
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);

@@ -979,12 +979,7 @@ namespace NachoClient.iOS
                 if (!string.IsNullOrEmpty (message.MessageID) && notifiedMessageIDs.Contains (message.MessageID)) {
                     Log.Info (Log.LOG_UI, "BadgeNotifUpdate: Skipping message {0} because a message with that message ID has already been processed", message.Id);
                     --badgeCount;
-                    message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                        var target = (McEmailMessage)record;
-                        target.HasBeenNotified = true;
-                        target.ShouldNotify = true;
-                        return true;
-                    });
+                    message.MarkHasBeenNotified (true);
                     continue;
                 }
                 if (message.HasBeenNotified) {
@@ -1006,12 +1001,7 @@ namespace NachoClient.iOS
                 }
                 if ((null == account) || !NotificationHelper.ShouldNotifyEmailMessage (message, account)) {
                     --badgeCount;
-                    message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                        var target = (McEmailMessage)record;
-                        target.HasBeenNotified = true;
-                        target.ShouldNotify = false;
-                        return true;
-                    });
+                    message.MarkHasBeenNotified (false);
                     continue;
                 }
                 if (!NotifyEmailMessage (message, account, !soundExpressed)) {
@@ -1022,12 +1012,7 @@ namespace NachoClient.iOS
                     soundExpressed = true;
                 }
 
-                var updatedMessage = message.UpdateWithOCApply<McEmailMessage> ((record) => {
-                    var target = (McEmailMessage)record;
-                    target.HasBeenNotified = true;
-                    target.ShouldNotify = true;
-                    return true;
-                });
+                var updatedMessage = message.MarkHasBeenNotified (true);
                 if (!string.IsNullOrEmpty (updatedMessage.MessageID)) {
                     notifiedMessageIDs.Add (updatedMessage.MessageID);
                 }

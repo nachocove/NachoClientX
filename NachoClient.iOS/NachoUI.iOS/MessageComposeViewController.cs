@@ -368,7 +368,7 @@ namespace NachoClient.iOS
 
             if (null != referencedMessage) {
                 var now = DateTime.UtcNow;
-                NcBrain.UpdateMessageReplyStatus (referencedMessage.AccountId, referencedMessage.Id, now, 0.1);
+                NcBrain.MessageReplyStatusUpdated (referencedMessage, now, 0.1);
             }
         }
 

@@ -367,6 +367,11 @@ namespace NachoCore.IMAP
                             updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
+                        if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                            // Another client has remotely read / unread this email.
+                            // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                            NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                        }
                     }
                 });
             }
