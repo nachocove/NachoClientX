@@ -8,6 +8,7 @@ using NachoCore.Model;
 using MailKit.Security;
 using NachoClient.Build;
 using MailKit;
+using System.Collections.Generic;
 
 namespace NachoCore.IMAP
 {
@@ -39,6 +40,7 @@ namespace NachoCore.IMAP
                         return true;
                     });
                 }
+                Cts.Token.ThrowIfCancellationRequested ();
             }
             if (!Client.IsAuthenticated) {
                 string username = BEContext.Cred.Username;
@@ -53,6 +55,7 @@ namespace NachoCore.IMAP
 
                 Exception ex = null;
                 for (var i = 0; i < KAuthRetries; i++) {
+                    Cts.Token.ThrowIfCancellationRequested ();
                     try {
                         try {
                             Client.Authenticate (username, cred, Cts.Token);
@@ -103,7 +106,7 @@ namespace NachoCore.IMAP
 
         private string dumpImapImplementation (ImapImplementation imapId)
         {
-            return string.Join (", ", imapId.Properties);
+            return HashHelper.HashEmailAddressesInImapId (string.Join (", ", imapId.Properties));
         }
 
         protected override Event ExecuteCommand ()
