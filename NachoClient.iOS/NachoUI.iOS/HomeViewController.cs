@@ -207,7 +207,7 @@ namespace NachoClient.iOS
         protected void ContinueButtonTouchUpInside (object sender, EventArgs e)
         {
 
-            UIView.Animate (.5, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
+            UIView.Animate (.3, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
                 tv.Alpha = 0;
             }, () => {
                 InitializePageViewController ();

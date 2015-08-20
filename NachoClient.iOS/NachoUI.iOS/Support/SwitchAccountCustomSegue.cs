@@ -58,7 +58,7 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
         ViewFramer.Create (statusGapView).Y (-DestinationViewController.View.Frame.Top);
         ViewFramer.Create (sourceNavbarSnapshot).Y (sourceNavbarFrame.Top - DestinationViewController.View.Frame.Top);
         ViewFramer.Create (destinationSnapshot).Y (-DestinationViewController.View.Frame.Top);
-        destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height);
+        destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height + sourceNavbarSnapshot.Frame.Top + sourceNavbarSnapshot.Frame.Height);
         destinationSnapshot.Layer.ShadowColor = UIColor.Black.CGColor;
         destinationSnapshot.Layer.ShadowOpacity = 0.4f;
         destinationSnapshot.Layer.ShadowRadius = 10.0f;
