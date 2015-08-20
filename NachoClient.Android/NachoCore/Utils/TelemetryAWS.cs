@@ -134,6 +134,22 @@ namespace NachoCore.Utils
             });
         }
 
+        private void DisposeClient ()
+        {
+            if (null != Client) {
+                Client.Dispose ();
+                Client = null;
+            }
+        }
+
+        private void DisposeS3Client ()
+        {
+            if (null != S3Client) {
+                S3Client.Dispose ();
+                S3Client = null;
+            }
+        }
+
         private void Retry (Action action)
         {
             bool isDone = false;
@@ -144,14 +160,8 @@ namespace NachoCore.Utils
                 } catch (Exception e) {
                     if (!HandleAWSException (e, "AWS init", false)) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
-                            if (null != Client) {
-                                Client.Dispose ();
-                                Client = null;
-                            }
-                            if (null != S3Client) {
-                                S3Client.Dispose ();
-                                S3Client = null;
-                            }
+                            DisposeClient ();
+                            DisposeS3Client ();
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
                         throw;
@@ -164,9 +174,7 @@ namespace NachoCore.Utils
 
         public void ReinitializeTables ()
         {
-            if (null != Client) {
-                Client.Dispose ();
-            }
+            DisposeClient ();
             InitializeTables ();
         }
 
@@ -305,10 +313,8 @@ namespace NachoCore.Utils
                         cleanup ();
                     }
                     if (NcTask.Cts.Token.IsCancellationRequested) {
-                        Client.Dispose ();
-                        Client = null;
-                        S3Client.Dispose ();
-                        S3Client = null;
+                        DisposeClient ();
+                        DisposeS3Client ();
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     }
                     throw;
