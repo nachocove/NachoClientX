@@ -901,7 +901,7 @@ namespace NachoCore.IMAP
 
         private void PossiblyKickPushAssist ()
         {
-            if (CanStartPushAssist ()) {
+            if (null != PushAssist && CanStartPushAssist ()) {
                 // uncomment for testing on the simulator
                 //PushAssist.SetDeviceToken ("SIMULATOR");
                 if (PushAssist.IsStartOrParked ()) {
