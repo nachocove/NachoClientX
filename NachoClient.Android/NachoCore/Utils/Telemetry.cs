@@ -461,7 +461,7 @@ namespace NachoCore.Utils
                 NcTask.Run (() => {
                     Token = NcTask.Cts.Token;
                     Process ();
-                }, "Telemetry", false, true);
+                }, "Telemetry", false, true, TaskCreationOptions.LongRunning);
             }
         }
 
