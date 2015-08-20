@@ -80,6 +80,8 @@ namespace NachoCore.Brain
             case NcBrainEventType.UNINDEX_MESSAGE:
             case NcBrainEventType.UPDATE_ADDRESS_SCORE:
             case NcBrainEventType.UPDATE_MESSAGE_SCORE:
+            case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+            case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
                 var errMesg = String.Format ("Event type {0} should go to persistent queue instead", brainEvent.Type);
                 throw new NotSupportedException (errMesg);
             case NcBrainEventType.TEST:
@@ -208,6 +210,14 @@ namespace NachoCore.Brain
                             }
                         }
                     });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
+                    var updateEvent = (NcBrainUpdateMessageReadStatusEvent)brainEvent;
+                    NcModel.Instance.RunInTransaction (() => {
+                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)updateEvent.EmailMessageId);
+                    });
+                    break;
+                case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);

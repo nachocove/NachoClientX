@@ -90,6 +90,30 @@ namespace NachoCore.Brain
                 index.MarkForDeletion ();
             }
         }
+
+        public static void UpdateMessageReadStatus (int accountId, int emailMessageId, DateTime readTime, double variance)
+        {
+            if ((0 == accountId) || (0 == emailMessageId)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateMessageReadStatusEvent (accountId, emailMessageId) {
+                ReadTime = readTime,
+                Variance = variance,
+            };
+            PersistentEnqueue (accountId, brainEvent);
+        }
+
+        public static void UpdateMessageReplyStatus (int accountId, int emailMessageId, DateTime replyTime, double variance)
+        {
+            if ((0 == accountId) || (0 == emailMessageId)) {
+                return;
+            }
+            var brainEvent = new NcBrainUpdateMessageReplyStatusEvent (accountId, emailMessageId) {
+                ReplyTime = replyTime,
+                Variance = variance,
+            };
+            PersistentEnqueue (accountId, brainEvent);
+        }
     }
 }
 

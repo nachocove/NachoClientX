@@ -58,6 +58,11 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         nfloat HEADER_TOP_MARGIN = 0;
+
+
+
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -113,11 +118,14 @@ namespace NachoClient.iOS
             // is possible for this view to become visible just as
             // it is about to be popped?  Catch & avoid that case.
             var message = thread.FirstMessageSpecialCase ();
-            if ((null != message) && (NcApplication.Instance.Account.Id != message.AccountId)) {
-                Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
-                if (null != NavigationController) {
-                    NavigationController.PopViewController (false);
+            if (null != message) {
+                if (NcApplication.Instance.Account.Id != message.AccountId) {
+                    Log.Error (Log.LOG_UI, "MessageViewController mismatched accounts {0} {1}.", NcApplication.Instance.Account.Id, message.AccountId);
+                    if (null != NavigationController) {
+                        NavigationController.PopViewController (false);
+                    }
                 }
+                NcBrain.UpdateMessageReadStatus (message.AccountId, message.Id, DateTime.UtcNow, 0.1);
             }
         }
 

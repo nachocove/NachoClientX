@@ -409,20 +409,22 @@ namespace NachoCore.Model
             ScoreStates.SecondsRead += seconds;
         }
 
-        public void SetScoreIsRead (bool value)
+        public bool SetScoreIsRead (bool value)
         {
             if (value == ScoreStates.IsRead) {
-                return;
+                return false;
             }
             ScoreStates.IsRead = value;
+            return true;
         }
 
-        public void SetScoreIsReplied (bool value)
+        public bool SetScoreIsReplied (bool value)
         {
             if (value == ScoreStates.IsReplied) {
-                return;
+                return false;
             }
             ScoreStates.IsReplied = value;
+            return true;
         }
 
         private string TimeVarianceDescription ()
@@ -807,6 +809,128 @@ namespace NachoCore.Model
                 return false;
             }
             return accountAddress == mbAddr.Address;
+        }
+
+        protected bool ShouldUpdateMinimum (DateTime currentTime, DateTime newTime)
+        {
+            if (DateTime.MinValue == currentTime) {
+                return DateTime.MinValue != newTime;
+            }
+            if (DateTime.MinValue == newTime) {
+                return true; // read status is being cleared
+            }
+            return (currentTime > newTime);
+        }
+
+        protected bool UpdateNotificationTime (DateTime notificationTime, double variance)
+        {
+            var original = ScoreStates.NotificationTime;
+            var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {
+                if (!ShouldUpdateMinimum (ScoreStates.NotificationTime, notificationTime)) {
+                    return false;
+                }
+                var ems = (McEmailMessageScore)item;
+                ems.NotificationTime = notificationTime;
+                ems.NotificationVariance = variance;
+                return true;
+            });
+            return original != newEmailMessage.NotificationTime;
+        }
+
+        protected bool UpdateReadTime (DateTime readTime, double variance)
+        {
+            var original = ScoreStates.ReadTime;
+            var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {
+                if (!ShouldUpdateMinimum (ScoreStates.ReadTime, readTime)) {
+                    return false;
+                }
+                var ems = (McEmailMessageScore)item;
+                ems.ReadTime = readTime;
+                ems.ReadVariance = variance;
+                return true;
+            });
+            return original != newEmailMessage.ReadTime;
+        }
+
+        protected bool UpdateReplyTime (DateTime replyTime, double variance)
+        {
+            var original = ScoreStates.ReplyTime;
+            var newEmailMessage = UpdateWithOCApply<McEmailMessageScore> ((item) => {
+                if (!ShouldUpdateMinimum (ScoreStates.ReplyTime, replyTime)) {
+                    return false;
+                }
+                var ems = (McEmailMessageScore)item;
+                ems.ReplyTime = replyTime;
+                ems.ReplyVariance = variance;
+                return true;
+            });
+            return original != newEmailMessage.ReadTime;
+        }
+
+        protected void UpdateAnalysisInternal (DateTime newTime, double variance, Func<DateTime, double, bool> updateFunc, Action<McEmailAddress, int> fromFunc,
+                                               Action<McEmailAddress, int> toFunc, Action<McEmailAddress, int> ccFunc)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                if (updateFunc (newTime, variance)) {
+                    int delta = DateTime.MinValue == newTime ? -1 : +1;
+                    if (ScoreVersion >= 1) {
+                        var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
+                        if (null != emailAddress) {
+                            fromFunc (emailAddress, delta);
+                            emailAddress.ScoreStates.Update ();
+                        }
+                    }
+                    if (ScoreVersion >= 4) {
+                        foreach (var emailAddressId in ToEmailAddressId) {
+                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressId);
+                            if (null != emailAddress) {
+                                toFunc (emailAddress, delta);
+                                emailAddress.ScoreStates.Update ();
+                            }
+                        }
+                        foreach (var emailAddressId in CcEmailAddressId) {
+                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressId);
+                            if (null != emailAddress) {
+                                ccFunc (emailAddress, delta);
+                                emailAddress.ScoreStates.Update ();
+                            }
+                        }
+                    }
+                    Score = Classify ();
+                    NeedUpdate = 0;
+                    UpdateScoreAndNeedUpdate ();
+                }
+            });
+        }
+
+        public void UpdateReadAnalysis (DateTime readTime, double variance)
+        {
+            UpdateAnalysisInternal (readTime, variance, UpdateReadTime,
+                (emailAdddress, delta) => {
+                    emailAdddress.IncrementEmailsRead (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementToEmailsRead (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementCcEmailsRead (delta);
+                }
+            );
+        }
+
+        public void UpdateReplyAnalysis (DateTime replyTime, double variance)
+        {
+            UpdateAnalysisInternal (replyTime, variance, UpdateReplyTime,
+                (emailAddress, delta) => {
+                    emailAddress.IncrementEmailsReplied (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementToEmailsReplied (delta);
+                },
+                (emailAddress, delta) => {
+                    emailAddress.IncrementCcEmailsReplied (delta);
+                }
+            );
         }
     }
 }
