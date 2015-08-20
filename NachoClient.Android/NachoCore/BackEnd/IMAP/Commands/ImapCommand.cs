@@ -120,7 +120,7 @@ namespace NachoCore.IMAP
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
             } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {1}", ex.Message);
+                Log.Error (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (OperationCanceledException) {
