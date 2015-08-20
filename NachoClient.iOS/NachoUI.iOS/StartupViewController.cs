@@ -108,7 +108,11 @@ namespace NachoClient.iOS
                     ShowMigrationScreen ();
                 } else if (NcApplication.Instance.ExecutionContext == NcApplication.ExecutionContextEnum.Initializing) {
                     Log.Info (Log.LOG_UI, "StartupViewController: instance isn't up yet, in Initializing state");
-                    ShowRecoveryScreen ();
+                    if (NcApplication.Instance.InSafeMode ()) {
+                        ShowRecoveryScreen ();
+                    } else {
+                        Log.Info (Log.LOG_UI, "StartupViewController initializing, but not in safe mode, keeping current screen");
+                    }
                 } else {
                     // I don't think we can ever get here based on the definition of NcApplication.IsUp.  If things
                     // change (like a new state is added to NcApplication), this will just result in a blank screen
