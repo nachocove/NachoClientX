@@ -105,6 +105,12 @@ namespace NachoCore.Utils
             "UpdateUnreadMessageView",
         };
 
+        struct tracer
+        {
+            public int parent;
+            public int child;
+        }
+
         public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None)
         {
             string dummy = null;
@@ -127,6 +133,10 @@ namespace NachoCore.Utils
                 option = TaskCreationOptions.LongRunning;
             }
 
+            var tracer = new tracer ();
+            tracer.parent = 0;
+            tracer.child = 0;
+
             var spawningId = Thread.CurrentThread.ManagedThreadId;
             var task = Task.Factory.StartNew (delegate {
                 DateTime startTime = DateTime.UtcNow;
@@ -135,7 +145,8 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1:n0} msec", taskName, latency);
                 }
                 if (Thread.CurrentThread.ManagedThreadId == spawningId) {
-                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread", taskName);
+                    Interlocked.Increment(ref tracer.child);
+                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread (parent={1})", taskName, tracer.parent);
                 }
                 if (!stfu) {
                     Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
@@ -172,6 +183,10 @@ namespace NachoCore.Utils
                     Log.Error (Log.LOG_SYS, "NcTask: Task already removed from UniqueList ({0}).", taskName);
                 }
             });
+            Interlocked.Increment (ref tracer.parent);
+            if (0 != tracer.child) {
+                Log.Error (Log.LOG_SYS, "NcTask: Spawned task {0} is running", taskName);
+            }
         }
 
         public static void StopService ()
