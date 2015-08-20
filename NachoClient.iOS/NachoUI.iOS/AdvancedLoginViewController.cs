@@ -713,8 +713,8 @@ namespace NachoClient.iOS
             scopes.Add ("https://www.googleapis.com/auth/calendar");
             scopes.Add ("https://www.google.com/m8/feeds/");
             var auth = new NachoCore.Utils.GoogleOAuth2Authenticator (
-                           clientId: "135541750674-3bmfkmlm767ipe0ih0trqf9o4jgum27h.apps.googleusercontent.com",
-                           clientSecret: "T08VVinKbAPiXjIlV3U5O12S",
+                           clientId: GoogleOAuthConstants.ClientId,
+                           clientSecret: GoogleOAuthConstants.ClientSecret,
                            scope: String.Join (" ", scopes.ToArray ()),
                            accessTokenUrl: new Uri ("https://accounts.google.com/o/oauth2/token"),
                            authorizeUrl: new Uri ("https://accounts.google.com/o/oauth2/auth"),

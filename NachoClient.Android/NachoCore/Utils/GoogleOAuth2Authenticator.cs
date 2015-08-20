@@ -6,8 +6,16 @@ using System.Threading.Tasks;
 
 namespace NachoCore.Utils
 {
+    public class GoogleOAuthConstants
+    {
+        public static string ClientId = "135541750674-3bmfkmlm767ipe0ih0trqf9o4jgum27h.apps.googleusercontent.com";
+        public static string ClientSecret = "T08VVinKbAPiXjIlV3U5O12S";
+    }
+
     public class GoogleOAuth2Authenticator : OAuth2Authenticator
     {
+
+
         public GoogleOAuth2Authenticator (string clientId, string clientSecret, string scope, Uri authorizeUrl, Uri redirectUrl, Uri accessTokenUrl, string loginHint, GetUsernameAsyncFunc getUsernameAsync = null)
             : base (clientId, clientSecret, scope, authorizeUrl, redirectUrl, accessTokenUrl, getUsernameAsync)
         {
