@@ -143,6 +143,9 @@ namespace NachoClient.iOS
 
         String IssueWithCredentials (String email, String password)
         {
+            if (!email.Contains ("@")) {
+                return "Your email address must include an @.  For Example, username@company.com";
+            }
             if (!EmailHelper.IsValidEmail (email)) {
                 return "Your email address is not valid.\nFor example, username@company.com";
             }
@@ -312,13 +315,15 @@ namespace NachoClient.iOS
                     IsSubmitting = false;
                     if (Service == McAccount.AccountServiceEnum.GoogleExchange || Service == McAccount.AccountServiceEnum.Office365Exchange) {
                         Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for known exchange service {0}, not showing advanced", Service);
-                        ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again");
+                        ShowCredentialsError ("We were unable to verify your information.  Please confirm it is correct and try again.");
                     } else {
                         Log.Info (Log.LOG_UI, "AccountCredentialsViewController got ServerConfWait for service {0}, showing advanced", Service);
                         UpdateForSubmitting ();
-                        statusLabel.Text = "We were unable to verify your informiation.  Please enter advanced configuration information.";
                         if (!IsShowingAdvanced) {
+                            statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
                             ToggleAdvancedFields ();
+                        } else {
+                            statusLabel.Text = "We were unable to verify your information.  Please enter advanced configuration information.";
                         }
                     }
                 } else if ((BackEndStateEnum.CredWait == senderState) || (BackEndStateEnum.CredWait == readerState)) {
