@@ -121,29 +121,36 @@ namespace NachoClient.iOS
 
         void ShowMigrationScreen ()
         {
-            if (PresentedViewController != null) {
-                DismissViewController(false, null);
-            }
             Log.Info (Log.LOG_UI, "StartupViewController ShowMigrationScreen");
-            PerformSegue ("migration", null);
+            if (PresentedViewController != null) {
+                UIView.Transition (PresentedViewController.View.Window, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, () => {
+                    DismissViewController (false, null);
+                    PerformSegue ("migration", null);
+                }, () => {
+                });
+            } else {
+                PerformSegue ("migration", null);
+            }
             currentState = StartupViewState.Migration;
         }
 
         void ShowRecoveryScreen ()
         {
-            if (PresentedViewController != null) {
-                DismissViewController(false, null);
-            }
             Log.Info (Log.LOG_UI, "StartupViewController ShowRecoveryScreen");
-            PerformSegue ("recovery", null);
+            if (PresentedViewController != null) {
+                UIView.Transition (PresentedViewController.View.Window, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, () => {
+                    DismissViewController (false, null);
+                    PerformSegue ("recovery", null);
+                }, () => {
+                });
+            } else {
+                PerformSegue ("recovery", null);
+            }
             currentState = StartupViewState.Recovery;
         }
 
         void ShowSetupScreen (bool startWithTutorial = false)
         {
-            if (PresentedViewController != null) {
-                DismissViewController(false, null);
-            }
             Log.Info (Log.LOG_UI, "StartupViewController ShowSetupScreen");
             var storyboard = UIStoryboard.FromName ("Welcome", null);
             UINavigationController vc = (UINavigationController)storyboard.InstantiateInitialViewController ();
@@ -153,7 +160,15 @@ namespace NachoClient.iOS
             if (currentState == StartupViewState.Startup) {
                 gettingStartedViewController.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
             }
-            PresentViewController (vc, false, null);
+            if (PresentedViewController != null) {
+                UIView.Transition (PresentedViewController.View.Window, 0.3, UIViewAnimationOptions.TransitionCrossDissolve, () => {
+                    DismissViewController (false, null);
+                    PresentViewController (vc, false, null);
+                }, () => {
+                });
+            } else {
+                PresentViewController (vc, false, null);
+            }
             currentState = StartupViewState.Setup;
         }
 

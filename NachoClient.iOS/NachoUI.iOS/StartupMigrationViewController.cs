@@ -71,6 +71,8 @@ namespace NachoClient.iOS
                 UIView.Animate (0.2, 0.3, 0, () => {
                     migrationLabel.Alpha = 1.0f;
                 }, null);
+            } else {
+                activityIndicator.StartAnimating ();
             }
         }
 

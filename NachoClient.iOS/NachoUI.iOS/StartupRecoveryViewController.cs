@@ -49,6 +49,8 @@ namespace NachoClient.iOS
                 UIView.Animate (0.2, 0.3, 0, () => {
                     infoLabel.Alpha = 1.0f;
                 }, null);
+            } else {
+                activityIndicator.StartAnimating ();
             }
         }
 	}
