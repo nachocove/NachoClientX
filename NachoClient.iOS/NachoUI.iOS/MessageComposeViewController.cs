@@ -138,8 +138,9 @@ namespace NachoClient.iOS
             showQuotedTextButton.Hidden = draftMessage.ReferencedBodyIsIncluded;
 
             foreach (var mimeAttachment in mimeMessage.Attachments) {
-                var attachment = McAttachment.InsertFile (draftMessage.AccountId, (stream) => mimeAttachment.ContentObject.DecodeTo (stream));
-                attachment.SetDisplayName (mimeAttachment.FileName);
+                var mimePartAttachment = (MimePart)mimeAttachment;
+                var attachment = McAttachment.InsertFile (draftMessage.AccountId, (stream) => mimePartAttachment.ContentObject.DecodeTo (stream));
+                attachment.SetDisplayName (mimePartAttachment.FileName);
                 attachmentView.Append (attachment);
             }
         }

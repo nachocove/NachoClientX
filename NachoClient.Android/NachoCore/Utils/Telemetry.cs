@@ -19,8 +19,7 @@ namespace NachoCore.Utils
     {
         #if __IOS__
         public static bool ENABLED = true;
-        
-#else
+        #else
         public static bool ENABLED = false;
         #endif
 
@@ -313,11 +312,19 @@ namespace NachoCore.Utils
                 return;
             }
 
+            var json = JsonConvert.SerializeObject (info);
             var jsonEvent = new TelemetrySupportEvent () {
-                support = JsonConvert.SerializeObject (info),
-                callback = callback
+                support = json,
             };
             RecordJsonEvent (TelemetryEventType.SUPPORT, jsonEvent);
+
+            if (null != callback) {
+                var requestEvent = new TelemetrySupportRequestEvent () {
+                    support = json,
+                    callback = callback
+                };
+                RecordJsonEvent (TelemetryEventType.SUPPORT_REQUEST, requestEvent);
+            }
         }
 
         public static void RecordAccountEmailAddress (McAccount account)
@@ -593,7 +600,7 @@ namespace NachoCore.Utils
 
                     if (succeed) {
                         // If it is a support, make the callback.
-                        if ((1 == tEvents.Count) && (tEvents [0].IsSupportEvent ()) && (null != tEvents [0].Callback)) {
+                        if ((1 == tEvents.Count) && (tEvents [0].IsSupportRequestEvent ()) && (null != tEvents [0].Callback)) {
                             InvokeOnUIThread.Instance.Invoke (tEvents [0].Callback);
                         }
 

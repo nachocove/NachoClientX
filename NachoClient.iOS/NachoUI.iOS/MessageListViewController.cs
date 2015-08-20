@@ -284,6 +284,11 @@ namespace NachoClient.iOS
             return path.Row;
         }
 
+        protected void RefreshMessage (int id)
+        {
+            messageSource.EmailMessageChanged (TableView, id);
+        }
+
         protected void RefreshThreadsIfVisible ()
         {
             threadsNeedsRefresh = true;
@@ -418,6 +423,11 @@ namespace NachoClient.iOS
             case NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded:
             case NcResult.SubKindEnum.Info_SystemTimeZoneChanged:
                 RefreshThreadsIfVisible ();
+                break;
+            case NcResult.SubKindEnum.Info_EmailMessageChanged:
+                if (s.Status.Value is int) {
+                    RefreshMessage ((int)s.Status.Value);
+                }
                 break;
             case NcResult.SubKindEnum.Error_SyncFailed:
             case NcResult.SubKindEnum.Info_SyncSucceeded:

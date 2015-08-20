@@ -1,11 +1,11 @@
-New features since the 1.0 release:
+Nacho Mail 2.0 beta
 
-. Support for Gmail, Yahoo, iCloud, and other IMAP e-mail servers.
+. Notifications tuned to new inbox messages only.
 
-. Support for multiple accounts within the app simultaneously.
+. Improved Gmail performance.
 
-. Displaying events from the device's calendar in the app's calendar.
+. Better contact handling.
 
 Known limitations:
 
-. No calendar support for IMAP servers.
+. No calendar or contact support for IMAP servers.

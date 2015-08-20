@@ -30,7 +30,6 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
-using Google.iOS;
 
 namespace NachoClient.iOS
 {
@@ -393,15 +392,6 @@ namespace NachoClient.iOS
                 }
             }
 
-            // Initialize Google and add scope to give full access to email
-            var googleInfo = NSDictionary.FromFile ("GoogleService-Info.plist");
-            GIDSignIn.SharedInstance.ClientID = googleInfo [new NSString ("CLIENT_ID")].ToString ();
-            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
-
             NcKeyboardSpy.Instance.Init ();
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
@@ -416,11 +406,6 @@ namespace NachoClient.iOS
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
-
-            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                CreateGooglePlaceholderAccount ();
-                return true;
-            }
 
             if (!url.IsFileUrl) {
                 return false;
@@ -454,7 +439,7 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
             }
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
-                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0}", application.BackgroundTimeRemaining);
+                Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0:n2}", application.BackgroundTimeRemaining);
                 FinalShutdown (null);
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
@@ -532,7 +517,7 @@ namespace NachoClient.iOS
             }
             DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
-            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
+            Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0:n2}", timeRemaining);
             if (25.0 > timeRemaining) {
                 FinalShutdown (null);
             } else {
@@ -543,7 +528,7 @@ namespace NachoClient.iOS
                         // iOS caveat: BackgroundTimeRemaining can be MAX_DOUBLE early on.
                         // It also seems to return to MAX_DOUBLE value after we call EndBackgroundTask().
                         var remaining = application.BackgroundTimeRemaining;
-                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0}", remaining);
+                        Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground:ShutdownTimer: time remaining: {0:n2}", remaining);
                         if (!didShutdown && 25.0 > remaining) {
                             didShutdown = true;
                             FinalShutdown (opaque);
@@ -1108,17 +1093,6 @@ namespace NachoClient.iOS
             }
         }
 
-        // Creates an in-progress account for AdvancedLoginView
-        void CreateGooglePlaceholderAccount ()
-        {
-            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (null != accountBeingConfigured) {
-                Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
-                return;
-            }
-            LoginHelpers.SetGoogleSignInCallbackArrived (true);
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount callback arrived");
-        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate

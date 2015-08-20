@@ -39,6 +39,7 @@ namespace NachoCore.Model
                         { 5, AnalyzeSendAddresses },
                         { 6, AnalyzeHeaders },
                         { 7, AnalyzeReplies },
+                        { 8, AnalyzeYahooBulkEmails },
                     };
                 }
                 return _AnalysisFunctions;
@@ -57,6 +58,7 @@ namespace NachoCore.Model
 
         public static NcUserActionDisqualifier UserActionDisqualifier = new NcUserActionDisqualifier ();
         public static NcMarketingEmailDisqualifier MarketingMailDisqualifier = new NcMarketingEmailDisqualifier ();
+        public static NcYahooBulkEmailDisqualifier YahooBulkEmailDisqualifier = new NcYahooBulkEmailDisqualifier ();
 
         /// Did the user take explicit action?
         public int UserAction { get; set; }
@@ -192,6 +194,7 @@ namespace NachoCore.Model
                         // Disqualifiers are evaluated next. Again, can cause early exit and avoid excessive compute
                         UserActionDisqualifier.Classify,
                         MarketingMailDisqualifier.Classify,
+                        YahooBulkEmailDisqualifier.Classify,
                         // The probablistic score is computed last because it is the most expensive.
                         (emailMessage2) => emailMessage2.BayesianLikelihood ()
                         // TODO - incorporate content score
@@ -363,9 +366,24 @@ namespace NachoCore.Model
             RepliesToMyEmailsQualifier.Analyze (this);
         }
 
+        protected void AnalyzeYahooBulkEmails ()
+        {
+            YahooBulkEmailDisqualifier.Analyze (this);
+        }
+
         public void Analyze ()
         {
             var newScoreVersion = Scoring.ApplyAnalysisFunctions (AnalysisFunctions, ScoreVersion);
+            if (NcTask.Cts.Token.IsCancellationRequested) {
+                UpdateByBrain ((item) => {
+                    var em = (McEmailMessage)item;
+                    em.ScoreVersion = newScoreVersion;
+                    // If we scoring the last version, need to mark for update to recompute the score later
+                    em.NeedUpdate = (Scoring.Version == newScoreVersion ? 1 : 0);
+                    return true;
+                });
+                return;
+            }
             InitializeTimeVariance ();
             var newScore = Classify ();
             var newState = TimeVarianceState;

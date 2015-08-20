@@ -31,6 +31,7 @@ namespace NachoCore.Utils
                 case BackEndStateEnum.CertAskWait:
                 case BackEndStateEnum.CredWait:
                 case BackEndStateEnum.ServerConfWait:
+                    Log.Info (Log.LOG_UTILS, "UserInterventionRequired: {0}", status);
                     serverWithIssue = server;
                     serverStatus = status; 
                     return true;
@@ -56,11 +57,13 @@ namespace NachoCore.Utils
             McServer serverWithIssue;
             BackEndStateEnum serverStatus;
             if (IsUserInterventionRequired (accountId, out serverWithIssue, out serverStatus)) {
+                Log.Info (Log.LOG_UTILS, "ShouldAlertUser: {0}: user intervention required {1}/{2}", accountId, serverWithIssue, serverStatus);
                 return true;
             }
             DateTime expiry;
             string rectificationUrl;
             if (LoginHelpers.PasswordWillExpire (accountId, out expiry, out rectificationUrl)) {
+                Log.Info (Log.LOG_UTILS, "ShouldAlertUser: {0}: password will expire {1}", accountId, expiry);
                 return true;
             }
             return false;

@@ -28,6 +28,7 @@ namespace NachoCore.IMAP
         {
             Sync,
             OpenOnly,
+            QuickSync,
         };
 
         public MethodEnum Method;
@@ -35,10 +36,12 @@ namespace NachoCore.IMAP
         public MessageSummaryItems Flags;
         // PendingSingle is null if Strategy decided to Sync.
         public McPending PendingSingle;
-        public UniqueIdSet SyncSet;
+        public IList<UniqueId> SyncSet;
         public HashSet<HeaderId> Headers;
         public bool GetPreviews;
+        public List<NcEmailMessageIndex> UploadMessages;
         public bool GetHeaders;
+        public uint Span; // Sync Span
 
         public SyncKit (McFolder folder)
         {
@@ -46,15 +49,26 @@ namespace NachoCore.IMAP
             Folder = folder;
         }
 
+        public SyncKit (McFolder folder, uint span, McPending pending, MessageSummaryItems flags, HashSet<HeaderId> headers)
+        {
+            Method = MethodEnum.QuickSync;
+            Folder = folder;
+            Span = span;
+            Flags = flags;
+            Headers = headers;
+            GetPreviews = true;
+            GetHeaders = true;
+            PendingSingle = pending;
+        }
 
-        public SyncKit (McFolder folder, UniqueIdSet uidset, MessageSummaryItems flags, HashSet<HeaderId> headers)
+        public SyncKit (McFolder folder, IList<UniqueId> uidset, MessageSummaryItems flags, HashSet<HeaderId> headers)
         {
             Method = MethodEnum.Sync;
             Folder = folder;
             SyncSet = uidset;
             Flags = flags;
             Headers = headers;
-            GetPreviews = false;
+            GetPreviews = true;
             GetHeaders = true;
         }
 
@@ -74,13 +88,14 @@ namespace NachoCore.IMAP
             case MethodEnum.Sync:
                 me += string.Format (" Flags {{{0}}}", Flags);
                 me += string.Format (" SyncSet {{{0}}}", SyncSet.ToString ());
+                me += string.Format (" UploadMessages {{{0}}}", null != UploadMessages ? UploadMessages.Count : 0);
                 break;
 
             default:
                 break;
             }
             if (null != PendingSingle) {
-                me += " UserRequested";
+                me += " pending=true";
             }
             me += ")";
             return me;

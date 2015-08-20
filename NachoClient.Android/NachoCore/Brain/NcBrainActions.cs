@@ -20,7 +20,7 @@ namespace NachoCore.Brain
             }
             Log.Debug (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
             if ((int)McEmailMessage.GleanPhaseEnum.GLEAN_PHASE1 > emailMessage.HasBeenGleaned) {
-                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage)) {
+                if (!NcContactGleaner.GleanContactsHeaderPart1 (emailMessage, false)) {
                     return false;
                 }
             }

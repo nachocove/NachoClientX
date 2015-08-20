@@ -13,6 +13,7 @@ using System.Text;
 using System.Net.Sockets;
 using HtmlAgilityPack;
 using MailKit.Search;
+using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -22,13 +23,12 @@ namespace NachoCore.IMAP
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
         private const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
+        protected const int KLockTimeout = 10000;
 
         public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
             Client = imapClient;
             RedactProtocolLogFunc = null;
-            NcCapture.AddKind (this.GetType ().Name);
-            NcCapture.AddKind (KCaptureFolderMetadata);
         }
 
         // MUST be overridden by subclass.
@@ -38,11 +38,44 @@ namespace NachoCore.IMAP
             return null;
         }
 
+        public class ImapCommandLockTimeOutException : Exception
+        {
+            public ImapCommandLockTimeOutException (string message) : base(message)
+            {
+                
+            }
+        }
+
+        public static Event TryLock (object lockObj, int timeout, Func<Event> func = null)
+        {
+            if (Monitor.TryEnter(lockObj, timeout))
+            {
+                try
+                {
+                    if (null != func) {
+                        return func();
+                    } else {
+                        return null;
+                    }
+                }
+                finally
+                {
+                    Monitor.Exit(lockObj);
+                }
+            } else {
+                throw new ImapCommandLockTimeOutException (string.Format ("Could not acquire lock object after {0}ms", timeout));
+            }
+        }
+
         public override void Cancel ()
         {
             base.Cancel ();
+            int timeout = BEContext.ProtoControl.ForceStopped ? 1000 : KLockTimeout;
             // FIXME - not a long term soln. There are issues with MailKit and cancellation.
-            lock (Client.SyncRoot) {
+            try {
+                TryLock (Client.SyncRoot, timeout);
+            } catch (ImapCommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
             }
         }
 
@@ -55,9 +88,10 @@ namespace NachoCore.IMAP
 
         public Event ExecuteConnectAndAuthEvent()
         {
+            NcCapture.AddKind (this.GetType ().Name);
             ImapDiscoverCommand.guessServiceType (BEContext);
 
-            lock(Client.SyncRoot) {
+            return TryLock (Client.SyncRoot, KLockTimeout, () => {
                 try {
                     if (null != RedactProtocolLogFunc && null != Client.MailKitProtocolLogger) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
@@ -75,7 +109,7 @@ namespace NachoCore.IMAP
                         ProtocolLoggerStopAndPostTelemetry ();
                     }
                 }
-            }
+            });
         }
 
         public void ExecuteNoTask(NcStateMachine sm)
@@ -85,6 +119,10 @@ namespace NachoCore.IMAP
                 Event evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
+            } catch (ImapCommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
+                ResolveAllDeferred ();
+                sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (OperationCanceledException) {
                 Log.Info (Log.LOG_IMAP, "OperationCanceledException");
                 ResolveAllDeferred ();
@@ -274,6 +312,7 @@ namespace NachoCore.IMAP
         /// <param name="timespan">Timespan.</param>
         public bool GetFolderMetaData (ref McFolder folder, IMailFolder mailKitFolder, TimeSpan timespan)
         {
+            NcCapture.AddKind (KCaptureFolderMetadata);
             using (var cap = NcCapture.CreateAndStart (KCaptureFolderMetadata)) {
                 // Just load UID with SELECT.
                 Log.Info (Log.LOG_IMAP, "GetFolderMetaData: {0}: Getting Folderstate", folder.ImapFolderNameRedacted ());
