@@ -172,6 +172,7 @@ namespace NachoClient.iOS
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
+            hasRegisteredForRemoteNotifications = true;
             var deviceTokenBytes = deviceToken.ToArray ();
             PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes));
             Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications: {0}", deviceToken.ToString ());
@@ -610,6 +611,8 @@ namespace NachoClient.iOS
         private List<int> fetchAccounts;
         // A list of all accounts ids that are waiting for push assist to set up
         private List<int> pushAccounts;
+        // PushAssist is active only when the app is registered for remote notifications
+        private bool hasRegisteredForRemoteNotifications = false;
 
         private bool fetchComplete {
             get {
@@ -619,13 +622,12 @@ namespace NachoClient.iOS
 
         private bool pushAssistArmComplete {
             get {
-                return (0 == pushAccounts.Count);
+                return !hasRegisteredForRemoteNotifications || (0 == pushAccounts.Count);
             }
         }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
-            // TODO - need to wait for ALL accounts to complete, not just 1st!
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
             int accountId = (null != statusEvent.Account) ? statusEvent.Account.Id : -1;
             switch (statusEvent.Status.SubKind) {
@@ -736,7 +738,11 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
             fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
-            pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            if (hasRegisteredForRemoteNotifications) {
+                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            } else {
+                pushAccounts = new List<int> ();
+            }
             StartFetch (application, completionHandler, "PF");
         }
 
