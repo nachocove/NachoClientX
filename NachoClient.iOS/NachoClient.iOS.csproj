@@ -1539,12 +1539,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcServiceHelper.cs">
       <Link>NachoCore\Utils\NcServiceHelper.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs">
-      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs</Link>
     </Compile>
@@ -1622,6 +1616,12 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs">
       <Link>NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs">
+      <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
