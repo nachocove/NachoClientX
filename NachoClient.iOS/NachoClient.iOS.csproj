@@ -261,10 +261,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\LaunchViewController.cs" />
-    <Compile Include="NachoUI.iOS\LaunchViewController.designer.cs">
-      <DependentUpon>LaunchViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
     </Compile>
@@ -959,10 +955,6 @@
     <Compile Include="NachoUI.iOS\ContactDetailViewController.designer.cs">
       <DependentUpon>ContactDetailViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\AdvancedLoginViewController.cs" />
-    <Compile Include="NachoUI.iOS\AdvancedLoginViewController.designer.cs">
-      <DependentUpon>AdvancedLoginViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcDeviceContacts.cs">
       <Link>NachoCore\Adapters\NcDeviceContacts.cs</Link>
     </Compile>
@@ -1043,7 +1035,6 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
-    <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoNotesController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
       <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>
