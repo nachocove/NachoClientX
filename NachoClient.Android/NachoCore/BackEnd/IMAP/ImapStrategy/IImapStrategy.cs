@@ -21,9 +21,6 @@ namespace NachoCore.IMAP
         //    we only need MessageSummaryItems.Flags and MessageSummaryItems.UniqueId. This will give us a much faster
         //    server-response.
         //    Perhaps instead UID+Flags_headers, have a set of "check for new" and a set for "check for changes"?
-        // 2) strategy should remember which folder it's been working on and give it some preference. Otherwise we always
-        //    do a depth-first sync, always checking the front of the list of folders first, making the tail-end of the list
-        //    very slow to update.
 
         public enum MethodEnum
         {
@@ -32,18 +29,56 @@ namespace NachoCore.IMAP
             QuickSync,
         };
 
+        /// <summary>
+        /// The type of synckit
+        /// </summary>
         public MethodEnum Method;
+
+        /// <summary>
+        /// The folder to sync.
+        /// </summary>
         public McFolder Folder;
+
+        /// <summary>
+        /// Message Summary Flags. Tunes IMAP fetch behavior
+        /// </summary>
         public MessageSummaryItems Flags;
-        // PendingSingle is null if Strategy decided to Sync.
+
+        /// <summary>
+        /// PendingSingle is null if Strategy decided to Sync.
+        /// </summary>
         public McPending PendingSingle;
+
+        /// <summary>
+        /// A list of Uid's to sync.
+        /// </summary>
         public IList<UniqueId> SyncSet;
+
+        /// <summary>
+        /// The headers to fetch for the summary fetch.
+        /// </summary>
         public HashSet<HeaderId> Headers;
+
+        /// <summary>
+        /// Whether to get Previews during fetching of the summary.
+        /// </summary>
         public bool GetPreviews;
+
+        /// <summary>
+        /// List of message Id's of messages we need to upload/sync to the server.
+        /// </summary>
         public List<NcEmailMessageIndex> UploadMessages;
+
+        /// <summary>
+        /// Whether to fetch the RAW headers when getting the message summary.
+        /// This is not related to the Headers list above.
+        /// </summary>
         public bool GetHeaders;
+
+        /// <summary>
+        /// The Sync Span
+        /// </summary>
         public uint Span;
-        // Sync Span
 
         public SyncKit (McFolder folder)
         {
@@ -127,8 +162,10 @@ namespace NachoCore.IMAP
 
     public interface IImapStrategy
     {
+        SyncKit GenSyncKit (ref McProtocolState protocolState, NcApplication.ExecutionContextEnum exeCtxt, McPending pending);
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McPending pending);
-        SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder);
+        SyncKit GenSyncKit (ref McProtocolState protocolState, McFolder folder, McPending pending, bool quickSync);
+
         FetchKit GenFetchKit (int accountId);
     }
 }
