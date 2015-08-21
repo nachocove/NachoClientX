@@ -111,16 +111,10 @@ namespace NachoClient.iOS
 
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)
         {
-            if (service == McAccount.AccountServiceEnum.GoogleDefault) {
-                Log.Info (Log.LOG_UI, "GettingStartedViewController need google credentials");
-                // Do the google thing
-            } else {
-                Log.Info (Log.LOG_UI, "GettingStartedViewController prompting for credentials for {0}", service);
-                var credentialsViewController = (AccountCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
-                credentialsViewController.Service = service;
-                credentialsViewController.AccountDelegate = this;
-                NavigationController.PushViewController (credentialsViewController, true);
-            }
+            var credentialsViewController = vc.SuggestedCredentialsViewController (service);
+            credentialsViewController.Service = service;
+            credentialsViewController.AccountDelegate = this;
+            NavigationController.PushViewController (credentialsViewController, true);
         }
 
         public void AccountCredentialsViewControllerDidValidateAccount (AccountCredentialsViewController vc, McAccount account)

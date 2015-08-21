@@ -105,7 +105,7 @@ namespace NachoClient.iOS
             accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
             accountImageView.Layer.CornerRadius = 25;
             accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.Center;
+            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
             contentView.AddSubview (accountImageView);
 
             // For edit prompt

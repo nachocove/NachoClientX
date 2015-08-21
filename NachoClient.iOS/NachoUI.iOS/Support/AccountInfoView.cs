@@ -38,7 +38,7 @@ namespace NachoClient.iOS
             accountImageView.Center = new CGPoint (accountImageView.Center.X, accountInfoView.Frame.Height / 2);
             accountImageView.Layer.CornerRadius = 25;
             accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.Center;
+            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
             accountImageView.Hidden = true;
             accountInfoView.AddSubview (accountImageView);
 

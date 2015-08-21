@@ -110,7 +110,7 @@ namespace NachoClient.iOS
             accountImageView = new UIImageView (new CGRect (12, 15, 50, 50));
             accountImageView.Layer.CornerRadius = 25;
             accountImageView.Layer.MasksToBounds = true;
-            accountImageView.ContentMode = UIViewContentMode.Center;
+            accountImageView.ContentMode = UIViewContentMode.ScaleAspectFill;
             contentView.AddSubview (accountImageView);
 
             accountEmailAddr = new UILabel (new CGRect (75, 12, contentView.Frame.Width - 75, 50));

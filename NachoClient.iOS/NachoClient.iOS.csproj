@@ -1433,10 +1433,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration28.cs">
       <Link>NachoCore\Model\Migration\NcMigration28.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.designer.cs">
-      <DependentUpon>AccountCredentialsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCredentials.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\ILoginFields.cs" />
     <Compile Include="NachoUI.iOS\Support\IMapFields.cs" />
@@ -1647,6 +1643,15 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\AccountCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\StandardCredentialsViewController.designer.cs">
+      <DependentUpon>StandardCredentialsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\StandardCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.cs" />
+    <Compile Include="NachoUI.iOS\GoogleCredentialsViewController.designer.cs">
+      <DependentUpon>GoogleCredentialsViewController.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

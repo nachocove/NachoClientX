@@ -72,7 +72,7 @@
         <!--Enter Credentials-->
         <scene sceneID="G83-WD-dze">
             <objects>
-                <viewController storyboardIdentifier="AccountCredentialsViewController" id="AaL-5e-fUA" customClass="AccountCredentialsViewController" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="AccountCredentialsViewController" id="AaL-5e-fUA" customClass="StandardCredentialsViewController" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="VeX-C2-5AZ"/>
                         <viewControllerLayoutGuide type="bottom" id="cNz-dp-qGk"/>
@@ -460,6 +460,26 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="TLn-Cc-2zM" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="2754" y="513"/>
+        </scene>
+        <!--Sign In with Google-->
+        <scene sceneID="lHD-Qo-MhD">
+            <objects>
+                <viewController storyboardIdentifier="GoogleCredentialsViewController" id="sPM-YL-nay" customClass="GoogleCredentialsViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Pgy-pr-gQm"/>
+                        <viewControllerLayoutGuide type="bottom" id="R5i-ij-YNb"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="vMY-R7-rFo">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" red="0.047058823530000002" green="0.25882352939999997" blue="0.29411764709999999" alpha="1" colorSpace="calibratedRGB"/>
+                    </view>
+                    <navigationItem key="navigationItem" title="Sign In with Google" id="TPX-gb-OeM"/>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="gRG-6v-eEz" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3523" y="513"/>
         </scene>
         <!--Exchange Advanced Fields View Controller-->
         <scene sceneID="xwM-dj-d3w">

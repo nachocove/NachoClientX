@@ -9,8 +9,8 @@ using System.CodeDom.Compiler;
 
 namespace NachoClient.iOS
 {
-	[Register ("AccountCredentialsViewController")]
-	partial class AccountCredentialsViewController
+	[Register ("StandardCredentialsViewController")]
+	partial class StandardCredentialsViewController
 	{
 		[Outlet]
 		UIKit.UIImageView accountIconView { get; set; }

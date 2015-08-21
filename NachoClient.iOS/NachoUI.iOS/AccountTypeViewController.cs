@@ -92,6 +92,17 @@ namespace NachoClient.iOS
             }
         }
 
+        public AccountCredentialsViewController SuggestedCredentialsViewController (McAccount.AccountServiceEnum service)
+        {
+            if (service == McAccount.AccountServiceEnum.GoogleDefault) {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController need google credentials");
+                return (GoogleCredentialsViewController)Storyboard.InstantiateViewController ("GoogleCredentialsViewController");
+            } else {
+                Log.Info (Log.LOG_UI, "GettingStartedViewController prompting for credentials for {0}", service);
+                return (AccountCredentialsViewController)Storyboard.InstantiateViewController ("AccountCredentialsViewController");
+            }
+        }
+
     }
 
 }
