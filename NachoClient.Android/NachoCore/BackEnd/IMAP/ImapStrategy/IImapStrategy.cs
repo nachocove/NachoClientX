@@ -8,6 +8,7 @@ using MailKit.Search;
 using MimeKit;
 using NachoCore.Utils;
 using System.Linq;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.IMAP
 {
@@ -41,7 +42,8 @@ namespace NachoCore.IMAP
         public bool GetPreviews;
         public List<NcEmailMessageIndex> UploadMessages;
         public bool GetHeaders;
-        public uint Span; // Sync Span
+        public uint Span;
+        // Sync Span
 
         public SyncKit (McFolder folder)
         {
@@ -102,10 +104,31 @@ namespace NachoCore.IMAP
         }
     }
 
+    public class FetchKit
+    {
+        public class FetchBody
+        {
+            public string ParentId { get; set; }
+            public string ServerId { get; set; }
+            public Xml.AirSync.TypeCode BodyPref { get; set; }
+        }
+
+        public class FetchPending
+        {
+            public McPending Pending { get; set; }
+            public Xml.AirSync.TypeCode BodyPref { get; set; }
+        }
+
+        public List<FetchBody> FetchBodies { get; set; }
+        public List<McAttachment> FetchAttachments { get; set; }
+        public List<FetchPending> Pendings { get; set; }
+    }
+
+
     public interface IImapStrategy
     {
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McPending pending);
-
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, McFolder folder);
+        FetchKit GenFetchKit (int accountId);
     }
 }

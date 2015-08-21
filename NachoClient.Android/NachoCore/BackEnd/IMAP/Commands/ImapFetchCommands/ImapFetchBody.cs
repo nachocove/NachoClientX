@@ -12,66 +12,42 @@ using System.Text;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchBodyCommand : ImapFetchCommand
+    public partial class ImapFetchCommand
     {
         const string KImapFetchBodyCommandFetch = "ImapFetchBodyCommand.Fetch";
 
-        public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
-        {
-            pending.MarkDispached ();
-            PendingSingle = pending;
-        }
-
-        protected override Event ExecuteCommand ()
+        private NcResult FetchBodies (FetchKit fetchkit)
         {
             NcResult result = null;
-            result = ProcessPending (PendingSingle);
-            if (result.isInfo ()) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
-            } else {
-                NcAssert.True (result.isError ());
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
+            foreach (var body in fetchkit.FetchBodies) {
+                var fetchResult = FetchOneBody (body.ServerId, body.ParentId);
+                if (!fetchResult.isOK ()) {
+                    Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult.GetMessage ());
+                    result = fetchResult;
+                }
             }
-        }
-
-        private NcResult ProcessPending (McPending pending)
-        {
-            McPending.Operations op;
-            if (null == pending) {
-                // If there is no pending, then we are doing an email prefetch.
-                op = McPending.Operations.EmailBodyDownload;
-            } else {
-                op = pending.Operation;
+            if (null != result) {
+                return result;
             }
-            switch (op) {
-            case McPending.Operations.EmailBodyDownload:
-                return FetchOneBody (pending);
-
-            default:
-                NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
-                break;
-            }
-            return NcResult.Error ("Unknown operation");
+            return NcResult.OK ();
         }
 
         private NcResult FetchOneBody (McPending pending)
         {
-            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
+            return FetchOneBody (pending.ServerId, pending.ParentId);
+        }
+
+        private NcResult FetchOneBody (string ServerId, string ParentId)
+        {
+            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ServerId);
             if (null == email) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
             Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             NcResult result;
-            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
+            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
             UniqueId uid = new UniqueId (email.ImapUid);
