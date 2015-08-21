@@ -400,9 +400,7 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs" />
@@ -483,8 +481,6 @@
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs" />
     <Compile Include="NachoCore\Utils\NcServiceHelper.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration34.cs" />
     <Compile Include="NachoCore\Utils\ContactsBinningHelper.cs" />
@@ -503,6 +499,12 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration41.cs" />
     <Compile Include="NachoCore\Utils\GoogleOAuth2Authenticator.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -565,6 +567,7 @@
     <Folder Include="NachoUI.Android\Support\" />
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
