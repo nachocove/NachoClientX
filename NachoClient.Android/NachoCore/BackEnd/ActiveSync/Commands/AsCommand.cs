@@ -310,10 +310,7 @@ namespace NachoCore.ActiveSync
             });
             var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
             result.Value = status;
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Account = BEContext.Account,
-                Status = result,
-            });
+            StatusInd (result);
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
                 string.Format ("{0}", (Xml.StatusCode)status));
@@ -329,10 +326,7 @@ namespace NachoCore.ActiveSync
             });
             var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
             result.Value = status;
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                Account = BEContext.Account,
-                Status = result,
-            });
+            StatusInd (result);
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
                 string.Format ("{0}", (Xml.StatusCode)status));

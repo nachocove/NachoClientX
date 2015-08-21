@@ -63,6 +63,7 @@ namespace NachoCore
             WillDelete,
         };
 
+        private ConcurrentDictionary<int, NcResult> LastErrorStatusInd;
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
         private Dictionary<int, bool> CredReqActive;
@@ -652,12 +653,28 @@ namespace NachoCore
                 (service) => NcResult.OK (service.ServerCertToBeExamined)).GetValue<X509Certificate2> ();
         }
 
+        public NcResult GetLastErrorStatusInd (int accountId)
+        {
+            NcResult last = null;
+            LastErrorStatusInd.TryGetValue (accountId, out last);
+            return last;
+        }
+
+        void ClearLastErrorStatusInd (int accountId)
+        {
+            NcResult dummy = null;
+            LastErrorStatusInd.TryRemove (accountId, out dummy);
+        }
+
         //
         // For IProtoControlOwner.
         //
-        private void InvokeStatusIndEvent (StatusIndEventArgs e)
+        private void InvokeStatusIndEvent (StatusIndEventArgs siea)
         {
-            NcApplication.Instance.InvokeStatusIndEvent (e);
+            if (NcResult.KindEnum.Error == siea.Status) {
+                LastErrorStatusInd.TryAdd (siea.Account.Id, siea.Status);
+            }
+            NcApplication.Instance.InvokeStatusIndEvent (siea);
         }
 
         public void StatusInd (NcProtoControl sender, NcResult status)

@@ -51,6 +51,10 @@ namespace NachoCore
         void CredResp (int accountId);
         // Indicate that pending Q items have been newly made eligible.
         void PendQHotInd (int accountId, McAccount.AccountCapabilityEnum capabilities);
+        // Latches the most recent error status-ind's NcResult.
+        NcResult GetLastErrorStatusInd (int accountId);
+        // Clears it.
+        void ClearLastErrorStatusInd (int accountId);
         // search email. returns token that can be used to cancel the search and all eclipsed searches.
         NcResult StartSearchEmailReq (int accountId, string prefix, uint? maxResults);
         // follow-on email search, using same token.
