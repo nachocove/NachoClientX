@@ -11,16 +11,16 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-	public partial class StartupMigrationViewController : UIViewController
-	{
+    public partial class StartupMigrationViewController : UIViewController
+    {
 
         bool StatusIndCallbackIsSet = false;
         public CGRect? AnimateFromLaunchImageFrame = null;
         private CGSize originalIndiatorSize;
 
 
-		public StartupMigrationViewController (IntPtr handle) : base (handle)
-		{
+        public StartupMigrationViewController (IntPtr handle) : base (handle)
+        {
         }
 
         void StartListeningForApplicationStatus ()
@@ -39,7 +39,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewWillAppear(bool animated)
+        public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
             if (AnimateFromLaunchImageFrame != null) {
@@ -54,7 +54,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewDidAppear(bool animated)
+        public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
             StartListeningForApplicationStatus ();
@@ -93,5 +93,5 @@ namespace NachoClient.iOS
                 });
             }
         }
-	}
+    }
 }

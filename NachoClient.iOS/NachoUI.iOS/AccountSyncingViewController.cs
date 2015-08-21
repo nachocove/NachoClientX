@@ -12,7 +12,8 @@ using NachoPlatform;
 namespace NachoClient.iOS
 {
 
-    public interface AccountSyncingViewControllerDelegate {
+    public interface AccountSyncingViewControllerDelegate
+    {
         void AccountSyncingViewControllerDidComplete (AccountSyncingViewController vc);
     }
 
@@ -126,7 +127,7 @@ namespace NachoClient.iOS
                 InvokeOnUIThread.Instance.Invoke (() => {
                     Dismiss ();
                 });
-            }, null, TimeSpan.FromSeconds(2), TimeSpan.Zero);
+            }, null, TimeSpan.FromSeconds (2), TimeSpan.Zero);
 
         }
 

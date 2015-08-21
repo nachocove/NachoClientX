@@ -52,7 +52,7 @@ namespace NachoClient.iOS
             accountsTableView.TableHeaderView = GetViewForHeader (accountsTableView);
             accountsTableView.TableFooterView = new AddAccountCell (new CGRect (0, 0, accountsTableView.Frame.Width, 80), AddAccountSelected);
             accountsTableViewSource = new AccountsTableViewSource ();
-            accountsTableViewSource.Setup (this, showAccessory: false, showUnreadCount:true);
+            accountsTableViewSource.Setup (this, showAccessory: false, showUnreadCount: true);
             accountsTableView.Source = accountsTableViewSource;
             View.AddSubview (accountsTableView);
             NavigationItem.TitleView = switchAccountButton;
@@ -106,7 +106,7 @@ namespace NachoClient.iOS
             LoginHelpers.SetSwitchToTime (account);
             switchAccountCallback (account);
             Deactivate (null, (McAccount acct) => {
-                UIView.Transition(UIApplication.SharedApplication.Delegate.GetWindow (), 0.75, UIViewAnimationOptions.TransitionFlipFromRight, () => {
+                UIView.Transition (UIApplication.SharedApplication.Delegate.GetWindow (), 0.75, UIViewAnimationOptions.TransitionFlipFromRight, () => {
                     DismissViewController (false, null);
                 }, null);
             });
@@ -134,10 +134,10 @@ namespace NachoClient.iOS
             View.Layer.ShadowOpacity = 0.4f;
             View.Layer.ShadowRadius = 10.0f;
             UIView.Animate (0.3, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
-                if (shadeView != null){
+                if (shadeView != null) {
                     shadeView.Alpha = 0.0f;
                 }
-                View.Transform = CGAffineTransform.MakeTranslation(0, -View.Frame.Height);
+                View.Transform = CGAffineTransform.MakeTranslation (0, -View.Frame.Height);
             }, () => {
                 callback (account);
             });

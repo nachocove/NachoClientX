@@ -32,7 +32,7 @@ namespace NachoClient.iOS
             SetupIndicator ();
         }
 
-        public NcActivityIndicatorView (CGRect frame) : base(frame)
+        public NcActivityIndicatorView (CGRect frame) : base (frame)
         {
             SetupIndicator ();
         }
@@ -41,7 +41,7 @@ namespace NachoClient.iOS
         {
             UIImage stripImage = UIImage.FromBundle ("NachoActivityIndicatorStrip");
             Layer.MasksToBounds = true;
-            stripImageLayer = new CALayer();
+            stripImageLayer = new CALayer ();
             stripImageLayer.ContentsScale = stripImage.CurrentScale;
             stripImageLayer.Contents = stripImage.CGImage;
             stripImageLayer.Frame = new CGRect (0, 0, stripImage.Size.Width, stripImage.Size.Height);
@@ -66,7 +66,7 @@ namespace NachoClient.iOS
             var keys = Layer.AnimationKeys;
             CATransaction.Begin ();
             if (keys != null && keys.Length > 0) {
-                var animation = Layer.AnimationForKey (keys[0]);
+                var animation = Layer.AnimationForKey (keys [0]);
                 CATransaction.AnimationDuration = animation.Duration;
                 CATransaction.AnimationTimingFunction = animation.TimingFunction;
             } else {

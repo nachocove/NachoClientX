@@ -15,7 +15,8 @@ namespace NachoClient.iOS
 
         bool StatusIndCallbackIsSet = false;
 
-        enum StartupViewState {
+        enum StartupViewState
+        {
             Startup,
             Incompatible,
             Setup,
@@ -190,7 +191,7 @@ namespace NachoClient.iOS
             var eventId = McMutables.Get (deviceAccount.Id, "EventNotif", currentAccountIdString);
             if (null != eventId) {
                 Log.Info (Log.LOG_UI, "StartupViewController ShowingEvent");
-                var vc = (EventViewController)Storyboard.InstantiateViewController("EventViewController");
+                var vc = (EventViewController)Storyboard.InstantiateViewController ("EventViewController");
                 var item = McEvent.QueryById<McEvent> (Convert.ToInt32 (eventId));
                 vc.SetCalendarItem (item);
                 McMutables.Delete (deviceAccount.Id, "EventNotif", currentAccountIdString);
@@ -217,7 +218,7 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "StartupViewController got ExecutionContextChanged event");
                 InvokeOnMainThread (() => {
-                    ShowScreenForApplicationState();
+                    ShowScreenForApplicationState ();
                 });
             }
         }
@@ -227,14 +228,14 @@ namespace NachoClient.iOS
             if (segue.Identifier == "migration") {
                 var vc = (StartupMigrationViewController)segue.DestinationViewController;
                 if (currentState == StartupViewState.Startup) {
-                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView(circleImageView.Frame, View);
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
                 }
                 return;
             }
             if (segue.Identifier == "recovery") {
                 var vc = (StartupRecoveryViewController)segue.DestinationViewController;
                 if (currentState == StartupViewState.Startup) {
-                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView(circleImageView.Frame, View);
+                    vc.AnimateFromLaunchImageFrame = circleImageView.Superview.ConvertRectToView (circleImageView.Frame, View);
                 }
                 return;
             }

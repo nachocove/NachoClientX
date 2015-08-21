@@ -8,17 +8,17 @@ using UIKit;
 
 namespace NachoClient.iOS
 {
-	public partial class StartupRecoveryViewController : UIViewController
-	{
+    public partial class StartupRecoveryViewController : UIViewController
+    {
 
         public CGRect? AnimateFromLaunchImageFrame = null;
         private CGSize originalIndiatorSize;
 
-		public StartupRecoveryViewController (IntPtr handle) : base (handle)
-		{
+        public StartupRecoveryViewController (IntPtr handle) : base (handle)
+        {
         }
 
-        public override void ViewWillAppear(bool animated)
+        public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
             if (AnimateFromLaunchImageFrame != null) {
@@ -33,7 +33,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewDidAppear(bool animated)
+        public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
             if (AnimateFromLaunchImageFrame != null) {
@@ -53,5 +53,5 @@ namespace NachoClient.iOS
                 activityIndicator.StartAnimating ();
             }
         }
-	}
+    }
 }

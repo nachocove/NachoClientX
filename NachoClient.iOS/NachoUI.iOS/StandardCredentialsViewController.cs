@@ -22,7 +22,7 @@ namespace NachoClient.iOS
         private UIView advancedSubview;
         private NSLayoutConstraint[] advancedConstraints;
         AccountAdvancedFieldsViewController advancedFieldsViewController;
-       
+
 
         public StandardCredentialsViewController (IntPtr handle) : base (handle)
         {
@@ -62,21 +62,21 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle (imageName)) {
                 accountIconView.Image = image;
             }
-            statusLabel.Text = String.Format("Please provide your {0} information", NcServiceHelper.AccountServiceName (Service));
+            statusLabel.Text = String.Format ("Please provide your {0} information", NcServiceHelper.AccountServiceName (Service));
             submitButton.Layer.CornerRadius = 6.0f;
             UpdateSubmitEnabled ();
             advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange;
-            using (var icon = UIImage.FromBundle("Loginscreen-2")){
+            using (var icon = UIImage.FromBundle ("Loginscreen-2")) {
                 emailField.LeftViewMode = UITextFieldViewMode.Always;
                 emailField.AdjustedEditingInsets = new UIEdgeInsets (0, 45, 0, 15);
-                emailField.AdjustedLeftViewRect = new CGRect(15, 15, 16, 11);
-                emailField.LeftView = new UIImageView(icon);
+                emailField.AdjustedLeftViewRect = new CGRect (15, 15, 16, 11);
+                emailField.LeftView = new UIImageView (icon);
             }
-            using (var icon = UIImage.FromBundle("Loginscreen-3")){
+            using (var icon = UIImage.FromBundle ("Loginscreen-3")) {
                 passwordField.AdjustedEditingInsets = new UIEdgeInsets (0, 45, 0, 15);
                 passwordField.LeftViewMode = UITextFieldViewMode.Always;
-                passwordField.AdjustedLeftViewRect = new CGRect(15, 15, 14, 15);
-                passwordField.LeftView = new UIImageView(icon);
+                passwordField.AdjustedLeftViewRect = new CGRect (15, 15, 14, 15);
+                passwordField.LeftView = new UIImageView (icon);
             }
             if (Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
                 ToggleAdvancedFields ();
@@ -98,29 +98,29 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController submitting");
             var email = emailField.Text.Trim ();
             var password = passwordField.Text;
-            var issue = IssueWithCredentials(email, password);
-            if (issue == null){
-                View.EndEditing(false);
+            var issue = IssueWithCredentials (email, password);
+            if (issue == null) {
+                View.EndEditing (false);
                 statusLabel.Text = "Verifying your information...";
                 IsSubmitting = true;
-                UpdateForSubmitting();
-                StartListeningForApplicationStatus();
-                scrollView.SetContentOffset(new CGPoint(0, 0), true);
+                UpdateForSubmitting ();
+                StartListeningForApplicationStatus ();
+                scrollView.SetContentOffset (new CGPoint (0, 0), true);
                 if (Account != null && (!String.Equals (Account.EmailAddr, email) || IsShowingAdvanced)) {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController removing account ID{0}", Account.Id);
                     NcAccountHandler.Instance.RemoveAccount (Account.Id);
                     Account = null;
                 }
-                if (Account == null){
+                if (Account == null) {
                     Account = NcAccountHandler.Instance.CreateAccount (Service, email, password);
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController created account ID{0}", Account.Id);
-                    if (IsShowingAdvanced){
+                    if (IsShowingAdvanced) {
                         advancedFieldsViewController.PopulateAccountWithFields (Account);
                     }
                     NcAccountHandler.Instance.MaybeCreateServersForIMAP (Account, Service);
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController Instace.Start for ID{0}", Account.Id);
                     BackEnd.Instance.Start (Account.Id);
-                }else{
+                } else {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController updating account ID{0}", Account.Id);
                     var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
                     cred.UpdatePassword (password);
@@ -128,7 +128,7 @@ namespace NachoClient.iOS
                     BackEnd.Instance.Stop (Account.Id);
                     BackEnd.Instance.Start (Account.Id);
                 }
-            }else{
+            } else {
                 Log.Info (Log.LOG_UI, "AccountCredentialsViewController issue found: {0}", issue);
                 NcAlertView.ShowMessage (this, "Nacho Mail", issue);
             }
@@ -164,24 +164,24 @@ namespace NachoClient.iOS
         partial void Support (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController showing support");
-            var storyboard = UIStoryboard.FromName("MainStoryboard_iPhone", null);
-            var vc = (SupportViewController)storyboard.InstantiateViewController("SupportViewController");
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = (SupportViewController)storyboard.InstantiateViewController ("SupportViewController");
             vc.HideNavTitle = false;
-            NavigationController.PushViewController(vc, true);
+            NavigationController.PushViewController (vc, true);
         }
 
         partial void Advanced (NSObject sender)
         {
             Log.Info (Log.LOG_UI, "AccountCredentialsViewController advanced toggle from {0} requested", IsShowingAdvanced);
-            ToggleAdvancedFields();
+            ToggleAdvancedFields ();
         }
 
         partial void TextFieldChanged (NSObject sender)
         {
-            UpdateSubmitEnabled();
+            UpdateSubmitEnabled ();
         }
 
-        void ToggleAdvancedFields()
+        void ToggleAdvancedFields ()
         {
             if (!IsShowingAdvanced) {
                 if (Service == McAccount.AccountServiceEnum.Exchange || Service == McAccount.AccountServiceEnum.IMAP_SMTP) {
@@ -203,7 +203,7 @@ namespace NachoClient.iOS
                         advancedSubview.Frame = new CGRect (0, 0, advancedView.Frame.Width, advancedSubview.Frame.Height);
                         advancedView.AddSubview (advancedSubview);
                         advancedConstraints = NSLayoutConstraint.FromVisualFormat ("|-0-[view]-0-|", 0, null, NSDictionary.FromObjectAndKey (advancedSubview, (NSString)"view"));
-                        advancedConstraints = advancedConstraints.Concat(NSLayoutConstraint.FromVisualFormat ("V:|-0-[view]-0-|", 0, null, NSDictionary.FromObjectAndKey (advancedSubview, (NSString)"view"))).ToArray();
+                        advancedConstraints = advancedConstraints.Concat (NSLayoutConstraint.FromVisualFormat ("V:|-0-[view]-0-|", 0, null, NSDictionary.FromObjectAndKey (advancedSubview, (NSString)"view"))).ToArray ();
                         advancedView.RemoveConstraint (advancedHeightConstraint);
                         advancedView.AddConstraints (advancedConstraints);
                     }
@@ -269,12 +269,12 @@ namespace NachoClient.iOS
             if (isAdvancedComplete && emailField.Text.Length > 0 && passwordField.Text.Length > 0) {
                 submitButton.Alpha = 1.0f;
                 submitButton.Enabled = true;
-            }else{
+            } else {
                 submitButton.Alpha = 0.5f;
                 submitButton.Enabled = false;
             }
         }
-            
+
         protected override void OnKeyboardChanged ()
         {
             scrollView.ContentInset = new UIEdgeInsets (0, 0, keyboardHeight, 0);
@@ -378,7 +378,7 @@ namespace NachoClient.iOS
             UpdateSubmitEnabled ();
         }
 
-        [Export("textFieldShouldReturn:")]
+        [Export ("textFieldShouldReturn:")]
         public bool ShouldReturn (UITextField textField)
         {
             if (submitButton.Enabled) {
