@@ -106,11 +106,9 @@ namespace NachoClient.iOS
             LoginHelpers.SetSwitchToTime (account);
             switchAccountCallback (account);
             Deactivate (null, (McAccount acct) => {
-                UIView.Animate (0.75, () => {
-                    UIView.SetAnimationCurve (UIViewAnimationCurve.EaseInOut);
-                    UIView.SetAnimationTransition (UIViewAnimationTransition.FlipFromRight, NavigationController.View.Window, false);
-                });
-                DismissViewController (false, null);
+                UIView.Transition(UIApplication.SharedApplication.Delegate.GetWindow (), 0.75, UIViewAnimationOptions.TransitionFlipFromRight, () => {
+                    DismissViewController (false, null);
+                }, null);
             });
         }
 
