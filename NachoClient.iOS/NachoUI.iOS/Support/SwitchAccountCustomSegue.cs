@@ -38,42 +38,35 @@ public class SwitchAccountCustomSegue : UIStoryboardSegue
         SourceViewController.View.Window.AddSubview (sourceSnapshot2);
         var sourceNavbarSnapshot = SourceViewController.NavigationController.NavigationBar.SnapshotView (false);
         var sourceNavbarFrame = SourceViewController.NavigationController.View.ConvertRectToView (SourceViewController.NavigationController.NavigationBar.Frame, SourceViewController.View.Window); 
-        var destinationSnapshot = new UIImageView (DestinationViewController.View.Frame);
-        var statusGapView = new UIView(new CGRect(0, 0, sourceNavbarFrame.Width, sourceNavbarFrame.Top));
         var shadeView = new UIView (DestinationViewController.View.Frame);
         shadeView.BackgroundColor = UIColor.Black;
         shadeView.Alpha = 0.0f;
         shadeView.Tag = ShadeViewTag;
-        statusGapView.BackgroundColor = SourceViewController.NavigationController.NavigationBar.BarTintColor;
-        using (var image = NachoClient.Util.captureView(DestinationViewController.View)){
-            destinationSnapshot.Image = image;
-        }
         sourceNavbarSnapshot.Frame = sourceNavbarFrame;
         DestinationViewController.View.AddSubview (sourceSnapshot);
         DestinationViewController.View.AddSubview (shadeView);
-        DestinationViewController.View.AddSubview (destinationSnapshot);
-        DestinationViewController.View.AddSubview (statusGapView);
+        DestinationViewController.View.SendSubviewToBack(shadeView);
+        DestinationViewController.View.SendSubviewToBack(sourceSnapshot);
         DestinationViewController.View.AddSubview (sourceNavbarSnapshot);
         ViewFramer.Create (sourceSnapshot).Y (-DestinationViewController.View.Frame.Top);
-        ViewFramer.Create (statusGapView).Y (-DestinationViewController.View.Frame.Top);
         ViewFramer.Create (sourceNavbarSnapshot).Y (sourceNavbarFrame.Top - DestinationViewController.View.Frame.Top);
-        ViewFramer.Create (destinationSnapshot).Y (-DestinationViewController.View.Frame.Top);
-        destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height + sourceNavbarSnapshot.Frame.Top + sourceNavbarSnapshot.Frame.Height);
-        destinationSnapshot.Layer.ShadowColor = UIColor.Black.CGColor;
-        destinationSnapshot.Layer.ShadowOpacity = 0.4f;
-        destinationSnapshot.Layer.ShadowRadius = 10.0f;
+        // Assuming destination is a navbar controller
+        UINavigationController destinationNav = (UINavigationController)DestinationViewController;
+        UIView destinationView = destinationNav.TopViewController.View;
+        destinationView.Alpha = 0.0f;
+        destinationView.Layer.ShadowColor = UIColor.Black.CGColor;
+        destinationView.Layer.ShadowOpacity = 0.4f;
+        destinationView.Layer.ShadowRadius = 10.0f;
         SourceViewController.PresentViewController (this.DestinationViewController, false, () => {
-            destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, -destinationSnapshot.Frame.Height);
             sourceSnapshot2.RemoveFromSuperview ();
+            destinationView.Transform = CGAffineTransform.MakeTranslation (0, -destinationView.Frame.Height);
+            destinationView.Alpha = 1.0f;
             UIView.Animate (0.3, 0.0, UIViewAnimationOptions.CurveEaseOut, () => {
                 shadeView.Alpha = 0.6f;
-                destinationSnapshot.Transform = CGAffineTransform.MakeTranslation (0, 20);
+                destinationView.Transform = CGAffineTransform.MakeTranslation (0, 0);
             }, () => {
-                DestinationViewController.View.SendSubviewToBack(shadeView);
-                DestinationViewController.View.SendSubviewToBack(sourceSnapshot);
                 sourceNavbarSnapshot.RemoveFromSuperview ();
-                statusGapView.RemoveFromSuperview ();
-                destinationSnapshot.RemoveFromSuperview ();
+                destinationView.Layer.ShadowColor = UIColor.Clear.CGColor;
             });
         });
 
