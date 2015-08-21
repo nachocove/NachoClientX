@@ -17,6 +17,8 @@ namespace NachoClient.iOS
 
     public partial class HomeViewController : NcUIViewController
     {
+
+        public McAccount.AccountServiceEnum Service;
         public HomeViewControllerDelegate AccountDelegate; 
         public UIPageControl pageDots;
         public UIButton closeTutorial;
@@ -207,7 +209,7 @@ namespace NachoClient.iOS
         protected void ContinueButtonTouchUpInside (object sender, EventArgs e)
         {
 
-            UIView.Animate (.3, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
+            UIView.Animate (.2, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
                 tv.Alpha = 0;
             }, () => {
                 InitializePageViewController ();
@@ -217,6 +219,7 @@ namespace NachoClient.iOS
         public void NavigateForward (int i)
         {
             HomePageController forwardPageController = new HomePageController (1);
+            forwardPageController.Service = Service;
 
             this.pageController.SetViewControllers (new UIViewController[] { forwardPageController }, UIPageViewControllerNavigationDirection.Forward, false,
                 s => {
@@ -256,6 +259,7 @@ namespace NachoClient.iOS
                     int previousPageIndex = currentPageController.PageIndex - 1;
                     var newPage = new HomePageController (previousPageIndex);
                     newPage.owner = this.parentController;
+                    newPage.Service = parentController.Service;
                     return newPage;
                 }
             }
@@ -271,6 +275,7 @@ namespace NachoClient.iOS
                     int nextPageIndex = currentPageController.PageIndex + 1;
                     var newPage = new HomePageController (nextPageIndex);
                     newPage.owner = this.parentController;
+                    newPage.Service = parentController.Service;
                     return newPage;
                 }
 

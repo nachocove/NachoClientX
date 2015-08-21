@@ -85,12 +85,14 @@ namespace NachoClient.iOS
             activityIndicatorView.StopAnimating ();
         }
 
-        void Complete ()
+        public void Complete ()
         {
             IsSyncingComplete = true;
-            Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
-            Account.Update ();
-            StopListeningForApplicationStatus ();
+            if (Account != null) {
+                Account.ConfigurationInProgress = McAccount.ConfigurationInProgressEnum.Done;
+                Account.Update ();
+                StopListeningForApplicationStatus ();
+            }
             Update ();
             if (IsVisible) {
                 Log.Info (Log.LOG_UI, "AccountSyncingViewController will set dismiss delay immediately");

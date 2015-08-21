@@ -83,9 +83,6 @@ namespace NachoClient.iOS
                     getStartedButton.Alpha = 1.0f;
                 }, null);
             }
-            if (StartWithTutorial) {
-                AccountDelegate.GettingStartedViewControllerDidComplete (this);
-            }
         }
 
         partial void getStarted (NSObject sender)
@@ -100,7 +97,10 @@ namespace NachoClient.iOS
                 NavigationController.PushViewController (vc, true);
             }else if (StartWithTutorial){
                 Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue with tutorial");
-                PerformSegue ("tutorial", null);
+                syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+                syncingViewController.AccountDelegate = this;
+                syncingViewController.Complete();
+                PerformSegue ("tutorial", new SegueHolder(NcApplication.Instance.Account.AccountService));
             }else{
                 Log.Info (Log.LOG_UI, "GettingStartedViewController going to start with fresh account");
                 var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
@@ -129,7 +129,7 @@ namespace NachoClient.iOS
                 NavigationController.PushViewController (syncingViewController, true);
             } else {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController showing tutorial over sync");
-                PerformSegue ("tutorial", null); 
+                PerformSegue ("tutorial", new SegueHolder(account.AccountService)); 
             }
         }
 
@@ -138,6 +138,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "tutorial") {
                 var vc = (HomeViewController)segue.DestinationViewController;
                 vc.AccountDelegate = this;
+                vc.Service = (McAccount.AccountServiceEnum)((SegueHolder)sender).value;
             }
         }
 
@@ -158,8 +159,10 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "GettingStartedViewController syncing complete");
             // FIXME: Only set if null or device
-            NcApplication.Instance.Account = vc.Account;
-            LoginHelpers.SetSwitchToTime (vc.Account);
+            if (vc.Account != null) {
+                NcApplication.Instance.Account = vc.Account;
+                LoginHelpers.SetSwitchToTime (vc.Account);
+            }
             AccountDelegate.GettingStartedViewControllerDidComplete (this);
         }
     }
