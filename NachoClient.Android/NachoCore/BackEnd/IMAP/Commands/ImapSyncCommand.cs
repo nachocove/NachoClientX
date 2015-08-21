@@ -19,7 +19,7 @@ using System.Threading;
 
 namespace NachoCore.IMAP
 {
-    public class ImapSyncCommand : ImapFetchCommand
+    public class ImapSyncCommand : ImapCommand
     {
         SyncKit Synckit;
         private const int PreviewSizeBytes = 500;

@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -63,7 +64,54 @@ namespace NachoCore.Utils
             return Run (action, name, stfu, false);
         }
 
-        public static Task Run (Action action, string name, bool stfu, bool isUnique)
+        static string[] LoginRunningTasks = new string[] {
+            "AttemptHttp",
+            "Brain",
+            "CheckNotified",
+            "DeviceProtoControl:DeviceDbChange",
+            "DeviceProtoControl:DoSync",
+            "DnldEmailBodyCmd",
+            "ExpandRecurrences",
+            "ImapCredResp",
+            "ImapDiscoverCommand",
+            "ImapEmailMarkReadCommand",
+            "ImapEmailMoveCommand",
+            "ImapFetchAttachmentCommand",
+            "ImapFetchBodyCommand",
+            "ImapFolderSyncCommand",
+            "ImapIdleCommand",
+            "ImapSyncCommand",
+            "InitializeJunkFolders",
+            "MarkEmailReadCmd",
+            "NcAppStartup",
+            "NcEventsCalendarMapCommonRefresh",
+            "PushAssistDeferSession",
+            "PushAssistDeviceToken",
+            "PushAssistStartSession",
+            "SafeMode",
+            "ScheduleNotifications",
+            "SearchContactsReq",
+            "SearchHelper_ContactChooserUpdateAuotCompleteResults",
+            "SearchHelper_ContactsTableViewSourceUpdateSearchResults",
+            "SmtpAuthenticateCommand",
+            "SmtpCredResp",
+            "SmtpDisconnectCommand",
+            "SmtpDiscoveryCommand",
+            "SmtpReplyMailCommand",
+            "Start",
+            "SyncCmd",
+            "Telemetry",
+            "UpdateUnreadMessageCount",
+            "UpdateUnreadMessageView",
+        };
+
+        struct tracer
+        {
+            public int parent;
+            public int child;
+        }
+
+        public static Task Run (Action action, string name, bool stfu, bool isUnique, TaskCreationOptions option = TaskCreationOptions.None)
         {
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
@@ -80,15 +128,25 @@ namespace NachoCore.Utils
                 return null; // an entry exists
             }
 
+            if (LoginRunningTasks.Contains (name)) {
+                Log.Warn (Log.LOG_SYS, "NcTask {0} will be long running", name);
+                option = TaskCreationOptions.LongRunning;
+            }
+
+            var tracer = new tracer ();
+            tracer.parent = 0;
+            tracer.child = 0;
+
             var spawningId = Thread.CurrentThread.ManagedThreadId;
-            var task = Task.Run (delegate {
+            var task = Task.Factory.StartNew (delegate {
                 DateTime startTime = DateTime.UtcNow;
                 double latency = (startTime - spawnTime).TotalMilliseconds;
                 if (200 < latency) {
                     Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1:n0} msec", taskName, latency);
                 }
                 if (Thread.CurrentThread.ManagedThreadId == spawningId) {
-                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread", taskName);
+                    Interlocked.Increment(ref tracer.child);
+                    Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread (parent={1})", taskName, tracer.parent);
                 }
                 if (!stfu) {
                     Log.Info (Log.LOG_SYS, "NcTask {0} started, {1} running", taskName, TaskMap.Count);
@@ -112,7 +170,7 @@ namespace NachoCore.Utils
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed after {1:n0} msec.", taskName, (finishTime - spawnTime).TotalMilliseconds);
                     }
                 }
-            }, Cts.Token);
+            }, Cts.Token, option);
             var taskRef = new WeakReference (task);
             if (!TaskMap.TryAdd (taskRef, taskName)) {
                 Log.Error (Log.LOG_SYS, "NcTask: Task already added to TaskMap ({0}).", taskName);
@@ -125,6 +183,10 @@ namespace NachoCore.Utils
                     Log.Error (Log.LOG_SYS, "NcTask: Task already removed from UniqueList ({0}).", taskName);
                 }
             });
+            Interlocked.Increment (ref tracer.parent);
+            if (0 != tracer.child) {
+                Log.Error (Log.LOG_SYS, "NcTask: Spawned task {0} is running", taskName);
+            }
         }
 
         public static void StopService ()

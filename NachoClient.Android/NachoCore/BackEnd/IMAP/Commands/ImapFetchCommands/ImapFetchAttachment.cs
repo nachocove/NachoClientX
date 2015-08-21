@@ -12,30 +12,27 @@ using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchAttachmentCommand : ImapFetchCommand
+    public partial class ImapFetchCommand
     {
-        public ImapFetchAttachmentCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
-        {
-            PendingSingle = pending;
-            pending.MarkDispached ();
-        }
-
-        protected override Event ExecuteCommand ()
+        private NcResult FetchAttachments (FetchKit fetchkit)
         {
             NcResult result = null;
-            result = FetchAttachment (PendingSingle);
-            if (result.isInfo ()) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPATTSUCC");
-            } else {
-                NcAssert.True (result.isError ());
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPSUCCHARD0");
+            foreach (var attachment in fetchkit.FetchAttachments) {
+                McEmailMessage email = McEmailMessage.QueryById<McEmailMessage> (attachment.ItemId);
+                McFolder folder = FolderFromEmail (email);
+                if (null == folder) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+                }
+                var fetchResult = FetchAttachment (folder, attachment, email);
+                if (!fetchResult.isOK ()) {
+                    Log.Error (Log.LOG_IMAP, "FetchAttachments: {0}", fetchResult.GetMessage ());
+                    result = fetchResult;
+                }
             }
+            if (null != result) {
+                return result;
+            }
+            return NcResult.OK ();
         }
 
         private NcResult FetchAttachment (McPending pending)
@@ -50,20 +47,15 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "Could not find attachment for Id {0}", pending.AttachmentId);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
-
-            // We don't really care which folder this email/attachment is in. If it's duplicated in multiple
-            // folders, the email and attachment will be the same. So find the first map and from that the folder.
-            var map = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (email.AccountId, email.Id, McAbstrFolderEntry.ClassCodeEnum.Email).FirstOrDefault ();
-            if (null == map) {
-                Log.Error (Log.LOG_IMAP, "Could not find folder from attachment Id {0}", pending.AttachmentId);
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
-            }
-            McFolder folder = McFolder.QueryById<McFolder> (map.FolderId);
+            McFolder folder = FolderFromEmail (email);
             if (null == folder) {
-                Log.Error (Log.LOG_IMAP, "Could not find folder for ImapUid {0}", email.ImapUid);
                 return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
             }
+            return FetchAttachment (folder, attachment, email);
+        }
 
+        private NcResult FetchAttachment (McFolder folder, McAttachment attachment, McEmailMessage email)
+        {
             var mailKitFolder = GetOpenMailkitFolder (folder);
             var part = attachmentBodyPart (new UniqueId(email.ImapUid), mailKitFolder, attachment.FileReference);
             if (null == part) {
@@ -107,6 +99,18 @@ namespace NachoCore.IMAP
             }
             var summary = isummary[0] as MessageSummary;
             return summary.BodyParts.Where (x => x.PartSpecifier == fileReference).FirstOrDefault ();
+        }
+
+        private McFolder FolderFromEmail (McEmailMessage email)
+        {
+            // We don't really care which folder this email/attachment is in. If it's duplicated in multiple
+            // folders, the email and attachment will be the same. So find the first map and from that the folder.
+            var map = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (email.AccountId, email.Id, McAbstrFolderEntry.ClassCodeEnum.Email).FirstOrDefault ();
+            if (null == map) {
+                Log.Error (Log.LOG_IMAP, "Could not find folder for EmailId {0}", email.Id);
+                return null;
+            }
+            return McFolder.QueryById<McFolder> (map.FolderId); // could be null!
         }
     }
 }
