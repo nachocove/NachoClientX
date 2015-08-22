@@ -63,19 +63,24 @@ namespace NachoCore.IMAP
                     Monitor.Exit(lockObj);
                 }
             } else {
-                throw new ImapCommandLockTimeOutException (string.Format ("Could not acquire lock object after {0}ms", timeout));
+                throw new ImapCommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
             }
         }
 
         public override void Cancel ()
         {
             base.Cancel ();
-            int timeout = BEContext.ProtoControl.ForceStopped ? 1000 : KLockTimeout;
-            // FIXME - not a long term soln. There are issues with MailKit and cancellation.
-            try {
-                TryLock (Client.SyncRoot, timeout);
-            } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+            // When the back end is being shut down, we can't afford to wait for the cancellation
+            // to be processed.
+            if (!BEContext.ProtoControl.ForceStopped) {
+                // Wait for the command to notice the cancellation and release the lock.
+                // TODO MailKit is not always good about cancelling in a timely manner.
+                // When MailKit is fixed, this code should be adjusted.
+                try {
+                    TryLock (Client.SyncRoot, KLockTimeout);
+                } catch (ImapCommandLockTimeOutException ex) {
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+                }
             }
         }
 
