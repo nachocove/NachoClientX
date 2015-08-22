@@ -400,9 +400,7 @@
     <Compile Include="NachoCore\Utils\TelemetryJsonFile.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration26.cs" />
     <Compile Include="NachoCore\BackEnd\NcStrategy.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\NcApplyServerCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\IImapStrategy.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFolderSyncCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapAuthenticateCommand.cs" />
@@ -483,8 +481,6 @@
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpSendMailCommand.cs" />
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpAuthenticateCommand.cs" />
     <Compile Include="NachoCore\Utils\NcServiceHelper.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachmentCommand.cs" />
-    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBodyCommand.cs" />
     <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration34.cs" />
     <Compile Include="NachoCore\Utils\ContactsBinningHelper.cs" />
@@ -500,6 +496,15 @@
     <Compile Include="NachoCore\BackEnd\SMTP\Commands\SmtpDisconnectCommand.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration39.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration40.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration41.cs" />
+    <Compile Include="NachoCore\Utils\GoogleOAuth2Authenticator.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapDisconnectCommand.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\IImapStrategy.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategyFetchKit.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\ImapStrategy\ImapStrategySyncKit.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs" />
+    <Compile Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchBody.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AboutAssets.txt" />
@@ -562,6 +567,7 @@
     <Folder Include="NachoUI.Android\Support\" />
     <Folder Include="NachoCore\BackEnd\SMTP\Commands\" />
     <Folder Include="NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\" />
+    <Folder Include="NachoCore\BackEnd\IMAP\ImapStrategy\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -643,6 +649,10 @@
     <ProjectReference Include="..\..\ModernHttpClient\vendor\okhttp\OkHttp\OkHttp.csproj">
       <Project>{133270E5-3A11-4A4A-A4AD-1D89FC9DBAAF}</Project>
       <Name>OkHttp</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Xamarin.Auth\src\Xamarin.Auth.Android\Xamarin.Auth.Android.csproj">
+      <Project>{FCF02C8C-6DD3-4C59-A8A2-58BC01A4BB21}</Project>
+      <Name>Xamarin.Auth.Android</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

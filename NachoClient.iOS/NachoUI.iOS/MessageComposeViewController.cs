@@ -1370,7 +1370,9 @@ namespace NachoClient.iOS
         void InitializeMessageForAction ()
         {
             if (EmailHelper.IsReplyAction (action)) {
-                if (null != referencedMessage.From) {
+                if (null != referencedMessage.ReplyTo) {
+                    toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.ReplyTo));
+                }else if (null != referencedMessage.From) {
                     toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.From));
                 }
             }

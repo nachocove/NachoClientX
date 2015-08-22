@@ -30,7 +30,6 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
-using Google.iOS;
 
 namespace NachoClient.iOS
 {
@@ -173,6 +172,7 @@ namespace NachoClient.iOS
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
+            hasRegisteredForRemoteNotifications = true;
             var deviceTokenBytes = deviceToken.ToArray ();
             PushAssist.SetDeviceToken (Convert.ToBase64String (deviceTokenBytes));
             Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications: {0}", deviceToken.ToString ());
@@ -388,15 +388,6 @@ namespace NachoClient.iOS
                 }
             }
 
-            // Initialize Google and add scope to give full access to email
-            var googleInfo = NSDictionary.FromFile ("GoogleService-Info.plist");
-            GIDSignIn.SharedInstance.ClientID = googleInfo [new NSString ("CLIENT_ID")].ToString ();
-            var scopes = Google.iOS.GIDSignIn.SharedInstance.Scopes.ToList ();
-            scopes.Add ("https://mail.google.com");
-            scopes.Add ("https://www.googleapis.com/auth/calendar");
-            scopes.Add ("https://www.google.com/m8/feeds/");
-            Google.iOS.GIDSignIn.SharedInstance.Scopes = scopes.ToArray ();
-
             NcKeyboardSpy.Instance.Init ();
 
             if (NcApplication.ReadyToStartUI ()) {
@@ -423,11 +414,6 @@ namespace NachoClient.iOS
         public override bool OpenUrl (UIApplication application, NSUrl url, string sourceApplication, NSObject annotation)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OpenUrl: {0} {1} {2}", application, url, annotation);
-
-            if (Google.iOS.GIDSignIn.SharedInstance.HandleURL (url, sourceApplication, annotation)) {
-                CreateGooglePlaceholderAccount ();
-                return true;
-            }
 
             if (!url.IsFileUrl) {
                 return false;
@@ -625,6 +611,8 @@ namespace NachoClient.iOS
         private List<int> fetchAccounts;
         // A list of all accounts ids that are waiting for push assist to set up
         private List<int> pushAccounts;
+        // PushAssist is active only when the app is registered for remote notifications
+        private bool hasRegisteredForRemoteNotifications = false;
 
         private bool fetchComplete {
             get {
@@ -634,29 +622,34 @@ namespace NachoClient.iOS
 
         private bool pushAssistArmComplete {
             get {
-                return (0 == pushAccounts.Count);
+                return !hasRegisteredForRemoteNotifications || (0 == pushAccounts.Count);
             }
         }
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
-            // TODO - need to wait for ALL accounts to complete, not just 1st!
             StatusIndEventArgs statusEvent = (StatusIndEventArgs)e;
+            int accountId = (null != statusEvent.Account) ? statusEvent.Account.Id : -1;
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox account {0}", accountId);
                 fetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
-                if ((null != statusEvent.Account) && (0 < statusEvent.Account.Id)) {
-                    fetchAccounts.Remove (statusEvent.Account.Id);
-                } else {
-                    Log.Error (Log.LOG_PUSH, "Info_SyncSucceeded for unknown account {0}", statusEvent.Account.Id);
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded for unspecified account {0}", accountId);
                 }
+                bool fetchWasComplete = fetchComplete;
+                fetchAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
                 if (fetchComplete) {
-                    BadgeNotifUpdate ();
+                    // There will sometimes be duplicate Info_SyncSucceeded for an account.
+                    // Only call BadgeNotifUpdate once.
+                    if (!fetchWasComplete) {
+                        BadgeNotifUpdate ();
+                    }
                     if (pushAssistArmComplete) {
                         CompletePerformFetch ();
                     }
@@ -664,17 +657,35 @@ namespace NachoClient.iOS
                 break;
 
             case NcResult.SubKindEnum.Info_PushAssistArmed:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed");
-                pushAccounts.Remove (statusEvent.Account.Id);
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed for unspecified account {0}", accountId);
+                }
+                pushAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_PushAssistArmed account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
                 if (fetchComplete && pushAssistArmComplete) {
                     CompletePerformFetch ();
                 }
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
-                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed");
-                fetchResult = UIBackgroundFetchResult.Failed;
-                CompletePerformFetch ();
+                if (0 >= accountId) {
+                    Log.Error (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed for unspecified account {0}", accountId);
+                }
+                fetchAccounts.Remove (accountId);
+                Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed account {0}. {1} accounts and {2} push assists remaining.",
+                    accountId, fetchAccounts.Count, pushAccounts.Count);
+                // If one account found some new messages and a different account failed to sync,
+                // return a successful result.
+                if (UIBackgroundFetchResult.NoData == fetchResult) {
+                    fetchResult = UIBackgroundFetchResult.Failed;
+                }
+                if (fetchComplete) {
+                    BadgeNotifUpdate ();
+                    if (pushAssistArmComplete) {
+                        CompletePerformFetch ();
+                    }
+                }
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
@@ -727,7 +738,11 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
             fetchAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
-            pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            if (hasRegisteredForRemoteNotifications) {
+                pushAccounts = McAccount.GetAllConfiguredNonDeviceAccountIds ();
+            } else {
+                pushAccounts = new List<int> ();
+            }
             StartFetch (application, completionHandler, "PF");
         }
 
@@ -750,8 +765,12 @@ namespace NachoClient.iOS
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             performFetchTimer = new Timer (((object state) => {
-                // When the timer expires, just fire an event.  The status callback will take
-                // care of shutting everything down.
+                // Stop the back end right away, so that any accounts still synching
+                // will stop ASAP, freeing the CPU for the rest of the shutdown work.
+                // Then fire an event.  The listener for the event will take care of
+                // the rest of the shutdown process.
+                Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired. Shutting down the app.");
+                BackEnd.Instance.Stop ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = NcApplication.Instance.Account,
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
@@ -850,7 +869,10 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind) {
+            // When the app is in QuickSync mode, BadgeNotifUpdate will be called when
+            // QuickSync is done.  There isn't a need to call it when each account's sync
+            // completes.
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
                 BadgeNotifUpdate ();
             }
         }
@@ -1115,17 +1137,6 @@ namespace NachoClient.iOS
             }
         }
 
-        // Creates an in-progress account for AdvancedLoginView
-        void CreateGooglePlaceholderAccount ()
-        {
-            var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (null != accountBeingConfigured) {
-                Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount {0} already being configured", accountBeingConfigured.DisplayName);
-                return;
-            }
-            LoginHelpers.SetGoogleSignInCallbackArrived (true);
-            Log.Info (Log.LOG_UI, "avl: CreateGoolgePlaceholderAccount callback arrived");
-        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate

@@ -708,11 +708,33 @@ namespace NachoCore.Model
                     " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
                     " likelihood (m.AccountId = ?, 1.0) AND " +
                     " likelihood (m.ClassCode = ?, 0.2) AND " +
-                    " likelihood (e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
+                    " likelihood (e.ImapUid <> 0 AND e.ImapUid >= ? AND e.ImapUid < ?, 0.1) AND " +
                     " likelihood (m.FolderId = ?, 0.5) " +
                     " ORDER BY e.ImapUid DESC LIMIT ?",
                     accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
                     min, max, folderId, limit);
+            }
+        }
+
+        const string KCapQueryImapMessagesToSend = "NcModel.McEmailMessage.QueryImapMessagesToSend";
+        public static List<NcEmailMessageIndex> QueryImapMessagesToSend (int accountId, int folderId, uint limit)
+        {
+            NcCapture.AddKind (KCapQueryImapMessagesToSend);
+            using (var cap = NcCapture.CreateAndStart (KCapQueryImapMessagesToSend)) {
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    "SELECT e.Id FROM McEmailMessage as e " +
+                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                    " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                    " WHERE " +
+                    " likelihood (e.AccountId = ?, 1.0) AND " +
+                    " likelihood (e.IsAwaitingDelete = 0, 1.0) AND " +
+                    " likelihood (m.AccountId = ?, 1.0) AND " +
+                    " likelihood (m.ClassCode = ?, 0.2) AND " +
+                    " likelihood (e.ImapUid = 0, 0.1) AND " +
+                    " likelihood (m.FolderId = ?, 0.5) " +
+                    " LIMIT ?",
+                    accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email,
+                    folderId, limit);
             }
         }
 

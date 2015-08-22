@@ -24,6 +24,7 @@ projects = {
             'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_dev_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
             's3_bucket': 'c6ae00d0-dev-t3-',
+            'support_s3_bucket': 'c6ae00d0-dev-t3-trouble-tickets',
         },
         'pinger': {
             'hostname': 'pinger.officetaco.com',
@@ -52,6 +53,7 @@ projects = {
             'unauth_role_arn': 'arn:aws:iam::263277746520:role/nachomail/cognito/nachomail_alpha_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
             's3_bucket': 'd3daf3ef-alpha-t3-',
+            'support_s3_bucket': 'd3daf3ef-alpha-t3-trouble-tickets',
         },
         'pinger': {
             'hostname': 'alphapinger.officetaco.com',
@@ -80,6 +82,7 @@ projects = {
             'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_beta_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
             's3_bucket': '3ca28b5e-beta-t3-',
+            'support_s3_bucket': '3ca28b5e-beta-t3-trouble-tickets',
         },
         'pinger': {
             'hostname': 'dk65t.pxs001.com',
@@ -108,6 +111,7 @@ projects = {
             'unauth_role_arn': 'arn:aws:iam::610813048224:role/nachomail/cognito/nachomail_prod_UnAuth_DefaultRole',
             'auth_role_arn': 'NO PUBLIC AUTHENTICATION',
             's3_bucket': '',
+            'support_s3_bucket': '',
         },
         'pinger': {
             'hostname': 'p745x.pxs001.com',

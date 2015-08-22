@@ -2,6 +2,8 @@
 //
 using NUnit.Framework;
 using NachoCore.Utils;
+using System.Text.RegularExpressions;
+using System;
 
 namespace Test.iOS
 {
@@ -9,24 +11,74 @@ namespace Test.iOS
     public class HashHelperTest
     {
         public static string[] emailAddresses = new string[] { 
-            "david.jones@proseware.com", "d.j@server1.proseware.com",
+            "david.jones@proseware.com",
+            "d.j@server1.proseware.com",
             "jones@ms1.proseware.com",
-            "j@proseware.com9", "js#internal@proseware.com",
+            "j@proseware.com9",
+            "js#internal@proseware.com",
+            "j_9@129.126.118.1",
             "j_9@[129.126.118.1]",
-            "js@proseware.com9", "j.s@server1.proseware.com",
-            "\"j\\\"s\\\"\"@proseware.com", "jēn@späm.de"
+            "js@proseware.com9",
+            "j.s@server1.proseware.com",
+            "\"j\\\"s\\\"\"@proseware.com",
+            "jēn@späm.de",
+            "Jan-Vee@comcast.net",
         };
-        public static string urlPrefixFrag = "https://mail.d2.officeburrito.com/Microsoft-Server-ActiveSync?Cmd=ItemOperations&User=";
-        public static string urlSuffixFrag = "&DeviceId=Nchob8f6b1150c41&DeviceType=iPhone";
 
+        private void dumpMatch (Match m)
+        {
+            if (m.Success) {
+                Console.WriteLine("Match: {0}", m.Value, RegexOptions.IgnoreCase);
+                for (int grpCtr = 1; grpCtr < m.Groups.Count; grpCtr++) {
+                    Group grp = m.Groups[grpCtr];
+                    Console.WriteLine("Group {0}: {1}", grpCtr, grp.Value);
+                    for (int capCtr = 0; capCtr < grp.Captures.Count; capCtr++)
+                        Console.WriteLine("   Capture {0}: {1}", capCtr,
+                            grp.Captures[capCtr].Value);
+                }
+            } else {
+                Console.WriteLine ("Did not match");
+            }
+        }
         [Test]
         public void TestEmailAddressHash ()
         {
             foreach (string emailAddress in emailAddresses) {
-                string plainUrl = urlPrefixFrag + emailAddress + urlSuffixFrag;
-                string expectedUrl = urlPrefixFrag + HashHelper.Sha256 (emailAddress) + urlSuffixFrag;
+                Match match = Regex.Match (emailAddress, HashHelper.EmailRegex);
+                //Console.WriteLine ("Email: {0} match {1}", emailAddress, match.Success);
+                Assert.AreEqual (true, match.Success);
+                //dumpMatch (match);
+                Assert.AreEqual (emailAddress, string.Format ("{0}@{1}", match.Groups ["username"].Value, match.Groups ["domain"].Value));
+            }
+        }
+
+
+        [Test]
+        public void TestEmailAddressInUrlHash ()
+        {
+            var urlTemplate = "https://mail.d2.officeburrito.com/Microsoft-Server-ActiveSync?Cmd=ItemOperations&User={0}&DeviceId=Nchob8f6b1150c41&DeviceType=iPhone";
+            foreach (string emailAddress in emailAddresses) {
+                string plainUrl = string.Format (urlTemplate, emailAddress);
+                string expectedUrl = string.Format (urlTemplate, HashHelper.Sha256 (emailAddress));
                 string hashedUrl = HashHelper.HashEmailAddressesInUrl (plainUrl);
                 Assert.AreEqual (expectedUrl, hashedUrl, "Hashed Email does not match.");
+            }
+        }
+
+        [Test]
+        public void TestEmailAddressInImapIdHash ()
+        {
+            var ImapIdStringTempls = new string[] {
+                "[NAME, Zimbra], [VERSION, 8.0.7_GA_6031], [RELEASE, 20140624152426], [USER, {0}], [SERVER, 1cd5ed18-e1c6-4a06-8255-66cd41c1f431]",
+                "[NAME, Zimbra], [VERSION, 8.0.7_GA_6031], [RELEASE, 20140624152426], [USER, {0}], [USER1, {0}], [SERVER, 1cd5ed18-e1c6-4a06-8255-66cd41c1f431]",
+            };
+            foreach (var template in ImapIdStringTempls) {
+                foreach (string emailAddress in emailAddresses) {
+                    string plainId = string.Format (template, emailAddress);
+                    string expectedId = string.Format (template, HashHelper.Sha256 (emailAddress));
+                    string hashedId = HashHelper.HashEmailAddressesInImapId (plainId);
+                    Assert.AreEqual (expectedId, hashedId, "Hashed Id does not match.");
+                }
             }
         }
     }

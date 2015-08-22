@@ -112,6 +112,12 @@ namespace NachoClient.iOS
             CancelSearchIfActive ();
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return true;
+            }
+        }
+
         public override bool ShouldEndEditing {
             get {
                 return false;

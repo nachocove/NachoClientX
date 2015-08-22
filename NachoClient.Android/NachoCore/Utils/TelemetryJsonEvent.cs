@@ -240,6 +240,19 @@ namespace NachoCore.Utils
         }
     }
 
+    public class TelemetrySupportRequestEvent : TelemetryJsonEvent
+    {
+        public const string SUPPORT_REQUEST = "SUPPORT_REQUEST";
+
+        public string support;
+
+        public TelemetrySupportRequestEvent ()
+        {
+            event_type = SUPPORT_REQUEST;
+        }
+    }
+
+
     public class TelemetryDeviceInfoEvent : TelemetryJsonEvent
     {
         public string os_type;

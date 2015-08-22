@@ -12,64 +12,42 @@ using System.Text;
 
 namespace NachoCore.IMAP
 {
-    public class ImapFetchBodyCommand : ImapFetchCommand
+    public partial class ImapFetchCommand
     {
-        public ImapFetchBodyCommand (IBEContext beContext, NcImapClient imap, McPending pending) : base (beContext, imap)
-        {
-            pending.MarkDispached ();
-            PendingSingle = pending;
-        }
+        const string KImapFetchBodyCommandFetch = "ImapFetchBodyCommand.Fetch";
 
-        protected override Event ExecuteCommand ()
+        private NcResult FetchBodies (FetchKit fetchkit)
         {
             NcResult result = null;
-            result = ProcessPending (PendingSingle);
-            if (result.isInfo ()) {
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPBDYSUCC");
-            } else {
-                NcAssert.True (result.isError ());
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand failed: {0}", result.Message);
-                PendingResolveApply ((pending) => {
-                    pending.ResolveAsHardFail (BEContext.ProtoControl, result);
-                });
-                return Event.Create ((uint)SmEvt.E.HardFail, "IMAPBDYHRD0");
+            foreach (var body in fetchkit.FetchBodies) {
+                var fetchResult = FetchOneBody (body.ServerId, body.ParentId);
+                if (!fetchResult.isOK ()) {
+                    Log.Error (Log.LOG_IMAP, "FetchBodies: {0}", fetchResult.GetMessage ());
+                    result = fetchResult;
+                }
             }
-        }
-
-        private NcResult ProcessPending (McPending pending)
-        {
-            McPending.Operations op;
-            if (null == pending) {
-                // If there is no pending, then we are doing an email prefetch.
-                op = McPending.Operations.EmailBodyDownload;
-            } else {
-                op = pending.Operation;
+            if (null != result) {
+                return result;
             }
-            switch (op) {
-            case McPending.Operations.EmailBodyDownload:
-                return FetchOneBody (pending);
-
-            default:
-                NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
-                break;
-            }
-            return NcResult.Error ("Unknown operation");
+            return NcResult.OK ();
         }
 
         private NcResult FetchOneBody (McPending pending)
         {
-            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
+            return FetchOneBody (pending.ServerId, pending.ParentId);
+        }
+
+        private NcResult FetchOneBody (string ServerId, string ParentId)
+        {
+            McEmailMessage email = McAbstrItem.QueryByServerId<McEmailMessage> (BEContext.Account.Id, ServerId);
             if (null == email) {
-                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", pending.ServerId);
+                Log.Error (Log.LOG_IMAP, "ImapFetchBodyCommand: Could not find email for {0}", ServerId);
                 return NcResult.Error ("Unknown email ServerId");
             }
             Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: fetching body for email {0}:{1}", email.Id, email.ServerId);
 
             NcResult result;
-            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, pending.ParentId);
+            McFolder folder = McFolder.QueryByServerId (BEContext.Account.Id, ParentId);
             var mailKitFolder = GetOpenMailkitFolder (folder);
 
             UniqueId uid = new UniqueId (email.ImapUid);
@@ -106,26 +84,36 @@ namespace NachoCore.IMAP
             try {
                 var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
                 mailKitFolder.SetStreamContext (uid, tmp);
-                Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
-                var path = body.GetFilePath ();
-                using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
-                    // TODO Do we need to filter by Content-Transfer-Encoding?
-                    switch (body.BodyType) {
-                    default:
-                        // Mime is good for us. Just copy over to the proper file
-                        // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
-                        // where it doesn't release the stream handles properly, and not using a temp file
-                        // leads to Sharing violations. This is fixed in more recent versions of MailKit.
-                        st.CopyTo(bodyFile);
-                        break;
+                NcCapture.AddKind (KImapFetchBodyCommandFetch);
+                long bytes;
+                using (var cap = NcCapture.CreateAndStart (KImapFetchBodyCommandFetch)) {
+                    Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
+                    var path = body.GetFilePath ();
+                    using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                        // TODO Do we need to filter by Content-Transfer-Encoding?
+                        switch (body.BodyType) {
+                        default:
+                            // Mime is good for us. Just copy over to the proper file
+                            // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
+                            // where it doesn't release the stream handles properly, and not using a temp file
+                            // leads to Sharing violations. This is fixed in more recent versions of MailKit.
+                            st.CopyTo(bodyFile);
+                            break;
 
-                    case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                    case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                        // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
-                        // to the proper place and remove the headers while we're doing so.
-                        CopyBody(st, bodyFile);
-                        break;
+                        case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                        case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                            // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
+                            // to the proper place and remove the headers while we're doing so.
+                            CopyBody(st, bodyFile);
+                            break;
+                        }
+                        bytes = st.Length;
                     }
+                    cap.Pause ();
+                    float kBytes = (float)bytes/(float)1024.0;
+                    Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Body download of size {0}k took {1}ms ({2}k/sec; {3})",
+                        bytes, cap.ElapsedMilliseconds,
+                        kBytes/((float)cap.ElapsedMilliseconds/(float)1000.0), NcCommStatus.Instance.Speed);
                 }
                 body.Truncated = false;
                 body.UpdateSaveFinish ();

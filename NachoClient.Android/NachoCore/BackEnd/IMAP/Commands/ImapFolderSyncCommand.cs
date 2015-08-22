@@ -76,7 +76,7 @@ namespace NachoCore.IMAP
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD0");
             }
             bool subscribedOnly = false;
-            IList<IMailFolder> folderList = Client.GetFolders (Client.PersonalNamespaces[0], subscribedOnly, Cts.Token).ToList ();
+            IList<IMailFolder> folderList = Client.GetFolders (Client.PersonalNamespaces [0], subscribedOnly, Cts.Token).ToList ();
             if (null == folderList) {
                 Log.Error (Log.LOG_IMAP, "ImapFolderSyncCommand: Could not refresh folder list");
                 return Event.Create ((uint)SmEvt.E.HardFail, "IMAPFSYNCHRD3");
@@ -99,96 +99,104 @@ namespace NachoCore.IMAP
                 return null;
             });
 
-            // Then, look for all 'directory' (hasChildren) folders.
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Folders with Children");
-            added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Dir Folder", mailKitFolder => {
-                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.HasChildren)) {
-                    return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
-                }
-                return null;
-            });
-
-            // second, look for some folders we don't want to misidentify
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Special Folders");
-            added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Special Folder", mailKitFolder => {
-                ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
-                bool isDistinguished;
-                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Sent)) {
-                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
-                    isDistinguished = true;
-                    haveSent = true;
-                } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Drafts)) {
-                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
-                    isDistinguished = true;
-                    haveDraft = true;
-                } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Trash)) {
-                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
-                    isDistinguished = true;
-                    haveTrash = true;
-                } else {
+            if (protocolState.ImapSyncRung > 0) {
+                // Then, look for all 'directory' (hasChildren) folders.
+                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Folders with Children");
+                added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Dir Folder", mailKitFolder => {
+                    if (mailKitFolder.Attributes.HasFlag (FolderAttributes.HasChildren)) {
+                        return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, mailKitFolder.Name, false);
+                    }
                     return null;
-                }
-                return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (folderType, mailKitFolder.Name, isDistinguished);
-            });
+                });
 
-            // look again and process the rest.
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for General Folders");
-            added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "General Folder", mailKitFolder => {
-                ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
-                bool isDistinguished;
-
-                if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
-                    folderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
-                    isDistinguished = false;
-                } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Archive)) {
-                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
-                    isDistinguished = false;
-                } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.All)) {
-                    folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
-                    isDistinguished = false;
-                } else {
-                    var folderName = mailKitFolder.Name;
-                    if (!haveNotes && McFolder.MaybeNotesFolder (protocolState.ImapServiceType, folderName)) {
-                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
-                        isDistinguished = true;
-                        haveNotes = true;
-                    } else if (!haveSent && McFolder.MaybeSentFolder (protocolState.ImapServiceType, folderName)) {
+                // second, look for some folders we don't want to misidentify
+                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Special Folders");
+                added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "Special Folder", mailKitFolder => {
+                    ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
+                    bool isDistinguished;
+                    if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Sent)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
                         isDistinguished = true;
                         haveSent = true;
-                    } else if (!haveTrash && McFolder.MaybeTrashFolder (protocolState.ImapServiceType, folderName)) {
-                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
-                        isDistinguished = true;
-                        haveTrash = true;
-                    } else if (!haveDraft && McFolder.MaybeDraftFolder (protocolState.ImapServiceType, folderName)) {
+                    } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Drafts)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
                         isDistinguished = true;
                         haveDraft = true;
+                    } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Trash)) {
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
+                        isDistinguished = true;
+                        haveTrash = true;
                     } else {
+                        return null;
+                    }
+                    return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (folderType, mailKitFolder.Name, isDistinguished);
+                });
+
+                // look again and process the rest.
+                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for General Folders");
+                added_or_changed |= FindAndCreateFolder (ref folderList, ref foldernames, "General Folder", mailKitFolder => {
+                    ActiveSync.Xml.FolderHierarchy.TypeCode folderType;
+                    bool isDistinguished;
+
+                    if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Junk)) {
+                        folderType = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                        isDistinguished = false;
+                    } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.Archive)) {
                         folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
                         isDistinguished = false;
+                    } else if (mailKitFolder.Attributes.HasFlag (FolderAttributes.All)) {
+                        folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                        isDistinguished = false;
+                    } else {
+                        var folderName = mailKitFolder.Name;
+                        if (!haveNotes && McFolder.MaybeNotesFolder (protocolState.ImapServiceType, folderName)) {
+                            folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultNotes_10;
+                            isDistinguished = true;
+                            haveNotes = true;
+                        } else if (!haveSent && McFolder.MaybeSentFolder (protocolState.ImapServiceType, folderName)) {
+                            folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultSent_5;
+                            isDistinguished = true;
+                            haveSent = true;
+                        } else if (!haveTrash && McFolder.MaybeTrashFolder (protocolState.ImapServiceType, folderName)) {
+                            folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDeleted_4;
+                            isDistinguished = true;
+                            haveTrash = true;
+                        } else if (!haveDraft && McFolder.MaybeDraftFolder (protocolState.ImapServiceType, folderName)) {
+                            folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.DefaultDrafts_3;
+                            isDistinguished = true;
+                            haveDraft = true;
+                        } else {
+                            folderType = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
+                            isDistinguished = false;
+                        }
+                    }
+                    return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (folderType, mailKitFolder.Name, isDistinguished);
+                });
+
+                if (folderList.Any ()) {
+                    Log.Error (Log.LOG_IMAP, "Not all incoming folders processed!");
+                }
+
+                // Compare the incoming folders to the ones we know about. Delete any that disappeared.
+                Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Deleted Folders");
+                foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
+                    Cts.Token.ThrowIfCancellationRequested ();
+                    if (!foldernames.Contains (folder.ServerId)) {
+                        Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Deleting folder {0} due to disappearance from server", folder.ImapFolderNameRedacted ());
+                        // TODO Do applyCommand stuff here
+                        // Delete folder and everything in and under it.
+                        folder.Delete ();
+                        added_or_changed = true;
                     }
                 }
-                return Tuple.Create<ActiveSync.Xml.FolderHierarchy.TypeCode, string, bool> (folderType, mailKitFolder.Name, isDistinguished);
-            });
-
-            if (folderList.Any ()) {
-                Log.Error (Log.LOG_IMAP, "Not all incoming folders processed!");
             }
+            Finish (added_or_changed, ref protocolState);
+            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Done");
+            return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
+        }
 
-            // Compare the incoming folders to the ones we know about. Delete any that disappeared.
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Looking for Deleted Folders");
-            foreach (var folder in McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)) {
-                Cts.Token.ThrowIfCancellationRequested ();
-                if (!foldernames.Contains (folder.ServerId)) {
-                    Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Deleting folder {0} due to disappearance from server", folder.ImapFolderNameRedacted ());
-                    // TODO Do applyCommand stuff here
-                    // Delete folder and everything in and under it.
-                    folder.Delete ();
-                    added_or_changed = true;
-                }
-            }
-
+        private void Finish (bool added_or_changed, ref McProtocolState protocolState)
+        {
             Cts.Token.ThrowIfCancellationRequested ();
 
             if (added_or_changed) {
@@ -200,8 +208,6 @@ namespace NachoCore.IMAP
                 target.AsLastFolderSync = DateTime.UtcNow;  // FIXME: Rename AsLastFolderSync to be generic.
                 return true;
             });
-            Log.Info (Log.LOG_IMAP, "ImapFolderSyncCommand: Done");
-            return Event.Create ((uint)SmEvt.E.Success, "IMAPFSYNCSUC");
         }
     }
 }
