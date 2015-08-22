@@ -145,7 +145,7 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_UTILS, "NcTask: Delay in running NcTask {0}, latency {1:n0} msec", taskName, latency);
                 }
                 if (Thread.CurrentThread.ManagedThreadId == spawningId) {
-                    Interlocked.Increment(ref tracer.child);
+                    Interlocked.Increment (ref tracer.child);
                     Log.Warn (Log.LOG_UTILS, "NcTask {0} running on spawning thread (parent={1})", taskName, tracer.parent);
                 }
                 if (!stfu) {
@@ -175,6 +175,10 @@ namespace NachoCore.Utils
             if (!TaskMap.TryAdd (taskRef, taskName)) {
                 Log.Error (Log.LOG_SYS, "NcTask: Task already added to TaskMap ({0}).", taskName);
             }
+            Interlocked.Increment (ref tracer.parent);
+            if (0 != tracer.child) {
+                Log.Error (Log.LOG_SYS, "NcTask: Spawned task {0} is running", taskName);
+            }
             return task.ContinueWith (delegate {
                 if (!TaskMap.TryRemove (taskRef, out dummy)) {
                     Log.Error (Log.LOG_SYS, "NcTask: Task already removed from TaskMap ({0}).", taskName);
@@ -183,10 +187,7 @@ namespace NachoCore.Utils
                     Log.Error (Log.LOG_SYS, "NcTask: Task already removed from UniqueList ({0}).", taskName);
                 }
             });
-            Interlocked.Increment (ref tracer.parent);
-            if (0 != tracer.child) {
-                Log.Error (Log.LOG_SYS, "NcTask: Spawned task {0} is running", taskName);
-            }
+
         }
 
         public static void StopService ()
