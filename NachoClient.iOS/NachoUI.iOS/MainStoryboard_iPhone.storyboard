@@ -174,7 +174,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="hqQ-yA-uNQ" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="cancel" id="SeI-fe-BAR" userLabel="Bar Button Item - cancelButton"/>
-                <barButtonItem title="Item" id="FeG-Jx-fjU" userLabel="Bar Button Item - sendButton"/>
+                <barButtonItem id="FeG-Jx-fjU" userLabel="Bar Button Item - sendButton"/>
             </objects>
             <point key="canvasLocation" x="-5499" y="4565"/>
         </scene>
