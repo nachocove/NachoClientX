@@ -546,6 +546,7 @@ namespace NachoCore.ActiveSync
                 var server = new McServer () {
                     AccountId = Account.Id,
                     Capabilities = McAccount.ActiveSyncCapabilities,
+                    IsHardWired = true,
                     Host = known,
                 };
                 server.Insert ();
