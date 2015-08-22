@@ -561,6 +561,8 @@ namespace NachoCore.IMAP
             }
 
             if (null != summary.Headers) {
+                bool haveImportance = false;
+                NcImportance importance;
                 foreach (var header in summary.Headers) {
                     switch (header.Id) {
                     case HeaderId.ContentClass:
@@ -568,25 +570,22 @@ namespace NachoCore.IMAP
                         break;
 
                     case HeaderId.Importance:
-                        // according to https://tools.ietf.org/html/rfc2156
-                        //       importance      = "low" / "normal" / "high"
-                        // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
-                        switch (header.Value.ToLowerInvariant ()) {
-                        case "low":
-                            emailMessage.Importance = NcImportance.Low_0;
-                            break;
+                        // The importance header takes priority (hah) over everything else.
+                        if (McEmailMessage.TryImportanceFromString (header.Value, out importance)) {
+                            emailMessage.Importance = importance;
+                            haveImportance = true;
+                        }
+                        break;
 
-                        case "normal":
-                            emailMessage.Importance = NcImportance.Normal_1;
-                            break;
-
-                        case "high":
-                            emailMessage.Importance = NcImportance.High_2;
-                            break;
-
-                        default:
-                            Log.Error (Log.LOG_IMAP, string.Format ("Unknown importance header value '{0}'", header.Value));
-                            break;
+                    case HeaderId.XMSMailPriority:
+                    case HeaderId.Priority:
+                    case HeaderId.XPriority:
+                        // take the first we come across.
+                        if (!haveImportance) {
+                            if (McEmailMessage.TryImportanceFromString (header.Value, out importance)) {
+                                emailMessage.Importance = importance;
+                                haveImportance = true;
+                            }
                         }
                         break;
 
