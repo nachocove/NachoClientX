@@ -244,8 +244,6 @@ namespace NachoCore.ActiveSync
 
             if (doUpdate || !McContact.CompareOnEditableFields (existing, original)) {
                 existing.Update ();
-            } else {
-                Log.Error (Log.LOG_AS, "GAL-cache not updated for email address {0}", emailAddress);
             }
             return true;
         }
