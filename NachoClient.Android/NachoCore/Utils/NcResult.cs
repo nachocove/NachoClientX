@@ -184,6 +184,7 @@ namespace NachoCore.Utils
             Info_DaysToSyncChanged,
             Error_CredWait,
             Info_DoesNotSync,
+            Error_ServerStatus,
         };
 
         public enum WhyEnum

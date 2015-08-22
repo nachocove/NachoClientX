@@ -63,7 +63,7 @@ namespace NachoCore
             WillDelete,
         };
 
-        private ConcurrentDictionary<int, NcResult> LastErrorStatusInd;
+        private ConcurrentDictionary<int, NcResult> LastErrorStatusInd = new ConcurrentDictionary<int, NcResult> ();
         private ConcurrentDictionary<int, ConcurrentQueue<NcProtoControl>> Services;
         private NcTimer PendingOnTimeTimer = null;
         private Dictionary<int, bool> CredReqActive;
@@ -660,7 +660,7 @@ namespace NachoCore
             return last;
         }
 
-        void ClearLastErrorStatusInd (int accountId)
+        public void ClearLastErrorStatusInd (int accountId)
         {
             NcResult dummy = null;
             LastErrorStatusInd.TryRemove (accountId, out dummy);
@@ -671,7 +671,7 @@ namespace NachoCore
         //
         private void InvokeStatusIndEvent (StatusIndEventArgs siea)
         {
-            if (NcResult.KindEnum.Error == siea.Status) {
+            if (NcResult.KindEnum.Error == siea.Status.Kind) {
                 LastErrorStatusInd.TryAdd (siea.Account.Id, siea.Status);
             }
             NcApplication.Instance.InvokeStatusIndEvent (siea);

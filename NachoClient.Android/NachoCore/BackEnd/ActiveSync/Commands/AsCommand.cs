@@ -308,8 +308,9 @@ namespace NachoCore.ActiveSync
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsHardFail (BEContext.ProtoControl, why);
             });
-            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            var result = NcResult.Error (NcResult.SubKindEnum.Error_ServerStatus);
             result.Value = status;
+            result.Why = why;
             StatusInd (result);
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
@@ -324,8 +325,9 @@ namespace NachoCore.ActiveSync
                 pending.ResponsegXmlStatus = (uint)status;
                 pending.ResolveAsUserBlocked (BEContext.ProtoControl, reason, why);
             });
-            var result = NcResult.Info (NcResult.SubKindEnum.Info_ServerStatus);
+            var result = NcResult.Error (NcResult.SubKindEnum.Error_ServerStatus);
             result.Value = status;
+            result.Why = why;
             StatusInd (result);
             return Event.Create ((uint)SmEvt.E.HardFail, 
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
