@@ -1096,6 +1096,53 @@ namespace Test.Common
                 Assert.AreEqual (SortedList [i].Id, results1[i].Id);
             }
         }
+
+        [Test]
+        public void TestNcImportance ()
+        {
+            var normalList = new string[] {
+                "normal",
+                "Normal",
+                "NormAl",
+                "3",
+                "medium",
+                "3 (Normal)",
+                "1 (Normal)",
+            };
+            foreach (var s in normalList) {
+                NcImportance i;
+                Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
+                Assert.AreEqual (NcImportance.Normal_1, i);
+            }
+
+            var lowList = new string[] {
+                "low",
+                "LOW",
+                "Low",
+                "5",
+                "4",
+                "non-urgent",
+            };
+            foreach (var s in lowList) {
+                NcImportance i;
+                Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
+                Assert.AreEqual (NcImportance.Low_0, i);
+            }
+
+            var highList = new string[] {
+                "high",
+                "HIgh",
+                "High",
+                "1",
+                "2",
+                "urgent",
+            };
+            foreach (var s in highList) {
+                NcImportance i;
+                Assert.IsTrue (McEmailMessage.TryImportanceFromString (s, out i));
+                Assert.AreEqual (NcImportance.High_2, i);
+            }
+        }
     }
 }
 

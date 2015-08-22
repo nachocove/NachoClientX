@@ -81,6 +81,10 @@ namespace NachoCore.IMAP
             headers.Add (HeaderId.Importance);
             headers.Add (HeaderId.DkimSignature);
             headers.Add (HeaderId.ContentClass);
+            headers.Add (HeaderId.XPriority);
+            headers.Add (HeaderId.Priority);
+            headers.Add (HeaderId.XMSMailPriority);
+
             return headers;
         }
 
