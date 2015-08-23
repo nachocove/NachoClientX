@@ -463,8 +463,7 @@ namespace NachoCore.Model
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
-                    var thisDb = db;
+                foreach (var idx in new int[] { 0, 1 }) {
                     // Integrity check is slow but it was useful when we were tracking
                     // down integrity problem. Comment it out for future reuse
 //                    if (0 == walCheckpointCount) {
@@ -483,9 +482,10 @@ namespace NachoCore.Model
                         if (NcApplication.Instance.IsQuickSync) {
                             return;
                         }
+                        var thisDb = (0 == idx) ? Db : TeleDb;
                         List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
                         if ((0 < results.Count) && (0 != results [0].busy)) {
-                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", db.DatabasePath);
+                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", thisDb.DatabasePath);
                         }
                     }
                 }

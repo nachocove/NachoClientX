@@ -812,6 +812,62 @@ namespace NachoCore.Model
             }
             return DateTime.MinValue;
         }
+
+        public static bool TryImportanceFromString (string priority, out NcImportance importance)
+        {
+            // see https://msdn.microsoft.com/en-us/library/Gg671973(v=EXCHG.80).aspx
+            int prio;
+            if (Int32.TryParse (priority, out prio)) {
+                if (prio > 3) {
+                    importance = NcImportance.Low_0;
+                    return true;
+                } else if (prio < 3) {
+                    importance = NcImportance.High_2;
+                    return true;
+                } else {
+                    importance = NcImportance.Normal_1;
+                    return true;
+                }
+            }
+
+            // according to https://tools.ietf.org/html/rfc2156
+            //       importance      = "low" / "normal" / "high"
+            // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
+            switch (priority.ToLowerInvariant ()) {
+            case "low":
+            case "non-urgent":
+                importance = NcImportance.Low_0;
+                return true;
+
+            case "medium":
+            case "normal":
+                importance = NcImportance.Normal_1;
+                return true;
+
+            case "high":
+            case "urgent":
+                importance = NcImportance.High_2;
+                return true;
+
+            default:
+                // cover the case where we have something like "3 (Normal)" (seriously I saw this one)
+                // ignore the number and go with the letters. If they don't match (say some idiot makes
+                // it "1 (Normal)", then tough cookies.
+                if (priority.ToLowerInvariant ().Contains ("normal") || priority.ToLowerInvariant ().Contains ("medium")) {
+                    importance = NcImportance.Normal_1;
+                    return true;
+                } else if (priority.ToLowerInvariant ().Contains ("low")) {
+                    importance = NcImportance.Low_0;
+                    return true;
+                } else if (priority.ToLowerInvariant ().Contains ("high")) {
+                    importance = NcImportance.High_2;
+                    return true;
+                }
+                Log.Error (Log.LOG_EMAIL, "Unknown Importance/Priority string {0}", priority);
+                importance = NcImportance.Normal_1; // gotta set something or the compiler complains.
+                return false;
+            }
+        }
     }
 
     public class McEmailMessageThread

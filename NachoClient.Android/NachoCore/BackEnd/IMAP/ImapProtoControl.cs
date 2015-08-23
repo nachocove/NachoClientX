@@ -847,11 +847,7 @@ namespace NachoCore.IMAP
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
 
             var disconnect = new ImapDisconnectCommand (this, MainClient);
-            try {
-                disconnect.Execute (this.Sm);
-            } catch (ImapCommand.ImapCommandLockTimeOutException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
-            }
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()
