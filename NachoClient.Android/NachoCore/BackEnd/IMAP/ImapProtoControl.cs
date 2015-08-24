@@ -643,7 +643,9 @@ namespace NachoCore.IMAP
 
         private void ExecuteCmd ()
         {
-            PossiblyKickPushAssist ();
+            if (!(Cmd is ImapDiscoverCommand)) {
+                PossiblyKickPushAssist ();
+            }
             Cmd.Execute (Sm);
         }
 
@@ -657,6 +659,11 @@ namespace NachoCore.IMAP
         public override void CredResp ()
         {
             NcTask.Run (delegate {
+                // park push assist. We just got a new credential, so chances are
+                // we need to tell push assist to restart with new ones.
+                if (null != PushAssist) {
+                    PushAssist.Park ();
+                }
                 Sm.PostEvent ((uint)ImapEvt.E.UiSetCred, "IMAPPCUSC");
             }, "ImapCredResp");
         }
@@ -859,6 +866,10 @@ namespace NachoCore.IMAP
 
         private void DoUiCredReq ()
         {
+            // our creds are bad. Stop pinger.
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             CancelCmd ();
             BackEndStatePreset = BackEndStateEnum.CredWait;
             // Send the request toward the UI.
@@ -871,6 +882,11 @@ namespace NachoCore.IMAP
 
         public override void ValidateConfig (McServer server, McCred cred)
         {
+            // park push assist. We just got a new credential, so chances are
+            // we need to tell push assist to restart with new ones.
+            if (null != PushAssist) {
+                PushAssist.Park ();
+            }
             CancelValidateConfig ();
             Validator = new ImapValidateConfig (this);
             Validator.Execute (server, cred);
