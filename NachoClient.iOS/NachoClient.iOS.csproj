@@ -2548,7 +2548,6 @@
     <BundleResource Include="Resources\gen-avatar-alert%403x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%404x.png" />
     <BundleResource Include="Resources\gen-avatar-alert%406x.png" />
-    <BundleResource Include="Resources\NachoUI.iOS\.DS_Store" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
