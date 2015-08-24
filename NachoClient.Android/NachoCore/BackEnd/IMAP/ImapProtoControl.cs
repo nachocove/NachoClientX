@@ -659,10 +659,10 @@ namespace NachoCore.IMAP
         public override void CredResp ()
         {
             NcTask.Run (delegate {
-                // park push assist. We just got a new credential, so chances are
+                // stop push assist. We just got a new credential, so chances are
                 // we need to tell push assist to restart with new ones.
                 if (null != PushAssist) {
-                    PushAssist.Park ();
+                    PushAssist.Stop ();
                 }
                 Sm.PostEvent ((uint)ImapEvt.E.UiSetCred, "IMAPPCUSC");
             }, "ImapCredResp");
@@ -868,7 +868,7 @@ namespace NachoCore.IMAP
         {
             // our creds are bad. Stop pinger.
             if (null != PushAssist) {
-                PushAssist.Park ();
+                PushAssist.Stop ();
             }
             CancelCmd ();
             BackEndStatePreset = BackEndStateEnum.CredWait;
@@ -882,10 +882,10 @@ namespace NachoCore.IMAP
 
         public override void ValidateConfig (McServer server, McCred cred)
         {
-            // park push assist. We just got a new credential, so chances are
+            // Stop push assist. We just got a new credential, so chances are
             // we need to tell push assist to restart with new ones.
             if (null != PushAssist) {
-                PushAssist.Park ();
+                PushAssist.Stop ();
             }
             CancelValidateConfig ();
             Validator = new ImapValidateConfig (this);
