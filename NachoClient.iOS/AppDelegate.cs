@@ -690,6 +690,9 @@ namespace NachoClient.iOS
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
+                // Stop the back end first, so that any accounts still running will give up the CPU
+                // as soon as possible.
+                BackEnd.Instance.Stop ();
                 BadgeNotifUpdate ();
                 CompletePerformFetch ();
                 break;
@@ -765,12 +768,11 @@ namespace NachoClient.iOS
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             performFetchTimer = new Timer (((object state) => {
-                // Stop the back end right away, so that any accounts still synching
-                // will stop ASAP, freeing the CPU for the rest of the shutdown work.
-                // Then fire an event.  The listener for the event will take care of
-                // the rest of the shutdown process.
+                // Just fire an event.  The listener for the event will take care of
+                // shutting things down.  (The UI thread is the synchronization method
+                // for lifecycle events, so the timer expiration needs to be channelled
+                // through the UI thread.)
                 Log.Info (Log.LOG_LIFECYCLE, "PerformFetch timer fired. Shutting down the app.");
-                BackEnd.Instance.Stop ();
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                     Account = NcApplication.Instance.Account,
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
