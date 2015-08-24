@@ -266,6 +266,7 @@ namespace NachoCore.Utils
             FailBadPort,
             FailBadHost,
             FailBadScheme,
+            FailHadUsername
         };
 
         public static ParseServerWhyEnum IsValidServer (string serverName)
@@ -314,6 +315,9 @@ namespace NachoCore.Utils
                     return ParseServerWhyEnum.FailUnknown;
                 }
             }
+            if (!String.IsNullOrEmpty(serverURI.UserInfo)) {
+                return ParseServerWhyEnum.FailHadUsername;
+            }
             // We were able to create a Url object.
             if (!EmailHelper.IsValidHost (serverURI.Host)) {
                 return ParseServerWhyEnum.FailBadHost;
@@ -359,6 +363,8 @@ namespace NachoCore.Utils
                 return "The server name has an error.";
             case ParseServerWhyEnum.Success_0:
                 return "";
+            case ParseServerWhyEnum.FailHadUsername:
+                return "The server name should not have an @";
             default:
                 NcAssert.CaseError ();
                 break;
