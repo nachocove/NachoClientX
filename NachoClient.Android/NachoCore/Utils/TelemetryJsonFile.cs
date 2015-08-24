@@ -162,7 +162,7 @@ namespace NachoCore.Utils
 
         protected static string GetFilePath (TelemetryEventClass eventClass)
         {
-            return Path.Combine (NcApplication.GetDataDirPath (), eventClass.ToString ().ToLower ());
+            return Path.Combine (NcApplication.GetDataDirPath (), eventClass.ToString ().ToLowerInvariant ());
         }
 
         protected static TelemetryEventClass GetEventClass (string eventType)
