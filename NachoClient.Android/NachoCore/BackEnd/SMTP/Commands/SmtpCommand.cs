@@ -69,7 +69,7 @@ namespace NachoCore.SMTP
                     // In the no-exception case, ExecuteCommand is resolving McPending.
                     sm.PostEvent (evt);
                 } catch (SocketException ex) {
-                    Log.Error (Log.LOG_IMAP, "{0}: SocketException: {1}", cmdname, ex.Message);
+                    Log.Error (Log.LOG_SMTP, "{0}: SocketException: {1}", cmdname, ex.Message);
                     ResolveAllFailed (NcResult.WhyEnum.InvalidDest);
                     var errResult = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
                     errResult.Message = ex.Message;
