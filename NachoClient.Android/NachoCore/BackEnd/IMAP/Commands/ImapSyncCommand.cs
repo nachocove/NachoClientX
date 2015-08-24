@@ -110,7 +110,7 @@ namespace NachoCore.IMAP
             var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
             if (null == syncSet || !syncSet.Any ()) {
                 Finish (false);
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
+                return Event.Create ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
             }
             Synckit.SyncSet = syncSet;
             Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
