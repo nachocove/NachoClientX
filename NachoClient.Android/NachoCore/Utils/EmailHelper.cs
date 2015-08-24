@@ -508,28 +508,45 @@ namespace NachoCore.Utils
 
         public static List<NcEmailAddress> CcList (string accountEmailAddress, string toString, string ccString)
         {
-            var ccList = new List<NcEmailAddress> ();
+            var exclusions = new List<string> (1);
+            if (!String.IsNullOrEmpty (accountEmailAddress)) {
+                exclusions.Add (accountEmailAddress);
+            }
+            return AddressList (NcEmailAddress.Kind.Cc, exclusions, toString, ccString);
+        }
 
-            InternetAddress accountAddress;
-            if (String.IsNullOrEmpty (accountEmailAddress) || !MailboxAddress.TryParse (accountEmailAddress, out accountAddress)) {
-                accountAddress = null;
+        public static List<NcEmailAddress> AddressList (NcEmailAddress.Kind kind, List<string> exclusions, params string[] addressStrings)
+        {
+            if (exclusions == null) {
+                exclusions = new List<string> ();
             }
+            var exclusionAddresses = new List<InternetAddress> ();
+            InternetAddress exclusionAddress;
+            foreach (var exclusion in exclusions) {
+                if (MailboxAddress.TryParse (exclusion, out exclusionAddress)) {
+                    exclusionAddresses.Add (exclusionAddress);
+                }
+            }
+            var addressList = new List<NcEmailAddress> ();
             InternetAddressList addresses;
-            if (!String.IsNullOrEmpty (toString) && InternetAddressList.TryParse (toString, out addresses)) {
-                foreach (var mailboxAddress in addresses.Mailboxes) {
-                    if (!IsAccountAlias (accountAddress, mailboxAddress.Address)) {
-                        ccList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, mailboxAddress.Address));
+            bool excluded;
+            foreach (var addressString in addressStrings) {
+                if (!String.IsNullOrEmpty (addressString) && InternetAddressList.TryParse (addressString, out addresses)) {
+                    foreach (var address in addresses.Mailboxes) {
+                        excluded = false;
+                        foreach (var exclusionAddress_ in exclusionAddresses){
+                            if (IsAccountAlias (exclusionAddress_, address.Address)){
+                                excluded = true;
+                                break;
+                            }
+                        }
+                        if (!excluded) {
+                            addressList.Add (new NcEmailAddress (kind, address.Address));
+                        }
                     }
                 }
             }
-            if (!String.IsNullOrEmpty (ccString) && InternetAddressList.TryParse (ccString, out addresses)) {
-                foreach (var mailboxAddress in addresses.Mailboxes) {
-                    if (!IsAccountAlias (accountAddress, mailboxAddress.Address)) {
-                        ccList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, mailboxAddress.Address));
-                    }
-                }
-            }
-            return ccList;
+            return addressList;
         }
 
         // Build up the text for the header part of the message being forwarded or replied to.
