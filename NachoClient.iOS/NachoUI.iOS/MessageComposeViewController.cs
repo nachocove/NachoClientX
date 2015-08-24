@@ -104,6 +104,9 @@ namespace NachoClient.iOS
             ccView.SetAddressList (draftMessage.Cc, NcEmailAddress.Kind.Cc);
             bccView.SetAddressList (draftMessage.Bcc, NcEmailAddress.Kind.Bcc);
 
+            startInSubjectField = !String.IsNullOrEmpty(draftMessage.To) && String.IsNullOrEmpty(draftMessage.Subject);
+            startInBodyField = !String.IsNullOrEmpty(draftMessage.To) && !String.IsNullOrEmpty(draftMessage.Subject);
+
             QRType = draftMessage.QRType;
             messageIntent = draftMessage.Intent;
             messageIntentDateTime = draftMessage.IntentDate;
@@ -339,7 +342,11 @@ namespace NachoClient.iOS
             } else if (startInBodyField) {
                 ConfigureBodyEditView (false);
                 bodyTextView.BecomeFirstResponder ();
-                bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
+                if (EmailTemplate == null) {
+                    bodyTextView.SelectedRange = new NSRange (0, 0);
+                } else {
+                    bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
+                }
             } else if (calendarInviteIsSet) {
                 toView.SetEditFieldAsFirstResponder ();
             } else {
