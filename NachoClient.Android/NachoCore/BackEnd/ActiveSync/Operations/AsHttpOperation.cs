@@ -658,8 +658,8 @@ namespace NachoCore.ActiveSync
                             var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
                                              (state) => {
                                     if (!cToken.IsCancellationRequested) {
-                                        Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes",
-                                            timeoutInSeconds, response.Content.Headers.ContentLength ?? -1);
+                                        Log.Error (Log.LOG_HTTP, "LoadBytes timed out after {0:n0}s trying to process {1:n0} bytes for command {2}",
+                                            timeoutInSeconds, response.Content.Headers.ContentLength ?? -1, CommandName);
                                         isWedged = true;
                                         TimeoutTimerCallback (state);
                                     }
@@ -671,8 +671,8 @@ namespace NachoCore.ActiveSync
                                 loadBytesDuration = capture.ElapsedMilliseconds;
                             }
                             if (1000 < loadBytesDuration) {
-                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes",
-                                    loadBytesDuration, response.Content.Headers.ContentLength ?? -1);
+                                Log.Warn (Log.LOG_HTTP, "LoadBytes took {0:n0}ms for {1:n0} bytes for command {2}",
+                                    loadBytesDuration, response.Content.Headers.ContentLength ?? -1, CommandName);
                             }
                             diaper.Dispose ();
                             if (isWedged) {
