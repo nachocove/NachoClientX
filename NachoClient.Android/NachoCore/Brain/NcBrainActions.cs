@@ -373,6 +373,24 @@ namespace NachoCore.Brain
 
             return true;
         }
+
+        protected bool UpdateEmailMessageReadStatus (McEmailMessage emailMessage, DateTime readTime, double readVariance)
+        {
+            if (null == emailMessage) {
+                return false;
+            }
+            emailMessage.UpdateReadAnalysis (readTime, readVariance);
+            return true;
+        }
+
+        protected bool UpdateEmailMessageReplyStatus (McEmailMessage emailMessage, DateTime replyTime, double replyVariance)
+        {
+            if (null == emailMessage) {
+                return false;
+            }
+            emailMessage.UpdateReplyAnalysis (replyTime, replyVariance);
+            return true;
+        }
     }
 }
 

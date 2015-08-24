@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
@@ -557,6 +558,7 @@ namespace NachoClient.iOS
                 ConfigureAsUnavailable (cell);
                 return;
             }
+            NcBrain.MessageNotificationStatusUpdated (message, DateTime.UtcNow, 60);
 
             cell.TextLabel.Text = "";
             cell.ContentView.Hidden = false;
