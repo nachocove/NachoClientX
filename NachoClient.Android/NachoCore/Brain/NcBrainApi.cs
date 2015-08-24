@@ -116,6 +116,7 @@ namespace NachoCore.Brain
                 Variance = variance,
             };
             PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
 
         public static void MessageReadStatusUpdated (McEmailMessage emailMessage, DateTime readTime, double variance)
@@ -132,6 +133,7 @@ namespace NachoCore.Brain
                 Variance = variance,
             };
             PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
 
         public static void MessageReplyStatusUpdated (McEmailMessage emailMessage, DateTime replyTime, double variance)
@@ -148,6 +150,7 @@ namespace NachoCore.Brain
                 Variance = variance,
             };
             PersistentEnqueue (emailMessage.AccountId, brainEvent);
+            SharedInstance.Enqueue (new NcBrainPersistentQueueEvent ());
         }
     }
 }

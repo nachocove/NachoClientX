@@ -258,8 +258,10 @@ namespace NachoCore.Model
                     }
 
                     // Initialize new columns
-                    SetScoreIsRead (IsRead);
-                    SetScoreIsReplied (IsReplied ());
+                    if (SetScoreIsRead (IsRead) ||
+                        SetScoreIsReplied (IsReplied ())) {
+                        ScoreStates.Update ();
+                    }
                 } else {
                     Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
                 }
@@ -832,22 +834,14 @@ namespace NachoCore.Model
                     }
                     if (4 <= ScoreVersion) {
                         var accountAddress = AccountAddress (AccountId);
-                        foreach (var emailAddressId in ToEmailAddressId) {
-                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressId);
-                            if (null == emailAddress) {
-                                continue;
-                            }
+                        foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                             if (accountAddress == emailAddress.CanonicalEmailAddress) {
                                 continue;
                             }
                             toFunc (emailAddress, delta);
                             emailAddress.ScoreStates.Update ();
                         }
-                        foreach (var emailAddressId in CcEmailAddressId) {
-                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressId);
-                            if (null == emailAddress) {
-                                continue;
-                            }
+                        foreach (var emailAddress in McEmailAddress.QueryCcAddressesByMessageId (Id)) {
                             if (accountAddress == emailAddress.CanonicalEmailAddress) {
                                 continue;
                             }
@@ -892,11 +886,6 @@ namespace NachoCore.Model
                     emailAddress.IncrementCcEmailsReplied (delta);
                 }
             );
-            if (2 <= ScoreVersion) {
-                if (SetScoreIsReplied (DateTime.MinValue != replyTime)) {
-                    ScoreStates.Update ();
-                }
-            }
         }
     }
 }

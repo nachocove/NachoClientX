@@ -70,6 +70,7 @@ namespace NachoCore.Model
             var newStates = UpdateWithOCApply<McEmailMessageScore> ((item) => {
                 if (!ShouldUpdateMinimum (NotificationTime, notificationTime)) {
                     notificationTime = NotificationTime;
+                    variance = NotificationVariance;
                 }
                 var ems = (McEmailMessageScore)item;
                 ems.NotificationTime = notificationTime;
@@ -85,6 +86,7 @@ namespace NachoCore.Model
             var newStates = UpdateWithOCApply<McEmailMessageScore> ((item) => {
                 if (!ShouldUpdateMinimum (ReadTime, readTime)) {
                     readTime = ReadTime;
+                    variance = ReadVariance;
                 }
                 var ems = (McEmailMessageScore)item;
                 ems.ReadTime = readTime;
@@ -100,13 +102,14 @@ namespace NachoCore.Model
             var newStates = UpdateWithOCApply<McEmailMessageScore> ((item) => {
                 if (!ShouldUpdateMinimum (ReplyTime, replyTime)) {
                     replyTime = ReplyTime;
+                    variance = ReplyVariance;
                 }
                 var ems = (McEmailMessageScore)item;
                 ems.ReplyTime = replyTime;
                 ems.ReplyVariance = variance;
                 return true;
             });
-            return original != newStates.ReadTime;
+            return original != newStates.ReplyTime;
         }
     }
 }

@@ -221,22 +221,10 @@ namespace NachoCore.Brain
                     });
                     break;
                 case NcBrainEventType.UPDATE_MESSAGE_READ_STATUS:
-                    var readEvent = (NcBrainUpdateMessageReadStatusEvent)brainEvent;
-                    NcModel.Instance.RunInTransaction (() => {
-                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)readEvent.EmailMessageId);
-                        if (null != emailMessage) {
-                            emailMessage.UpdateReadAnalysis (readEvent.ReadTime, readEvent.Variance);
-                        }
-                    });
+                    ProcessMessageReadStatusUpdated ((NcBrainUpdateMessageReadStatusEvent)brainEvent);
                     break;
                 case NcBrainEventType.UPDATE_MESSAGE_REPLY_STATUS:
-                    var replyEvent = (NcBrainUpdateMessageReplyStatusEvent)brainEvent;
-                    NcModel.Instance.RunInTransaction (() => {
-                        var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)replyEvent.EmailMessageId);
-                        if (null != emailMessage) {
-                            emailMessage.UpdateReplyAnalysis (replyEvent.ReplyTime, replyEvent.Variance);
-                        }
-                    });
+                    ProcessMessageReplyStatusUpdated ((NcBrainUpdateMessageReplyStatusEvent)brainEvent);
                     break;
                 default:
                     Log.Warn (Log.LOG_BRAIN, "Unknown event type for persisted requests (type={0})", brainEvent.Type);
@@ -346,6 +334,22 @@ namespace NachoCore.Brain
                 NotificationRateLimiter.NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
             }
             return numGleaned;
+        }
+
+        private void ProcessMessageReadStatusUpdated (NcBrainUpdateMessageReadStatusEvent readEvent)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)readEvent.EmailMessageId);
+                UpdateEmailMessageReadStatus (emailMessage, readEvent.ReadTime, readEvent.Variance);
+            });
+        }
+
+        private void ProcessMessageReplyStatusUpdated (NcBrainUpdateMessageReplyStatusEvent replyEvent)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)replyEvent.EmailMessageId);
+                UpdateEmailMessageReplyStatus (emailMessage, replyEvent.ReplyTime, replyEvent.Variance);
+            });
         }
     }
 }
