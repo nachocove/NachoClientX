@@ -117,6 +117,11 @@ namespace NachoCore.Utils
                     }
                 } else {
                     message.Delete ();
+                    var sentFolder = McFolder.GetDefaultSentFolder (accountId);
+                    if (null != sentFolder) {
+                        // Best-effort, nothing to do on non-OK retval.
+                        BackEnd.Instance.SyncCmd (accountId, sentFolder.Id);
+                    }
                 }
             } else {
                 // OutboxTableViewSource handles the details
