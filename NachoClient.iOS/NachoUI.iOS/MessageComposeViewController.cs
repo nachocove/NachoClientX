@@ -360,12 +360,16 @@ namespace NachoClient.iOS
                 }
             }
             backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
-            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver(UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
 
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
 
+            if (null != referencedMessage) {
+                var now = DateTime.UtcNow;
+                NcBrain.MessageReplyStatusUpdated (referencedMessage, now, 0.1);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)

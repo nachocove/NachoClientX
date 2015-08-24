@@ -717,6 +717,7 @@ namespace NachoCore.Model
         }
 
         const string KCapQueryImapMessagesToSend = "NcModel.McEmailMessage.QueryImapMessagesToSend";
+
         public static List<NcEmailMessageIndex> QueryImapMessagesToSend (int accountId, int folderId, uint limit)
         {
             NcCapture.AddKind (KCapQueryImapMessagesToSend);
@@ -1331,6 +1332,19 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT * FROM McEmailMessage WHERE AccountId = ? AND MessageID = ?", accountId, messageId).FirstOrDefault ();
+        }
+
+        public McEmailMessage MarkHasBeenNotified (bool shouldNotify)
+        {
+            if (shouldNotify) {
+                NcBrain.MessageNotificationStatusUpdated (this, DateTime.UtcNow, 0.1);
+            }
+            return UpdateWithOCApply<McEmailMessage> ((record) => {
+                var target = (McEmailMessage)record;
+                target.HasBeenNotified = true;
+                target.ShouldNotify = shouldNotify;
+                return true;
+            });
         }
     }
 }

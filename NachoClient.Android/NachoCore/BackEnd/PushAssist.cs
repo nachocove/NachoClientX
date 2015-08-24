@@ -661,7 +661,7 @@ namespace NachoCore
 
         private static string GetPlatformName ()
         {
-            var platform = NachoPlatform.Device.Instance.OsType ().ToLower ();
+            var platform = NachoPlatform.Device.Instance.OsType ().ToLowerInvariant ();
             if ("iphone os" == platform) {
                 return "ios";
             }

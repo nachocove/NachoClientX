@@ -110,7 +110,7 @@ namespace NachoCore.IMAP
             var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
             if (null == syncSet || !syncSet.Any ()) {
                 Finish (false);
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
+                return Event.Create ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
             }
             Synckit.SyncSet = syncSet;
             Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
@@ -367,6 +367,11 @@ namespace NachoCore.IMAP
                             updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
+                        if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                            // Another client has remotely read / unread this email.
+                            // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                            NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                        }
                     }
                 });
             }

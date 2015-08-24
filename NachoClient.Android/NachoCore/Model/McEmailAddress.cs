@@ -102,6 +102,13 @@ namespace NachoCore.Model
             return emailAddressIdList;
         }
 
+        public static McEmailAddress QueryByCanonicalAddress (string canonicalAddress)
+        {
+            return NcModel.Instance.Db.Query<McEmailAddress> (
+                "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?",
+                canonicalAddress).SingleOrDefault ();
+        }
+
         public static List<McEmailAddress> QueryToCcAddressByMessageId (int messageId)
         {
             return NcModel.Instance.Db.Query<McEmailAddress> (
