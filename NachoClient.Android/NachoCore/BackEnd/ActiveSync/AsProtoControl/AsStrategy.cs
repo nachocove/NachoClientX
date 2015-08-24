@@ -772,7 +772,6 @@ namespace NachoCore.ActiveSync
             var maxHeartbeatInterval = (stillHaveUnsyncedFolders) ? 60 : BEContext.ProtocolState.HeartbeatInterval;
             var folders = FolderListProvider (accountId, Scope.StrategyRung (protocolState), isNarrow);
             if (0 == folders.Count) {
-                Log.Error (Log.LOG_AS, "GenPingKit: no folders");
                 return null;
             }
             if (!ignoreToClientExpected && folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
