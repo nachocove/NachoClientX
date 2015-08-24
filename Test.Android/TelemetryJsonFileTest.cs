@@ -66,7 +66,7 @@ namespace Test.Common
             // Delete all JSON files
             var files = Directory.GetFiles (NcApplication.GetDataDirPath ());
             foreach (var eventClass in TelemetryJsonFileTable.AllEventClasses()) {
-                var eventClassString = eventClass.ToString ().ToLower ();
+                var eventClassString = eventClass.ToString ().ToLowerInvariant ();
                 foreach (var file in files) {
                     if (file.Contains (eventClassString)) {
                         Console.WriteLine ("Deleting {0}", file);
