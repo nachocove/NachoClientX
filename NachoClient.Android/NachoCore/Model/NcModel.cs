@@ -440,24 +440,30 @@ namespace NachoCore.Model
             public int checkpointed { set; get; }
         }
 
+        private void DbConnGCTimerCallback (Object state)
+        {
+            Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
+            foreach (var kvp in DbConns) {
+                NcSQLiteConnection dummy;
+                if (kvp.Key == NcApplication.Instance.UiThreadId) {
+                    continue;
+                }
+                kvp.Value.EliminateIfStale (() => {
+                    if (!DbConns.TryRemove (kvp.Key, out dummy)) {
+                        Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
+                    } else {
+                        Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
+                    }
+                });
+            }
+            // Avoid recurring timer because C# will dump many invocations into the Q and run them concurrently.
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
+            DbConnGCTimer.Stfu = true;
+        }
+
         public void Start ()
         {
-            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", state => {
-                Log.Info (Log.LOG_DB, "DbConnGCTimer: Cleaning up stale DB connections");
-                foreach (var kvp in DbConns) {
-                    NcSQLiteConnection dummy;
-                    if (kvp.Key == NcApplication.Instance.UiThreadId) {
-                        continue;
-                    }
-                    kvp.Value.EliminateIfStale (() => {
-                        if (!DbConns.TryRemove (kvp.Key, out dummy)) {
-                            Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
-                        } else {
-                            Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
-                        }
-                    });
-                }
-            }, null, 15 * 1000, 15 * 1000);
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", DbConnGCTimerCallback, null, 15 * 1000, Timeout.Infinite);
             DbConnGCTimer.Stfu = true;
 
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
