@@ -981,6 +981,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.CaseError (cmd.ToString ());
                         break;
                     }
+                    SideChannelCommandAdd (cmd);
                     // Leave State unchanged.
                     return;
                 }

@@ -176,6 +176,7 @@ namespace NachoCore.IMAP
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             } finally {
                 Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+                BEContext.ProtoControl.SideChannelCommandRemove (this);
             }
         }
 

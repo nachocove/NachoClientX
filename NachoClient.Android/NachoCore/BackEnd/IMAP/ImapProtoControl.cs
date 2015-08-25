@@ -681,7 +681,9 @@ namespace NachoCore.IMAP
             Interlocked.Decrement (ref ConcurrentExtraRequests);
             // Send the PendQHot so that the ProtoControl SM looks to see if there is another hot op
             // to run in parallel.
-            Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            if (!ForceStopped) {
+                Sm.PostEvent ((uint)PcEvt.E.PendQHot, "DOEXDONE1MORE");
+            }
         }
 
         private const int MaxConcurrentExtraRequests = 4;
@@ -753,6 +755,7 @@ namespace NachoCore.IMAP
                         break;
                     }
                     // Leave State unchanged.
+                    SideChannelCommandAdd (cmd);
                     return;
                 }
             }

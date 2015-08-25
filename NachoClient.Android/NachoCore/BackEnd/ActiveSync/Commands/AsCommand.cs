@@ -280,6 +280,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 PendingList.Clear ();
+                BEContext.ProtoControl.SideChannelCommandRemove (this);
             }
         }
         // Sub-class can override if there is a way to break-up the pending list (e.g. Sync).
