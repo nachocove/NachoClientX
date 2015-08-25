@@ -34,10 +34,10 @@ namespace NachoCore
 
         public NcCommand (IBEContext beContext)
         {
-            Cts = new CancellationTokenSource ();
             BEContext = beContext;
             PendingList = new List<McPending> ();
             PendingResolveLockObj = new object ();
+            Cts = CancellationTokenSource.CreateLinkedTokenSource (new [] { BEContext.ProtoControl.Cts.Token });
         }
 
         public virtual void Execute (NcStateMachine sm)

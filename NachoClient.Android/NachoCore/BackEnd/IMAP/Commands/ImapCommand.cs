@@ -72,7 +72,7 @@ namespace NachoCore.IMAP
             base.Cancel ();
             // When the back end is being shut down, we can't afford to wait for the cancellation
             // to be processed.
-            if (!BEContext.ProtoControl.ForceStopped) {
+            if (!BEContext.ProtoControl.Cts.IsCancellationRequested) {
                 // Wait for the command to notice the cancellation and release the lock.
                 // TODO MailKit is not always good about cancelling in a timely manner.
                 // When MailKit is fixed, this code should be adjusted.
@@ -87,7 +87,7 @@ namespace NachoCore.IMAP
         public override void Execute (NcStateMachine sm)
         {
             NcTask.Run (() => {
-                ExecuteNoTask(sm);
+                ExecuteNoTask (sm);
             }, this.GetType ().Name);
         }
 
@@ -119,8 +119,10 @@ namespace NachoCore.IMAP
 
         public void ExecuteNoTask(NcStateMachine sm)
         {
-            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, BEContext.Account.Id);
+            var AccountId = BEContext.Account.Id;
+            Log.Info (Log.LOG_IMAP, "{0}({1}): Started", this.GetType ().Name, AccountId);
             try {
+                Cts.Token.ThrowIfCancellationRequested ();
                 Event evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
@@ -175,7 +177,7 @@ namespace NachoCore.IMAP
                 ResolveAllFailed (NcResult.WhyEnum.Unknown);
                 sm.PostEvent ((uint)SmEvt.E.HardFail, "IMAPHARD2");
             } finally {
-                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, BEContext.Account.Id);
+                Log.Info (Log.LOG_IMAP, "{0}({1}): Finished", this.GetType ().Name, AccountId);
             }
         }
 

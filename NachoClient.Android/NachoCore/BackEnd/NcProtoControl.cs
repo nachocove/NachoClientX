@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
+using System.Threading;
 
 namespace NachoCore
 {
@@ -93,12 +94,13 @@ namespace NachoCore
             }
         }
 
+        public CancellationTokenSource Cts { get; protected set; }
         public NcProtoControl (INcProtoControlOwner owner, int accountId)
         {
             Owner = owner;
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
-            ForceStopped = false;
+            Cts = new CancellationTokenSource ();
         }
 
         protected void SetupAccount ()
@@ -320,15 +322,12 @@ namespace NachoCore
                 Log.Warn (Log.LOG_BACKEND, "Execute called while network is down.");
                 return false;
             }
-            ForceStopped = false;
             // TODO - extract more from the EAS class and stuff here.
             return true;
         }
 
-        public bool ForceStopped { get; protected set; }
         public virtual void ForceStop ()
         {
-            ForceStopped = true;
         }
 
         public virtual void Remove ()
