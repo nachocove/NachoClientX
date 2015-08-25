@@ -241,7 +241,9 @@ namespace NachoClient.iOS
 
             this.email = email;
             this.password = password;
-            Log.Info (Log.LOG_UI, "avl: onConnect - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));              
+            if (account != null) {
+                Log.Info (Log.LOG_UI, "avl: onConnect - LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (account, password));    
+            }
             switch (connect) {
             case ConnectCallbackStatusEnum.Connect:
                 if (null == this.account) {

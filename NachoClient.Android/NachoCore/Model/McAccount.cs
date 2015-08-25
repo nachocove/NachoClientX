@@ -403,6 +403,14 @@ namespace NachoCore.Model
             Update ();
         }
 
+        public override int Insert ()
+        {
+            int retVal = base.Insert ();
+            // need to do this after the insert since I need the account id for the keychain insert
+            GenerateAndUpdateLogSalt ();
+            return retVal;
+        }
+
         public override int Delete ()
         {
             if (Keychain.Instance.HasKeychain ()) {
@@ -416,6 +424,9 @@ namespace NachoCore.Model
         public static string GetLoggablePassword (McAccount account, string password)
         {
             NcAssert.False (string.IsNullOrEmpty (account.GetLogSalt ()));
+            if (account == null) {
+                return null;
+            }
             string hash = HashHelper.Sha256 (account.GetLogSalt () + password);
             return hash.Substring (hash.Length - 3); // e.g. "f47"
         }
