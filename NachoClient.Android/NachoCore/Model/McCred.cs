@@ -237,6 +237,7 @@ namespace NachoCore.Model
                         Log.Error (Log.LOG_SYS, "Missing OAUTH2 access_token {0} or expires_in {1}", response.access_token, response.expires_in);
                         return false;
                     }
+                    Log.Info (Log.LOG_SYS, "OAUTH2 Token refreshed. expires_in={0}", response.expires_in);
                     UpdateOauth2 (response.access_token, GetRefreshToken (), 
                         DateTime.UtcNow.AddSeconds (int.Parse (response.expires_in)));
                     return true;
