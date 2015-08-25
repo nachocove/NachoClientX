@@ -753,6 +753,7 @@ namespace NachoCore.IMAP
                         break;
                     }
                     // Leave State unchanged.
+                    SideChannelCommands.Add (cmd);
                     return;
                 }
             }

@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
+using System.Collections.Generic;
 
 namespace NachoCore
 {
@@ -38,6 +39,8 @@ namespace NachoCore
         public NcProtoControl ProtoControl { set; get; }
 
         public McAccount.AccountCapabilityEnum Capabilities { protected set; get; }
+
+        public List<NcCommand> SideChannelCommands { get; set; }
 
         public McAccount Account {
             get {
@@ -99,6 +102,7 @@ namespace NachoCore
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
             ForceStopped = false;
+            SideChannelCommands = new List<NcCommand> ();
         }
 
         protected void SetupAccount ()
@@ -329,6 +333,10 @@ namespace NachoCore
         public virtual void ForceStop ()
         {
             ForceStopped = true;
+            // it is the sub-class'es job to add or remove commands from the list
+            foreach (var cmd in SideChannelCommands) {
+                cmd.Cancel ();
+            }
         }
 
         public virtual void Remove ()
