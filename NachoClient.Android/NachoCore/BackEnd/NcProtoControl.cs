@@ -5,6 +5,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync; // For XML code values for now (Jan, I know...)
 using System.Collections.Generic;
+using System.Threading;
 
 namespace NachoCore
 {
@@ -39,8 +40,6 @@ namespace NachoCore
         public NcProtoControl ProtoControl { set; get; }
 
         public McAccount.AccountCapabilityEnum Capabilities { protected set; get; }
-
-        public List<NcCommand> SideChannelCommands { get; set; }
 
         public McAccount Account {
             get {
@@ -102,7 +101,7 @@ namespace NachoCore
             AccountId = accountId;
             McPending.ResolveAllDispatchedAsDeferred (this, AccountId);
             ForceStopped = false;
-            SideChannelCommands = new List<NcCommand> ();
+            SideChannelCommandsInit ();
         }
 
         protected void SetupAccount ()
@@ -334,9 +333,7 @@ namespace NachoCore
         {
             ForceStopped = true;
             // it is the sub-class'es job to add or remove commands from the list
-            foreach (var cmd in SideChannelCommands) {
-                cmd.Cancel ();
-            }
+            SideChannelCommandsCancel ();
         }
 
         public virtual void Remove ()
@@ -1265,5 +1262,47 @@ namespace NachoCore
         {
             Owner.StatusInd (this, status, tokens);
         }
+
+        #region SideChannelCommands
+        private List<NcCommand> SideChannelCommands { get; set; }
+        private void SideChannelCommandsInit ()
+        {
+            SideChannelCommands = new List<NcCommand> ();
+        }
+
+        public void SideChannelCommandAdd (NcCommand cmd)
+        {
+            lock(SideChannelCommands) {
+                SideChannelCommands.Add (cmd);
+                LogSideChannelCommands ("add");
+            }
+        }
+        public void SideChannelCommandRemove (NcCommand cmd)
+        {
+            lock(SideChannelCommands) {
+                if (SideChannelCommands.Contains (cmd)) {
+                    SideChannelCommands.Remove (cmd);
+                }
+                LogSideChannelCommands ("remove");
+            }
+        }
+        private void LogSideChannelCommands (string msg)
+        {
+            List<string> cmds = new List<string> ();
+            foreach (var cmd in SideChannelCommands) {
+                cmds.Add (string.Format ("{0}:{1}", cmd.GetType ().Name, cmd.GetHashCode ()));
+            }
+            Log.Info (Log.LOG_IMAP, "SideChannelCommand:{0} {1}: {2}", SideChannelCommands.Count, msg, string.Join (", ", cmds));
+        }
+        public void SideChannelCommandsCancel ()
+        {
+            lock (SideChannelCommands) {
+                LogSideChannelCommands ("cancel");
+                foreach (var cmd in SideChannelCommands) {
+                    cmd.Cancel ();
+                }
+            }
+        }
+        #endregion
     }
 }
