@@ -510,7 +510,10 @@ namespace NachoCore.ActiveSync
                     }
                     lock (PendingResolveLockObj) {
                         // Any pending not already resolved gets resolved as Success.
-                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                        pendingInFolder = PendingList.Where (x => 
+                            x.ParentId == folder.ServerId ||
+                            (x.ServerId == folder.ServerId && x.Operation == McPending.Operations.Sync)
+                        ).ToList ();
                         foreach (var pending in pendingInFolder) {
                             PendingList.Remove (pending);
                             pending.ResolveAsSuccess (BEContext.ProtoControl);

@@ -931,7 +931,7 @@ namespace NachoClient.iOS
 
         protected void SetViewProperties (string whatType, ref string label, ref string value, ref string icon)
         {
-            label = contactHelper.ExchangeNameToLabel (whatType).ToUpper ();
+            label = contactHelper.ExchangeNameToLabel (whatType).ToUpperInvariant ();
 
             switch (whatType) {
             //Address names

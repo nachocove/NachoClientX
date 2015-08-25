@@ -388,16 +388,18 @@ namespace NachoClient.iOS
 
         void SwitchToAccount (McAccount account)
         {
-            currentAccount = account;
-            priorityInboxNeedsRefresh = false;
-            NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
-            priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
-            hotListSource = new HotListTableViewSource (this, priorityInbox);
-            hotListView.Source = hotListSource;
-            hotListView.ReloadData ();
-            hotListSource.ConfigureFooter (hotListView);
-            switchAccountButton.SetAccountImage (account);
-            NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
+            if (IsViewLoaded) {
+                currentAccount = account;
+                priorityInboxNeedsRefresh = false;
+                NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController SwitchToAccount");
+                priorityInbox = NcEmailManager.PriorityInbox (currentAccount.Id);
+                hotListSource = new HotListTableViewSource (this, priorityInbox);
+                hotListView.Source = hotListSource;
+                hotListView.ReloadData ();
+                hotListSource.ConfigureFooter (hotListView);
+                switchAccountButton.SetAccountImage (account);
+                NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController SwitchToAccount");
+            }
         }
 
         /// <summary>

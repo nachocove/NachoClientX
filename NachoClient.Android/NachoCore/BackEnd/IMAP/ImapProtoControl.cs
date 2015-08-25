@@ -643,7 +643,9 @@ namespace NachoCore.IMAP
 
         private void ExecuteCmd ()
         {
-            PossiblyKickPushAssist ();
+            if (!(Cmd is ImapDiscoverCommand)) {
+                PossiblyKickPushAssist ();
+            }
             Cmd.Execute (Sm);
         }
 
@@ -657,6 +659,11 @@ namespace NachoCore.IMAP
         public override void CredResp ()
         {
             NcTask.Run (delegate {
+                // stop push assist. We just got a new credential, so chances are
+                // we need to tell push assist to restart with new ones.
+                if (null != PushAssist) {
+                    PushAssist.Stop ();
+                }
                 Sm.PostEvent ((uint)ImapEvt.E.UiSetCred, "IMAPPCUSC");
             }, "ImapCredResp");
         }
@@ -847,11 +854,7 @@ namespace NachoCore.IMAP
             McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
 
             var disconnect = new ImapDisconnectCommand (this, MainClient);
-            try {
-                disconnect.Execute (this.Sm);
-            } catch (ImapCommand.ImapCommandLockTimeOutException ex) {
-                Log.Warn (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
-            }
+            disconnect.Execute (this.Sm);
         }
 
         private void DoDrive ()
@@ -863,6 +866,10 @@ namespace NachoCore.IMAP
 
         private void DoUiCredReq ()
         {
+            // our creds are bad. Stop pinger.
+            if (null != PushAssist) {
+                PushAssist.Stop ();
+            }
             CancelCmd ();
             BackEndStatePreset = BackEndStateEnum.CredWait;
             // Send the request toward the UI.
@@ -875,6 +882,11 @@ namespace NachoCore.IMAP
 
         public override void ValidateConfig (McServer server, McCred cred)
         {
+            // Stop push assist. We just got a new credential, so chances are
+            // we need to tell push assist to restart with new ones.
+            if (null != PushAssist) {
+                PushAssist.Stop ();
+            }
             CancelValidateConfig ();
             Validator = new ImapValidateConfig (this);
             Validator.Execute (server, cred);

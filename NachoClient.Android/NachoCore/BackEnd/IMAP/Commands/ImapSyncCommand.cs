@@ -110,7 +110,7 @@ namespace NachoCore.IMAP
             var syncSet = ImapStrategy.QuickSyncSet (Synckit.Folder.ImapUidNext, Synckit.Folder, span);
             if (null == syncSet || !syncSet.Any ()) {
                 Finish (false);
-                return Event.Create ((uint)SmEvt.E.Success, "IMAPSYNCQKNONE");
+                return Event.Create ((uint)NachoCore.IMAP.ImapProtoControl.ImapEvt.E.Wait, "IMAPSYNCQKNONE", 60);
             }
             Synckit.SyncSet = syncSet;
             Synckit.UploadMessages = McEmailMessage.QueryImapMessagesToSend (BEContext.Account.Id, Synckit.Folder.Id, span);
@@ -367,6 +367,11 @@ namespace NachoCore.IMAP
                             updateFlags (target, imapSummary.Flags.GetValueOrDefault (), imapSummary.UserFlags);
                             return true;
                         });
+                        if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                            // Another client has remotely read / unread this email.
+                            // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                            NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                        }
                     }
                 });
             }
@@ -561,6 +566,8 @@ namespace NachoCore.IMAP
             }
 
             if (null != summary.Headers) {
+                bool haveImportance = false;
+                NcImportance importance;
                 foreach (var header in summary.Headers) {
                     switch (header.Id) {
                     case HeaderId.ContentClass:
@@ -568,25 +575,22 @@ namespace NachoCore.IMAP
                         break;
 
                     case HeaderId.Importance:
-                        // according to https://tools.ietf.org/html/rfc2156
-                        //       importance      = "low" / "normal" / "high"
-                        // But apparently I need to make sure to account for case (i.e. Normal and Low, etc).
-                        switch (header.Value.ToLowerInvariant ()) {
-                        case "low":
-                            emailMessage.Importance = NcImportance.Low_0;
-                            break;
+                        // The importance header takes priority (hah) over everything else.
+                        if (McEmailMessage.TryImportanceFromString (header.Value, out importance)) {
+                            emailMessage.Importance = importance;
+                            haveImportance = true;
+                        }
+                        break;
 
-                        case "normal":
-                            emailMessage.Importance = NcImportance.Normal_1;
-                            break;
-
-                        case "high":
-                            emailMessage.Importance = NcImportance.High_2;
-                            break;
-
-                        default:
-                            Log.Error (Log.LOG_IMAP, string.Format ("Unknown importance header value '{0}'", header.Value));
-                            break;
+                    case HeaderId.XMSMailPriority:
+                    case HeaderId.Priority:
+                    case HeaderId.XPriority:
+                        // take the first we come across.
+                        if (!haveImportance) {
+                            if (McEmailMessage.TryImportanceFromString (header.Value, out importance)) {
+                                emailMessage.Importance = importance;
+                                haveImportance = true;
+                            }
                         }
                         break;
 

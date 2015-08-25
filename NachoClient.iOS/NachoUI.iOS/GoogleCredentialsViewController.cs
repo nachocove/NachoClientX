@@ -72,6 +72,10 @@ namespace NachoClient.iOS
                 string refresh_token;
                 e.Account.Properties.TryGetValue ("refresh_token", out refresh_token);
 
+                string expires_in;
+                e.Account.Properties.TryGetValue ("expires_in", out expires_in);
+                Log.Info (Log.LOG_SYS, "OAUTH2 Token acquired. expires_in={0}", expires_in);
+
                 int expires = 0;
                 string expiresString = "0";
                 DateTime expirationDateTime = DateTime.UtcNow;

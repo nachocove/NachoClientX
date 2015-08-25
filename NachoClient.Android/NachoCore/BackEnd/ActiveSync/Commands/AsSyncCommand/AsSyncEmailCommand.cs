@@ -75,6 +75,11 @@ namespace NachoCore.ActiveSync
                         return true;
                     });
                     folder.UpdateLink (emailMessage);
+                    if (emailMessage.ScoreStates.IsRead != emailMessage.IsRead) {
+                        // Another client has remotely read / unread this email.
+                        // TODO - Should be the average of now and last sync time. But last sync time does not exist yet
+                        NcBrain.MessageReadStatusUpdated (emailMessage, DateTime.UtcNow, 60.0);
+                    }
                 }
             });
 

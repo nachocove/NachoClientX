@@ -104,6 +104,9 @@ namespace NachoClient.iOS
             ccView.SetAddressList (draftMessage.Cc, NcEmailAddress.Kind.Cc);
             bccView.SetAddressList (draftMessage.Bcc, NcEmailAddress.Kind.Bcc);
 
+            startInSubjectField = !String.IsNullOrEmpty(draftMessage.To) && String.IsNullOrEmpty(draftMessage.Subject);
+            startInBodyField = !String.IsNullOrEmpty(draftMessage.To) && !String.IsNullOrEmpty(draftMessage.Subject);
+
             QRType = draftMessage.QRType;
             messageIntent = draftMessage.Intent;
             messageIntentDateTime = draftMessage.IntentDate;
@@ -339,7 +342,11 @@ namespace NachoClient.iOS
             } else if (startInBodyField) {
                 ConfigureBodyEditView (false);
                 bodyTextView.BecomeFirstResponder ();
-                bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
+                if (EmailTemplate == null) {
+                    bodyTextView.SelectedRange = new NSRange (0, 0);
+                } else {
+                    bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
+                }
             } else if (calendarInviteIsSet) {
                 toView.SetEditFieldAsFirstResponder ();
             } else {
@@ -360,12 +367,16 @@ namespace NachoClient.iOS
                 }
             }
             backgroundNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.DidEnterBackgroundNotification, OnBackgroundNotification);
-            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver(UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
+            contentSizeCategoryChangedNotification = NSNotificationCenter.DefaultCenter.AddObserver (UIApplication.ContentSizeCategoryChangedNotification, OnContentSizeCategoryChangedNotification);
 
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
             }
 
+            if (null != referencedMessage) {
+                var now = DateTime.UtcNow;
+                NcBrain.MessageReplyStatusUpdated (referencedMessage, now, 0.1);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -1366,16 +1377,41 @@ namespace NachoClient.iOS
         /// </summary>
         void InitializeMessageForAction ()
         {
+            var toList = new List<NcEmailAddress> ();
+            var recipientExclusions = new List<string> ();
+            recipientExclusions.Add (account.EmailAddr);
             if (EmailHelper.IsReplyAction (action)) {
+                string toString = null;
+                // Reply-To trumps From
                 if (null != referencedMessage.ReplyTo) {
-                    toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.ReplyTo));
+                    toString = referencedMessage.ReplyTo;
                 }else if (null != referencedMessage.From) {
-                    toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.From));
+                    toString = referencedMessage.From;
                 }
+                // Some validation
+                if (toString != null) {
+                    InternetAddress toAddress;
+                    if (MailboxAddress.TryParse (toString, out toAddress)){
+                        if (String.Equals ((toAddress as MailboxAddress).Address, account.EmailAddr, StringComparison.OrdinalIgnoreCase)) {
+                            // If it looks like we're replying to ourself, we should instead reply to the entire To list from the
+                            // referenced message.  This behavior is consistent with other clients, and is typically seen when
+                            // replying to a message you sent.  It's an interesting case where a reply could go to multiple people
+                            // even though it wasn't a reply-all.  If there was anyone in the CC list of the referenced message,
+                            // they'll get picked up in the reply-all scenario in the next block.
+                            toList = EmailHelper.AddressList (NcEmailAddress.Kind.To, recipientExclusions, referencedMessage.To);
+                        } else {
+                            toList.Add(new NcEmailAddress (NcEmailAddress.Kind.To, toString));
+                        }
+                    }
+                }
+            }
+            foreach (var to in toList) {
+                toView.Append (to);
+                recipientExclusions.Add (to.address);
             }
             if (EmailHelper.Action.ReplyAll == action) {
                 // Add the To & Cc list to the CC list, not included this user
-                var ccList = EmailHelper.CcList (account.EmailAddr, referencedMessage.To, referencedMessage.Cc);
+                var ccList = EmailHelper.AddressList (NcEmailAddress.Kind.Cc, recipientExclusions, referencedMessage.To, referencedMessage.Cc);
                 foreach (var cc in ccList) {
                     ccView.Append (cc);
                 }

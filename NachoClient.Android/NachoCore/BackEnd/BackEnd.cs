@@ -692,6 +692,7 @@ namespace NachoCore
             };
 
             Action<McCred> onFailure = (cred) => {
+                Log.Error (Log.LOG_BACKEND, "CredReq:onFailure called.");
                 InvokeOnUIThread.Instance.Invoke (delegate () {
                     Owner.CredReq (sender.AccountId);
                 });

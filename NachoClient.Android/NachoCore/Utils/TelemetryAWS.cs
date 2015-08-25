@@ -361,7 +361,7 @@ namespace NachoCore.Utils
             var date = startTimeStamp.Substring (0, 8);
 
             string s3Path;
-            if (jsonType == TelemetrySupportRequestEvent.SUPPORT_REQUEST.ToLower ()) {
+            if (jsonType == TelemetrySupportRequestEvent.SUPPORT_REQUEST.ToLowerInvariant ()) {
                 s3Path = NcApplication.Instance.UserId + '-' + NcApplication.Instance.ClientId + '-' + startTimeStamp + ".gz";
                 s3Bucket = BuildInfo.SupportS3Bucket;
             } else {
