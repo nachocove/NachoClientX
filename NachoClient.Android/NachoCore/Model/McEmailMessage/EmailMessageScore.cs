@@ -309,13 +309,7 @@ namespace NachoCore.Model
             }
 
             // Update statistics for email addresses
-            McEmailAddress emailAddress;
-            foreach (var toAddressId in ToEmailAddressId) {
-                emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
-                if (null == emailAddress) {
-                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
-                    continue;
-                }
+            foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                 emailAddress.IncrementToEmailsReceived (markDependencies: false);
                 if (IsReplied ()) {
                     emailAddress.IncrementToEmailsReplied (markDependencies: false);
@@ -326,12 +320,7 @@ namespace NachoCore.Model
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
-            foreach (var ccAddressId in CcEmailAddressId) {
-                emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
-                if (null == emailAddress) {
-                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
-                    continue;
-                }
+            foreach (var emailAddress in McEmailAddress.QueryCcAddressesByMessageId (Id)) {
                 emailAddress.IncrementCcEmailsReceived (markDependencies: false);
                 if (IsReplied ()) {
                     emailAddress.IncrementCcEmailsReplied (markDependencies: false);
