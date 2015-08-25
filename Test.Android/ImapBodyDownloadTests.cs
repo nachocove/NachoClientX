@@ -41,27 +41,27 @@ namespace Test.iOS
             result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
             Assert.NotNull (result);
             Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No Body found"));
+            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
 
             // Add a body part, but no content type
             imapSummary.Body = new BodyPartMultipart ();
             result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
             Assert.NotNull (result);
             Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("No ContentType found in body."));
+            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
 
             // add a bogus Body content type
             imapSummary.Body.ContentType = new ContentType ("foo", "bar");
             result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
             Assert.NotNull (result);
             Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("Unhandled contenttype"));
+            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
 
             imapSummary.Body.ContentType = new ContentType ("text", "foo");
             result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
             Assert.NotNull (result);
             Assert.True (result.isError ());
-            Assert.True (result.GetMessage ().Contains ("Unhandled text subtype"));
+            Assert.True (result.GetMessage ().Contains ("No Body Type found"));
 
             imapSummary.Body.ContentType = new ContentType ("multipart", "foo");
             result = ImapFetchCommand.BodyTypeFromSummary (imapSummary);
