@@ -80,7 +80,6 @@ namespace NachoCore.Model
                 account.SetAccountService (service);
                 account.DisplayName = NcServiceHelper.AccountServiceName (service);
                 account.Insert ();
-                account.GenerateAndUpdateLogSalt ();
                 var cred = makeCred (account.Id);
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
                 Telemetry.RecordAccountEmailAddress (account);
