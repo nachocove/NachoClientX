@@ -297,13 +297,16 @@ namespace NachoCore.IMAP
                 } else {
                     Log.Warn (Log.LOG_IMAP, "Unhandled contenttype {0}:{1}", summary.Body.ContentType.MediaType, summary.Body.ContentType.MediaSubtype);
                 }
-            } else if (summary.Headers.Contains (HeaderId.MimeVersion)) {
+            } 
+
+            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None && 
+                summary.Headers.Contains (HeaderId.MimeVersion)) {
                 bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
             }
 
             if (bodyType != McAbstrFileDesc.BodyTypeEnum.None) {
                 NcResult result = NcResult.OK ();
-                result.Value = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                result.Value = bodyType;
                 return result;
             } else {
                 return NcResult.Error (string.Format ("No Body Type found"));
