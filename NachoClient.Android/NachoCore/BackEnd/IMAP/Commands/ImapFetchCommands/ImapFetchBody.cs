@@ -108,7 +108,7 @@ namespace NachoCore.IMAP
                                     if (null != basic) {
                                         filtered.Add (DecoderFilter.Create (basic.ContentTransferEncoding));
                                     } else {
-                                        Log.Info (Log.LOG_IMAP, "Not a basic part {0}", part.GetType ().Name);
+                                        Log.Warn (Log.LOG_IMAP, "Not a basic part {0}", part.GetType ().Name);
                                     }
 
                                     // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
