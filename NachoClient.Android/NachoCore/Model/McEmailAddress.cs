@@ -93,6 +93,9 @@ namespace NachoCore.Model
             if (!String.IsNullOrEmpty (emailAddressListString)) {
                 var addressList = NcEmailAddress.ParseAddressListString (emailAddressListString);
                 foreach (var address in addressList) {
+                    if (!(address is MailboxAddress)) {
+                        continue; // ignore group address
+                    }
                     var emailAddressId = Get (accountId, ((MailboxAddress)address).Address);
                     if (0 != emailAddressId) {
                         emailAddressIdList.Add (emailAddressId);
