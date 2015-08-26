@@ -2,6 +2,7 @@
 //
 using NachoCore.Utils;
 using System;
+using System.Threading;
 
 namespace NachoCore.SMTP
 {
@@ -10,30 +11,29 @@ namespace NachoCore.SMTP
         public SmtpDisconnectCommand (IBEContext beContext, NcSmtpClient smtp) : base (beContext, smtp)
         {
         }
-        public override Event ExecuteConnectAndAuthEvent ()
+
+        public override void Execute (NcStateMachine sm)
         {
-            // For this we don't want to connect-and-auth. Just override it and disconnect.
-            lock (Client.SyncRoot) {
+            // Disconnect is different than the other IMAP commands.  It is run when parking
+            // the ProtoControl, which usually happens when shutting down the app.  Because
+            // it is run during the shutdown process, it can't block.  But it needs to wait
+            // until any other command is done using the ImapClient.  If the ImapClient's lock
+            // is available, disconnect it right away.  If the lock is not available, then
+            // start a background task that will wait as long as necessary to get the lock.
+            // The state machine is not waiting for the command to complete, so there is no
+            // need to post an event when done.
+            if (Monitor.TryEnter (Client.SyncRoot)) {
                 try {
-                    if (null != Client.MailKitProtocolLogger && null != RedactProtocolLogFunc) {
-                        Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
-                    }
-                    if (Client.IsConnected) {
-                        try {
-                            Client.Disconnect (true, Cts.Token);
-                        } catch (Exception ex) {
-                            Log.Warn (Log.LOG_SMTP, "SmtpDisconnectCommand: Exception (ignoring): {0}", ex);
-                            if (Client.IsConnected) {
-                                Log.Error (Log.LOG_SMTP, "SmtpDisconnectCommand: Disconnect failed.");
-                            }
-                        }
-                    }
-                    return Event.Create ((uint)SmEvt.E.Success, "SMTPDISCSUC");
+                    Client.Disconnect (true);
                 } finally {
-                    if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
-                        ProtocolLoggerStopAndLog ();
-                    }
+                    Monitor.Exit (Client.SyncRoot);
                 }
+            } else {
+                NcTask.Run (() => {
+                    lock (Client.SyncRoot) {
+                        Client.Disconnect (true);
+                    }
+                }, "SmtpDisconnectCommand");
             }
         }
     }

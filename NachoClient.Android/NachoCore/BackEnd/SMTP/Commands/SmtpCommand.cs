@@ -32,13 +32,18 @@ namespace NachoCore.SMTP
         public override void Cancel ()
         {
             base.Cancel ();
-            lock (Client.SyncRoot) {
+            if (!BEContext.ProtoControl.ForceStopped) {
+                try {
+                    TryLock (Client.SyncRoot, KLockTimeout);
+                } catch (CommandLockTimeOutException ex) {
+                    Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
+                }
             }
         }
 
         public virtual Event ExecuteConnectAndAuthEvent ()
         {
-            lock (Client.SyncRoot) {
+            return TryLock (Client.SyncRoot, KLockTimeout, () => {
                 try {
                     if (null != Client.MailKitProtocolLogger && null != RedactProtocolLogFunc) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
@@ -56,7 +61,7 @@ namespace NachoCore.SMTP
                         ProtocolLoggerStopAndLog ();
                     }
                 }
-            }
+            });
         }
 
         public override void Execute (NcStateMachine sm)

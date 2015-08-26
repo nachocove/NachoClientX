@@ -33,7 +33,7 @@ namespace NachoCore.SMTP
             errResult.Message = "Unknown error"; // gets filled in by the various exceptions.
             Event evt;
             try {
-                lock (Client.SyncRoot) {
+                Event evt1 = TryLock (Client.SyncRoot, KLockTimeout, () => {
                     if (Client.IsConnected) {
                         Client.Disconnect (false, Cts.Token);
                     }
@@ -41,9 +41,10 @@ namespace NachoCore.SMTP
                         var authy = new SmtpAuthenticateCommand (BEContext, Client);
                         authy.ConnectAndAuthenticate ();
                     }
-                }
+                    return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+                });
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
-                return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
+                return evt1;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", AutoDFailureReason.CannotFindServer);

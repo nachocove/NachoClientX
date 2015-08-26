@@ -23,7 +23,6 @@ namespace NachoCore.IMAP
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
 
         private const string KCaptureFolderMetadata = "ImapCommand.FolderMetadata";
-        protected const int KLockTimeout = 10000;
 
         public ImapCommand (IBEContext beContext, NcImapClient imapClient) : base (beContext)
         {
@@ -38,35 +37,6 @@ namespace NachoCore.IMAP
             return null;
         }
 
-        public class ImapCommandLockTimeOutException : Exception
-        {
-            public ImapCommandLockTimeOutException (string message) : base(message)
-            {
-                
-            }
-        }
-
-        public static Event TryLock (object lockObj, int timeout, Func<Event> func = null)
-        {
-            if (Monitor.TryEnter(lockObj, timeout))
-            {
-                try
-                {
-                    if (null != func) {
-                        return func();
-                    } else {
-                        return null;
-                    }
-                }
-                finally
-                {
-                    Monitor.Exit(lockObj);
-                }
-            } else {
-                throw new ImapCommandLockTimeOutException (string.Format ("Could not acquire lock object after {0:n0}ms", timeout));
-            }
-        }
-
         public override void Cancel ()
         {
             base.Cancel ();
@@ -78,7 +48,7 @@ namespace NachoCore.IMAP
                 // When MailKit is fixed, this code should be adjusted.
                 try {
                     TryLock (Client.SyncRoot, KLockTimeout);
-                } catch (ImapCommandLockTimeOutException ex) {
+                } catch (CommandLockTimeOutException ex) {
                     Log.Error (Log.LOG_IMAP, "{0}.Cancel({1}): {2}", this.GetType ().Name, BEContext.Account.Id, ex.Message);
                 }
             }
@@ -124,8 +94,8 @@ namespace NachoCore.IMAP
                 Event evt = ExecuteConnectAndAuthEvent();
                 // In the no-exception case, ExecuteCommand is resolving McPending.
                 sm.PostEvent (evt);
-            } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapCommandLockTimeOutException: {0}", ex.Message);
+            } catch (CommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "CommandLockTimeOutException: {0}", ex.Message);
                 ResolveAllDeferred ();
                 sm.PostEvent ((uint)SmEvt.E.TempFail, "IMAPLOKTIME");
             } catch (OperationCanceledException) {
