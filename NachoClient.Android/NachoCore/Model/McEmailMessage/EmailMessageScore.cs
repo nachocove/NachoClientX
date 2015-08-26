@@ -819,20 +819,21 @@ namespace NachoCore.Model
             NcModel.Instance.RunInTransaction (() => {
                 if (updateFunc (newTime, variance)) {
                     int delta = DateTime.MinValue == newTime ? -1 : +1;
-                    bool shouldUpdate = false;
-                    if (1 <= ScoreVersion) {
-                        var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
-                        if (null != emailAddress) {
-                            fromFunc (emailAddress, delta);
-                            emailAddress.ScoreStates.Update ();
-                        }
-                    }
                     if (2 <= ScoreVersion) {
                         if (setFunc (DateTime.MinValue != newTime)) {
                             ScoreStates.Update ();
+                        } else {
+                            delta = 0;
+                        }
+                        if (0 != delta) {
+                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
+                            if (null != emailAddress) {
+                                fromFunc (emailAddress, delta);
+                                emailAddress.ScoreStates.Update ();
+                            }
                         }
                     }
-                    if (4 <= ScoreVersion) {
+                    if ((4 <= ScoreVersion) && (0 != delta)) {
                         var accountAddress = AccountAddress (AccountId);
                         foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                             if (accountAddress == emailAddress.CanonicalEmailAddress) {
