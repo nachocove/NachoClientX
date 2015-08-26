@@ -40,16 +40,16 @@ namespace NachoCore.IMAP
             McEmailMessage email = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, pending.ServerId);
             if (null == email) {
                 Log.Error (Log.LOG_IMAP, "Could not find email for ServerId {0}", pending.ServerId);
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.BadOrMalformed);
             }
             var attachment = McAttachment.QueryById<McAttachment> (pending.AttachmentId);
             if (null == attachment) {
                 Log.Error (Log.LOG_IMAP, "Could not find attachment for Id {0}", pending.AttachmentId);
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.BadOrMalformed);
             }
             McFolder folder = FolderFromEmail (email);
             if (null == folder) {
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.ConflictWithServer);
             }
             return FetchAttachment (folder, attachment, email);
         }
@@ -60,7 +60,7 @@ namespace NachoCore.IMAP
             var part = attachmentBodyPart (new UniqueId(email.ImapUid), mailKitFolder, attachment.FileReference);
             if (null == part) {
                 Log.Error (Log.LOG_IMAP, "Could not find part with PartSpecifier {0} in summary", attachment.FileReference);
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed, NcResult.WhyEnum.MissingOnServer);
             }
 
             var tmp = NcModel.Instance.TmpPath (BEContext.Account.Id);
@@ -80,7 +80,7 @@ namespace NachoCore.IMAP
             } catch (Exception e) {
                 Log.Error (Log.LOG_IMAP, "Could not GetBodyPart: {0}", e);
                 attachment.DeleteFile ();
-                return NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed);
+                throw;
             } finally {
                 mailKitFolder.UnsetStreamContext ();
             }
@@ -96,6 +96,7 @@ namespace NachoCore.IMAP
             var isummary = mailKitFolder.Fetch (UidList, flags, Cts.Token);
             if (null == isummary || isummary.Count < 1) {
                 Log.Error (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
+                return null;
             }
             var summary = isummary[0] as MessageSummary;
             return summary.BodyParts.Where (x => x.PartSpecifier == fileReference).FirstOrDefault ();
