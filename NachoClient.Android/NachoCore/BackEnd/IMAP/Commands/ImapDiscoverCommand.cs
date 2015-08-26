@@ -28,7 +28,9 @@ namespace NachoCore.IMAP
         {
             NcTask.Run (() => {
                 Event evt = ExecuteCommandInternal ();
-                sm.PostEvent (evt);
+                if (!Cts.Token.IsCancellationRequested) {
+                    sm.PostEvent (evt);
+                }
             }, "ImapDiscoverCommand");
         }
 
@@ -49,6 +51,10 @@ namespace NachoCore.IMAP
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
                 ResolveAllDeferred ();
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
+                errResult.Message = ex.Message;
+            } catch (OperationCanceledException ex) {
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "IMAPDISCOCANCEL"); // will be ignored by the caller
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: UriFormatException: {0}", ex.Message);
