@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
+using System;
 
 namespace NachoCore.IMAP
 {
@@ -107,6 +108,17 @@ namespace NachoCore.IMAP
                                 using (var filtered = new FilteredStream (st)) {
                                     if (null != basic) {
                                         filtered.Add (DecoderFilter.Create (basic.ContentTransferEncoding));
+                                        try {
+                                            filtered.Add (new CharsetFilter (basic.ContentType.Charset, "utf-8"));
+                                        } catch (NotSupportedException ex) {
+                                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
+                                            // continue without the filter
+                                        } catch (ArgumentException ex) {
+                                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
+                                            // continue without the filter
+                                        }
                                     } else {
                                         Log.Warn (Log.LOG_IMAP, "Not a basic part {0}", part.GetType ().Name);
                                     }
@@ -184,13 +196,10 @@ namespace NachoCore.IMAP
         /// <param name="terminator">Terminator (default "\r\n")</param>
         private void CopyBody (Stream src, Stream dst, string terminator = "\r\n")
         {
-            // TODO Need to pass in the encoding, instead of assuming UTF8?
-            Encoding enc = Encoding.UTF8;
-            int bufsize = 1024;
             string line;
             bool skip = true;
-            using (var streamReader = new StreamReader (src, enc, true, bufsize)) {
-                using (var streamWriter = new StreamWriter (dst, enc, bufsize, true)) {
+            using (var streamReader = new StreamReader (src)) {
+                using (var streamWriter = new StreamWriter (dst)) {
                     streamWriter.NewLine = terminator;
                     while ((line = streamReader.ReadLine ()) != null) {
                         if (skip && line.Equals (string.Empty)) {
