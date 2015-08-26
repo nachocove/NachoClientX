@@ -1136,7 +1136,8 @@ namespace NachoClient.iOS
             c.attachments = attachmentView.AttachmentList;
                 
             // Extras
-            c.OrganizerName = Pretty.UserNameForAccount (account);
+            // The app does not keep track of the account owner's name.  Use the e-mail address instead.
+            c.OrganizerName = account.EmailAddr; //Pretty.UserNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
             c.DtStamp = DateTime.UtcNow;
             if (0 == c.attendees.Count) {
