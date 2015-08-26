@@ -88,7 +88,7 @@ namespace NachoCore.ActiveSync
         // HttpClient factory stuff.
         private static object LockObj = new object ();
         public static Type HttpClientType = typeof(MockableHttpClient);
-        private static IHttpClient EncryptedClient;
+        private static Dictionary<int,IHttpClient> EncryptedClients = new Dictionary<int, IHttpClient> ();
         private static string LastUsername;
         private static string LastPassword;
         private static IHttpClient ClearClient;
@@ -121,10 +121,10 @@ namespace NachoCore.ActiveSync
 
         public bool DontReUseHttpClient { set; get; }
 
-        private IHttpClient GetEncryptedClient (string username, string password)
+        private IHttpClient GetEncryptedClient (int accountId, string username, string password)
         {
             lock (LockObj) {
-                if (DontReUseHttpClient || null == EncryptedClient ||
+                if (DontReUseHttpClient || (!EncryptedClients.ContainsKey (accountId)) ||
                     null == LastUsername || null == LastPassword ||
                     LastUsername != username || LastPassword != password) {
                     var handler = new NativeMessageHandler () {
@@ -139,9 +139,9 @@ namespace NachoCore.ActiveSync
                     // Don't Dispose () HttpClient nor HttpClientHandler. We don't have
                     // a ref-count to know when we CAN Dispose(). As we are almost always
                     // re-using, this should not be an issue.
-                    EncryptedClient = client;
+                    EncryptedClients[accountId] = client;
                 }
-                return EncryptedClient;
+                return EncryptedClients[accountId];
             }
         }
 
@@ -444,7 +444,7 @@ namespace NachoCore.ActiveSync
                 // Never send password over unencrypted channel.
                 string password = BEContext.Cred.GetPassword ();
                 Log.Info (Log.LOG_HTTP, "AsHttpOperation: LoggablePasswordSaltedHash {0}", McAccount.GetLoggablePassword (BEContext.Account, password));              
-                client = GetEncryptedClient (BEContext.Cred.Username, password);
+                client = GetEncryptedClient (BEContext.Account.Id, BEContext.Cred.Username, password);
             } else {
                 client = GetClearClient ();
             }
