@@ -89,8 +89,8 @@ namespace NachoCore.ActiveSync
         private static object LockObj = new object ();
         public static Type HttpClientType = typeof(MockableHttpClient);
         private static Dictionary<int,IHttpClient> EncryptedClients = new Dictionary<int, IHttpClient> ();
-        private static string LastUsername;
-        private static string LastPassword;
+        private static Dictionary<int,string> LastUsernames = new Dictionary<int, string> ();
+        private static Dictionary<int,string> LastPasswords = new Dictionary<int, string> ();
         private static IHttpClient ClearClient;
 
         private IBEContext BEContext;
@@ -124,15 +124,18 @@ namespace NachoCore.ActiveSync
         private IHttpClient GetEncryptedClient (int accountId, string username, string password)
         {
             lock (LockObj) {
-                if (DontReUseHttpClient || (!EncryptedClients.ContainsKey (accountId)) ||
-                    null == LastUsername || null == LastPassword ||
-                    LastUsername != username || LastPassword != password) {
+                if (DontReUseHttpClient || 
+                    (!EncryptedClients.ContainsKey (accountId)) ||
+                    (!LastUsernames.ContainsKey (accountId)) || 
+                    (!LastPasswords.ContainsKey (accountId)) ||
+                    LastUsernames[accountId] != username || 
+                    LastPasswords[accountId] != password) {
                     var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
                     };
-                    LastUsername = username;
-                    LastPassword = password;
+                    LastUsernames[accountId] = username;
+                    LastPasswords[accountId] = password;
                     handler.Credentials = new NetworkCredential (username, password);
                     var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
                     client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
