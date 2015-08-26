@@ -228,23 +228,30 @@ namespace NachoCore.IMAP
 
             var isummary = mailKitFolder.Fetch (UidList, flags, headers, Cts.Token);
             if (null == isummary || isummary.Count < 1) {
-                return NcResult.Error (string.Format ("Could not get summary for uid {0}", uid));
+                Log.Info (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.MissingOnServer);
             }
 
             var summary = isummary [0] as MessageSummary;
             if (null == summary) {
-                return NcResult.Error ("Could not convert summary to MessageSummary");
+                Log.Error (Log.LOG_IMAP, "Could not convert summary to MessageSummary");
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.Unknown);
+
             }
             var part = summary.Body;
             if (null == part) {
                 // No body fetched.
-                return NcResult.Error ("messageBodyPart: no body");
+                Log.Error (Log.LOG_IMAP, "messageBodyPart: no body");
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.MissingOnServer);
             }
 
             result = BodyTypeFromSummary (summary);
             if (!result.isOK ()) {
                 // we couldn't find the content type. Try to continue assuming MIME.
-                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}", result.GetMessage ());
+                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}. Defaulting to Mime.", result.GetMessage ());
                 bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
             } else {
                 bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
