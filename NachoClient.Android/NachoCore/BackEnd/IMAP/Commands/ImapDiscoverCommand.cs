@@ -45,8 +45,8 @@ namespace NachoCore.IMAP
                     }
                     return base.ExecuteConnectAndAuthEvent ();
                 });
-            } catch (ImapCommandLockTimeOutException ex) {
-                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: ImapCommandLockTimeOutException: {0}", ex.Message);
+            } catch (CommandLockTimeOutException ex) {
+                Log.Error (Log.LOG_IMAP, "ImapDiscoverCommand: CommandLockTimeOutException: {0}", ex.Message);
                 ResolveAllDeferred ();
                 evt = Event.Create ((uint)SmEvt.E.TempFail, "IMAPDISCOLOKTIME");
                 errResult.Message = ex.Message;

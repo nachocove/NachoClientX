@@ -24,14 +24,14 @@ namespace NachoCore.IMAP
             // need to post an event when done.
             if (Monitor.TryEnter (Client.SyncRoot)) {
                 try {
-                    Client.Disconnect (true);
+                    Client.Disconnect (true, Cts.Token);
                 } finally {
                     Monitor.Exit (Client.SyncRoot);
                 }
             } else {
                 NcTask.Run (() => {
                     lock (Client.SyncRoot) {
-                        Client.Disconnect (true);
+                        Client.Disconnect (true, Cts.Token);
                     }
                 }, "ImapDisconnectCommand");
             }
