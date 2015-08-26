@@ -138,6 +138,7 @@ namespace NachoCore.SMTP
                 //client.ClientCertificates = new X509CertificateCollection ();
                 Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
                 Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+                Cts.Token.ThrowIfCancellationRequested ();
             }
             if (!Client.IsAuthenticated) {
                 RedactProtocolLogFuncDel RestartLog = null;
@@ -158,6 +159,7 @@ namespace NachoCore.SMTP
 
                 Exception ex = null;
                 for (var i = 0; i++ < KAuthRetries; ) {
+                    Cts.Token.ThrowIfCancellationRequested ();
                     try {
                         try {
                             ex = null;

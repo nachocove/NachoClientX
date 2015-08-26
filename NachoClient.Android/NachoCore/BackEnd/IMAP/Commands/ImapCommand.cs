@@ -66,6 +66,7 @@ namespace NachoCore.IMAP
 
         public Event ExecuteConnectAndAuthEvent()
         {
+            Cts.Token.ThrowIfCancellationRequested ();
             NcCapture.AddKind (this.GetType ().Name);
             ImapDiscoverCommand.guessServiceType (BEContext);
 
