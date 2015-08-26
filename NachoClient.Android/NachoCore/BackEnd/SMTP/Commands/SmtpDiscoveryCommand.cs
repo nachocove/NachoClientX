@@ -38,8 +38,7 @@ namespace NachoCore.SMTP
                         Client.Disconnect (false, Cts.Token);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new SmtpAuthenticateCommand (BEContext, Client);
-                        authy.ConnectAndAuthenticate ();
+                        ConnectAndAuthenticate ();
                     }
                     return Event.Create ((uint)SmEvt.E.Success, "SMTPAUTHSUC");
                 });

@@ -7,11 +7,15 @@ using MailKit;
 using System.IO;
 using System.Net.Sockets;
 using MailKit.Net.Smtp;
+using NachoCore.IMAP;
+using NachoCore.Model;
 
 namespace NachoCore.SMTP
 {
     public abstract class SmtpCommand : NcCommand
     {
+        const int KAuthRetries = 2;
+
         public NcSmtpClient Client { get; set; }
 
         protected RedactProtocolLogFuncDel RedactProtocolLogFunc;
@@ -43,14 +47,14 @@ namespace NachoCore.SMTP
 
         public virtual Event ExecuteConnectAndAuthEvent ()
         {
+            Cts.Token.ThrowIfCancellationRequested ();
             return TryLock (Client.SyncRoot, KLockTimeout, () => {
                 try {
                     if (null != Client.MailKitProtocolLogger && null != RedactProtocolLogFunc) {
                         Client.MailKitProtocolLogger.Start (RedactProtocolLogFunc);
                     }
                     if (!Client.IsConnected || !Client.IsAuthenticated) {
-                        var authy = new SmtpAuthenticateCommand (BEContext, Client);
-                        authy.ConnectAndAuthenticate ();
+                        ConnectAndAuthenticate ();
                     }
                     if (null != Client.MailKitProtocolLogger) {
                         Client.MailKitProtocolLogger.ResetBuffers ();
@@ -124,6 +128,64 @@ namespace NachoCore.SMTP
                     Log.Info (Log.LOG_SMTP, "{0}({1}): Finished", cmdname, BEContext.Account.Id);
                 }
             }, cmdname);
+        }
+
+        public void ConnectAndAuthenticate ()
+        {
+            ImapDiscoverCommand.guessServiceType (BEContext);
+
+            if (!Client.IsConnected) {
+                //client.ClientCertificates = new X509CertificateCollection ();
+                Client.Connect (BEContext.Server.Host, BEContext.Server.Port, false, Cts.Token);
+                Log.Info (Log.LOG_SMTP, "SMTP Server: {0}:{1}", BEContext.Server.Host, BEContext.Server.Port);
+            }
+            if (!Client.IsAuthenticated) {
+                RedactProtocolLogFuncDel RestartLog = null;
+                if (null != Client.MailKitProtocolLogger && Client.MailKitProtocolLogger.Enabled ()) {
+                    ProtocolLoggerStopAndLog ();
+                    RestartLog = Client.MailKitProtocolLogger.RedactProtocolLogFunc;
+                }
+
+                string username = BEContext.Cred.Username;
+                string cred;
+                if (BEContext.Cred.CredType == McCred.CredTypeEnum.OAuth2) {
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => !m.Contains ("XOAUTH2"));
+                    cred = BEContext.Cred.GetAccessToken ();
+                } else {
+                    Client.AuthenticationMechanisms.RemoveWhere ((m) => m.Contains ("XOAUTH"));
+                    cred = BEContext.Cred.GetPassword ();
+                }
+
+                Exception ex = null;
+                for (var i = 0; i++ < KAuthRetries; ) {
+                    try {
+                        try {
+                            ex = null;
+                            Client.Authenticate (username, cred, Cts.Token);
+                            break;
+                        } catch (SmtpProtocolException e) {
+                            Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);
+                            // some servers (icloud.com) seem to close the connection on a bad password/username.
+                            throw new AuthenticationException (e.Message);
+                        }
+                    } catch (AuthenticationException e) {
+                        ex = e;
+                        Log.Warn (Log.LOG_SMTP, "AuthenticationException: {0}", ex.Message);
+                        continue;
+                    } catch (ServiceNotAuthenticatedException e) {
+                        ex = e;
+                        Log.Warn (Log.LOG_SMTP, "ServiceNotAuthenticatedException: {0}", e.Message);
+                    }
+                }
+                if (null != ex) {
+                    throw ex;
+                }
+
+                Log.Info (Log.LOG_SMTP, "SMTP Server capabilities: {0}", Client.Capabilities.ToString ());
+                if (null != Client.MailKitProtocolLogger && null != RestartLog) {
+                    Client.MailKitProtocolLogger.Start (RestartLog);
+                }
+            }
         }
 
         protected void ProtocolLoggerStopAndLog ()
