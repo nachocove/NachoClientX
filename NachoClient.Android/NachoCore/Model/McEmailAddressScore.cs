@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -85,6 +86,55 @@ namespace NachoCore.Model
         public static void DeleteByParentId (int parentId)
         {
             NcModel.Instance.Db.Execute ("DELETE FROM McEmailAddressScore WHERE ParentId = ?", parentId);
+        }
+
+        public bool CheckStatistics (string caller)
+        {
+            bool ok = 
+                (0 <= EmailsRead) &&
+                (0 <= EmailsReplied) &&
+                (0 <= EmailsReceived) &&
+                (0 <= EmailsSent) &&
+                (0 <= EmailsDeleted) &&
+                (0 <= MarkedHot) &&
+                (0 <= MarkedNotHot) &&
+                ((EmailsRead + EmailsReplied) <= EmailsReceived);
+            if (!ok) {
+                Log.Error (Log.LOG_BRAIN, "{0}: {1}\n{2}", caller, ToString (), new StackTrace (true));
+            }
+            return ok;
+        }
+
+        public bool CheckToStatistics (string caller)
+        {
+            bool ok =
+                (0 <= ToEmailsRead) &&
+                (0 <= ToEmailsReplied) &&
+                (0 <= ToEmailsReceived) &&
+                ((ToEmailsRead + ToEmailsReplied) <= ToEmailsReceived);
+            if (!ok) {
+                Log.Error (Log.LOG_BRAIN, "{0}: {1}\n{2}", caller, ToString (), new StackTrace (true));
+            }
+            return ok;
+        }
+
+        public bool CheckCcStatistics (string caller)
+        {
+            bool ok =
+                (0 <= CcEmailsRead) &&
+                (0 <= CcEmailsReplied) &&
+                (0 <= CcEmailsReceived) &&
+                ((CcEmailsRead + CcEmailsReplied) <= CcEmailsReceived);
+            if (!ok) {
+                Log.Error (Log.LOG_BRAIN, "{0}: {1}\n{2}", caller, ToString (), new StackTrace (true));
+            }
+            return ok;
+        }
+
+        public override string ToString ()
+        {
+            return string.Format ("[McEmailAddressScore: ParentId={0}, EmailsReceived={1}, EmailsRead={2}, EmailsReplied={3}, EmailsArchived={4}, EmailsDeleted={5}, ToEmailsReceived={6}, ToEmailsRead={7}, ToEmailsReplied={8}, ToEmailsArchived={9}, ToEmailsDeleted={10}, CcEmailsReceived={11}, CcEmailsRead={12}, CcEmailsReplied={13}, CcEmailsArchived={14}, CcEmailsDeleted={15}, EmailsSent={16}, MarkedHot={17}, MarkedNotHot={18}]",
+                ParentId, EmailsReceived, EmailsRead, EmailsReplied, EmailsArchived, EmailsDeleted, ToEmailsReceived, ToEmailsRead, ToEmailsReplied, ToEmailsArchived, ToEmailsDeleted, CcEmailsReceived, CcEmailsRead, CcEmailsReplied, CcEmailsArchived, CcEmailsDeleted, EmailsSent, MarkedHot, MarkedNotHot);
         }
     }
 }

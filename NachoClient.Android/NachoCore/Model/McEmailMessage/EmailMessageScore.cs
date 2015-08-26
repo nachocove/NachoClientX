@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -172,6 +173,13 @@ namespace NachoCore.Model
             }
 
             score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
+            if (0.0 > score) {
+                Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
+                score = 0.0;
+            } else if (1.0 < score) {
+                Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
+                score = 1.0;
+            }
             NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
                 DateTime now = DateTime.UtcNow;
