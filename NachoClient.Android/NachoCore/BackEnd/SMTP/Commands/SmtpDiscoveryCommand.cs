@@ -22,7 +22,9 @@ namespace NachoCore.SMTP
         {
             NcTask.Run (() => {
                 Event evt = ExecuteCommand ();
-                sm.PostEvent (evt);
+                if (!Cts.Token.IsCancellationRequested) {
+                    sm.PostEvent (evt);
+                }
             }, "SmtpDiscoveryCommand");
         }
 
@@ -44,6 +46,10 @@ namespace NachoCore.SMTP
                 });
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsAutoDComplete));
                 return evt1;
+            } catch (OperationCanceledException ex ) {
+                ResolveAllDeferred ();
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPDISCOCANCEL"); // will be ignored by the callerd multipl
+                errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
                 evt = Event.Create ((uint)SmtpProtoControl.SmtpEvt.E.GetServConf, "SMTPCONNFAIL2", AutoDFailureReason.CannotFindServer);
