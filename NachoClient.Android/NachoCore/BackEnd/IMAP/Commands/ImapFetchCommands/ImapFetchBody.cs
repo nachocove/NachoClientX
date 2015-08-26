@@ -9,6 +9,8 @@ using NachoCore.Model;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using MimeKit.IO;
+using MimeKit.IO.Filters;
 
 namespace NachoCore.IMAP
 {
@@ -87,33 +89,42 @@ namespace NachoCore.IMAP
                 NcCapture.AddKind (KImapFetchBodyCommandFetch);
                 long bytes;
                 using (var cap = NcCapture.CreateAndStart (KImapFetchBodyCommandFetch)) {
-                    Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this);
-                    var path = body.GetFilePath ();
-                    using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
-                        // TODO Do we need to filter by Content-Transfer-Encoding?
-                        switch (body.BodyType) {
-                        default:
-                            // Mime is good for us. Just copy over to the proper file
-                            // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
-                            // where it doesn't release the stream handles properly, and not using a temp file
-                            // leads to Sharing violations. This is fixed in more recent versions of MailKit.
-                            st.CopyTo(bodyFile);
-                            break;
+                    using (Stream st = mailKitFolder.GetStream (uid, part.PartSpecifier, Cts.Token, this)) {
+                        var path = body.GetFilePath ();
+                        using (var bodyFile = new FileStream (path, FileMode.OpenOrCreate, FileAccess.Write)) {
+                            switch (body.BodyType) {
+                            default:
+                                // Mime is good for us. Just copy over to the proper file
+                                // FIXME: We don't just use the body.GetFilePath(), because MailKit has a bug
+                                // where it doesn't release the stream handles properly, and not using a temp file
+                                // leads to Sharing violations. This is fixed in more recent versions of MailKit.
+                                st.CopyTo (bodyFile);
+                                break;
 
-                        case McAbstrFileDesc.BodyTypeEnum.HTML_2:
-                        case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
-                            // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
-                            // to the proper place and remove the headers while we're doing so.
-                            CopyBody(st, bodyFile);
-                            break;
+                            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
+                            case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
+                                var basic = part as BodyPartBasic;
+                                using (var filtered = new FilteredStream (st)) {
+                                    if (null != basic) {
+                                        filtered.Add (DecoderFilter.Create (basic.ContentTransferEncoding));
+                                    } else {
+                                        Log.Warn (Log.LOG_IMAP, "Not a basic part {0}", part.GetType ().Name);
+                                    }
+
+                                    // Text and Mime get downloaded with the RFC822 mail headers. Copy the stream
+                                    // to the proper place and remove the headers while we're doing so.
+                                    CopyBody (filtered, bodyFile);
+                                    break;
+                                }
+                            }
                         }
                         bytes = st.Length;
                     }
                     cap.Pause ();
-                    float kBytes = (float)bytes/(float)1024.0;
+                    float kBytes = (float)bytes / (float)1024.0;
                     Log.Info (Log.LOG_IMAP, "ImapFetchBodyCommand: Body download of size {0}k took {1}ms ({2}k/sec; {3})",
                         bytes, cap.ElapsedMilliseconds,
-                        kBytes/((float)cap.ElapsedMilliseconds/(float)1000.0), NcCommStatus.Instance.Speed);
+                        kBytes / ((float)cap.ElapsedMilliseconds / (float)1000.0), NcCommStatus.Instance.Speed);
                 }
                 body.Truncated = false;
                 body.UpdateSaveFinish ();
@@ -192,7 +203,7 @@ namespace NachoCore.IMAP
                     }
                 }
             }
-        }   
+        }
 
         /// <summary>
         /// Find the message part of for a give UID. This makes a FETCH query to the server, similar to what sync
@@ -203,7 +214,7 @@ namespace NachoCore.IMAP
         /// <param name="uid">Uid.</param>
         /// <param name="mailKitFolder">Mail kit folder.</param>
         /// <param name="bodyType">Body type.</param>
-        private NcResult messageBodyPart(UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
+        private NcResult messageBodyPart (UniqueId uid, IMailFolder mailKitFolder, out McAbstrFileDesc.BodyTypeEnum bodyType)
         {
             bodyType = McAbstrFileDesc.BodyTypeEnum.None;
             NcResult result;
@@ -217,23 +228,30 @@ namespace NachoCore.IMAP
 
             var isummary = mailKitFolder.Fetch (UidList, flags, headers, Cts.Token);
             if (null == isummary || isummary.Count < 1) {
-                return NcResult.Error (string.Format ("Could not get summary for uid {0}", uid));
+                Log.Info (Log.LOG_IMAP, "Could not get summary for uid {0}", uid);
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.MissingOnServer);
             }
 
             var summary = isummary [0] as MessageSummary;
             if (null == summary) {
-                return NcResult.Error ("Could not convert summary to MessageSummary");
+                Log.Error (Log.LOG_IMAP, "Could not convert summary to MessageSummary");
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.Unknown);
+
             }
             var part = summary.Body;
             if (null == part) {
                 // No body fetched.
-                return NcResult.Error ("messageBodyPart: no body");
+                Log.Error (Log.LOG_IMAP, "messageBodyPart: no body");
+                return NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed,
+                    NcResult.WhyEnum.MissingOnServer);
             }
 
             result = BodyTypeFromSummary (summary);
             if (!result.isOK ()) {
                 // we couldn't find the content type. Try to continue assuming MIME.
-                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}", result.GetMessage ());
+                Log.Error (Log.LOG_IMAP, "BodyTypeFromSummary error: {0}. Defaulting to Mime.", result.GetMessage ());
                 bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
             } else {
                 bodyType = result.GetValue<McAbstrFileDesc.BodyTypeEnum> ();
@@ -251,48 +269,54 @@ namespace NachoCore.IMAP
         /// Given an IMAP summary, figure out the ContentType, and return the 
         /// McAbstrFileDesc.BodyTypeEnum that corresponds to it.
         /// </summary>
+        /// <description>
+        /// Using the values from the body-summary is much more accurate. If we don't have
+        /// any body-summary, then the headers are a good hint. If the header contains
+        /// the Mime-version header, then we just default to mime. But that masks some of the
+        /// plain parts with funky encodings (transfer encoding).
+        /// </description>
         /// <returns>The type from summary.</returns>
         /// <param name="summary">Summary.</param>
         public static NcResult BodyTypeFromSummary (MessageSummary summary)
         {
-            McAbstrFileDesc.BodyTypeEnum bodyType;
+            McAbstrFileDesc.BodyTypeEnum bodyType = McAbstrFileDesc.BodyTypeEnum.None;
 
             if (null == summary.Headers && null == summary.Body) {
                 return NcResult.Error (string.Format ("No headers nor body."));
             }
 
-            // check headers first, because it's nice and easy.
-            if (null != summary.Headers && summary.Headers.Contains (HeaderId.MimeVersion)) {
-                NcResult result = NcResult.OK ();
-                result.Value = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                return result;
+            if (null != summary.Body && null == summary.Body.ContentType) {
+                Log.Warn (Log.LOG_IMAP, "No ContentType found in body.");
             }
 
-            if (null != summary.Body) {
-                var part = summary.Body;
-                if (null == part.ContentType) {
-                    return NcResult.Error (string.Format ("No ContentType found in body."));
-                } else {
-                    // If we have a body and a content type, get the body type from that.
-                    if (part.ContentType.Matches ("multipart", "*")) {
-                        bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
-                    } else if (part.ContentType.Matches ("text", "*")) {
-                        if (part.ContentType.Matches ("text", "html")) {
-                            bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
-                        } else if (part.ContentType.Matches ("text", "plain")) {
-                            bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
-                        } else {
-                            return NcResult.Error (string.Format ("Unhandled text subtype {0}", part.ContentType.MediaSubtype));
-                        }
+            if (null != summary.Body && null != summary.Body.ContentType) {
+                // If we have a body and a content type, get the body type from that.
+                if (summary.Body.ContentType.Matches ("multipart", "*")) {
+                    bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+                } else if (summary.Body.ContentType.Matches ("text", "*")) {
+                    if (summary.Body.ContentType.Matches ("text", "html")) {
+                        bodyType = McAbstrFileDesc.BodyTypeEnum.HTML_2;
+                    } else if (summary.Body.ContentType.Matches ("text", "plain")) {
+                        bodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
                     } else {
-                        return NcResult.Error (string.Format ("Unhandled contenttype {0}:{1}", part.ContentType.MediaType, part.ContentType.MediaSubtype));
+                        Log.Warn (Log.LOG_IMAP, "Unhandled text subtype {0}", summary.Body.ContentType.MediaSubtype);
                     }
-                    NcResult result = NcResult.OK ();
-                    result.Value = bodyType;
-                    return result;
+                } else {
+                    Log.Warn (Log.LOG_IMAP, "Unhandled contenttype {0}:{1}", summary.Body.ContentType.MediaType, summary.Body.ContentType.MediaSubtype);
                 }
+            } 
+
+            if (bodyType == McAbstrFileDesc.BodyTypeEnum.None && 
+                summary.Headers.Contains (HeaderId.MimeVersion)) {
+                bodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4;
+            }
+
+            if (bodyType != McAbstrFileDesc.BodyTypeEnum.None) {
+                NcResult result = NcResult.OK ();
+                result.Value = bodyType;
+                return result;
             } else {
-                return NcResult.Error (string.Format ("No Body found"));
+                return NcResult.Error (string.Format ("No Body Type found"));
             }
         }
 

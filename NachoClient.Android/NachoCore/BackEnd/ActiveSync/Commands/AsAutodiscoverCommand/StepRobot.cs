@@ -1091,8 +1091,12 @@ namespace NachoCore.ActiveSync
                             if (null == serverUri) {
                                 Log.Error (Log.LOG_AS, "URI not extracted from: {0} in: {1}", xmlUrlValue, xmlSettings);
                             } else {
-                                SrServerUri = serverUri;
-                                haveServerSettings = true;
+                                if (McServer.PathIsEWS (serverUri.ToString ())) {
+                                    Log.Error (Log.LOG_AS, "ProcessXmlSettings: Url seems to be EWS: {0}.", serverUri.ToString ());
+                                } else {
+                                    SrServerUri = serverUri;
+                                    haveServerSettings = true;
+                                }
                             }
                         }
                         // TODO: add support for CertEnroll.

@@ -71,6 +71,13 @@ namespace NachoCore.Utils
 
         public void Initialize ()
         {
+            // Clean up all leftover gzipped JSON files
+            foreach (var gzFilePath in Directory.EnumerateFiles (NcApplication.GetDataDirPath ())) {
+                if (gzFilePath.EndsWith (".gz")) {
+                    SafeFileDelete (gzFilePath);
+                }
+            }
+
             InitializeTables ();
         }
 

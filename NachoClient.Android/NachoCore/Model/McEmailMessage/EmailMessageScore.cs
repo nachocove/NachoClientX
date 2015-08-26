@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Brain;
@@ -172,6 +173,13 @@ namespace NachoCore.Model
             }
 
             score = (0 == bottom) ? 0.0 : (double)top / (double)bottom;
+            if (0.0 > score) {
+                Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
+                score = 0.0;
+            } else if (1.0 < score) {
+                Log.Error (Log.LOG_BRAIN, "Invalid score {0}\n{1}", score, new StackTrace (true));
+                score = 1.0;
+            }
             NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
             if (0 < tvList.Count) {
                 DateTime now = DateTime.UtcNow;
@@ -309,13 +317,7 @@ namespace NachoCore.Model
             }
 
             // Update statistics for email addresses
-            McEmailAddress emailAddress;
-            foreach (var toAddressId in ToEmailAddressId) {
-                emailAddress = McEmailAddress.QueryById<McEmailAddress> (toAddressId);
-                if (null == emailAddress) {
-                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find To email address {0} in email message {1}", toAddressId, Id);
-                    continue;
-                }
+            foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                 emailAddress.IncrementToEmailsReceived (markDependencies: false);
                 if (IsReplied ()) {
                     emailAddress.IncrementToEmailsReplied (markDependencies: false);
@@ -326,12 +328,7 @@ namespace NachoCore.Model
                 emailAddress.ScoreStates.Update ();
                 emailAddress.UpdateByBrain ();
             }
-            foreach (var ccAddressId in CcEmailAddressId) {
-                emailAddress = McEmailAddress.QueryById<McEmailAddress> (ccAddressId);
-                if (null == emailAddress) {
-                    Log.Error (Log.LOG_BRAIN, "AnalyzeOtherAddresses: fail to find Cc email address {0} in email message {1}", ccAddressId, Id);
-                    continue;
-                }
+            foreach (var emailAddress in McEmailAddress.QueryCcAddressesByMessageId (Id)) {
                 emailAddress.IncrementCcEmailsReceived (markDependencies: false);
                 if (IsReplied ()) {
                     emailAddress.IncrementCcEmailsReplied (markDependencies: false);
@@ -819,20 +816,21 @@ namespace NachoCore.Model
             NcModel.Instance.RunInTransaction (() => {
                 if (updateFunc (newTime, variance)) {
                     int delta = DateTime.MinValue == newTime ? -1 : +1;
-                    bool shouldUpdate = false;
-                    if (1 <= ScoreVersion) {
-                        var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
-                        if (null != emailAddress) {
-                            fromFunc (emailAddress, delta);
-                            emailAddress.ScoreStates.Update ();
-                        }
-                    }
                     if (2 <= ScoreVersion) {
                         if (setFunc (DateTime.MinValue != newTime)) {
                             ScoreStates.Update ();
+                        } else {
+                            delta = 0;
+                        }
+                        if (0 != delta) {
+                            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (FromEmailAddressId);
+                            if (null != emailAddress) {
+                                fromFunc (emailAddress, delta);
+                                emailAddress.ScoreStates.Update ();
+                            }
                         }
                     }
-                    if (4 <= ScoreVersion) {
+                    if ((4 <= ScoreVersion) && (0 != delta)) {
                         var accountAddress = AccountAddress (AccountId);
                         foreach (var emailAddress in McEmailAddress.QueryToAddressesByMessageId (Id)) {
                             if (accountAddress == emailAddress.CanonicalEmailAddress) {
