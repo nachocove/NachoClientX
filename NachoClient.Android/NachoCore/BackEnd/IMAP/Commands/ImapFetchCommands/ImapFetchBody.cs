@@ -56,13 +56,6 @@ namespace NachoCore.IMAP
             McAbstrFileDesc.BodyTypeEnum bodyType;
             result = messageBodyPart (uid, mailKitFolder, out bodyType);
             if (!result.isOK ()) {
-                if (result.isError () && result.Why == NcResult.WhyEnum.MissingOnServer) {
-                    Log.Info (Log.LOG_IMAP, "Message is gone from server. Deleting locally. UID {0} id {1}", email.ImapUid, email.Id);
-                    BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageChanged, email.Id));
-                    //BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageDeleteSucceeded));
-                    //BEContext.Owner.StatusInd (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
-                    email.Delete ();
-                }
                 return result;
             }
             BodyPart part = result.GetValue<BodyPart> ();
