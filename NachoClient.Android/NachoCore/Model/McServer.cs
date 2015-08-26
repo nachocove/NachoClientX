@@ -46,6 +46,9 @@ namespace NachoCore.Model
         // own server or if we figured it out on our own.
         public string UserSpecifiedServerName { get; set; }
 
+        // true if our code jammed the name in based on something static: not auto-d, not user-entered.
+        public bool IsHardWired { get; set; }
+
         /// <summary>
         /// The base URI for the server.
         /// </summary>

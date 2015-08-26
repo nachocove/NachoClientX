@@ -106,6 +106,7 @@ namespace NachoCore.ActiveSync
         private Stream ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
+        private bool ExtraRetry451Consumed;
 
         // Properties.
         // User for mocking.
@@ -856,6 +857,10 @@ namespace NachoCore.ActiveSync
 
             case (HttpStatusCode)451:
                 ReportCommResult (ServerUri.Host, false);
+                if (!ExtraRetry451Consumed) {
+                    ++TriesLeft;
+                    ExtraRetry451Consumed = true;
+                }
                 if (!Allow451Follow) {
                     return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOP451A", null, "HttpStatusCode.451 follow not allowed.");
                 }
