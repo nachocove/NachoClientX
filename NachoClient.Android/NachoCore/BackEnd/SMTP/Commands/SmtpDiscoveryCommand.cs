@@ -49,7 +49,7 @@ namespace NachoCore.SMTP
                 return evt1;
             } catch (OperationCanceledException ex ) {
                 ResolveAllDeferred ();
-                evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPDISCOCANCEL"); // will be ignored by the callerd multipl
+                evt = Event.Create ((uint)SmEvt.E.HardFail, "SMTPDISCOCANCEL"); // will be ignored by the caller
                 errResult.Message = ex.Message;
             } catch (UriFormatException ex) {
                 Log.Error (Log.LOG_SMTP, "SmtpDiscoveryCommand: UriFormatException: {0}", ex.Message);
