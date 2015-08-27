@@ -53,8 +53,13 @@ namespace NachoCore.IMAP
             if (mailDeleted) {
                 Log.Info (Log.LOG_IMAP, "{0}: Mail Deleted during idle", IdleFolder.ImapFolderNameRedacted ());
             }
-            mailKitFolder.Close (false, Cts.Token); // close and then reopen to pull in the latest values
-            mailKitFolder = GetOpenMailkitFolder (IdleFolder);
+            mailKitFolder.Status (
+                StatusItems.Count |
+                StatusItems.Recent |
+                StatusItems.UidValidity |
+                StatusItems.UidNext |
+                StatusItems.HighestModSeq |
+                StatusItems.Unread);
             UpdateImapSetting (mailKitFolder, ref IdleFolder);
             if (mailArrived || mailDeleted || needResync) {
                 if (!GetFolderMetaData (ref IdleFolder, mailKitFolder, BEContext.Account.DaysSyncEmailSpan ())) {
