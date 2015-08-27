@@ -12,10 +12,7 @@ using NachoCore;
 using NachoCore.Brain;
 using NachoCore.Model;
 using System.Text;
-using MimeKit.IO;
-using MimeKit.IO.Filters;
 using MailKit.Search;
-using System.Threading;
 
 namespace NachoCore.IMAP
 {
@@ -659,14 +656,10 @@ namespace NachoCore.IMAP
                 try {
                     int previewBytes = PreviewSizeBytes;
                     string partSpecifier = part.PartSpecifier;
-                    ContentEncoding encoding = ContentEncoding.Default;
                     BodyPartBasic m = part as BodyPartBasic;
+                    string TransferEncoding = string.Empty;
                     bool isPlainText = false; // when in doubt, run the http decode, just in case.
                     if (null != m) {
-                        if (!MimeKit.Utils.MimeUtils.TryParse (m.ContentTransferEncoding, out encoding)) {
-                            Log.Error (Log.LOG_IMAP, "Could not parse ContentTransferEncoding {0}", m.ContentTransferEncoding);
-                            encoding = ContentEncoding.Default;
-                        }
                         if (previewBytes >= m.Octets) {
                             previewBytes = (int)m.Octets;
                         }
@@ -675,6 +668,7 @@ namespace NachoCore.IMAP
                         } else if (m is BodyPartMessage) {
                             partSpecifier = m.PartSpecifier + ".TEXT";
                         }
+                        TransferEncoding = m.ContentTransferEncoding;
                     } else {
                         Log.Warn (Log.LOG_IMAP, "BodyPart is not BodyPartBasic: {0}", part);
                     }
@@ -690,7 +684,13 @@ namespace NachoCore.IMAP
                         return null;
                     }
 
-                    preview = getTextFromStream (stream, part, encoding);
+                    using (var decoded = new MemoryStream ()) {
+                        CopyFilteredStream (stream, decoded, part.ContentType.Charset, TransferEncoding, CopyDataAction);
+                        var buffer = decoded.GetBuffer ();
+                        var length = (int)decoded.Length;
+                        preview = Encoding.UTF8.GetString (buffer, 0, length);
+                    }
+
                     if (!isPlainText) {
                         var p = Html2Text (preview);
                         if (string.Empty == p) {
@@ -713,6 +713,11 @@ namespace NachoCore.IMAP
             return preview;
         }
 
+        private void CopyDataAction (Stream inStream, Stream outStream)
+        {
+            inStream.CopyTo (outStream);
+        }
+
         private BodyPart findPreviewablePart (MessageSummary summary)
         {
             BodyPart text;
@@ -727,32 +732,6 @@ namespace NachoCore.IMAP
                 text = summary.TextBody ?? summary.HtmlBody;
             }
             return text;
-        }
-
-        private string getTextFromStream (Stream stream, BodyPart part, ContentEncoding enc)
-        {
-            using (var decoded = new MemoryStream ()) {
-                using (var filtered = new FilteredStream (decoded)) {
-                    filtered.Add (DecoderFilter.Create (enc));
-                    if (part.ContentType.Charset != null) {
-                        try {
-                            filtered.Add (new CharsetFilter (part.ContentType.Charset, "utf-8"));
-                        } catch (NotSupportedException ex) {
-                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
-                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
-                            // continue without the filter
-                        } catch (ArgumentException ex) {
-                            // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
-                            Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", part.ContentType.Charset, ex);
-                            // continue without the filter
-                        }
-                    }
-                    stream.CopyTo (filtered);
-                }
-                var buffer = decoded.GetBuffer ();
-                var length = (int)decoded.Length;
-                return Encoding.UTF8.GetString (buffer, 0, length);
-            }
         }
     }
 }
