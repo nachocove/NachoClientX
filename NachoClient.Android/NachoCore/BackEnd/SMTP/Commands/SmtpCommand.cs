@@ -184,16 +184,21 @@ namespace NachoCore.SMTP
                             break;
                         } catch (SmtpProtocolException e) {
                             Log.Info (Log.LOG_SMTP, "Protocol Error during auth: {0}", e);
-                            // some servers (icloud.com) seem to close the connection on a bad password/username.
-                            throw new AuthenticationException (e.Message);
+                            if (BEContext.ProtocolState.ImapServiceType == McAccount.AccountServiceEnum.iCloud) {
+                                // some servers (icloud.com) seem to close the connection on a bad password/username.
+                                throw new AuthenticationException (e.Message);
+                            } else {
+                                throw;
+                            }
                         }
                     } catch (AuthenticationException e) {
                         ex = e;
-                        Log.Warn (Log.LOG_SMTP, "AuthenticationException: {0}", ex.Message);
+                        Log.Info (Log.LOG_SMTP, "ConnectAndAuthenticate: AuthenticationException: (i={0}) {1}", i, ex.Message);
                         continue;
                     } catch (ServiceNotAuthenticatedException e) {
                         ex = e;
-                        Log.Warn (Log.LOG_SMTP, "ServiceNotAuthenticatedException: {0}", e.Message);
+                        Log.Info (Log.LOG_SMTP, "ConnectAndAuthenticate: ServiceNotAuthenticatedException: (i={0}) {1}", i, ex.Message);
+                        continue;
                     }
                 }
                 if (null != ex) {
