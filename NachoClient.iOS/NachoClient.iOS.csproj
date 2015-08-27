@@ -1623,6 +1623,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs">
       <Link>NachoCore\BackEnd\IMAP\Commands\ImapFetchCommands\ImapFetchAttachment.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TestMode.cs">
+      <Link>NachoCore\Utils\TestMode.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
