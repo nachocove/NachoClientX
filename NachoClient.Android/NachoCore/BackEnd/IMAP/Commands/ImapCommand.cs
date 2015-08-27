@@ -15,6 +15,9 @@ using HtmlAgilityPack;
 using MailKit.Search;
 using System.Threading;
 using NachoClient.Build;
+using MimeKit.IO;
+using MimeKit.IO.Filters;
+using MimeKit;
 
 namespace NachoCore.IMAP
 {
@@ -408,6 +411,28 @@ namespace NachoCore.IMAP
                 });
                 McPending.MakeEligibleOnFMetaData (folder);
                 return true;
+            }
+        }
+
+        protected void CopyFilteredStream (Stream inStream, Stream outStream, 
+            string CharSet, string TransferEncoding, Action<Stream, Stream> func)
+        {
+            using (var filtered = new FilteredStream (outStream)) {
+                filtered.Add (DecoderFilter.Create (TransferEncoding));
+                if (string.IsNullOrEmpty (CharSet)) {
+                    try {
+                        filtered.Add (new CharsetFilter (CharSet, "utf-8"));
+                    } catch (NotSupportedException ex) {
+                        // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", CharSet, ex);
+                        // continue without the filter
+                    } catch (ArgumentException ex) {
+                        // Seems to be a xamarin bug: https://bugzilla.xamarin.com/show_bug.cgi?id=30709
+                        Log.Error (Log.LOG_IMAP, "Could not Add CharSetFilter for CharSet {0}\n{1}", CharSet, ex);
+                        // continue without the filter
+                    }
+                }
+                func (inStream, filtered);
             }
         }
 
