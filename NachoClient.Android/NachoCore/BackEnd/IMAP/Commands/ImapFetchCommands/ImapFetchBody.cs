@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using MimeKit.IO;
 using MimeKit.IO.Filters;
+using System;
 
 namespace NachoCore.IMAP
 {
@@ -182,18 +183,27 @@ namespace NachoCore.IMAP
             string terminator = "\r\n";
             string line;
             bool skip = true;
-            using (var streamReader = new StreamReader (src)) {
-                using (var streamWriter = new StreamWriter (dst)) {
-                    streamWriter.NewLine = terminator;
-                    while ((line = streamReader.ReadLine ()) != null) {
-                        if (skip && line.Equals (string.Empty)) {
-                            skip = false;
-                            continue; // skip the empty line. Next iteration will start writing.
-                        }
-                        if (!skip) {
-                            streamWriter.WriteLine (line);
+            int bytes_written = 0;
+            try {
+                using (var streamReader = new StreamReader (src)) {
+                    using (var streamWriter = new StreamWriter (dst)) {
+                        streamWriter.NewLine = terminator;
+                        while ((line = streamReader.ReadLine ()) != null) {
+                            if (skip && line.Equals (string.Empty)) {
+                                skip = false;
+                                continue; // skip the empty line. Next iteration will start writing.
+                            }
+                            if (!skip) {
+                                streamWriter.WriteLine (line);
+                                bytes_written += line.Length;
+                            }
                         }
                     }
+                }
+            } catch (ArgumentException) {
+                // happens if there was nothing written to the stream.
+                if (bytes_written != 0) {
+                    throw;
                 }
             }
         }
