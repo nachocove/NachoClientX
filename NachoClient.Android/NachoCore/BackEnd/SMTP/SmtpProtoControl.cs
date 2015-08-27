@@ -458,6 +458,10 @@ namespace NachoCore.SMTP
             //  UI:Info:1:: avl: handleStatusEnums 2 sender=Running reader=Running
             // But this is an illegal state in SubMitWait:
             //  STATE:Error:1:: SM(Account:3): S=SubmitWait & E=Running/avl: EventFromEnum running => INVALID EVENT
+            if (null != Cmd && Cmd is SmtpDiscoveryCommand) {
+                // a SmtpDiscoveryCommand is already running.
+                return;
+            }
             BackEndStatePreset = BackEndStateEnum.Running;
             var cmd = new SmtpDiscoveryCommand (this, SmtpClient);
             cmd.Execute (Sm);
