@@ -53,23 +53,16 @@ namespace NachoClient.iOS
 
         public override bool CanSubmitFields ()
         {
-            if (usernameField.Text.Trim().Length == 0) {
-                return false;
-            }
-            if (serverField.Text.Trim().Length == 0) {
-                return false;
-            }
-            if (domainField.Text.Trim().Length == 0) {
-                return false;
-            }
             return true;
         }
 
         public override string IssueWithFields (String email)
         {
-            var result = EmailHelper.IsValidServer (serverField.Text);
-            if (EmailHelper.ParseServerWhyEnum.Success_0 != result) {
-                return EmailHelper.ParseServerWhyEnumToString (result);
+            if (!String.IsNullOrEmpty (serverField.Text)) {
+                var result = EmailHelper.IsValidServer (serverField.Text);
+                if (EmailHelper.ParseServerWhyEnum.Success_0 != result) {
+                    return EmailHelper.ParseServerWhyEnumToString (result);
+                }
             }
             string serviceName;
             if (NcServiceHelper.IsServiceUnsupported (email, out serviceName)) {
@@ -81,22 +74,49 @@ namespace NachoClient.iOS
         public override void PopulateAccountWithFields (NachoCore.Model.McAccount account)
         {
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
+            var username = usernameField.Text.Trim ();
+            var domain = domainField.Text.Trim ();
+            var serverString = serverField.Text.Trim ();
             cred.UserSpecifiedUsername = true;
-            cred.Username = McCred.Join (domainField.Text, usernameField.Text);
-            cred.Update ();
-            var server = new McServer () { 
-                AccountId = account.Id,
-                Capabilities = McAccount.ActiveSyncCapabilities,
-            };
-            server.Insert ();
-            var temp = new McServer ();
-            var result = EmailHelper.ParseServer (ref temp, serverField.Text);
-            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
-            temp.Capabilities = McAccount.ActiveSyncCapabilities;
-            server.CopyFrom (temp);
-            server.UserSpecifiedServerName = serverField.Text;
-            server.UsedBefore = false;
-            server.Update ();
+            if (!String.IsNullOrEmpty (username)) {
+                cred.Username = McCred.Join (domain, username);
+                cred.Update ();
+            }
+            var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();
+            if (server != null) {
+                if (String.IsNullOrEmpty (serverString)) {
+                    Log.Info (Log.LOG_UI, "ExchangeAdvancedFields remove server: {0}/{1}", account.Id, server.Id);
+                    server.Delete ();
+                    server = null;
+                }
+            } else {
+                if (!String.IsNullOrEmpty (serverString)) {
+                    server = new McServer () { 
+                        AccountId = account.Id,
+                        Capabilities = McAccount.ActiveSyncCapabilities,
+                    };
+                    server.UsedBefore = false;
+                    server.Insert ();
+                    Log.Info (Log.LOG_UI, "ExchangeAdvancedFields cerate server: {0}/{1}", account.Id, server.Id);
+                }
+            }
+            if (server != null && !String.IsNullOrEmpty (serverString)) {
+                var result = EmailHelper.ParseServer (ref server, serverString);
+                NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
+                server.Update ();
+                Log.Info (Log.LOG_UI, "ExchangeAdvancedFields update server: {0}/{1}/{2}", account.Id, server.Id, serverString);
+            }
+        }
+
+        public override void UnpopulateAccount (McAccount account)
+        {
+            if (account != null) {
+                var server = McServer.QueryByAccountId<McServer> (account.Id).FirstOrDefault ();
+                if (server != null) {
+                    Log.Info (Log.LOG_UI, "ExchangeAdvancedFields unpopulate server: {0}/{1}", account.Id, server.Id);
+                    server.Delete ();
+                }
+            }
         }
 
         public override void PopulateFieldsWithAccount (NachoCore.Model.McAccount account)

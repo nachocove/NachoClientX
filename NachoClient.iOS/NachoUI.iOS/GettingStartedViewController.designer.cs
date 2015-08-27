@@ -35,9 +35,6 @@ namespace NachoClient.iOS
 
 		[Outlet]
 		UIKit.UIImageView rightTriangleImageView { get; set; }
-
-		[Action ("getStarted:")]
-		partial void getStarted (Foundation.NSObject sender);
 		
 		void ReleaseDesignerOutlets ()
 		{

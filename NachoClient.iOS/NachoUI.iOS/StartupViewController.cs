@@ -85,8 +85,11 @@ namespace NachoClient.iOS
                 StopListeningForApplicationStatus ();
                 var configAccount = McAccount.GetAccountBeingConfigured ();
                 var deviceAccount = McAccount.GetDeviceAccount ();
+                var mdmAccount = McAccount.GetMDMAccount ();
                 if (null != configAccount) {
                     Log.Info (Log.LOG_UI, "StartupViewController: found account being configured");
+                    ShowSetupScreen ();
+                } else if (null == mdmAccount && NcMdmConfig.Instance.IsPopulated) {
                     ShowSetupScreen ();
                 } else if (null == NcApplication.Instance.Account) {
                     Log.Info (Log.LOG_UI, "StartupViewController: null NcApplication.Instance.Account");

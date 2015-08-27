@@ -349,6 +349,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => McAccount.ConfigurationInProgressEnum.Done != x.ConfigurationInProgress).SingleOrDefault ();
         }
 
+        public static McAccount GetMDMAccount ()
+        {
+            return NcModel.Instance.Db.Table<McAccount> ().Where (x => true == x.IsMdmBased).SingleOrDefault ();
+        }
+
         public static bool IsAccountBeingConfigured (int accountId)
         {
             var account = McAccount.QueryById<McAccount> (accountId);

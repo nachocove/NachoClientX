@@ -65,7 +65,7 @@ namespace NachoClient.iOS
             statusLabel.Text = String.Format ("Please provide your {0} information", NcServiceHelper.AccountServiceName (Service));
             submitButton.Layer.CornerRadius = 6.0f;
             UpdateSubmitEnabled ();
-            advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange;
+            advancedButton.Hidden = Service != McAccount.AccountServiceEnum.Exchange || (Account != null && Account.IsMdmBased == true);
             using (var icon = UIImage.FromBundle ("Loginscreen-2")) {
                 emailField.LeftViewMode = UITextFieldViewMode.Always;
                 emailField.AdjustedEditingInsets = new UIEdgeInsets (0, 45, 0, 15);
@@ -108,11 +108,6 @@ namespace NachoClient.iOS
                 UpdateForSubmitting ();
                 StartListeningForApplicationStatus ();
                 scrollView.SetContentOffset (new CGPoint (0, 0), true);
-                if (Account != null && (!String.Equals (Account.EmailAddr, email) || IsShowingAdvanced)) {
-                    Log.Info (Log.LOG_UI, "AccountCredentialsViewController removing account ID{0}", Account.Id);
-                    NcAccountHandler.Instance.RemoveAccount (Account.Id);
-                    Account = null;
-                }
                 if (Account == null) {
                     Account = NcAccountHandler.Instance.CreateAccount (Service, email, password);
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController created account ID{0}", Account.Id);
@@ -124,8 +119,14 @@ namespace NachoClient.iOS
                     BackEnd.Instance.Start (Account.Id);
                 } else {
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController updating account ID{0}", Account.Id);
+                    Account.EmailAddr = email;
+                    Account.Update ();
                     var cred = McCred.QueryByAccountId<McCred> (Account.Id).Single ();
+                    cred.Username = email;
                     cred.UpdatePassword (password);
+                    if (IsShowingAdvanced) {
+                        advancedFieldsViewController.PopulateAccountWithFields (Account);
+                    }
                     Log.Info (Log.LOG_UI, "AccountCredentialsViewController stop/start ID{0}", Account.Id);
                     BackEnd.Instance.Stop (Account.Id);
                     BackEnd.Instance.Start (Account.Id);
@@ -198,10 +199,10 @@ namespace NachoClient.iOS
                         if (advancedFieldsViewController != null) {
                             advancedSubview = advancedFieldsViewController.View.Subviews [0];
                             advancedFieldsViewController.AccountDelegate = this;
-                            advancedFieldsViewController.PopulateFieldsWithAccount (Account);
                         }
                     }
                     if (advancedSubview != null) {
+                        advancedFieldsViewController.PopulateFieldsWithAccount (Account);
                         advancedSubview.Frame = new CGRect (0, 0, advancedView.Frame.Width, advancedSubview.Frame.Height);
                         advancedView.AddSubview (advancedSubview);
                         advancedConstraints = NSLayoutConstraint.FromVisualFormat ("|-0-[view]-0-|", 0, null, NSDictionary.FromObjectAndKey (advancedSubview, (NSString)"view"));
@@ -221,6 +222,7 @@ namespace NachoClient.iOS
                         advancedConstraints = null;
                         advancedSubview.RemoveFromSuperview ();
                         advancedView.AddConstraint (advancedHeightConstraint);
+                        advancedFieldsViewController.UnpopulateAccount (Account);
                     }
                 }
             }

@@ -47,7 +47,11 @@ namespace NachoCore
         {
             setter (this);
             IsPopulated = !String.IsNullOrEmpty(Host) || Port.HasValue || !String.IsNullOrEmpty(Username) || !String.IsNullOrEmpty(Domain) || !String.IsNullOrEmpty(EmailAddr) || !String.IsNullOrEmpty(BrandingName);
-            IsValid = true;
+            if (String.IsNullOrEmpty (Host) && Port.HasValue) {
+                IsValid = false;
+            } else {
+                IsValid = true;
+            }
             NcApplication.Instance.InvokeStatusIndEventInfo (ConstMcAccount.NotAccountSpecific, 
                 NcResult.SubKindEnum.Info_MdmConfigMayHaveChanged);
         }

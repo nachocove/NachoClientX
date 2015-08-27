@@ -23,9 +23,18 @@ namespace NachoClient.iOS
         public CGRect? AnimateFromLaunchImageFrame = null;
         private CGSize originalCircleImageSize;
         private nfloat originalCircleImageOffset;
-        private UIStoryboard accountStoryboard;
+        private UIStoryboard _accountStoryboard;
+        private UIStoryboard accountStoryboard {
+            get { 
+                if (_accountStoryboard == null) {
+                    _accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
+                }
+                return _accountStoryboard;
+            }
+        }
         public bool StartWithTutorial;
         AccountSyncingViewController syncingViewController;
+        EventHandler StartEventHandler;
 
         public GettingStartedViewController (IntPtr handle) : base (handle)
         {
@@ -45,11 +54,18 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             getStartedButton.Hidden = false;
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
+            var mdmAccount = McAccount.GetMDMAccount ();
+            EventHandler startEventHandler = null;
             if (accountBeingConfigured != null || StartWithTutorial) {
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with account being configured (or just tutorial left)");
                 introLabel.Text = "Welcome Back!  We need to finish setting up your account.";
                 getStartedButton.SetTitle ("Continue", UIControlState.Normal);
-            }else if (NcMdmConfig.Instance.IsPopulated){
+                if (accountBeingConfigured != null) {
+                    startEventHandler = ShowAccountBeingConfigured;
+                } else {
+                    startEventHandler = ShowTutorial;
+                }
+            }else if (NcMdmConfig.Instance.IsPopulated && mdmAccount == null){
                 if (NcMdmConfig.Instance.IsValid) {
                     Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with mdm account");
                     var companyName = NcMdmConfig.Instance.BrandingName;
@@ -58,6 +74,7 @@ namespace NachoClient.iOS
                     }
                     introLabel.Text = String.Format ("Start by setting up your {0} account.", companyName);
                     getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
+                    startEventHandler = ShowMDMAccount;
                 } else {
                     // The user is stuck here at a dead end until their MDM profile is fixed.  Will we be relaunched, or do we need to
                     // force a re-query of the mdm parameters somehow?
@@ -73,6 +90,14 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "GettingStartedViewController will appear with no account");
                 introLabel.Text = "Start by choosing your email service provider";
                 getStartedButton.SetTitle ("Get Started", UIControlState.Normal);
+                startEventHandler = ShowAccountTypeChooser;
+            }
+            if (StartEventHandler != null) {
+                getStartedButton.RemoveTarget (StartEventHandler, UIControlEvent.TouchUpInside);
+            }
+            StartEventHandler = startEventHandler;
+            if (StartEventHandler != null) {
+                getStartedButton.AddTarget (StartEventHandler, UIControlEvent.TouchUpInside);
             }
             if (AnimateFromLaunchImageFrame != null) {
                 View.LayoutIfNeeded ();
@@ -106,35 +131,41 @@ namespace NachoClient.iOS
             }
         }
 
-        partial void getStarted (NSObject sender)
+        private void ShowAccountBeingConfigured (object sender, EventArgs e)
         {
-            accountStoryboard = UIStoryboard.FromName ("AccountCreation", null);
             var accountBeingConfigured = McAccount.GetAccountBeingConfigured ();
-            if (accountBeingConfigured != null){
-                Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue account ID{0} config", accountBeingConfigured.Id);
-                var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
-                var credentialsViewController = vc.SuggestedCredentialsViewController (accountBeingConfigured.AccountService);
-                credentialsViewController.AccountDelegate = this;
-                credentialsViewController.Account = accountBeingConfigured;
-                NavigationController.PushViewController (credentialsViewController, true);
-            }else if (StartWithTutorial){
-                Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue with tutorial");
-                syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
-                syncingViewController.AccountDelegate = this;
-                syncingViewController.Complete();
-                PerformSegue ("tutorial", new SegueHolder(NcApplication.Instance.Account.AccountService));
-            }else if (NcMdmConfig.Instance.IsPopulated){
-                Log.Info (Log.LOG_UI, "GettingStartedViewController going to mdm account config");
-                var vc = (StandardCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
-                vc.AccountDelegate = this;
-                vc.Account = NcAccountHandler.Instance.CreateAccount (NcMdmConfig.Instance);
-                NavigationController.PushViewController (vc, true);
-            }else{
-                Log.Info (Log.LOG_UI, "GettingStartedViewController going to start with fresh account");
-                var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
-                vc.AccountDelegate = this;
-                NavigationController.PushViewController (vc, true);
-            }
+            Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue account ID{0} config", accountBeingConfigured.Id);
+            var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+            var credentialsViewController = vc.SuggestedCredentialsViewController (accountBeingConfigured.AccountService);
+            credentialsViewController.AccountDelegate = this;
+            credentialsViewController.Account = accountBeingConfigured;
+            NavigationController.PushViewController (credentialsViewController, true);
+        }
+
+        private void ShowAccountTypeChooser (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "GettingStartedViewController going to start with fresh account");
+            var vc = (AccountTypeViewController)accountStoryboard.InstantiateViewController ("AccountTypeViewController");
+            vc.AccountDelegate = this;
+            NavigationController.PushViewController (vc, true);
+        }
+
+        private void ShowTutorial (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "GettingStartedViewController going to continue with tutorial");
+            syncingViewController = (AccountSyncingViewController)accountStoryboard.InstantiateViewController ("AccountSyncingViewController");
+            syncingViewController.AccountDelegate = this;
+            syncingViewController.Complete();
+            PerformSegue ("tutorial", new SegueHolder(NcApplication.Instance.Account.AccountService));
+        }
+
+        private void ShowMDMAccount (object sender, EventArgs e)
+        {
+            Log.Info (Log.LOG_UI, "GettingStartedViewController going to mdm account config");
+            var vc = (StandardCredentialsViewController)accountStoryboard.InstantiateViewController ("AccountCredentialsViewController");
+            vc.AccountDelegate = this;
+            vc.Account = NcAccountHandler.Instance.CreateAccount (NcMdmConfig.Instance);
+            NavigationController.PushViewController (vc, true);
         }
 
         public void AccountTypeViewControllerDidSelectService (AccountTypeViewController vc, McAccount.AccountServiceEnum service)

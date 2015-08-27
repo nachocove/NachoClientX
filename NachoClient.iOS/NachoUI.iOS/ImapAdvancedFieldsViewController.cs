@@ -110,7 +110,6 @@ namespace NachoClient.iOS
         {
             var username = usernameField.Text;
             var cred = McCred.QueryByAccountId<McCred> (account.Id).Single ();
-
             cred.Username = username;
             cred.UserSpecifiedUsername = true;
             cred.Update ();
@@ -126,13 +125,29 @@ namespace NachoClient.iOS
             var smtpPortTryParse = int.TryParse (outgoingPortField.Text, out smtpServerPort);
             NcAssert.True (smtpPortTryParse);
 
-            var imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
-            var smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
-            NcModel.Instance.RunInTransaction (() => {
+            var imapServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter);
+            if (imapServer == null) {
+                imapServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailReaderWriter, imapServerName, imapServerPort);
                 imapServer.Insert ();
+                Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController create IMAP server: {0}/{1}/{2}:{3}", account.Id, imapServer.Id, imapServerName, imapServerPort);
+            } else {
+                imapServer.Host = imapServerName;
+                imapServer.Port = imapServerPort;
+                imapServer.Update ();
+                Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController update IMAP server: {0}/{1}/{2}:{3}", account.Id, imapServer.Id, imapServerName, imapServerPort);
+            }
+
+            var smtpServer = McServer.QueryByAccountIdAndCapabilities (account.Id, McAccount.AccountCapabilityEnum.EmailSender);
+            if (smtpServer == null) {
+                smtpServer = McServer.Create (account.Id, McAccount.AccountCapabilityEnum.EmailSender, smtpServerName, smtpServerPort);
                 smtpServer.Insert ();
-            });
-            Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController CreateServersForIMAP: {0}/{1}:{2}/{3}:{4}", account.Id, imapServerName, imapServerPort, smtpServer, smtpServerPort);
+                Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController create SMTP server: {0}/{1}/{2}:{3}", account.Id, smtpServer.Id, smtpServerName, smtpServerPort);
+            } else {
+                smtpServer.Host = smtpServerName;
+                smtpServer.Port = smtpServerPort;
+                smtpServer.Update ();
+                Log.Info (Log.LOG_UI, "ImapAdvancedFieldsViewController update SMTP server: {0}/{1}/{2}:{3}", account.Id, smtpServer.Id, smtpServerName, smtpServerPort);
+            }
         }
 
         public override void PopulateFieldsWithAccount (NachoCore.Model.McAccount account)
@@ -175,6 +190,10 @@ namespace NachoClient.iOS
             incomingPortField.Enabled = enabled;
             outgoingServerField.Enabled = enabled;
             outgoingPortField.Enabled = enabled;
+        }
+
+        public override void UnpopulateAccount (McAccount account)
+        {
         }
 
         partial void textFieldChanged (Foundation.NSObject sender)

@@ -24,6 +24,7 @@ namespace NachoClient.iOS
         public abstract bool CanSubmitFields ();
         public abstract void PopulateFieldsWithAccount (McAccount account);
         public abstract void PopulateAccountWithFields (McAccount account);
+        public abstract void UnpopulateAccount (McAccount account);
         public abstract void SetFieldsEnabled (bool enabled);
     }
 }
