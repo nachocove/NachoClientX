@@ -362,7 +362,6 @@ namespace NachoCore.SMTP
                             (uint)PcEvt.E.Park,
                         },
                         Invalid = new uint[] {
-                            (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmtpEvt.E.AuthFail,
@@ -372,6 +371,7 @@ namespace NachoCore.SMTP
                             (uint)SmtpEvt.E.GetServConf,
                         },
                         On = new Trans[] {
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Parked },
                             new Trans { Event = (uint)PcEvt.E.PendQ, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)PcEvt.E.PendQHot, Act = DoConn, State = (uint)Lst.ConnW },
                             new Trans { Event = (uint)SmtpEvt.E.ReDisc, Act = DoConn, State = (uint)Lst.ConnW }, // TODO FIXME
